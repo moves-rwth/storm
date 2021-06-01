@@ -13,7 +13,7 @@ namespace storm {
         namespace dd {
             
             template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> computeReachableStates(storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) {
+            std::pair<storm::dd::Bdd<Type>,uint64_t> computeReachableStates(storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) {
 
                 STORM_LOG_TRACE("Computing reachable states: transition matrix BDD has " << transitions.getNodeCount() << " node(s) and " << transitions.getNonZeroCount() << " non-zero(s), " << initialStates.getNonZeroCount() << " initial states).");
 
@@ -42,7 +42,7 @@ namespace storm {
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Reachability computation completed in " << iteration << " iterations (" << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms).");
                 
-                return reachableStates;
+                return {reachableStates, iteration};
             }
             
             template <storm::dd::DdType Type>
@@ -82,8 +82,8 @@ namespace storm {
                 return ddManager.getIdentity(rowColumnMetaVariablePairs, false);
             }
             
-            template storm::dd::Bdd<storm::dd::DdType::CUDD> computeReachableStates(storm::dd::Bdd<storm::dd::DdType::CUDD> const& initialStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
-            template storm::dd::Bdd<storm::dd::DdType::Sylvan> computeReachableStates(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& initialStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
+            template std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>,uint64_t> computeReachableStates(storm::dd::Bdd<storm::dd::DdType::CUDD> const& initialStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
+            template std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, uint64_t> computeReachableStates(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& initialStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
 
             template storm::dd::Bdd<storm::dd::DdType::CUDD> computeBackwardsReachableStates(storm::dd::Bdd<storm::dd::DdType::CUDD> const& initialStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& constraintStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);
             template storm::dd::Bdd<storm::dd::DdType::Sylvan> computeBackwardsReachableStates(storm::dd::Bdd<storm::dd::DdType::Sylvan> const& initialStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& constraintStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& transitions, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables);

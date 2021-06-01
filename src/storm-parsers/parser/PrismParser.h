@@ -20,7 +20,7 @@ namespace storm {
 namespace storm {
     namespace parser {
         class ExpressionParser;
-        
+
         // A class that stores information about the parsed program.
         class GlobalProgramInformation {
         public:
@@ -29,7 +29,7 @@ namespace storm {
                 // Map the empty action to index 0.
                 actionIndices.emplace("", 0);
             }
-            
+
             void moveToSecondRun() {
                 // Clear all data except the action to indices mapping.
                 modelType = storm::prism::Program::ModelType::UNDEFINED;
@@ -37,7 +37,9 @@ namespace storm {
                 formulas.clear();
                 globalBooleanVariables.clear();
                 globalIntegerVariables.clear();
-                moduleToIndexMap.clear();
+                players.clear();
+                playerControlledModules.clear();
+                playerControlledActions.clear();
                 modules.clear();
                 rewardModels.clear();
                 labels.clear();
@@ -45,11 +47,11 @@ namespace storm {
                 hasInitialConstruct = false;
                 initialConstruct = storm::prism::InitialConstruct();
                 systemCompositionConstruct = boost::none;
-                
+
                 currentCommandIndex = 0;
                 currentUpdateIndex = 0;
             }
-            
+
             // Members for all essential information that needs to be collected.
             storm::prism::Program::ModelType modelType;
             std::vector<storm::prism::Constant> constants;
@@ -62,11 +64,15 @@ namespace storm {
             std::vector<storm::prism::RewardModel> rewardModels;
             std::vector<storm::prism::Label> labels;
             std::vector<storm::prism::ObservationLabel> observationLabels;
+            std::vector<storm::prism::Player> players;
+            std::set<uint_fast64_t> playerControlledModules;
+            std::set<uint_fast64_t> playerControlledActions;
+
             bool hasInitialConstruct;
             storm::prism::InitialConstruct initialConstruct;
             boost::optional<storm::prism::SystemCompositionConstruct> systemCompositionConstruct;
 
-            
+
             // Counters to provide unique indexing for commands and updates.
             uint_fast64_t currentCommandIndex;
             uint_fast64_t currentUpdateIndex;
@@ -81,7 +87,7 @@ namespace storm {
              * @return The resulting PRISM program.
              */
             static storm::prism::Program parse(std::string const& filename, bool prismCompatability = false);
-            
+
             /*!
              * Parses the given input stream into the PRISM storage classes assuming it complies with the PRISM syntax.
              *
@@ -90,7 +96,7 @@ namespace storm {
              * @return The resulting PRISM program.
              */
             static storm::prism::Program parseFromString(std::string const& input, std::string const& filename, bool prismCompatability = false);
-            
+
         private:
             struct modelTypeStruct : qi::symbols<char, storm::prism::Program::ModelType> {
                 modelTypeStruct() {
@@ -101,10 +107,11 @@ namespace storm {
                     ("ctmdp", storm::prism::Program::ModelType::CTMDP)
                     ("ma", storm::prism::Program::ModelType::MA)
                     ("pomdp", storm::prism::Program::ModelType::POMDP)
-                    ("pta", storm::prism::Program::ModelType::PTA);
+                    ("pta", storm::prism::Program::ModelType::PTA)
+                    ("smg", storm::prism::Program::ModelType::SMG);
                 }
             };
-            
+
             struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
                 keywordsStruct() {
                     add
@@ -115,35 +122,38 @@ namespace storm {
                     ("ma", 5)
                     ("pomdp", 6)
                     ("pta", 7)
-                    ("const", 8)
-                    ("int", 9)
-                    ("bool", 10)
-                    ("module", 11)
-                    ("endmodule", 12)
-                    ("rewards", 13)
-                    ("endrewards", 14)
-                    ("true", 15)
-                    ("false", 16)
-                    ("min", 17)
-                    ("max", 18)
-                    ("floor", 19)
-                    ("ceil", 20)
-                    ("init", 21)
-                    ("endinit", 22)
-                    ("invariant", 23)
-                    ("endinvariant", 24);
+                    ("smg", 8)
+                    ("const", 9)
+                    ("int", 10)
+                    ("bool", 11)
+                    ("module", 12)
+                    ("endmodule", 13)
+                    ("rewards", 14)
+                    ("endrewards", 15)
+                    ("true", 16)
+                    ("false", 17)
+                    ("min", 18)
+                    ("max", 19)
+                    ("floor", 20)
+                    ("ceil", 21)
+                    ("init", 22)
+                    ("endinit", 23)
+                    ("invariant", 24)
+                    ("endinvariant", 25)
+                    ("player", 26)
+                    ("endplayer", 27);
                 }
             };
-            
+
             // Functor used for annotating entities with line number information.
             class PositionAnnotation {
             public:
                 typedef void result_type;
-                
+
                 PositionAnnotation(Iterator first) : first(first) {
                     // Intentionally left empty.
                 }
-                
+
                 template<typename Entity, typename First, typename Last>
                 result_type operator()(Entity& entity, First f, Last) const {
                     entity.setLineNumber(get_line(f));
@@ -152,7 +162,7 @@ namespace storm {
                 std::string filename;
                 Iterator const first;
             };
-            
+
             /*!
              * Creates a grammar for the given filename and the iterator to the first input to parse.
              *
@@ -160,32 +170,32 @@ namespace storm {
              * @param first The iterator to the beginning of the input.
              */
             PrismParser(std::string const& filename, Iterator first, bool prismCompatibility);
-            
+
             /*!
              * Sets an internal flag that indicates the second run is now taking place.
              */
             void moveToSecondRun();
-            
+
             /*!
              * Parses the stored formula Expressions.
              */
             void createFormulaIdentifiers(std::vector<storm::prism::Formula> const& formulas);
-            
+
             // A flag that stores whether the grammar is currently doing the second run.
             bool secondRun;
 
             bool prismCompatibility;
-            
+
             /*!
              * Sets whether doubles literals are allowed in the parsed expression.
              *
              * @param flag Indicates whether to allow or forbid double literals in the parsed expression.
              */
             void allowDoubleLiterals(bool flag);
-            
+
             // The name of the file being parsed.
             std::string filename;
-            
+
             /*!
              * Retrieves the name of the file currently being parsed.
              *
@@ -194,22 +204,22 @@ namespace storm {
             std::string const& getFilename() const;
 
             mutable std::set<std::string> observables;
-            
+
             // Store the expressions of formulas. They have to be parsed after the first and before the second run
             std::vector<std::string> formulaExpressions;
             // Stores a proper order in which formulas can be evaluated. This is necessary since formulas might depend on each other.
             // E.g. for "formula x = y; formula y = z;" we have to swap the order of the two formulas.
             std::vector<uint64_t> formulaOrder;
-            
+
             // A function used for annotating the entities with their position.
             phoenix::function<PositionAnnotation> annotate;
-            
+
             // An object gathering information about the program while parsing.
             GlobalProgramInformation globalProgramInformation;
-            
+
             // The starting point of the grammar.
             qi::rule<Iterator, storm::prism::Program(), Skipper> start;
-            
+
             // Rules for model type.
             qi::rule<Iterator, storm::prism::Program::ModelType(), Skipper> modelTypeDefinition;
 
@@ -217,7 +227,7 @@ namespace storm {
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> boolExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> intExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> numericalExpression;
-            
+
             // Rules for parsing the program header.
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedBooleanConstantDefinition;
@@ -227,45 +237,52 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Constant(), Skipper> definedBooleanConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> definedIntegerConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> definedDoubleConstantDefinition;
-            
+
             // Rules for global variable definitions.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> globalVariableDefinition;
-            qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> globalBooleanVariableDefinition;
-            qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> globalIntegerVariableDefinition;
-            
+
             // Rules for modules definition.
             qi::rule<Iterator, std::string(), Skipper> knownModuleName;
             qi::rule<Iterator, std::string(), Skipper> freshModuleName;
             qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::vector<storm::prism::BooleanVariable>, std::vector<storm::prism::IntegerVariable>, std::vector<storm::prism::ClockVariable>>, Skipper> moduleDefinition;
             qi::rule<Iterator, storm::prism::ModuleRenaming, qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
             qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::string, storm::prism::ModuleRenaming>, Skipper> renamedModule;
-            
+
             // Rules for variable definitions.
             qi::rule<Iterator, qi::unused_type(std::vector<storm::prism::BooleanVariable>&, std::vector<storm::prism::IntegerVariable>&, std::vector<storm::prism::ClockVariable>&), Skipper> variableDefinition;
             qi::rule<Iterator, storm::prism::BooleanVariable(), qi::locals<storm::expressions::Expression>, Skipper> booleanVariableDefinition;
             qi::rule<Iterator, storm::prism::IntegerVariable(), qi::locals<storm::expressions::Expression>, Skipper> integerVariableDefinition;
+            qi::rule<Iterator, storm::prism::IntegerVariable(), qi::locals<storm::expressions::Expression>, Skipper> boundedIntegerVariableDefinition;
+            qi::rule<Iterator, storm::prism::IntegerVariable(), qi::locals<storm::expressions::Expression>, Skipper> unboundedIntegerVariableDefinition;
             qi::rule<Iterator, storm::prism::ClockVariable(), qi::locals<storm::expressions::Expression>, Skipper> clockVariableDefinition;
-            
+
             // Rules for command definitions.
             qi::rule<Iterator, storm::prism::Command(GlobalProgramInformation&), qi::locals<bool>, Skipper> commandDefinition;
             qi::rule<Iterator, std::vector<storm::prism::Update>(GlobalProgramInformation&), Skipper> updateListDefinition;
             qi::rule<Iterator, storm::prism::Update(GlobalProgramInformation&), Skipper> updateDefinition;
             qi::rule<Iterator, std::vector<storm::prism::Assignment>(), Skipper> assignmentDefinitionList;
             qi::rule<Iterator, storm::prism::Assignment(), Skipper> assignmentDefinition;
-            
+            qi::rule<Iterator, std::string(), Skipper> knownActionName;
+
             // Rules for reward definitions.
             qi::rule<Iterator, std::string(), Skipper> freshRewardModelName;
             qi::rule<Iterator, storm::prism::RewardModel(GlobalProgramInformation&), qi::locals<std::string, std::vector<storm::prism::StateReward>, std::vector<storm::prism::StateActionReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
             qi::rule<Iterator, storm::prism::StateReward(), Skipper> stateRewardDefinition;
             qi::rule<Iterator, storm::prism::StateActionReward(GlobalProgramInformation&), Skipper> stateActionRewardDefinition;
             qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), qi::locals<std::string, storm::expressions::Expression, storm::expressions::Expression,storm::expressions::Expression>, Skipper> transitionRewardDefinition;
-            
+
+            // Rules for player definitions
+            qi::rule<Iterator, std::string(), Skipper> freshPlayerName;
+            qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> playerControlledActionName;
+            qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> playerControlledModuleName;
+            qi::rule<Iterator, storm::prism::Player(GlobalProgramInformation&), qi::locals<std::string, std::vector<std::string>, std::vector<std::string>>, Skipper> playerConstruct;
+
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
 
             // Rules for POMDP observables (standard prism)
             qi::rule<Iterator, qi::unused_type(), Skipper> observablesConstruct;
-            
+
             // Rules for invariant constructs
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> invariantConstruct;
 
@@ -294,28 +311,30 @@ namespace storm {
             // Rules for formula definitions.
             qi::rule<Iterator, std::string(), Skipper> formulaDefinitionRhs;
             qi::rule<Iterator, storm::prism::Formula(), Skipper> formulaDefinition;
-            
+
             // Rules for identifier parsing.
             qi::rule<Iterator, std::string(), Skipper> identifier;
             qi::rule<Iterator, std::string(), Skipper> freshIdentifier;
-            
+
             // Parsers that recognize special keywords and model types.
             storm::parser::PrismParser::keywordsStruct keywords_;
             storm::parser::PrismParser::modelTypeStruct modelType_;
             qi::symbols<char, storm::expressions::Expression> identifiers_;
-            
+
             // Parser and manager used for recognizing expressions.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
             std::shared_ptr<storm::parser::ExpressionParser> expressionParser;
-            
+
             // Helper methods used in the grammar.
             bool isValidIdentifier(std::string const& identifier);
             bool isFreshIdentifier(std::string const& identifier);
-            bool isKnownModuleName(std::string const& moduleName);
+            bool isKnownModuleName(std::string const& moduleName, bool inSecondRun);
             bool isFreshModuleName(std::string const& moduleName);
+            bool isKnownActionName(std::string const& actionName, bool inSecondRun);
             bool isFreshLabelName(std::string const& moduleName);
             bool isFreshObservationLabelName(std::string const& labelName);
             bool isFreshRewardModelName(std::string const& moduleName);
+            bool isFreshPlayerName(std::string const& playerName);
             bool isOfBoolType(storm::expressions::Expression const& expression);
             bool isOfIntType(storm::expressions::Expression const& expression);
             bool isOfNumericalType(storm::expressions::Expression const& expression);
@@ -323,7 +342,7 @@ namespace storm {
             bool addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
             void setModelType(GlobalProgramInformation& globalProgramInformation, storm::prism::Program::ModelType const& modelType);
-            
+
             std::shared_ptr<storm::prism::Composition> createModuleComposition(std::string const& moduleName) const;
             std::shared_ptr<storm::prism::Composition> createRenamingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::map<std::string, std::string> const& renaming) const;
             std::shared_ptr<storm::prism::Composition> createHidingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::set<std::string> const& actionsToHide) const;
@@ -355,12 +374,13 @@ namespace storm {
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::ModuleRenaming createModuleRenaming(std::map<std::string,std::string> const& renaming) const;
             storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, storm::prism::ModuleRenaming const& renaming, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::Player createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & commandNames);
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
             void createObservablesList(std::vector<std::string> const& observables);
 
 
             void removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const;
-            
+
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;
         };
@@ -368,4 +388,3 @@ namespace storm {
 } // namespace storm
 
 #endif	/* STORM_PARSER_PRISMPARSER_H_ */
-

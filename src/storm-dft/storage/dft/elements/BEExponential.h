@@ -25,8 +25,8 @@ namespace storm {
                 STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(failureRate), "Exponential failure rate should not be zero.");
             }
 
-            DFTElementType type() const override {
-                return DFTElementType::BE_EXP;
+            BEType beType() const override {
+                return BEType::EXPONENTIAL;
             }
 
             /*!
@@ -50,13 +50,11 @@ namespace storm {
              * @return Dormancy factor.
              */
             ValueType dormancyFactor() const {
-                if (storm::utility::isZero<ValueType>(this->activeFailureRate())) {
-                    // Return default value of 1
-                    return storm::utility::one<ValueType>();
-                } else {
-                    return this->passiveFailureRate() / this->activeFailureRate();
-                }
+                STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(this->activeFailureRate()), "Active failure rate of non-const BE should not be zero.");
+                return this->passiveFailureRate() / this->activeFailureRate();
             }
+
+            ValueType getUnreliability(ValueType time) const override;
 
             /*!
              * Return whether the BE experiences transient failures.
@@ -67,7 +65,8 @@ namespace storm {
             }
 
             bool canFail() const override {
-                return !storm::utility::isZero(this->activeFailureRate());
+                STORM_LOG_ASSERT(!storm::utility::isZero(this->activeFailureRate()), "BEExp should have failure rate > 0");
+                return true;
             }
 
             /*!
@@ -79,7 +78,7 @@ namespace storm {
             }
 
             bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
-                if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
+                if (!DFTBE<ValueType>::isTypeEqualTo(other)) {
                     return false;
                 }
                 auto& otherBE = static_cast<BEExponential<ValueType> const&>(other);

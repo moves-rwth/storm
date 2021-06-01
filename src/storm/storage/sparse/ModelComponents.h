@@ -13,6 +13,7 @@
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/PlayerIndex.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/utility/macros.h"
@@ -21,10 +22,10 @@
 namespace storm {
     namespace storage {
         namespace sparse {
-            
+
             template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
             struct ModelComponents {
-                
+
                 ModelComponents(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                 storm::models::sparse::StateLabeling const& stateLabeling = storm::models::sparse::StateLabeling(),
                                 std::unordered_map<std::string, RewardModelType> const& rewardModels =  std::unordered_map<std::string, RewardModelType>(),
@@ -34,7 +35,7 @@ namespace storm {
                         : transitionMatrix(transitionMatrix), stateLabeling(stateLabeling), rewardModels(rewardModels), rateTransitions(rateTransitions), markovianStates(markovianStates), player1Matrix(player1Matrix) {
                     // Intentionally left empty
                 }
-              
+
                 ModelComponents(storm::storage::SparseMatrix<ValueType>&& transitionMatrix = storm::storage::SparseMatrix<ValueType>(),
                                 storm::models::sparse::StateLabeling&& stateLabeling = storm::models::sparse::StateLabeling(),
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels =  std::unordered_map<std::string, RewardModelType>(),
@@ -44,12 +45,10 @@ namespace storm {
                         : transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)), rewardModels(std::move(rewardModels)), rateTransitions(rateTransitions), markovianStates(std::move(markovianStates)), player1Matrix(std::move(player1Matrix)) {
                     // Intentionally left empty
                 }
-                
-                
-                
-                
+
+
                 // General components (applicable for all model types):
-                
+
                 // The transition matrix.
                 storm::storage::SparseMatrix<ValueType> transitionMatrix;
                 // The state labeling.
@@ -66,6 +65,7 @@ namespace storm {
                 // POMDP specific components
                 // The POMDP observations
                 boost::optional<std::vector<uint32_t>> observabilityClasses;
+                boost::optional<storm::storage::sparse::StateValuations> observationValuations;
 
                 // Continuous time specific components (CTMCs, Markov Automata):
                 // True iff the transition values (for Markovian choices) are interpreted as rates.
@@ -78,6 +78,12 @@ namespace storm {
                 // Stochastic two player game specific components:
                 // The matrix of player 1 choices (needed for stochastic two player games
                 boost::optional<storm::storage::SparseMatrix<storm::storage::sparse::state_type>> player1Matrix;
+
+                // Stochastic multiplayer game specific components:
+                // The vector mapping states to player indices.
+                boost::optional<std::vector<storm::storage::PlayerIndex>> statePlayerIndications;
+                // A mapping of player names to player indices.
+                boost::optional<std::map<std::string, storm::storage::PlayerIndex>> playerNameToIndexMap;
             };
         }
     }

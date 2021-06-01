@@ -42,8 +42,8 @@ namespace storm {
 
         LinearCoefficientVisitor::VariableCoefficients& LinearCoefficientVisitor::VariableCoefficients::operator/=(VariableCoefficients&& other) {
             STORM_LOG_THROW(other.variableToCoefficientMapping.size() == 0, storm::exceptions::InvalidArgumentException, "Expression is non-linear.");
-            for (auto const& otherVariableCoefficientPair : other.variableToCoefficientMapping) {
-                this->variableToCoefficientMapping[otherVariableCoefficientPair.first] /= other.constantPart;
+            for (auto& variableCoefficientPair : this->variableToCoefficientMapping) {
+                variableCoefficientPair.second /= other.constantPart;
             }
             constantPart /= other.constantPart;
             return *this;

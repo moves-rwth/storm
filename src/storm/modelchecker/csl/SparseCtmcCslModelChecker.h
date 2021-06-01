@@ -43,6 +43,12 @@ namespace storm {
              */
             std::vector<ValueType> computeAllTransientProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask);
 
+            /*!
+             * Computes the long run average (or: steady state) distribution over all states
+             * Assumes a uniform distribution over initial states.
+             */
+            std::unique_ptr<CheckResult> computeSteadyStateDistribution(Environment const& env);
+
         };
         
     } // namespace modelchecker

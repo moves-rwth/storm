@@ -20,22 +20,28 @@ namespace storm {
                 for (size_t i = 0; i < dft.nrElements(); ++i) {
                     std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
                     switch (element->type()) {
-                        case storm::storage::DFTElementType::BE_EXP: {
-                            auto be_exp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(
-                                    element);
-                            builder.addBasicElementExponential(be_exp->name(), be_exp->activeFailureRate(),
-                                                               be_exp->dormancyFactor());
-                            break;
-                        }
-                        case storm::storage::DFTElementType::BE_CONST: {
-                            auto be_const = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(
-                                    element);
-                            if (be_const->canFail()) {
-                                STORM_LOG_TRACE("Transform " + element->name() + " [BE (const failed)]");
-                                failedBEs.push_back(be_const->name());
+                        case storm::storage::DFTElementType::BE: {
+                            auto be = std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(element);
+                            switch (be->beType()) {
+                                case storm::storage::BEType::CONSTANT: {
+                                    auto beConst = std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(element);
+                                    if (beConst->canFail()) {
+                                        STORM_LOG_TRACE("Transform " + beConst->name() + " [BE (const failed)]");
+                                        failedBEs.push_back(beConst->name());
+                                    }
+                                    // All original constant BEs are set to failsafe, failed BEs are later triggered by a new element
+                                    builder.addBasicElementConst(beConst->name(), false);
+                                    break;
+                                }
+                                case storm::storage::BEType::EXPONENTIAL: {
+                                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(element);
+                                    builder.addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
+                                    break;
+                                }
+                                default:
+                                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "BE type '" << be->beType() << "' not known.");
+                                    break;
                             }
-                            // All original constant BEs are set to failsafe, failed BEs are later triggered by a new element
-                            builder.addBasicElementConst(be_const->name(), false);
                             break;
                         }
                         case storm::storage::DFTElementType::AND:
@@ -107,18 +113,23 @@ namespace storm {
                 for (size_t i = 0; i < dft.nrElements(); ++i) {
                     std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
                     switch (element->type()) {
-                        case storm::storage::DFTElementType::BE_EXP: {
-                            auto be_exp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(
-                                    element);
-                            builder.addBasicElementExponential(be_exp->name(), be_exp->activeFailureRate(),
-                                                               be_exp->dormancyFactor());
-                            break;
-                        }
-                        case storm::storage::DFTElementType::BE_CONST: {
-                            auto be_const = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(
-                                    element);
-                            // All original constant BEs are set to failsafe, failed BEs are later triggered by a new element
-                            builder.addBasicElementConst(be_const->name(), be_const->canFail());
+                        case storm::storage::DFTElementType::BE: {
+                            auto be = std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(element);
+                            switch (be->beType()) {
+                                case storm::storage::BEType::CONSTANT: {
+                                    auto beConst = std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(element);
+                                    builder.addBasicElementConst(beConst->name(), beConst->canFail());
+                                    break;
+                                }
+                                case storm::storage::BEType::EXPONENTIAL: {
+                                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(element);
+                                    builder.addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
+                                    break;
+                                }
+                                default:
+                                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "BE type '" << be->beType() << "' not known.");
+                                    break;
+                            }
                             break;
                         }
                         case storm::storage::DFTElementType::AND:
@@ -139,7 +150,7 @@ namespace storm {
                         }
                         case storm::storage::DFTElementType::POR: {
                             auto por = std::static_pointer_cast<storm::storage::DFTPor<ValueType> const>(element);
-                            builder.addPandElement(por->name(), getChildrenVector(por), por->isInclusive());
+                            builder.addPorElement(por->name(), getChildrenVector(por), por->isInclusive());
                             break;
                         }
                         case storm::storage::DFTElementType::SPARE:

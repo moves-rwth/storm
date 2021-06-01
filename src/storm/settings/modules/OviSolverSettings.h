@@ -19,12 +19,11 @@ namespace storm {
                 
                 double getMaxVerificationIterationFactor() const;
                 
-                bool useRelevantValuesForPrecisionUpdate() const;
-
                 double getUpperBoundGuessingFactor() const;
 
                 uint64_t getUpperBoundOnlyIterations() const;
-                
+
+                bool useNoTerminationGuaranteeMinimumMethod() const;
                 
                 // The name of the module.
                 static const std::string moduleName;
@@ -32,9 +31,9 @@ namespace storm {
             private:
                 static const std::string precisionUpdateFactorOptionName;
                 static const std::string maxVerificationIterationFactorOptionName;
-                static const std::string useRelevantValuesForPrecisionUpdateOptionName;
                 static const std::string upperBoundGuessingFactorOptionName;
                 static const std::string upperBoundOnlyIterationsOptionName;
+                static const std::string useNoTerminationGuaranteeMinimumMethodOptionName;
             };
             
         }

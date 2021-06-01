@@ -30,6 +30,8 @@ namespace storm {
         }
 
         template class UniqueObservationStates<storm::RationalNumber>;
-        
+
+        template
+        class UniqueObservationStates<double>;
     }
 }

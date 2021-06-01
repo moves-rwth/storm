@@ -47,7 +47,7 @@ namespace storm {
                     ++it2;
                 }
                 return it1 == end1 && it2 == end2;
-            };
+            }
 
 
             bool operator<(ActionIdentifier const& lhs, ActionIdentifier const& rhs) {
@@ -95,7 +95,13 @@ namespace storm {
 
             void actionIdentifiersToStream(std::ostream& stream, std::vector<ActionIdentifier> const& actionIdentifiers, ChoiceLabelIdStorage const& labelStorage) {
                 stream << "actions: {";
+                bool first = true;
                 for (auto ai : actionIdentifiers) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        stream << " ";
+                    }
                     stream << "[" << ai.choiceLabelId << " (" << labelStorage.getLabel(ai.choiceLabelId) << ")";
                     stream << ", " << ai.choiceOriginId << "]";
                 }
@@ -105,8 +111,14 @@ namespace storm {
             template <typename IrrelevantType>
             void actionIdentifiersToStream(std::ostream& stream, std::map<ActionIdentifier, IrrelevantType> const& actionIdentifiers, ChoiceLabelIdStorage const& labelStorage) {
                 stream << "actions: {";
+                bool first = true;
                 for (auto ai : actionIdentifiers) {
-                    stream << "[" << ai.first.choiceLabelId << "('" << labelStorage.getLabel(ai.first.choiceLabelId) << "')";
+                    if (first) {
+                        first = false;
+                    } else {
+                        stream << " ";
+                    }
+                    stream << "[" << ai.first.choiceLabelId << " (" << labelStorage.getLabel(ai.first.choiceLabelId) << ")";
                     stream << ", " << ai.first.choiceOriginId << "]";
                 }
                 stream << "}";
@@ -136,7 +148,10 @@ namespace storm {
                                                                                newRewardModels,
                                                                                false, boost::none);
             modelcomponents.observabilityClasses = pomdp.getObservations();
-            //modelcomponents.choiceLabeling = pomdp.getChoiceLabeling();
+            modelcomponents.stateValuations = pomdp.getOptionalStateValuations();
+            modelcomponents.choiceLabeling = pomdp.getChoiceLabeling();
+            modelcomponents.choiceLabeling->permuteItems(permutation);
+            modelcomponents.observationValuations = pomdp.getOptionalObservationValuations();
             return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(modelcomponents, true);
         }
 
@@ -144,7 +159,7 @@ namespace storm {
         template<typename ValueType>
         std::string MakePOMDPCanonic<ValueType>::getStateInformation(uint64_t state) const {
             if(pomdp.hasStateValuations()) {
-                return std::to_string(state) + "[" +  pomdp.getStateValuations().getStateInfo(state) + "]";
+                return std::to_string(state) + " " +  pomdp.getStateValuations().getStateInfo(state);
             } else {
                 return std::to_string(state);
             }
@@ -173,7 +188,15 @@ namespace storm {
                     if (moreActionObservations.get(observation)) {
                         // We have seen this observation previously with multiple actions. Error!
                         // TODO provide more diagnostic information
-                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides multiple actions, but in state " <<  state << " provides one action.");
+                        std::string stateval ="";
+                        if (pomdp.hasStateValuations()) {
+                            stateval = " (" + pomdp.getStateValuations().getStateInfo(state) + ") ";
+                        }
+                        std::string actionval= "";
+                        if (pomdp.hasChoiceLabeling()) {
+                            actionval = *pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom).begin();
+                        }
+                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides multiple actions, but in state " <<  state << stateval << " provides only one action " << actionval << ".");
                     }
                     oneActionObservations.set(observation);
 
@@ -182,7 +205,15 @@ namespace storm {
                 } else {
                     if (oneActionObservations.get(observation)) {
                         // We have seen this observation previously with one action. Error!
-                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides one action, but in state " <<  state << " provides multiple actions.");
+                        std::string stateval ="";
+                        if (pomdp.hasStateValuations()) {
+                            stateval = " (" + pomdp.getStateValuations().getStateInfo(state) + ") ";
+                        }
+//                        std::string actionval= "";
+//                        if (pomdp.hasChoiceLabeling()) {
+//                            actionval = *pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom).begin();
+//                        }
+                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides one action, but in state " <<  state << stateval << " provides " << rowIndexTo - rowIndexFrom << " actions.");
                     }
                     moreActionObservations.set(observation);
                 }
@@ -242,7 +273,7 @@ namespace storm {
                         detail::actionIdentifiersToStream(std::cout, actionIdentifiers, labelStorage);
                         std::cout << " according to state " << state << "." <<  std::endl;
 
-                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Actions identifiers do not align between states '" <<  getStateInformation(state) << "' and '" << getStateInformation(actionIdentifierDefinition[observation]) << "', both having observation " << observation  << ". See output above for more information.");
+                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Actions identifiers do not align between states \n\t" <<  getStateInformation(state) << "\nand\n\t" << getStateInformation(actionIdentifierDefinition[observation]) << "\nboth having observation " << observation  << ". See output above for more information.");
                     }
                 }
 
@@ -259,5 +290,6 @@ namespace storm {
 
         template class MakePOMDPCanonic<double>;
         template class MakePOMDPCanonic<storm::RationalNumber>;
+        template class MakePOMDPCanonic<storm::RationalFunction>;
     }
 }

@@ -37,6 +37,8 @@ namespace storm {
                 for (auto e : storm::utility::getEngines()) {
                     engines.push_back(storm::utility::toString(e));
                 }
+                engines.push_back("portfolio"); // for backwards compatibility
+                
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
@@ -46,7 +48,7 @@ namespace storm {
                 
                 std::vector<std::string> ddLibraries = {"cudd", "sylvan"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(ddLibraries)).setDefaultValueString("cudd").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(ddLibraries)).setDefaultValueString("sylvan").build()).build());
                 
                 std::vector<std::string> lpSolvers = {"gurobi", "glpk", "z3"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")

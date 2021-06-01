@@ -3,6 +3,7 @@ add_custom_target(test-resources)
 
 set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
+set(STORM_3RDPARTY_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include/resources/3rdparty)
 
 
 #############################################################
@@ -44,8 +45,26 @@ list(APPEND STORM_DEP_TARGETS gmm)
 ##
 #############################################################
 
-add_imported_library_interface(StormEigen33 "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
-list(APPEND STORM_DEP_TARGETS StormEigen33)
+# Checkout Eigen version 3.3.7
+message (STATUS "Storm - Including Eigen 3.3.7.")
+ExternalProject_Add(
+        eigen_src
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+		GIT_SHALLOW 1
+        GIT_TAG 21ae2afd4edaa1b69782c67a54182d34efe43f9c
+        SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
+        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.7
+		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen.patch
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        LOG_INSTALL ON
+)
+add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen")
+list(APPEND STORM_DEP_TARGETS StormEigen)
+add_dependencies(StormEigen eigen_src)
+
 
 
 #############################################################
@@ -105,7 +124,7 @@ set(SPARSEPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/spar
 file(GLOB SPARSEPP_HEADERS "${SPARSEPP_INCLUDE_DIR}/*.h")
 
 # Add the sparsepp headers to the headers that are copied to the include directory in the build directory.
-set(SPARSEPP_BINDIR_DIR ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp)
+set(SPARSEPP_BINDIR_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/sparsepp)
 include_directories("${SPARSEPP_BINDIR_DIR}")
 foreach(HEADER ${SPARSEPP_HEADERS})
     string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})
@@ -241,14 +260,26 @@ if (NOT STORM_FORCE_SHIPPED_CARL)
 		find_package(carl QUIET)
     endif()
 endif()
+
+set(STORM_SHIPPED_CARL OFF)
 if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
     get_target_property(carlLOCATION lib_carl LOCATION)
     if("${carlLOCATION}" STREQUAL "carlLOCATION-NOTFOUND")
-        message(FATAL_ERROR "Library location for carl is not found, did you build carl?")
+        if(EXISTS ${STORM_3RDPARTY_BINARY_DIR}/carl)
+            message(WARNING "Storm - Library for carl location is not found but the directory ${STORM_3RDPARTY_BINARY_DIR}/carl exists. Will (re-)try to build a shipped version of carl.")
+            set(STORM_SHIPPED_CARL ON)
+        else()
+            message(FATAL_ERROR "Library location for carl is not found, did you build carl?")
+        endif()
     elseif(EXISTS ${carlLOCATION})
         #empty on purpose
     else()
-        message(FATAL_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
+        if(EXISTS ${STORM_3RDPARTY_BINARY_DIR}/carl)
+            message(WARNING "Storm - File ${carlLOCATION} does not exist but the directory ${STORM_3RDPARTY_BINARY_DIR}/carl exists. Will (re-)try to build a shipped version of carl.")
+            set(STORM_SHIPPED_CARL ON)
+        else()
+            message(FATAL_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
+        endif()
     endif()
     if("${carl_VERSION_MAJOR}" STREQUAL "${CARL_C14VERSION}")
         message(STATUS "Storm - Found carl using master14 branch.")
@@ -257,14 +288,16 @@ if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
         message(FATAL_ERROR "Carl outdated, require ${CARL_MINVERSION}, have ${carl_VERSION}")
     endif()
 
-    set(STORM_SHIPPED_CARL OFF)
     set(STORM_HAVE_CARL ON)
     message(STATUS "Storm - Use system version of carl.")
     message(STATUS "Storm - Linking with preinstalled carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
     set(STORM_HAVE_CLN ${CARL_USE_CLN_NUMBERS})
     set(STORM_HAVE_GINAC ${CARL_USE_GINAC})
 else()
-	set(STORM_SHIPPED_CARL ON)
+    set(STORM_SHIPPED_CARL ON)
+endif()
+
+if (STORM_SHIPPED_CARL)
 	# The first external project will be built at *configure stage*
 	message(STATUS "Carl - Start of config process")
 	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download)
@@ -314,7 +347,11 @@ else()
     message(STATUS "Storm - Linking with shipped carl ${carl_VERSION} (include: ${carl_INCLUDE_DIR}, library ${carl_LIBRARIES}, CARL_USE_CLN_NUMBERS: ${CARL_USE_CLN_NUMBERS}, CARL_USE_GINAC: ${CARL_USE_GINAC}).")
 
     # install the carl dynamic library if we built it
-    install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.${carl_VERSION}${DYNAMIC_EXT} DESTINATION lib)
+    if(MACOSX)
+        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl.${carl_VERSION}${DYNAMIC_EXT} DESTINATION lib)
+    else()
+        install(FILES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}.${carl_VERSION} DESTINATION lib)
+    endif()
 endif()
 
 if(STORM_USE_CLN_RF AND NOT STORM_HAVE_CLN)
@@ -431,13 +468,31 @@ endif(ENABLE_MSAT)
 #############################################################
 
 set(STORM_HAVE_QVBS OFF)
-if (NOT "${STORM_QVBS_ROOT}" STREQUAL "")
-	if( EXISTS "${STORM_QVBS_ROOT}/index.json")
-       set(STORM_HAVE_QVBS ON)
-       message (STATUS "Storm - Enabled inputs from QVBS located at ${STORM_QVBS_ROOT}")
-	else()
-   		message(FATAL_ERROR "No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
-	endif()
+if (STORM_LOAD_QVBS)
+    ExternalProject_Add(
+            download_qvbs
+            GIT_REPOSITORY https://github.com/ahartmanns/qcomp.git
+            GIT_SHALLOW 1
+            PREFIX ${PROJECT_BINARY_DIR}/qvbs
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            LOG_INSTALL ON
+    )
+    add_dependencies(resources download_qvbs)
+    set(STORM_HAVE_QVBS ON)
+    ExternalProject_Get_Property(download_qvbs source_dir)
+    set(STORM_QVBS_ROOT "${source_dir}/benchmarks")
+elseif (NOT "${STORM_QVBS_ROOT}" STREQUAL "")
+    if( EXISTS "${STORM_QVBS_ROOT}/index.json")
+        set(STORM_HAVE_QVBS ON)
+    else()
+        message(FATAL_ERROR "No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
+    endif()
+endif()
+if (STORM_HAVE_QVBS)
+    message (STATUS "Storm - Enabled inputs from QVBS located at ${STORM_QVBS_ROOT}")
 endif()
 
 

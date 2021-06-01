@@ -95,8 +95,12 @@ namespace storm {
             if (variable.hasInitExpression()) {
                 traverse(variable.getInitExpression(), data);
             }
-            traverse(variable.getLowerBound(), data);
-            traverse(variable.getUpperBound(), data);
+            if (variable.hasLowerBound()) {
+                traverse(variable.getLowerBound(), data);
+            }
+            if (variable.hasUpperBound()) {
+                traverse(variable.getUpperBound(), data);
+            }
         }
         
         void JaniTraverser::traverse(UnboundedIntegerVariable& variable, boost::any const& data) {
@@ -276,8 +280,12 @@ namespace storm {
             if (variable.hasInitExpression()) {
                 traverse(variable.getInitExpression(), data);
             }
-            traverse(variable.getLowerBound(), data);
-            traverse(variable.getUpperBound(), data);
+            if (variable.hasLowerBound()) {
+                traverse(variable.getLowerBound(), data);
+            }
+            if (variable.hasUpperBound()) {
+                traverse(variable.getUpperBound(), data);
+            }
         }
         
         void ConstJaniTraverser::traverse(UnboundedIntegerVariable const& variable, boost::any const& data) {

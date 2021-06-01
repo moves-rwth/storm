@@ -166,7 +166,17 @@ namespace storm {
             }
         }
         
-
+        template<typename ValueType, typename StateType>
+        void Distribution<ValueType, StateType>::normalize() {
+            ValueType sum = storm::utility::zero<ValueType>();
+            for (auto const& entry: distribution) {
+                sum += entry.second;
+            }
+            for (auto& entry: distribution) {
+                entry.second /= sum;
+            }
+        }
+    
         
         template class Distribution<double>;
         template std::ostream& operator<<(std::ostream& out, Distribution<double> const& distribution);

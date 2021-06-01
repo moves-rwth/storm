@@ -1,8 +1,0 @@
-src/**/*.{%{cpp}}
-src/**/*.{in}
-src/**/CMakeLists.txt
-CMakeLists.txt
-*.{in}
-resources/3rdparty/**/*.{%{cpp}}
-resources/3rdparty/eigen-3.3-beta1/StormEigen/**/*
-resources/3rdparty/eigen-3.3-beta1/unsupported/**/*

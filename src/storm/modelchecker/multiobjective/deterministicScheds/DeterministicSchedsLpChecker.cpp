@@ -147,7 +147,7 @@ namespace storm {
                     unprocessed.erase(currentIt);
                     
                     bool hasSubEc = false;
-                    for (auto const& removedState : currentStates) {
+                    for (auto removedState : currentStates) {
                         storm::storage::BitVector subset = currentStates;
                         subset.set(removedState, false);
                         storm::storage::MaximalEndComponentDecomposition<ValueType> subMecs(mecTransitions, backwardTransitions, subset);
@@ -389,7 +389,7 @@ namespace storm {
                     STORM_LOG_WARN_COND(largestUpperBound < storm::utility::convertNumber<ValueType>(1e5), "Found a large upper bound '" << storm::utility::convertNumber<double>(largestUpperBound) << "' in the LP encoding. This might trigger numerical instabilities.");
                     // create choiceValue variables and assert deterministic ones.
                     std::vector<storm::expressions::Expression> choiceValVars(model.getNumberOfChoices());
-                    for (auto const& state : nonBottomStates) {
+                    for (auto state : nonBottomStates) {
                         for (uint64_t globalChoice = groups[state]; globalChoice < groups[state + 1]; ++globalChoice) {
                             choiceValVars[globalChoice] = lpModel->addBoundedContinuousVariable("y" + std::to_string(globalChoice), storm::utility::zero<ValueType>(), visitingTimesUpperBounds[state]).getExpression();
                             if (model.getNumberOfChoices(state) > 1) {;
@@ -400,7 +400,7 @@ namespace storm {
                     // create EC 'slack' variables for states that lie in an ec
                     std::vector<storm::expressions::Expression> ecValVars(model.getNumberOfStates());
                     if (hasEndComponents) {
-                        for (auto const& state : nonBottomStates) {
+                        for (auto state : nonBottomStates) {
                             // For the in-out-encoding, all objectives have the same ECs (because there are no non-zero scheduler independend state values).
                             // Hence, we only care for the variables of the first objective.
                             if (ecVars.front()[state].isInitialized()) {
@@ -413,7 +413,7 @@ namespace storm {
                     std::vector<storm::expressions::Expression> bottomStatesIn;
                     std::vector<std::vector<storm::expressions::Expression>> ins(numStates), outs(numStates);
                     ins[initialState].push_back(one);
-                    for (auto const& state : nonBottomStates) {
+                    for (auto state : nonBottomStates) {
                         for (uint64_t globalChoice = groups[state]; globalChoice < groups[state + 1]; ++globalChoice) {
                             for (auto const& transition : model.getTransitionMatrix().getRow(globalChoice)) {
                                 uint64_t successor = transition.getColumn();
@@ -433,7 +433,7 @@ namespace storm {
                     }
                     
                     // Assert 'in == out' at each state
-                    for (auto const& state : nonBottomStates) {
+                    for (auto state : nonBottomStates) {
                         lpModel->addConstraint("", storm::expressions::sum(ins[state]) == storm::expressions::sum(outs[state]));
                         
                     }
@@ -444,7 +444,7 @@ namespace storm {
                     for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
                         auto choiceValueOffsets = objectiveHelper[objIndex].getChoiceValueOffsets();
                         std::vector<storm::expressions::Expression> objValue;
-                        for (auto const& state : nonBottomStates) {
+                        for (auto state : nonBottomStates) {
                             for (uint64_t globalChoice = groups[state]; globalChoice < groups[state + 1]; ++globalChoice) {
                                 auto choiceValueIt = choiceValueOffsets.find(globalChoice);
                                 if (choiceValueIt != choiceValueOffsets.end()) {
@@ -663,7 +663,7 @@ namespace storm {
                                         // The issue has to be for some normal vector with a negative entry. Otherwise, the intersection with the downward closure wouldn't be empty
                                         bool normalVectorContainsNegative = false;
                                         for (auto const& hi : h.normalVector()) {
-                                            if (hi < storm::utility::zero<ValueType>()) {
+                                            if (hi < storm::utility::zero<GeometryValueType>()) {
                                                 normalVectorContainsNegative = true;
                                                 break;
                                             }
@@ -743,7 +743,7 @@ namespace storm {
                     if (objectiveHelper[objIndex].minimizing()) {
                         inducedValue = -inducedValue;
                     }
-                    inducedPoint.push_back(inducedValue);
+                    inducedPoint.push_back(storm::utility::convertNumber<GeometryValueType>(inducedValue));
                     // If this objective has weight zero, the lp solution is not necessarily correct
                     if (!storm::utility::isZero(currentWeightVector[objIndex])) {
                         ValueType lpValue = lpModel->getContinuousValue(currentObjectiveVariables[objIndex]);

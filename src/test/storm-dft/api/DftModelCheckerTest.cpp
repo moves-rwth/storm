@@ -12,7 +12,6 @@ namespace {
         bool useSR;
         bool useMod;
         bool useDC;
-        bool allowDCForRelevantEvents;
     };
 
     class NoOptimizationsConfig {
@@ -20,7 +19,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{false, false, false, true};
+            return DftAnalysisConfig{false, false, false};
         }
     };
 
@@ -29,7 +28,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{false, false, true, true};
+            return DftAnalysisConfig{false, false, true};
         }
     };
 
@@ -38,7 +37,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{false, true, false, true};
+            return DftAnalysisConfig{false, true, false};
         }
     };
 
@@ -47,7 +46,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{true, false, false, true};
+            return DftAnalysisConfig{true, false, false};
         }
     };
 
@@ -56,7 +55,7 @@ namespace {
         typedef double ValueType;
 
         static DftAnalysisConfig createConfig() {
-            return DftAnalysisConfig{true, true, true, true};
+            return DftAnalysisConfig{true, true, true};
         }
     };
 
@@ -73,36 +72,35 @@ namespace {
             return config;
         }
 
-        double analyzeMTTF(std::string const& file) {
-            storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
-            std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(
-                    *(storm::api::loadDFTGalileoFile<double>(file)));
-            EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
-            std::string property = "Tmin=? [F \"failed\"]";
-            std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-            std::set<size_t> relevantEvents;
-            if (!config.useDC) {
-                relevantEvents = dft->getAllIds();
-            }
-            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod,
-                                                                                                                        relevantEvents, config.allowDCForRelevantEvents);
-            return boost::get<double>(results[0]);
-        }
-
-        double analyzeReliability(std::string const &file, double bound) {
+        double analyze(std::string const& file, std::string const& property) {
+            // Load, build and prepare DFT
             storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
             std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::api::loadDFTGalileoFile<double>(file)));
             EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
-            std::string property = "Pmin=? [F<=" + std::to_string(bound) + " \"failed\"]";
-            std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(
-                    storm::api::parseProperties(property));
-            std::set<size_t> relevantEvents;
+
+            // Create property
+            std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
+
+            // Create relevant names
+            std::vector<std::string> relevantNames;
             if (!config.useDC) {
-                relevantEvents = dft->getAllIds();
+                relevantNames.push_back("all");
             }
-            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod,
-                                                                                                                        relevantEvents, config.allowDCForRelevantEvents);
+            storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<ValueType>(*dft, properties, relevantNames);
+
+            // Perform model checking
+            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod, relevantEvents, false);
             return boost::get<double>(results[0]);
+        }
+
+        double analyzeMTTF(std::string const& file) {
+            std::string property = "Tmin=? [F \"failed\"]";
+            return analyze(file, property);
+        }
+
+        double analyzeReliability(std::string const &file, double bound) {
+            std::string property = "Pmin=? [F<=" + std::to_string(bound) + " \"failed\"]";
+            return analyze(file, property);
         }
 
     private:
@@ -173,8 +171,12 @@ namespace {
     TYPED_TEST(DftModelCheckerTest, PdepMTTF) {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft");
         EXPECT_FLOAT_EQ(result, 8 / 3.0);
-        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
-        EXPECT_FLOAT_EQ(result, 38 / 15.0);
+        if (this->getConfig().useMod && !this->getConfig().useDC) {
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft"), storm::exceptions::NotSupportedException);
+        } else {
+            result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
+            EXPECT_FLOAT_EQ(result, 38 / 15.0);
+        }
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep3.dft");
         EXPECT_FLOAT_EQ(result, 67 / 24.0);
 
@@ -235,6 +237,11 @@ namespace {
     }
 
     TYPED_TEST(DftModelCheckerTest, HecsReliability) {
+        if (!this->getConfig().useDC) {
+            // Skip configurations because it takes too long
+            GTEST_SKIP();
+            return;
+        }
         double result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/hecs_2_2.dft", 1.0);
         EXPECT_FLOAT_EQ(result, 0.00021997582);
     }

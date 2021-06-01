@@ -72,14 +72,14 @@ namespace storm {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with with rational numbers using LU factorization (Eigen library).");
             
             // Map the input vectors to Eigen's format.
-            auto eigenX = StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
-            auto eigenB = StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, 1>::Map(b.data(), b.size());
+            auto eigenX = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenB = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(b.data(), b.size());
             
-            StormEigen::SparseLU<StormEigen::SparseMatrix<storm::RationalNumber>, StormEigen::COLAMDOrdering<int>> solver;
+            Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalNumber>, Eigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
             
-            return solver.info() == StormEigen::ComputationInfo::Success;
+            return solver.info() == Eigen::ComputationInfo::Success;
         }
         
         // Specialization for storm::RationalFunction
@@ -90,13 +90,13 @@ namespace storm {
             STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with rational functions using LU factorization (Eigen library).");
 
             // Map the input vectors to Eigen's format.
-            auto eigenX = StormEigen::Matrix<storm::RationalFunction, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
-            auto eigenB = StormEigen::Matrix<storm::RationalFunction, StormEigen::Dynamic, 1>::Map(b.data(), b.size());
+            auto eigenX = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenB = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(b.data(), b.size());
             
-            StormEigen::SparseLU<StormEigen::SparseMatrix<storm::RationalFunction>, StormEigen::COLAMDOrdering<int>> solver;
+            Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalFunction>, Eigen::COLAMDOrdering<int>> solver;
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
-            return solver.info() == StormEigen::ComputationInfo::Success;
+            return solver.info() == Eigen::ComputationInfo::Success;
         }
 #endif
 
@@ -104,19 +104,19 @@ namespace storm {
         template<typename ValueType>
         bool EigenLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Map the input vectors to Eigen's format.
-            auto eigenX = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
-            auto eigenB = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(b.data(), b.size());
+            auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenB = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b.data(), b.size());
 
             auto solutionMethod = getMethod(env, env.solver().isForceExact());
             if (solutionMethod == EigenLinearEquationSolverMethod::SparseLU) {
                 STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with sparse LU factorization (Eigen library).");
-                StormEigen::SparseLU<StormEigen::SparseMatrix<ValueType>, StormEigen::COLAMDOrdering<int>> solver;
+                Eigen::SparseLU<Eigen::SparseMatrix<ValueType>, Eigen::COLAMDOrdering<int>> solver;
                 solver.compute(*this->eigenA);
                 solver._solve_impl(eigenB, eigenX);
             } else {
                 bool converged = false;
                 uint64_t numberOfIterations = 0;
-                StormEigen::Index maxIter = std::numeric_limits<StormEigen::Index>::max();
+                Eigen::Index maxIter = std::numeric_limits<Eigen::Index>::max();
                 if (env.solver().eigen().getMaximalNumberOfIterations() < static_cast<uint64_t>(maxIter)) {
                     maxIter = env.solver().eigen().getMaximalNumberOfIterations();
                 }
@@ -127,102 +127,102 @@ namespace storm {
                     if (preconditioner == EigenLinearEquationSolverPreconditioner::Ilu) {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with Ilu preconditioner (Eigen library).");
 
-                        StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IncompleteLUT<ValueType>> solver;
+                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
                         solver.compute(*this->eigenA);
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else if (preconditioner == EigenLinearEquationSolverPreconditioner::Diagonal) {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with Diagonal preconditioner (Eigen library).");
 
-                        StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
+                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with BiCGSTAB with identity preconditioner (Eigen library).");
 
-                        StormEigen::BiCGSTAB<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
+                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
                         numberOfIterations = solver.iterations();
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                     }
                 } else if (solutionMethod == EigenLinearEquationSolverMethod::DGmres) {
                     if (preconditioner == EigenLinearEquationSolverPreconditioner::Ilu) {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with DGMRES with Ilu preconditioner (Eigen library).");
-
-                        StormEigen::DGMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IncompleteLUT<ValueType>> solver;
+                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         solver.set_restart(restartThreshold);
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else if (preconditioner == EigenLinearEquationSolverPreconditioner::Diagonal) {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with DGMRES with Diagonal preconditioner (Eigen library).");
 
-                        StormEigen::DGMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
+                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         solver.set_restart(restartThreshold);
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with DGMRES with identity preconditioner (Eigen library).");
 
-                        StormEigen::DGMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
+                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         solver.set_restart(restartThreshold);
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     }
+
                 } else if (solutionMethod == EigenLinearEquationSolverMethod::Gmres) {
                     if (preconditioner == EigenLinearEquationSolverPreconditioner::Ilu) {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with GMRES with Ilu preconditioner (Eigen library).");
 
-                        StormEigen::GMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IncompleteLUT<ValueType>> solver;
+                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         solver.set_restart(restartThreshold);
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else if (preconditioner == EigenLinearEquationSolverPreconditioner::Diagonal) {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with GMRES with Diagonal preconditioner (Eigen library).");
 
-                        StormEigen::GMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::DiagonalPreconditioner<ValueType>> solver;
+                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         solver.set_restart(restartThreshold);
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     } else {
                         STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with GMRES with identity preconditioner (Eigen library).");
 
-                        StormEigen::GMRES<StormEigen::SparseMatrix<ValueType>, StormEigen::IdentityPreconditioner> solver;
+                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
                         solver.setTolerance(precision);
                         solver.setMaxIterations(maxIter);
                         solver.set_restart(restartThreshold);
                         solver.compute(*this->eigenA);
                         eigenX = solver.solveWithGuess(eigenB, eigenX);
-                        converged = solver.info() == StormEigen::ComputationInfo::Success;
+                        converged = solver.info() == Eigen::ComputationInfo::Success;
                         numberOfIterations = solver.iterations();
                     }
                 }

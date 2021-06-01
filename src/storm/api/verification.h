@@ -18,6 +18,7 @@
 #include "storm/modelchecker/abstraction/BisimulationAbstractionRefinementModelChecker.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
 
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -25,7 +26,9 @@
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Smg.h"
 
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
@@ -251,6 +254,28 @@ namespace storm {
         }
 
         template<typename ValueType>
+        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Smg<ValueType>> const& smg, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            storm::modelchecker::SparseSmgRpatlModelChecker<storm::models::sparse::Smg<ValueType>> modelchecker(*smg);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(env, task);
+            }
+            return result;
+        }
+
+        template<typename ValueType>
+        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Smg<ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sparse engine cannot verify SMGs with this data type.");
+        }
+
+        template<typename ValueType>
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Smg<ValueType>> const& smg, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+            Environment env;
+            return verifyWithSparseEngine(env, smg, task);
+        }
+
+
+        template<typename ValueType>
         std::unique_ptr<storm::modelchecker::CheckResult> verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             std::unique_ptr<storm::modelchecker::CheckResult> result;
             if (model->getType() == storm::models::ModelType::Dtmc) {
@@ -261,6 +286,8 @@ namespace storm {
                 result = verifyWithSparseEngine(env, model->template as<storm::models::sparse::Ctmc<ValueType>>(), task);
             } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
                 result = verifyWithSparseEngine(env, model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), task);
+            } else if (model->getType() == storm::models::ModelType::Smg) {
+                result = verifyWithSparseEngine(env, model->template as<storm::models::sparse::Smg<ValueType>>(), task);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported by the sparse engine.");
             }
@@ -272,7 +299,34 @@ namespace storm {
             Environment env;
             return verifyWithSparseEngine(env, model, task);
         }
+        
+        template<typename ValueType>
+        std::unique_ptr<storm::modelchecker::CheckResult> computeSteadyStateDistributionWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const& dtmc) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
+            return modelchecker.computeSteadyStateDistribution(env);
+        }
 
+        template<typename ValueType>
+        std::unique_ptr<storm::modelchecker::CheckResult> computeSteadyStateDistributionWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> const& ctmc) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
+            return modelchecker.computeSteadyStateDistribution(env);
+        }
+
+        template<typename ValueType>
+        std::unique_ptr<storm::modelchecker::CheckResult> computeSteadyStateDistributionWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            if (model->getType() == storm::models::ModelType::Dtmc) {
+                result = computeSteadyStateDistributionWithSparseEngine(env, model->template as<storm::models::sparse::Dtmc<ValueType>>());
+            } else if (model->getType() == storm::models::ModelType::Ctmc) {
+                result = computeSteadyStateDistributionWithSparseEngine(env, model->template as<storm::models::sparse::Ctmc<ValueType>>());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing the long run average distribution for the model type " << model->getType() << " is not supported.");
+            }
+            return result;
+        }
+        
         //
         // Verifying with Hybrid engine
         //

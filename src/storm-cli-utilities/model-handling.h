@@ -6,12 +6,11 @@
 #include "storm-parsers/api/storm-parsers.h"
 
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/file.h"
-#include "storm/utility/storm-version.h"
+#include "storm/io/file.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Engine.h"
-#include "storm/utility/Portfolio.h"
+#include "storm/utility/AutomaticSettings.h"
 
 #include "storm/utility/initialize.h"
 #include "storm/utility/Stopwatch.h"
@@ -68,10 +67,11 @@ namespace storm {
         };
         
         void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input) {
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             if (ioSettings.isPrismOrJaniInputSet()) {
                 storm::utility::Stopwatch modelParsingWatch(true);
                 if (ioSettings.isPrismInputSet()) {
-                    input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename(), storm::settings::getModule<storm::settings::modules::BuildSettings>().isPrismCompatibilityEnabled());
+                    input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename(), buildSettings.isPrismCompatibilityEnabled(), !buildSettings.isNoSimplifySet());
                 } else {
                     boost::optional<std::vector<std::string>> propertyFilter;
                     if (ioSettings.isJaniPropertiesSet()) {
@@ -179,30 +179,30 @@ namespace storm {
             bool isCompatible;
         };
         
-        void getModelProcessingInformationPortfolio(SymbolicInput const& input, ModelProcessingInformation& mpi) {
+        void getModelProcessingInformationAutomatic(SymbolicInput const& input, ModelProcessingInformation& mpi) {
             auto hints = storm::settings::getModule<storm::settings::modules::HintSettings>();
             
-            STORM_LOG_THROW(input.model.is_initialized(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a JANI input model.");
-            STORM_LOG_THROW(input.model->isJaniModel(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a JANI input model.");
+            STORM_LOG_THROW(input.model.is_initialized(), storm::exceptions::InvalidArgumentException, "Automatic engine requires a JANI input model.");
+            STORM_LOG_THROW(input.model->isJaniModel(), storm::exceptions::InvalidArgumentException, "Automatic engine requires a JANI input model.");
             std::vector<storm::jani::Property> const& properties = input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties;
-            STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a property.");
-            STORM_LOG_WARN_COND(properties.size() == 1, "Portfolio engine does not support decisions based on multiple properties. Only the first property will be considered.");
+            STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Automatic engine requires a property.");
+            STORM_LOG_WARN_COND(properties.size() == 1, "Automatic engine does not support decisions based on multiple properties. Only the first property will be considered.");
             
-            storm::utility::Portfolio pf;
+            storm::utility::AutomaticSettings as;
             if (hints.isNumberStatesSet()) {
-                pf.predict(input.model->asJaniModel(), properties.front(), hints.getNumberStates());
+                as.predict(input.model->asJaniModel(), properties.front(), hints.getNumberStates());
             } else {
-                pf.predict(input.model->asJaniModel(), properties.front());
+                as.predict(input.model->asJaniModel(), properties.front());
             }
             
-            mpi.engine = pf.getEngine();
-            if (pf.enableBisimulation()) {
+            mpi.engine = as.getEngine();
+            if (as.enableBisimulation()) {
                 mpi.applyBisimulation = true;
             }
-            if (pf.enableExact() && mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision) {
+            if (as.enableExact() && mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision) {
                 mpi.verificationValueType = ModelProcessingInformation::ValueType::Exact;
             }
-            STORM_PRINT_AND_LOG( "Portfolio engine picked the following settings: " << std::endl
+            STORM_PRINT_AND_LOG( "Automatic engine picked the following settings: " << std::endl
                 << "\tengine=" << mpi.engine
                 << std::boolalpha
                 << "\t bisimulation=" << mpi.applyBisimulation
@@ -238,12 +238,12 @@ namespace storm {
             }
             auto originalVerificationValueType = mpi.verificationValueType;
             
-            // Since the remaining settings could depend on the ones above, we need apply the portfolio engine now.
-            bool usePortfolio = input.model.is_initialized() && mpi.engine == storm::utility::Engine::Portfolio;
-            if (usePortfolio) {
+            // Since the remaining settings could depend on the ones above, we need apply the automatic engine now.
+            bool useAutomatic = input.model.is_initialized() && mpi.engine == storm::utility::Engine::Automatic;
+            if (useAutomatic) {
                 if (input.model->isJaniModel()) {
                     // This can potentially overwrite the settings above, but will not overwrite settings that were explicitly set by the user (e.g. we will not disable bisimulation or disable exact arithmetic)
-                    getModelProcessingInformationPortfolio(input, mpi);
+                    getModelProcessingInformationAutomatic(input, mpi);
                 } else {
                     // Transform Prism to jani first
                     STORM_LOG_ASSERT(input.model->isPrismProgram(), "Unexpected type of input.");
@@ -256,7 +256,7 @@ namespace storm {
                         janiInput.preprocessedProperties = std::move(modelAndProperties.second);
                     }
                     // This can potentially overwrite the settings above, but will not overwrite settings that were explicitly set by the user (e.g. we will not disable bisimulation or disable exact arithmetic)
-                    getModelProcessingInformationPortfolio(janiInput, mpi);
+                    getModelProcessingInformationAutomatic(janiInput, mpi);
                     if (transformedJaniInput) {
                         // We cache the transformation result.
                         *transformedJaniInput = std::move(janiInput);
@@ -280,9 +280,9 @@ namespace storm {
                 };
                 mpi.isCompatible = checkCompatibleSettings();
                 if (!mpi.isCompatible) {
-                    if (usePortfolio) {
+                    if (useAutomatic) {
                         bool useExact = mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision;
-                        STORM_LOG_WARN("The settings picked by the portfolio engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << useExact << ") are incompatible with this model. Falling back to default settings.");
+                        STORM_LOG_WARN("The settings picked by the automatic engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << useExact << ") are incompatible with this model. Falling back to default settings.");
                         mpi.engine = storm::utility::Engine::Sparse;
                         mpi.applyBisimulation = false;
                         mpi.verificationValueType = originalVerificationValueType;
@@ -301,8 +301,8 @@ namespace storm {
                 auto builderType = storm::utility::getBuilderType(mpi.engine);
                 bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
                 STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
-                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
-                STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
+                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA) && (!input.model->isJaniModel());
+                STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the input model.");
                 mpi.transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
             }
 
@@ -348,6 +348,12 @@ namespace storm {
             
             SymbolicInput output = input;
             
+            // Preprocess properties (if requested)
+            if (ioSettings.isPropertiesAsMultiSet()) {
+                STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidArgumentException, "Can not translate properties to multi-objective formula because no properties were specified.");
+                output.properties = {storm::api::createMultiObjectiveProperty(output.properties)};
+            }
+            
             // Substitute constant definitions in symbolic input.
             std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
@@ -362,7 +368,6 @@ namespace storm {
             auto transformedJani = std::make_shared<SymbolicInput>();
             ModelProcessingInformation mpi = getModelProcessingInformation(output, transformedJani);
 
-            auto builderType = storm::utility::getBuilderType(mpi.engine);
             
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (output.model && output.model.get().isPrismProgram()) {
@@ -384,7 +389,7 @@ namespace storm {
             }
             
             if (output.model && output.model.get().isJaniModel()) {
-                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
+                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(storm::utility::getBuilderType(mpi.engine));
                 storm::api::simplifyJaniModel(output.model.get().asJaniModel(), output.properties, supportedFeatures);
             }
 
@@ -422,9 +427,10 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings, bool useJit) {
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
-            options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
-            options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
-            bool buildChoiceOrigins = buildSettings.isBuildChoiceOriginsSet();
+            options.setBuildChoiceLabels(options.isBuildChoiceLabelsSet() || buildSettings.isBuildChoiceLabelsSet());
+            options.setBuildStateValuations(options.isBuildStateValuationsSet() || buildSettings.isBuildStateValuationsSet());
+            options.setBuildAllLabels(options.isBuildAllLabelsSet() || buildSettings.isBuildAllLabelsSet());
+            bool buildChoiceOrigins = options.isBuildChoiceOriginsSet() || buildSettings.isBuildChoiceOriginsSet();
             if (storm::settings::manager().hasModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName)) {
                 auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
                 if (counterexampleGeneratorSettings.isCounterexampleSet()) {
@@ -432,15 +438,16 @@ namespace storm {
                 }
             }
             options.setBuildChoiceOrigins(buildChoiceOrigins);
-            if (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP) {
-                options.setBuildChoiceOrigins(true);
-                options.setBuildChoiceLabels(true);
-            }
 
             if (buildSettings.isApplyNoMaximumProgressAssumptionSet()) {
                 options.setApplyMaximalProgressAssumption(false);
             }
-            
+
+            if (buildSettings.isExplorationChecksSet()) {
+                options.setExplorationChecks();
+            }
+            options.setReservedBitsForUnboundedVariables(buildSettings.getBitsForUnboundedVariables());
+
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
@@ -569,7 +576,7 @@ namespace storm {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             
             if (ioSettings.isExportExplicitSet()) {
-                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), input.model ? input.model.get().getParameterNames() : std::vector<std::string>());
+                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), input.model ? input.model.get().getParameterNames() : std::vector<std::string>(), !ioSettings.isExplicitExportPlaceholdersDisabled());
             }
 
             if (ioSettings.isExportDdSet()) {
@@ -988,8 +995,7 @@ namespace storm {
         void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            verifyProperties<ValueType>(input,
-                                        [&sparseModel,&ioSettings,&mpi] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            auto verificationCallback = [&sparseModel,&ioSettings,&mpi] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                                             bool filterForInitialStates = states->isInitialFormula();
                                             auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
                                             if (ioSettings.isExportSchedulerSet()) {
@@ -1007,14 +1013,21 @@ namespace storm {
                                                 result->filter(filter->asQualitativeCheckResult());
                                             }
                                             return result;
-                                        },
-                                        [&sparseModel,&ioSettings] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+                                        };
+            uint64_t exportCount = 0; // this number will be prepended to the export file name of schedulers and/or check results in case of multiple properties.
+            auto postprocessingCallback = [&sparseModel,&ioSettings,&input,&exportCount] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
                                             if (ioSettings.isExportSchedulerSet()) {
                                                 if (result->isExplicitQuantitativeCheckResult()) {
                                                     if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
                                                         auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
                                                         STORM_PRINT_AND_LOG("Exporting scheduler ... ")
-                                                        storm::api::exportScheduler(sparseModel, scheduler, ioSettings.getExportSchedulerFilename());
+                                                        if (input.model) {
+                                                            STORM_LOG_WARN_COND(sparseModel->hasStateValuations(), "No information of state valuations available. The scheduler output will use internal state ids. You might be interested in building the model with state valuations using --buildstateval.");
+                                                            STORM_LOG_WARN_COND(sparseModel->hasChoiceLabeling() || sparseModel->hasChoiceOrigins(), "No symbolic choice information is available. The scheduler output will use internal choice ids. You might be interested in building the model with choice labels or choice origins using --buildchoicelab or --buildchoiceorig.");
+                                                            STORM_LOG_WARN_COND(sparseModel->hasChoiceLabeling() && !sparseModel->hasChoiceOrigins(), "Only partial choice information is available. You might want to build the model with choice origins using --buildchoicelab or --buildchoiceorig.");
+                                                        }
+                                                        STORM_LOG_WARN_COND(exportCount == 0, "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
+                                                        storm::api::exportScheduler(sparseModel, scheduler, (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
                                                     } else {
                                                         STORM_LOG_ERROR("Scheduler requested but could not be generated.");
                                                     }
@@ -1022,7 +1035,27 @@ namespace storm {
                                                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
                                                 }
                                             }
-                                        });
+                                            if (ioSettings.isExportCheckResultSet()) {
+                                                STORM_LOG_WARN_COND(sparseModel->hasStateValuations(), "No information of state valuations available. The result output will use internal state ids. You might be interested in building the model with state valuations using --buildstateval.");
+                                                STORM_LOG_WARN_COND(exportCount == 0, "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
+                                                storm::api::exportCheckResultToJson(sparseModel, result, (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportCheckResultFilename());
+                                            }
+                                            ++exportCount;
+                                        };
+            verifyProperties<ValueType>(input,verificationCallback, postprocessingCallback);
+            if (ioSettings.isComputeSteadyStateDistributionSet()) {
+                storm::utility::Stopwatch watch(true);
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                try {
+                    result = storm::api::computeSteadyStateDistributionWithSparseEngine<ValueType>(mpi.env, sparseModel);
+                } catch (storm::exceptions::BaseException const& ex) {
+                    STORM_LOG_WARN("Cannot compute steady-state probabilities: " << ex.what());
+                }
+                watch.stop();
+                postprocessingCallback(result);
+                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << std::endl);
+                STORM_PRINT("Time for model checking: " << watch << "." << std::endl);
+            }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

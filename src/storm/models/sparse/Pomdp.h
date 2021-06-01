@@ -59,19 +59,55 @@ namespace storm {
 
                 uint64_t getNrObservations() const;
 
+                /*!
+                 * Returns the number of hidden values, i.e. the maximum number of states with the same observation
+                 */
+                uint64_t getMaxNrStatesWithSameObservation() const;
+                
                 std::vector<uint32_t> const& getObservations() const;
+                
+                /*!
+                 * Changes the observations to the given ones and updates redundant informations (like the number of observations)
+                 * After calling this method, isCanonic() returns true iff (i) isCanonic() returned true before calling this method and (ii) preservesCanonicity was set to true.
+                 *
+                 * @param newObservations The new observations
+                 * @param preservesCanonicity specifies whether the pomdp is still canonic (assuming that it was canonic before)
+                 *
+                 */
+                void updateObservations(std::vector<uint32_t>&& newObservations, bool preservesCanonicity);
+
+                std::vector<uint64_t> getStatesWithObservation(uint32_t observation) const;
+
+                bool hasObservationValuations() const;
+
+                storm::storage::sparse::StateValuations const& getObservationValuations() const;
+
+                boost::optional<storm::storage::sparse::StateValuations> const& getOptionalObservationValuations() const;
 
                 bool isCanonic() const;
 
+                void setIsCanonic(bool newValue = true);
 
+                virtual std::size_t hash() const override;
+
+                virtual bool isPartiallyObservable() const override;
 
             protected:
+                /*!
+                 * Return a string that is additonally added to the state information in the dot stream.
+                 * @param state
+                 * @return
+                 */
+                virtual std::string additionalDotStateInfo(uint64_t state) const override;
+
                 // TODO: consider a bitvector based presentation (depending on our needs).
                 std::vector<uint32_t> observations;
-
                 uint64_t nrObservations;
-
                 bool canonicFlag = false;
+
+                boost::optional<storm::storage::sparse::StateValuations> observationValuations;
+
+
 
                 void computeNrObservations();
             };

@@ -17,7 +17,7 @@
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
 
@@ -39,6 +39,11 @@ namespace storm {
         double SmtlibSmtSolver::SmtlibModelReference::getRationalValue(storm::expressions::Variable const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
+
+        std::string SmtlibSmtSolver::SmtlibModelReference::toString() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+        }
+
 
         SmtlibSmtSolver::SmtlibSmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions) : SmtSolver(manager), isCommandFileOpen(false), expressionAdapter(nullptr), useCarlExpressions(useCarlExpressions) {
 #ifndef STORM_HAVE_CARL

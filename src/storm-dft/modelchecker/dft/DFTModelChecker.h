@@ -6,6 +6,7 @@
 #include "storm/utility/Stopwatch.h"
 
 #include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/utility/RelevantEvents.h"
 
 
 namespace storm {
@@ -46,8 +47,8 @@ namespace storm {
              * @param properties Properties to check for.
              * @param symred Flag whether symmetry reduction should be used.
              * @param allowModularisation Flag indicating if modularisation is allowed.
-             * @param relevantEvents List with ids of relevant events which should be observed.
-             * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
+             * @param relevantEvents Relevant events which should be observed.
+             * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
              * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
              * @param approximationHeuristic Heuristic used for state space exploration.
              * @param eliminateChains If true, chains of non-Markovian states are elimianted from the resulting MA
@@ -55,8 +56,8 @@ namespace storm {
              * @return Model checking results for the given properties..
              */
             dft_results check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true,
-                              std::set<size_t> const& relevantEvents = {}, bool allowDCForRelevantEvents = true, double approximationError = 0.0,
-                              storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
+                              storm::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
+                              double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
                               bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
 
             /*!
@@ -92,8 +93,8 @@ namespace storm {
              * @param properties Properties to check for.
              * @param symred Flag indicating if symmetry reduction should be used.
              * @param allowModularisation Flag indicating if modularisation is allowed.
-             * @param relevantEvents List with ids of relevant events which should be observed.
-             * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
+             * @param relevantEvents Relevant events which should be observed.
+             * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
              * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
              * @param approximationHeuristic Heuristic used for approximation.
              * @param eliminateChains If true, chains of non-Markovian states are elimianted from the resulting MA
@@ -101,10 +102,9 @@ namespace storm {
              * @return Model checking results (or in case of approximation two results for lower and upper bound)
              */
             dft_results checkHelper(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
-                                    std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents = true, double approximationError = 0.0,
-                                    storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
-                                    bool eliminateChains = false,
-                                    storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
+                                    storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant = false,
+                                    double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
+                                    bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
 
             /*!
              * Internal helper for building a CTMC from a DFT via parallel composition.
@@ -113,13 +113,16 @@ namespace storm {
              * @param properties Properties to check for.
              * @param symred Flag indicating if symmetry reduction should be used.
              * @param allowModularisation Flag indicating if modularisation is allowed.
-             * @param relevantEvents List with ids of relevant events which should be observed.
-             * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
+             * @param relevantEvents Relevant events which should be observed.
+             * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
              * @return CTMC representing the DFT
              */
-            std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::storage::DFT<ValueType> const& dft, property_vector const& properties,
-                                                                                             bool symred, bool allowModularisation, std::set<size_t> const& relevantEvents,
-                                                                                             bool allowDCForRelevantEvents = true);
+            std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::storage::DFT<ValueType> const& dft,
+                    property_vector const& properties,
+                    bool symred,
+                    bool allowModularisation,
+                    storm::utility::RelevantEvents const& relevantEvents,
+                    bool allowDCForRelevant);
 
             /*!
              * Check model generated from DFT.
@@ -127,8 +130,8 @@ namespace storm {
              * @param dft The DFT.
              * @param properties Properties to check for.
              * @param symred Flag indicating if symmetry reduction should be used.
-             * @param relevantEvents List with ids of relevant events which should be observed.
-             * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
+             * @param relevantEvents Relevant events which should be observed.
+             * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
              * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
              * @param approximationHeuristic Heuristic used for approximation.
              * @param eliminateChains If true, chains of non-Markovian states are elimianted from the resulting MA
@@ -136,11 +139,9 @@ namespace storm {
              *
              * @return Model checking result
              */
-            dft_results checkDFT(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, std::set<size_t> const& relevantEvents = {},
-                                 bool allowDCForRelevantEvents = true, double approximationError = 0.0,
-                                 storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
-                                 bool eliminateChains = false,
-                                 storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
+            dft_results checkDFT(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant,
+                                 double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
+                                 bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
 
             /*!
              * Check the given markov model for the given properties.

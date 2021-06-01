@@ -105,16 +105,8 @@ namespace storm {
                         }
                         
                         std::vector<uint64_t> dimensionIndexMap;
-                        for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
+                        for (auto globalDimensionIndex : objectiveDimensions[objIndex]) {
                             dimensionIndexMap.push_back(globalDimensionIndex);
-                        }
-                        
-                        bool objectiveContainsLowerBound = false;
-                        for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
-                            if (dimensions[globalDimensionIndex].boundType == DimensionBoundType::LowerBound) {
-                                objectiveContainsLowerBound = true;
-                                break;
-                            }
                         }
                         
                         // collect the memory states for this objective
@@ -131,7 +123,7 @@ namespace storm {
                         
                         // Get the set of states that for all subobjectives satisfy either the left or the right subformula
                         storm::storage::BitVector constraintStates(model.getNumberOfStates(), true);
-                        for (auto const& dim : objectiveDimensions[objIndex]) {
+                        for (auto dim : objectiveDimensions[objIndex]) {
                             auto const& dimension = dimensions[dim];
                             STORM_LOG_ASSERT(dimension.formula->isBoundedUntilFormula(), "Unexpected Formula type");
                             constraintStates &=
@@ -147,7 +139,7 @@ namespace storm {
                                 if (memStatePrimeBV.isSubsetOf(memStateBV)) {
                                     
                                     std::shared_ptr<storm::logic::Formula const> transitionFormula = storm::logic::Formula::getTrueFormula();
-                                    for (auto const& subObjIndex : memStateBV) {
+                                    for (auto subObjIndex : memStateBV) {
                                         std::shared_ptr<storm::logic::Formula const> subObjFormula = dimensions[dimensionIndexMap[subObjIndex]].formula->asBoundedUntilFormula().getRightSubformula().asSharedPointer();
                                         if (memStatePrimeBV.get(subObjIndex)) {
                                             subObjFormula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, subObjFormula);
@@ -172,7 +164,7 @@ namespace storm {
                                             prob1InitialStates[objIndex] = initialTransitionStates;
                                         }
                                                 
-                                        for (auto const& initState : initialTransitionStates) {
+                                        for (auto initState : initialTransitionStates) {
                                             objMemoryBuilder.setInitialMemoryState(initState, memStatePrime);
                                         }
                                     }
@@ -183,7 +175,7 @@ namespace storm {
                         // Build the memory labels
                         for (uint64_t memState = 0; memState < objMemStates.size(); ++memState) {
                             auto const& memStateBV = objMemStates[memState];
-                            for (auto const& subObjIndex : memStateBV) {
+                            for (auto subObjIndex : memStateBV) {
                                 objMemoryBuilder.setLabel(memState, dimensions[dimensionIndexMap[subObjIndex]].memoryLabel.get());
                             }
                         }
@@ -254,7 +246,7 @@ namespace storm {
                     }
                     for (auto const& initEpochClass : initEpochClasses) {
                         auto memStateIt = memory.getInitialMemoryStates().begin();
-                        for (auto const& initState : model.getInitialStates()) {
+                        for (auto initState : model.getInitialStates()) {
                             uint64_t transformedMemoryState = transformMemoryState(memoryStateMap[*memStateIt], initEpochClass, memoryStateManager.getInitialMemoryState());
                             reachableProductStates[transformedMemoryState].set(initState, true);
                             ++memStateIt;
@@ -275,7 +267,7 @@ namespace storm {
                         // Find the remaining set of reachable states via DFS.
                         std::vector<std::pair<uint64_t, MemoryState>> dfsStack;
                         for (MemoryState const& memState : memoryStateMap) {
-                            for (auto const& modelState : reachableProductStates[memState]) {
+                            for (auto modelState : reachableProductStates[memState]) {
                                 dfsStack.emplace_back(modelState, memState);
                             }
                         }
@@ -302,7 +294,7 @@ namespace storm {
                     }
                     
                     for (uint64_t memStateIndex = 0; memStateIndex < memoryStateManager.getMemoryStateCount(); ++memStateIndex) {
-                        for (auto const& modelState : reachableProductStates[memoryStateMap[memStateIndex]]) {
+                        for (auto modelState : reachableProductStates[memoryStateMap[memStateIndex]]) {
                             productBuilder.addReachableState(modelState, memStateIndex);
                         }
                     }
@@ -367,12 +359,12 @@ namespace storm {
                         if (formula.isProbabilityOperatorFormula()) {
                             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<ValueType>> mc(getProduct());
                             std::vector<uint64_t> dimensionIndexMap;
-                            for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
+                            for (auto globalDimensionIndex : objectiveDimensions[objIndex]) {
                                 dimensionIndexMap.push_back(globalDimensionIndex);
                             }
                             
                             std::shared_ptr<storm::logic::Formula const> sinkStatesFormula;
-                            for (auto const& dim : objectiveDimensions[objIndex]) {
+                            for (auto dim : objectiveDimensions[objIndex]) {
                                 auto memLabelFormula = std::make_shared<storm::logic::AtomicLabelFormula>(dimensions[dim].memoryLabel.get());
                                 if (sinkStatesFormula) {
                                     sinkStatesFormula = std::make_shared<storm::logic::BinaryBooleanStateFormula>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, sinkStatesFormula, memLabelFormula);
@@ -390,7 +382,7 @@ namespace storm {
                                 
                                 // find out whether objective reward should be earned within this epoch class
                                 bool collectRewardInEpoch = true;
-                                for (auto const& subObjIndex : relevantObjectives) {
+                                for (auto subObjIndex : relevantObjectives) {
                                     if (dimensions[dimensionIndexMap[subObjIndex]].boundType == DimensionBoundType::UpperBound && epochManager.isBottomDimensionEpochClass(epochClass, dimensionIndexMap[subObjIndex])) {
                                         collectRewardInEpoch = false;
                                         break;
@@ -418,7 +410,7 @@ namespace storm {
                                     storm::storage::BitVector relevantStates = mc.check(*relevantStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                                     storm::storage::BitVector relevantChoices = getProduct().getTransitionMatrix().getRowFilter(relevantStates);
                                     storm::storage::BitVector goalStates = mc.check(*goalStatesFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                                    for (auto const& choice : relevantChoices) {
+                                    for (auto choice : relevantChoices) {
                                         objRew[choice] += getProduct().getTransitionMatrix().getConstrainedRowSum(choice, goalStates);
                                     }
                                 }
@@ -431,7 +423,7 @@ namespace storm {
                             STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
                             bool rewardCollectedInEpoch = true;
                             if (formula.getSubformula().isCumulativeRewardFormula()) {
-                                for (auto const& dim : objectiveDimensions[objIndex]) {
+                                for (auto dim : objectiveDimensions[objIndex]) {
                                     if (epochManager.isBottomDimensionEpochClass(epochClass, dim)) {
                                         rewardCollectedInEpoch = false;
                                         break;
@@ -542,7 +534,7 @@ namespace storm {
                     
                     storm::storage::BitVector ecInStates(getProduct().getNumberOfStates(), false);
                     if (considerInitialStates) {
-                        for (auto const& initState : getProduct().getInitialStates()) {
+                        for (auto initState : getProduct().getInitialStates()) {
                             uint64_t transformedInitState = transformProductState(initState, epochClass, memoryStateManager.getInitialMemoryState());
                             ecInStates.set(transformedInitState, true);
                         }
@@ -556,12 +548,12 @@ namespace storm {
                         }
                         STORM_LOG_ASSERT(reachableStates.find(predecessor) != reachableStates.end(), "Could not find reachable states of predecessor epoch class.");
                         storm::storage::BitVector predecessorStates = reachableStates.find(predecessor)->second;
-                        for (auto const& predecessorState : predecessorStates) {
+                        for (auto predecessorState : predecessorStates) {
                             uint64_t predecessorMemoryState = getMemoryState(predecessorState);
                             for (uint64_t choice = getProduct().getTransitionMatrix().getRowGroupIndices()[predecessorState]; choice < getProduct().getTransitionMatrix().getRowGroupIndices()[predecessorState + 1]; ++choice) {
                                 bool choiceLeadsToThisClass = false;
                                 Epoch const& choiceStep = getSteps()[choice];
-                                for (auto const& dim : positiveStepDimensions) {
+                                for (auto dim : positiveStepDimensions) {
                                     if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
                                         choiceLeadsToThisClass = true;
                                     }
@@ -591,7 +583,7 @@ namespace storm {
                             
                             bool choiceLeadsOutsideOfEpoch = false;
                             Epoch const& choiceStep = getSteps()[choice];
-                            for (auto const& dim : nonBottomDimensions) {
+                            for (auto dim : nonBottomDimensions) {
                                 if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
                                     choiceLeadsOutsideOfEpoch = true;
                                     break;
@@ -621,7 +613,7 @@ namespace storm {
                     MemoryState memoryStatePrime = memoryState;
                     
                     for (auto const& objDimensions : objectiveDimensions) {
-                        for (auto const& dim : objDimensions) {
+                        for (auto dim : objDimensions) {
                             auto const& dimension = dimensions[dim];
                             if (dimension.memoryLabel) {
                                 bool dimUpperBounded = dimension.boundType == DimensionBoundType::UpperBound;

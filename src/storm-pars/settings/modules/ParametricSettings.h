@@ -64,6 +64,13 @@ namespace storm {
                  */
                 bool isSampleExactSet() const;
 
+                /*!
+                 * Retrieves whether monotonicity should be used
+                 */
+                bool isUseMonotonicitySet() const;
+
+//                bool isOnlyGlobalSet() const;
+
                 const static std::string moduleName;
                 
             private:
@@ -75,6 +82,9 @@ namespace storm {
                 const static std::string samplesOptionName;
                 const static std::string samplesGraphPreservingOptionName;
                 const static std::string sampleExactOptionName;
+                const static std::string useMonotonicityName;
+//                const static std::string onlyGlobalName;
+
             };
             
         } // namespace modules

@@ -1,6 +1,7 @@
 Storm - A Modern Probabilistic Model Checker
 ============================================
-[![Build Status](https://travis-ci.org/moves-rwth/storm.svg?branch=master)](https://travis-ci.org/moves-rwth/storm)
+
+[![Build Status](https://github.com/moves-rwth/storm/workflows/Build%20Test/badge.svg)](https://github.com/moves-rwth/storm/actions)
 [![GitHub release](https://img.shields.io/github/release/moves-rwth/storm.svg)](https://github.com/moves-rwth/storm/releases/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896)
 
@@ -47,15 +48,18 @@ Storm has been developed at RWTH Aachen University.
 * Jip Spel
 
 ###### Contributors (lexicographical order)
+* Daniel Basgöze
 * Dimitri Bohlender
 * Alexander Bork
 * Harold Bruintjes
 * Michael Deutschen
+* Linus Heck
 * Thomas Heinemann
 * Thomas Henn
 * Tom Janson
 * Jan Karuc
 * Gereon Kremer
 * Sascha Vincent Kurowski
+* Stefan Pranger
 * Manuel Sascha Weiand
 * Lukas Westhofen

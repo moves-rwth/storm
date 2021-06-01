@@ -1,0 +1,77 @@
+name: Doxygen
+# Builds and deploys storms doxygen documentation
+
+on:
+  schedule:
+      # run daily
+      - cron: '0 8 * * *'
+  # needed to trigger the workflow manually
+  workflow_dispatch:
+
+env:
+  BASE_IMG: "movesrwth/carl:ci-release"
+  STORM_GIT_URL: "${{ github.server_url }}/${{ github.repository }}.git"
+  STORM_BRANCH: "master"
+  # github runners currently have two cores
+  NR_JOBS: "2"
+
+
+jobs:
+
+  deploy:
+    name: Create documentation
+    runs-on: ubuntu-latest
+    # Do not run on forks
+    if: github.repository_owner == 'moves-rwth'
+    steps:
+      - name: Init Docker
+        run: sudo docker run -d -it --name storm --privileged ${BASE_IMG}
+
+        # We should not do partial updates :/
+        # but we need to install some dependencies
+        # Surely we can find a better way to do this at some point
+      - name: Update base system
+        run: |
+          sudo docker exec storm apt-get update
+          sudo docker exec storm apt-get upgrade -qqy
+      - name: install dependencies
+        run: sudo docker exec storm apt-get install -qq -y doxygen graphviz
+      - name: Git clone storm
+        run: sudo docker exec storm git clone --depth 1 --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
+      - name: Run cmake
+        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .."
+      - name: Build doxygen
+        run: sudo docker exec storm bash -c "cd /opt/storm/build; make doc -j ${NR_JOBS}"
+      - name: Copy doxygen
+        run: sudo docker cp storm:/opt/storm/build/doc/html .
+      - name: Deploy doxygen
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.DOC_DEPLOY_KEY }}
+          publish_dir: ./html
+          external_repository: moves-rwth/storm-doc
+          publish_branch: master
+          force_orphan: true
+
+  notify:
+    name: Email notification
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    # Only run in main repo and even if previous step failed
+    if: github.repository_owner == 'moves-rwth' && always()
+    steps:
+      - uses: technote-space/workflow-conclusion-action@v2
+      - uses: dawidd6/action-send-mail@v2
+        with:
+          server_address: ${{ secrets.STORM_CI_MAIL_SERVER }}
+          server_port: 587
+          username: ${{ secrets.STORM_CI_MAIL_USERNAME }}
+          password: ${{ secrets.STORM_CI_MAIL_PASSWORD }}
+          subject: "[You broke it] Doxygen generation failed for ${{ github.repository }}"
+          body:
+            "CI job of ${{ github.repository }} has failed for commit ${{ github.sha }}.\n\
+            The error type is: ${{ env.WORKFLOW_CONCLUSION }}.\n\n\
+            For more information, see https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          to: ${{ secrets.STORM_CI_MAIL_RECIPIENTS }}
+          from: Github Actions <you-broke-it@stormchecker.org>
+        if: env.WORKFLOW_CONCLUSION != 'success' # notify only if failure

@@ -39,25 +39,21 @@ namespace storm {
         boost::any ToRationalFunctionVisitor<RationalFunctionType>::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
             RationalFunctionType firstOperandAsRationalFunction = boost::any_cast<RationalFunctionType>(expression.getFirstOperand()->accept(*this, data));
             RationalFunctionType secondOperandAsRationalFunction = boost::any_cast<RationalFunctionType>(expression.getSecondOperand()->accept(*this, data));
-            uint_fast64_t exponentAsInteger = 0;
             switch(expression.getOperatorType()) {
                 case BinaryNumericalFunctionExpression::OperatorType::Plus:
                     return firstOperandAsRationalFunction + secondOperandAsRationalFunction;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Minus:
                     return firstOperandAsRationalFunction - secondOperandAsRationalFunction;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Times:
                     return firstOperandAsRationalFunction * secondOperandAsRationalFunction;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Divide:
                     return firstOperandAsRationalFunction / secondOperandAsRationalFunction;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power:
-                    STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalFunction), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer but is " << secondOperandAsRationalFunction << ".");
-                    exponentAsInteger = storm::utility::convertNumber<uint_fast64_t>(secondOperandAsRationalFunction);
-                    return storm::utility::pow(firstOperandAsRationalFunction, exponentAsInteger);
-                    break;
+                    {
+                        STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalFunction), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be an integer but is " << secondOperandAsRationalFunction << ".");
+                        auto exponentAsInteger = storm::utility::convertNumber<carl::sint>(secondOperandAsRationalFunction);
+                        return storm::utility::pow(firstOperandAsRationalFunction, exponentAsInteger);
+                    }
                 default:
                     STORM_LOG_ASSERT(false, "Illegal operator type.");
             }
@@ -82,7 +78,7 @@ namespace storm {
             if (variablePair != variableToVariableMap.end()) {
                 return convertVariableToPolynomial(variablePair->second);
             } else {
-                storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(expression.getVariableName());
+                storm::RationalFunctionVariable carlVariable = storm::createRFVariable(expression.getVariableName());
                 variableToVariableMap.emplace(expression.getVariable(), carlVariable);
                 return convertVariableToPolynomial(carlVariable);
             }

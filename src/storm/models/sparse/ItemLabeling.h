@@ -121,6 +121,9 @@ namespace storm {
 
 
                 void permuteItems(std::vector<uint64_t> const& inversePermutation);
+
+                virtual std::size_t hash() const;
+
                 /*!
                  * Prints information about the labeling to the specified stream.
                  *

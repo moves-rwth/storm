@@ -7,7 +7,7 @@
 namespace storm {
 	namespace solver {
 #ifdef STORM_HAVE_Z3
-		Z3SmtSolver::Z3ModelReference::Z3ModelReference(storm::expressions::ExpressionManager const& manager, z3::model model, storm::adapters::Z3ExpressionAdapter& expressionAdapter) : ModelReference(manager), model(model), expressionAdapter(expressionAdapter) {
+		Z3SmtSolver::Z3ModelReference::Z3ModelReference(storm::expressions::ExpressionManager const& manager, z3::model const& model, storm::adapters::Z3ExpressionAdapter& expressionAdapter) : ModelReference(manager), model(model), expressionAdapter(expressionAdapter) {
             // Intentionally left empty.
 		}
 #endif
@@ -44,7 +44,18 @@ namespace storm {
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
-        
+
+		std::string Z3SmtSolver::Z3ModelReference::toString() const {
+#ifdef STORM_HAVE_Z3
+			std::stringstream sstr;
+			sstr << model;
+			return sstr.str();
+#else
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+#endif
+		}
+
+
 		Z3SmtSolver::Z3SmtSolver(storm::expressions::ExpressionManager& manager) : SmtSolver(manager)
 #ifdef STORM_HAVE_Z3
         , context(nullptr), solver(nullptr), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)

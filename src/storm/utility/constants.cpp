@@ -55,12 +55,14 @@ namespace storm {
             return std::isnan(value);
         }
         
-        bool isAlmostZero(double const& a) {
-            return a < 1e-12 && a > -1e-12;
+        template<typename ValueType>
+        bool isAlmostZero(ValueType const& a) {
+            return a < convertNumber<ValueType>(1e-12) && a > -convertNumber<ValueType>(1e-12);
         }
         
-        bool isAlmostOne(double const& a) {
-            return a < (1.0 + 1e-12) && a > (1.0 - 1e-12);
+        template<typename ValueType>
+        bool isAlmostOne(ValueType const& a) {
+            return a < convertNumber<ValueType>(1.0 + 1e-12) && a > convertNumber<ValueType>(1.0 - 1e-12);
         }
         
         template<typename ValueType>
@@ -222,7 +224,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        ValueType pow(ValueType const& value, uint_fast64_t exponent) {
+        ValueType pow(ValueType const& value, int_fast64_t exponent) {
             return std::pow(value, exponent);
         }
 
@@ -456,13 +458,18 @@ namespace storm {
         }
         
         template<>
-        typename NumberTraits<ClnRationalNumber>::IntegerType pow(typename NumberTraits<ClnRationalNumber>::IntegerType const& value, uint_fast64_t exponent) {
+        typename NumberTraits<ClnRationalNumber>::IntegerType pow(typename NumberTraits<ClnRationalNumber>::IntegerType const& value, int_fast64_t exponent) {
+            STORM_LOG_THROW(exponent >= 0, storm::exceptions::InvalidArgumentException, "Tried to compute the power 'x^y' as an integer, but the exponent 'y' is negative.");
             return carl::pow(value, exponent);
         }
         
         template<>
-        ClnRationalNumber pow(ClnRationalNumber const& value, uint_fast64_t exponent) {
-            return carl::pow(value, exponent);
+        ClnRationalNumber pow(ClnRationalNumber const& value, int_fast64_t exponent) {
+            if (exponent >= 0) {
+                return carl::pow(value, exponent);
+            } else {
+                return storm::utility::one<ClnRationalNumber>() / carl::pow(value, -exponent);
+            }
         }
         
         template<>
@@ -653,13 +660,18 @@ namespace storm {
         }
         
         template<>
-        typename NumberTraits<GmpRationalNumber>::IntegerType pow(typename NumberTraits<GmpRationalNumber>::IntegerType const& value, uint_fast64_t exponent) {
+        typename NumberTraits<GmpRationalNumber>::IntegerType pow(typename NumberTraits<GmpRationalNumber>::IntegerType const& value, int_fast64_t exponent) {
+            STORM_LOG_THROW(exponent >= 0, storm::exceptions::InvalidArgumentException, "Tried to compute the power 'x^y' as an integer, but the exponent 'y' is negative.");
             return carl::pow(value, exponent);
         }
         
         template<>
-        GmpRationalNumber pow(GmpRationalNumber const& value, uint_fast64_t exponent) {
-            return carl::pow(value, exponent);
+        GmpRationalNumber pow(GmpRationalNumber const& value, int_fast64_t exponent) {
+            if (exponent >= 0) {
+                return carl::pow(value, exponent);
+            } else {
+                return storm::utility::one<GmpRationalNumber>() / carl::pow(value, -exponent);
+            }
         }
         
         template<>
@@ -775,6 +787,11 @@ namespace storm {
         }
         
         template<>
+        carl::sint convertNumber(RationalFunction const& func){
+            return carl::toInt<carl::sint>(convertNumber<RationalFunctionCoefficient>(func));
+        }
+        
+        template<>
         double convertNumber(RationalFunction const& func) {
             return carl::toDouble(convertNumber<RationalFunctionCoefficient>(func));
         }
@@ -819,6 +836,16 @@ namespace storm {
         }
         
         template<>
+        bool isAlmostZero(storm::RationalFunction const& a) {
+            return a.isConstant() && isAlmostZero(convertNumber<RationalFunctionCoefficient>(a));
+        }
+        
+        template<>
+        bool isAlmostOne(storm::RationalFunction const& a) {
+            return a.isConstant() && isAlmostOne(convertNumber<RationalFunctionCoefficient>(a));
+        }
+        
+        template<>
         std::pair<storm::RationalFunction, storm::RationalFunction> minmax(std::vector<storm::RationalFunction> const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum/maximum for rational functions is not defined.");
         }
@@ -849,8 +876,12 @@ namespace storm {
         }
 
         template<>
-        RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent) {
-            return carl::pow(value, exponent);
+        RationalFunction pow(RationalFunction const& value, int_fast64_t exponent) {
+            if (exponent >= 0) {
+                return carl::pow(value, exponent);
+            } else {
+                return storm::utility::one<RationalFunction>() / carl::pow(value, -exponent);
+            }
         }
 
         template<>
@@ -885,6 +916,8 @@ namespace storm {
         template double infinity();
         template bool isOne(double const& value);
         template bool isZero(double const& value);
+        template bool isAlmostZero(double const& value);
+        template bool isAlmostOne(double const& value);
         template bool isConstant(double const& value);
         template bool isInfinity(double const& value);
         template bool isInteger(double const& number);
@@ -898,7 +931,7 @@ namespace storm {
         template std::pair<double, double> minmax(std::map<uint64_t, double> const&);
         template double minimum(std::map<uint64_t, double> const&);
         template double maximum(std::map<uint64_t, double> const&);
-        template double pow(double const& value, uint_fast64_t exponent);
+        template double pow(double const& value, int_fast64_t exponent);
         template double max(double const& first, double const& second);
         template double min(double const& first, double const& second);
         template double sqrt(double const& number);
@@ -931,7 +964,7 @@ namespace storm {
         template std::pair<float, float> minmax(std::map<uint64_t, float> const&);
         template float minimum(std::map<uint64_t, float> const&);
         template float maximum(std::map<uint64_t, float> const&);
-        template float pow(float const& value, uint_fast64_t exponent);
+        template float pow(float const& value, int_fast64_t exponent);
         template float max(float const& first, float const& second);
         template float min(float const& first, float const& second);
         template float sqrt(float const& number);
@@ -982,6 +1015,8 @@ namespace storm {
         template bool isConstant(storm::ClnRationalNumber const& value);
         template bool isInfinity(storm::ClnRationalNumber const& value);
         template bool isNan(storm::ClnRationalNumber const& value);
+        template bool isAlmostZero(storm::ClnRationalNumber const& value);
+        template bool isAlmostOne(storm::ClnRationalNumber const& value);
         template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
         template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
         template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
@@ -1008,6 +1043,8 @@ namespace storm {
         template bool isConstant(storm::GmpRationalNumber const& value);
         template bool isInfinity(storm::GmpRationalNumber const& value);
         template bool isNan(storm::GmpRationalNumber const& value);
+        template bool isAlmostZero(storm::GmpRationalNumber const& value);
+        template bool isAlmostOne(storm::GmpRationalNumber const& value);
         template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
         template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
         template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);

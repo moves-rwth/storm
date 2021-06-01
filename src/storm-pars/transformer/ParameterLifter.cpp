@@ -1,10 +1,7 @@
 #include "storm-pars/transformer/ParameterLifter.h"
 
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/utility/vector.h"
-
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -12,41 +9,54 @@ namespace storm {
     namespace transformer {
 
         template<typename ParametricType, typename ConstantType>
-        ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels) {
-        
-            
+        ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels, bool useMonotonicityInFuture) {
             // get a mapping from old column indices to new ones
-            std::vector<uint_fast64_t> oldToNewColumnIndexMapping(selectedColumns.size(), selectedColumns.size());
+            oldToNewColumnIndexMapping = std::vector<uint_fast64_t>(selectedColumns.size(), selectedColumns.size());
             uint_fast64_t newIndex = 0;
             for (auto const& oldColumn : selectedColumns) {
                 oldToNewColumnIndexMapping[oldColumn] = newIndex++;
             }
+
+            // create vector, such that the occuringVariables for all states can be stored
+            occurringVariablesAtState = std::vector<std::set<VariableType>>(pMatrix.getColumnCount());
             
             // Stores which entries of the original matrix/vector are non-constant. Entries for non-selected rows/columns are omitted
-            storm::storage::BitVector nonConstMatrixEntries(pMatrix.getEntryCount(), false); //this vector has to be resized later
-            storm::storage::BitVector nonConstVectorEntries(selectedRows.getNumberOfSetBits(), false);
+            auto nonConstMatrixEntries = storm::storage::BitVector(pMatrix.getEntryCount(), false); //this vector has to be resized later
+            auto nonConstVectorEntries = storm::storage::BitVector(selectedRows.getNumberOfSetBits(), false);
             // Counters for selected entries in the pMatrix and the pVector
             uint_fast64_t pMatrixEntryCount = 0;
             uint_fast64_t pVectorEntryCount = 0;
             
             // The matrix builder for the new matrix. The correct number of rows and entries is not known yet.
             storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
+            rowGroupToStateNumber = std::vector<uint_fast64_t>();
             uint_fast64_t newRowIndex = 0;
+            uint_fast64_t countNonParam = 0;
             for (auto const& rowIndex : selectedRows) {
                 builder.newRowGroup(newRowIndex);
+                rowGroupToStateNumber.push_back(rowIndex);
                 
                 // Gather the occurring variables within this row and set which entries are non-constant
                 std::set<VariableType> occurringVariables;
+                bool constant = true;
                 for (auto const& entry : pMatrix.getRow(rowIndex)) {
                     if (selectedColumns.get(entry.getColumn())) {
                         if (!storm::utility::isConstant(entry.getValue())) {
                             storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
                             nonConstMatrixEntries.set(pMatrixEntryCount, true);
+                            constant = false;
                         }
                         ++pMatrixEntryCount;
+                    } else {
+                        if (!storm::utility::isConstant(entry.getValue())) {
+                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                        }
                     }
                 }
-                
+
+                if (constant) {
+                    countNonParam++;
+                }
                 ParametricType const& pVectorEntry = pVector[rowIndex];
                 std::set<VariableType> vectorEntryVariables;
                 if (!storm::utility::isConstant(pVectorEntry)) {
@@ -59,15 +69,14 @@ namespace storm {
                     nonConstVectorEntries.set(pVectorEntryCount, true);
                 }
                 ++pVectorEntryCount;
-                
                 // Compute the (abstract) valuation for each row
                 auto rowValuations = getVerticesOfAbstractRegion(occurringVariables);
-                
                 for (auto const& val : rowValuations) {
                     if (generateRowLabels) {
                         rowLabels.push_back(val);
                     }
-                    
+
+                    auto countPlaceHolders = 0;
                     // Insert matrix entries for each valuation. For non-constant entries, a dummy value is inserted and the function and the valuation are collected.
                     // The placeholder for the collected function/valuation are stored in the matrixAssignment. The matrixAssignment is completed after the matrix is finished
                     for (auto const& entry: pMatrix.getRow(rowIndex)) {
@@ -78,6 +87,7 @@ namespace storm {
                                 builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], storm::utility::one<ConstantType>());
                                 ConstantType& placeholder = functionValuationCollector.add(entry.getValue(), val);
                                 matrixAssignment.push_back(std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>(typename storm::storage::SparseMatrix<ConstantType>::iterator(), placeholder));
+                                countPlaceHolders++;
                             }
                         }
                     }
@@ -100,15 +110,22 @@ namespace storm {
 
                     ++newRowIndex;
                 }
+                if (useMonotonicityInFuture) {
+                    // Save the occuringVariables of a state, needed if we want to use monotonicity
+                    for (auto& var : occurringVariables) {
+                        occuringStatesAtVariable[var].insert(rowIndex);
+                    }
+                    occurringVariablesAtState[rowIndex] = std::move(occurringVariables);
+                }
             }
-            
+
             // Matrix and vector are now filled with constant results from constant functions and place holders for non-constant functions.
             matrix = builder.build(newRowIndex);
             vector.shrink_to_fit();
             matrixAssignment.shrink_to_fit();
             vectorAssignment.shrink_to_fit();
             nonConstMatrixEntries.resize(pMatrixEntryCount);
-            
+
             // Now insert the correct iterators for the matrix and vector assignment
             auto matrixAssignmentIt = matrixAssignment.begin();
             uint_fast64_t startEntryOfRow = 0;
@@ -139,21 +156,41 @@ namespace storm {
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
             // write the evaluation result of each function,evaluation pair into the placeholders
             functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
-            
+
             //apply the matrix and vector assignments to write the contents of the placeholder into the matrix/vector
-                            
-            for(auto& assignment : matrixAssignment) {
+            for (auto &assignment : matrixAssignment) {
                 STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
                 assignment.first->setValue(assignment.second);
             }
-            for(auto& assignment : vectorAssignment) {
+
+            for (auto &assignment : vectorAssignment) {
                 *assignment.first = assignment.second;
             }
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        uint_fast64_t ParameterLifter<ParametricType, ConstantType>::getRowGroupIndex(uint_fast64_t originalState) const {
+            return matrix.getRowGroupIndices()[oldToNewColumnIndexMapping[originalState]];
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        uint_fast64_t ParameterLifter<ParametricType, ConstantType>::getOriginalStateNumber(uint_fast64_t newState) const {
+            return rowGroupToStateNumber[newState];
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        uint_fast64_t ParameterLifter<ParametricType, ConstantType>::getRowGroupSize(uint_fast64_t originalState) const {
+            return matrix.getRowGroupSize(oldToNewColumnIndexMapping[originalState]);
+        }
+        template<typename ParametricType, typename ConstantType>
+        uint_fast64_t ParameterLifter<ParametricType, ConstantType>::getRowGroupCount() const {
+            return matrix.getRowGroupCount();
         }
     
         template<typename ParametricType, typename ConstantType>
         storm::storage::SparseMatrix<ConstantType> const& ParameterLifter<ParametricType, ConstantType>::getMatrix() const {
             return matrix;
+
         }
     
         template<typename ParametricType, typename ConstantType>
@@ -186,6 +223,16 @@ namespace storm {
                 }
             }
             return result;
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        const std::vector<std::set<typename ParameterLifter<ParametricType, ConstantType>::VariableType>> & ParameterLifter<ParametricType, ConstantType>::getOccurringVariablesAtState() const {
+            return occurringVariablesAtState;
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        std::map<typename ParameterLifter<ParametricType, ConstantType>::VariableType, std::set<uint_fast64_t>> ParameterLifter<ParametricType, ConstantType>::getOccuringStatesAtVariable() const {
+            return occuringStatesAtVariable;
         }
 
         template<typename ParametricType, typename ConstantType>
@@ -268,7 +315,13 @@ namespace storm {
             }
             return result;
         }
-        
+
+        template<typename ParametricType, typename ConstantType>
+        uint_fast64_t ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getOriginalState(
+                uint_fast64_t newStateNumber) const {
+            return 0;
+        }
+
         template<typename ParametricType, typename ConstantType>
         ConstantType& ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(ParametricType const& function, AbstractValuation const& valuation) {
             ParametricType simplifiedFunction = function;
@@ -284,17 +337,16 @@ namespace storm {
     
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters) {
-            for (auto& collectedFunctionValuationPlaceholder : collectedFunctions) {
-                ParametricType const& function = collectedFunctionValuationPlaceholder.first.first;
-                AbstractValuation const& abstrValuation = collectedFunctionValuationPlaceholder.first.second;
-                ConstantType& placeholder = collectedFunctionValuationPlaceholder.second;
-                
+            for (auto &collectedFunctionValuationPlaceholder : collectedFunctions) {
+                ParametricType const &function = collectedFunctionValuationPlaceholder.first.first;
+                AbstractValuation const &abstrValuation = collectedFunctionValuationPlaceholder.first.second;
+                ConstantType &placeholder = collectedFunctionValuationPlaceholder.second;
                 auto concreteValuations = abstrValuation.getConcreteValuations(region);
                 auto concreteValuationIt = concreteValuations.begin();
                 placeholder = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(function, *concreteValuationIt));
-                for(++concreteValuationIt; concreteValuationIt != concreteValuations.end(); ++concreteValuationIt) {
+                for (++concreteValuationIt; concreteValuationIt != concreteValuations.end(); ++concreteValuationIt) {
                     ConstantType currentResult = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::evaluate(function, *concreteValuationIt));
-                    if(storm::solver::minimize(dirForUnspecifiedParameters)) {
+                    if (storm::solver::minimize(dirForUnspecifiedParameters)) {
                         placeholder = std::min(placeholder, currentResult);
                     } else {
                         placeholder = std::max(placeholder, currentResult);

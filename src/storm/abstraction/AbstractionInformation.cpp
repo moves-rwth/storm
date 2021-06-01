@@ -465,7 +465,7 @@ namespace storm {
         std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>> AbstractionInformation<DdType>::decodeChoiceToUpdateSuccessorMapping(storm::dd::Bdd<DdType> const& choice) const {
             std::map<uint_fast64_t, std::pair<storm::storage::BitVector, ValueType>> result;
             
-            storm::dd::Add<DdType, double> lowerChoiceAsAdd = choice.template toAdd<double>();
+            storm::dd::Add<DdType, ValueType> lowerChoiceAsAdd = choice.template toAdd<ValueType>();
             for (auto const& successorValuePair : lowerChoiceAsAdd) {
                 uint_fast64_t updateIndex = this->decodeAux(successorValuePair.first, 0, this->getAuxVariableCount());
                 

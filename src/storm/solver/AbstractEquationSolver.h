@@ -52,6 +52,7 @@ namespace storm {
              * Retrieves the relevant values (if there are any).
              */
             storm::storage::BitVector const& getRelevantValues() const;
+            boost::optional<storm::storage::BitVector> const& getOptionalRelevantValues() const;
             
             /*!
              * Sets the relevant values.
@@ -100,6 +101,13 @@ namespace storm {
             ValueType const& getLowerBound() const;
             
             /*!
+             * Retrieves the lower bound for the variable with the given index (if there is any lower bound).
+             * @pre some lower bound (local or global) has been specified
+             * @return the largest lower bound known for the given row
+             */
+            ValueType const& getLowerBound(uint64_t const& index) const;
+            
+            /*!
              * Retrieves the lower bound (if there is any).
              * If the given flag is true and if there are only local bounds,
              * the minimum of the local bounds is returned.
@@ -110,6 +118,13 @@ namespace storm {
              * Retrieves the upper bound (if there is any).
              */
             ValueType const& getUpperBound() const;
+            
+            /*!
+             * Retrieves the upper bound for the variable with the given index (if there is any upper bound).
+             * @pre some upper bound (local or global) has been specified
+             * @return the smallest upper bound known for the given row
+             */
+            ValueType const& getUpperBound(uint64_t const& index) const;
             
            /*!
              * Retrieves the upper bound (if there is any).

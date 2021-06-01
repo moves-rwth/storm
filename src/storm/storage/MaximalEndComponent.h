@@ -69,6 +69,11 @@ namespace storm {
             void addState(uint_fast64_t state, set_type&& choices);
             
             /*!
+             * @return The number of states in this mec.
+             */
+            std::size_t size() const;
+            
+            /*!
              * Retrieves the choices for the given state that are contained in this MEC under the assumption that the
              * state is in the MEC.
              *

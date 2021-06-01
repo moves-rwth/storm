@@ -38,7 +38,7 @@ namespace storm {
             builder.setTransition(0, 0, ~goalStates);
             builder.setTransition(0, 1, goalStates);
             builder.setTransition(1, 1, storm::storage::BitVector(model.getNumberOfStates(), true));
-            for (auto const& initState : model.getInitialStates()) {
+            for (auto initState : model.getInitialStates()) {
                 builder.setInitialMemoryState(initState, goalStates.get(initState) ? 1 : 0);
             }
             return builder.build();
@@ -74,7 +74,7 @@ namespace storm {
                     auto notPhi = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, subsubFormula.asGloballyFormula().getSubformula().asSharedPointer());
                     memory = memory.product(getGoalMemory(model, *notPhi));
                 } else {
-                    STORM_LOG_THROW(subsubFormula.isTotalRewardFormula() || subsubFormula.isCumulativeRewardFormula(), storm::exceptions::NotSupportedException, "The given Formula " << subsubFormula << " is not supported.");
+                    STORM_LOG_THROW(subFormula->isLongRunAverageOperatorFormula() || subsubFormula.isTotalRewardFormula() || subsubFormula.isCumulativeRewardFormula() || subsubFormula.isLongRunAverageRewardFormula(), storm::exceptions::NotSupportedException, "The given Formula " << subsubFormula << " is not supported.");
                 }
             }
 

@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
-#include <storm/adapters/RationalFunctionAdapter.h>
-#include <storm/adapters/IntelTbbAdapter.h>
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/IntelTbbAdapter.h"
 
 #include <boost/optional.hpp>
 
@@ -63,6 +63,7 @@ namespace storm {
              */
             template<class T>
             void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
+                STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= values.size(), "The number of selected positions (" << positions.getNumberOfSetBits() << ") exceeds the size of the input vector (" << values.size() << ").");
                 uint_fast64_t oldPosition = 0;
                 for (auto position : positions) {
                     vector[position] = values[oldPosition++];
@@ -80,6 +81,16 @@ namespace storm {
             void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, T value) {
                 for (auto position : positions) {
                     vector[position] = value;
+                }
+            }
+
+            template<typename T>
+            void setNonzeroIndices(std::vector<T> const& vec, storm::storage::BitVector& bv) {
+                STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size");
+                for (uint64_t i = 0; i < vec.size(); ++i) {
+                    if(!storm::utility::isZero(vec[i])) {
+                        bv.set(i, true);
+                    }
                 }
             }
 
@@ -142,6 +153,12 @@ namespace storm {
                 return true;
             }
             
+            template<typename T, typename Comparator>
+            bool compareElementWise(std::vector<T> const& left, std::vector<T> const& right, Comparator comp = std::less<T>()) {
+                STORM_LOG_ASSERT(left.size() == right.size(), "Expected that vectors for comparison have equal size");
+                return std::equal(left.begin(), left.end(), right.begin(), comp);
+            }
+            
             /*!
              * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.
              * @param vector The vector into which the selected elements are to be written.
@@ -150,6 +167,8 @@ namespace storm {
              */
             template<class T>
             void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
+                STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= vector.size(), "The number of selected positions (" << positions.getNumberOfSetBits() << ") exceeds the size of the target vector (" << vector.size() << ").");
+                STORM_LOG_ASSERT(positions.size() == values.size(), "Size mismatch of the positions vector (" << positions.size() << ") and the values vector (" << values.size() << ").");
                 auto targetIt = vector.begin();
                 for (auto position : positions) {
                     *targetIt = values[position];
@@ -201,6 +220,8 @@ namespace storm {
              */
             template<class T>
             void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& indexSequence, std::vector<T> const& values) {
+                STORM_LOG_ASSERT(indexSequence.size() <= vector.size(), "The number of selected positions (" << indexSequence.size() << ") exceeds the size of the target vector (" << vector.size() << ").");
+                
                 for (uint_fast64_t vectorIndex = 0; vectorIndex < vector.size(); ++vectorIndex){
                     vector[vectorIndex] = values[indexSequence[vectorIndex]];
                 }

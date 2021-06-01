@@ -51,6 +51,13 @@ namespace storm {
                 bool isVerboseSet() const;
 
                 /*!
+                 * Retrieves whether the progress option was set.
+                 *
+                 * @return True if the progress option was set.
+                 */
+                bool isShowProgressSet() const;
+
+                /*!
                  * Retrieves the delay for printing information about the exploration progress.
                  *
                  * @return The desired delay in seconds. If 0, no information about the progress shall be printed.
@@ -91,7 +98,11 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-                
+
+                bool isPrecisionSet() const;
+
+                void setPrecision(std::string precision);
+
                 /*!
                  * Retrieves whether the option enabling exact model checking is set and we should use infinite precision rationals.
                  *

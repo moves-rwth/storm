@@ -6,6 +6,7 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
 
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
@@ -51,8 +52,8 @@ namespace storm {
                     return "expl";
                 case Engine::AbstractionRefinement:
                     return "abs";
-                case Engine::Portfolio:
-                    return "portfolio";
+                case Engine::Automatic:
+                    return "automatic";
                 case Engine::Unknown:
                     return "UNKNOWN";
                 default:
@@ -71,6 +72,10 @@ namespace storm {
                 if (engineStr == toString(e)) {
                     return e;
                 }
+            }
+            if (engineStr == "portfolio") {
+                STORM_LOG_WARN("The engine name \"portfolio\" is deprecated. The name of this engine has been changed to \"" << toString(Engine::Automatic) << "\".");
+                return Engine::Automatic;
             }
             STORM_LOG_ERROR("The engine '" << engineStr << "' was not found.");
             return Engine::Unknown;
@@ -108,6 +113,7 @@ namespace storm {
             switch (engine) {
                 case Engine::Sparse:
                 case Engine::DdSparse:
+                case Engine::Jit:
                     switch (modelType) {
                         case ModelType::DTMC:
                             return storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>::canHandleStatic(checkTask);
@@ -119,7 +125,10 @@ namespace storm {
                             return storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>>::canHandleStatic(checkTask);
                         case ModelType::POMDP:
                             return false;
+                        case ModelType::SMG:
+                            return storm::modelchecker::SparseSmgRpatlModelChecker<storm::models::sparse::Smg<ValueType>>::canHandleStatic(checkTask);
                     }
+                    break;
                 case Engine::Hybrid:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -131,8 +140,10 @@ namespace storm {
                         case ModelType::MA:
                             return storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<ddType, ValueType>>::canHandleStatic(checkTask);
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
+                    break;
                 case Engine::Dd:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -142,10 +153,12 @@ namespace storm {
                         case ModelType::CTMC:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
+                    break;
                 default:
-                    STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
+                    STORM_LOG_ERROR("The selected engine " << engine << " is not considered.");
             }
             STORM_LOG_ERROR("The selected combination of engine (" << engine << ") and model type (" << modelType << ") does not seem to be supported for this value type.");
             return false;
@@ -169,8 +182,10 @@ namespace storm {
                         case ModelType::MDP:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
+                    break;
                 case Engine::Hybrid:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -180,8 +195,10 @@ namespace storm {
                         case ModelType::MDP:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
+                    break;
                 case Engine::Dd:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -190,8 +207,10 @@ namespace storm {
                         case ModelType::CTMC:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
+                    break;
                 default:
                     STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
             }
@@ -206,7 +225,7 @@ namespace storm {
                 for (auto const& f : {p.getRawFormula(), p.getFilter().getStatesFormula()}) {
                     auto task = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*f, true);
                     if (!canHandle(engine, modelDescription.getModelType(), task)) {
-                        STORM_LOG_INFO("Engine " << engine << " can not handle formula '" << *f << "'.");
+                        STORM_LOG_INFO("Engine " << engine << " can not handle formula '" << *f << "' on models of type " << modelDescription.getModelType() << ".");
                         return false;
                     }
                 }

@@ -98,10 +98,9 @@ namespace storm {
             if (this->options.hasTerminalStates()) {
                 for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
                     if (expressionOrLabelAndBool.first.isExpression()) {
-                        this->terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
+                        this->terminalStates.emplace_back(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second);
                     } else {
-                        // If it's a label, i.e. refers to a transient boolean variable we need to derive the expression
-                        // for the label so we can cut off the exploration there.
+                        // If it's a label, i.e. refers to a transient boolean variable we do some sanity checks first
                         if (expressionOrLabelAndBool.first.getLabel() != "init" && expressionOrLabelAndBool.first.getLabel() != "deadlock") {
                             STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()) , storm::exceptions::InvalidSettingsException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
@@ -109,7 +108,7 @@ namespace storm {
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
-                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata), expressionOrLabelAndBool.second));
+                            this->terminalStates.emplace_back(variable.getExpressionVariable().getExpression(), expressionOrLabelAndBool.second);
                         }
                     }
                 }
@@ -169,7 +168,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         bool JaniNextStateGenerator<ValueType, StateType>::isPartiallyObservable() const {
             return false;
-        };
+        }
         
         template<typename ValueType, typename StateType>
         uint64_t JaniNextStateGenerator<ValueType, StateType>::getLocation(CompressedState const& state, LocationVariableInformation const& locationVariable) const {
@@ -394,7 +393,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments,  storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
+        void JaniNextStateGenerator<ValueType, StateType>::applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments,  storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) const {
             
             auto assignmentIt = transientAssignments.begin();
             auto assignmentIte = transientAssignments.end();
@@ -415,8 +414,8 @@ namespace storm {
                 }
                 int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
                 if (this->options.isExplorationChecksSet()) {
-                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
-                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    STORM_LOG_THROW(!integerIt->lowerBound || assignedValue >= integerIt->lowerBound.get(), storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    STORM_LOG_THROW(!integerIt->upperBound || assignedValue <= integerIt->upperBound.get(), storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                 }
                 transientValuation.integerValues.emplace_back(&(*integerIt), assignedValue);
             }
@@ -457,7 +456,101 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        TransientVariableValuation<ValueType> JaniNextStateGenerator<ValueType, StateType>::getTransientVariableValuationAtLocations(std::vector<uint64_t> const& locations, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) const {
+            uint64_t automatonIndex = 0;
+            TransientVariableValuation<ValueType> transientVariableValuation;
+            for (auto const& automatonRef : this->parallelAutomata) {
+                auto const& automaton = automatonRef.get();
+                uint64_t currentLocationIndex = locations[automatonIndex];
+                storm::jani::Location const& location = automaton.getLocation(currentLocationIndex);
+                STORM_LOG_ASSERT(!location.getAssignments().hasMultipleLevels(true), "Indexed assignments at locations are not supported in the jani standard.");
+                applyTransientUpdate(transientVariableValuation, location.getAssignments().getTransientAssignments(), evaluator);
+                ++automatonIndex;
+            }
+            return transientVariableValuation;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::unpackTransientVariableValuesIntoEvaluator(CompressedState const& state, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) const {
+            transientVariableInformation.setDefaultValuesInEvaluator(evaluator);
+            auto transientVariableValuation = getTransientVariableValuationAtLocations(getLocations(state), evaluator);
+            transientVariableValuation.setInEvaluator(evaluator, this->getOptions().isExplorationChecksSet());
+        }
+        
+        template<typename ValueType, typename StateType>
+        storm::storage::sparse::StateValuationsBuilder JaniNextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder() const {
+            auto result = NextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder();
+            // Also add information for transient variables
+            for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
+                result.addVariable(varInfo.variable);
+            }
+            for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
+                result.addVariable(varInfo.variable);
+            }
+            for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
+                result.addVariable(varInfo.variable);
+            }
+            return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const {
+            std::vector<bool> booleanValues;
+            booleanValues.reserve(this->variableInformation.booleanVariables.size() + transientVariableInformation.booleanVariableInformation.size());
+            std::vector<int64_t> integerValues;
+            integerValues.reserve(this->variableInformation.locationVariables.size() + this->variableInformation.integerVariables.size() + transientVariableInformation.integerVariableInformation.size());
+            std::vector<storm::RationalNumber> rationalValues;
+            rationalValues.reserve(transientVariableInformation.rationalVariableInformation.size());
+            
+            // Add values for non-transient variables
+            extractVariableValues(*this->state, this->variableInformation, integerValues, booleanValues, integerValues);
+            
+            // Add values for transient variables
+            auto transientVariableValuation = getTransientVariableValuationAtLocations(getLocations(*this->state), *this->evaluator);
+            {
+                auto varIt = transientVariableValuation.booleanValues.begin();
+                auto varIte = transientVariableValuation.booleanValues.end();
+                for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
+                    if (varIt != varIte && varIt->first->variable == varInfo.variable) {
+                        booleanValues.push_back(varIt->second);
+                        ++varIt;
+                    } else {
+                        booleanValues.push_back(varInfo.defaultValue);
+                    }
+                }
+            }
+            {
+                auto varIt = transientVariableValuation.integerValues.begin();
+                auto varIte = transientVariableValuation.integerValues.end();
+                for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
+                    if (varIt != varIte && varIt->first->variable == varInfo.variable) {
+                        integerValues.push_back(varIt->second);
+                        ++varIt;
+                    } else {
+                        integerValues.push_back(varInfo.defaultValue);
+                    }
+                }
+            }
+            {
+                auto varIt = transientVariableValuation.rationalValues.begin();
+                auto varIte = transientVariableValuation.rationalValues.end();
+                for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
+                    if (varIt != varIte && varIt->first->variable == varInfo.variable) {
+                        rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varIt->second));
+                        ++varIt;
+                    } else {
+                        rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varInfo.defaultValue));
+                    }
+                }
+            }
+            
+            valuationsBuilder.addState(currentStateIndex, std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
+        }
+        
+        template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
+            // The evaluator should have the default values of the transient variables right now.
+            
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
             
@@ -466,29 +559,24 @@ namespace storm {
             
             // First, construct the state rewards, as we may return early if there are no choices later and we already
             // need the state rewards then.
-            uint64_t automatonIndex = 0;
-            TransientVariableValuation<ValueType> transientVariableValuation;
-            for (auto const& automatonRef : this->parallelAutomata) {
-                auto const& automaton = automatonRef.get();
-                uint64_t currentLocationIndex = locations[automatonIndex];
-                storm::jani::Location const& location = automaton.getLocation(currentLocationIndex);
-                STORM_LOG_ASSERT(!location.getAssignments().hasMultipleLevels(true), "Indexed assignments at locations are not supported in the jani standard.");
-                applyTransientUpdate(transientVariableValuation, location.getAssignments().getTransientAssignments(), *this->evaluator);
-                ++automatonIndex;
-            }
+            auto transientVariableValuation = getTransientVariableValuationAtLocations(locations, *this->evaluator);
             transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
             result.addStateRewards(evaluateRewardExpressions());
-            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
 
-            
             // If a terminal expression was set and we must not expand this state, return now.
+            // Terminal state expressions do not consider transient variables.
             if (!this->terminalStates.empty()) {
                 for (auto const& expressionBool : this->terminalStates) {
                     if (this->evaluator->asBool(expressionBool.first) == expressionBool.second) {
+                        // Set back transient variables to default values so we are ready to process the next state
+                        this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
                         return result;
                     }
                 }
             }
+            
+            // Set back transient variables to default values so we are ready to process the transition assignments
+            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             
             // Get all choices for the state.
             result.setExpanded();
@@ -1020,25 +1108,16 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
+            
             // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
             // create a list of boolean transient variables and the expressions that define them.
-            std::unordered_map<storm::expressions::Variable, storm::expressions::Expression> transientVariableToExpressionMap;
-            bool translateArrays = !this->arrayEliminatorData.replacements.empty();
+            std::vector<std::pair<std::string, storm::expressions::Expression>> transientVariableExpressions;
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
                 if (variable.isBooleanVariable()) {
                     if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
-                        storm::expressions::Expression labelExpression = model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata);
-                        if (translateArrays) {
-                            labelExpression = this->arrayEliminatorData.transformExpression(labelExpression);
-                        }
-                        transientVariableToExpressionMap[variable.getExpressionVariable()] = std::move(labelExpression);
+                        transientVariableExpressions.emplace_back(variable.getName(), variable.getExpressionVariable().getExpression());
                     }
                 }
-            }
-            
-            std::vector<std::pair<std::string, storm::expressions::Expression>> transientVariableExpressions;
-            for (auto const& element : transientVariableToExpressionMap) {
-                transientVariableExpressions.push_back(std::make_pair(element.first.getName(), element.second));
             }
             return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, transientVariableExpressions);
         }
@@ -1109,6 +1188,8 @@ namespace storm {
                 uint64_t automatonIndex = 0;
                 for (auto const& composition : parallelComposition.getSubcompositions()) {
                     STORM_LOG_THROW(composition->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Expected flat parallel composition.");
+                    STORM_LOG_THROW(composition->asAutomatonComposition().getInputEnabledActions().empty(), storm::exceptions::NotSupportedException, "Input-enabled actions are not supported right now.");
+
                     this->parallelAutomata.push_back(this->model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
                 
                     // Add edges with silent action.
@@ -1201,7 +1282,7 @@ namespace storm {
         storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
             STORM_LOG_WARN("There are no observation labels in JANI currenty");
             return storm::storage::BitVector(0);
-        };
+        }
 
 
         template<typename ValueType, typename StateType>

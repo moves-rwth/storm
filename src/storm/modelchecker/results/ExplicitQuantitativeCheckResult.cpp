@@ -5,10 +5,10 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidAccessException.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -82,7 +82,7 @@ namespace storm {
             if (this->isResultForAllStates()) {
                 map_type newMap;
                 
-                for (auto const& element : filterTruthValues) {
+                for (auto element : filterTruthValues) {
                     STORM_LOG_THROW(element < this->getValueVector().size(), storm::exceptions::InvalidAccessException, "Invalid index in results.");
                     newMap.emplace(element, this->getValueVector()[element]);
                 }
@@ -415,6 +415,40 @@ namespace storm {
                     element.second = storm::utility::one<ValueType>() - element.second;
                 }
             }
+        }
+        
+        template<typename ValueType>
+        void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType const& value, boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none) {
+            typename storm::json<ValueType> entry;
+            if (stateValuations) {
+                entry["s"] = stateValuations->template toJson<ValueType>(id);
+            } else {
+                entry["s"] = id;
+            }
+            entry["v"] = value;
+            json.push_back(std::move(entry));
+        }
+        
+        template<typename ValueType>
+        storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations) const {
+            storm::json<ValueType> result;
+            if (this->isResultForAllStates()) {
+                vector_type const& valuesAsVector = boost::get<vector_type>(values);
+                for (uint64_t state = 0; state < valuesAsVector.size(); ++state) {
+                    insertJsonEntry(result, state, valuesAsVector[state], stateValuations);
+                }
+            } else {
+                map_type const& valuesAsMap = boost::get<map_type>(values);
+                for (auto const& stateValue : valuesAsMap) {
+                    insertJsonEntry(result, stateValue.first, stateValue.second, stateValuations);
+                }
+            }
+            return result;
+        }
+        
+        template<>
+        storm::json<storm::RationalFunction> ExplicitQuantitativeCheckResult<storm::RationalFunction>::toJson(boost::optional<storm::storage::sparse::StateValuations> const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of Check results is not supported for Rational Functions.");
         }
         
         template class ExplicitQuantitativeCheckResult<double>;

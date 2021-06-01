@@ -5,7 +5,6 @@
 #include <storm/exceptions/IllegalArgumentException.h>
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/logic/AtomicLabelFormula.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/utility/bitoperations.h"
@@ -34,19 +33,18 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) :
+        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries) :
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
-                relevantEvents(relevantEvents),
                 generator(dft, *stateGenerationInfo),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(dft.stateBitVectorSize()),
                 explorationQueue(1, 0, 0.9, false)
         {
             // Set relevant events
-            this->dft.setRelevantEvents(this->relevantEvents, allowDCForRelevantEvents);
             STORM_LOG_DEBUG("Relevant events: " << this->dft.getRelevantEventsString());
-            if (this->relevantEvents.empty()) {
+            if (dft.getRelevantEvents().size() <= 1) {
+                STORM_LOG_ASSERT(dft.getRelevantEvents()[0] == dft.getTopLevelIndex(), "TLE is not relevant");
                 // Only interested in top level event -> introduce unique failed state
                 this->uniqueFailedState = true;
                 STORM_LOG_DEBUG("Using unique failed state with id 0.");
@@ -59,14 +57,14 @@ namespace storm {
                     // Consider all children of the top level gate
                     std::vector<size_t> isubdft;
                     if (child->nrParents() > 1 || child->hasOutgoingDependencies()) {
-                        STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                        STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                         isubdft.clear();
                     } else if (dft.isGate(child->id())) {
                         isubdft = dft.getGate(child->id())->independentSubDft(false);
                     } else {
                         STORM_LOG_ASSERT(dft.isBasicElement(child->id()), "Child is no BE.");
                         if(dft.getBasicElement(child->id())->hasIngoingDependencies()) {
-                            STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                            STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                             isubdft.clear();
                         } else {
                             isubdft = {child->id()};
@@ -495,6 +493,8 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
+            bool isAddLabelsClaiming = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isAddLabelsClaiming();
+
             // Build state labeling
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
             // Initial state
@@ -513,11 +513,25 @@ namespace storm {
                     modelComponents.stateLabeling.addLabel(element->name() + "_dc");
                 }
             }
+            std::vector<std::shared_ptr<storm::storage::DFTGate<ValueType> const>> spares; // Only filled if needed
+            if (isAddLabelsClaiming) {
+                // Collect labels for claiming
+                for (size_t spareId : dft.getSpareIndices()) {
+                    auto const& spare = dft.getGate(spareId);
+                    spares.push_back(spare);
+                    for (auto const& child : spare->children()) {
+                        modelComponents.stateLabeling.addLabel(spare->name() + "_claimed_" + child->name());
+                    }
+                }
+            }
 
             // Set labels to states
             if (this->uniqueFailedState) {
                 // Unique failed state has label 0
                 modelComponents.stateLabeling.addLabelToState("failed", 0);
+                std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(dft.getTopLevelIndex());
+                STORM_LOG_ASSERT(element->isRelevant(), "TLE should be relevant if unique failed state is used.");
+                modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", 0);
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
                 storm::storage::BitVector state = stateIdPair.first;
@@ -543,6 +557,14 @@ namespace storm {
                                 break;
                             default:
                                 STORM_LOG_ASSERT(false, "Unknown element state " << elementState);
+                        }
+                    }
+                }
+                if (isAddLabelsClaiming) {
+                    for (auto const& spare : spares) {
+                        size_t claimedChildId = dft.uses(state, *stateGenerationInfo, spare->id());
+                        if (claimedChildId != spare->id()) {
+                            modelComponents.stateLabeling.addLabelToState(spare->name() + "_claimed_" + dft.getElement(claimedChildId)->name(), stateId);
                         }
                     }
                 }
@@ -721,8 +743,9 @@ namespace storm {
         ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
             // Get the lower bound by considering the failure of all possible BEs
             ValueType lowerBound = storm::utility::zero<ValueType>();
-            for (state->getFailableElements().init(false); !state->getFailableElements().isEnd(); state->getFailableElements().next()) {
-                lowerBound += state->getBERate(state->getFailableElements().get());
+            STORM_LOG_ASSERT(!state->getFailableElements().hasDependencies(), "Lower bound should only be computed if dependencies were already handled.");
+            for (auto it = state->getFailableElements().begin(); it != state->getFailableElements().end(); ++it) {
+                lowerBound += state->getBERate(*it);
             }
             STORM_LOG_TRACE("Lower bound is " << lowerBound << " for state " << state->getId());
             return lowerBound;
@@ -745,37 +768,35 @@ namespace storm {
                 storm::storage::BitVector coldBEs(subtree.size(), false);
                 for (size_t i = 0; i < subtree.size(); ++i) {
                     size_t id = subtree[i];
+                    // Consider only still operational BEs
                     if (state->isOperational(id)) {
-                        // Get BE rate
-                        ValueType rate = state->getBERate(id);
-                        if (storm::utility::isZero<ValueType>(rate)) {
-                            // Get active failure rate for cold BE
-                            auto be = dft.getBasicElement(id);
-                            switch (be->type()) {
-                                case storm::storage::DFTElementType::BE_EXP:
-                                {
+                        auto be = dft.getBasicElement(id);
+                        switch (be->beType()) {
+                            case storm::storage::BEType::CONSTANT:
+                                // Ignore BE which cannot fail
+                                continue;
+                            case storm::storage::BEType::EXPONENTIAL:
+                            {
+                                // Get BE rate
+                                ValueType rate = state->getBERate(id);
+                                if (storm::utility::isZero<ValueType>(rate)) {
+                                    // Get active failure rate for cold BE
                                     auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(be);
                                     rate = beExp->activeFailureRate();
                                     STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(rate), "Failure rate should not be zero.");
                                     // Mark BE as cold
                                     coldBEs.set(i, true);
-                                    break;
                                 }
-                                case storm::storage::DFTElementType::BE_CONST:
-                                {
-                                    // Ignore BE which cannot fail
-                                    continue;
-                                }
-                                default:
-                                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
-                                    break;
+                                rates.push_back(rate);
+                                rateSum += rate;
+                                break;
                             }
+                            default:
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                                break;
                         }
-                        rates.push_back(rate);
-                        rateSum += rate;
                     }
                 }
-
                 STORM_LOG_ASSERT(rates.size() > 0, "No rates failable");
 
                 // Sort rates

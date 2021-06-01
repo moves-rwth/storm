@@ -10,8 +10,8 @@
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
+#include "storm/adapters/eigen.h"
 #include "storm/storage/dd/DdManager.h"
-#include "storm/utility/eigen.h"
 
 namespace storm {
 namespace modelchecker {
@@ -197,12 +197,12 @@ class SFTBDDChecker {
 
         // caches
         auto const basicElemets{dft->getBasicElements()};
-        std::map<uint32_t, StormEigen::ArrayXd> indexToProbabilities{};
-        std::unordered_map<uint64_t, std::pair<bool, StormEigen::ArrayXd>>
+        std::map<uint32_t, Eigen::ArrayXd> indexToProbabilities{};
+        std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
             bddToProbabilities{};
 
         // The current timepoints we calculate with
-        StormEigen::ArrayXd timepointsArray{chunksize};
+        Eigen::ArrayXd timepointsArray{chunksize};
 
         // The Return vector
         std::vector<double> resultProbabilities{};
@@ -213,7 +213,7 @@ class SFTBDDChecker {
             auto const sizeLeft{timepoints.size() - currentIndex};
             if (sizeLeft < chunksize) {
                 chunksize = sizeLeft;
-                timepointsArray = StormEigen::ArrayXd{chunksize};
+                timepointsArray = Eigen::ArrayXd{chunksize};
             }
 
             // Update current timepoints
@@ -331,10 +331,10 @@ class SFTBDDChecker {
      * are valid elements in bddToProbabilities.
      *
      */
-    StormEigen::ArrayXd const *recursiveProbabilities(
+    Eigen::ArrayXd const *recursiveProbabilities(
         size_t const chunksize, Bdd const bdd,
-        std::map<uint32_t, StormEigen::ArrayXd> const &indexToProbabilities,
-        std::unordered_map<uint64_t, std::pair<bool, StormEigen::ArrayXd>>
+        std::map<uint32_t, Eigen::ArrayXd> const &indexToProbabilities,
+        std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
             &bddToProbabilities) const {
         auto const bddId{bdd.GetBDD()};
         auto const it{bddToProbabilities.find(bddId)};
@@ -346,12 +346,12 @@ class SFTBDDChecker {
         if (bdd.isOne()) {
             bddToProbabilitiesElement.first = true;
             bddToProbabilitiesElement.second =
-                StormEigen::ArrayXd::Constant(chunksize, 1);
+                Eigen::ArrayXd::Constant(chunksize, 1);
             return &bddToProbabilitiesElement.second;
         } else if (bdd.isZero()) {
             bddToProbabilitiesElement.first = true;
             bddToProbabilitiesElement.second =
-                StormEigen::ArrayXd::Constant(chunksize, 0);
+                Eigen::ArrayXd::Constant(chunksize, 0);
             return &bddToProbabilitiesElement.second;
         }
 

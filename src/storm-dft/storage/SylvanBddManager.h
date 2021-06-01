@@ -2,9 +2,9 @@
 
 #include <map>
 
+#include "storm/adapters/sylvan.h"
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/sylvan.h"
 
 namespace storm {
 namespace storage {

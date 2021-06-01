@@ -32,7 +32,6 @@ namespace storm {
             friend Expression operator-(Expression const& first);
             friend Expression operator*(Expression const& first, Expression const& second);
             friend Expression operator/(Expression const& first, Expression const& second);
-            friend Expression operator^(Expression const& first, Expression const& second);
             friend Expression operator%(Expression const& first, Expression const& second);
             friend Expression operator&&(Expression const& first, Expression const& second);
             friend Expression operator||(Expression const& first, Expression const& second);
@@ -51,6 +50,7 @@ namespace storm {
             friend Expression implies(Expression const& first, Expression const& second);
             friend Expression iff(Expression const& first, Expression const& second);
             friend Expression xclusiveor(Expression const& first, Expression const& second);
+            friend Expression pow(Expression const& base, Expression const& exponent, bool allowIntegerType);
             friend Expression abs(Expression const& first);
             friend Expression truncate(Expression const& first);
             friend Expression sign(Expression const& first);
@@ -412,7 +412,6 @@ namespace storm {
         Expression operator-(Expression const& first);
         Expression operator*(Expression const& first, Expression const& second);
         Expression operator/(Expression const& first, Expression const& second);
-        Expression operator^(Expression const& first, Expression const& second);
         Expression operator&&(Expression const& first, Expression const& second);
         Expression operator||(Expression const& first, Expression const& second);
         Expression operator!(Expression const& first);
@@ -430,12 +429,23 @@ namespace storm {
         Expression implies(Expression const& first, Expression const& second);
         Expression iff(Expression const& first, Expression const& second);
         Expression xclusiveor(Expression const& first, Expression const& second);
+        
+        /*!
+         * The type of the resulting expression is
+         * - integer, if base and exponent are integer expressions and allowIntegerType is true
+         *      (in this case it is assumed that exponent is always positive), and
+         * - rational, otherwise.
+         * The integer case is to reflect the PRISM semantics
+         * @see https://github.com/ahartmanns/qcomp/issues/103
+         */
+        Expression pow(Expression const& base, Expression const& exponent, bool allowIntegerType = false);
         Expression abs(Expression const& first);
         Expression truncate(Expression const& first);
         Expression sign(Expression const& first);
         Expression floor(Expression const& first);
         Expression ceil(Expression const& first);
         Expression round(Expression const& first);
+        Expression modulo(Expression const& first, Expression const& second);
         Expression minimum(Expression const& first, Expression const& second);
         Expression maximum(Expression const& first, Expression const& second);
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions);

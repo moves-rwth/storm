@@ -50,7 +50,13 @@ namespace storm {
             virtual bool isPartiallyObservable() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
             
+            /// Initializes a builder for state valuations by adding the appropriate variables.
+            virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const override;
+            
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
+            
+            /// Adds the valuation for the currently loaded state to the given builder
+            virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const override;
             
             virtual std::size_t getNumberOfRewardModels() const override;
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
@@ -58,6 +64,15 @@ namespace storm {
             virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) override;
             
             virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const override;
+            
+            /*!
+             * Sets the values of all transient variables in the current state to the given evaluator.
+             * @pre The values of non-transient variables have been set in the provided evaluator
+             * @param state The current state
+             * @param evaluator the evaluator to which the values will be set
+             * @post The values of all transient variables are set in the given evaluator (including the transient variables without an explicit assignment in the current locations).
+             */
+            virtual void unpackTransientVariableValuesIntoEvaluator(CompressedState const& state, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) const override;
             
         private:
             /*!
@@ -102,7 +117,7 @@ namespace storm {
              * @params assignmentLevel The assignmentLevel that is to be considered for the update.
              * @return The resulting state.
              */
-            void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
+            void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) const;
 
             /**
              * Required method to overload, but currently throws an error as POMDPs are not yet specified in JANI.
@@ -113,6 +128,14 @@ namespace storm {
              */
             virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const override;
 
+            /*!
+             * Computes the values of the transient variables assigned in the given locations.
+             * @note Only the the transient variables with an explicit assignment in the provided locations are contained in the returned struct.
+             * @pre The values of non-transient variables have been set in the provided evaluator
+             * @return a struct containing the values of the transient variables within the given locations
+             */
+            TransientVariableValuation<ValueType> getTransientVariableValuationAtLocations(std::vector<uint64_t> const& locations, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) const;
+            
             /*!
              * Retrieves all choices possible from the given state.
              *

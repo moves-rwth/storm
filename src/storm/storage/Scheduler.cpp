@@ -56,7 +56,7 @@ namespace storm {
 
         template <typename ValueType>
         bool Scheduler<ValueType>::isChoiceSelected(BitVector const& selectedStates, uint64_t memoryState) const {
-            for (auto const& selectedState : selectedStates) {
+            for (auto selectedState : selectedStates) {
                 auto& schedulerChoice = schedulerChoices[memoryState][selectedState];
                 if (!schedulerChoice.isDefined()) {
                     return false;
@@ -241,7 +241,7 @@ namespace storm {
                 }
                 storm::json<storm::RationalNumber> stateChoicesJson;
                 if (model && model->hasStateValuations()) {
-                    stateChoicesJson["s"] = model->getStateValuations().getStateValuation(state).toJson();
+                    stateChoicesJson["s"] = model->getStateValuations().template toJson<storm::RationalNumber>(state);
                 } else {
                     stateChoicesJson["s"] = state;
                 }

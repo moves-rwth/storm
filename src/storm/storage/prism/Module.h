@@ -58,6 +58,11 @@ namespace storm {
             Module& operator=(Module&& other) = default;
 
             /*!
+             * @return True iff the module contains at least one variable with infinite domain
+             */
+            bool hasUnboundedVariables() const;
+            
+            /*!
              * Retrieves the number of boolean variables in the module.
              *
              * @return the number of boolean variables in the module.
@@ -263,6 +268,11 @@ namespace storm {
              * Equips all of the modules' variables without initial values with initial values based on their type.
              */
             void createMissingInitialValues();
+
+            /*
+             * Gets the number of commands without a label
+             */
+            uint64_t getNumberOfUnlabeledCommands() const;
             
             /*!
              * Returns true, if an invariant was specified (only relevant for PTA models)

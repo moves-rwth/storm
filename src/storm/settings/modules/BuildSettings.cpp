@@ -32,8 +32,10 @@ namespace storm {
             const std::string buildChoiceLabelOptionName = "buildchoicelab";
             const std::string buildChoiceOriginsOptionName = "buildchoiceorig";
             const std::string buildStateValuationsOptionName = "buildstateval";
-            const std::string buildOutOfBoundsStateOptionName = "buildoutofboundsstate";
-            const std::string buildOverlappingGuardsLabelOptionName = "overlappingguardslabel";
+            const std::string buildAllLabelsOptionName = "build-all-labels";
+            const std::string buildOutOfBoundsStateOptionName = "build-out-of-bounds-state";
+            const std::string buildOverlappingGuardsLabelOptionName = "build-overlapping-guards-label";
+            const std::string noSimplifyOptionName = "no-simplify";
             const std::string bitsForUnboundedVariablesOptionName = "int-bits";
 
             BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
@@ -45,6 +47,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceOriginsOptionName, false, "If set, also build information that for each choice indicates the part(s) of the input that yielded the choice.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildAllLabelsOptionName, false, "If set, build all labels").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").setIsAdvanced().build());
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
@@ -53,6 +56,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationChecksOptionName, false, "If set, additional checks (if available) are performed during model exploration to debug the model.").setShortName(explorationChecksOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildOutOfBoundsStateOptionName, false, "If set, a state for out-of-bounds valuations is added").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildOverlappingGuardsLabelOptionName, false, "For states where multiple guards are enabled, we add a label (for debugging DTMCs)").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, noSimplifyOptionName, false, "If set, simplification PRISM input is disabled.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bitsForUnboundedVariablesOptionName, false, "Sets the number of bits that is used for unbounded integer variables.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "The number of bits.").addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorExcluding(0,63)).setDefaultValueUnsignedInteger(32).build()).build());
             }
@@ -105,6 +109,10 @@ namespace storm {
                 return this->getOption(buildOverlappingGuardsLabelOptionName).getHasOptionBeenSet();
             }
 
+            bool BuildSettings::isBuildAllLabelsSet() const {
+                return this->getOption(buildAllLabelsOptionName).getHasOptionBeenSet();
+            }
+
             storm::builder::ExplorationOrder BuildSettings::getExplorationOrder() const {
                 std::string explorationOrderAsString = this->getOption(explorationOrderOptionName).getArgumentByName("name").getValueAsString();
                 if (explorationOrderAsString == "dfs") {
@@ -117,6 +125,10 @@ namespace storm {
             
             bool BuildSettings::isExplorationChecksSet() const {
                 return this->getOption(explorationChecksOptionName).getHasOptionBeenSet();
+            }
+            
+            bool BuildSettings::isNoSimplifySet() const {
+                return this->getOption(noSimplifyOptionName).getHasOptionBeenSet();
             }
 
             uint64_t BuildSettings::getBitsForUnboundedVariables() const {

@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "storm/utility/macros.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -324,18 +324,22 @@ namespace storm {
             }
             return opDecl;
         }
-        
+
         boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boost::any const& data) const {
             ExportJsonType opDecl;
             opDecl["op"] = "G";
             opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
             return opDecl;
         }
-        
+
+        boost::any FormulaToJaniJson::visit(storm::logic::GameFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Conversion of game formulas to Jani is not supported.");
+        }
+
         boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an instanteneous reward formula");
         }
-        
+
         boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageOperatorFormula const& f, boost::any const& data) const {
             ExportJsonType opDecl;
             if(f.hasBound()) {
@@ -628,8 +632,17 @@ namespace storm {
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
             opDecl["left"] = anyToJson(expression.getOperand(0)->accept(*this, data));
             opDecl["right"] = anyToJson(expression.getOperand(1)->accept(*this, data));
-            return opDecl;
+            if (expression.getOperator() == storm::expressions::OperatorType::Power && expression.getType().isIntegerType()) {
+                // power expressions that have integer type need to be "type casted"
+                ExportJsonType trc;
+                trc["op"] = "trc";
+                trc["exp"] = std::move(opDecl);
+                return trc;
+            } else {
+                return opDecl;
+            }
         }
+        
         boost::any ExpressionToJson::visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) {
             ExportJsonType opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
@@ -666,6 +679,7 @@ namespace storm {
             opDecl["exp"] = anyToJson(expression.getOperand()->accept(*this, data));
             return opDecl;
         }
+
         boost::any ExpressionToJson::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&) {
             return ExportJsonType(expression.getValue());
         }

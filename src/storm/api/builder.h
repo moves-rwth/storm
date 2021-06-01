@@ -12,6 +12,7 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
+#include "storm/models/sparse/Smg.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StochasticTwoPlayerGame.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -77,6 +78,26 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
         }
 
+        /**
+         * Initializes an explict model builder; an object/algorithm that is used to build sparse models
+         * @tparam ValueType Type of the probabilities in the sparse model
+         * @param model SymbolicModelDescription of the model
+         * @param options Builder options
+         * @return A builder
+         */
+        template<typename ValueType>
+        storm::builder::ExplicitModelBuilder<ValueType> makeExplicitModelBuilder(storm::storage::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options) {
+            std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
+            if (model.isPrismProgram()) {
+                generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options);
+            } else if (model.isJaniModel()) {
+                generator = std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, uint32_t>>(model.asJaniModel(), options);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
+            }
+            return storm::builder::ExplicitModelBuilder<ValueType>(generator);
+        }
+
         template<typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, storm::builder::BuilderOptions const& options, bool jit = false, bool doctor = false) {
             if (jit) {
@@ -92,18 +113,13 @@ namespace storm {
 
                 return builder.build();
             } else {
-                std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator;
-                if (model.isPrismProgram()) {
-                    generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(model.asPrismProgram(), options);
-                } else if (model.isJaniModel()) {
-                    generator = std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, uint32_t>>(model.asJaniModel(), options);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Cannot build sparse model from this symbolic model description.");
-                }
-                storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
+                storm::builder::ExplicitModelBuilder<ValueType> builder = makeExplicitModelBuilder<ValueType>(model, options);
                 return builder.build();
             }
         }
+
+
+
 
         template<typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool jit = false, bool doctor = false) {
@@ -126,6 +142,8 @@ namespace storm {
                     return std::make_shared<storm::models::sparse::Pomdp<ValueType, RewardModelType>>(std::move(components));
                 case storm::models::ModelType::S2pg:
                     return std::make_shared<storm::models::sparse::StochasticTwoPlayerGame<ValueType, RewardModelType>>(std::move(components));
+                case storm::models::ModelType::Smg:
+                    return std::make_shared<storm::models::sparse::Smg<ValueType, RewardModelType>>(std::move(components));
             }
 
         }

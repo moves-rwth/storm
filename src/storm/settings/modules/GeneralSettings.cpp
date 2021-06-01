@@ -65,11 +65,22 @@ namespace storm {
             bool GeneralSettings::isVerboseSet() const {
                 return this->getOption(verboseOptionName).getHasOptionBeenSet();
             }
+
+            bool GeneralSettings::isShowProgressSet() const {
+                return this->getOption(showProgressOptionName).getHasOptionBeenSet();
+            }
             
             uint64_t GeneralSettings::getShowProgressDelay() const {
                 return this->getOption(showProgressOptionName).getArgumentByName("delay").getValueAsUnsignedInteger();
             }
-            
+
+            bool GeneralSettings::isPrecisionSet() const {
+                return this->getOption(precisionOptionName).getHasOptionBeenSet();
+            }
+
+            void GeneralSettings::setPrecision(std::string precision) {
+                this->getOption(precisionOptionName).getArgumentByName("value").setFromStringValue(precision);
+            }
             double GeneralSettings::getPrecision() const {
                 return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
             }

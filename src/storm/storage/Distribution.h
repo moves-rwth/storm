@@ -6,12 +6,10 @@
 #include <boost/container/flat_map.hpp>
 
 #include "storm/storage/sparse/StateType.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
-    namespace utility {
-        template <typename ValueType>
-        class ConstantsComparator;
-    }
+
     
     namespace storage {
         
@@ -143,6 +141,11 @@ namespace storm {
              * @return The probability of the given state.
              */
             ValueType getProbability(StateType const& state) const;
+            
+            /*!
+             * Normalizes the distribution such that the values sum up to one.
+             */
+            void normalize();
             
         private:
             // A list of states and the probabilities that are assigned to them.

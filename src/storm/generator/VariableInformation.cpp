@@ -29,8 +29,52 @@ namespace storm {
         LocationVariableInformation::LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool observable) : variable(variable), highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth), observable(observable) {
             // Intentionally left empty.
         }
+
+        ObservationLabelInformation::ObservationLabelInformation(const std::string &name) : name(name) {
+            // Intentionally left empty.
+        }
         
-        VariableInformation::VariableInformation(storm::prism::Program const& program, bool outOfBoundsState) : totalBitOffset(0) {
+        /*!
+         * Small helper function that sets unspecified lower/upper bounds for an integer variable based on the provided reservedBitsForUnboundedVariables and returns the number of bits required to represent the final variable range
+         * @pre If has[Lower,Upper]Bound is true, [lower,upper]Bound must be set to the corresponding bound.
+         * @post lowerBound and upperBound are set to the considered bound for this variable
+         * @param hasLowerBound shall be true iff there is a lower bound given
+         * @param lowerBound a reference to the lower bound value
+         * @param hasUpperBound shall be true iff there is an upper bound given
+         * @param upperBound a reference to the upper bound
+         * @param reservedBitsForUnboundedVariables the number of bits that shall be used to represent unbounded variables
+         * @return the number of bits required to represent the final variable range
+         */
+        uint64_t getBitWidthLowerUpperBound(bool const& hasLowerBound, int64_t& lowerBound, bool const& hasUpperBound, int64_t& upperBound, uint64_t  const& reservedBitsForUnboundedVariables) {
+            if (hasLowerBound) {
+                if (hasUpperBound) {
+                    STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
+                    // We do not have to set any bounds in this case.
+                    // Return the number of bits required to store all the values between lower and upper bound
+                    return static_cast<uint64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
+                } else {
+                    // We only have a lower bound. Find the largest upper bound we can store with the given number of bits.
+                    upperBound = lowerBound + ((1ll << reservedBitsForUnboundedVariables) - 1);
+                }
+            } else {
+                if (hasUpperBound) {
+                    // We only have an upper bound. Find the smallest lower bound we can store with the given number of bits
+                    lowerBound = upperBound - ((1ll << reservedBitsForUnboundedVariables) - 1);
+                } else {
+                    // We neither have a lower nor an upper bound. Take the usual n-bit integer values for lower/upper bounds
+                    lowerBound = -(1ll << (reservedBitsForUnboundedVariables - 1)); // = -2^(reservedBits-1)
+                    upperBound = (1ll << (reservedBitsForUnboundedVariables - 1)) - 1; // = 2^(reservedBits-1) - 1
+                }
+            }
+            // If we reach this point, it means that the variable is unbounded.
+            // Lets check for potential overflows.
+            STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound. Has there been an integer over-/underflow?");
+            // By choice of the lower/upper bound, the number of reserved bits must coincide with the bitwidth
+            STORM_LOG_ASSERT(reservedBitsForUnboundedVariables == static_cast<uint64_t>(std::ceil(std::log2(upperBound - lowerBound + 1))), "Unexpected bitwidth for unbounded variable.");
+            return reservedBitsForUnboundedVariables;
+        }
+        
+        VariableInformation::VariableInformation(storm::prism::Program const& program, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState) : totalBitOffset(0) {
             if (outOfBoundsState) {
                 outOfBoundsBit = 0;
                 ++totalBitOffset;
@@ -43,11 +87,15 @@ namespace storm {
                 ++totalBitOffset;
             }
             for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
-                int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
-                STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
-                uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true, integerVariable.isObservable());
+                int64_t lowerBound, upperBound;
+                if (integerVariable.hasLowerBoundExpression()) {
+                    lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
+                }
+                if (integerVariable.hasUpperBoundExpression()) {
+                    upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                }
+                uint64_t bitwidth = getBitWidthLowerUpperBound(integerVariable.hasLowerBoundExpression(), lowerBound, integerVariable.hasUpperBoundExpression(), upperBound, reservedBitsForUnboundedVariables);
+                integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true, integerVariable.isObservable(), !integerVariable.hasLowerBoundExpression() || !integerVariable.hasUpperBoundExpression());
                 totalBitOffset += bitwidth;
             }
             for (auto const& module : program.getModules()) {
@@ -56,13 +104,20 @@ namespace storm {
                     ++totalBitOffset;
                 }
                 for (auto const& integerVariable : module.getIntegerVariables()) {
-                    int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
-                    int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
-                    STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
-                    uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                    integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, false, integerVariable.isObservable());
+                    int64_t lowerBound, upperBound;
+                    if (integerVariable.hasLowerBoundExpression()) {
+                        lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
+                    }
+                    if (integerVariable.hasUpperBoundExpression()) {
+                        upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
+                    }
+                    uint64_t bitwidth = getBitWidthLowerUpperBound(integerVariable.hasLowerBoundExpression(), lowerBound, integerVariable.hasUpperBoundExpression(), upperBound, reservedBitsForUnboundedVariables);
+                    integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, false, integerVariable.isObservable(), !integerVariable.hasLowerBoundExpression() || !integerVariable.hasUpperBoundExpression());
                     totalBitOffset += bitwidth;
                 }
+            }
+            for (auto const& oblab : program.getObservationLabels()) {
+                observationLabels.emplace_back(oblab.getName());
             }
             
             sortVariables();
@@ -74,22 +129,6 @@ namespace storm {
             for (auto const& automaton : model.getAutomata()) {
                 STORM_LOG_THROW(!automaton.getVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains non-transient real variables in automaton '" << automaton.getName() << "'.");
             }
-//            
-//            for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
-//                if (!variable.isTransient()) {
-//                    booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true, true);
-//                    ++totalBitOffset;
-//                }
-//            }
-//            for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
-//                if (!variable.isTransient()) {
-//                    int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
-//                    int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
-//                    uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-//                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true, true);
-//                    totalBitOffset += bitwidth;
-//                }
-//            }
 
             if (outOfBoundsState) {
                 outOfBoundsBit = 0;
@@ -174,30 +213,24 @@ namespace storm {
             }
             for (auto const& variable : variableSet.getBoundedIntegerVariables()) {
                 if (!variable.isTransient()) {
-                    int64_t lowerBound;
-                    int64_t upperBound;
+                    int64_t lowerBound, upperBound;
+                    STORM_LOG_ASSERT(variable.hasLowerBound() || variable.hasUpperBound(), "Bounded integer variable has neither a lower nor an upper bound.");
                     if (variable.hasLowerBound()) {
                         lowerBound = variable.getLowerBound().evaluateAsInt();
-                        if (variable.hasUpperBound()) {
-                            upperBound = variable.getUpperBound().evaluateAsInt();
-                        } else {
-                            upperBound = lowerBound + ((1ll << reservedBitsForUnboundedVariables) - 1);
-                        }
-                    } else {
-                        STORM_LOG_THROW(variable.hasUpperBound(), storm::exceptions::WrongFormatException, "Bounded integer variable has neither a lower nor an upper bound.");
-                        upperBound = variable.getUpperBound().evaluateAsInt();
-                        lowerBound = upperBound - ((1ll << reservedBitsForUnboundedVariables) - 1);
                     }
-                    uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
+                    if (variable.hasUpperBound()) {
+                        upperBound = variable.getUpperBound().evaluateAsInt();
+                    }
+                    uint64_t bitwidth = getBitWidthLowerUpperBound(variable.hasLowerBound(), lowerBound, variable.hasUpperBound(), upperBound, reservedBitsForUnboundedVariables);
                     integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, global, true, !variable.hasLowerBound() || !variable.hasUpperBound());
                     totalBitOffset += bitwidth;
                 }
             }
             for (auto const& variable : variableSet.getUnboundedIntegerVariables()) {
                 if (!variable.isTransient()) {
-                    int64_t lowerBound = -(1ll << (reservedBitsForUnboundedVariables - 1));
-                    int64_t upperBound = (1ll << (reservedBitsForUnboundedVariables - 1)) - 1;
-                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, reservedBitsForUnboundedVariables, global, true, true);
+                    int64_t lowerBound, upperBound;
+                    uint64_t bitwidth = getBitWidthLowerUpperBound(false, lowerBound, false, upperBound, reservedBitsForUnboundedVariables);
+                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, global, true, true);
                     totalBitOffset += reservedBitsForUnboundedVariables;
                 }
             }

@@ -42,6 +42,7 @@ namespace storm {
             JaniParser() : expressionManager(new storm::expressions::ExpressionManager()) {}
             JaniParser(std::string const& jsonstring);
             static std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parse(std::string const& path, bool parseProperties = true);
+            static std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseFromString(std::string const& jsonstring, bool parseProperties = true);
 
         protected:
             void readFile(std::string const& path);

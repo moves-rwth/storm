@@ -142,6 +142,12 @@ namespace storm {
                 storm::dd::Add<Type, ValueType> const& getExitRateVector() const;
                 
                 virtual void reduceToStateBasedRewards() override;
+                
+                /*!
+                 * @return the probabilistic transition matrix P
+                 * @note getTransitionMatrix() retrieves the exit rate matrix R, where R(s,s') = r(s) * P(s,s')
+                 */
+                storm::dd::Add<Type, ValueType> computeProbabilityMatrix() const;
 
                 template<typename NewValueType>
                 std::shared_ptr<Ctmc<Type, NewValueType>> toValueType() const;

@@ -9,7 +9,10 @@
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/storage/sparse/StateValuations.h"
+
 #include "storm/utility/OsDetection.h"
+#include "storm/adapters/JsonAdapter.h"
 
 namespace storm {
     namespace modelchecker {
@@ -69,6 +72,8 @@ namespace storm {
             void setScheduler(std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler);
             storm::storage::Scheduler<ValueType> const& getScheduler() const;
             storm::storage::Scheduler<ValueType>& getScheduler();
+            
+            storm::json<ValueType> toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none) const;
             
         private:
             // The values of the quantitative check result.

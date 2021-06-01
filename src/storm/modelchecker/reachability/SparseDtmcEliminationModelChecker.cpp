@@ -494,7 +494,7 @@ namespace storm {
                 for (auto state : ~maybeStates | initialStates) {
                     (*checkResult)[state] = result[state];
                 }
-                return std::move(checkResult);
+                return std::move(checkResult); // move() required by, e.g., clang 3.8
             }
             return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
         }
@@ -591,7 +591,7 @@ namespace storm {
                 for (auto state : ~maybeStates | initialStates) {
                     (*checkResult)[state] = result[state];
                 }
-                return std::move(checkResult);
+                return std::move(checkResult); // move() required by, e.g., clang 3.8
             }
             return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
         }

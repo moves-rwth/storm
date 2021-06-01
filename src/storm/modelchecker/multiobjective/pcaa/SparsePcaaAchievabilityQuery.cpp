@@ -7,6 +7,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 
@@ -56,7 +57,7 @@ namespace storm {
             template <class SparseModelType, typename GeometryValueType>
             bool SparsePcaaAchievabilityQuery<SparseModelType, GeometryValueType>::checkAchievability(Environment const& env) {
                 // repeatedly refine the over/ under approximation until the threshold point is either in the under approx. or not in the over approx.
-                while(!this->maxStepsPerformed(env)){
+                while (!this->maxStepsPerformed(env) && !storm::utility::resources::isTerminate()) {
                     WeightVector separatingVector = this->findSeparatingVector(thresholds);
                     this->updateWeightedPrecision(separatingVector);
                     this->performRefinementStep(env, std::move(separatingVector));
@@ -67,7 +68,7 @@ namespace storm {
                         return true;
                     }
                 }
-                STORM_LOG_ERROR("Could not check whether thresholds are achievable: Exceeded maximum number of refinement steps");
+                STORM_LOG_ERROR("Could not check whether thresholds are achievable: Termination requested or maximum number of refinement steps exceeded.");
                 return false;
             }
 

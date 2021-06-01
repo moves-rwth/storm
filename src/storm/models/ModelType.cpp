@@ -19,6 +19,8 @@ namespace storm {
                 return ModelType::S2pg;
             } else if (type == "POMDP") {
                 return ModelType::Pomdp;
+            } else if (type == "SMG") {
+                return ModelType::Smg;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Type " << type << "not known.");
             }
@@ -43,6 +45,9 @@ namespace storm {
                     break;
                 case ModelType::Pomdp:
                     os << "POMDP";
+                    break;
+                case ModelType::Smg:
+                    os << "SMG";
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unknown model type.");

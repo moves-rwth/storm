@@ -2,11 +2,15 @@
 
 #include "storm/settings/SettingsManager.h"
 
-#include "storm/utility/DirectEncodingExporter.h"
-#include "storm/utility/DDEncodingExporter.h"
-#include "storm/utility/file.h"
+#include "storm/io/DirectEncodingExporter.h"
+#include "storm/io/DDEncodingExporter.h"
+#include "storm/io/file.h"
 #include "storm/utility/macros.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     
@@ -19,10 +23,12 @@ namespace storm {
         void exportJaniModelAsDot(storm::jani::Model const& model, std::string const& filename);
 
         template <typename ValueType>
-        void exportSparseModelAsDrn(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename, std::vector<std::string> const& parameterNames = {}) {
+        void exportSparseModelAsDrn(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename, std::vector<std::string> const& parameterNames = {}, bool allowPlaceholders=true) {
             std::ofstream stream;
             storm::utility::openFile(filename, stream);
-            storm::exporter::explicitExportSparseModel(stream, model, parameterNames);
+            storm::exporter::DirectEncodingOptions options;
+            options.allowPlaceholders = allowPlaceholders;
+            storm::exporter::explicitExportSparseModel(stream, model, parameterNames, options);
             storm::utility::closeFile(stream);
         }
 
@@ -55,6 +61,24 @@ namespace storm {
                 scheduler.printToStream(stream, model);
             }
             storm::utility::closeFile(stream);
+        }
+        
+        template <typename ValueType>
+        inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename) {
+            std::ofstream stream;
+            storm::utility::openFile(filename, stream);
+            if (checkResult->isExplicitQualitativeCheckResult()) {
+                stream << checkResult->asExplicitQualitativeCheckResult().toJson(model->getOptionalStateValuations()).dump(4);
+            } else {
+                STORM_LOG_THROW(checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::NotSupportedException, "Export of check results is only supported for explicit check results (e.g. in the sparse engine)");
+                stream << checkResult->template asExplicitQuantitativeCheckResult<ValueType>().toJson(model->getOptionalStateValuations()).dump(4);
+            }
+            storm::utility::closeFile(stream);
+        }
+        
+        template <>
+        inline void exportCheckResultToJson<storm::RationalFunction>(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&, std::unique_ptr<storm::modelchecker::CheckResult> const&, std::string const&) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of check results is not supported for rational functions. ");
         }
         
     }

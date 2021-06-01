@@ -79,6 +79,18 @@ namespace storm {
                 }
             }
             
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::SparseMatrix<ValueType> Ctmc<ValueType, RewardModelType>::computeProbabilityMatrix() const {
+                // Turn the rates into probabilities by scaling each row with the exit rate of the state.
+                storm::storage::SparseMatrix<ValueType> result(this->getTransitionMatrix());
+                for (uint_fast64_t row = 0; row < result.getRowCount(); ++row) {
+                    for (auto& entry : result.getRow(row)) {
+                        entry.setValue(entry.getValue() / exitRates[row]);
+                    }
+                }
+                return result;
+            }
+            
             template class Ctmc<double>;
 
 #ifdef STORM_HAVE_CARL

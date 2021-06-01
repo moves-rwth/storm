@@ -1,7 +1,7 @@
 #include "PgclParser.h"
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "storm/exceptions/WrongFormatException.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 namespace storm {
     namespace parser {
@@ -111,7 +111,8 @@ namespace storm {
             expression.name("expression");
             booleanCondition  = expressionParser[qi::_val = phoenix::bind(&PgclParser::createBooleanExpression, phoenix::ref(*this), qi::_1)];
             uniformExpression = (qi::lit("unif") >> qi::lit("(") >> qi::int_ >> qi::lit(",") >> qi::int_ >> qi::lit(")"))[qi::_val = phoenix::bind(&PgclParser::createUniformExpression, phoenix::ref(*this), qi::_1, qi::_2)];
-            variableName     %= (+(qi::alnum | qi::lit("_"))) - invalidIdentifiers;
+            variableName     %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&PgclParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
+            
             variableName.name("variable name");
             programName      %= +(qi::alnum | qi::lit("_"));
             programName.name("program name");
@@ -181,6 +182,10 @@ namespace storm {
             return *result;
         }
 
+        bool PgclParser::isValidIdentifier(std::string const& identifier) {
+            return this->invalidIdentifiers.find(identifier) == nullptr;
+        }
+        
         storm::expressions::Variable PgclParser::declareDoubleVariable(std::string const& variableName) {
             storm::expressions::Variable variable = expressionManager->declareRationalVariable(variableName);
             this->identifiers_.add(variableName, variable.getExpression());

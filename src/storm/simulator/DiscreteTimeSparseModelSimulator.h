@@ -19,11 +19,15 @@ namespace storm {
             DiscreteTimeSparseModelSimulator(storm::models::sparse::Model<ValueType, RewardModelType> const& model);
             void setSeed(uint64_t);
             bool step(uint64_t action);
+            bool randomStep();
+            std::vector<ValueType> const& getLastRewards() const;
             uint64_t getCurrentState() const;
             bool resetToInitial();
         protected:
-            uint64_t currentState;
             storm::models::sparse::Model<ValueType, RewardModelType> const& model;
+            uint64_t currentState;
+            std::vector<ValueType> lastRewards;
+            std::vector<ValueType> zeroRewards;
             storm::utility::RandomProbabilityGenerator<ValueType> generator;
         };
     }

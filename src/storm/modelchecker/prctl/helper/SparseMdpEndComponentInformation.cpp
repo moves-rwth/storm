@@ -351,7 +351,7 @@ namespace storm {
                 storm::storage::BitVector maybeStatesWithoutChoice(maybeStates.size(), false);
                 storm::storage::BitVector ecStayChoices(transitionMatrix.getRowCount(), false);
                 auto notInEcResultIt = fromResult.begin();
-                for (auto const& state : maybeStates) {
+                for (auto state : maybeStates) {
                     if (this->isStateInEc(state)) {
                         STORM_LOG_ASSERT(this->getRowGroupAfterElimination(state) >= this->getNumberOfMaybeStatesNotInEc(), "Expected introduced EC states to be located at the end of the matrix.");
                         STORM_LOG_ASSERT(!ecToExitChoicesBefore.empty(), "No EC exit choices available. End Components have probably been build without.");

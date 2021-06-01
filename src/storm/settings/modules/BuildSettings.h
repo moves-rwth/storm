@@ -106,11 +106,20 @@ namespace storm {
                  bool isAddOverlappingGuardsLabelSet() const;
 
                 /*!
+                 * Retrieves whether all labels should be build
+                 */
+                 bool isBuildAllLabelsSet() const;
+
+                /*!
                  * Retrieves the number of bits that should be used to represent unbounded integer variables
                  * @return
                  */
                 uint64_t getBitsForUnboundedVariables() const;
-
+                
+                /*!
+                 * Retrieves whether simplification of symbolic inputs through static analysis shall be disabled
+                 */
+                 bool isNoSimplifySet() const;
 
                 // The name of the module.
                 static const std::string moduleName;

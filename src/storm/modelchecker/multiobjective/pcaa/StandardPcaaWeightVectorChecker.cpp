@@ -11,6 +11,8 @@
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -39,20 +41,20 @@ namespace storm {
             void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) {
                 auto rewardAnalysis = preprocessing::SparseMultiObjectiveRewardAnalysis<SparseModelType>::analyze(preprocessorResult);
                 STORM_LOG_THROW(rewardAnalysis.rewardFinitenessType != preprocessing::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException, "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
-                STORM_LOG_THROW(rewardAnalysis.rewardLessInfinityEStates, storm::exceptions::UnexpectedException, "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
-                STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException, "At least one objective was not reduced to an expected (total or cumulative) reward objective during preprocessing. This is not supported by the considered weight vector checker.");
+                STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException, "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
+                STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException, "At least one objective was not reduced to an expected (long run, total or cumulative) reward objective during preprocessing. This is not supported by the considered weight vector checker.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
 
                 // Build a subsystem of the preprocessor result model that discards states that yield infinite reward for all schedulers.
                 // We can also merge the states that will have reward zero anyway.
-                storm::storage::BitVector maybeStates = rewardAnalysis.rewardLessInfinityEStates.get() & ~rewardAnalysis.reward0AStates;
-                storm::storage::BitVector finiteRewardChoices = preprocessorResult.preprocessedModel->getTransitionMatrix().getRowFilter(rewardAnalysis.rewardLessInfinityEStates.get(), rewardAnalysis.rewardLessInfinityEStates.get());
+                storm::storage::BitVector maybeStates = rewardAnalysis.totalRewardLessInfinityEStates.get() & ~rewardAnalysis.reward0AStates;
+                storm::storage::BitVector finiteTotalRewardChoices = preprocessorResult.preprocessedModel->getTransitionMatrix().getRowFilter(rewardAnalysis.totalRewardLessInfinityEStates.get(), rewardAnalysis.totalRewardLessInfinityEStates.get());
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : this->objectives) {
                     obj.formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
-                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteRewardChoices);
+                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteTotalRewardChoices);
                 
                 // Initialize data specific for the considered model type
                 initializeModelTypeSpecificData(*mergerResult.model);
@@ -60,10 +62,10 @@ namespace storm {
                 // Initilize general data of the model
                 transitionMatrix = std::move(mergerResult.model->getTransitionMatrix());
                 initialState = *mergerResult.model->getInitialStates().begin();
-                reward0EStates = rewardAnalysis.reward0EStates % maybeStates;
+                totalReward0EStates = rewardAnalysis.totalReward0EStates % maybeStates;
                 if (mergerResult.targetState) {
                     // There is an additional state in the result
-                    reward0EStates.resize(reward0EStates.size() + 1, true);
+                    totalReward0EStates.resize(totalReward0EStates.size() + 1, true);
                     
                     // The overapproximation for the possible ec choices consists of the states that can reach the target states with prob. 0 and the target state itself.
                     storm::storage::BitVector targetStateAsVector(transitionMatrix.getRowGroupCount(), false);
@@ -75,6 +77,7 @@ namespace storm {
                 }
                 
                 // set data for unbounded objectives
+                lraObjectives = storm::storage::BitVector(this->objectives.size(), false);
                 objectivesWithNoUpperTimeBound = storm::storage::BitVector(this->objectives.size(), false);
                 actionsWithoutRewardInUnboundedPhase = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
@@ -83,6 +86,17 @@ namespace storm {
                         objectivesWithNoUpperTimeBound.set(objIndex, true);
                         actionsWithoutRewardInUnboundedPhase &= storm::utility::vector::filterZero(actionRewards[objIndex]);
                     }
+                    if (formula.getSubformula().isLongRunAverageRewardFormula()) {
+                        lraObjectives.set(objIndex, true);
+                        objectivesWithNoUpperTimeBound.set(objIndex, true);
+                    }
+                }
+                
+                // Set data for LRA objectives (if available)
+                if (!lraObjectives.empty()) {
+                    lraMecDecomposition = LraMecDecomposition();
+                    lraMecDecomposition->mecs = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, transitionMatrix.transpose(true), storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), actionsWithoutRewardInUnboundedPhase);
+                    lraMecDecomposition->auxMecValues.resize(lraMecDecomposition->mecs.size());
                 }
                 
                 // initialize data for the results
@@ -91,29 +105,63 @@ namespace storm {
                 offsetsToUnderApproximation.resize(this->objectives.size(), storm::utility::zero<ValueType>());
                 offsetsToOverApproximation.resize(this->objectives.size(), storm::utility::zero<ValueType>());
                 optimalChoices.resize(transitionMatrix.getRowGroupCount(), 0);
+                
+                // Print some statistics (if requested)
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Weight Vector Checker Statistics:" << std::endl);
+                    STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states." << std::endl);
+                    STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions." << std::endl);
+                    if (lraMecDecomposition) {
+                        STORM_PRINT_AND_LOG("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis." << std::endl);
+                        uint64_t numLraMecStates = 0;
+                        for (auto const& mec : this->lraMecDecomposition->mecs) {
+                            numLraMecStates += mec.size();
+                        }
+                        STORM_PRINT_AND_LOG(numLraMecStates << " states lie on such an end component." << std::endl);
+                    }
+                    STORM_PRINT_AND_LOG(std::endl);
+                }
             }
 
-            
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
                 checkHasBeenCalled = true;
                 STORM_LOG_INFO("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
                 
+                // Prepare and invoke weighted infinite horizon (long run average) phase
                 std::vector<ValueType> weightedRewardVector(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
-                for (auto objIndex : objectivesWithNoUpperTimeBound) {
+                if (!lraObjectives.empty()) {
+                    boost::optional<std::vector<ValueType>> weightedStateRewardVector;
+                    for (auto objIndex : lraObjectives) {
+                        ValueType weight = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
+                        storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], weight);
+                        if (!stateRewards.empty() && !stateRewards[objIndex].empty()) {
+                            if (!weightedStateRewardVector) {
+                                weightedStateRewardVector = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                            }
+                            storm::utility::vector::addScaledVector(weightedStateRewardVector.get(), stateRewards[objIndex], weight);
+                        }
+                    }
+                    infiniteHorizonWeightedPhase(env, weightedRewardVector, weightedStateRewardVector);
+                    // Clear all values of the weighted reward vector
+                    weightedRewardVector.assign(weightedRewardVector.size(), storm::utility::zero<ValueType>());
+                }
+                
+                // Prepare and invoke weighted indefinite horizon (unbounded total reward) phase
+                auto totalRewardObjectives = objectivesWithNoUpperTimeBound & ~lraObjectives;
+                for (auto objIndex : totalRewardObjectives) {
                     if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
                         storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], -weightVector[objIndex]);
                     } else {
                         storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], weightVector[objIndex]);
                     }
                 }
-                
                 unboundedWeightedPhase(env, weightedRewardVector, weightVector);
                 
                 unboundedIndividualPhase(env, weightVector);
                 // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
                 for (auto const& obj : this->objectives) {
-                    if (!obj.formula->getSubformula().isTotalRewardFormula()) {
+                    if (!obj.formula->getSubformula().isTotalRewardFormula() && !obj.formula->getSubformula().isLongRunAverageRewardFormula()) {
                         boundedPhase(env, weightVector, weightedRewardVector);
                         break;
                     }
@@ -151,7 +199,7 @@ namespace storm {
             storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType> StandardPcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
                 STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 for (auto const& obj : this->objectives) {
-                    STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula(), storm::exceptions::NotImplementedException, "Scheduler retrival is only implemented for objectives without time-bound.");
+                    STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isLongRunAverageRewardFormula(), storm::exceptions::NotImplementedException, "Scheduler retrival is only implemented for objectives without time-bound.");
                 }
                 
                 storm::storage::Scheduler<ValueType> result(this->optimalChoices.size());
@@ -161,6 +209,71 @@ namespace storm {
                     ++state;
                 }
                 return result;
+            }
+            
+            template <typename ValueType>
+            void computeSchedulerProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& consideredStates, storm::storage::BitVector const& statesToReach, std::vector<uint64_t>& choices, storm::storage::BitVector const* allowedChoices = nullptr) {
+                
+                std::vector<uint64_t> stack;
+                storm::storage::BitVector processedStates = statesToReach;
+                stack.insert(stack.end(), processedStates.begin(), processedStates.end());
+                uint64_t currentState = 0;
+                
+                while (!stack.empty()) {
+                    currentState = stack.back();
+                    stack.pop_back();
+                    
+                    for (auto const& predecessorEntry : backwardTransitions.getRow(currentState)) {
+                        auto predecessor = predecessorEntry.getColumn();
+                        if (consideredStates.get(predecessor) & !processedStates.get(predecessor)) {
+                            // Find a choice leading to an already processed state (such a choice has to exist since this is a predecessor of the currentState)
+                            auto const& groupStart = transitionMatrix.getRowGroupIndices()[predecessor];
+                            auto const& groupEnd = transitionMatrix.getRowGroupIndices()[predecessor + 1];
+                            uint64_t row = allowedChoices ? allowedChoices->getNextSetIndex(groupStart) : groupStart;
+                            for (; row < groupEnd; row = allowedChoices ? allowedChoices->getNextSetIndex(row + 1) : row + 1) {
+                                bool hasSuccessorInProcessedStates = false;
+                                for (auto const& successorOfPredecessor : transitionMatrix.getRow(row)) {
+                                    if (processedStates.get(successorOfPredecessor.getColumn())) {
+                                        hasSuccessorInProcessedStates = true;
+                                        break;
+                                    }
+                                }
+                                if (hasSuccessorInProcessedStates) {
+                                    choices[predecessor] = row - groupStart;
+                                    processedStates.set(predecessor, true);
+                                    stack.push_back(predecessor);
+                                    break;
+                                }
+                            }
+                            STORM_LOG_ASSERT(allowedChoices || row < groupEnd, "Unable to find choice at a predecessor of a processed state that leads to a processed state.");
+                        }
+                    }
+                }
+                STORM_LOG_ASSERT(consideredStates.isSubsetOf(processedStates), "Not all states have been processed.");
+            }
+            
+            template <typename ValueType>
+            void computeSchedulerProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& consideredStates, storm::storage::BitVector const& statesToAvoid, storm::storage::BitVector const& allowedChoices, std::vector<uint64_t>& choices) {
+                
+                for (auto state : consideredStates) {
+                    auto const& groupStart = transitionMatrix.getRowGroupIndices()[state];
+                    auto const& groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
+                    bool choiceFound = false;
+                    for (uint64_t row = allowedChoices.getNextSetIndex(groupStart); row < groupEnd; row = allowedChoices.getNextSetIndex(row + 1)) {
+                        choiceFound = true;
+                        for (auto const& element : transitionMatrix.getRow(row)) {
+                            if (statesToAvoid.get(element.getColumn())) {
+                                choiceFound = false;
+                                break;
+                            }
+                        }
+                        if (choiceFound) {
+                            choices[state] = row - groupStart;
+                            break;
+                        }
+                    }
+                    STORM_LOG_ASSERT(choiceFound, "Unable to find choice for a state.");
+                }
             }
             
             template <typename ValueType>
@@ -175,50 +288,110 @@ namespace storm {
                         processedStates.set(state, true);
                     }
                 }
-                std::vector<uint64_t> stack(processedStates.begin(), processedStates.end());
-                while (!stack.empty()) {
-                    uint64_t current = stack.back();
-                    stack.pop_back();
-                    STORM_LOG_ASSERT(processedStates.get(current), "states on the stack shall be processed.");
-                    for (auto const& entry : backwardsTransitions.getRow(current)) {
-                        uint64_t pred = entry.getColumn();
-                        if (!processedStates.get(pred)) {
-                            // Find a choice that leads to a processed state
-                            uint64_t predChoice = groups[pred];
-                            bool foundSuccessor = false;
-                            for (; predChoice < groups[pred + 1]; ++predChoice) {
-                                for (auto const& predEntry : matrix.getRow(predChoice)) {
-                                    if (processedStates.get(predEntry.getColumn())) {
-                                        foundSuccessor = true;
-                                        break;
-                                    }
-                                }
-                                if (foundSuccessor) {
-                                    break;
-                                }
-                            }
-                            STORM_LOG_ASSERT(foundSuccessor && predChoice < groups[pred + 1], "Predecessor of a processed state should have a processed successor");
-                            result[pred] = predChoice - groups[pred];
-                            processedStates.set(pred, true);
-                            stack.push_back(pred);
-                        }
-                    }
-                }
+                
+                computeSchedulerProb1(matrix, backwardsTransitions, ~processedStates, processedStates, result);
                 return result;
+            }
+            
+            
+            
+            /*!
+             * Computes a scheduler taking the choices from the given set only finitely often
+             * @param safeStates it is assumed that reaching such a state is unproblematic. The choice for these states is not set.
+             * @pre such a scheduler exists
+             */
+            template <typename ValueType>
+            void computeSchedulerFinitelyOften(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& finitelyOftenChoices, storm::storage::BitVector safeStates, std::vector<uint64_t>& choices) {
+                auto badStates = transitionMatrix.getRowGroupFilter(finitelyOftenChoices, true) & ~safeStates;
+                // badStates shall only be reached finitely often
+                
+                auto reachBadWithProbGreater0AStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, ~safeStates, badStates, false, 0, ~finitelyOftenChoices);
+                // States in ~reachBadWithProbGreater0AStates can avoid bad states forever by only taking ~finitelyOftenChoices.
+                // We compute a scheduler for these states achieving exactly this (but we exclude the safe states)
+                auto avoidBadStates = ~reachBadWithProbGreater0AStates & ~safeStates;
+                computeSchedulerProb0(transitionMatrix, backwardTransitions, avoidBadStates, reachBadWithProbGreater0AStates, ~finitelyOftenChoices, choices);
+                
+                // We need to take care of states that will reach a bad state with prob greater 0 (including the bad states themselves).
+                // due to the precondition, we know that it has to be possible to eventually avoid the bad states for ever.
+                // Perform a backwards search from the avoid states and store choices with prob. 1
+                computeSchedulerProb1(transitionMatrix, backwardTransitions, reachBadWithProbGreater0AStates, avoidBadStates | safeStates, choices);
+            }
+            
+            template <class SparseModelType>
+            void StandardPcaaWeightVectorChecker<SparseModelType>::infiniteHorizonWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedActionRewardVector, boost::optional<std::vector<ValueType>> const& weightedStateRewardVector) {
+                // Compute the optimal (weighted) lra value for each mec, keeping track of the optimal choices
+                STORM_LOG_ASSERT(lraMecDecomposition, "Mec decomposition for lra computations not initialized.");
+                storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper = createNondetInfiniteHorizonHelper(this->transitionMatrix);
+                helper.provideLongRunComponentDecomposition(lraMecDecomposition->mecs);
+                helper.setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
+                helper.setProduceScheduler(true);
+                for (uint64_t mecIndex = 0; mecIndex < lraMecDecomposition->mecs.size(); ++mecIndex) {
+                    auto const& mec = lraMecDecomposition->mecs[mecIndex];
+                    auto actionValueGetter = [&weightedActionRewardVector] (uint64_t const& a) { return weightedActionRewardVector[a]; };
+                    typename storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>::ValueGetter stateValueGetter;
+                    if (weightedStateRewardVector) {
+                        stateValueGetter = [&weightedStateRewardVector] (uint64_t const& s) { return weightedStateRewardVector.get()[s]; };
+                    } else {
+                        stateValueGetter = [] (uint64_t const&) { return storm::utility::zero<ValueType>(); };
+                    }
+                    lraMecDecomposition->auxMecValues[mecIndex] = helper.computeLraForComponent(env, stateValueGetter, actionValueGetter, mec);
+                }
+                // Extract the produced optimal choices for the MECs
+                this->optimalChoices = std::move(helper.getProducedOptimalChoices());
             }
             
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
-                
-                if (this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
-                    this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                    this->optimalChoices = std::vector<uint_fast64_t>(transitionMatrix.getRowGroupCount(), 0);
+                // Catch the case where all values on the RHS of the MinMax equation system are zero.
+                if (this->objectivesWithNoUpperTimeBound.empty() || ((this->lraObjectives.empty() || !storm::utility::vector::hasNonZeroEntry(lraMecDecomposition->auxMecValues)) && !storm::utility::vector::hasNonZeroEntry(weightedRewardVector))) {
+                    this->weightedResult.assign(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                    storm::storage::BitVector statesInLraMec(transitionMatrix.getRowGroupCount(), false);
+                    if (this->lraMecDecomposition) {
+                        for (auto const& mec : this->lraMecDecomposition->mecs) {
+                            for (auto const& sc : mec) {
+                                statesInLraMec.set(sc.first, true);
+                            }
+                        }
+                    }
+                    // Get an arbitrary scheduler that yields finite reward for all objectives
+                    computeSchedulerFinitelyOften(transitionMatrix, transitionMatrix.transpose(true), ~actionsWithoutRewardInUnboundedPhase, statesInLraMec, this->optimalChoices);
                     return;
                 }
                 
                 updateEcQuotient(weightedRewardVector);
                 
+                // Set up the choice values
                 storm::utility::vector::selectVectorValues(ecQuotient->auxChoiceValues, ecQuotient->ecqToOriginalChoiceMapping, weightedRewardVector);
+                std::map<uint64_t, uint64_t> ecqStateToOptimalMecMap;
+                if (!lraObjectives.empty()) {
+                    // We also need to assign a value for each ecQuotientChoice that corresponds to "staying" in the eliminated EC. (at this point these choices should all have a value of zero).
+                    // Since each of the eliminated ECs has to contain *at least* one LRA EC, we need to find the largest value among the contained LRA ECs
+                    storm::storage::BitVector foundEcqChoices(ecQuotient->matrix.getRowCount(), false); // keeps track of choices we have already seen before
+                    for (uint64_t mecIndex = 0; mecIndex < lraMecDecomposition->mecs.size(); ++mecIndex) {
+                        auto const& mec = lraMecDecomposition->mecs[mecIndex];
+                        auto const& mecValue = lraMecDecomposition->auxMecValues[mecIndex];
+                        uint64_t ecqState = ecQuotient->originalToEcqStateMapping[mec.begin()->first];
+                        if (ecqState >= ecQuotient->matrix.getRowGroupCount()) {
+                            // The mec was not part of the ecquotient. This means that it must have value 0.
+                            // No further processing is needed.
+                            continue;
+                        }
+                        uint64_t ecqChoice = ecQuotient->ecqStayInEcChoices.getNextSetIndex(ecQuotient->matrix.getRowGroupIndices()[ecqState]);
+                        STORM_LOG_ASSERT(ecqChoice < ecQuotient->matrix.getRowGroupIndices()[ecqState + 1], "Unable to find choice that represents staying inside the (eliminated) ec.");
+                        auto& ecqChoiceValue = ecQuotient->auxChoiceValues[ecqChoice];
+                        auto insertionRes = ecqStateToOptimalMecMap.emplace(ecqState, mecIndex);
+                        if (insertionRes.second) {
+                            // We have seen this ecqState for the first time.
+                            STORM_LOG_ASSERT(storm::utility::isZero(ecqChoiceValue), "Expected a total reward of zero for choices that represent staying in an EC for ever.");
+                            ecqChoiceValue = mecValue;
+                        } else {
+                            if (mecValue > ecqChoiceValue) { // found a larger value
+                                ecqChoiceValue = mecValue;
+                                insertionRes.first->second = mecIndex;
+                            }
+                        }
+                    }
+                }
                 
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(env, ecQuotient->matrix);
@@ -246,7 +419,7 @@ namespace storm {
                 solver->solveEquations(env, ecQuotient->auxStateValues, ecQuotient->auxChoiceValues);
                 this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount());
                 
-                transformReducedSolutionToOriginalModel(ecQuotient->matrix, ecQuotient->auxStateValues, solver->getSchedulerChoices(), ecQuotient->ecqToOriginalChoiceMapping, ecQuotient->originalToEcqStateMapping, this->weightedResult, this->optimalChoices);
+                transformEcqSolutionToOriginalModel(ecQuotient->auxStateValues, solver->getSchedulerChoices(), ecqStateToOptimalMecMap, this->weightedResult, this->optimalChoices);
             }
             
             template <class SparseModelType>
@@ -263,11 +436,14 @@ namespace storm {
                        }
                    }
                 } else {
-                   storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, true);
+                   storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, false);
                    storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
-                   std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());
+                   std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount()); // allocate here
                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
 
+                   auto infiniteHorizonHelper = createDetInfiniteHorizonHelper(deterministicMatrix);
+                   infiniteHorizonHelper.provideBackwardTransitions(deterministicBackwardTransitions);
+                   
                    // We compute an estimate for the results of the individual objectives which is obtained from the weighted result and the result of the objectives computed so far.
                    // Note that weightedResult = Sum_{i=1}^{n} w_i * objectiveResult_i.
                    std::vector<ValueType> weightedSumOfUncheckedObjectives = weightedResult;
@@ -278,58 +454,68 @@ namespace storm {
                        if (objectivesWithNoUpperTimeBound.get(objIndex)) {
                            offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
                            offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
-                           storm::utility::vector::selectVectorValues(deterministicStateRewards, this->optimalChoices, transitionMatrix.getRowGroupIndices(), actionRewards[objIndex]);
-                           storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
-                           // As maybestates we pick the states from which a state with reward is reachable
-                           storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
-
-                           // Compute the estimate for this objective
-                           if (!storm::utility::isZero(weightVector[objIndex])) {
-                               objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
-                               ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
-                               if (storm::solver::minimize(obj.formula->getOptimalityType())) {
-                                   scalingFactor *= -storm::utility::one<ValueType>();
+                           if (lraObjectives.get(objIndex)) {
+                               auto actionValueGetter = [&] (uint64_t const& a) { return actionRewards[objIndex][transitionMatrix.getRowGroupIndices()[a] + this->optimalChoices[a]]; };
+                               typename storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>::ValueGetter stateValueGetter;
+                               if (stateRewards.empty() || stateRewards[objIndex].empty()) {
+                                   stateValueGetter = [] (uint64_t const&) { return storm::utility::zero<ValueType>(); };
+                               } else {
+                                   stateValueGetter = [&] (uint64_t const& s) { return stateRewards[objIndex][s]; };
                                }
-                               storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], scalingFactor);
-                               storm::utility::vector::clip(objectiveResults[objIndex], obj.lowerResultBound, obj.upperResultBound);
+                               objectiveResults[objIndex] = infiniteHorizonHelper.computeLongRunAverageValues(env, stateValueGetter, actionValueGetter);
+                           } else { // i.e. a total reward objective
+                               storm::utility::vector::selectVectorValues(deterministicStateRewards, this->optimalChoices, transitionMatrix.getRowGroupIndices(), actionRewards[objIndex]);
+                               storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
+                               // As maybestates we pick the states from which a state with reward is reachable
+                               storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
+    
+                               // Compute the estimate for this objective
+                               if (!storm::utility::isZero(weightVector[objIndex])) {
+                                   objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
+                                   ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
+                                   if (storm::solver::minimize(obj.formula->getOptimalityType())) {
+                                       scalingFactor *= -storm::utility::one<ValueType>();
+                                   }
+                                   storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], scalingFactor);
+                                   storm::utility::vector::clip(objectiveResults[objIndex], obj.lowerResultBound, obj.upperResultBound);
+                               }
+                               // Make sure that the objectiveResult is initialized correctly
+                               objectiveResults[objIndex].resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+    
+                               if (!maybeStates.empty()) {
+                                   bool needEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                                   storm::storage::SparseMatrix<ValueType> submatrix = deterministicMatrix.getSubmatrix(
+                                           true, maybeStates, maybeStates, needEquationSystem);
+                                   if (needEquationSystem) {
+                                       // Converting the matrix from the fixpoint notation to the form needed for the equation
+                                       // system. That is, we go from x = A*x + b to (I-A)x = b.
+                                       submatrix.convertToEquationSystem();
+                                   }
+    
+                                   // Prepare solution vector and rhs of the equation system.
+                                   std::vector<ValueType> x = storm::utility::vector::filterVector(objectiveResults[objIndex], maybeStates);
+                                   std::vector<ValueType> b = storm::utility::vector::filterVector(deterministicStateRewards, maybeStates);
+    
+                                   // Now solve the resulting equation system.
+                                   std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, submatrix);
+                                   auto req = solver->getRequirements(env);
+                                   solver->clearBounds();
+                                   storm::storage::BitVector submatrixRowsWithSumLessOne = deterministicMatrix.getRowFilter(maybeStates, maybeStates) % maybeStates;
+                                   submatrixRowsWithSumLessOne.complement();
+                                   this->setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
+                                   if (solver->hasLowerBound()) {
+                                       req.clearLowerBounds();
+                                   }
+                                   if (solver->hasUpperBound()) {
+                                       req.clearUpperBounds();
+                                   }
+                                   STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
+                                   solver->solveEquations(env, x, b);
+                                   // Set the result for this objective accordingly
+                                   storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);
+                               }
+                               storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], ~maybeStates, storm::utility::zero<ValueType>());
                            }
-                           // Make sure that the objectiveResult is initialized correctly
-                           objectiveResults[objIndex].resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-
-                           if (!maybeStates.empty()) {
-                               bool needEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
-                               storm::storage::SparseMatrix<ValueType> submatrix = deterministicMatrix.getSubmatrix(
-                                       true, maybeStates, maybeStates, needEquationSystem);
-                               if (needEquationSystem) {
-                                   // Converting the matrix from the fixpoint notation to the form needed for the equation
-                                   // system. That is, we go from x = A*x + b to (I-A)x = b.
-                                   submatrix.convertToEquationSystem();
-                               }
-
-                               // Prepare solution vector and rhs of the equation system.
-                               std::vector<ValueType> x = storm::utility::vector::filterVector(objectiveResults[objIndex], maybeStates);
-                               std::vector<ValueType> b = storm::utility::vector::filterVector(deterministicStateRewards, maybeStates);
-
-                               // Now solve the resulting equation system.
-                               std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, submatrix);
-                               auto req = solver->getRequirements(env);
-                               solver->clearBounds();
-                               storm::storage::BitVector submatrixRowsWithSumLessOne = deterministicMatrix.getRowFilter(maybeStates, maybeStates) % maybeStates;
-                               submatrixRowsWithSumLessOne.complement();
-                               this->setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
-                               if (solver->hasLowerBound()) {
-                                   req.clearLowerBounds();
-                               }
-                               if (solver->hasUpperBound()) {
-                                   req.clearUpperBounds();
-                               }
-                               STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
-                               solver->solveEquations(env, x, b);
-                               // Set the result for this objective accordingly
-                               storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);
-                           }
-                           storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], ~maybeStates, storm::utility::zero<ValueType>());
-
                            // Update the estimate for the next objectives.
                            if (!storm::utility::isZero(weightVector[objIndex])) {
                                storm::utility::vector::addScaledVector(weightedSumOfUncheckedObjectives, objectiveResults[objIndex], -weightVector[objIndex]);
@@ -345,20 +531,32 @@ namespace storm {
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::updateEcQuotient(std::vector<ValueType> const& weightedRewardVector) {
                 // Check whether we need to update the currently cached ecElimResult
-                storm::storage::BitVector newReward0Choices = storm::utility::vector::filterZero(weightedRewardVector);
+                storm::storage::BitVector newTotalReward0Choices = storm::utility::vector::filterZero(weightedRewardVector);
+                storm::storage::BitVector zeroLraRewardChoices(weightedRewardVector.size(), true);
+                if (lraMecDecomposition) {
+                    for (uint64_t mecIndex = 0; mecIndex < lraMecDecomposition->mecs.size(); ++mecIndex) {
+                        if (!storm::utility::isZero(lraMecDecomposition->auxMecValues[mecIndex])) {
+                            // The mec has a non-zero value, so flag all its choices as non-zero
+                            auto const& mec = lraMecDecomposition->mecs[mecIndex];
+                            for (auto const& stateChoices : mec) {
+                                for (auto const& choice : stateChoices.second) {
+                                    zeroLraRewardChoices.set(choice, false);
+                                }
+                            }
+                        }
+                    }
+                }
+                storm::storage::BitVector newReward0Choices = newTotalReward0Choices & zeroLraRewardChoices;
                 if (!ecQuotient || ecQuotient->origReward0Choices != newReward0Choices) {
                     
                     // It is sufficient to consider the states from which a transition with non-zero reward is reachable. (The remaining states always have reward zero).
-                    storm::storage::BitVector nonZeroRewardStates(transitionMatrix.getRowGroupCount(), false);
-                    for (uint_fast64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state){
-                        if (newReward0Choices.getNextUnsetIndex(transitionMatrix.getRowGroupIndices()[state]) < transitionMatrix.getRowGroupIndices()[state+1]) {
-                            nonZeroRewardStates.set(state);
-                        }
-                    }
+                    auto nonZeroRewardStates = transitionMatrix.getRowGroupFilter(newReward0Choices, true);
+                    nonZeroRewardStates.complement();
                     storm::storage::BitVector subsystemStates = storm::utility::graph::performProbGreater0E(transitionMatrix.transpose(true), storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), nonZeroRewardStates);
                 
-                    // Remove neutral end components, i.e., ECs in which no reward is earned.
-                    auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(transitionMatrix, subsystemStates, ecChoicesHint & newReward0Choices, reward0EStates);
+                    // Remove neutral end components, i.e., ECs in which no total reward is earned.
+                    // Note that such ECs contain one (or maybe more) LRA ECs.
+                    auto ecElimResult = storm::transformer::EndComponentEliminator<ValueType>::transform(transitionMatrix, subsystemStates, ecChoicesHint & newTotalReward0Choices, totalReward0EStates);
                     
                     storm::storage::BitVector rowsWithSumLessOne(ecElimResult.matrix.getRowCount(), false);
                     for (uint64_t row = 0; row < rowsWithSumLessOne.size(); ++row) {
@@ -378,12 +576,19 @@ namespace storm {
                     ecQuotient->matrix = std::move(ecElimResult.matrix);
                     ecQuotient->ecqToOriginalChoiceMapping = std::move(ecElimResult.newToOldRowMapping);
                     ecQuotient->originalToEcqStateMapping = std::move(ecElimResult.oldToNewStateMapping);
+                    ecQuotient->ecqToOriginalStateMapping.resize(ecQuotient->matrix.getRowGroupCount());
+                    for (uint64_t state = 0; state < ecQuotient->originalToEcqStateMapping.size(); ++state) {
+                        uint64_t ecqState = ecQuotient->originalToEcqStateMapping[state];
+                        if (ecqState < ecQuotient->matrix.getRowGroupCount()) {
+                            ecQuotient->ecqToOriginalStateMapping[ecqState].insert(state);
+                        }
+                    }
+                    ecQuotient->ecqStayInEcChoices = std::move(ecElimResult.sinkRows);
                     ecQuotient->origReward0Choices = std::move(newReward0Choices);
                     ecQuotient->rowsWithSumLessOne = std::move(rowsWithSumLessOne);
-                    ecQuotient->auxStateValues.reserve(transitionMatrix.getRowGroupCount());
                     ecQuotient->auxStateValues.resize(ecQuotient->matrix.getRowGroupCount());
-                    ecQuotient->auxChoiceValues.reserve(transitionMatrix.getRowCount());
                     ecQuotient->auxChoiceValues.resize(ecQuotient->matrix.getRowCount());
+                    
                 }
             }
 
@@ -405,14 +610,26 @@ namespace storm {
             
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::setBoundsToSolver(storm::solver::AbstractEquationSolver<ValueType>& solver, bool requiresLower, bool requiresUpper, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter, storm::storage::SparseMatrix<ValueType> const& transitions, storm::storage::BitVector const& rowsWithSumLessOne, std::vector<ValueType> const& rewards) const {
-                
+
                 // Check whether bounds are already available
-                boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, objectiveFilter);
+                boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, objectiveFilter & ~lraObjectives);
                 if (lowerBound) {
+                    if (!lraObjectives.empty()) {
+                        auto min = std::min_element(lraMecDecomposition->auxMecValues.begin(), lraMecDecomposition->auxMecValues.end());
+                        if (min != lraMecDecomposition->auxMecValues.end()) {
+                            lowerBound.get() += *min;
+                        }
+                    }
                     solver.setLowerBound(lowerBound.get());
                 }
                 boost::optional<ValueType> upperBound = this->computeWeightedResultBound(false, weightVector, objectiveFilter);
                 if (upperBound) {
+                    if (!lraObjectives.empty()) {
+                        auto max = std::max_element(lraMecDecomposition->auxMecValues.begin(), lraMecDecomposition->auxMecValues.end());
+                        if (max != lraMecDecomposition->auxMecValues.end()) {
+                            upperBound.get() += *max;
+                        }
+                    }
                     solver.setUpperBound(upperBound.get());
                 }
                 
@@ -426,7 +643,7 @@ namespace storm {
 
                 // Compute the one step target probs
                 std::vector<ValueType> oneStepTargetProbs(transitions.getRowCount(), storm::utility::zero<ValueType>());
-                for (auto const& row : rowsWithSumLessOne) {
+                for (auto row : rowsWithSumLessOne) {
                     oneStepTargetProbs[row] = storm::utility::one<ValueType>() - transitions.getRowSum(row);
                 }
                 
@@ -474,99 +691,153 @@ namespace storm {
             }
             
             template <class SparseModelType>
-            void StandardPcaaWeightVectorChecker<SparseModelType>::transformReducedSolutionToOriginalModel(storm::storage::SparseMatrix<ValueType> const& reducedMatrix,
-                                                         std::vector<ValueType> const& reducedSolution,
-                                                         std::vector<uint_fast64_t> const& reducedOptimalChoices,
-                                                         std::vector<uint_fast64_t> const& reducedToOriginalChoiceMapping,
-                                                         std::vector<uint_fast64_t> const& originalToReducedStateMapping,
-                                                         std::vector<ValueType>& originalSolution,
-                                                         std::vector<uint_fast64_t>& originalOptimalChoices) const {
+            void StandardPcaaWeightVectorChecker<SparseModelType>::transformEcqSolutionToOriginalModel(std::vector<ValueType> const& ecqSolution,
+                                                             std::vector<uint_fast64_t> const& ecqOptimalChoices,
+                                                             std::map<uint64_t, uint64_t> const& ecqStateToOptimalMecMap,
+                                                             std::vector<ValueType>& originalSolution,
+                                                             std::vector<uint_fast64_t>& originalOptimalChoices) const {
                 
-                storm::storage::BitVector bottomStates(transitionMatrix.getRowGroupCount(), false);
-                storm::storage::BitVector statesThatShouldStayInTheirEC(transitionMatrix.getRowGroupCount(), false);
-                storm::storage::BitVector statesWithUndefSched(transitionMatrix.getRowGroupCount(), false);
+                auto backwardsTransitions = transitionMatrix.transpose(true);
                 
-                // Handle all the states for which the choice in the original model is uniquely given by the choice in the reduced model
-                // Also store some information regarding the remaining states
-                for (uint_fast64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
-                    // Check if the state exists in the reduced model, i.e., the mapping retrieves a valid index
-                    uint_fast64_t stateInReducedModel = originalToReducedStateMapping[state];
-                    if (stateInReducedModel < reducedMatrix.getRowGroupCount()) {
-                        originalSolution[state] = reducedSolution[stateInReducedModel];
-                        uint_fast64_t chosenRowInReducedModel = reducedMatrix.getRowGroupIndices()[stateInReducedModel] + reducedOptimalChoices[stateInReducedModel];
-                        uint_fast64_t chosenRowInOriginalModel = reducedToOriginalChoiceMapping[chosenRowInReducedModel];
-                        // Check if the state is a bottom state, i.e., the chosen row stays inside its EC.
-                        bool stateIsBottom = reward0EStates.get(state);
-                        for (auto const& entry : transitionMatrix.getRow(chosenRowInOriginalModel)) {
-                            stateIsBottom &= originalToReducedStateMapping[entry.getColumn()] == stateInReducedModel;
-                        }
-                        if (stateIsBottom) {
-                            bottomStates.set(state);
-                            statesThatShouldStayInTheirEC.set(state);
-                        } else {
-                            // Check if the chosen row originaly belonged to the current state (and not to another state of the EC)
-                            if (chosenRowInOriginalModel >= transitionMatrix.getRowGroupIndices()[state] &&
-                               chosenRowInOriginalModel <  transitionMatrix.getRowGroupIndices()[state+1]) {
-                                originalOptimalChoices[state] = chosenRowInOriginalModel - transitionMatrix.getRowGroupIndices()[state];
+                // Keep track of states for which no choice has been set yet.
+                storm::storage::BitVector unprocessedStates(transitionMatrix.getRowGroupCount(), true);
+                
+                // For each eliminated ec, keep track of the states (within the ec) that we want to reach and the states for which a choice needs to be set
+                // (Declared already at this point to avoid expensive allocations in each loop iteration)
+                storm::storage::BitVector ecStatesToReach(transitionMatrix.getRowGroupCount(), false);
+                storm::storage::BitVector ecStatesToProcess(transitionMatrix.getRowGroupCount(), false);
+                
+                // Run through each state of the ec quotient as well as the associated state(s) of the original model
+                for (uint64_t ecqState = 0; ecqState < ecqSolution.size(); ++ecqState) {
+                    uint64_t ecqChoice = ecQuotient->matrix.getRowGroupIndices()[ecqState] + ecqOptimalChoices[ecqState];
+                    uint_fast64_t origChoice = ecQuotient->ecqToOriginalChoiceMapping[ecqChoice];
+                    auto const& origStates = ecQuotient->ecqToOriginalStateMapping[ecqState];
+                    STORM_LOG_ASSERT(!origStates.empty(), "Unexpected empty set of original states.");
+                    if (ecQuotient->ecqStayInEcChoices.get(ecqChoice)) {
+                        // We stay in the current state(s) forever (End component)
+                        // We need to set choices in a way that (i) the optimal LRA Mec is reached (if there is any) and (ii) 0 total reward is collected.
+                        if (!ecqStateToOptimalMecMap.empty()) {
+                            // The current ecqState represents an elimnated EC and we need to stay in this EC and we need to make sure that optimal MEC decisions are performed within this EC.
+                            STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC");
+                            auto const& lraMec = lraMecDecomposition->mecs[ecqStateToOptimalMecMap.at(ecqState)];
+                            if (lraMec.size() == origStates.size()) {
+                                // LRA mec and eliminated EC coincide
+                                for (auto const& state : origStates) {
+                                    STORM_LOG_ASSERT(lraMec.containsState(state), "Expected state to be contained in the lra mec.");
+                                    // Note that the optimal choice for this state has already been set in the infinite horizon phase.
+                                    unprocessedStates.set(state, false);
+                                    originalSolution[state] = ecqSolution[ecqState];
+                                }
                             } else {
-                                statesWithUndefSched.set(state);
-                                statesThatShouldStayInTheirEC.set(state);
+                                // LRA mec is proper subset of eliminated ec. There are also other states for which we have to set choices leading to the LRA MEC inside.
+                                STORM_LOG_ASSERT(lraMec.size() < origStates.size(), "Lra Mec (" << lraMec.size() << " states) should be a proper subset of the eliminated ec (" << origStates.size() << " states).");
+                                for (auto const& state : origStates) {
+                                    if (lraMec.containsState(state)) {
+                                        ecStatesToReach.set(state, true);
+                                        // Note that the optimal choice for this state has already been set in the infinite horizon phase.
+                                    } else {
+                                        ecStatesToProcess.set(state, true);
+                                    }
+                                    unprocessedStates.set(state, false);
+                                    originalSolution[state] = ecqSolution[ecqState];
+                                }
+                                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices);
+                                // Clear bitvectors for next ecqState.
+                                ecStatesToProcess.clear();
+                                ecStatesToReach.clear();
                             }
+                        } else {
+                            // If there is no LRA Mec to reach, we just need to make sure that finite total reward is collected for all objectives
+                            // In this branch our BitVectors have a slightly different meaning, so we create more readable aliases
+                            storm::storage::BitVector& ecStatesToAvoid = ecStatesToReach;
+                            bool needSchedulerComputation = false;
+                            STORM_LOG_ASSERT(storm::utility::isZero(ecqSolution[ecqState]), "Solution for state that stays inside EC must be zero. Got " << ecqSolution[ecqState] << " instead.");
+                            for (auto const& state : origStates) {
+                                originalSolution[state] = storm::utility::zero<ValueType>(); // i.e. ecqSolution[ecqState];
+                                ecStatesToProcess.set(state, true);
+                            }
+                            auto validChoices = transitionMatrix.getRowFilter(ecStatesToProcess, ecStatesToProcess);
+                            auto valid0RewardChoices = validChoices & actionsWithoutRewardInUnboundedPhase;
+                            for (auto const& state : origStates) {
+                                auto groupStart = transitionMatrix.getRowGroupIndices()[state];
+                                auto groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
+                                auto nextValidChoice = valid0RewardChoices.getNextSetIndex(groupStart);
+                                if (nextValidChoice < groupEnd) {
+                                    originalOptimalChoices[state] = nextValidChoice - groupStart;
+                                } else {
+                                    // this state should not be reached infinitely often
+                                    ecStatesToAvoid.set(state, true);
+                                    needSchedulerComputation = true;
+                                }
+                            }
+                            if (needSchedulerComputation) {
+                                // There are ec states which we should not visit infinitely often
+                                auto ecStatesThatCanAvoid = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardsTransitions, ecStatesToProcess, ecStatesToAvoid, false, 0, valid0RewardChoices);
+                                ecStatesThatCanAvoid.complement();
+                                // Set the choice for all states that can achieve value 0
+                                computeSchedulerProb0(transitionMatrix, backwardsTransitions, ecStatesThatCanAvoid, ecStatesToAvoid, valid0RewardChoices, originalOptimalChoices);
+                                // Set the choice for all remaining states
+                                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess & ~ecStatesToAvoid, ecStatesToAvoid, originalOptimalChoices, &validChoices);
+                            }
+                            ecStatesToAvoid.clear();
+                            ecStatesToProcess.clear();
                         }
                     } else {
-                        // if the state does not exist in the reduced model, it means that the (weighted) result is always zero, independent of the scheduler.
-                        originalSolution[state] = storm::utility::zero<ValueType>();
-                        // However, it might be the case that infinite reward is induced for an objective with weight 0.
-                        // To avoid this, all possible bottom states are made bottom and the remaining states have to reach a bottom state with prob. one
-                        if (reward0EStates.get(state)) {
-                            bottomStates.set(state);
+                        // We eventually leave the current state(s)
+                        // In this case, we can safely take the origChoice at the corresponding state (say 's').
+                        // For all other origStates associated with ecqState (if there are any), we make sure that the state 's' is reached almost surely.
+                        if (origStates.size() > 1) {
+                            for (auto const& state : origStates) {
+                                // Check if the orig choice originates from this state
+                                auto groupStart = transitionMatrix.getRowGroupIndices()[state];
+                                auto groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
+                                if (origChoice >= groupStart && origChoice < groupEnd) {
+                                    originalOptimalChoices[state] = origChoice - groupStart;
+                                    ecStatesToReach.set(state, true);
+                                } else {
+                                    STORM_LOG_ASSERT(origStates.size() > 1, "Multiple original states expected.");
+                                    ecStatesToProcess.set(state, true);
+                                }
+                                unprocessedStates.set(state, false);
+                                originalSolution[state] = ecqSolution[ecqState];
+                            }
+                            computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices);
+                            // Clear bitvectors for next ecqState.
+                            ecStatesToProcess.clear();
+                            ecStatesToReach.clear();
                         } else {
-                            statesWithUndefSched.set(state);
+                            // There is just one state so we take the associated choice.
+                            auto state = *origStates.begin();
+                            auto groupStart = transitionMatrix.getRowGroupIndices()[state];
+                            STORM_LOG_ASSERT(origChoice >= groupStart && origChoice < transitionMatrix.getRowGroupIndices()[state + 1], "Invalid choice: " << originalOptimalChoices[state] << " at a state with " << transitionMatrix.getRowGroupSize(state) << " choices.");
+                            originalOptimalChoices[state] = origChoice - groupStart;
+                            originalSolution[state] = ecqSolution[ecqState];
+                            unprocessedStates.set(state, false);
                         }
                     }
                 }
                 
-                // Handle bottom states
-                for (auto state : bottomStates) {
-                    bool foundRowForState = false;
-                    // Find a row with zero rewards that only leads to bottom states.
-                    // If the state should stay in its EC, we also need to make sure that all successors map to the same state in the reduced model
-                    uint_fast64_t stateInReducedModel = originalToReducedStateMapping[state];
-                    for (uint_fast64_t row = transitionMatrix.getRowGroupIndices()[state]; row < transitionMatrix.getRowGroupIndices()[state+1]; ++row) {
-                        bool rowOnlyLeadsToBottomStates = true;
-                        bool rowStaysInEC = true;
-                        for ( auto const& entry : transitionMatrix.getRow(row)) {
-                            rowOnlyLeadsToBottomStates &= bottomStates.get(entry.getColumn());
-                            rowStaysInEC &= originalToReducedStateMapping[entry.getColumn()] == stateInReducedModel;
-                        }
-                        if (rowOnlyLeadsToBottomStates && (rowStaysInEC || !statesThatShouldStayInTheirEC.get(state)) && actionsWithoutRewardInUnboundedPhase.get(row)) {
-                            foundRowForState = true;
-                            originalOptimalChoices[state] = row - transitionMatrix.getRowGroupIndices()[state];
-                            break;
-                        }
-                    }
-                    STORM_LOG_ASSERT(foundRowForState, "Could not find a suitable choice for a bottom state.");
-                }
-                
-                // Handle remaining states with still undef. scheduler (either EC states or non-subsystem states)
-                while(!statesWithUndefSched.empty()) {
-                    for (auto state : statesWithUndefSched) {
-                        // Iteratively Try to find a choice such that at least one successor has a defined scheduler.
-                        uint_fast64_t stateInReducedModel = originalToReducedStateMapping[state];
-                        for (uint_fast64_t row = transitionMatrix.getRowGroupIndices()[state]; row < transitionMatrix.getRowGroupIndices()[state+1]; ++row) {
-                            bool rowStaysInEC = true;
-                            bool rowLeadsToDefinedScheduler = false;
-                            for (auto const& entry : transitionMatrix.getRow(row)) {
-                                rowStaysInEC &= ( stateInReducedModel == originalToReducedStateMapping[entry.getColumn()]);
-                                rowLeadsToDefinedScheduler |= !statesWithUndefSched.get(entry.getColumn());
-                            }
-                            if (rowLeadsToDefinedScheduler && (rowStaysInEC || !statesThatShouldStayInTheirEC.get(state))) {
-                                originalOptimalChoices[state] = row - transitionMatrix.getRowGroupIndices()[state];
-                                statesWithUndefSched.set(state, false);
+                // The states that still not have been processed, there is no associated state of the ec quotient.
+                // This is because the value for these states will be 0 under all (lra optimal-) schedulers.
+                storm::utility::vector::setVectorValues(originalSolution, unprocessedStates, storm::utility::zero<ValueType>());
+                // Get a set of states for which we know that no reward (for all objectives) will be collected
+                if (this->lraMecDecomposition) {
+                    // In this case, all unprocessed non-lra mec states should reach an (unprocessed) lra mec
+                    for (auto const& mec : this->lraMecDecomposition->mecs) {
+                        for (auto const& sc : mec) {
+                            if (unprocessedStates.get(sc.first)) {
+                                ecStatesToReach.set(sc.first, true);
                             }
                         }
                     }
+                } else {
+                    ecStatesToReach = unprocessedStates & totalReward0EStates;
+                    // Set a scheduler for the ecStates that we want to reach
+                    computeSchedulerProb0(transitionMatrix, backwardsTransitions, ecStatesToReach, ~unprocessedStates | ~totalReward0EStates, actionsWithoutRewardInUnboundedPhase, originalOptimalChoices);
                 }
+                unprocessedStates &= ~ecStatesToReach;
+                // Set a scheduler for the remaining states
+                computeSchedulerProb1(transitionMatrix, backwardsTransitions, unprocessedStates, ecStatesToReach, originalOptimalChoices);
             }
             
             

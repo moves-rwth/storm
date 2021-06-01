@@ -10,6 +10,7 @@
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
+#include "storm-dft/utility/RelevantEvents.h"
 
 
 namespace storm {
@@ -206,8 +207,6 @@ namespace storm {
                         break;
                     }
                         //BEs
-                    case storage::DFTElementType::BE_EXP:
-                    case storage::DFTElementType::BE_CONST:
                     case storage::DFTElementType::BE: {
                         auto be = std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(currentElement);
                         dynamicBehaviorVector[be->id()] = true;
@@ -416,7 +415,7 @@ namespace storm {
                 } else {
                     STORM_LOG_ASSERT(isBasicElement(child->id()), "Child is no BE.");
                     if (getBasicElement(child->id())->hasIngoingDependencies()) {
-                        STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                        STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                         return {*this};
                     } else {
                         isubdft = {child->id()};
@@ -506,8 +505,7 @@ namespace storm {
                     case DFTElementType::OR:
                         builder.addOrElement(newParentName, childrenNames);
                         break;
-                    case DFTElementType::BE_EXP:
-                    case DFTElementType::BE_CONST:
+                    case DFTElementType::BE:
                     case DFTElementType::VOT:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -548,8 +546,7 @@ namespace storm {
                     case DFTElementType::AND:
                     case DFTElementType::OR:
                     case DFTElementType::VOT:
-                    case DFTElementType::BE_EXP:
-                    case DFTElementType::BE_CONST:
+                    case DFTElementType::BE:
                         break;
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -577,8 +574,7 @@ namespace storm {
                     case DFTElementType::VOT:
                         ++noStatic;
                         break;
-                    case DFTElementType::BE_EXP:
-                    case DFTElementType::BE_CONST:
+                    case DFTElementType::BE:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
                     case DFTElementType::POR:
@@ -701,13 +697,7 @@ namespace storm {
                     stream << storm::storage::toChar(DFTState<ValueType>::getElementState(status, stateGenerationInfo, elem->id()));
                     if (elem->isSpareGate()) {
                         stream << "[";
-                        size_t nrUsedChild = status.getAsInt(stateGenerationInfo.getSpareUsageIndex(elem->id()), stateGenerationInfo.usageInfoBits());
-                        size_t useId;
-                        if (nrUsedChild == getMaxSpareChildCount()) {
-                            useId = elem->id();
-                        } else {
-                            useId = getChild(elem->id(), nrUsedChild);
-                        }
+                        size_t useId = this->uses(status, stateGenerationInfo, elem->id());
                         if (useId == elem->id() || status[stateGenerationInfo.getSpareActivationIndex(useId)]) {
                             stream << "actively ";
                         }
@@ -765,14 +755,17 @@ namespace storm {
             // Check independence of spare modules
             // TODO: comparing one element of each spare module sufficient?
             for (auto module1 = mSpareModules.begin(); module1 != mSpareModules.end(); ++module1) {
-                size_t firstElement = module1->second.front();
-                for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
-                    if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
-                        if (!wellformed) {
-                            stream << std::endl;
+                if (!module1->second.empty()) {
+                    // Empty modules are allowed for the primary module of a spare gate
+                    size_t firstElement = module1->second.front();
+                    for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
+                        if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
+                            if (!wellformed) {
+                                stream << std::endl;
+                            }
+                            stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
+                            wellformed = false;
                         }
-                        stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
-                        wellformed = false;
                     }
                 }
             }
@@ -806,6 +799,11 @@ namespace storm {
             STORM_LOG_TRACE("Considering ids " << index1 << ", " << index2 << " for isomorphism.");
             bool sharedSpareMode = false;
             std::map<size_t, size_t> bijection;
+
+            if (getElement(index1)->isRelevant() || getElement(index2)->isRelevant()) {
+                // Relevant events need to be uniquely identified and cannot be symmetric.
+                return {};
+            }
 
             if (isBasicElement(index1)) {
                 if (!isBasicElement(index2)) {
@@ -1029,6 +1027,11 @@ namespace storm {
         }
 
         template<typename ValueType>
+        bool DFT<ValueType>::existsName(std::string const& name) const {
+            return std::find_if(mElements.begin(), mElements.end(), [&name](DFTElementPointer const& e) { return e->name() == name; }) != mElements.end();
+        }
+
+        template<typename ValueType>
         size_t DFT<ValueType>::getIndex(std::string const& name) const {
             auto iter = std::find_if(mElements.begin(), mElements.end(), [&name](DFTElementPointer const& e) { return e->name() == name; });
             STORM_LOG_THROW(iter != mElements.end(), storm::exceptions::InvalidArgumentException, "Event name '" << name << "' not known.");
@@ -1036,14 +1039,15 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const {
+        void DFT<ValueType>::setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents, bool const allowDCForRelevant) const {
             mRelevantEvents.clear();
+            STORM_LOG_THROW(relevantEvents.checkRelevantNames(*this), storm::exceptions::InvalidArgumentException, "One of the relevant elements does not exist.");
             // Top level element is first element
             mRelevantEvents.push_back(this->getTopLevelIndex());
-            for (auto const& elem : mElements) {
-                if (relevantEvents.find(elem->id()) != relevantEvents.end() || elem->id() == this->getTopLevelIndex()) {
+            for (auto& elem : mElements) {
+                if (relevantEvents.isRelevant(elem->name()) || elem->id() == this->getTopLevelIndex()) {
                     elem->setRelevance(true);
-                    elem->setAllowDC(allowDCForRelevantEvents);
+                    elem->setAllowDC(allowDCForRelevant);
                     if (elem->id() != this->getTopLevelIndex()) {
                         // Top level element was already added
                         mRelevantEvents.push_back(elem->id());
@@ -1089,8 +1093,7 @@ namespace storm {
             size_t noRestriction = 0;
             for (auto const& elem : mElements) {
                 switch (elem->type()) {
-                    case DFTElementType::BE_EXP:
-                    case DFTElementType::BE_CONST:
+                    case DFTElementType::BE:
                         ++noBE;
                         break;
                     case DFTElementType::AND:

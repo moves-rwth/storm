@@ -1,4 +1,5 @@
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/modelchecker/helper/finitehorizon/SparseDeterministicStepBoundedHorizonHelper.h"
 
 #include <vector>
 #include <memory>
@@ -13,6 +14,8 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/QuantileHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -68,15 +71,17 @@ namespace storm {
                 auto numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeRewardBoundedValues(env, this->getModel(), formula);
                 return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
             } else {
-                STORM_LOG_THROW(!pathFormula.hasLowerBound() && pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have single upper time bound.");
-                STORM_LOG_THROW(pathFormula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have discrete upper time bound.");
+                STORM_LOG_THROW(pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have (a single) upper step bound.");
+                STORM_LOG_THROW(pathFormula.hasIntegerLowerBound(), storm::exceptions::InvalidPropertyException, "Formula lower step bound must be discrete/integral.");
+                STORM_LOG_THROW(pathFormula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have discrete upper step bound.");
                 std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
                 std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
                 ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
                 ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-                std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeStepBoundedUntilProbabilities(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getNonStrictUpperBound<uint64_t>(), checkTask.getHint());
+                storm::modelchecker::helper::SparseDeterministicStepBoundedHorizonHelper<ValueType> helper;
+                std::vector<ValueType> numericResult = helper.compute(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getNonStrictLowerBound<uint64_t>(), pathFormula.getNonStrictUpperBound<uint64_t>(), checkTask.getHint());
                 std::unique_ptr<CheckResult> result = std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
-               return result;
+                return result;
             }
         }
         
@@ -166,18 +171,25 @@ namespace storm {
 
         template<typename SparseDtmcModelType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeLongRunAverageProbabilities(Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
+            
             storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
-            ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageProbabilities<ValueType>(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), nullptr);
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+			std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
+			ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+			
+			storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+			auto values = helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
+			
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(values)));
         }
         
         template<typename SparseDtmcModelType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType>(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), this->getModel().getTransitionMatrix(), rewardModel.get(), nullptr);
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+			auto values = helper.computeLongRunAverageRewards(env, rewardModel.get());
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(values)));
         }
         
         template<typename SparseDtmcModelType>
@@ -231,6 +243,28 @@ namespace storm {
                 return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<ValueType>(initialState, std::move(res)));
             }
         }
+        
+        template <typename SparseCtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseCtmcModelType>::computeSteadyStateDistribution(Environment const& env) {
+            // Initialize helper
+            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix());
+            
+            // Compute result
+            std::vector<ValueType> result;
+            auto const& initialStates = this->getModel().getInitialStates();
+            uint64_t numInitStates = initialStates.getNumberOfSetBits();
+            if (numInitStates == 1) {
+                result = helper.computeLongRunAverageStateDistribution(env, *initialStates.begin());
+            } else {
+                STORM_LOG_WARN("Multiple initial states found. A uniform distribution over initial states is assumed.");
+                ValueType initProb = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(numInitStates);
+                result = helper.computeLongRunAverageStateDistribution(env, [&initialStates,&initProb](uint64_t const& stateIndex) { return initialStates.get(stateIndex) ? initProb : storm::utility::zero<ValueType>(); });
+            }
+
+            // Return CheckResult
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+        }
+
         
         template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>;
 

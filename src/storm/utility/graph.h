@@ -3,6 +3,7 @@
 
 #include <set>
 #include <limits>
+#include <storm/storage/StronglyConnectedComponent.h>
 
 #include "storm/utility/OsDetection.h"
 
@@ -406,6 +407,7 @@ namespace storm {
              * @param psiStates The set of all states satisfying psi.
              * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
              * @param maximalSteps The maximal number of steps to reach the psi states.
+             * @param choiceConstraint If set, we assume that only the specified choices exist in the model
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
@@ -704,6 +706,9 @@ namespace storm {
              */
             template <typename T>
             std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates = {}) ;
+
+            template <typename T>
+            std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& firstStates) ;
 
         } // namespace graph
     } // namespace utility

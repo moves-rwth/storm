@@ -24,7 +24,9 @@ namespace storm {
         // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
             BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable);
-            
+
+            std::string const& getName() const { return variable.getName(); }
+
             // The boolean variable.
             storm::expressions::Variable variable;
             
@@ -42,6 +44,8 @@ namespace storm {
         struct IntegerVariableInformation {
 
             IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global = false, bool observable = true, bool forceOutOfBoundsCheck = false);
+
+            std::string const& getName() const { return variable.getName(); }
 
             // The integer variable.
             storm::expressions::Variable variable;
@@ -85,10 +89,16 @@ namespace storm {
 
             bool observable;
         };
+
+        struct ObservationLabelInformation {
+            ObservationLabelInformation(std::string const& name);
+            std::string name;
+            bool deterministic = true;
+        };
         
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
-            VariableInformation(storm::prism::Program const& program, bool outOfBoundsState = false);
+            VariableInformation(storm::prism::Program const& program, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState = false);
             VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState);
             
             VariableInformation() = default;
@@ -109,7 +119,10 @@ namespace storm {
             
             /// The integer variables.
             std::vector<IntegerVariableInformation> integerVariables;
-            
+
+            /// The observation labels
+            std::vector<ObservationLabelInformation> observationLabels;
+
             /// Replacements for each array variable
             std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
 

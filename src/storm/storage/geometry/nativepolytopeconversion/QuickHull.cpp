@@ -117,7 +117,7 @@ namespace storm {
                     vectorMatrix.col(i) << points[subset[i]], storm::utility::one<ValueType>();
                 }
                 vectorMatrix.col(subset.size()) << points[item], storm::utility::one<ValueType>();
-                return (vectorMatrix.fullPivLu().rank() > (StormEigen::Index) subset.size());
+                return (vectorMatrix.fullPivLu().rank() > (Eigen::Index) subset.size());
             }
 
             template<typename ValueType>
@@ -172,7 +172,7 @@ namespace storm {
                 // clear the additionally added points. Note that the order of the points might have changed
                 storm::storage::BitVector keptPoints(points.size(), true);
                 for (uint_fast64_t pointIndex = 0; pointIndex < points.size(); ++pointIndex) {
-                    for (StormEigen::Index row = 0; row < resultMatrix.rows(); ++row) {
+                    for (Eigen::Index row = 0; row < resultMatrix.rows(); ++row) {
                         if ((resultMatrix.row(row) * points[pointIndex])(0) > resultVector(row)) {
                             keptPoints.set(pointIndex, false);
                             break;
@@ -184,7 +184,7 @@ namespace storm {
                 if (generateRelevantVerticesAndVertexSets) {
                     storm::storage::BitVector keptVertices(relevantVertices.size(), true);
                     for (uint_fast64_t vertexIndex = 0; vertexIndex < relevantVertices.size(); ++vertexIndex) {
-                        for (StormEigen::Index row = 0; row < resultMatrix.rows(); ++row) {
+                        for (Eigen::Index row = 0; row < resultMatrix.rows(); ++row) {
                             if ((resultMatrix.row(row) * relevantVertices[vertexIndex])(0) > resultVector(row)) {
                                 keptVertices.set(vertexIndex, false);
                                 break;
@@ -228,7 +228,7 @@ namespace storm {
 
                 //Found candidates. Now swap them to the front.
                 const uint_fast64_t numOfGoodCandidates = goodCandidates.getNumberOfSetBits();
-                for ( auto const& goodCandidate : goodCandidates) {
+                for ( auto goodCandidate : goodCandidates) {
                     if (goodCandidate >= numOfGoodCandidates) {
                         uint_fast64_t notGoodCandidate = *notGoodCandidates.begin();
                         assert(notGoodCandidate < numOfGoodCandidates);
@@ -389,7 +389,7 @@ namespace storm {
                     std::unordered_map<EigenVector, std::vector<uint_fast64_t>> relevantVerticesMap;
                     relevantVerticesMap.reserve(points.size());
                     for (uint_fast64_t vertexIndex = 0; vertexIndex < hyperplanesOnVertexCounter.size(); ++vertexIndex){
-                        if ((StormEigen::Index) hyperplanesOnVertexCounter[vertexIndex] >= points.front().rows()){
+                        if ((Eigen::Index) hyperplanesOnVertexCounter[vertexIndex] >= points.front().rows()){
                             auto mapEntry = relevantVerticesMap.insert(typename std::unordered_map<EigenVector, std::vector<uint_fast64_t>>::value_type(points[vertexIndex], std::vector<uint_fast64_t>())).first;
                             mapEntry->second.push_back(vertexIndex);
                         }
@@ -408,7 +408,7 @@ namespace storm {
                     for (auto& vertexVector : vertexSets){
                         std::set<uint_fast64_t> vertexSet;
                         for (auto const& oldIndex : vertexVector){
-                            if ((StormEigen::Index) hyperplanesOnVertexCounter[oldIndex] >= points.front().rows()){
+                            if ((Eigen::Index) hyperplanesOnVertexCounter[oldIndex] >= points.front().rows()){
                                 vertexSet.insert(oldToNewIndexMapping[oldIndex]);
                             }
                         }

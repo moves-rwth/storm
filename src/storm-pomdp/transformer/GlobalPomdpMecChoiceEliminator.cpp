@@ -84,7 +84,9 @@ namespace storm {
             }
             
             ChoiceSelector<ValueType> cs(pomdp);
-            return cs.transform(choiceFilter)->template as<storm::models::sparse::Pomdp<ValueType>>();
+            auto res =  cs.transform(choiceFilter)->template as<storm::models::sparse::Pomdp<ValueType>>();
+            res->setIsCanonic();
+            return res;
         }
         
         template<typename ValueType>
@@ -122,7 +124,9 @@ namespace storm {
             }
             
             ChoiceSelector<ValueType> cs(pomdp);
-            return cs.transform(choiceFilter)->template as<storm::models::sparse::Pomdp<ValueType>>();
+            auto res =  cs.transform(choiceFilter)->template as<storm::models::sparse::Pomdp<ValueType>>();
+            res->setIsCanonic();
+            return res;
         }
         
         template<typename ValueType>
@@ -225,5 +229,8 @@ namespace storm {
 
         
         template class GlobalPomdpMecChoiceEliminator<storm::RationalNumber>;
+
+        template
+        class GlobalPomdpMecChoiceEliminator<double>;
     }
 }

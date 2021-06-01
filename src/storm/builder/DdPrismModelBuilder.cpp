@@ -56,7 +56,7 @@ namespace storm {
             void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
                 for (auto const& constant : program.getConstants()) {
                     if (!constant.isDefined()) {
-                        storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                        storm::RationalFunctionVariable carlVariable = storm::createRFVariable(constant.getExpressionVariable().getName());
                         parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -541,7 +541,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         bool DdPrismModelBuilder<Type, ValueType>::canHandle(storm::prism::Program const& program) {
-            return program.getModelType() != storm::prism::Program::ModelType::PTA;
+            return !program.hasUnboundedVariables() && (program.getModelType() != storm::prism::Program::ModelType::PTA);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1166,14 +1166,14 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        void checkRewards(storm::dd::Add<Type, ValueType> const& rewards) {
-            STORM_LOG_WARN_COND(rewards.getMin() >= 0, "The reward model assigns negative rewards to some states.");
-            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model does not assign any non-zero rewards.");
+        void checkRewards(storm::dd::Add<Type, ValueType> const& rewards, std::string const& rewardType) {
+            STORM_LOG_WARN_COND(rewards.getMin() >= 0, "The reward model assigns negative " << rewardType << " to some states.");
+            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model declares " << rewardType << " but does not assign any non-zero values.");
         }
         
         template <storm::dd::DdType Type>
-        void checkRewards(storm::dd::Add<Type, storm::RationalFunction> const& rewards) {
-            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model does not assign any non-zero rewards.");
+        void checkRewards(storm::dd::Add<Type, storm::RationalFunction> const& rewards, std::string const& rewardType) {
+            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model declares " << rewardType << " but does not assign any non-zero values.");
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1191,12 +1191,11 @@ namespace storm {
                     // Restrict the rewards to those states that satisfy the condition.
                     rewards = reachableStatesAdd * states * rewards;
                     
-                    // Perform some sanity checks.
-                    checkRewards(rewards);
-                    
                     // Add the rewards to the global state reward vector.
                     stateRewards.get() += rewards;
                 }
+                // Perform some sanity checks.
+                checkRewards(stateRewards.get(), "state rewards");
             }
             
             // Next, build the state-action reward vector.
@@ -1228,9 +1227,6 @@ namespace storm {
                         stateActionRewardDd *= actionDd.transitionsDd.sumAbstract(generationInfo.columnMetaVariables);
                     }
                     
-                    // Perform some sanity checks.
-                    checkRewards(stateActionRewardDd);
-                    
                     // Add the rewards to the global transition reward matrix.
                     stateActionRewards.get() += stateActionRewardDd;
                 }
@@ -1243,6 +1239,9 @@ namespace storm {
                     
                     stateActionRewards.get() /= stateActionDd.get();
                 }
+                
+                // Perform some sanity checks.
+                checkRewards(stateActionRewards.get(), "action rewards");
             }
             
             // Then build the transition reward matrix.
@@ -1279,12 +1278,12 @@ namespace storm {
                         transitionRewardDd = transitions.notZero().template toAdd<ValueType>() * transitionRewardDd;
                     }
                     
-                    // Perform some sanity checks.
-                    checkRewards(transitionRewardDd);
-                    
                     // Add the rewards to the global transition reward matrix.
                     transitionRewards.get() += transitionRewardDd;
                 }
+            
+                // Perform some sanity checks.
+                checkRewards(transitionRewards.get(), "transition rewards");
                 
                 // Scale transition rewards for DTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
@@ -1312,6 +1311,7 @@ namespace storm {
                 stream << ".";
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
             }
+            STORM_LOG_THROW(!program.hasUnboundedVariables(), storm::exceptions::InvalidArgumentException, "Program contains unbounded variables which is not supported by the DD engine.");
             
             STORM_LOG_TRACE("Building representation of program:" << std::endl << program << std::endl);
             
@@ -1349,7 +1349,7 @@ namespace storm {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             
-            storm::dd::Bdd<Type> reachableStates = storm::utility::dd::computeReachableStates<Type>(initialStates, transitionMatrixBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
+            storm::dd::Bdd<Type> reachableStates = storm::utility::dd::computeReachableStates<Type>(initialStates, transitionMatrixBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables).first;
             storm::dd::Add<Type, ValueType> reachableStatesAdd = reachableStates.template toAdd<ValueType>();
             transitionMatrix *= reachableStatesAdd;
             if (system.stateActionDd) {

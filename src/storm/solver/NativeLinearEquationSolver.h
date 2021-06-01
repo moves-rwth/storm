@@ -9,6 +9,7 @@
 #include "storm/solver/NativeMultiplier.h"
 #include "storm/solver/SolverStatus.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "storm/solver/helper/OptimisticValueIterationHelper.h"
 
 #include "storm/utility/NumberTraits.h"
 
@@ -96,6 +97,7 @@ namespace storm {
             // cached auxiliary data
             mutable std::unique_ptr<std::vector<ValueType>> cachedRowVector2; // A.getRowCount() rows
             mutable std::unique_ptr<storm::solver::helper::SoundValueIterationHelper<ValueType>> soundValueIterationHelper;
+            mutable std::unique_ptr<storm::solver::helper::OptimisticValueIterationHelper<ValueType>> optimisticValueIterationHelper;
             
             struct JacobiDecomposition {
                 JacobiDecomposition(Environment const& env, storm::storage::SparseMatrix<ValueType> const& A);

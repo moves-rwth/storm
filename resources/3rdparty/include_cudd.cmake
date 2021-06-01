@@ -34,13 +34,25 @@ if (CMAKE_OSX_SYSROOT)
     set(CUDD_INCLUDE_FLAGS "CPPFLAGS=--sysroot=${CMAKE_OSX_SYSROOT}")
 endif()
 
+set(CUDD_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0.0.12000032)
+		if (CMAKE_HOST_SYSTEM_VERSION VERSION_GREATER_EQUAL 20.1.0)
+			message(WARNING "There are some known issues compiling CUDD on some setups. We implemented a workaround that mostly works, but if you still have problems compiling CUDD, especially if you do not use the default compiler of your system, please contact the Storm developers.")
+			# The issue is known to occur using the Command Line Tools for XCode 12.2. Apparently, it is fixed in the beta for XCode 12.3. 
+			set(CUDD_CXX_COMPILER "c++")
+		endif()
+	endif()
+endif()
+
+
 ExternalProject_Add(
         cudd3
         DOWNLOAD_COMMAND ""
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0
         PATCH_COMMAND ${AUTORECONF}
-        CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure --enable-shared --enable-obj --with-pic=yes --prefix=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0 --libdir=${CUDD_LIB_DIR} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ${CUDD_INCLUDE_FLAGS}
+        CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure --enable-shared --enable-obj --with-pic=yes --prefix=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0 --libdir=${CUDD_LIB_DIR} CC=${CMAKE_C_COMPILER} CXX=${CUDD_CXX_COMPILER} ${CUDD_INCLUDE_FLAGS}
         BUILD_COMMAND make ${STORM_CUDD_FLAGS}
         INSTALL_COMMAND make install
         BUILD_IN_SOURCE 0

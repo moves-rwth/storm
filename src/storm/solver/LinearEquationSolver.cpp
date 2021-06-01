@@ -112,7 +112,12 @@ namespace storm {
             
              // Adjust the solver type if it is not supported by this value type
             if (type == EquationSolverType::Gmmxx || type == EquationSolverType::Native) {
-                STORM_LOG_INFO("Selecting '" + toString(EquationSolverType::Eigen) + "' as the linear equation solver since the previously selected one (" << toString(type) << ") does not support parametric computations.");
+                if (env.solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
+                    STORM_LOG_INFO("Selecting '" + toString(EquationSolverType::Eigen) + "' as the linear equation solver since the previously selected one (" << toString(type) << ") does not support parametric computations.");
+                } else {
+                    // Be more verbose if the user set the solver explicitly
+                    STORM_LOG_WARN("The selected linear equation solver (" << toString(type) << ") does not support parametric computations. Falling back to " << toString(EquationSolverType::Eigen) << ".");
+                }
                 type = EquationSolverType::Eigen;
             }
            

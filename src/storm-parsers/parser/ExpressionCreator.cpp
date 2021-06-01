@@ -130,7 +130,7 @@ namespace storm {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
-                        case storm::expressions::OperatorType::Power: return e1 ^ e2; break;
+                        case storm::expressions::OperatorType::Power: return storm::expressions::pow(e1, e2, true); break;
                         case storm::expressions::OperatorType::Modulo: return e1 % e2; break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
@@ -141,18 +141,18 @@ namespace storm {
             return manager.boolean(false);
         }
         
-        storm::expressions::Expression ExpressionCreator::createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1, bool& pass) const {
+        storm::expressions::Expression ExpressionCreator::createUnaryExpression(std::vector<storm::expressions::OperatorType> const& operatorTypes, storm::expressions::Expression const& e1, bool& pass) const {
             if (this->createExpressions) {
                 try {
-                    if (operatorType) {
-                        switch (operatorType.get()) {
-                            case storm::expressions::OperatorType::Not: return !e1; break;
-                            case storm::expressions::OperatorType::Minus: return -e1; break;
+                    storm::expressions::Expression result = e1;
+                    for (auto const& op : operatorTypes) {
+                        switch (op) {
+                            case storm::expressions::OperatorType::Not: result = !result; break;
+                            case storm::expressions::OperatorType::Minus: result = -result; break;
                             default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                         }
-                    } else {
-                        return e1;
                     }
+                    return result;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     pass = false;
                 }
@@ -173,7 +173,7 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int value, bool&) const {
+        storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int64_t value, bool&) const {
             if (this->createExpressions) {
                 return manager.integer(value);
             } else {

@@ -2,7 +2,7 @@
 
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/eigen.h"
+#include "storm/adapters/eigen.h"
 
 namespace storm {
     namespace storage {
@@ -89,10 +89,10 @@ namespace storm {
             }
 
             template class SubsetEnumerator<std::nullptr_t>;
-            template class SubsetEnumerator<std::vector<StormEigen::Matrix<double, StormEigen::Dynamic, 1>>>;
-            template class SubsetEnumerator<std::vector<StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, 1>>>;
-            template class SubsetEnumerator<StormEigen::Matrix<double, StormEigen::Dynamic, StormEigen::Dynamic>>;
-            template class SubsetEnumerator<StormEigen::Matrix<storm::RationalNumber, StormEigen::Dynamic, StormEigen::Dynamic>>;
+            template class SubsetEnumerator<std::vector<Eigen::Matrix<double, Eigen::Dynamic, 1>>>;
+            template class SubsetEnumerator<std::vector<Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>>>;
+            template class SubsetEnumerator<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>;
+            template class SubsetEnumerator<Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, Eigen::Dynamic>>;
         }
     }
 }

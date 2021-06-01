@@ -41,9 +41,10 @@ void processOptions() {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model given.");
     }
 
-    // DFT statistics
-    if (dftIOSettings.isDisplayStatsSet()) {
+    // Show statistics about DFT (number of gates, etc.)
+    if (dftIOSettings.isShowDftStatisticsSet()) {
         dft->writeStatsToStream(std::cout);
+        std::cout << std::endl;
     }
 
     // Export to json
@@ -132,47 +133,27 @@ void processOptions() {
     // Apply transformations
     // TODO transform later before actual analysis
     dft = storm::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true);
+    STORM_LOG_DEBUG(dft->getElementsString());
 
-
-    dft->setDynamicBehaviorInfo();
-
-    storm::api::PreprocessingResult preResults;
+    // Compute minimal number of BE failures leading to system failure and
+    // maximal number of BE failures not leading to system failure yet.
     // TODO: always needed?
-    preResults.lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(*dft, useSMT, solverTimeout);
-    preResults.upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(*dft, useSMT, solverTimeout);
-    STORM_LOG_DEBUG("BE failure bounds" << std::endl << "========================================" << std::endl <<
-                                        "Lower bound: " << std::to_string(preResults.lowerBEBound) << std::endl <<
-                                        "Upper bound: " << std::to_string(preResults.upperBEBound));
+    auto bounds = storm::api::computeBEFailureBounds(*dft, useSMT, solverTimeout);
+    STORM_LOG_DEBUG("BE failure bounds: lower bound: " << bounds.first << ", upper bound: " << bounds.second << ".");
 
-    // TODO: move into API call?
-    preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(*dft, useSMT, solverTimeout);
-
-    if (preResults.fdepConflicts.empty()) {
-        STORM_LOG_DEBUG("No FDEP conflicts found");
+    // Check which FDEPs actually introduce conflicts which need non-deterministic resolution
+    bool hasConflicts = storm::api::computeDependencyConflicts(*dft, useSMT, solverTimeout);
+    if (hasConflicts) {
+        STORM_LOG_DEBUG("FDEP conflicts found.");
     } else {
-        STORM_LOG_DEBUG("========================================" << std::endl << "FDEP CONFLICTS" << std::endl << "========================================");
-    }
-    for (auto pair: preResults.fdepConflicts) {
-        STORM_LOG_DEBUG("Conflict between " << dft->getElement(pair.first)->name() << " and " << dft->getElement(pair.second)->name());
-    }
-
-    // Set the conflict map of the dft
-    std::set<size_t> conflict_set;
-    for (auto conflict : preResults.fdepConflicts) {
-        conflict_set.insert(size_t(conflict.first));
-        conflict_set.insert(size_t(conflict.second));
-    }
-    for (size_t depId : dft->getDependencies()) {
-        if (!conflict_set.count(depId)) {
-            dft->setDependencyNotInConflict(depId);
-        }
+        STORM_LOG_DEBUG("No FDEP conflicts found.");
     }
 
 
 #ifdef STORM_HAVE_Z3
     if (useSMT) {
         // Solve with SMT
-        STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
+        STORM_LOG_DEBUG("Running DFT analysis with use of SMT.");
         // Set dynamic behavior vector
         storm::api::analyzeDFTSMT(*dft, true);
     }
@@ -227,54 +208,16 @@ void processOptions() {
 
 
     // Set relevant event names
-    std::vector<std::string> relevantEventNames;
-    //Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
+    std::vector<std::string> additionalRelevantEventNames;
     if (faultTreeSettings.areRelevantEventsSet()) {
-        relevantEventNames = faultTreeSettings.getRelevantEvents();
+        //Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
+        additionalRelevantEventNames = faultTreeSettings.getRelevantEvents();
     } else if (faultTreeSettings.isDisableDC()) {
         // All events are relevant
-        relevantEventNames = {"all"};
+        additionalRelevantEventNames = {"all"};
     }
+    storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames);
 
-    // Events from properties are relevant as well
-    // Get necessary labels from properties
-    std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
-    for (auto property : props) {
-        property->gatherAtomicLabelFormulas(atomicLabels);
-    }
-    // Add relevant event names from properties
-    for (auto atomic : atomicLabels) {
-        std::string label = atomic->getLabel();
-        if (label == "failed" or label == "skipped") {
-            // Ignore as these label will always be added if necessary
-        } else {
-            // Get name of event
-            if (boost::ends_with(label, "_failed")) {
-                relevantEventNames.push_back(label.substr(0, label.size() - 7));
-            } else if (boost::ends_with(label, "_dc")) {
-                relevantEventNames.push_back(label.substr(0, label.size() - 3));
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");
-            }
-        }
-    }
-
-    // Set relevant elements
-    std::set<size_t> relevantEvents; // Per default no event (except the toplevel event) is relevant
-    for (std::string const& relevantName : relevantEventNames) {
-        if (relevantName == "none") {
-            // Only toplevel event is relevant
-            relevantEvents = {};
-            break;
-        } else if (relevantName == "all") {
-            // All events are relevant
-            relevantEvents = dft->getAllIds();
-            break;
-        } else {
-            // Find and add corresponding event id
-            relevantEvents.insert(dft->getIndex(relevantName));
-        }
-    }
 
     // Analyze DFT
     // TODO allow building of state space even without properties
@@ -285,9 +228,7 @@ void processOptions() {
         if (faultTreeSettings.isApproximationErrorSet()) {
             approximationError = faultTreeSettings.getApproximationError();
         }
-        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents,
-                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(),
-                                          transformationSettings.isChainEliminationSet(), transformationSettings.getLabelBehavior(), true);
+        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents, faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(), transformationSettings.isChainEliminationSet(), transformationSettings.getLabelBehavior(), true);
     }
 }
 

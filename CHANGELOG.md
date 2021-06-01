@@ -1,3 +1,4 @@
+
 Changelog
 ==============
 
@@ -5,12 +6,56 @@ This changelog lists only the most important changes. Smaller (bug)fixes as well
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
 
+Version 1.6.x
+-------------
+## Version 1.6.4 (20xx/xx)
+- Added support for PRISM models that use unbounded integer variables.
+- Added an export of check results to json. Use `--exportresult` in the command line interface.
+- Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
+- Implemented parsing and model building of Stochastic multiplayer games (SMGs) in the PRISM language. No model checking implemented, for now.
+- Added support for continuous integration with Github Actions.
+- `storm-pars`: Exploit monotonicity for computing extremal values and parameter space partitioning.
+
+## Version 1.6.3 (2020/11)
+- Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.
+- Added support for generating optimal schedulers for globally formulae.
+- Simulator supports exact arithmetic.
+- Added switch `--no-simplify` to disable simplification of PRISM programs (which sometimes costs a bit of time on extremely large inputs).
+- Fixed issues with JANI inputs concerning .
+    - transient variable expressions in properties,
+    - constants in properties, and
+    - integer variables with either only an upper or only a lower bound.
+- `storm-pomdp`: States can be labelled with values for observable predicates.
+- `storm-pomdp`: (Only API) Track state estimates.
+- `storm-pomdp`: (Only API) Reduce computation of state estimates to computation on unrolled MDP.
+
+## Version 1.6.2 (2020/09)
+- Prism program simplification improved.
+- Revamped implementation of long-run-average algorithms, including scheduler export for LRA properties on Markov automata.
+- Support for step-bounded properties of the form ... [F[x,y] ... ] for DTMCs and MDPs (sparse engine).
+- Renamed portfolio engine to automatic 
+- `storm-dft`: Fix for relevant events when using symmetry reduction.
+- `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae.
+- `storm-pomdp`: POMDPs can be parametric as well.
+
+## Version 1.6.0 (2020/06)
+- Changed default Dd library from `cudd` to `sylvan`. The Dd library can be changed back to `cudd` using the command line switch `--ddlib`.
+- Scheduler export: Properly handle models with end components. Added export in `.json` format.
+- CMake: Search for Gurobi prefers new versions.
+- CMake: We no longer ship xerces-c. If xerces-c is not found on the system, storm-gspn will not be able to parse xml-based GSPN formats.
+- CMake: Added option `STORM_LOAD_QVBS` to automatically download the quantitative verification benchmark set.
+- Eigen library: The source code of Eigen is no longer included but downloaded from an external repository instead. Incremented Eigen version to 3.3.7 which fixes a compilation issue with recent XCode versions.
+- Tests: Enabled tests for permissive schedulers.
+- `storm-counterexamples`: fix when computing multiple counterexamples in debug mode.
+- `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
+- `storm-pomdp`: Implemented approximation algorithms that explore (a discritization of) the belief MDP, allowing to compute safe lower- and upper bounds for a given property.
+- `storm-pomdp`: Implemented almost-sure reachability computations: graph-based, one-shot SAT-based, and iterative SAT-based.
+- `storm-pomdp': Various changes such that transformation to pMCs is now again supported (and improved).
+- Fixed several compiler warnings.
+
+
 Version 1.5.x
 -------------
-## Version 1.5.x (Under development)
-- Scheduler export: Properly handle models with end components. Added export in .json format.
-- CMake: Search for Gurobi prefers new versions
-- Tests: Enabled tests for permissive schedulers
 
 ## Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.

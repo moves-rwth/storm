@@ -296,7 +296,7 @@ namespace storm {
         
         Type const& ExpressionManager::getVariableType(uint_fast64_t index) const {
             auto indexTypePair = indexToTypeMapping.find(index);
-            STORM_LOG_ASSERT(indexTypePair != indexToTypeMapping.end(), "Unable to retrieve type of unknown variable index.");
+            STORM_LOG_ASSERT(indexTypePair != indexToTypeMapping.end(), "Unable to retrieve type of unknown variable index '" << index << "'.");
             return indexTypePair->second;
         }
         
@@ -324,7 +324,7 @@ namespace storm {
             out << "manager {" << std::endl;
             
             for (auto const& variableTypePair : manager) {
-                out << "\t" << variableTypePair.second << " " << variableTypePair.first.getName() << " [offset " << variableTypePair.first.getOffset() << "]" << std::endl;
+                out << "\t" << variableTypePair.second << " " << variableTypePair.first.getName() << " [offset " << variableTypePair.first.getOffset() << ", " << variableTypePair.first.getIndex() <<" ]"  << std::endl;
             }
             
             out << "}" << std::endl;

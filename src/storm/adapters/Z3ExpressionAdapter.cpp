@@ -37,8 +37,7 @@ namespace storm {
                     result = result && assertion;
                 }
                 additionalAssertions.clear();
-
-                return result;
+                return result.simplify();
             }
             
             z3::expr Z3ExpressionAdapter::translateExpression(storm::expressions::Variable const& variable) {
@@ -116,7 +115,7 @@ namespace storm {
                             case Z3_OP_IFF:
                                     return storm::expressions::iff(this->translateExpression(expr.arg(0)), this->translateExpression(expr.arg(1)));
                             case Z3_OP_XOR:
-                                    return this->translateExpression(expr.arg(0)) ^ this->translateExpression(expr.arg(1));
+                                    return storm::expressions::xclusiveor(this->translateExpression(expr.arg(0)), this->translateExpression(expr.arg(1)));
                             case Z3_OP_NOT:
                                     return !this->translateExpression(expr.arg(0));
                             case Z3_OP_IMPLIES:
@@ -150,7 +149,8 @@ namespace storm {
                                     } else {
                                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
                                     }
-                                } else if (expr.is_real() && expr.is_const()) {
+                                } else {
+                                    STORM_LOG_ASSERT(expr.is_real() && expr.is_const(), "Cannot handle numerical expression");
                                     Z3_SIGNED_INTEGER num;
                                     Z3_SIGNED_INTEGER den;
                                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {

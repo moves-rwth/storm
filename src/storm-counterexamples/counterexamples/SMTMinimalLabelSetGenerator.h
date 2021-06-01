@@ -423,13 +423,11 @@ namespace storm {
                         
                         // Then add the constraints for bounds of the integer variables.
                         for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                            localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
-                            localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
+                            localSolver->add(integerVariable.getRangeExpression());
                         }
                         for (auto const& module : program.getModules()) {
                             for (auto const& integerVariable : module.getIntegerVariables()) {
-                                localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
-                                localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
+                                localSolver->add(integerVariable.getRangeExpression());
                             }
                         }
                     } else {
@@ -1220,10 +1218,6 @@ namespace storm {
                 // try with an increased bound.
                 while (solver.checkWithAssumptions({assumption}) == storm::solver::SmtSolver::CheckResult::Unsat) {
                     STORM_LOG_DEBUG("Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
-#ifndef NDEBUG
-                    STORM_LOG_DEBUG("Sanity check to see whether constraint system is still satisfiable.");
-                    STORM_LOG_ASSERT(solver.check() == storm::solver::SmtSolver::CheckResult::Sat, "Constraint system is not satisfiable anymore.");
-#endif
                     solver.add(variableInformation.auxiliaryVariables.back());
                     variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(solver, variableInformation, ++currentBound));
                     assumption = !variableInformation.auxiliaryVariables.back();
@@ -1510,9 +1504,9 @@ namespace storm {
              * Also returns the Labelsets of the sub-model.
              */
             static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<storm::storage::FlatSet<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  storm::storage::FlatSet<uint_fast64_t> const& filterLabelSet, boost::optional<uint64_t> absorbState = boost::none) {
-
                 bool customRowGrouping = model.isOfType(storm::models::ModelType::Mdp);
-                
+                STORM_LOG_TRACE("Restrict model to label set " <<  storm::storage::toString(filterLabelSet));
+                STORM_LOG_TRACE("Absorb state = " << (absorbState == boost::none ? "none" : std::to_string(absorbState.get())));
                 std::vector<storm::storage::FlatSet<uint_fast64_t>> resultLabelSet;
                 storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, model.getTransitionMatrix().getColumnCount(), 0, true, customRowGrouping, model.getTransitionMatrix().getRowGroupCount());
 
@@ -1526,6 +1520,8 @@ namespace storm {
 
                         // If the choice is valid, copy over all its elements.
                         if (choiceValid) {
+                            STORM_LOG_TRACE("Choice " << choice << " has a valid label set " <<  storm::storage::toString(choiceLabelSet));
+
                             if (!stateHasValidChoice && customRowGrouping) {
                                 transitionMatrixBuilder.newRowGroup(currentRow);
                             }
@@ -1543,7 +1539,7 @@ namespace storm {
                         if (customRowGrouping) {
                             transitionMatrixBuilder.newRowGroup(currentRow);
                         }
-                        uint64_t targetState = absorbState == boost::none ? state : absorbState.get();
+                        uint64_t targetState = (absorbState == boost::none ? state : absorbState.get());
                         transitionMatrixBuilder.addNextValue(currentRow, targetState, storm::utility::one<T>());
                         // Insert an empty label set for this choice
                         resultLabelSet.emplace_back();
@@ -1567,14 +1563,16 @@ namespace storm {
 
                 std::vector<T> allStatesResult;
                 
-                STORM_LOG_DEBUG("Invoking model checker.");
+                STORM_LOG_DEBUG("Invoking model checker on model with " << model.getNumberOfStates() << " states and " << model.getNumberOfTransitions() << " transitions.");
                 if (model.isOfType(storm::models::ModelType::Dtmc)) {
                     if (rewardName == boost::none) {
                         results.push_back(storm::utility::zero<T>());
                         allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
                         for (auto state : model.getInitialStates()) {
+                            STORM_LOG_TRACE("Found probability " << allStatesResult[state]);
                             results.back() = std::max(results.back(), allStatesResult[state]);
                         }
+                        STORM_LOG_TRACE("Final probability " << results.back());
                     } else {
                         for (auto const &rewName : rewardName.get()) {
                             results.push_back(storm::utility::zero<T>());
@@ -1755,6 +1753,10 @@ namespace storm {
                     if (result.size() > 0 && iterations > firstCounterexampleFound + options.maximumExtraIterations) {
                         break;
                     }
+                    if (result.size() == 0) {
+                        STORM_LOG_DEBUG("Sanity check to see whether constraint system is still satisfiable.");
+                        STORM_LOG_ASSERT(solver->check() == storm::solver::SmtSolver::CheckResult::Sat, "Constraint system is not satisfiable anymore.");
+                    }
                     STORM_LOG_DEBUG("Computing minimal command set.");
                     solverClock = std::chrono::high_resolution_clock::now();
                     boost::optional<storm::storage::FlatSet<uint_fast64_t>> smallest = findSmallestCommandSet(*solver, variableInformation, currentBound);
@@ -1781,7 +1783,7 @@ namespace storm {
                         break;
                     }
 
-                    auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet, psiStates.getNextSetIndex(0));
+                    auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet, rewardName ? boost::make_optional(psiStates.getNextSetIndex(0)) : boost::none);
                     std::shared_ptr<storm::models::sparse::Model<T>> const& subModel = subChoiceOrigins.first;
                     std::vector<storm::storage::FlatSet<uint_fast64_t>> const& subLabelSets = subChoiceOrigins.second;
   
@@ -1844,10 +1846,10 @@ namespace storm {
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= progressDelay || lastSize < commandSet.size()) {
                         auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - totalClock).count();
                         if (lastSize < commandSet.size()) {
-                            std::cout << "Improved lower bound to " << currentBound << " after " << milliseconds << "ms." << std::endl;
+                            STORM_LOG_DEBUG("Improved lower bound to " << currentBound << " after " << milliseconds << "ms.");
                             lastSize = commandSet.size();
                         } else {
-                            std::cout << "Lower bound on label set size is " << currentBound << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
+                            STORM_LOG_DEBUG("Lower bound on label set size is " << currentBound << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set).");
                             timeOfLastMessage = std::chrono::high_resolution_clock::now();
                         }
                     }
@@ -1905,7 +1907,7 @@ namespace storm {
                 // Create a queue of reachable prob0E(psi) states so we can check which commands need to be added
                 // to give them a strategy that avoids psi states.
                 std::queue<uint_fast64_t> prob0EWorklist;
-                for (auto const& e : reachableProb0EStates) {
+                for (auto e : reachableProb0EStates) {
                     prob0EWorklist.push(e);
                 }
                 
@@ -2117,7 +2119,11 @@ namespace storm {
 
 
                 if (symbolicModel.isPrismProgram()) {
-                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asPrismProgram().restrictCommands(labelSets[0]));
+                    storm::prism::Program program = symbolicModel.asPrismProgram().restrictCommands(labelSets[0]);
+                    if(formula->isProbabilityOperatorFormula()) {
+                        program.removeRewardModels();
+                    }
+                    return std::make_shared<HighLevelCounterexample>(program);
                 } else {
                     STORM_LOG_ASSERT(symbolicModel.isJaniModel(), "Unknown symbolic model description type.");
                     return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(labelSets[0]));

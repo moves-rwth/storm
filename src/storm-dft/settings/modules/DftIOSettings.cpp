@@ -29,7 +29,8 @@ namespace storm {
             const std::string DftIOSettings::exportToJsonOptionName = "export-json";
             const std::string DftIOSettings::exportToSmtOptionName = "export-smt";
             const std::string DftIOSettings::exportToBddDotOptionName = "export-bdd-dot";
-            const std::string DftIOSettings::displayStatsOptionName = "show-dft-stats";
+            const std::string DftIOSettings::dftStatisticsOptionName = "dft-statistics";
+            const std::string DftIOSettings::dftStatisticsOptionShortName = "dftstats";
 
 
             DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
@@ -79,7 +80,7 @@ namespace storm {
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename",
                                                                                                             "The name of the dot file to export to.").build())
                                         .build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, displayStatsOptionName, false, "Print stats to stdout").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, dftStatisticsOptionName, false, "Sets whether to display DFT statistics if available.").setShortName(dftStatisticsOptionShortName).build());
             }
 
             bool DftIOSettings::isDftFileSet() const {
@@ -169,8 +170,8 @@ namespace storm {
                 return this->getOption(exportToBddDotOptionName).getArgumentByName("filename").getValueAsString();
             }
 
-            bool DftIOSettings::isDisplayStatsSet() const {
-                return this->getOption(displayStatsOptionName).getHasOptionBeenSet();
+            bool DftIOSettings::isShowDftStatisticsSet() const {
+                return this->getOption(dftStatisticsOptionName).getHasOptionBeenSet();
             }
 
             void DftIOSettings::finalize() {

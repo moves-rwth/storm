@@ -11,7 +11,6 @@
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/OptionParserException.h"
-#include "storm/utility/storm-version.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
@@ -43,7 +42,7 @@
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/OviSolverSettings.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/utility/string.h"
 #include "storm/settings/Option.h"
 

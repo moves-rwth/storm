@@ -2,7 +2,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/utility/builder.h"
 
 namespace storm {

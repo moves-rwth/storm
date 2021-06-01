@@ -34,15 +34,15 @@ namespace storm {
                  * @param optionalStateActionRewardVector The reward values associated with state-action pairs.
                  * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
                  */
-                StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::none,
+                StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
                                     boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = boost::none,
                                     boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::none);
                 
-                StandardRewardModel(StandardRewardModel<ValueType> const& dtmc) = default;
-                StandardRewardModel& operator=(StandardRewardModel<ValueType> const& dtmc) = default;
+                StandardRewardModel(StandardRewardModel<ValueType> const& other) = default;
+                StandardRewardModel& operator=(StandardRewardModel<ValueType> const& other) = default;
                 
-                StandardRewardModel(StandardRewardModel<ValueType>&& dtmc) = default;
-                StandardRewardModel& operator=(StandardRewardModel<ValueType>&& dtmc) = default;
+                StandardRewardModel(StandardRewardModel<ValueType>&& other) = default;
+                StandardRewardModel& operator=(StandardRewardModel<ValueType>&& other) = default;
 
                 /*!
                  * Retrieves whether the reward model has state rewards.
@@ -167,6 +167,15 @@ namespace storm {
                  */
                 boost::optional<storm::storage::SparseMatrix<ValueType>> const& getOptionalTransitionRewardMatrix() const;
 
+                /*!
+                 * @param choiceIndex The index of the considered choice
+                 * @param transitionMatrix The matrix that is used to weight the values of the transition reward matrix.
+                 * @return the sum of the action reward and the weighted transition rewards for the given choice, excluding potential state rewards
+                 * @note returns zero if there is neither action nor transition reward.
+                 */
+                template<typename MatrixValueType>
+                ValueType getStateActionAndTransitionReward(uint_fast64_t choiceIndex, storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const;
+                
                 /*!
                  * Retrieves the total reward for the given state action pair (including (scaled) state rewards, action rewards and transition rewards
                  *
@@ -313,6 +322,8 @@ namespace storm {
                  * @param nrChoices The number of choices in the model
                  */
                 bool isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const;
+
+                std::size_t hash() const;
                 
                 template <typename ValueTypePrime>
                 friend std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueTypePrime> const& rewardModel);

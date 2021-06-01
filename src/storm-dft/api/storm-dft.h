@@ -13,17 +13,12 @@
 #include "storm-dft/transformations/DftTransformator.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
 #include "storm-dft/utility/FailureBoundFinder.h"
+#include "storm-dft/utility/RelevantEvents.h"
 
 #include "storm-gspn/api/storm-gspn.h"
 
 namespace storm {
     namespace api {
-        struct PreprocessingResult {
-            uint64_t lowerBEBound;
-            uint64_t upperBEBound;
-            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts;
-        };
-
 
         /*!
          * Load DFT from Galileo file.
@@ -93,29 +88,51 @@ namespace storm {
             return transformedDFT;
         }
 
-        template <typename ValueType>
-        bool computeDependencyConflicts(storm::storage::DFT<ValueType> const& dft, bool useSMT, double solverTimeout) {
-            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts = storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(*dft, useSMT, solverTimeout);
+        template<typename ValueType>
+        std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::storage::DFT<ValueType> const& dft, bool useSMT, double solverTimeout) {
+            uint64_t lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(dft, useSMT, solverTimeout);
+            uint64_t upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(dft, useSMT, solverTimeout);
+            return std::make_pair(lowerBEBound, upperBEBound);
+        }
 
-            if (fdepConflicts.empty()) {
-                return false;
-            }
-            for (auto pair: fdepConflicts) {
+        template<typename ValueType>
+        bool computeDependencyConflicts(storm::storage::DFT<ValueType>& dft, bool useSMT, double solverTimeout) {
+            // Initialize which DFT elements have dynamic behavior
+            dft.setDynamicBehaviorInfo();
+
+            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts = storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(dft, useSMT, solverTimeout);
+
+            for (auto const& pair: fdepConflicts) {
                 STORM_LOG_DEBUG("Conflict between " << dft.getElement(pair.first)->name() << " and " << dft.getElement(pair.second)->name());
             }
 
             // Set the conflict map of the dft
             std::set<size_t> conflict_set;
-            for (auto conflict : fdepConflicts) {
+            for (auto const& conflict : fdepConflicts) {
                 conflict_set.insert(size_t(conflict.first));
                 conflict_set.insert(size_t(conflict.second));
             }
-            for (size_t depId : dft->getDependencies()) {
+            for (size_t depId : dft.getDependencies()) {
                 if (!conflict_set.count(depId)) {
-                    dft->setDependencyNotInConflict(depId);
+                    dft.setDependencyNotInConflict(depId);
                 }
             }
-            return true;
+            return !fdepConflicts.empty();
+        }
+
+        /*!
+         * Get relevant event ids from given relevant event names and labels in properties.
+         *
+         * @param dft DFT.
+         * @param properties List of properties. All events occurring in a property are relevant.
+         * @param additionalRelevantEventNames List of names of additional relevant events.
+         * @return Relevant events.
+         */
+        template<typename ValueType>
+        storm::utility::RelevantEvents computeRelevantEvents(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const& additionalRelevantEventNames) {
+            storm::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
+            events.insertNamesFromProperties(properties.begin(), properties.end());
+            return events;
         }
 
         /*!
@@ -126,8 +143,8 @@ namespace storm {
          * @param properties PCTL formulas capturing the properties to check.
          * @param symred Flag whether symmetry reduction should be used.
          * @param allowModularisation Flag whether modularisation should be applied if possible.
-         * @param relevantEvents List of relevant events which should be observed.
-         * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
+         * @param relevantEvents Relevant events which should be observed.
+         * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
          * @param approximationError Allowed approximation error.  Value 0 indicates no approximation.
          * @param approximationHeuristic Heuristic used for state space exploration.
          * @param eliminateChains If true, chains of non-Markovian states are eliminated from the resulting MA.
@@ -137,14 +154,11 @@ namespace storm {
          */
         template<typename ValueType>
         typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
-        analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
-                   bool allowModularisation = true, std::set<size_t> const& relevantEvents = {}, bool allowDCForRelevantEvents = true, double approximationError = 0.0,
-                   storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH, bool eliminateChains = false,
+        analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true, bool allowModularisation = true, storm::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
+                   double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH, bool eliminateChains = false,
                    storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels, bool printOutput = false) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
-            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents,
-                                                                                                               allowDCForRelevantEvents, approximationError, approximationHeuristic,
-                                                                                                               eliminateChains, labelBehavior);
+            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic, eliminateChains, labelBehavior);
             if (printOutput) {
                 modelChecker.printTimings();
                 modelChecker.printResults(results);
