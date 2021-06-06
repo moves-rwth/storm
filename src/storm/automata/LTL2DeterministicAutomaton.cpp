@@ -34,16 +34,20 @@ namespace storm {
 
             // Request a deterministic, complete automaton with state-based acceptance
             spot::translator trans = spot::translator();
-            trans.set_type(spot::postprocessor::Generic);
+            trans.set_type(spot::postprocessor::Generic);  //Generic
             trans.set_pref(spot::postprocessor::Deterministic | spot::postprocessor::SBAcc | spot::postprocessor::Complete);
             STORM_LOG_INFO("Construct deterministic automaton for "<< spotFormula);
             auto aut = trans.run(spotFormula);
 
             // TODO necessary for MDP LTL-MC
             if(!(aut->get_acceptance().is_dnf()) && dnf){
-                STORM_LOG_INFO("Convert acceptance condition into DNF...");
-                aut->set_acceptance(aut->get_acceptance().to_dnf());
+                STORM_LOG_INFO("Convert acceptance condition "<< aut->get_acceptance() << " into DNF...");
+                // Transform the acceptance condition in disjunctive normal form and merge all the Fin-sets of each clause
+                aut = to_generalized_rabin(aut,true);
             }
+
+
+            STORM_LOG_INFO(aut->get_acceptance());
 
             std::stringstream autStream;
             // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
