@@ -446,4 +446,81 @@ namespace {
         EXPECT_NEAR(0.404043, result[0], 1e-6);
         EXPECT_NEAR(0.595957, result[1], 1e-6);
     }
+
+
+    TYPED_TEST(CtmcCslModelCheckerTest, LTLProbabilitiesEmbedded) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+        std::string formulasString = "P=?  [ X F (!\"down\" U \"fail_sensors\") ]";
+        formulasString += "; P=?  [  (! \"down\" U ( F \"fail_actuators\" U \"fail_io\")) ]";
+        formulasString += "; P=?  [ F (\"down\" & X G \"fail_sensors\") ]";
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(3478ul, model->getNumberOfStates());
+        EXPECT_EQ(14639ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        //TODO values
+        if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("0.9345877711"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("0.8781042341"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_NEAR(this->parseNumber("0.9345877711"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+#else
+        GTEST_SKIP();
+#endif
+
+    }
+
+
+    TYPED_TEST(CtmcCslModelCheckerTest, LTLProbabilitiesPolling) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+        std::string formulasString = "P=? [ X X !(s=1 & a=1) U (s=2 & a=1) ]";  //TODO more test ctmc
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(12ul, model->getNumberOfStates());
+        EXPECT_EQ(21ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("80400/160801"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+#else
+        GTEST_SKIP();
+#endif
+
+    }
+
+    TYPED_TEST(CtmcCslModelCheckerTest, LTLProbabilitiesTandem) {
+        //TODO LTL tests
+        std::string formulasString = "P=? [\"first_queue_full\"]";
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(66ul, model->getNumberOfStates());
+        EXPECT_EQ(189ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("0.20079750055570736"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        }
+
+    }
 }
