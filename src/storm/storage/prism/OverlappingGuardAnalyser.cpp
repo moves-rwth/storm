@@ -13,16 +13,7 @@ namespace storm {
 
         bool OverlappingGuardAnalyser::hasModuleWithInnerActionOverlap() {
             if(!initializedWithStateConstraints) {
-                for(auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                    smtSolver->add(integerVariable.getExpressionVariable().getExpression() >= integerVariable.getLowerBoundExpression());
-                    smtSolver->add(integerVariable.getExpressionVariable().getExpression() <= integerVariable.getUpperBoundExpression());
-                }
-                for (auto const& module : program.getModules()) {
-                    for(auto const& integerVariable : module.getIntegerVariables()) {
-                        smtSolver->add(integerVariable.getExpressionVariable().getExpression() >= integerVariable.getLowerBoundExpression());
-                        smtSolver->add(integerVariable.getExpressionVariable().getExpression() <= integerVariable.getUpperBoundExpression());
-                    }
-                }
+                smtSolver->add(storm::expressions::conjunction((program.getAllRangeExpressions())));
             }
 
             for(auto const& module : program.getModules()) {
@@ -33,7 +24,7 @@ namespace storm {
                     } else {
                         for (uint64_t commandIndexA : commandIndices) {
                             for (uint64_t commandIndexB : commandIndices) {
-                                if (commandIndexA == commandIndexB) {
+                                if (commandIndexA <= commandIndexB) {
                                     continue;
                                 }
                                 smtSolver->push();
