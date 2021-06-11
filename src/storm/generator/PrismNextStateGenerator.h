@@ -86,21 +86,22 @@ namespace storm {
             boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
-             * Retrieves all unlabeled choices possible from the given state.
+             * Retrieves all choices that are definitively asynchronous, possible from the given state.
              *
              * @param state The state for which to retrieve the unlabeled choices.
-             * @return The unlabeled choices of the state.
+             * @return The asynchronous choices of the state.
              */
-            std::vector<Choice<ValueType>> getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
+            std::vector<Choice<ValueType>> getAsynchronousChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
-             * Retrieves all labeled choices possible from the given state.
+             * Retrieves all (potentially) synchronous choices possible from the given state. 
+             * Note that these may include choices that run asynchronously for this state.
              *
              * @param choices The new choices are inserted in this vector
              * @param state The state for which to retrieve the unlabeled choices.
-             * @return The labeled choices of the state.
+             * @return The synchronous choices of the state.
              */
-            void addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
+            void addSynchronousChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
 
             /*!
              * Extend the Json struct with additional information about the state.

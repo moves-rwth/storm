@@ -296,16 +296,16 @@ namespace storm {
             std::vector<Choice<ValueType>> allChoices;
             if (this->getOptions().isApplyMaximalProgressAssumptionSet()) {
                 // First explore only edges without a rate
-                allChoices = getUnlabeledChoices(*this->state, stateToIdCallback, CommandFilter::Probabilistic);
-                addLabeledChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Probabilistic);
+                allChoices = getAsynchronousChoices(*this->state, stateToIdCallback, CommandFilter::Probabilistic);
+                addSynchronousChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Probabilistic);
                 if (allChoices.empty()) {
                     // Expand the Markovian edges if there are no probabilistic ones.
-                    allChoices = getUnlabeledChoices(*this->state, stateToIdCallback, CommandFilter::Markovian);
-                    addLabeledChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Markovian);
+                    allChoices = getAsynchronousChoices(*this->state, stateToIdCallback, CommandFilter::Markovian);
+                    addSynchronousChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Markovian);
                 }
             } else {
-                allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
-                addLabeledChoices(allChoices, *this->state, stateToIdCallback);
+                allChoices = getAsynchronousChoices(*this->state, stateToIdCallback);
+                addSynchronousChoices(allChoices, *this->state, stateToIdCallback);
             }
 
             std::size_t totalNumberOfChoices = allChoices.size();
@@ -538,7 +538,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
+        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getAsynchronousChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
             std::vector<Choice<ValueType>> result;
 
             // Iterate over all modules.
@@ -650,7 +650,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
+        void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
 
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
                 if (this->actionMask != nullptr) {

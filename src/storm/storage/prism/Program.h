@@ -708,8 +708,14 @@ namespace storm {
              */
             Program flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::shared_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
 
-
-            Program labelUnlabelledCommands(std::map<uint64_t,std::string> const& nameSuggestions) const;
+            /*!
+             * Give commands that do not have an action name an action,
+             * which can be helpful for debugging and understanding traces.
+             *
+             * @param nameSuggestions Optional suggestions that map command indices to names
+             * @return
+             */
+            Program labelUnlabelledCommands(std::map<uint64_t,std::string> const& nameSuggestions = {}) const;
 
 
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
