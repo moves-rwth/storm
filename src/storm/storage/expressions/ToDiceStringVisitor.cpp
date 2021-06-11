@@ -154,18 +154,11 @@ namespace storm {
         boost::any ToDiceStringVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
             switch (expression.getRelationType()) {
                 case BinaryRelationExpression::RelationType::Equal:
-                    if (expression.getFirstOperand()->isBinaryNumericalFunctionExpression()) {
-                        if (expression.getFirstOperand()->asBinaryNumericalFunctionExpression().getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Modulo) {
-                            expression.getFirstOperand()->accept(*this, data);
-                        }
-                    } else {
-                        stream << "(";
-                        expression.getFirstOperand()->accept(*this, data);
-                        stream << "==";
-                        expression.getSecondOperand()->accept(*this, data);
-                        stream << ")";
-                    }
-
+                    stream << "(";
+                    expression.getFirstOperand()->accept(*this, data);
+                    stream << "==";
+                    expression.getSecondOperand()->accept(*this, data);
+                    stream << ")";
                     break;
                 case BinaryRelationExpression::RelationType::NotEqual:
                     stream << "(";
