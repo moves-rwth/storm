@@ -83,6 +83,7 @@ namespace storm {
          * @tparam ValueType Type of the probabilities in the sparse model
          * @param model SymbolicModelDescription of the model
          * @param options Builder options
+         * @param actionMask An object to restrict which actions are expanded in the builder
          * @return A builder
          */
         template<typename ValueType>

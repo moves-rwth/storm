@@ -280,7 +280,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         storm::json<ValueType> NextStateGenerator<ValueType, StateType>::currentStateToJson(bool onlyObservable) const {
             storm::json<ValueType> result = unpackStateIntoJson<ValueType>(*state, variableInformation, onlyObservable);
-            extendStateInformation(result,onlyObservable);
+            extendStateInformation(result);
             return result;
         }
 
@@ -291,7 +291,7 @@ namespace storm {
 
 
         template<typename ValueType, typename StateType>
-        void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>&, bool) const {
+        void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>&) const {
             // Intentionally left empty.
         }
 

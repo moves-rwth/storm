@@ -1,4 +1,4 @@
-// Knuth's model of a fair die using only fair coins
+// Variation to Knuth's model of a fair die using only fair coins
 mdp
 
 module die

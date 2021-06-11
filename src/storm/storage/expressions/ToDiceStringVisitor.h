@@ -3,7 +3,6 @@
 #include <sstream>
 
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {

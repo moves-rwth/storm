@@ -6,8 +6,8 @@
 #include <vector>
 #include <set>
 #include <boost/optional.hpp>
-#include <storm/storage/BitVector.h>
 
+#include "storm/storage/BitVector.h"
 #include "storm/storage/prism/Constant.h"
 #include "storm/storage/prism/Formula.h"
 #include "storm/storage/prism/Label.h"
@@ -739,6 +739,10 @@ namespace storm {
              */
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal = true, std::string suffix = "") const;
 
+            /*!
+             * Compute the (labelled) commands in the program that may be synchronizing
+             * @return A bitvector representing the set of commands by global command index
+             */
             storm::storage::BitVector const& getPossiblySynchronizingCommands() const;
 
         private:

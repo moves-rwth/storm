@@ -793,7 +793,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>& result, bool onlyObservable) const {
+        void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>& result) const {
 
             for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
                 result[program.getObservationLabels()[i].getName()] = this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression());

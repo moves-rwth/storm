@@ -102,10 +102,10 @@ namespace storm {
              */
             void addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
 
-            /*
+            /*!
              * Extend the Json struct with additional information about the state.
              */
-            virtual void extendStateInformation(storm::json<ValueType>& stateInfo, bool onlyObservable = false) const override;
+            virtual void extendStateInformation(storm::json<ValueType>& stateInfo) const override;
 
             /*!
              * Evaluate observation labels

@@ -39,14 +39,29 @@ namespace storm {
         template<typename ValueType, typename StateType = uint32_t>
         class NextStateGenerator;
 
+        /*!
+         * Action masks are arguments you can give to the state generator that limit which states are generated.
+         *
+         */
         template<typename ValueType, typename StateType = uint32_t>
         class ActionMask {
         public:
             virtual ~ActionMask() = default;
+            /**
+             * This method is called to check whether an action should be expanded.
+             * The current state is obtained from the generator.
+             *
+             * @param generator the generator that is to be masked
+             * @param actionIndex the actionIndex in Prism Programs; i.e. id of actions.
+             * @return true if the mask allows building the action/edge/command
+             */
             virtual bool query(storm::generator::NextStateGenerator<ValueType, StateType> const &generator, uint64_t actionIndex) = 0;
         };
 
-
+        /*!
+         * A particular instance of the action mask that uses a callback function
+         * to evaluate whether an action should be expanded.
+         */
         template<typename ValueType, typename StateType = uint32_t>
         class StateValuationFunctionMask : public ActionMask<ValueType,StateType> {
         public:
@@ -139,7 +154,7 @@ namespace storm {
             
             virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const =0;
 
-            virtual void extendStateInformation(storm::json<ValueType>& stateInfo, bool onlyObservable = false) const;
+            virtual void extendStateInformation(storm::json<ValueType>& stateInfo) const;
 
             virtual storm::storage::sparse::StateValuationsBuilder initializeObservationValuationsBuilder() const;
 

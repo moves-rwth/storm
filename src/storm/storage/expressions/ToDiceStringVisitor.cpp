@@ -1,5 +1,6 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ToDiceStringVisitor.h"
+#include "storm/storage/expressions/Expressions.h"
 
 namespace storm {
     namespace expressions {

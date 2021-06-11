@@ -18,7 +18,7 @@ namespace storm {
         class IntegerLiteralExpression;
         class RationalLiteralExpression;
         class PredicateExpression;
-        
+
         class ExpressionVisitor {
         public:
             virtual ~ExpressionVisitor() = default;

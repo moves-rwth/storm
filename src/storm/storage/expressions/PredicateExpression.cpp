@@ -26,16 +26,16 @@ namespace storm {
 
         bool PredicateExpression::evaluateAsBool(Valuation const *valuation) const {
             STORM_LOG_THROW(this->hasBooleanType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
-            storm::storage::BitVector results(operands.size());
-            uint64_t i = 0;
+            uint64_t nrTrue = 0;
             for(auto const& operand : operands) {
-                results.set(i, operand->evaluateAsBool(valuation));
-                ++i;
+                if (operand->evaluateAsBool(valuation)) {
+                    nrTrue++;
+                }
             }
             switch(predicate) {
-                case PredicateType::ExactlyOneOf: return results.getNumberOfSetBits() == 1;
-                case PredicateType::AtMostOneOf: return results.getNumberOfSetBits() <= 1;
-                case PredicateType::AtLeastOneOf: return results.getNumberOfSetBits() >= 1;
+                case PredicateType::ExactlyOneOf: return nrTrue == 1;
+                case PredicateType::AtMostOneOf: return nrTrue <= 1;
+                case PredicateType::AtLeastOneOf: return nrTrue >= 1;
             }
             STORM_LOG_ASSERT(false, "Unknown predicate type");
         }
@@ -45,7 +45,14 @@ namespace storm {
             for (auto const& operand : operands) {
                 simplifiedOperands.push_back(operand->simplify());
             }
-            return std::shared_ptr<BaseExpression>(new PredicateExpression(this->getManager(), this->getType(), simplifiedOperands, predicate));
+            // Return new expression if something changed.
+            for (uint64_t i = 0; i < operands.size(); ++i) {
+                if (operands[i] != simplifiedOperands[i]) {
+                    return std::shared_ptr<BaseExpression>(new PredicateExpression(this->getManager(), this->getType(), simplifiedOperands, predicate));
+                }
+            }
+            // All operands remained the same.
+            return this->shared_from_this();
         }
 
         boost::any PredicateExpression::accept(ExpressionVisitor &visitor, boost::any const &data) const {

@@ -2,23 +2,23 @@
 #include <unordered_map>
 #include <string>
 
-#include "storm/storage/expressions/SimplificationVisitor.h"
+#include "storm/storage/expressions/RestrictSyntaxVisitor.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/PredicateExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace expressions {
-        SimplificationVisitor::SimplificationVisitor() {
+        RestrictSyntaxVisitor::RestrictSyntaxVisitor() {
             // Intentionally left empty.
         }
 
-        Expression SimplificationVisitor::substitute(Expression const &expression) {
+        Expression RestrictSyntaxVisitor::substitute(Expression const &expression) {
             return Expression(boost::any_cast<std::shared_ptr<BaseExpression const>>(
                     expression.getBaseExpression().accept(*this, boost::none)));
         }
 
-        boost::any SimplificationVisitor::visit(IfThenElseExpression const &expression, boost::any const &data) {
+        boost::any RestrictSyntaxVisitor::visit(IfThenElseExpression const &expression, boost::any const &data) {
             std::shared_ptr<BaseExpression const> conditionExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
                     expression.getCondition()->accept(*this, data));
             std::shared_ptr<BaseExpression const> thenExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
@@ -39,7 +39,7 @@ namespace storm {
         }
 
         boost::any
-        SimplificationVisitor::visit(BinaryBooleanFunctionExpression const &expression, boost::any const &data) {
+        RestrictSyntaxVisitor::visit(BinaryBooleanFunctionExpression const &expression, boost::any const &data) {
             std::shared_ptr<BaseExpression const> firstExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
                     expression.getFirstOperand()->accept(*this, data));
             std::shared_ptr<BaseExpression const> secondExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
@@ -58,7 +58,7 @@ namespace storm {
         }
 
         boost::any
-        SimplificationVisitor::visit(BinaryNumericalFunctionExpression const &expression, boost::any const &data) {
+        RestrictSyntaxVisitor::visit(BinaryNumericalFunctionExpression const &expression, boost::any const &data) {
             std::shared_ptr<BaseExpression const> firstExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
                     expression.getFirstOperand()->accept(*this, data));
             std::shared_ptr<BaseExpression const> secondExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
@@ -76,7 +76,7 @@ namespace storm {
             }
         }
 
-        boost::any SimplificationVisitor::visit(BinaryRelationExpression const &expression, boost::any const &data) {
+        boost::any RestrictSyntaxVisitor::visit(BinaryRelationExpression const &expression, boost::any const &data) {
             std::shared_ptr<BaseExpression const> firstExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
                     expression.getFirstOperand()->accept(*this, data));
             std::shared_ptr<BaseExpression const> secondExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
@@ -93,14 +93,14 @@ namespace storm {
             }
         }
 
-        boost::any SimplificationVisitor::visit(VariableExpression const &expression, boost::any const &) {
+        boost::any RestrictSyntaxVisitor::visit(VariableExpression const &expression, boost::any const &) {
 
             return expression.getSharedPointer();
 
         }
 
         boost::any
-        SimplificationVisitor::visit(UnaryBooleanFunctionExpression const &expression, boost::any const &data) {
+        RestrictSyntaxVisitor::visit(UnaryBooleanFunctionExpression const &expression, boost::any const &data) {
             std::shared_ptr<BaseExpression const> operandExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
                     expression.getOperand()->accept(*this, data));
 
@@ -115,7 +115,7 @@ namespace storm {
         }
 
         boost::any
-        SimplificationVisitor::visit(UnaryNumericalFunctionExpression const &expression, boost::any const &data) {
+        RestrictSyntaxVisitor::visit(UnaryNumericalFunctionExpression const &expression, boost::any const &data) {
             std::shared_ptr<BaseExpression const> operandExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(
                     expression.getOperand()->accept(*this, data));
 
@@ -129,7 +129,7 @@ namespace storm {
             }
         }
 
-        boost::any SimplificationVisitor::visit(PredicateExpression const &expression, boost::any const &data) {
+        boost::any RestrictSyntaxVisitor::visit(PredicateExpression const &expression, boost::any const &data) {
             std::vector<Expression> newExpressions;
             for (uint64_t i = 0; i < expression.getArity(); ++i) {
                 newExpressions.emplace_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(
@@ -155,15 +155,15 @@ namespace storm {
         }
 
 
-        boost::any SimplificationVisitor::visit(BooleanLiteralExpression const &expression, boost::any const &) {
+        boost::any RestrictSyntaxVisitor::visit(BooleanLiteralExpression const &expression, boost::any const &) {
             return expression.getSharedPointer();
         }
 
-        boost::any SimplificationVisitor::visit(IntegerLiteralExpression const &expression, boost::any const &) {
+        boost::any RestrictSyntaxVisitor::visit(IntegerLiteralExpression const &expression, boost::any const &) {
             return expression.getSharedPointer();
         }
 
-        boost::any SimplificationVisitor::visit(RationalLiteralExpression const &expression, boost::any const &) {
+        boost::any RestrictSyntaxVisitor::visit(RationalLiteralExpression const &expression, boost::any const &) {
             return expression.getSharedPointer();
         }
 

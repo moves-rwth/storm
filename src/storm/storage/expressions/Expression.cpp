@@ -13,7 +13,7 @@
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
-#include "storm/storage/expressions/SimplificationVisitor.h"
+#include "storm/storage/expressions/RestrictSyntaxVisitor.h"
 
 namespace storm {
     namespace expressions {
@@ -55,7 +55,7 @@ namespace storm {
 		}
 
 		Expression Expression::substituteNonStandardPredicates() const {
-            return SimplificationVisitor().substitute(*this);
+            return RestrictSyntaxVisitor().substitute(*this);
         }
 
         bool Expression::evaluateAsBool(Valuation const* valuation) const {

@@ -6,7 +6,7 @@
 
 namespace storm {
     namespace expressions {
-        class SimplificationVisitor : public ExpressionVisitor {
+        class RestrictSyntaxVisitor : public ExpressionVisitor {
         public:
             /*!
              * Creates a new simplification visitor that replaces predicates by other (simpler?) predicates.
@@ -15,7 +15,7 @@ namespace storm {
              *  Currently, the visitor only replaces nonstandard predicates
              *
              */
-            SimplificationVisitor();
+            RestrictSyntaxVisitor();
 
             /*!
              * Simplifies based on the configuration.
