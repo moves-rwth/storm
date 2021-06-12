@@ -14,43 +14,14 @@ TEST(PrismProgramSimulatorTest, KnuthYaoDieTest) {
     rew = sim.getLastRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(0.0, rew[0]);
-#if 0
-    std::cout << "reward: ";
-    for (auto const& r : rew) {
-        std::cout << r << " ";
-    }
-    std::cout << std::endl;
-    std::cout << sim.getCurrentStateAsValuation() << std::endl;
-    for (auto const& c : sim.getChoices()) {
-        std::cout << "Choice ";
-        std::cout << "action index: " << program.getActionName(c.getActionIndex()) << std::endl;
-    }
-#endif
     EXPECT_EQ(2ul, sim.getChoices().size());
     sim.step(0);
     rew = sim.getLastRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(0.0, rew[0]);
-#if 0
-    std::cout << "reward: ";
-    for (auto const& r : rew) {
-        std::cout << r << " ";
-    }
-    std::cout << std::endl;
-    std::cout << sim.getCurrentStateString() << std::endl;
-#endif
     EXPECT_EQ(1ul, sim.getChoices().size());
     sim.step(0);
     rew = sim.getLastRewards();
     EXPECT_EQ(1ul, rew.size());
     EXPECT_EQ(1.0, rew[0]);
-#if 0
-    std::cout << "reward: ";
-    for (auto const& r : rew) {
-        std::cout << r << " ";
-    }
-    std::cout << std::endl;
-    std::cout << sim.getCurrentStateString() << std::endl;
-#endif
-
 }
