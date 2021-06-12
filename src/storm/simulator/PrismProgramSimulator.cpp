@@ -126,6 +126,15 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::vector<std::string> DiscreteTimePrismProgramSimulator<ValueType>::getRewardNames() const {
+            std::vector<std::string> names;
+            for (uint64_t i = 0; i < stateGenerator->getNumberOfRewardModels(); ++i) {
+                names.push_back(stateGenerator->getRewardModelInformation(i).getName());
+            }
+            return names;
+        }
+
+        template<typename ValueType>
         uint32_t DiscreteTimePrismProgramSimulator<ValueType>::getOrAddStateIndex(generator::CompressedState const& state) {
             uint32_t newIndex = static_cast<uint32_t>(stateToId.size());
 

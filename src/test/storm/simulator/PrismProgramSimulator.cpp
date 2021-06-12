@@ -10,6 +10,7 @@ TEST(PrismProgramSimulatorTest, KnuthYaoDieTest) {
     options.setBuildAllRewardModels();
 
     storm::simulator::DiscreteTimePrismProgramSimulator<double> sim(program, options);
+    EXPECT_EQ("coin_flips", sim.getRewardNames()[0]);
     auto rew = sim.getLastRewards();
     rew = sim.getLastRewards();
     EXPECT_EQ(1ul, rew.size());

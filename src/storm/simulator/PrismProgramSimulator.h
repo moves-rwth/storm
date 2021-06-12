@@ -75,6 +75,11 @@ namespace storm {
             bool resetToState(generator::CompressedState const& compressedState);
 
             bool resetToState(expressions::SimpleValuation const& valuationState);
+
+            /**
+             * The names of the rewards that are returned.
+             */
+            std::vector<std::string> getRewardNames() const;
         protected:
             bool explore();
             void clearStateCaches();
