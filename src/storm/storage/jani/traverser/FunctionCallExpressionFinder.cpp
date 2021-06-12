@@ -11,6 +11,7 @@ namespace storm {
         namespace detail {
             class FunctionCallExpressionFinderExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             public:
+                using storm::expressions::ExpressionVisitor::visit;
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
                     expression.getCondition()->accept(*this, data);
                     expression.getThenExpression()->accept(*this, data);
