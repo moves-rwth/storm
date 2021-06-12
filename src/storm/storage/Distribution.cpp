@@ -10,6 +10,7 @@
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace storage {
@@ -178,17 +179,26 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        StateType Distribution<ValueType, StateType>::sampleFromDistribution(const ValueType &quantile) const {
+        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, StateType>::type sample(boost::container::flat_map<StateType, ValueType> const& distr, ValueType const& quantile) {
             ValueType sum = storm::utility::zero<ValueType>();
-            storm::utility::ConstantsComparator<ValueType> comp;
-            for (auto const& entry: distribution) {
+            for (auto const& entry : distr) {
                 sum += entry.second;
-                if (comp.isLess(quantile,sum)) {
+                if (quantile < sum) {
                     return entry.first;
                 }
             }
             STORM_LOG_ASSERT(false,"This point should not be reached.");
             return 0;
+        }
+
+        template<typename ValueType, typename StateType>
+        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, StateType>::type sample(boost::container::flat_map<StateType, storm::RationalFunction> const& distr, storm::RationalFunction const& quantile) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "We cannot sample from parametric distributions.");
+        }
+
+        template<typename ValueType, typename StateType>
+        StateType Distribution<ValueType, StateType>::sampleFromDistribution(const ValueType &quantile) const {
+            return sample<ValueType, StateType>(this->distribution, quantile);
         }
     
         
