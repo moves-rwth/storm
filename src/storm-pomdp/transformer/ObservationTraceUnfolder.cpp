@@ -196,6 +196,5 @@ namespace storm {
         template class ObservationTraceUnfolder<double>;
         template class ObservationTraceUnfolder<storm::RationalNumber>;
         template class ObservationTraceUnfolder<storm::RationalFunction>;
-
     }
 }
