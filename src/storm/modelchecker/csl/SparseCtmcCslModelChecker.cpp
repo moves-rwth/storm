@@ -16,18 +16,20 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
+
 #include "storm/logic/FragmentSpecification.h"
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
-
-#include "storm/automata/DeterministicAutomaton.h"
-#include "storm/automata/AcceptanceCondition.h"
-#include "storm/automata/LTL2DeterministicAutomaton.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
+
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
 
 namespace storm {
     namespace modelchecker {
@@ -104,7 +106,7 @@ namespace storm {
             STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
 
             std::map<std::string, storm::storage::BitVector> apSets;
-
+            // TODO simplify APs
             for (auto& p : extracted) {
                 STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
 
@@ -116,16 +118,6 @@ namespace storm {
 
                 apSets[p.first] = std::move(sat);
             }
-
-            STORM_LOG_INFO("Resulting LTL path formula: " << *ltlFormula);
-            STORM_LOG_INFO(" in prefix format: " << ltlFormula->toPrefixString());
-
-            std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula, false);
-
-            STORM_LOG_INFO("Deterministic automaton for LTL formula has "
-                    << da->getNumberOfStates() << " states, "
-                    << da->getAPSet().size() << " atomic propositions and "
-                    << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
 
             const SparseCtmcModelType& ctmc = this->getModel();
             typedef typename storm::models::sparse::Dtmc<typename SparseCtmcModelType::ValueType> SparseDtmcModelType;
@@ -140,9 +132,19 @@ namespace storm {
             SparseDtmcModelType embeddedDtmc(std::move(probabilityMatrix), std::move(labeling));
             storm::solver::SolveGoal<ValueType> goal(embeddedDtmc, checkTask);
 
+            STORM_LOG_INFO("Performing ltl probability computations in embedded DTMC...");
 
-            STORM_LOG_INFO("Performing DA product and probability computations in embedded DTMC...");
-            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeDAProductProbabilities(env, embeddedDtmc, std::move(goal), *da, apSets, checkTask.isQualitativeSet());
+            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+                STORM_LOG_TRACE("Writing model to model.dot");
+                std::ofstream modelDot("model.dot");
+                embeddedDtmc.writeDotToStream(modelDot);
+                modelDot.close();
+            }
+
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(embeddedDtmc.getTransitionMatrix(), this->getModel().getNumberOfStates());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, embeddedDtmc);
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
+
             // we can directly return the numericResult vector as the state space of the CTMC and the embedded DTMC are exactly the same
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
