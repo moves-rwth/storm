@@ -448,11 +448,14 @@ namespace {
     }
 
 
-    TYPED_TEST(CtmcCslModelCheckerTest, LTLProbabilitiesEmbedded) {
+    TYPED_TEST(CtmcCslModelCheckerTest, LtlProbabilitiesEmbedded) {
 #ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
         std::string formulasString = "P=?  [ X F (!\"down\" U \"fail_sensors\") ]";
         formulasString += "; P=?  [  (! \"down\" U ( F \"fail_actuators\" U \"fail_io\")) ]";
-        formulasString += "; P=?  [ F (\"down\" & X G \"fail_sensors\") ]";
+        formulasString += "; P=?  [ F \"down\" & X G \"fail_sensors\" ]"; // F ("down" & (X (G "fail_sensors")) )
+        formulasString += "; P<1  [ F \"down\" & X G \"fail_sensors\" ]"; // F ("down" & (X (G "fail_sensors")) )
+        formulasString += "; P>0.9  [ F \"down\" & X G \"fail_sensors\" ]"; // F ("down" & (X (G "fail_sensors")) )
+        formulasString += "; P=?  [ ( X X X X X X !\"down\") ]";
 
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", formulasString);
         auto model = std::move(modelFormulas.first);
@@ -460,19 +463,31 @@ namespace {
         EXPECT_EQ(3478ul, model->getNumberOfStates());
         EXPECT_EQ(14639ul, model->getNumberOfTransitions());
         ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
-
-        //TODO values
         if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
             result = checker->check(this->env(), tasks[0]);
-            EXPECT_NEAR(this->parseNumber("0.9345877711"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            EXPECT_NEAR(this->parseNumber("0.93458777106264368"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
             result = checker->check(this->env(), tasks[1]);
-            EXPECT_NEAR(this->parseNumber("0.8781042341"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            EXPECT_NEAR(this->parseNumber("0.878104234117144888"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
             result = checker->check(this->env(), tasks[2]);
-            EXPECT_NEAR(this->parseNumber("0.9345877711"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            EXPECT_NEAR(this->parseNumber("0.934587771062649453"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
+
+            result = checker->check(this->env(), tasks[4]);
+            EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
+
+            result = checker->check(this->env(), tasks[5]);
+            EXPECT_NEAR(this->parseNumber("0.999979077232484914"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
 #else
         GTEST_SKIP();
@@ -480,47 +495,34 @@ namespace {
 
     }
 
-
-    TYPED_TEST(CtmcCslModelCheckerTest, LTLProbabilitiesPolling) {
+    TYPED_TEST(CtmcCslModelCheckerTest, LtlProbabilitiesPolling) {
 #ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
-        std::string formulasString = "P=? [ X X !(s=1 & a=1) U (s=2 & a=1) ]";  //TODO more test ctmc
+        std::string formulasString = "P=? [ X X !(s=1 & a=1) U (s=2 & a=1) ]";  // (X X a) U b
+        formulasString += "; P=? [ X (( !(s=1) U (a=1)) U (s=1)) ]";
 
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", formulasString);
         auto model = std::move(modelFormulas.first);
         auto tasks = this->getTasks(modelFormulas.second);
         EXPECT_EQ(12ul, model->getNumberOfStates());
-        EXPECT_EQ(21ul, model->getNumberOfTransitions());
+        EXPECT_EQ(22ul, model->getNumberOfTransitions());
         ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
         if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
             result = checker->check(this->env(), tasks[0]);
-            EXPECT_NEAR(this->parseNumber("80400/160801"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            EXPECT_NEAR(this->parseNumber("0.49999689056660507"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("0.0074564831701838807"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
 #else
         GTEST_SKIP();
 #endif
-
-    }
-
-    TYPED_TEST(CtmcCslModelCheckerTest, LTLProbabilitiesTandem) {
-        //TODO LTL tests
-        std::string formulasString = "P=? [\"first_queue_full\"]";
-
-        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", formulasString);
-        auto model = std::move(modelFormulas.first);
-        auto tasks = this->getTasks(modelFormulas.second);
-        EXPECT_EQ(66ul, model->getNumberOfStates());
-        EXPECT_EQ(189ul, model->getNumberOfTransitions());
-        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
-        auto checker = this->createModelChecker(model);
-        std::unique_ptr<storm::modelchecker::CheckResult> result;
-
-        if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
-            result = checker->check(this->env(), tasks[0]);
-            EXPECT_NEAR(this->parseNumber("0.20079750055570736"),this->getQuantitativeResultAtInitialState(model, result), this->precision());
-        }
 
     }
 }
