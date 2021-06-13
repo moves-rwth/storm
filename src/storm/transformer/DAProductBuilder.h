@@ -22,7 +22,7 @@ namespace storm {
             }
 
             template <typename Model>
-            typename DAProduct<Model>::ptr build(const storm::storage::SparseMatrix<typename Model::ValueType>& originalMatrix, const storm::storage::BitVector& statesOfInterest) const { //todo transition matrix
+            typename DAProduct<Model>::ptr build(const storm::storage::SparseMatrix<typename Model::ValueType>& originalMatrix, const storm::storage::BitVector& statesOfInterest) const {
                 typename Product<Model>::ptr product = ProductBuilder<Model>::buildProduct(originalMatrix, *this, statesOfInterest);
                 storm::automata::AcceptanceCondition::ptr prodAcceptance
                         = da.getAcceptance()->lift(product->getProductModel().getNumberOfStates(),

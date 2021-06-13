@@ -23,8 +23,6 @@
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 
 #include "storm/automata/AcceptanceCondition.h"
-#include "storm/automata/DeterministicAutomaton.h"
-#include "storm/automata/LTL2DeterministicAutomaton.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -161,7 +159,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
 
             STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
-
+            // TODO simplify APs
             std::map<std::string, storm::storage::BitVector> apSets;
             for (auto& p : extracted) {
                 STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
@@ -177,10 +175,11 @@ namespace storm {
 
             const SparseDtmcModelType& dtmc = this->getModel();
 
+            // TODO ?
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                 STORM_LOG_TRACE("Writing model to model.dot");
                 std::ofstream modelDot("model.dot");
-                this->getModel().writeDotToStream(modelDot);
+                dtmc.writeDotToStream(modelDot);
                 modelDot.close();
             }
 
