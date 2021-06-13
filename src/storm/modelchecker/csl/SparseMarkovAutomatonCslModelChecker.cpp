@@ -1,8 +1,9 @@
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
-
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
+
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
+#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
@@ -13,15 +14,22 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
+
 #include "storm/solver/SolveGoal.h"
+
+#include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
+
+#include "storm/api/storm.h"
 
 namespace storm {
     namespace modelchecker {
@@ -32,7 +40,7 @@ namespace storm {
         
         template <typename ModelType>
         bool SparseMarkovAutomatonCslModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
-            auto singleObjectiveFragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true).setRewardAccumulationAllowed(true).setInstantaneousFormulasAllowed(false);
+            auto singleObjectiveFragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true).setRewardAccumulationAllowed(true).setInstantaneousFormulasAllowed(false).setNestedPathFormulasAllowed(true); //TODO (hannah) correct?
             auto multiObjectiveFragment = storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setRewardAccumulationAllowed(true);
             if (!storm::NumberTraits<ValueType>::SupportsExponential) {
                 singleObjectiveFragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
@@ -102,6 +110,63 @@ namespace storm {
             }
             return result;
         }
+
+
+        template<typename SparseMarkovAutomatonModelType>
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
+            storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
+
+            std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
+            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
+
+            STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
+
+            std::map<std::string, storm::storage::BitVector> apSets;
+
+            // TODO simplify APs
+            for (auto& p : extracted) {
+                STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
+
+                std::unique_ptr<CheckResult> subResultPointer = this->check(env, *p.second);
+                ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+                auto sat = subResult.getTruthValuesVector();
+
+                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
+
+                apSets[p.first] = std::move(sat);
+            }
+
+            const SparseMarkovAutomatonModelType& ma = this->getModel();
+            typedef typename storm::models::sparse::Mdp<typename SparseMarkovAutomatonModelType::ValueType> SparseMdpModelType;
+
+            // TODO correct?
+            STORM_LOG_INFO("Computing embedded MDP...");
+            storm::storage::SparseMatrix<ValueType> probabilityMatrix = ma.getTransitionMatrix();
+            // Copy of the state labelings of the MDP
+            storm::models::sparse::StateLabeling labeling(ma.getStateLabeling());
+            // The embedded MDP, used for building the product and computing the probabilities in the product
+            SparseMdpModelType embeddedMdp(std::move(probabilityMatrix), std::move(labeling));
+
+            storm::solver::SolveGoal<ValueType> goal(embeddedMdp, checkTask);
+
+            STORM_LOG_INFO("Performing ltl probability computations in embedded MDP...");
+
+            // TODO ?
+            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+                STORM_LOG_TRACE("Writing model to model.dot");
+                std::ofstream modelDot("model.dot");
+                embeddedMdp.writeDotToStream(modelDot);
+                modelDot.close();
+            }
+
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(embeddedMdp.getTransitionMatrix(), this->getModel().getNumberOfStates());
+            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, embeddedMdp);
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
+
+            // We can directly return the numericResult vector as the state space of the CTMC and the embedded MDP are exactly the same
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+
                 
         template<typename SparseMarkovAutomatonModelType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
