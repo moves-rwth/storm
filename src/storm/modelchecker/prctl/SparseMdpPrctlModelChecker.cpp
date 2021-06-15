@@ -166,7 +166,14 @@ namespace storm {
 
             STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
 
+
+
             std::map<std::string, storm::storage::BitVector> apSets;
+            std::map<std::string, std::string> substitution;
+
+            // TODO Maintain a mapping from APsets to labels in order to use the same label for the same formulas
+            std::map<storm::storage::BitVector, std::string> labels;
+
             for (auto& p : extracted) {
                 STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
 
@@ -176,8 +183,30 @@ namespace storm {
 
                 STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
 
+
+                auto occ = labels.find(sat);
+                if(occ != labels.end()){
+                    // Reuse AP
+                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is equivalent to " << occ->second << ", substituting...");
+                    substitution[p.first] = occ->second;
+                    continue;
+                }
+                /*// equivalent to !pi
+                occ = labels.find(~sat);
+                if(occ != labels.end()){
+                    // Reuse negated AP
+                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is equivalent to !" << occ->second << ", substituting...");
+                    substitution[p.first] =  todo: ! occ->second;
+                    continue;
+                }
+                 */
+
+                labels[sat] = p.first;
                 apSets[p.first] = std::move(sat);
+                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
             }
+
+            ltlFormula = ltlFormula->substitute(substitution);
 
             const SparseMdpModelType& mdp = this->getModel();
 
