@@ -50,7 +50,7 @@ namespace storm {
                  * @param a flag indicating whether qualitative model checking is performed
                  * @return a value for each state
                  */
-                std::vector<ValueType> computeDAProductProbabilities(Environment const& env, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative);
+                std::vector<ValueType> computeDAProductProbabilities(Environment const& env, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets);
 
 
             private:

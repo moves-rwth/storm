@@ -156,7 +156,7 @@ namespace storm {
             }
 
             template<typename ValueType, bool Nondeterministic>
-            std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeDAProductProbabilities(Environment const& env, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative) {
+            std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeDAProductProbabilities(Environment const& env, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets) {
                 const storm::automata::APSet& apSet = da.getAPSet();
 
                 std::vector<storm::storage::BitVector> apLabels;
@@ -210,12 +210,12 @@ namespace storm {
                 }
 
                 if (acceptingStates.empty()) {
-                    STORM_LOG_INFO("No acceptingStates states, skipping probability computation.");
+                    STORM_LOG_INFO("No accepting states, skipping probability computation.");
                     std::vector<ValueType> numericResult(this->_numberOfStates, storm::utility::zero<ValueType>());
                     return numericResult;
                 }
 
-                STORM_LOG_INFO("Computing probabilities for reaching acceptingStates components...");
+                STORM_LOG_INFO("Computing probabilities for reaching accepting components...");
 
                 storm::storage::BitVector bvTrue(product->getProductModel().getNumberOfStates(), true);
                 storm::storage::BitVector soiProduct(product->getStatesOfInterest());
@@ -231,6 +231,7 @@ namespace storm {
 
                 std::vector<ValueType> prodNumericResult;
 
+
                 if (Nondeterministic) {
                     prodNumericResult = std::move(storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(env,
                                                                                                                                           std::move(solveGoalProduct),
@@ -238,7 +239,7 @@ namespace storm {
                                                                                                                                           product->getProductModel().getBackwardTransitions(),
                                                                                                                                           bvTrue,
                                                                                                                                           acceptingStates,
-                                                                                                                                          qualitative,
+                                                                                                                                          this->isQualitativeSet(),
                                                                                                                                           false  // no schedulers (at the moment)
                                                                                                                                 ).values);
 
@@ -249,7 +250,7 @@ namespace storm {
                                                                                                                                  product->getProductModel().getBackwardTransitions(),
                                                                                                                                  bvTrue,
                                                                                                                                  acceptingStates,
-                                                                                                                                 qualitative);
+                                                                                                                                 this->isQualitativeSet());
                     }
 
                 std::vector<ValueType> numericResult = product->projectToOriginalModel(this->_numberOfStates, prodNumericResult);
@@ -281,7 +282,7 @@ namespace storm {
                                        << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
 
 
-                std::vector<ValueType> numericResult = computeDAProductProbabilities(env, *da, apSatSets, this->isQualitativeSet());
+                std::vector<ValueType> numericResult = computeDAProductProbabilities(env, *da, apSatSets);
 
                 if(Nondeterministic && this->getOptimizationDirection()==OptimizationDirection::Minimize) {
                     // compute 1-Pmax[!fomula]
