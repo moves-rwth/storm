@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-
+#include <map>
 #include "storm/logic/CloneVisitor.h"
 
 namespace storm {
@@ -11,7 +11,10 @@ namespace storm {
         public:
             typedef std::pair<std::string, std::shared_ptr<Formula const>> LabelFormulaPair;
 
-            static std::shared_ptr<Formula> extract(PathFormula const& f, std::vector<LabelFormulaPair>& extractedFormulas);
+            // Maintain a mapping from formula-strings to formula-label pairs in order to use the same label for the equivalent formulas (as strings)
+            typedef std::map<std::string, LabelFormulaPair> FormulaLabelMapping;
+
+            static std::shared_ptr<Formula> extract(PathFormula const& f, FormulaLabelMapping& extractedFormulas);
 
             virtual boost::any visit(BinaryBooleanPathFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(BoundedUntilFormula const& f, boost::any const& data) const override;
@@ -28,13 +31,13 @@ namespace storm {
             virtual boost::any visit(RewardOperatorFormula const& f, boost::any const& data) const override;
 
         private:
-            ExtractMaximalStateFormulasVisitor(std::vector<LabelFormulaPair>& extractedFormulas);
+            ExtractMaximalStateFormulasVisitor(FormulaLabelMapping& extractedFormulas);
 
             std::shared_ptr<Formula> extract(std::shared_ptr<Formula> f) const;
             void incrementNestingLevel() const;
             void decrementNestingLevel() const;
 
-            std::vector<LabelFormulaPair>& extractedFormulas;
+            FormulaLabelMapping& extractedFormulas;
             std::size_t nestingLevel;
         };
 

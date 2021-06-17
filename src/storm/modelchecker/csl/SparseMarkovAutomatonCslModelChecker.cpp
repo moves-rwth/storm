@@ -117,7 +117,9 @@ namespace storm {
             storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
             STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
-            std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
+
+            // Maintain a mapping from formula-strings to pairs in order to reuse labels of equivalent (compared as strings) formulas
+            std::map<std::string, storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
             std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
 
             const SparseMarkovAutomatonModelType& ma = this->getModel();

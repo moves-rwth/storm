@@ -7,10 +7,10 @@
 namespace storm {
     namespace logic {
 
-        ExtractMaximalStateFormulasVisitor::ExtractMaximalStateFormulasVisitor(std::vector<LabelFormulaPair>& extractedFormulas) : extractedFormulas(extractedFormulas), nestingLevel(0) {
+        ExtractMaximalStateFormulasVisitor::ExtractMaximalStateFormulasVisitor(FormulaLabelMapping& extractedFormulas) : extractedFormulas(extractedFormulas), nestingLevel(0) {
         }
 
-        std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(PathFormula const& f, std::vector<LabelFormulaPair>& extractedFormulas) {
+        std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(PathFormula const& f, FormulaLabelMapping& extractedFormulas) {
             ExtractMaximalStateFormulasVisitor visitor(extractedFormulas);
             boost::any result = f.accept(visitor, boost::any());
             return boost::any_cast<std::shared_ptr<Formula>>(result);
@@ -150,10 +150,18 @@ namespace storm {
         }
 
         std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(std::shared_ptr<Formula> f) const {
-            std::string label = "p" + std::to_string(extractedFormulas.size());
+            // TODO can be optimized
+            std::string label;
+            auto it = extractedFormulas.find(f->toString());
+            if (it != extractedFormulas.end()){
+                // Reuse label of equivalent formula
+                label = it->second.first;
+            } else {
+                // Create new label
+                label = "p" + std::to_string(extractedFormulas.size());
+            }
 
-            const_cast<std::vector<LabelFormulaPair>&>(extractedFormulas).emplace_back(label, f);
-
+            extractedFormulas[f->toString()] = LabelFormulaPair(label, f);
             return std::make_shared<storm::logic::AtomicLabelFormula>(label);
         }
 

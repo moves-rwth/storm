@@ -297,18 +297,19 @@ namespace storm {
             }
 
             template<typename ValueType, bool Nondeterministic>
-            std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker){
+            std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::map<std::string, storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker){
                 std::map<std::string, storm::storage::BitVector> apSets;
-                for (auto& p : extracted) {
-                    STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
+                for (auto& it: extracted) {
+                    storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair pair = it.second;
+                    STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << pair.first << "\" <=> " << *pair.second << "...");
 
-                    std::unique_ptr<CheckResult> subResultPointer = formulaChecker(p.second);
+                    std::unique_ptr<CheckResult> subResultPointer = formulaChecker(pair.second);
 
                     ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
                     auto sat = subResult.getTruthValuesVector();
 
-                    apSets[p.first] = std::move(sat);
-                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
+                    apSets[pair.first] = std::move(sat);
+                    STORM_LOG_INFO(" Atomic proposition \"" << pair.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
                 }
                 return apSets;
             }

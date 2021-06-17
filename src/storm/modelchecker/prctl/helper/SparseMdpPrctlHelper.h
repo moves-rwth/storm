@@ -10,8 +10,6 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "MDPModelCheckingHelperReturnType.h"
 
-#include "storm/automata/AcceptanceCondition.h"
-
 #include "storm/utility/solver.h"
 #include "storm/solver/SolveGoal.h"
 
