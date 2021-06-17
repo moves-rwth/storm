@@ -577,14 +577,14 @@ list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cppt
 ##	Google Test gtest
 ##
 #############################################################
-set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/gtest-1.11.0)
+set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/googletest)
 ExternalProject_Add(
         googletest
         #For downloads (may be useful later!)
         #SVN_REPOSITORY http://googletest.googlecode.com/svn/trunk/
         #TIMEOUT 10
         DOWNLOAD_COMMAND ""
-        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.11.0"
+        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/googletest"
         # Force the same output paths for debug and release builds so that
         # we know in which place the binaries end up when using the Xcode generator
         CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${GOOGLETEST_LIB_DIR} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${GOOGLETEST_LIB_DIR}
