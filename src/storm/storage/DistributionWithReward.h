@@ -3,13 +3,10 @@
 #include "storm/storage/Distribution.h"
 
 #include "storm/utility/constants.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
-    namespace utility {
-        template <typename ValueType>
-        class ConstantsComparator;
-    }
-    
+
     namespace storage {
         
         template<typename ValueType, typename StateType = uint32_t>

@@ -19,5 +19,14 @@ namespace storm {
             return true;
         }
         
+        std::shared_ptr<UnboundedIntegerVariable> makeUnboundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
+            if (initValue) {
+                return std::make_shared<UnboundedIntegerVariable>(name, variable, initValue.get(), transient);
+            } else {
+                assert(!transient);
+                return std::make_shared<UnboundedIntegerVariable>(name, variable);
+            }
+        }
+        
     }
 }

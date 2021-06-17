@@ -207,7 +207,21 @@ namespace storm {
             }
             return res;
         }
-
+        
+        bool Program::hasUnboundedVariables() const {
+            for (auto const& globalIntegerVariable : this->globalIntegerVariables) {
+                if (!globalIntegerVariable.hasLowerBoundExpression() || !globalIntegerVariable.hasUpperBoundExpression()) {
+                    return true;
+                }
+            }
+            for (auto const& module : modules) {
+                if (module.hasUnboundedVariables()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
         bool Program::hasUndefinedConstants() const {
             for (auto const& constant : this->getConstants()) {
                 if (!constant.isDefined()) {
@@ -254,10 +268,10 @@ namespace storm {
                         return false;
                     }
                 }
-                if (integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
+                if (integerVariable.hasLowerBoundExpression() && integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
                 }
-                if (integerVariable.getUpperBoundExpression().containsVariable(undefinedConstantVariables)) {
+                if (integerVariable.hasUpperBoundExpression() && integerVariable.getUpperBoundExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
                 }
             }
@@ -437,7 +451,9 @@ namespace storm {
         std::vector<storm::expressions::Expression> Program::getAllRangeExpressions() const {
             std::vector<storm::expressions::Expression> result;
             for (auto const& globalIntegerVariable : this->globalIntegerVariables) {
-                result.push_back(globalIntegerVariable.getRangeExpression());
+                if (globalIntegerVariable.hasLowerBoundExpression() || globalIntegerVariable.hasUpperBoundExpression()) {
+                    result.push_back(globalIntegerVariable.getRangeExpression());
+                }
             }
 
             for (auto const& module : modules) {
@@ -1065,37 +1081,43 @@ namespace storm {
             }
             for (auto const& variable : this->getGlobalIntegerVariables()) {
                 // Check that bound expressions of the range.
-                std::set<storm::expressions::Variable> containedVariables = variable.getLowerBoundExpression().getVariables();
-                std::set<storm::expressions::Variable> illegalVariables;
-                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                bool isValid = illegalVariables.empty();
+                if (variable.hasLowerBoundExpression()) {
+                    std::set<storm::expressions::Variable> containedVariables = variable.getLowerBoundExpression().getVariables();
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
 
-                if (!isValid) {
-                    std::vector<std::string> illegalVariableNames;
-                    for (auto const& var : illegalVariables) {
-                        illegalVariableNames.push_back(var.getName());
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                 }
 
-                containedVariables = variable.getLowerBoundExpression().getVariables();
-                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                isValid = illegalVariables.empty();
-                if (!isValid) {
-                    std::vector<std::string> illegalVariableNames;
-                    for (auto const& var : illegalVariables) {
-                        illegalVariableNames.push_back(var.getName());
+                if (variable.hasUpperBoundExpression()) {
+                    std::set<storm::expressions::Variable> containedVariables = variable.getUpperBoundExpression().getVariables();
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                 }
 
                 if (variable.hasInitialValue()) {
                     STORM_LOG_THROW(!this->hasInitialConstruct(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": illegal to specify initial value if an initial construct is present.");
 
                     // Check the initial value of the variable.
-                    containedVariables = variable.getInitialValueExpression().getVariables();
+                    std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
+                    std::set<storm::expressions::Variable> illegalVariables;
                     std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                    isValid = illegalVariables.empty();
+                    bool isValid = illegalVariables.empty();
                     if (!isValid) {
                         std::vector<std::string> illegalVariableNames;
                         for (auto const& var : illegalVariables) {
@@ -1138,38 +1160,45 @@ namespace storm {
                 }
                 for (auto const& variable : module.getIntegerVariables()) {
                     // Check that bound expressions of the range.
-                    std::set<storm::expressions::Variable> containedVariables = variable.getLowerBoundExpression().getVariables();
-                    std::set<storm::expressions::Variable> illegalVariables;
-                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                    bool isValid = illegalVariables.empty();
-                    if (!isValid) {
-                        std::vector<std::string> illegalVariableNames;
-                        for (auto const& var : illegalVariables) {
-                            illegalVariableNames.push_back(var.getName());
+                    if (variable.hasLowerBoundExpression()) {
+                        std::set<storm::expressions::Variable> containedVariables = variable.getLowerBoundExpression().getVariables();
+                        std::set<storm::expressions::Variable> illegalVariables;
+                        std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                        bool isValid = illegalVariables.empty();
+                        if (!isValid) {
+                            std::vector<std::string> illegalVariableNames;
+                            for (auto const& var : illegalVariables) {
+                                illegalVariableNames.push_back(var.getName());
+                            }
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                         }
-                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
-
-                    containedVariables = variable.getLowerBoundExpression().getVariables();
-                    illegalVariables.clear();
-                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                    isValid = illegalVariables.empty();
-                    if (!isValid) {
-                        std::vector<std::string> illegalVariableNames;
-                        for (auto const& var : illegalVariables) {
-                            illegalVariableNames.push_back(var.getName());
+                    
+                    if (variable.hasUpperBoundExpression()) {
+                        std::set<storm::expressions::Variable> containedVariables = variable.getUpperBoundExpression().getVariables();
+                        std::set<storm::expressions::Variable> illegalVariables;
+    
+                        illegalVariables.clear();
+                        std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                        bool isValid = illegalVariables.empty();
+                        if (!isValid) {
+                            std::vector<std::string> illegalVariableNames;
+                            for (auto const& var : illegalVariables) {
+                                illegalVariableNames.push_back(var.getName());
+                            }
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                         }
-                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
                     }
 
                     if (variable.hasInitialValue()) {
                         STORM_LOG_THROW(!this->hasInitialConstruct(), storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": illegal to specify initial value if an initial construct is present.");
 
                         // Check the initial value of the variable.
-                        containedVariables = variable.getInitialValueExpression().getVariables();
+                        std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
+                        std::set<storm::expressions::Variable> illegalVariables;
                         illegalVariables.clear();
                         std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
-                        isValid = illegalVariables.empty();
+                        bool isValid = illegalVariables.empty();
                         if (!isValid) {
                             std::vector<std::string> illegalVariableNames;
                             for (auto const& var : illegalVariables) {
@@ -1623,8 +1652,7 @@ namespace storm {
 
             // Assert the bounds of the global variables.
             for (auto const& variable : this->getGlobalIntegerVariables()) {
-                solver->add(variable.getExpression() >= variable.getLowerBoundExpression());
-                solver->add(variable.getExpression() <= variable.getUpperBoundExpression());
+                solver->add(variable.getRangeExpression());
             }
 
             // Make the global variables local, such that the resulting module covers all occurring variables. Note that
@@ -1642,8 +1670,7 @@ namespace storm {
                 allClockVariables.insert(allClockVariables.end(), module.getClockVariables().begin(), module.getClockVariables().end());
 
                 for (auto const& variable : module.getIntegerVariables()) {
-                    solver->add(variable.getExpression() >= variable.getLowerBoundExpression());
-                    solver->add(variable.getExpression() <= variable.getUpperBoundExpression());
+                    solver->add(variable.getRangeExpression());
                 }
 
                 if (module.hasInvariant()) {
@@ -1987,14 +2014,10 @@ namespace storm {
 
         void Program::createMissingInitialValues() {
             for (auto& variable : globalBooleanVariables) {
-                if (!variable.hasInitialValue()) {
-                    variable.setInitialValueExpression(manager->boolean(false));
-                }
+                variable.createMissingInitialValue();
             }
             for (auto& variable : globalIntegerVariables) {
-                if (!variable.hasInitialValue()) {
-                    variable.setInitialValueExpression(variable.getLowerBoundExpression());
-                }
+                variable.createMissingInitialValue();
             }
         }
 
