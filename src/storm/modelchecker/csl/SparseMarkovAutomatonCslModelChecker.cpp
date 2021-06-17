@@ -116,25 +116,9 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
             storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
+            STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
             std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
             std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
-
-            STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
-
-            std::map<std::string, storm::storage::BitVector> apSets;
-
-            // TODO simplify APs
-            for (auto& p : extracted) {
-                STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
-
-                std::unique_ptr<CheckResult> subResultPointer = this->check(env, *p.second);
-                ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-                auto sat = subResult.getTruthValuesVector();
-
-                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
-
-                apSets[p.first] = std::move(sat);
-            }
 
             const SparseMarkovAutomatonModelType& ma = this->getModel();
             typedef typename storm::models::sparse::Mdp<typename SparseMarkovAutomatonModelType::ValueType> SparseMdpModelType;
@@ -161,6 +145,11 @@ namespace storm {
 
             storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(embeddedMdp.getTransitionMatrix(), this->getModel().getNumberOfStates());
             storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, embeddedMdp);
+
+            // Compute Satisfaction sets for APs
+            auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) { return this->check(env, *formula); };
+            std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
+
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
             // We can directly return the numericResult vector as the state space of the CTMC and the embedded MDP are exactly the same

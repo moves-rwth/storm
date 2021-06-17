@@ -161,56 +161,13 @@ namespace storm {
 
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
 
+            STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
             std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
+            
             std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
 
-            STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
-
-
-
-            std::map<std::string, storm::storage::BitVector> apSets;
-            std::map<std::string, std::string> substitution;
-
-            // TODO Maintain a mapping from APsets to labels in order to use the same label for the same formulas
-            std::map<storm::storage::BitVector, std::string> labels;
-
-            for (auto& p : extracted) {
-                STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
-
-                std::unique_ptr<CheckResult> subResultPointer = this->check(env, *p.second);
-                ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-                auto sat = subResult.getTruthValuesVector();
-
-                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
-
-
-                auto occ = labels.find(sat);
-                if(occ != labels.end()){
-                    // Reuse AP
-                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is equivalent to " << occ->second << ", substituting...");
-                    substitution[p.first] = occ->second;
-                    continue;
-                }
-                /*// equivalent to !pi
-                occ = labels.find(~sat);
-                if(occ != labels.end()){
-                    // Reuse negated AP
-                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is equivalent to !" << occ->second << ", substituting...");
-                    substitution[p.first] =  todo: ! occ->second;
-                    continue;
-                }
-                 */
-
-                labels[sat] = p.first;
-                apSets[p.first] = std::move(sat);
-                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
-            }
-
-            ltlFormula = ltlFormula->substitute(substitution);
-
             const SparseMdpModelType& mdp = this->getModel();
-
-            // TODO
+            // TODO ?
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                 STORM_LOG_TRACE("Writing model to model.dot");
                 std::ofstream modelDot("model.dot");
@@ -218,8 +175,13 @@ namespace storm {
                 modelDot.close();
             }
 
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(mdp.getTransitionMatrix(), this->getModel().getNumberOfStates());
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(mdp.getTransitionMatrix(), mdp.getNumberOfStates());
             storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, mdp);
+
+            // Compute Satisfaction sets for APs
+            auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) { return this->check(env, *formula); };
+            std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
+
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));

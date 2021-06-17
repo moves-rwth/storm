@@ -4,6 +4,7 @@
 #include "storm/solver/SolveGoal.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 
 
 namespace storm {
@@ -27,6 +28,7 @@ namespace storm {
                 using productModelType = typename std::conditional<Nondeterministic, storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Dtmc<ValueType>>::type;
 
 
+
                 /*!
                  * Initializes the helper for a discrete time model (i.e. DTMC, MDP)
                  * @param the transition matrix of the model
@@ -44,6 +46,16 @@ namespace storm {
                 std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets);
 
                 /*!
+                 * todo computes Sat sets of AP
+                 * @param
+                 * @param
+                 * @return
+                 */
+                std::map<std::string, storm::storage::BitVector> computeApSets(std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker);
+
+
+            private:
+                /*!
                  * Computes the (maximizing) probabilities for the constructed DA product
                  * @param the DA to build the product with
                  * @param the atomic propositions and satisfaction sets
@@ -52,8 +64,6 @@ namespace storm {
                  */
                 std::vector<ValueType> computeDAProductProbabilities(Environment const& env, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets);
 
-
-            private:
 
                 /*!
                  * Compute a set S of states that admit a probability 1 strategy of satisfying the given acceptance condition (in DNF).

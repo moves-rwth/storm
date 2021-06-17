@@ -147,6 +147,7 @@ namespace storm {
             const SparseDtmcModelType& dtmc = this->getModel();
             storm::solver::SolveGoal<ValueType> goal(dtmc, checkTask);
 
+            // TODO HOA call LTL helper
             std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeDAProductProbabilities(env, dtmc, std::move(goal), *da, apSets, checkTask.isQualitativeSet());
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
@@ -155,23 +156,9 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
             storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
+            STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
             std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
             std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
-
-            STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
-            // TODO simplify APs
-            std::map<std::string, storm::storage::BitVector> apSets;
-            for (auto& p : extracted) {
-                STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
-
-                std::unique_ptr<CheckResult> subResultPointer = this->check(env, *p.second);
-                ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-                auto sat = subResult.getTruthValuesVector();
-
-                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
-
-                apSets[p.first] = std::move(sat);
-            }
 
             const SparseDtmcModelType& dtmc = this->getModel();
 
@@ -185,6 +172,11 @@ namespace storm {
 
             storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix(), this->getModel().getNumberOfStates());
             storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, dtmc);
+
+            // Compute Satisfaction sets for APs
+            auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) { return this->check(env, *formula); };
+            std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
+
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));

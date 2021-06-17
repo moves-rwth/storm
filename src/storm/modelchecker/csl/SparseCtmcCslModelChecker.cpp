@@ -100,40 +100,27 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
             storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
+            STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
             std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
             std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
 
-            STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
-
-            std::map<std::string, storm::storage::BitVector> apSets;
-            // TODO simplify APs
-            for (auto& p : extracted) {
-                STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
-
-                std::unique_ptr<CheckResult> subResultPointer = this->check(env, *p.second);
-                ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-                auto sat = subResult.getTruthValuesVector();
-
-                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
-
-                apSets[p.first] = std::move(sat);
-            }
 
             const SparseCtmcModelType& ctmc = this->getModel();
             typedef typename storm::models::sparse::Dtmc<typename SparseCtmcModelType::ValueType> SparseDtmcModelType;
 
             STORM_LOG_INFO("Computing embedded DTMC...");
-            // compute probability matrix (embedded DTMC)
+            // Compute probability matrix (embedded DTMC)
             storm::storage::SparseMatrix<ValueType> probabilityMatrix = storm::modelchecker::helper::SparseCtmcCslHelper::computeProbabilityMatrix(ctmc.getTransitionMatrix(), ctmc.getExitRateVector());
-            // copy of the state labelings of the CTMC
+            // Copy of the state labelings of the CTMC
             storm::models::sparse::StateLabeling labeling(ctmc.getStateLabeling());
 
-            // the embedded DTMC, used for building the product and computing the probabilities in the product
+            // The embedded DTMC, used for building the product and computing the probabilities in the product
             SparseDtmcModelType embeddedDtmc(std::move(probabilityMatrix), std::move(labeling));
             storm::solver::SolveGoal<ValueType> goal(embeddedDtmc, checkTask);
 
             STORM_LOG_INFO("Performing ltl probability computations in embedded DTMC...");
 
+            // TODO ?
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                 STORM_LOG_TRACE("Writing model to model.dot");
                 std::ofstream modelDot("model.dot");
@@ -141,11 +128,16 @@ namespace storm {
                 modelDot.close();
             }
 
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(embeddedDtmc.getTransitionMatrix(), this->getModel().getNumberOfStates());
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(embeddedDtmc.getTransitionMatrix(), embeddedDtmc.getNumberOfStates());
             storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, embeddedDtmc);
+
+            // Compute Satisfaction sets for APs
+            auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) { return this->check(env, *formula); };
+            std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
+
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
-            // we can directly return the numericResult vector as the state space of the CTMC and the embedded DTMC are exactly the same
+            // We can directly return the numericResult vector as the state space of the CTMC and the embedded DTMC are exactly the same
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
 

@@ -1,3 +1,5 @@
+#include <modelchecker/results/ExplicitQualitativeCheckResult.h>
+#include <logic/ExtractMaximalStateFormulasVisitor.h>
 #include "SparseLTLHelper.h"
 
 #include "storm/transformer/DAProductBuilder.h"
@@ -259,7 +261,7 @@ namespace storm {
 
 
             template<typename ValueType, bool Nondeterministic>
-            std::vector <ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
+            std::vector <ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const& env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
                 std::shared_ptr<storm::logic::Formula const> ltlFormula;
                 STORM_LOG_THROW((!Nondeterministic) || this->isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
                 if (Nondeterministic && this->getOptimizationDirection() == OptimizationDirection::Minimize) {
@@ -292,6 +294,23 @@ namespace storm {
                 }
 
                 return numericResult;
+            }
+
+            template<typename ValueType, bool Nondeterministic>
+            std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker){
+                std::map<std::string, storm::storage::BitVector> apSets;
+                for (auto& p : extracted) {
+                    STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
+
+                    std::unique_ptr<CheckResult> subResultPointer = formulaChecker(p.second);
+
+                    ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+                    auto sat = subResult.getTruthValuesVector();
+
+                    apSets[p.first] = std::move(sat);
+                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
+                }
+                return apSets;
             }
 
             template class SparseLTLHelper<double, false>;
