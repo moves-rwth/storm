@@ -22,12 +22,10 @@
 namespace storm {
     namespace automata {
 
-        bool LTL2DeterministicAutomaton::isExternalDaToolSet() {
-            return std::getenv("LTL2DA");
-        }
 
-        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daInternalTool(std::string const& prefixLtl, bool dnf) {
+        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot(storm::logic::Formula const& f, bool dnf) {
 #ifdef STORM_HAVE_SPOT
+            std::string prefixLtl = f.toPrefixString();
 
             spot::parsed_formula spotPrefixLtl = spot::parse_prefix_ltl(prefixLtl);
             if(!spotPrefixLtl.errors.empty()){
@@ -68,12 +66,10 @@ namespace storm {
         }
 
         // TODO: this is quite hacky, improve robustness
-        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daExternalTool(std::string const& prefixLtl) {
+        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daExternalTool(storm::logic::Formula const& f, std::string ltl2daTool) {
+            std::string prefixLtl = f.toPrefixString();
 
-
-            std::string ltl2da_tool = std::getenv("LTL2DA");
-
-            STORM_LOG_INFO("Calling external LTL->DA tool:   " << ltl2da_tool << " '" << prefixLtl << "' da.hoa");
+            STORM_LOG_INFO("Calling external LTL->DA tool:   " << ltl2daTool << " '" << prefixLtl << "' da.hoa");
 
             pid_t pid;
 
@@ -82,7 +78,7 @@ namespace storm {
 
             if (pid == 0) {
                 // we are in the child process
-                if (execlp(ltl2da_tool.c_str(), ltl2da_tool.c_str(), prefixLtl.c_str(), "da.hoa", NULL) < 0) {
+                if (execlp(ltl2daTool.c_str(), ltl2daTool.c_str(), prefixLtl.c_str(), "da.hoa", NULL) < 0) {
                     std::cerr << "ERROR: exec failed: " << strerror(errno) << std::endl;
                     std::exit(1);
                 }
@@ -110,17 +106,6 @@ namespace storm {
             }
         }
 
-        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2da(storm::logic::Formula const& f, bool dnf) {
-            std::string prefixLtl = f.toPrefixString();
-
-            storm::automata::DeterministicAutomaton::ptr da;
-            if(isExternalDaToolSet()){
-                da = ltl2daExternalTool(prefixLtl);
-            } else {
-                da = ltl2daInternalTool(prefixLtl, dnf);
-            }
-            return da;
-        }
-
     }
+
 }

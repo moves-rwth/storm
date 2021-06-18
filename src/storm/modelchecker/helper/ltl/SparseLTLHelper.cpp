@@ -15,6 +15,8 @@
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
+
 namespace storm {
     namespace modelchecker {
         namespace helper {
@@ -272,11 +274,21 @@ namespace storm {
                     ltlFormula = formula.asSharedPointer();
                 }
 
-
                 STORM_LOG_INFO("Resulting LTL path formula: " << ltlFormula->toString());
                 STORM_LOG_INFO(" in prefix format: " << ltlFormula->toPrefixString());
 
-                std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula, Nondeterministic);
+                // Convert LTL formula to a deterministic automaton
+                std::shared_ptr<storm::automata::DeterministicAutomaton> da;
+                if (env.modelchecker().isLtl2daSet()) {
+                    // Use the external tool given via ltl2da
+                    std::string ltl2da = env.modelchecker().getLtl2da().get();
+                    da = storm::automata::LTL2DeterministicAutomaton::ltl2daExternalTool(*ltlFormula, ltl2da);
+                }
+                else {
+                    // Use the internal tool (Spot)
+                    // For nondeterministic models the acceptance condition is transformed into DNF
+                    da = storm::automata::LTL2DeterministicAutomaton::ltl2daSpot(*ltlFormula, Nondeterministic);
+                }
 
                 STORM_LOG_INFO("Deterministic automaton for LTL formula has "
                                        << da->getNumberOfStates() << " states, "

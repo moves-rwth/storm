@@ -19,8 +19,22 @@ namespace storm {
                  * Creates a new set of general settings.
                  */
                 ModelCheckerSettings();
-                
+
                 bool isFilterRewZeroSet() const;
+
+                /*!
+                 * Retrieves whether the external ltl2da tool has been set.
+                 *
+                 * @return True iff the external ltl2da has been set.
+                 */
+                bool isLtl2daSet() const;
+
+                /*!
+                 * Retrieves the external ltl2da tool that is used for converting LTL formulas to deterministic automata.
+                 *
+                 * @return The executable to use for converting LTL formulas to deterministic automata.
+                 */
+                std::string getLtl2da() const;
 
                 // The name of the module.
                 static const std::string moduleName;
@@ -28,6 +42,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string filterRewZeroOptionName;
+                static const std::string ltl2daName;
             };
 
         } // namespace modules
