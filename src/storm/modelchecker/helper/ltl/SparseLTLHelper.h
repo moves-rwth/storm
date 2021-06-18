@@ -49,7 +49,7 @@ namespace storm {
                  * @param
                  * @return
                  */
-                std::map<std::string, storm::storage::BitVector> computeApSets(std::map<std::string, storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair>  const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker);
+                std::map<std::string, storm::storage::BitVector> computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker);
 
 
             private:

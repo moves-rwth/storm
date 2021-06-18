@@ -133,6 +133,7 @@ namespace storm {
                     << da->getAPSet().size() << " atomic propositions and "
                     << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
 
+            // TODO move computation of apSets to SparseLTLHelper (extracted: AP to formula - std::map<std::string, std::shared_ptr<Formula const>>)
             std::map<std::string, storm::storage::BitVector> apSets;
             for (std::string const& ap : apSet.getAPs()) {
                 std::shared_ptr<storm::logic::Formula const> expression = pathFormula.getAPMapping().at(ap);
@@ -149,6 +150,15 @@ namespace storm {
 
             // TODO HOA call LTL helper
             std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeDAProductProbabilities(env, dtmc, std::move(goal), *da, apSets, checkTask.isQualitativeSet());
+            // storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix(), this->getModel().getNumberOfStates());
+            // storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, dtmc);
+
+            // Compute Satisfaction sets for APs (see above)
+            // auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {return this->check(*formula); };
+            // std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
+
+            // std::vector<ValueType> numericResult = helper.computeDAProductProbabilities(env, *da, apSatSets);
+
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
 
@@ -157,10 +167,10 @@ namespace storm {
             storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
             STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
-
-            // Maintain a mapping from formula-strings to pairs in order to reuse labels of equivalent (compared as strings) formulas
-            std::map<std::string, storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
-            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
+            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
+            // Maintain a mapping from formula-strings to labels in order to reuse labels of equivalent (compared as strings) formulas
+            std::map<std::string, std::string> cached;
+            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted, cached);
 
             const SparseDtmcModelType& dtmc = this->getModel();
 

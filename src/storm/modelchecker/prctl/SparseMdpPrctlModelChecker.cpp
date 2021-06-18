@@ -162,10 +162,10 @@ namespace storm {
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
 
             STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
-
-            // Maintain a mapping from formula-strings to pairs in order to reuse labels of equivalent (compared as strings) formulas
-            std::map<std::string, storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
-            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
+            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
+            // Maintain a mapping from formula-strings to labels in order to reuse labels of equivalent (compared as strings) formulas
+            std::map<std::string, std::string> cached;
+            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted, cached);
 
             const SparseMdpModelType& mdp = this->getModel();
             // TODO ?

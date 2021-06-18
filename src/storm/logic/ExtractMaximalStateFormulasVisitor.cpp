@@ -7,11 +7,11 @@
 namespace storm {
     namespace logic {
 
-        ExtractMaximalStateFormulasVisitor::ExtractMaximalStateFormulasVisitor(FormulaLabelMapping& extractedFormulas) : extractedFormulas(extractedFormulas), nestingLevel(0) {
+        ExtractMaximalStateFormulasVisitor::ExtractMaximalStateFormulasVisitor(ApToFormulaMap& extractedFormulas, std::map<std::string, std::string>& cachedFormulas) : extractedFormulas(extractedFormulas), cachedFormulas(cachedFormulas), nestingLevel(0) {
         }
 
-        std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(PathFormula const& f, FormulaLabelMapping& extractedFormulas) {
-            ExtractMaximalStateFormulasVisitor visitor(extractedFormulas);
+        std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(PathFormula const& f, ApToFormulaMap& extractedFormulas, std::map<std::string, std::string>& cachedFormulas) {
+            ExtractMaximalStateFormulasVisitor visitor(extractedFormulas, cachedFormulas);
             boost::any result = f.accept(visitor, boost::any());
             return boost::any_cast<std::shared_ptr<Formula>>(result);
         }
@@ -152,16 +152,20 @@ namespace storm {
         std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(std::shared_ptr<Formula> f) const {
             // TODO can be optimized
             std::string label;
-            auto it = extractedFormulas.find(f->toString());
-            if (it != extractedFormulas.end()){
+
+            // Find equivalent formula in cache
+            auto it = cachedFormulas.find(f->toString());
+            if (it != cachedFormulas.end()){
                 // Reuse label of equivalent formula
-                label = it->second.first;
+                label = it->second;
             } else {
                 // Create new label
                 label = "p" + std::to_string(extractedFormulas.size());
+                extractedFormulas[label] = f;
+                // Update cache
+                cachedFormulas[f->toString()] = label;
             }
 
-            extractedFormulas[f->toString()] = LabelFormulaPair(label, f);
             return std::make_shared<storm::logic::AtomicLabelFormula>(label);
         }
 
