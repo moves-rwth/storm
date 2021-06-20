@@ -290,10 +290,10 @@ namespace storm {
                     da = storm::automata::LTL2DeterministicAutomaton::ltl2daSpot(*ltlFormula, Nondeterministic);
                 }
 
-                STORM_LOG_INFO("Deterministic automaton for LTL formula has "
+                STORM_PRINT("Deterministic automaton for LTL formula has "
                                        << da->getNumberOfStates() << " states, "
                                        << da->getAPSet().size() << " atomic propositions and "
-                                       << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
+                                       << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition." << std::endl);
 
 
                 std::vector<ValueType> numericResult = computeDAProductProbabilities(env, *da, apSatSets);
