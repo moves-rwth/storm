@@ -7,7 +7,7 @@ option(STORM_3RDPARTY_BINARY_DIR "3rd party bin dir")
 message(STATUS "Carl - Storm 3rdparty binary dir: ${STORM_3RDPARTY_BINARY_DIR}")
 
 ExternalProject_Add(carl-config
-	GIT_REPOSITORY https://github.com/smtrat/carl
+	GIT_REPOSITORY https://github.com/ths-rwth/carl
 	GIT_TAG master14
 	PREFIX here
 	SOURCE_DIR source_dir

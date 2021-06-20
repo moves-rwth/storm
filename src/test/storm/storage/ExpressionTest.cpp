@@ -209,6 +209,26 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.hasBooleanType());
     ASSERT_NO_THROW(tempExpression = intVarExpression <= rationalVarExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
+
+    STORM_SILENT_ASSERT_THROW(tempExpression = trueExpression % piExpression, storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = threeExpression % threeExpression);
+    EXPECT_TRUE(tempExpression.hasIntegerType());
+    ASSERT_NO_THROW(tempExpression = threeExpression % piExpression);
+    EXPECT_TRUE(tempExpression.hasRationalType());
+    ASSERT_NO_THROW(tempExpression = piExpression % threeExpression);
+    EXPECT_TRUE(tempExpression.hasRationalType());
+    ASSERT_NO_THROW(tempExpression = piExpression % piExpression);
+    EXPECT_TRUE(tempExpression.hasRationalType());
+
+    STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::modulo(trueExpression, piExpression), storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = storm::expressions::modulo(threeExpression, threeExpression));
+    EXPECT_TRUE(tempExpression.hasIntegerType());
+    ASSERT_NO_THROW(tempExpression = storm::expressions::modulo(threeExpression, piExpression));
+    EXPECT_TRUE(tempExpression.hasRationalType());
+    ASSERT_NO_THROW(tempExpression = storm::expressions::modulo(piExpression, threeExpression));
+    EXPECT_TRUE(tempExpression.hasRationalType());
+    ASSERT_NO_THROW(tempExpression = storm::expressions::modulo(piExpression, piExpression));
+    EXPECT_TRUE(tempExpression.hasRationalType());
     
     STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::minimum(trueExpression, piExpression), storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = storm::expressions::minimum(threeExpression, threeExpression));
@@ -260,7 +280,6 @@ TEST(Expression, OperatorTest) {
     ASSERT_NO_THROW(tempExpression = storm::expressions::pow(intVarExpression, rationalVarExpression));
     EXPECT_TRUE(tempExpression.hasRationalType());
 
-    STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::modulo(trueExpression, piExpression), storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = storm::expressions::maximum(threeExpression, threeExpression));
     EXPECT_TRUE(tempExpression.hasIntegerType());
 }
