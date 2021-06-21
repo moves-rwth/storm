@@ -79,7 +79,7 @@ namespace storm {
                 const ConstantType biasCorrectedMovingAverage = radam->decayingStepAverage[steppingParameter] / (1 - utility::pow(radam->averageDecay, stepNum + 1));
                 const ConstantType squaredAverageDecayPow = utility::pow(radam->squaredAverageDecay, stepNum + 1);
                 // 8: Compute the length of the approximated single moving average
-                const ConstantType lengthApproxSMA = maxLengthApproxSMA - ((2 * (stepNum + 1) * squaredAverageDecayPow) / (1 - squaredAverageDecayPow));
+                const ConstantType lengthApproxSMA = maxLengthApproxSMA - ((2 * (utility::convertNumber<ConstantType>(stepNum) + 1) * squaredAverageDecayPow) / (1 - squaredAverageDecayPow));
                 // 9: If the variance is tractable, i.e. lengthApproxSMA > 4, then
                 if (lengthApproxSMA > 4) {
                     // 10: Compute adaptive learning rate
