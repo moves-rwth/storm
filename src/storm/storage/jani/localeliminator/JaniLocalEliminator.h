@@ -36,7 +36,7 @@ namespace storm {
 
                 expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
                 expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);
-                OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);
+                OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then, std::set<std::string> &rewardVariables);
                 bool isEliminable(const std::string &automatonName, std::string const& locationName);
                 bool hasLoops(const std::string &automatonName, std::string const& locationName);
                 bool isPossiblyInitial(const std::string &automatonName, std::string const &locationName);
@@ -49,6 +49,9 @@ namespace storm {
                 void setPartOfProp(const std::string &automatonName, uint64_t locationIndex, bool isPartOfProp);
                 void clearIsPartOfProp(const std::string &automatonName);
                 bool isVariablePartOfProperty(const std::string &expressionVariableName);
+
+                bool isRewardFormula;
+                std::set<std::string> rewardModels;
             private:
                 Model model;
                 Property property;

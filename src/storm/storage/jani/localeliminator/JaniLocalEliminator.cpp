@@ -12,6 +12,7 @@ namespace storm {
                 STORM_LOG_WARN("Only the first property will be used for local elimination.");
             }
             property = properties[0];
+
             scheduler = EliminationScheduler();
         }
 
@@ -188,6 +189,15 @@ namespace storm {
         JaniLocalEliminator::Session::Session(Model model, Property property) : model(model), property(property), finished(false){
             buildAutomataInfo();
 
+            if (property.getRawFormula()->isRewardOperatorFormula()) {
+                isRewardFormula = true;
+                rewardModels = property.getRawFormula()->getReferencedRewardModels();
+            } else if (property.getRawFormula()->isProbabilityOperatorFormula()){
+                isRewardFormula = false;
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This type of property is currently not supported");
+            }
+
             for (auto &var : property.getUsedVariablesAndConstants()){
                 expressionVarsInProperty.insert(var.getIndex());
             }
@@ -224,8 +234,10 @@ namespace storm {
             return (first.getProbability() * then.getProbability().substitute(first.getAsVariableToExpressionMap())).simplify();
         }
 
-        OrderedAssignments JaniLocalEliminator::Session::executeInSequence(const EdgeDestination& first, const EdgeDestination& then) {
-            STORM_LOG_THROW(!first.usesAssignmentLevels() && !then.usesAssignmentLevels(), storm::exceptions::NotImplementedException, "Assignment levels are currently not supported");
+        OrderedAssignments JaniLocalEliminator::Session::executeInSequence(const EdgeDestination& first, const EdgeDestination& then, std::set<std::string> &rewardVariables) {
+            STORM_LOG_THROW(!first.usesAssignmentLevels() && !then.usesAssignmentLevels(),
+                            storm::exceptions::NotImplementedException,
+                            "Assignment levels are currently not supported");
 
             /*
              * x = 2
@@ -249,14 +261,27 @@ namespace storm {
             }
 
             for (const auto &assignment : first.getOrderedAssignments()) {
-                if (thenVariables.find(assignment.getExpressionVariable()) != thenVariables.end())
-                    continue; // Skip variables for which a second assignment exists
+                if (thenVariables.find(assignment.getExpressionVariable()) != thenVariables.end()) {
+                    continue;
+                }
                 newOa.add(assignment);
             }
 
             std::map<expressions::Variable, expressions::Expression> substitutionMap = first.getAsVariableToExpressionMap();
-            for (const auto &assignment : then.getOrderedAssignments()){
-                newOa.add(Assignment(assignment.getVariable(), assignment.getAssignedExpression().substitute(substitutionMap).simplify()));
+            for (const auto &assignment : then.getOrderedAssignments()) {
+
+                bool isReward = rewardVariables.count(assignment.getExpressionVariable().getName());
+                auto firstAssignment = substitutionMap.find(assignment.getExpressionVariable());
+                if (isReward && firstAssignment != substitutionMap.end()) {
+
+                    auto newAssignment =
+                            (*firstAssignment).second + assignment.getAssignedExpression().substitute(substitutionMap);
+
+                    newOa.add(Assignment(assignment.getVariable(), newAssignment));
+                } else {
+                    newOa.add(Assignment(assignment.getVariable(),
+                                         assignment.getAssignedExpression().substitute(substitutionMap).simplify()));
+                }
             }
             return newOa;
         }

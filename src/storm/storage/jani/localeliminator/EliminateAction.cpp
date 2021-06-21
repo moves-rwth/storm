@@ -94,7 +94,7 @@ namespace storm {
 
                         expressions::Expression probability = session.getProbability(dest, outDest);
 
-                        OrderedAssignments oa = session.executeInSequence(dest, outDest);
+                        OrderedAssignments oa = session.executeInSequence(dest, outDest, session.rewardModels);
                         TemplateEdgeDestination templateEdgeDestination(oa);
                         templateEdge->addDestination(templateEdgeDestination);
 
