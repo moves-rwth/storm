@@ -210,7 +210,7 @@ namespace storm {
                 }
 
                 std::vector<VariableType<ValueType>> miniBatch;
-                for (uint_fast64_t i = parameterNum; i < std::min(parameterEnumeration.size(), parameterNum + miniBatchSize); i++) {
+                for (uint_fast64_t i = parameterNum; i < std::min((uint_fast64_t) parameterEnumeration.size(), parameterNum + miniBatchSize); i++) {
                     miniBatch.push_back(parameterEnumeration[i]);
                 }
                 
