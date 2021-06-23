@@ -15,8 +15,6 @@
 #include "spot/twaalgos/translate.hh"
 #include "spot/twaalgos/hoa.hh"
 #include "spot/twaalgos/totgba.hh"
-#include "spot/twaalgos/toparity.hh"
-#include "spot/twa/acc.hh"
 #endif
 
 namespace storm {

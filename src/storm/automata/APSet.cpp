@@ -1,5 +1,7 @@
 
 #include "storm/automata/APSet.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
 
 #include <string>
 #include <exception>
@@ -20,13 +22,12 @@ namespace storm {
         }
 
         void APSet::add(const std::string& ap) {
-            if (size() >= MAX_APS)
-                throw std::runtime_error("Set of atomic proposition size is limited to " + std::to_string(MAX_APS));
+            STORM_LOG_THROW(size() < MAX_APS, storm::exceptions::UnexpectedException, "Set of atomic proposition size is limited to " << std::to_string(MAX_APS));
 
             unsigned int index = size();
             bool fresh = ap_to_index.insert(std::make_pair(ap, index)).second;
-            if (!fresh)
-                throw std::runtime_error("Duplicate atomic proposition '" + ap + "' in APSet");
+            STORM_LOG_THROW(fresh, storm::exceptions::UnexpectedException,"Duplicate atomic proposition '" << ap << "' in APSet");
+
             index_to_ap.push_back(ap);
         }
 
@@ -54,9 +55,7 @@ namespace storm {
         }
 
         APSet::alphabet_element APSet::elementAddAP(alphabet_element element, unsigned int ap) const {
-            if (ap >= size()) {
-                throw std::runtime_error("AP out of range");
-            }
+            STORM_LOG_THROW(ap < size(), storm::exceptions::UnexpectedException, "AP out of range");
 
             return element | (1ul << ap);
         }
