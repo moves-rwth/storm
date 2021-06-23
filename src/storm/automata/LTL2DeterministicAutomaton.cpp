@@ -4,7 +4,7 @@
 #include "storm/logic/Formula.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
-#include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/FileIoException.h"
 
 #include <sys/wait.h>
