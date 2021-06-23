@@ -126,7 +126,7 @@ namespace storm {
             globallyFormula.name("globally formula");
             hoaPathFormula = qi::lit("HOA:") > qi::lit("{")
                 > quotedString[qi::_val = phoenix::bind(&FormulaParserGrammar::createHOAPathFormula, phoenix::ref(*this), qi::_1)]
-                >> *(qi::lit(",") > quotedString > qi::lit("->") > formula(FormulaKind::Path, qi::_r1) )[phoenix::bind(&FormulaParserGrammar::addHoaAPMapping, phoenix::ref(*this), *qi::_val, qi::_1, qi::_2)]
+                >> *(qi::lit(",") > quotedString > qi::lit("->") > formula(FormulaKind::State, qi::_r1) )[phoenix::bind(&FormulaParserGrammar::addHoaAPMapping, phoenix::ref(*this), *qi::_val, qi::_1, qi::_2)]
                 > qi::lit("}");
             multiBoundedPathFormulaOperand = pathFormula(qi::_r1)[qi::_pass = phoenix::bind(&FormulaParserGrammar::isValidMultiBoundedPathFormulaOperand, phoenix::ref(*this), qi::_1)][qi::_val = qi::_1];
             multiBoundedPathFormulaOperand.name("multi bounded path formula operand");
