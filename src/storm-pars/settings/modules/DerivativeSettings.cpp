@@ -14,8 +14,7 @@ namespace storm {
         namespace modules {
 
             const std::string DerivativeSettings::moduleName = "derivative";
-            const std::string DerivativeSettings::extremumSearch = "find-extremum";
-            const std::string DerivativeSettings::feasibleInstantiationSearch = "find-feasible";
+            const std::string DerivativeSettings::feasibleInstantiationSearch = "gradient-descent";
             const std::string DerivativeSettings::derivativeAtInstantiation = "compute-derivative";
             const std::string DerivativeSettings::learningRate = "learning-rate";
             const std::string DerivativeSettings::miniBatchSize = "batch-size";
@@ -29,7 +28,6 @@ namespace storm {
             const std::string DerivativeSettings::startPoint = "start-point";
 
             DerivativeSettings::DerivativeSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, extremumSearch, false, "Search for an extremum (one-shot, starting at p->0.5 for all parameters p)").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, feasibleInstantiationSearch, false, "Search for a feasible instantiation (restart with new instantiation while not feasible)").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, derivativeAtInstantiation, false, "Compute the derivative at an input instantiation")
                     .addArgument(storm::settings::ArgumentBuilder::createStringArgument(derivativeAtInstantiation, "Instantiation at which the derivative should be computed").build()).build());
@@ -48,10 +46,6 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, terminationEpsilon, false, "The change in value that constitutes as a \"tiny change\", after a few of which the gradient descent will terminate")
                     .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(terminationEpsilon, "The epsilon").setDefaultValueDouble(1e-6).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, omitInconsequentialParams, false, "Parameters that are removed in minimization because they have no effect on the rational function are normally set to 0.5 in the final instantiation. If this flag is set, they will be omitted from the final instantiation entirely.").setIsAdvanced().build());
-            }
-
-            bool DerivativeSettings::isExtremumSearchSet() const {
-                return this->getOption(extremumSearch).getHasOptionBeenSet();
             }
 
             bool DerivativeSettings::isFeasibleInstantiationSearchSet() const {

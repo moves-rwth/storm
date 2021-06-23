@@ -23,11 +23,6 @@ namespace storm {
                 DerivativeSettings();
 
 								/*!
-								 * Retrieves whether an extremum should be found by Gradient Descent.
-								 */
-								bool isExtremumSearchSet() const;
-
-								/*!
 								 * Retrieves whether a feasible instance should be found by Gradient Descent.
 								 */
 								bool isFeasibleInstantiationSearchSet() const;

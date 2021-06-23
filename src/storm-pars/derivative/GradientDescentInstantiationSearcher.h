@@ -2,12 +2,15 @@
 #define STORM_DERIVATIVECHECKER_H
 
 #include <map>
+#include <memory>
 #include "analysis/GraphConditions.h"
+#include "settings/modules/GeneralSettings.h"
+#include "storm-parsers/parser/FormulaParser.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "logic/Formula.h"
 #include "solver/LinearEquationSolver.h"
-#include "storm-pars/analysis/MonotonicityChecker.h"
-#include "storm-pars/derivative/DerivativeEvaluationHelper.h"
+#include "storm-pars/analysis/MonotonicityHelper.h"
+#include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseDtmcInstantiationModelChecker.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/models/sparse/Dtmc.h"
@@ -17,26 +20,17 @@
 
 namespace storm {
     namespace derivative {
-        template <typename ValueType, typename ConstantType>
+        template <typename FunctionType, typename ConstantType>
         class GradientDescentInstantiationSearcher {
 
         public:
             /**
              * The GradientDescentInstantiationSearcher can find extrema and feasible instantiations in pMCs,
              * for either rewards or probabilities.
-             * Internally uses the DerivativeEvaluationHelper to evaluate derivatives at instantiations.
+             * Internally uses the SparseDerivativeInstantiationModelChecker to evaluate derivatives at instantiations.
              * @param env The environment. Always pass the same environment to the gradientDescent call!
-             * @param model The Dtmc to optimize. This must have _one_
-             * target state labeled "target" and _one_ initial state labeled "init". Note this is exactly the
-             * kind of Dtmc the SparseParametricDtmcSimplifier spits out.
-             * The constructor will setup the matrices used for computing the derivatives by constructing the
-             * DerivativeEvaluationHelper. Note this can consume a substantial amount of memory if the model is
-             * big and there's a large number of parameters.
-             * @param parameters The Dtmc's parameters. See storm::models::sparse::getAllParameters
-             * @param formulas The first element of this is considered, which needs to be an eventually formula.
-             * A "Rmax=?" or "Pmin=?" formula needs to be input to find an optimum.
-             * A "Rmax>=0.5" or "Pmin<=0.159" formula needs to be input to find a feasible instantiation.
-             * @param method The method of graident descent that is used. 
+             * @param model The Dtmc to optimize.
+             * @param method The method of gradient descent that is used. 
              * @param learningRate The learning rate of the Gradient Descent.
              * @param averageDecay Decay of ADAM's decaying average.
              * @param squaredAverageDecay Decay of ADAM's squared decaying average.
@@ -45,80 +39,25 @@ namespace storm {
              * a number of these the algorithm will terminate.
              * @param startPoint Start point of the search (default: all parameters set to 0.5)
              * @param recordRun Records the run into a global variable, which can be converted into JSON
-             * using the printRunAsJson function (currently not exposed as API though).
+             * using the printRunAsJson function 
              */
-            GradientDescentInstantiationSearcher<ValueType, ConstantType>(
-                    Environment const& env,
-                    std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const model,
-                    std::set<typename utility::parametric::VariableType<ValueType>::type> const parameters,
-                    std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas,
+            GradientDescentInstantiationSearcher<FunctionType, ConstantType>(
+                    storm::models::sparse::Dtmc<FunctionType> const model,
                     GradientDescentMethod method = GradientDescentMethod::ADAM,
                     double learningRate = 0.1,
                     double averageDecay = 0.9,
                     double squaredAverageDecay = 0.999,
                     uint_fast64_t miniBatchSize = 32,
                     double terminationEpsilon = 1e-6,
-                    boost::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>> startPoint = boost::none,
+                    boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>> startPoint = boost::none,
                     bool recordRun = false
             ) : model(model)
-              , parameters(parameters)
-              , formula(formulas[0])
-              , instantiationModelChecker(std::make_unique<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<ValueType>, ConstantType>>(*model))
-              /* , monotonicityChecker(std::make_unique<analysis::MonotonicityChecker<ValueType>>(model, formulas, std::vector<storm::storage::ParameterRegion<ValueType>>(), true)) */
+              , derivativeEvaluationHelper(std::make_unique<SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>>(model))
+              , instantiationModelChecker(std::make_unique<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<FunctionType>, ConstantType>>(model))
+              , startPoint(startPoint)
               , miniBatchSize(miniBatchSize)
               , terminationEpsilon(terminationEpsilon)
-              , startPoint(startPoint)
               , recordRun(recordRun) {
-                if (formula->isProbabilityOperatorFormula()) {
-                    resultType = ResultType::PROBABILITY;
-                    derivativeEvaluationHelper = std::move(std::make_unique<storm::derivative::DerivativeEvaluationHelper<ValueType, ConstantType>>(env, model, parameters, formulas));
-                } else if (formula->isRewardOperatorFormula()) {
-                    resultType = ResultType::REWARD;
-                    derivativeEvaluationHelper = std::move(std::make_unique<storm::derivative::DerivativeEvaluationHelper<ValueType, ConstantType>>(env, model, parameters, formulas, ResultType::REWARD, std::string("")));
-                } else {
-                    STORM_LOG_ERROR("Formula must be reward operator formula or probability operator formula!");
-                }
-                switch (resultType) {
-                    case ResultType::PROBABILITY: {
-                        STORM_LOG_THROW(formula->asProbabilityOperatorFormula().hasOptimalityType(),
-                                storm::exceptions::WrongFormatException,
-                                "no optimality type in formula");
-                        optimalityType = formula->asProbabilityOperatorFormula().getOptimalityType();
-                        if (formula->asProbabilityOperatorFormula().hasBound()) {
-                            bound = boost::make_optional(formula->asProbabilityOperatorFormula().getBound());
-                        }
-                        break;
-                    }
-                    case ResultType::REWARD: {
-                        STORM_LOG_THROW(formula->asRewardOperatorFormula().hasOptimalityType(),
-                                storm::exceptions::WrongFormatException,
-                                "no optimality type in formula");
-                        optimalityType = formula->asRewardOperatorFormula().getOptimalityType();
-                        if (formula->asRewardOperatorFormula().hasBound()) {
-                            bound = boost::make_optional(formula->asRewardOperatorFormula().getBound());
-                        }
-                    }
-                }
-
-                switch (resultType) {
-                    case ResultType::PROBABILITY: {
-                        auto formulaWithoutBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
-                                formulas[0]->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), storm::logic::OperatorInformation(boost::none, boost::none));
-                        const storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask
-                            = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBound);
-                        instantiationModelChecker->specifyFormula(checkTask);
-                        break;
-                    }
-                    case ResultType::REWARD: {
-                        auto formulaWithoutBound = std::make_shared<storm::logic::RewardOperatorFormula>(
-                                formulas[0]->asRewardOperatorFormula().getSubformula().asSharedPointer());
-                        const storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask
-                            = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBound);
-                        instantiationModelChecker->specifyFormula(checkTask);
-                        break;
-                    }
-                }
-
                 switch (method) {
                     case GradientDescentMethod::ADAM: {
                         Adam adam;
@@ -126,10 +65,6 @@ namespace storm {
                         adam.averageDecay = averageDecay;
                         adam.averageDecay = averageDecay;
                         adam.squaredAverageDecay = squaredAverageDecay;
-                        for (auto const& parameter : parameters) {
-                            adam.decayingStepAverage[parameter] = 0;
-                            adam.decayingStepAverageSquared[parameter] = 0;
-                        }
                         gradientDescentType = adam;
                         break;
                     }
@@ -137,12 +72,7 @@ namespace storm {
                         RAdam radam;
                         radam.learningRate = learningRate;
                         radam.averageDecay = averageDecay;
-                        radam.averageDecay = averageDecay;
                         radam.squaredAverageDecay = squaredAverageDecay;
-                        for (auto const& parameter : parameters) {
-                            radam.decayingStepAverage[parameter] = 0;
-                            radam.decayingStepAverageSquared[parameter] = 0;
-                        }
                         gradientDescentType = radam;
                         break;
                     }
@@ -150,9 +80,6 @@ namespace storm {
                         RmsProp rmsProp;
                         rmsProp.learningRate = learningRate;
                         rmsProp.averageDecay = averageDecay;
-                        for (auto const& parameter : parameters) {
-                            rmsProp.rootMeanSquare[parameter] = 0;
-                        }
                         gradientDescentType = rmsProp;
                         break;
                     }
@@ -174,9 +101,6 @@ namespace storm {
                         momentum.learningRate = learningRate;
                         // TODO Document this
                         momentum.momentumTerm = averageDecay;
-                        for (auto const& parameter : parameters) {
-                            momentum.pastStep[parameter] = 0;
-                        }
                         gradientDescentType = momentum;
                         if (method == GradientDescentMethod::MOMENTUM_SIGN) {
                             useSignsOnly = true;
@@ -191,9 +115,6 @@ namespace storm {
                         nesterov.learningRate = learningRate;
                         // TODO Document this
                         nesterov.momentumTerm = averageDecay;
-                        for (auto const& parameter : parameters) {
-                            nesterov.pastStep[parameter] = 0;
-                        }
                         gradientDescentType = nesterov;
                         if (method == GradientDescentMethod::NESTEROV_SIGN) {
                             useSignsOnly = true;
@@ -204,26 +125,89 @@ namespace storm {
                     }
                 }
             }
+
+            /**
+             * specifyFormula specifies a CheckTask.
+             * This will setup the matrices used for computing the derivatives by constructing the
+             * SparseDerivativeInstantiationModelChecker. Note this can consume a substantial amount of memory if the model is
+             * big and there's a large number of parameters.
+             * @param env The environment. Pass the same environment as to gradientDescent. We need this because we need to know what kind of
+             * equation solver we are dealing with.
+             * @param checkTask The CheckTask.
+             */
+            void specifyFormula(Environment const& env, modelchecker::CheckTask<logic::Formula, FunctionType> const& checkTask) {
+                this->currentFormula = checkTask.getFormula().asSharedPointer();
+                this->currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, FunctionType>>(checkTask.substituteFormula(*currentFormula).template convertValueType<FunctionType>());
+
+                if (!checkTask.isRewardModelSet()) {
+                    this->currentFormulaNoBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
+                        checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asSharedPointer(), storm::logic::OperatorInformation(boost::none, boost::none));
+                } else {
+                    // No worries, this works as intended, the API is just weird.
+                    this->currentFormulaNoBound = std::make_shared<storm::logic::RewardOperatorFormula>(
+                        checkTask.getFormula().asRewardOperatorFormula().getSubformula().asSharedPointer());
+                }
+                this->currentCheckTaskNoBound = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, FunctionType>>(*currentFormulaNoBound);
+                this->currentCheckTaskNoBoundConstantType = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(*currentFormulaNoBound);
+
+                this->parameters = storm::models::sparse::getProbabilityParameters(model);
+                if (checkTask.isRewardModelSet()) {
+                    for (auto const& rewardParameter : storm::models::sparse::getRewardParameters(model)) {
+                        this->parameters.insert(rewardParameter);
+                    }
+                }
+                instantiationModelChecker->specifyFormula(*this->currentCheckTaskNoBound);
+                derivativeEvaluationHelper->specifyFormula(env, *this->currentCheckTaskNoBound);
+
+                // TODO: Monotonicity Checker stub :)
+                /* const auto precision = storm::utility::convertNumber<typename utility::parametric::CoefficientType<FunctionType>::type>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()); */
+                /* storm::utility::parametric::Valuation<FunctionType> lowerBoundaries; */
+                /* storm::utility::parametric::Valuation<FunctionType> upperBoundaries; */
+
+                /* // TODO Make regions configurable */
+                /* for (auto parameter : this->parameters) { */
+                /*     lowerBoundaries[parameter] = precision; */
+                /*     upperBoundaries[parameter] = 1 - precision; */
+                /* } */
+
+                /* std::shared_ptr<const storm::logic::Formula> formula = this->currentFormulaNoBound; */
+                /* storage::ParameterRegion<FunctionType> region = storm::storage::ParameterRegion<FunctionType>(lowerBoundaries, upperBoundaries); */
+                /* std::vector<storage::ParameterRegion<FunctionType>> regions = { region }; */
+                /* std::vector<std::shared_ptr<logic::Formula const>> formulas { formula }; */
+                /* std::shared_ptr<models::sparse::Dtmc<FunctionType>> modelSharedPtr = std::make_shared<models::sparse::Dtmc<FunctionType>>(model); */
+                
+                /* this->monotonicityHelper = std::make_unique<storm::analysis::MonotonicityHelper<FunctionType, ConstantType>>(modelSharedPtr, formulas, regions); */
+
+                /* std::cout << "Checking monotonicity..." << std::endl; */
+                /* std::map<std::shared_ptr<storm::analysis::Order>, std::pair<std::shared_ptr<storm::analysis::MonotonicityResult<typename utility::parametric::VariableType<FunctionType>::type>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> resultMap = monotonicityHelper->checkMonotonicityInBuild(std::cout); */
+                /* for (auto const& orderResult : resultMap) { */
+                /*     for (auto const& parameter : this->parameters) { */
+                /*         if (orderResult.second.first->isMonotone(parameter)) { */
+                /*             std::cout << "Is montone in " << parameter << std::endl; */
+                /*         } */
+                /*     } */
+                /* } */
+            }
+
+
             /**
              * Perform Gradient Descent.
-             * @param env The environment. Always pass the same environment as the constructor!
-             * @param findFeasibleInstantiation true iff a feasible instantiation needs to be found, false iff an optimum
-             * needs to be found. This must be compatible with the input formula.
+             * @param env The environment. Pass the same environment as to specifyFormula.
              */
-            std::pair<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>, ConstantType> gradientDescent(
-                Environment const& env,
-                bool findFeasibleInstantiation
+            std::pair<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>, ConstantType> gradientDescent(
+                Environment const& env
             );
+
             /**
              * Print the previously done run as JSON. This run can be retrieved using getVisualizationWalk.
              */
             void printRunAsJson();
-            
+
             /**
              * A point in the Gradient Descent walk, recorded if recordRun is set to true in the constructor (false by default).
              */
             struct VisualizationPoint {
-                std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> position;
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> position;
                 ConstantType value;
             };
             /**
@@ -232,18 +216,22 @@ namespace storm {
             std::vector<VisualizationPoint> getVisualizationWalk();
             
         private:
-            const std::shared_ptr<models::sparse::Dtmc<ValueType>> model;
-            const std::set<typename utility::parametric::VariableType<ValueType>::type> parameters;
-            std::unique_ptr<storm::derivative::DerivativeEvaluationHelper<ValueType, ConstantType>> derivativeEvaluationHelper;
-            const std::shared_ptr<storm::logic::Formula const> formula;
-            const std::unique_ptr<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<ValueType>, ConstantType>> instantiationModelChecker;
-            const std::unique_ptr<storm::analysis::MonotonicityChecker<ValueType>> monotonicityChecker;
+            void resetDynamicValues();
+
+            std::unique_ptr<modelchecker::CheckTask<storm::logic::Formula, FunctionType>> currentCheckTask;
+            std::unique_ptr<modelchecker::CheckTask<storm::logic::Formula, FunctionType>> currentCheckTaskNoBound;
+            std::unique_ptr<modelchecker::CheckTask<storm::logic::Formula, ConstantType>> currentCheckTaskNoBoundConstantType;
+            std::shared_ptr<storm::logic::Formula const> currentFormula;
+            std::shared_ptr<storm::logic::Formula const> currentFormulaNoBound;
+
+            const models::sparse::Dtmc<FunctionType> model;
+            std::set<typename utility::parametric::VariableType<FunctionType>::type> parameters;
+            std::unique_ptr<storm::derivative::SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>> derivativeEvaluationHelper;
+            std::unique_ptr<storm::analysis::MonotonicityHelper<FunctionType, ConstantType>> monotonicityHelper;
+            const std::unique_ptr<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<FunctionType>, ConstantType>> instantiationModelChecker;
+            boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>> startPoint;
             const uint_fast64_t miniBatchSize;
             const double terminationEpsilon;
-            ResultType resultType;
-            boost::optional<storm::logic::Bound> bound;
-            OptimizationDirection optimalityType;
-            boost::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>> startPoint;
 
             // This is for visualizing data
             const bool recordRun;
@@ -255,20 +243,20 @@ namespace storm {
                 double averageDecay;
                 double squaredAverageDecay;
                 double learningRate;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> decayingStepAverageSquared;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> decayingStepAverage;
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> decayingStepAverageSquared;
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> decayingStepAverage;
             };
             struct RAdam {
                 double averageDecay;
                 double squaredAverageDecay;
                 double learningRate;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> decayingStepAverageSquared;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> decayingStepAverage;
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> decayingStepAverageSquared;
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> decayingStepAverage;
             };
             struct RmsProp {
                 double averageDecay;
                 double learningRate;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> rootMeanSquare;
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> rootMeanSquare;
             };
             struct Plain {
                 double learningRate;
@@ -276,12 +264,12 @@ namespace storm {
             struct Momentum {
                 double learningRate;
                 double momentumTerm;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> pastStep;
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> pastStep;
             };
             struct Nesterov {
                 double learningRate;
                 double momentumTerm;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> pastStep;
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> pastStep;
             };
             typedef boost::variant<Adam, RAdam, RmsProp, Plain, Momentum, Nesterov> GradientDescentType;
             GradientDescentType gradientDescentType;
@@ -290,12 +278,12 @@ namespace storm {
 
             ConstantType stochasticGradientDescent(
                 Environment const& env,
-                std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> &position
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> &position
             );
             ConstantType doStep(
-                typename utility::parametric::VariableType<ValueType>::type steppingParameter,
-                std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> &position,
-                const std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> &gradient,
+                typename utility::parametric::VariableType<FunctionType>::type steppingParameter,
+                std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> &position,
+                const std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> &gradient,
                 uint_fast64_t stepNum
             );
             ConstantType constantTypeSqrt(ConstantType input) {

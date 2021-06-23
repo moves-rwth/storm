@@ -25,16 +25,16 @@
 namespace storm {
     namespace derivative {
 
-        template<typename ValueType>
-        using VariableType = typename utility::parametric::VariableType<ValueType>::type;
-        template<typename ValueType>
-        using CoefficientType = typename utility::parametric::CoefficientType<ValueType>::type;
+        template<typename FunctionType>
+        using VariableType = typename utility::parametric::VariableType<FunctionType>::type;
+        template<typename FunctionType>
+        using CoefficientType = typename utility::parametric::CoefficientType<FunctionType>::type;
 
-        template<typename ValueType, typename ConstantType>
-        ConstantType GradientDescentInstantiationSearcher<ValueType, ConstantType>::doStep(
-                VariableType<ValueType> steppingParameter,
-                std::map<VariableType<ValueType>, CoefficientType<ValueType>> &position,
-                const std::map<VariableType<ValueType>, ConstantType> &gradient,
+        template<typename FunctionType, typename ConstantType>
+        ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::doStep(
+                VariableType<FunctionType> steppingParameter,
+                std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> &position,
+                const std::map<VariableType<FunctionType>, ConstantType> &gradient,
                 uint64_t stepNum
             ) {
             const ConstantType precisionAsConstant = utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
@@ -55,11 +55,6 @@ namespace storm {
 
                 const ConstantType toSqrt = correctedSquaredGradient;
                 ConstantType sqrtResult = constantTypeSqrt(toSqrt);
-                /* if (std::is_same<ConstantType, double>::value) { */
-                /*     sqrtResult = constantTypeSqrt(toSqrt); */
-                /* } else { */
-                /*     sqrtResult = carl::sqrt(toSqrt); */
-                /* } */
                 
                 step = (adam->learningRate / (sqrtResult + precisionAsConstant)) * correctedGradient;
             } else if (RAdam* radam = boost::get<RAdam>(&gradientDescentType)) {
@@ -153,35 +148,36 @@ namespace storm {
                 STORM_LOG_ERROR("GradientDescentType was not a known one");
             }
 
-            const CoefficientType<ValueType> convertedStep = utility::convertNumber<CoefficientType<ValueType>>(step);
-            const CoefficientType<ValueType> newPos = position[steppingParameter] + convertedStep;
+            const CoefficientType<FunctionType> convertedStep = utility::convertNumber<CoefficientType<FunctionType>>(step);
+            const CoefficientType<FunctionType> newPos = position[steppingParameter] + convertedStep;
             position[steppingParameter] = newPos;
-            const auto precision = storm::utility::convertNumber<CoefficientType<ValueType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+            const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
             // Map parameter back to (0, 1).
-            position[steppingParameter] = utility::max(utility::zero<CoefficientType<ValueType>>() + precision, position[steppingParameter]);
-            position[steppingParameter] = utility::min(utility::one<CoefficientType<ValueType>>() - precision, position[steppingParameter]);
+            position[steppingParameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, position[steppingParameter]);
+            position[steppingParameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, position[steppingParameter]);
             return utility::abs(utility::convertNumber<ConstantType>(oldPos - position[steppingParameter]));
         }
 
-        template<typename ValueType, typename ConstantType>
-        ConstantType GradientDescentInstantiationSearcher<ValueType, ConstantType>::stochasticGradientDescent(
+        template<typename FunctionType, typename ConstantType>
+        ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGradientDescent(
             Environment const& env,
-            std::map<VariableType<ValueType>, CoefficientType<ValueType>> &position
+            std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> &position
         ) {
-
             uint_fast64_t initialState;           
-            const storm::storage::BitVector initialVector = model->getStates("init");
+            const storm::storage::BitVector initialVector = model.getInitialStates();
             for (uint_fast64_t x : initialVector) {
                 initialState = x;
                 break;
             }
 
             ConstantType currentValue;
-            switch (optimalityType) {
-                case storm::OptimizationDirection::Maximize:
+            switch (this->currentCheckTask->getBound().comparisonType) {
+                case logic::ComparisonType::Greater:
+                case logic::ComparisonType::GreaterEqual:
                     currentValue = -utility::infinity<ConstantType>();
                     break;
-                case storm::OptimizationDirection::Minimize:
+                case logic::ComparisonType::Less:
+                case logic::ComparisonType::LessEqual:
                     currentValue = utility::infinity<ConstantType>();
                     break;
             }
@@ -189,10 +185,10 @@ namespace storm {
             // We count the number of iterations where the value changes less than the threshold, and terminate if it is large enough.
             uint64_t tinyChangeIterations = 0;
 
-            std::map<VariableType<ValueType>, ConstantType> deltaVector;
+            std::map<VariableType<FunctionType>, ConstantType> deltaVector;
 
-            std::vector<VariableType<ValueType>> parameterEnumeration;
-            for (auto parameter : parameters) {
+            std::vector<VariableType<FunctionType>> parameterEnumeration;
+            for (auto parameter : this->parameters) {
                 parameterEnumeration.push_back(parameter);
             }
 
@@ -209,7 +205,7 @@ namespace storm {
                     std::cout << currentValue << std::endl;
                 }
 
-                std::vector<VariableType<ValueType>> miniBatch;
+                std::vector<VariableType<FunctionType>> miniBatch;
                 for (uint_fast64_t i = parameterNum; i < std::min((uint_fast64_t) parameterEnumeration.size(), parameterNum + miniBatchSize); i++) {
                     miniBatch.push_back(parameterEnumeration[i]);
                 }
@@ -217,14 +213,14 @@ namespace storm {
                 ConstantType oldValue = currentValue;
 
                 // If nesterov is enabled, we need to compute the gradient on the predicted position
-                std::map<VariableType<ValueType>, CoefficientType<ValueType>> nesterovPredictedPosition(position);
+                std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> nesterovPredictedPosition(position);
                 if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
                     for (auto const& parameter : miniBatch) {
-                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<ValueType>>(nesterov->momentumTerm)
-                            * storm::utility::convertNumber<CoefficientType<ValueType>>(nesterov->pastStep[parameter]);
-                        const auto precision = storm::utility::convertNumber<CoefficientType<ValueType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-                        nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<ValueType>>() + precision, nesterovPredictedPosition[parameter]);
-                        nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<ValueType>>() - precision, nesterovPredictedPosition[parameter]);
+                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->momentumTerm)
+                            * storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->pastStep[parameter]);
+                        const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                        nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, nesterovPredictedPosition[parameter]);
+                        nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, nesterovPredictedPosition[parameter]);
                     }
                 }
 
@@ -246,27 +242,15 @@ namespace storm {
                 } else {
                     currentValue = valueVector[initialState];
                 }
-                
-                if (bound && bound->isSatisfied(currentValue)) {
-                    std::cout << "Satisfied the bound! Done!" << std::endl;
+
+                if (currentCheckTask->getBound().isSatisfied(currentValue)) {
                     break;
                 }
 
-                if (resultType == ResultType::PROBABILITY) {
-                    auto precision = storm::utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-                    if (!bound && currentValue >= 1 - precision && optimalityType == storm::OptimizationDirection::Maximize) {
-                        std::cout << "Probability is 1! Done!" << std::endl;
-                        break;
-                    }
-                    if (!bound && currentValue <= precision && optimalityType == storm::OptimizationDirection::Minimize) {
-                        std::cout << "Probability is 0! Done!" << std::endl;
-                        break;
-                    }
-                }
-
                 for (auto const& parameter : miniBatch) {
-                    ConstantType delta = derivativeEvaluationHelper->calculateDerivative(env, parameter, nesterovPredictedPosition, valueVector); 
-                    if (optimalityType == storm::OptimizationDirection::Minimize) {
+                    auto checkResult = derivativeEvaluationHelper->check(env, nesterovPredictedPosition, parameter, valueVector);
+                    ConstantType delta = checkResult->getValueVector()[0];
+                    if (currentCheckTask->getBound().comparisonType == logic::ComparisonType::Less || currentCheckTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
                         delta *= -1;
                     }
                     deltaVector[parameter] = delta;
@@ -311,110 +295,118 @@ namespace storm {
             return currentValue;
         }
 
-        template<typename ValueType, typename ConstantType>
-        std::pair<std::map<VariableType<ValueType>, CoefficientType<ValueType>>, ConstantType> GradientDescentInstantiationSearcher<ValueType, ConstantType>::gradientDescent(
-            Environment const& env,
-            bool findFeasibleInstantiation
+        template<typename FunctionType, typename ConstantType>
+        std::pair<std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>, ConstantType> GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescent(
+            Environment const& env
         ) {
-            std::map<VariableType<ValueType>, CoefficientType<ValueType>> bestInstantiation;
+            STORM_LOG_ASSERT(this->currentCheckTask, "Call specifyFormula before calling gradientDescent");
+
+            resetDynamicValues();
+
+            STORM_LOG_ASSERT(this->currentCheckTask->isBoundSet(), "No bound on formula! E.g. P>=0.5 [F \"goal\"]");
+
+            std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> bestInstantiation;
             ConstantType bestValue;
-            switch (optimalityType) {
-                case storm::OptimizationDirection::Maximize:
+            switch (this->currentCheckTask->getBound().comparisonType) {
+                case logic::ComparisonType::Greater:
+                case logic::ComparisonType::GreaterEqual:
                     bestValue = -utility::infinity<ConstantType>();
                     break;
-                case storm::OptimizationDirection::Minimize:
+                case logic::ComparisonType::Less:
+                case logic::ComparisonType::LessEqual:
                     bestValue = utility::infinity<ConstantType>();
                     break;
             }
 
-            // For bounded formulas, always start from random positions until point found
-            if (findFeasibleInstantiation) {
-                switch(resultType) {
-                    case ResultType::PROBABILITY: {
-                        STORM_LOG_ASSERT(formula->asProbabilityOperatorFormula().hasBound(), "Formula has to have a bound to find a feasible instantiation satisfying it");
-                        break;
-                    }
-                    case ResultType::REWARD: {
-                        STORM_LOG_ASSERT(formula->asRewardOperatorFormula().hasBound(), "Formula has to have a bound to find a feasible instantiation satisfying it");
-                    }
+            std::random_device device;
+            std::default_random_engine engine(device());
+            std::uniform_real_distribution<> dist(0, 1);
+            bool initialGuess = true;
+            while (true) {
+                std::cout << "Trying out a new starting point" << std::endl;
+                if (initialGuess) {
+                    std::cout << "Trying initial guess (p->0.5 for every parameter p or set start point)" << std::endl;
                 }
-                std::random_device device;
-                std::default_random_engine engine(device());
-                std::uniform_real_distribution<> dist(0, 1);
-                bool initialGuess = true;
-                while (true) {
-                    std::cout << "Trying out a new starting point" << std::endl;
+                // Generate random starting point
+                std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
+                for (auto const& param : this->parameters) {
                     if (initialGuess) {
-                        std::cout << "Trying initial guess (p->0.5 for every parameter p or set start point)" << std::endl;
-                    }
-                    // Generate random starting point
-                    std::map<VariableType<ValueType>, CoefficientType<ValueType>> point;
-                    for (auto const& param : parameters) {
-                        if (initialGuess) {
-                            if (startPoint) {
-                                point[param] = (*startPoint)[param];
-                            } else {
-                                point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5 + 1e-6);
-                            }
+                        if (startPoint) {
+                            point[param] = (*startPoint)[param];
                         } else {
-                            point[param] = utility::convertNumber<CoefficientType<ValueType>>(dist(engine));
+                            point[param] = utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
                         }
-                    }
-                    initialGuess = false;
-
-                    walk.clear();                   
-
-                    stochasticWatch.start();
-                    ConstantType prob = stochasticGradientDescent(env, point);
-                    stochasticWatch.stop();
-
-                    if ((optimalityType == OptimizationDirection::Maximize && bestValue < prob)
-                        || (optimalityType == solver::OptimizationDirection::Minimize && bestValue > prob)) {
-                        bestInstantiation = point;
-                        bestValue = prob;
-                    }
-
-                    if ((resultType == ResultType::PROBABILITY && formula->asProbabilityOperatorFormula().getBound().isSatisfied(prob)) ||
-                        (resultType == ResultType::REWARD && formula->asRewardOperatorFormula().getBound().isSatisfied(prob))) {
-                        std::cout << "Aborting because the bound is satisfied" << std::endl;
-                        break;
                     } else {
-                        std::cout << "Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << std::endl;
-                        continue;
+                        point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
                     }
                 }
-            } else {
-                switch(resultType) {
-                    case ResultType::PROBABILITY: {
-                        STORM_LOG_ASSERT(!formula->asProbabilityOperatorFormula().hasBound(), "Formula cannot have bound when searching for extremum");
-                        break;
-                    }
-                    case ResultType::REWARD: {
-                        STORM_LOG_ASSERT(!formula->asRewardOperatorFormula().hasBound(), "Formula cannot have bound when searching for extremum");
-                    }
-                }
-                std::map<VariableType<ValueType>, CoefficientType<ValueType>> point;
-                for (auto const& param : parameters) {
-                    if (startPoint) {
-                        point[param] = (*startPoint)[param];
-                    } else {
-                        point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5 + 1e-6);
-                    }
-                }
+                initialGuess = false;
+
+                walk.clear();                   
 
                 stochasticWatch.start();
                 ConstantType prob = stochasticGradientDescent(env, point);
                 stochasticWatch.stop();
 
-                bestInstantiation = point;
-                bestValue = prob;
+                bool isFoundPointBetter = false;
+                switch (this->currentCheckTask->getBound().comparisonType) {
+                    case logic::ComparisonType::Greater:
+                    case logic::ComparisonType::GreaterEqual:
+                        isFoundPointBetter = prob > bestValue;
+                        break;
+                    case logic::ComparisonType::Less:
+                    case logic::ComparisonType::LessEqual:
+                        isFoundPointBetter = prob < bestValue;
+                        break;
+                }
+                if (isFoundPointBetter) {
+                    bestInstantiation = point;
+                    bestValue = prob;
+                }
+
+                if (currentCheckTask->getBound().isSatisfied(bestValue)) {
+                    std::cout << "Aborting because the bound is satisfied" << std::endl;
+                    break;
+                } else if (storm::utility::resources::isTerminate()) {
+                    break;
+                } else {
+                    std::cout << "Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << std::endl;
+                    continue;
+                }
             }
 
             return std::make_pair(bestInstantiation, bestValue);
         }
 
-        template<typename ValueType, typename ConstantType>
-        void GradientDescentInstantiationSearcher<ValueType, ConstantType>::printRunAsJson() {
+        template<typename FunctionType, typename ConstantType>
+        void GradientDescentInstantiationSearcher<FunctionType, ConstantType>::resetDynamicValues() {
+            if (Adam* adam = boost::get<Adam>(&gradientDescentType)) {
+                for (auto const& parameter : this->parameters) {
+                    adam->decayingStepAverage[parameter] = 0;
+                    adam->decayingStepAverageSquared[parameter] = 0;
+                }
+            } else if (RAdam* radam = boost::get<RAdam>(&gradientDescentType)) {
+                for (auto const& parameter : this->parameters) {
+                    radam->decayingStepAverage[parameter] = 0;
+                    radam->decayingStepAverageSquared[parameter] = 0;
+                }
+            } else if (RmsProp* rmsProp = boost::get<RmsProp>(&gradientDescentType)) {
+                for (auto const& parameter : this->parameters) {
+                    rmsProp->rootMeanSquare[parameter] = 0;
+                }
+            } else if (Momentum* momentum = boost::get<Momentum>(&gradientDescentType)) {
+                for (auto const& parameter : this->parameters) {
+                    momentum->pastStep[parameter] = 0;
+                }
+            } else if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+                for (auto const& parameter : this->parameters) {
+                    nesterov->pastStep[parameter] = 0;
+                }
+            }
+        }
+
+        template<typename FunctionType, typename ConstantType>
+        void GradientDescentInstantiationSearcher<FunctionType, ConstantType>::printRunAsJson() {
             std::cout << "[";
             for (auto s = walk.begin(); s != walk.end(); ++s) {
                 std::cout << "{";
@@ -437,8 +429,8 @@ namespace storm {
             std::cout << storm::utility::convertNumber<double>(walk.at(walk.size() - 1).value) << std::endl;
         }
 
-        template<typename ValueType, typename ConstantType>
-        std::vector<typename GradientDescentInstantiationSearcher<ValueType, ConstantType>::VisualizationPoint> GradientDescentInstantiationSearcher<ValueType, ConstantType>::getVisualizationWalk() {
+        template<typename FunctionType, typename ConstantType>
+        std::vector<typename GradientDescentInstantiationSearcher<FunctionType, ConstantType>::VisualizationPoint> GradientDescentInstantiationSearcher<FunctionType, ConstantType>::getVisualizationWalk() {
             return walk;
         }
 

@@ -32,7 +32,7 @@
 namespace {
     class RationalGmmxxEnvironment {
     public:
-        typedef storm::RationalFunction ValueType;
+        typedef storm::RationalFunction FunctionType;
         typedef storm::RationalNumber ConstantType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
@@ -42,7 +42,7 @@ namespace {
     };
     class DoubleGmmxxEnvironment {
     public:
-        typedef storm::RationalFunction ValueType;
+        typedef storm::RationalFunction FunctionType;
         typedef double ConstantType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
@@ -52,7 +52,7 @@ namespace {
     };
     class RationalEigenEnvironment {
     public:
-        typedef storm::RationalFunction ValueType;
+        typedef storm::RationalFunction FunctionType;
         typedef storm::RationalNumber ConstantType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
@@ -62,7 +62,7 @@ namespace {
     };
     class DoubleEigenEnvironment {
     public:
-        typedef storm::RationalFunction ValueType;
+        typedef storm::RationalFunction FunctionType;
         typedef double ConstantType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
@@ -72,7 +72,7 @@ namespace {
     };
     class DoubleEigenTopologicalEnvironment {
     public:
-        typedef storm::RationalFunction ValueType;
+        typedef storm::RationalFunction FunctionType;
         typedef double ConstantType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
@@ -84,7 +84,7 @@ namespace {
     template<typename TestType>
     class GradientDescentInstantiationSearcherTest : public ::testing::Test {
     public:
-        typedef typename TestType::ValueType ValueType;
+        typedef typename TestType::FunctionType FunctionType;
         typedef typename TestType::ConstantType ConstantType;
         GradientDescentInstantiationSearcherTest() : _environment(TestType::createEnvironment()) {}
         storm::Environment const& env() const { return _environment; }
@@ -106,7 +106,7 @@ TYPED_TEST_SUITE(GradientDescentInstantiationSearcherTest, TestingTypes, );
 
 TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/gradient1.pm";
-    std::string formulaAsString = "Pmax=? [F s=2]";
+    std::string formulaAsString = "P>=0.2499 [F s=2]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
@@ -116,20 +116,22 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
-    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    ASSERT_TRUE(simplifier.simplify(*formulas[0]));
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
 
-    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::ValueType, typename TestFixture::ConstantType> checker(this->env(), dtmc, vars, formulas);
-    auto doubleInstantiation = checker.gradientDescent(this->env(), false);
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> checker(*dtmc);
+    storm::modelchecker::CheckTask<storm::logic::Formula, typename TestFixture::FunctionType> checkTask(*formulas[0]);
+    checker.specifyFormula(this->env(), checkTask);
+    auto doubleInstantiation = checker.gradientDescent(this->env());
     ASSERT_NEAR(doubleInstantiation.second, 0.25, 1e-6);
 }
 
 TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
-    std::string formulaAsString = "Pmin=? [F \"observe0Greater1\"]";
+    std::string formulaAsString = "P<=0.00000001 [F \"observe0Greater1\"]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
@@ -139,9 +141,10 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
-    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    ASSERT_TRUE(simplifier.simplify(*formulas[0]));
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    storm::modelchecker::CheckTask<storm::logic::Formula, typename TestFixture::FunctionType> checkTask(*formulas[0]);
 
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
 
@@ -149,11 +152,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     /* ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull); */
 
     // First, test an ADAM instance. We will check that we have implemented ADAM correctly by comparing our results to results gathered by an ADAM implementation in tensorflow :)
-    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::ValueType, typename TestFixture::ConstantType> adamChecker(
-            this->env(),
-            dtmc, 
-            vars, 
-            formulas,
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> adamChecker(
+            *dtmc, 
             storm::derivative::GradientDescentMethod::ADAM,
             0.01,
             0.9,
@@ -163,7 +163,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             boost::none,
             true
     );
-    auto doubleInstantiation = adamChecker.gradientDescent(this->env(), false);
+    adamChecker.specifyFormula(this->env(), checkTask);
+    auto doubleInstantiation = adamChecker.gradientDescent(this->env());
     auto walk = adamChecker.getVisualizationWalk();
 
     carl::Variable badCVar;
@@ -190,11 +191,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     ASSERT_NEAR(doubleInstantiation.second, 0, 1e-6);
 
     // Same thing with RAdam
-    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::ValueType, typename TestFixture::ConstantType> radamChecker(
-            this->env(),
-            dtmc, 
-            vars, 
-            formulas,
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> radamChecker(
+            *dtmc, 
             storm::derivative::GradientDescentMethod::RADAM,
             0.01,
             0.9,
@@ -204,7 +202,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             boost::none,
             true
     );
-    auto radamInstantiation = radamChecker.gradientDescent(this->env(), false);
+    radamChecker.specifyFormula(this->env(), checkTask);
+    auto radamInstantiation = radamChecker.gradientDescent(this->env());
     auto radamWalk = radamChecker.getVisualizationWalk();
 
     const float badCValuesRadam[] = {0.5, 0.49060654640197754, 0.48096320033073425, 0.47105303406715393, 0.4608582556247711, 0.46068474650382996, 0.4604234993457794, 0.460092693567276, 0.4597006142139435, 0.4592539370059967, 0.4587569832801819, 0.45821380615234375, 0.4576275646686554, 0.4570005536079407, 0.45633500814437866, 0.4556325674057007, 0.45489493012428284, 0.454123318195343, 0.4533190429210663, 0.45248323678970337, 0.45161670446395874, 0.4507202208042145, 0.44979462027549744, 0.448840469121933, 0.44785845279693604, 0.4468490481376648, 0.4458127021789551, 0.4447498917579651, 0.44366100430488586, 0.4425463378429413, 0.4414062798023224, 0.4402410686016083, 0.4390510618686676, 0.43783634901046753, 0.43659722805023193, 0.43533384799957275, 0.4340464472770691, 0.4327350854873657, 0.43139997124671936, 0.43004119396209717, 0.4286588430404663};
@@ -217,11 +216,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     }
 
     // Same thing with momentum
-    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::ValueType, typename TestFixture::ConstantType> momentumChecker(
-            this->env(),
-            dtmc, 
-            vars, 
-            formulas,
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> momentumChecker(
+            *dtmc, 
             storm::derivative::GradientDescentMethod::MOMENTUM,
             0.001,
             0.9,
@@ -231,7 +227,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             boost::none,
             true
     );
-    auto momentumInstantiation = momentumChecker.gradientDescent(this->env(), false);
+    momentumChecker.specifyFormula(this->env(), checkTask);
+    auto momentumInstantiation = momentumChecker.gradientDescent(this->env());
     auto momentumWalk = momentumChecker.getVisualizationWalk();
 
     const float badCValuesMomentum[] = {0.5 + 1e-6, 0.4990617036819458, 0.4972723126411438, 0.4947088360786438, 0.4914357662200928, 0.4875074326992035, 0.48296919465065, 0.4778585731983185, 0.47220611572265625, 0.4660361409187317, 0.45936742424964905, 0.45221376419067383, 0.44458451867103577, 0.43648505210876465, 0.42791709303855896, 0.41887906193733215, 0.4093664884567261, 0.3993722200393677, 0.3888867497444153, 0.37789851427078247, 0.3663942813873291, 0.3543594181537628, 0.34177839756011963, 0.32863524556159973, 0.3149142265319824, 0.30060049891471863, 0.28568127751350403, 0.27014678716659546, 0.253991961479187, 0.23721818625926971, 0.2198355346918106, 0.201865553855896, 0.18334446847438812, 0.16432702541351318, 0.1448907107114792, 0.12514044344425201, 0.10521329939365387, 0.08528289198875427, 0.06556269526481628, 0.04630732536315918, 0.027810536324977875};
@@ -244,11 +241,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     }
 
     // Same thing with nesterov
-    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::ValueType, typename TestFixture::ConstantType> nesterovChecker(
-            this->env(),
-            dtmc, 
-            vars, 
-            formulas,
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> nesterovChecker(
+            *dtmc, 
             storm::derivative::GradientDescentMethod::NESTEROV,
             0.001,
             0.9,
@@ -258,16 +252,14 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             boost::none,
             true
     );
-    auto nesterovInstantiation = nesterovChecker.gradientDescent(this->env(), false);
+    nesterovChecker.specifyFormula(this->env(), checkTask);
+    auto nesterovInstantiation = nesterovChecker.gradientDescent(this->env());
     auto nesterovWalk = nesterovChecker.getVisualizationWalk();
 
     const float badCValuesNesterov[] = {0.5 + 1e-6, 0.49821633100509644, 0.49565380811691284, 0.4923747181892395, 0.48843076825141907, 0.4838651120662689, 0.4787132740020752, 0.473004013299942, 0.4667600393295288, 0.45999863743782043, 0.452732115983963, 0.44496846199035645, 0.43671154975891113, 0.4279615581035614, 0.4187155067920685, 0.4089673161506653, 0.3987082839012146, 0.387927383184433, 0.376611590385437, 0.36474621295928955, 0.35231542587280273, 0.33930283784866333, 0.3256921172142029, 0.3114677667617798, 0.2966162860393524, 0.2811274528503418, 0.2649959325790405, 0.24822339415550232, 0.23082087934017181, 0.21281197667121887, 0.19423632323741913, 0.1751537024974823, 0.15564869344234467, 0.1358354091644287, 0.11586219072341919, 0.09591540694236755, 0.07622162997722626, 0.05704677850008011, 0.03869114816188812, 0.021478772163391113, 0.005740571767091751};
     const float pfValuesNesterov[] = {0.5 + 1e-6, 0.49972638487815857, 0.4993318021297455, 0.4988263249397278, 0.4982176721096039, 0.4975121319293976, 0.4967147409915924, 0.4958295524120331, 0.4948597252368927, 0.4938075542449951, 0.49267470836639404, 0.49146217107772827, 0.49017035961151123, 0.48879921436309814, 0.48734840750694275, 0.48581716418266296, 0.48420456051826477, 0.4825096130371094, 0.48073118925094604, 0.4788684844970703, 0.47692081332206726, 0.4748881161212921, 0.4727708697319031, 0.47057047486305237, 0.4682896137237549, 0.4659323990345001, 0.4635048806667328, 0.4610152840614319, 0.4584745764732361, 0.45589667558670044, 0.45329880714416504, 0.45070162415504456, 0.4481291174888611, 0.44560813903808594, 0.44316741824150085, 0.440836101770401, 0.43864157795906067, 0.4366067945957184, 0.4347473978996277, 0.433069109916687, 0.43156614899635315};
     /* const float badCValuesNesterov[] = {0.5 + 1e-6, 0.48215430974960327, 0.4549678862094879, 0.4174332320690155, 0.3678884208202362, 0.3040007948875427, 0.22317135334014893, 0.1245405375957489, 0.015854060649871826, -0.07138122618198395, -0.08732079714536667, -0.054625146090984344, -0.021562930196523666, 0.002717580646276474, 0.016955651342868805, 0.022058267146348953, 0.020058389753103256, 0.013667754828929901, 0.005805882625281811, -0.0010135127231478691, -0.005262729246169329, -0.006624229717999697, -0.005726880859583616, -0.003615057095885277, -0.0012790467590093613, 0.0005968832410871983, 0.0016920699272304773, 0.0019929916597902775, 0.001688098069280386, 0.0010544004617258906, 0.00036079331766813993, -0.00019644992426037788, -0.0005201236344873905, -0.0006047885399311781, -0.0005079141701571643, -0.00031414750264957547, -0.00010457742610014975, 6.264288094826043e-05, 0.00015928645734675229, 0.00018418609397485852, 0.00015458241978194565}; */
     /* const float pfValuesNesterov[] = {0.5 + 1e-6, 0.49725469946861267, 0.4930391311645508, 0.48717358708381653, 0.4793955385684967, 0.4694150984287262, 0.4571276009082794, 0.4431881308555603, 0.42986947298049927, 0.41938552260398865, 0.4062378406524658, 0.3903593122959137, 0.3771025240421295, 0.36578163504600525, 0.35568857192993164, 0.34651216864585876, 0.33814865350723267, 0.33057093620300293, 0.3237515389919281, 0.3176305592060089, 0.3121263086795807, 0.30716386437416077, 0.30268803238868713, 0.2986562252044678, 0.2950284481048584, 0.2917648255825043, 0.28882768750190735, 0.28618350625038147, 0.2838030159473419, 0.2816603183746338, 0.27973195910453796, 0.2779965400695801, 0.27643465995788574, 0.27502891421318054, 0.2737636864185333, 0.2726249396800995, 0.27160006761550903, 0.27067771553993225, 0.2698476016521454, 0.26910048723220825, 0.26842808723449707}; */
-    for (uint_fast64_t i = 0; i < 41; i++) {
-        std::cout << storm::utility::convertNumber<double>(nesterovWalk[i].position[badCVar]) << ", ";
-    }
 
     for (uint_fast64_t i = 0; i < 41; i++) {
         ASSERT_NEAR(storm::utility::convertNumber<double>(nesterovWalk[i].position[badCVar]), badCValuesNesterov[i], 1e-5);
