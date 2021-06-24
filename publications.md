@@ -19,13 +19,16 @@ If you want to cite Storm, please use the most recent paper in this category.
 ## Papers about features in Storm
 
 {:.alert .alert-info}
-The publications in this category present functionality from which a substantial part (but not necessarily everything) is available in Storm's release.
+The publications in this category present functionality from which a substantial part is available in Storm's release.
 
 {% bibliography --group_by year --query @*[category=feature] %}
 
 ## Papers using Storm as a backend
 
-{:.alert .alert-warning}
-The publications in this category present tools, algorithms and case studies that use Storm as a backend. At least some parts of this functionality are currently not part of Storm itself. The source code and results may be outdated or even unavailable.
+{:.alert .alert-info}
+The publications in this category present tools, algorithms and case studies that use Storm as a backend. 
 
 {% bibliography --group_by year --query @*[category=using] %}
+
+{:.alert .alert-danger}
+If there is a publication missing in some of the lists above, feel free to [contact us]({{ '/about.html#people' | relative_url }}).
