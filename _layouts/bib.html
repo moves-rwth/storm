@@ -1,33 +1,32 @@
 ---
 ---
-{{ reference }}
-<br>
+{{ reference }}<br>
 {% if link %}
 <a href="{{link}}" target="_blank">
-	<img alt="{{key}}.pdf" src="https://img.shields.io/static/v1?label=pdf&message={{key}}.pdf&color=orange">
+	<img alt="{{key}}.pdf" src="https://img.shields.io/static/v1?label=&message=PDF&color=orange">
 </a>
 {% elsif entry.pdf-url%}
 <a href="{{entry.pdf-url}}" target="_blank">
-	<img alt="{{key}}.pdf" src="https://img.shields.io/static/v1?label=pdf&message={{key}}.pdf&color=orange">
+	<img alt="{{key}}.pdf" src="https://img.shields.io/static/v1?label=&message=PDF&color=orange">
 </a>
 {% endif %}	
 {% if entry.doi %}
 <a href="http://dx.doi.org/{{entry.doi}}" target="_blank">
-	<img alt="DOI: {{entry.doi}}" src="https://img.shields.io/static/v1?label=doi&message={{entry.doi}}&color=blue">
+	<img alt="DOI: {{entry.doi}}" src="https://img.shields.io/static/v1?label=&message=DOI&color=blue">
 </a>
 {% elsif entry.url %}
 <a href="{{entry.url}}" target="_blank">
-	<img alt="URL: {{entry.url}}" src="https://img.shields.io/static/v1?label=url&message={{entry.url}}&color=blueviolet">
+	<img alt="URL: {{entry.url}}" src="https://img.shields.io/static/v1?label=&message=URL&color=blueviolet">
 </a>
 {% endif %}
 {% if entry.arxiv-id %}
 <a href="https://arxiv.org/abs/{{entry.arxiv-id}}" target="_blank">
-	<img alt="arXiv: {{entry.arxiv-id}}" src="https://img.shields.io/static/v1?label=arXiv&message={{entry.arxiv-id}}&color=A42C25">
+	<img alt="arXiv: {{entry.arxiv-id}}" src="https://img.shields.io/static/v1?label=&message=arXiv&color=A42C25">
 </a>
 {% endif %}
 {% if entry.material %}
 <a href="{{entry.material}}" target="_blank">
-	<img alt="supplemental material" src="https://img.shields.io/static/v1?label=&message=supplemental material&color=889900">
+	<img alt="supplemental material" src="https://img.shields.io/static/v1?label=&message=material&color=889900">
 </a>
 {% endif %}
 {% if entry.website %}
