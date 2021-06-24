@@ -3,3 +3,4 @@ _site/
 .jekyll-cache/
 Gemfile.lock
 vendor/
+.bundle
