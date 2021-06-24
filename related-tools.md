@@ -22,7 +22,7 @@ There are various tools whose functionality overlaps or is closely related with 
 - [PRISM](http://www.prismmodelchecker.org/){:target="_blank"}
 - [Uppaal SMC](http://people.cs.aau.dk/~adavid/smc/){:target="_blank"}
 
-If you feel there is a tool that we forgot about, do not hesitate to [contact us]({{ site.github.url }}/about.html#people).
+If you feel there is a tool that we forgot about, do not hesitate to [contact us]({{ '/about.html#people' | relative_url }}).
 
 # Dependencies
 

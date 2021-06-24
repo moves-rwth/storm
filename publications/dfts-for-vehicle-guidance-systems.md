@@ -34,5 +34,5 @@ Similarly, the computation of the mean-time-to-failure (MTTF) can be performed w
 $ storm-dft -dftjson sc_1.json --firstdep -mttf
 ```
 
-For more details on analysing DFTs with Storm we refer to our [documentation]({{ site.github.url }}/documentation/usage/running-storm-on-dfts.html).
+For more details on analysing DFTs with Storm we refer to our [documentation]({{ '/documentation/usage/running-storm-on-dfts.html' | relative_url }}).
 

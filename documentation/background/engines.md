@@ -65,7 +65,7 @@ The hybrid engine tries to combine the [sparse](#sparse) and [dd](#dd) engines. 
 
 ## Exploration
 
-All engines so far have the requirement that a representation of the model needs to be built prior to model checking. This can be prohibitive for some models and may be unnecessary as fragments of the model may already allow for an answer (within a given precision) to a query. The exploration engine is based on the ideas of applying techniques from *machine learning*[^1]. Intuitively, it tries to explore the parts of the system on-the-fly that contribute most to the model checking result.
+All engines so far have the requirement that a representation of the model needs to be built prior to model checking. This can be prohibitive for some models and may be unnecessary as fragments of the model may already allow for an answer (within a given precision) to a query. The exploration engine is based on the ideas of applying techniques from *machine learning* {% cite BCCFKKPU14 %}. Intuitively, it tries to explore the parts of the system on-the-fly that contribute most to the model checking result.
 
 **Select**: `--engine expl` or `-e expl`
 
@@ -83,7 +83,7 @@ All engines so far have the requirement that a representation of the model needs
 All other engines are not suited for models with an infinite state space. The approach of the abstraction-refinement engine is to start with a coarse over-approximation of the concrete model. This *abstract model* is then analyzed. Based on the result, one of two things happen: either the result carries over to the concrete model and and an answer can be returned or the abstraction needs to be refined. In the latter case, the abstraction is analyzed again and the loop is repeated until a conclusive answer can be given.
 
 {:.alert .alert-danger}
-This engine relies heavily on SMT solving (more concretely an enumeration of all satisfying assignments of a formula) and Craig interpolation. Therefore, this engine needs [MathSAT](http://mathsat.fbk.eu/){:target="_blank" .alert-link} and Storm has to be built with MathSAT support, which requires a [manual setup]({{ site.github.url }}/documentation/obtain-storm/manual-configuration.html#mathsat){:.alert-link}.
+This engine relies heavily on SMT solving (more concretely an enumeration of all satisfying assignments of a formula) and Craig interpolation. Therefore, this engine needs [MathSAT](http://mathsat.fbk.eu/){:target="_blank" .alert-link} and Storm has to be built with MathSAT support, which requires a [manual setup]({{ '/documentation/obtain-storm/manual-configuration.html#mathsat' | relative_url }}){:.alert-link}.
 
 **Select**: `--engine abs` or `-e abs`
 
@@ -94,7 +94,3 @@ This engine relies heavily on SMT solving (more concretely an enumeration of all
 **Major restrictions**:
 - only supports [discrete-time models](models.html)
 - only supports reachability objectives
-
-## References
-
-[^1]: [T. Brázdil, K. Chatterjee, M. Chmelík, V. Forejt, J. Křetínský, M. Kwiatkowska, D. Parker, M. Ujma: *Verification of Markov Decision Processes Using Learning Algorithms*, 2014](https://link.springer.com/chapter/10.1007/978-3-319-11936-6_8){:target="_blank"}

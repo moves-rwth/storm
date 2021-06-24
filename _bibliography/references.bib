@@ -1,0 +1,617 @@
+---
+---
+References
+==========
+
+PLEASE READ THIS BEFORE ADDING ENTRIES:
+
+To easily spot duplicates, sort by 
+ 1. Year (descending)
+ 2. Last name of first author
+
+For cite keys please use the existing scheme:
+ - 1 Author: First three letters of author last name + year
+ - 2 or more authors: First letter of each author's last name + year
+ - Append a,b,c, ... in case this yields duplicates
+Drop non-ASCII characters like accents
+
+If the publication shall appear on the "Publications"-webpage, specify a category-field with a value in [tool, competition, feature, using]
+
+Other (non-standard) fields are
+ - arxiv-id: Identifier that can be set if the paper is (also) on arXiv
+ - material: Link to supplemental material (e.g. an artifact or a repository)
+ - website: Link to a website related to the publication
+ - pdf-url: An (external!) link to a pdf file.
+   You may also upload a pdf to /files/<cite key>.pdf. In that case no bibtex field has to be specified
+
+More custom fields can be added by editing the corresponding bib layout (_layouts/bib.html)
+
+
+@inproceedings{QK21,
+  category  = {feature},
+  author    = {Tim Quatmann and
+               Joost{-}Pieter Katoen},
+  title     = {Multi-objective Optimization of Long-run Average and Total Rewards},
+  booktitle = {{TACAS} {(1)}},
+  series    = {{LNCS}},
+  volume    = {12651},
+  pages     = {230--249},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-72016-2\_13},
+  url       = {https://doi.org/10.1007/978-3-030-72016-2_13},
+  arxiv-id  = {2010.13566},
+  year      = {2021},
+  material  = {https://doi.org/10.5281/zenodo.4121878},
+}
+
+@inproceedings{DKQR20,
+  category  = {feature},
+  author    = {Florent Delgrange and
+               Joost{-}Pieter Katoen and
+               Tim Quatmann and
+               Mickael Randour},
+  title     = {Simple Strategies in Multi-Objective {MDP}s},
+  booktitle = {{TACAS} {(1)}},
+  series    = {{LNCS}},
+  volume    = {12078},
+  pages     = {346--364},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-45190-5\_19},
+  year      = {2020},
+  arxiv-id  = {1910.11024},
+  material  = {https://doi.org/10.6084/m9.figshare.11569485}
+}
+
+@article{HJKQV20,
+  category  = {tool},
+  author    = {Christian Hensel and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Tim Quatmann and
+               Matthias Volk},
+  title     = {The Probabilistic Model Checker {S}torm},
+  journal   = {STTT (to {a}ppear)},
+  year      = {2020},
+  arxiv-id  = {2002.07080},
+  website   = {http://stormchecker.org/benchmarks.html},
+  material  = {https://doi.org/10.5281/zenodo.4017717}
+}
+
+@inproceedings{CHJK19,
+  category  = {using},
+  author    = {Milan Ceska and
+               Christian Hensel and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen},
+  title     = {Counterexample-Driven Synthesis for Probabilistic Program Sketches},
+  booktitle = {{FM}},
+  series    = {{LNCS}},
+  volume    = {11800},
+  pages     = {101--120},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-30942-8\_8},
+  year      = {2019},
+  arxiv-id  = {1904.12371}
+}
+
+@inproceedings{CJJK19,
+  category  = {using},
+  author    = {Milan Ceska and
+               Nils Jansen and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen},
+  title     = {Shepherding Hordes of {M}arkov Chains},
+  booktitle = {{TACAS} {(2)}},
+  series    = {{LNCS}},
+  volume    = {11428},
+  pages     = {172--190},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-17465-1\_10},
+  year      = {2019},
+  arxiv-id  = {1902.05727}
+}
+
+@article{GJKKV19,
+  category  = {using},
+  author    = {Majdi Ghadhab and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Matthias Kuntz and
+               Matthias Volk},
+  title     = {Safety analysis for vehicle guidance systems with dynamic fault trees},
+  journal   = {Reliab. Eng. Syst. Saf.},
+  volume    = {186},
+  pages     = {37--50},
+  doi       = {10.1016/j.ress.2019.02.005},
+  year      = {2019},
+  arxiv-id  = {1903.05361},
+  website   = {http://www.stormchecker.org/publications/dfts-for-vehicle-guidance-systems.html},
+}
+
+@inproceedings{HHHKKKPQRS19,
+  category  = {competition},
+  author    = {Ernst Moritz Hahn and
+               Arnd Hartmanns and
+               Christian Hensel and
+               Michaela Klauck and
+               Joachim Klein and
+               Jan Kret{\'{\i}}nsk{\'{y}} and
+               David Parker and
+               Tim Quatmann and
+               Enno Ruijters and
+               Marcel Steinmetz},
+  title     = {The 2019 Comparison of Tools for the Analysis of Quantitative Formal
+               Models - (QComp 2019 Competition Report)},
+  booktitle = {{TACAS} {(3)}},
+  series    = {{LNCS}},
+  volume    = {11429},
+  pages     = {69--92},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-17502-3\_5},
+  year      = {2019},
+  website   = {https://qcomp.org/competition/2019/index.html},
+  material  = {https://doi.org/10.5281/zenodo.2628301}
+}
+
+@inproceedings{VWKN19,
+  category  = {using},
+  author    = {Matthias Volk and
+               Norman Weik and
+               Joost{-}Pieter Katoen and
+               Nils Nie{\ss}en},
+  title     = {A {DFT} Modeling Approach for Infrastructure Reliability Analysis
+               of Railway Station Areas},
+  booktitle = {{FMICS}},
+  series    = {{LNCS}},
+  volume    = {11687},
+  pages     = {40--58},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-27008-7\_3},
+  year      = {2019}
+}
+
+@inproceedings{CJJKT18,
+  category  = {using},
+  author    = {Murat Cubuktepe and
+               Nils Jansen and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Ufuk Topcu},
+  title     = {Synthesis in p{MDP}s: {A} Tale of 1001 Parameters},
+  booktitle = {{ATVA}},
+  series    = {{LNCS}},
+  volume    = {11138},
+  pages     = {160--176},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-01090-4\_10},
+  year      = {2018}
+}
+
+@inproceedings{HJKQ18,
+  category  = {feature},
+  author    = {Arnd Hartmanns and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Tim Quatmann},
+  title     = {Multi-cost Bounded Reachability in {MDP}},
+  booktitle = {{TACAS} {(2)}},
+  series    = {{LNCS}},
+  volume    = {10806},
+  pages     = {320--339},
+  publisher = {Springer},
+  year      = {2018},
+  doi       = {10.1007/978-3-319-89963-3\_19},
+  material  = {https://doi.org/10.5281/zenodo.1181896}
+}
+
+@inproceedings{JJKTZH18,
+  category  = {using},
+  author    = {Sebastian Junges and
+               Nils Jansen and
+               Joost{-}Pieter Katoen and
+               Ufuk Topcu and
+               Ruohan Zhang and
+               Mary M. Hayhoe},
+  title     = {Model Checking for Safe Navigation Among Humans},
+  booktitle = {{QEST}},
+  series    = {{LNCS}},
+  volume    = {11024},
+  pages     = {207--222},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-99154-2\_13},
+  year      = {2018}
+}
+
+@inproceedings{JJWQWKB18,
+  category  = {using},
+  author    = {Sebastian Junges and
+               Nils Jansen and
+               Ralf Wimmer and
+               Tim Quatmann and
+               Leonore Winterer and
+               Joost{-}Pieter Katoen and
+               Bernd Becker},
+  title     = {Finite-State Controllers of PO{MDP}s using Parameter Synthesis},
+  booktitle = {{UAI}},
+  pages     = {519--529},
+  publisher = {{AUAI} Press},
+  year      = {2018},
+  pdf-url   = {http://auai.org/uai2018/proceedings/papers/195.pdf},
+  arxiv-id  = {1710.10294}
+}
+
+@inproceedings{JKSV18,
+  category  = {feature},
+  author    = {Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Mari{\"{e}}lle Stoelinga and
+               Matthias Volk},
+  title     = {One Net Fits All - {A} Unifying Semantics of Dynamic Fault Trees Using
+               {GSPN}s},
+  booktitle = {Petri Nets},
+  series    = {{LNCS}},
+  volume    = {10877},
+  pages     = {272--293},
+  publisher = {Springer},
+  year      = {2018},
+  arxiv-id  = {1803.05376},
+  website   = {http://www.stormchecker.org/publications/gspn-semantics-for-dfts.html},
+  material  = {https://github.com/moves-rwth/dft-gspn-examples},
+  doi       = {10.1007/978-3-319-91268-4\_14},
+}
+
+
+@inproceedings{QK18,
+  category  = {feature},
+  author    = {Tim Quatmann and
+               Joost{-}Pieter Katoen},
+  title     = {Sound Value Iteration},
+  booktitle = {{CAV} {(1)}},
+  series    = {{LNCS}},
+  volume    = {10981},
+  pages     = {643--661},
+  publisher = {Springer},
+  year      = {2018},
+  doi       = {10.1007/978-3-319-96145-3\_37},
+  material  = {https://doi.org/10.6084/m9.figshare.6139052},
+  arxiv-id  = {1804.05001}
+}
+
+@article{VJK18,
+  category  = {feature},
+  author    = {Matthias Volk and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen},
+  title     = {Fast Dynamic Fault Tree Analysis by Model Checking Techniques},
+  journal   = {{IEEE} Trans. Ind. Informatics},
+  volume    = {14},
+  number    = {1},
+  pages     = {370--379},
+  year      = {2018},
+  doi       = {10.1109/TII.2017.2710316},
+}
+
+@inproceedings{AVBKS17,
+  category  = {using},
+  author    = {Saba Aflaki and
+               Matthias Volk and
+               Borzoo Bonakdarpour and
+               Joost{-}Pieter Katoen and
+               Arne Storjohann},
+  title     = {Automated Fine Tuning of Probabilistic Self-Stabilizing Algorithms},
+  booktitle = {{SRDS}},
+  pages     = {94--103},
+  publisher = {{IEEE} Computer Society},
+  doi       = {10.1109/SRDS.2017.22},
+  year      = {2017}
+}
+
+@inproceedings{BDHHJT17,
+  category  = {feature},
+  author    = {Carlos E. Budde and
+               Christian Dehnert and
+               Ernst Moritz Hahn and
+               Arnd Hartmanns and
+               Sebastian Junges and
+               Andrea Turrini},
+  title     = {{JANI:} Quantitative Model and Tool Interaction},
+  booktitle = {{TACAS} {(2)}},
+  series    = {{LNCS}},
+  volume    = {10206},
+  pages     = {151--168},
+  doi       = {10.1007/978-3-662-54580-5\_9},
+  year      = {2017},
+  website   = {https://jani-spec.org}
+}
+
+@inproceedings{CJJKPPT17,
+  category  = {using},
+  author    = {Murat Cubuktepe and
+               Nils Jansen and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Ivan Papusha and
+               Hasan A. Poonawala and
+               Ufuk Topcu},
+  title     = {Sequential Convex Programming for the Efficient Verification of Parametric
+               {MDP}s},
+  booktitle = {{TACAS} {(2)}},
+  series    = {{LNCS}},
+  volume    = {10206},
+  pages     = {133--150},
+  doi       = {10.1007/978-3-662-54580-5\_8},
+  year      = {2017},
+  arxiv-id  = {1702.00063s}
+}
+
+@inproceedings{DJKV17,
+  category  = {tool},
+  author    = {Christian Dehnert and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Matthias Volk},
+  title     = {A {S}torm is Coming: {A} Modern Probabilistic Model Checker},
+  booktitle = {{CAV} {(2)}},
+  series    = {{LNCS}},
+  volume    = {10427},
+  pages     = {592--600},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-63390-9\_31},
+  year      = {2017},
+  arxiv-id  = {1702.04311},
+  website   = {http://stormchecker.org/benchmarks.html},
+  material  = {http://stormchecker.org/documentation/obtain-storm/vm.html#storm-010-20172}
+}
+
+
+@inproceedings{GJKKV17,
+  category  = {using},
+  author    = {Majdi Ghadhab and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Matthias Kuntz and
+               Matthias Volk},
+  title     = {Model-Based Safety Analysis for Vehicle Guidance Systems},
+  booktitle = {{SAFECOMP}},
+  series    = {{LNCS}},
+  volume    = {10488},
+  pages     = {3--19},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-66266-4\_1},
+  year      = {2017}
+}
+
+
+@inproceedings{QJK17,
+  category  = {feature},
+  author    = {Tim Quatmann and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen},
+  title     = {{M}arkov Automata with Multiple Objectives},
+  booktitle = {{CAV} {(1)}},
+  series    = {{LNCS}},
+  volume    = {10426},
+  pages     = {140--159},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-63387-9\_7},
+  year      = {2017},
+  arxiv-id  = {1704.06648},
+  material  = {https://doi.org/10.5281/zenodo.4298643}
+}
+
+@inproceedings{DJKG16,
+  category  = {using},
+  author    = {Christian Dombrowski and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               James Gross},
+  title     = {Model-Checking Assisted Protocol Design for Ultra-reliable Low-Latency
+               Wireless Networks},
+  booktitle = {{SRDS}},
+  pages     = {307--316},
+  publisher = {{IEEE} Computer Society},
+  doi       = {10.1109/SRDS.2016.048},
+  year      = {2016}
+}
+
+@article{DJKV16,
+  category  = {tool},
+  author    = {Christian Dehnert and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen and
+               Matthias Volk},
+  title     = {The Probabilistic Model Checker {S}torm (Extended Abstract)},
+  journal   = {CoRR},
+  volume    = {abs/1610.08713},
+  year      = {2016},
+  arxiv-id  = {1610.08713}
+}
+
+@inproceedings{JDKKW16,
+  category  = {using},
+  author    = {Nils Jansen and
+               Christian Dehnert and
+               Benjamin Lucien Kaminski and
+               Joost{-}Pieter Katoen and
+               Lukas Westhofen},
+  title     = {Bounded Model Checking for Probabilistic Programs},
+  booktitle = {{ATVA}},
+  series    = {{LNCS}},
+  volume    = {9938},
+  pages     = {68--85},
+  doi       = {10.1007/978-3-319-46520-3\_5},
+  year      = {2016},
+  arxiv-id  = {1605.04477}
+}
+
+@inproceedings{JJDTK16,
+  category  = {feature},
+  author    = {Sebastian Junges and
+               Nils Jansen and
+               Christian Dehnert and
+               Ufuk Topcu and
+               Joost{-}Pieter Katoen},
+  title     = {Safety-Constrained Reinforcement Learning for {MDP}s},
+  booktitle = {{TACAS}},
+  series    = {{LNCS}},
+  volume    = {9636},
+  pages     = {130--146},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-662-49674-9\_8},
+  year      = {2016},
+  arxiv-id  = {1510.05880}
+}
+
+@inproceedings{Kat16,
+  author    = {Joost{-}Pieter Katoen},
+  title     = {The Probabilistic Model Checking Landscape},
+  booktitle = {{LICS}},
+  pages     = {31--45},
+  publisher = {{ACM}},
+  doi       = {10.1145/2933575.2934574},
+  year      = {2016},
+  pdf-url   = {http://www-i2.informatik.rwth-aachen.de/pub/index.php?type=download&pub_id=1296}
+}
+
+@inproceedings{LVATJ16,
+  category  = {using},
+  author    = {Francesco Leofante and
+               Simone Vuotto and
+               Erika {\'{A}}brah{\'{a}}m and
+               Armando Tacchella and
+               Nils Jansen},
+  title     = {Combining Static and Runtime Methods to Achieve Safe Standing-Up for
+               Humanoid Robots},
+  booktitle = {ISoLA {(1)}},
+  series    = {{LNCS}},
+  volume    = {9952},
+  pages     = {496--514},
+  doi       = {10.1007/978-3-319-47166-2\_34},
+  year      = {2016}
+}
+
+
+@inproceedings{QDJJK16,
+  category  = {feature},
+  author    = {Tim Quatmann and
+               Christian Dehnert and
+               Nils Jansen and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen},
+  title     = {Parameter Synthesis for {M}arkov Models: Faster Than Ever},
+  booktitle = {{ATVA}},
+  series    = {{LNCS}},
+  volume    = {9938},
+  pages     = {50--67},
+  doi       = {10.1007/978-3-319-46520-3\_4},
+  year      = {2016},
+  arxiv-id  = {1602.05113}
+}
+
+@inproceedings{VJK16,
+  category  = {feature},
+  author    = {Matthias Volk and
+               Sebastian Junges and
+               Joost{-}Pieter Katoen},
+  title     = {Advancing Dynamic Fault Tree Analysis - Get Succinct State Spaces
+               Fast and Synthesise Failure Rates},
+  booktitle = {{SAFECOMP}},
+  series    = {{LNCS}},
+  volume    = {9922},
+  pages     = {253--265},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-45477-1\_20},
+  year      = {2016},
+  arxiv-id  = {abs/1604.07474}
+}
+
+@inproceedings{DJJCVBA15,
+  category  = {feature},
+  author    = {Christian Dehnert and
+               Sebastian Junges and
+               Nils Jansen and
+               Florian Corzilius and
+               Matthias Volk and
+               Harold Bruintjes and
+               Joost{-}Pieter Katoen and
+               Erika {\'{A}}brah{\'{a}}m},
+  title     = {PROPhESY: {A} PRObabilistic ParamEter SYnthesis Tool},
+  booktitle = {{CAV} {(1)}},
+  series    = {{LNCS}},
+  volume    = {9206},
+  pages     = {214--231},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-21690-4\_13},
+  year      = {2015},
+  website   = {https://moves-rwth.github.io/prophesy/}
+}
+
+@inproceedings{QJDWAKB15,
+  category  = {using},
+  author    = {Tim Quatmann and
+               Nils Jansen and
+               Christian Dehnert and
+               Ralf Wimmer and
+               Erika {\'{A}}brah{\'{a}}m and
+               Joost{-}Pieter Katoen and
+               Bernd Becker},
+  title     = {Counterexamples for Expected Rewards},
+  booktitle = {{FM}},
+  series    = {{LNCS}},
+  volume    = {9109},
+  pages     = {435--452},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-19249-9\_27},
+  year      = {2015}
+}
+
+@inproceedings{BCCFKKPU14,
+  author    = {Tom{\'{a}}s Br{\'{a}}zdil and
+               Krishnendu Chatterjee and
+               Martin Chmelik and
+               Vojtech Forejt and
+               Jan Kret{\'{\i}}nsk{\'{y}} and
+               Marta Z. Kwiatkowska and
+               David Parker and
+               Mateusz Ujma},
+  title     = {Verification of {M}arkov Decision Processes Using Learning Algorithms},
+  booktitle = {{ATVA}},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {8837},
+  pages     = {98--114},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-11936-6\_8},
+  year      = {2014},
+  arxiv-id  = {1402.2967}
+}
+
+@inproceedings{DJWAK14,
+  category  = {feature},
+  author    = {Christian Dehnert and
+               Nils Jansen and
+               Ralf Wimmer and
+               Erika {\'{A}}brah{\'{a}}m and
+               Joost{-}Pieter Katoen},
+  title     = {Fast Debugging of {{PRISM}} Models},
+  booktitle = {{ATVA}},
+  series    = {{LNCS}},
+  volume    = {8837},
+  pages     = {146--162},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-319-11936-6\_11},
+  year      = {2014}
+}
+
+@article{HSM97,
+  author    = {Jifeng He and
+               Karen Seidel and
+               Annabelle McIver},
+  title     = {Probabilistic Models for the Guarded Command Language},
+  journal   = {Sci. Comput. Program.},
+  volume    = {28},
+  number    = {2-3},
+  pages     = {171--192},
+  doi       = {10.1016/S0167-6423(96)00019-6},
+  year      = {1997}
+}
+

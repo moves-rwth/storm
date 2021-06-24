@@ -28,7 +28,7 @@ Currently, we provide support for
 - <i class="icon-debian"></i> Debian 9 "Stretch" and higher
 - <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak" and higher
 
-which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. For example, thanks to [Joachim Klein](http://www.inf.tu-dresden.de/index.php?node_id=1473){:target="_blank"}, there is a [script]({{ site.github.url }}/resources/scripts/installation/storm-build-debian-jessie.sh) that installs Storm and some crucial dependencies on Debian 8 "Jessie".
+which are known to enable the easy installation of Storm. Other Linux distributions are likely to work too, but it may take significant effort to get the required versions of the dependencies up and running. For example, thanks to [Joachim Klein](http://www.inf.tu-dresden.de/index.php?node_id=1473){:target="_blank"}, there is a [script]({{ '/resources/scripts/installation/storm-build-debian-jessie.sh' | relative_url }}) that installs Storm and some crucial dependencies on Debian 8 "Jessie".
 
 {:.alert .alert-danger}
 Note that in particular <i class="icon-ubuntu"></i>Ubuntu 16.04 "Xenial Xerus" is *not* supported anymore as the shipped GCC version is too old.
@@ -104,7 +104,7 @@ $ make binaries
 ```
 
 {:.alert .alert-info}
-If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ site.github.url }}/documentation/usage/running-storm.html#storms-executables){:.alert-link}.
+If you just want to compile Storm's main command-line interface, typing `make storm-main` suffices. To see which targets you need to build, we refer to the table of [available executables]({{ '/documentation/usage/running-storm.html#storms-executables' | relative_url }}){:.alert-link}.
 
 {:.alert .alert-info}
 If you have multiple cores at your disposal and at least 8GB of memory, you can execute
@@ -112,7 +112,7 @@ If you have multiple cores at your disposal and at least 8GB of memory, you can 
 
 ## Adding Storm to your Path <span class="label label-info">optional</span>
 
-If you want to be able to run Storm from anywhere, you may want to add it to your path (in the tutorial on how to [run Storm]({{ site.github.url }}/documentation/usage/running-storm.html) this is assumed). You can do so, by
+If you want to be able to run Storm from anywhere, you may want to add it to your path (in the tutorial on how to [run Storm]({{ '/documentation/usage/running-storm.html' | relative_url }}) this is assumed). You can do so, by
 
 ```console
 $ export PATH=$PATH:$STORM_DIR/build/bin

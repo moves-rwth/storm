@@ -1,0 +1,5 @@
+{% capture bibcount %}{%bibliography_count --cited %}{% endcapture %}
+{% if bibcount != "0" %}
+<h2>References</h2>
+{% bibliography --cited %}
+{% endif %}

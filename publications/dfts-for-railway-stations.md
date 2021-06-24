@@ -20,7 +20,7 @@ Further information on the DFT GUI can be found in the [documentation](https://g
 
 ### Analysis
 
-The fault tree analysis can be performed by [Storm]({{ site.github.url }}/getting-started.html).
+The fault tree analysis can be performed by [Storm]({{ '/getting-started.html' | relative_url }}).
 
 For example, the unreliability of the train station of Herzogenrath (with scheduled routes and single BEs for components) within 90 days can be computed with:
 ```console
@@ -32,5 +32,5 @@ Similarly, the mean-time-to-failure (MTTF) is computed by:
 $ storm-dft -dftjson Herzogenrath_scheduled_single.json -mttf -nosymred
 ```
 
-For more details on analysing DFTs with Storm we refer to our [documentation]({{ site.github.url }}/documentation/usage/running-storm-on-dfts.html).
+For more details on analysing DFTs with Storm we refer to our [documentation]({{ '/documentation/usage/running-storm-on-dfts.html' | relative_url }}).
 

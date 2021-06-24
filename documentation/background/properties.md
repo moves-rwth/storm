@@ -13,7 +13,7 @@ categories: [Background]
 Storm takes properties in a format that can be described as an "extended subset" of the [PRISM property language](http://www.prismmodelchecker.org/manual/PropertySpecification/Introduction){:target="_blank"}. Alternatively, if the input is given in terms of a [JANI](languages.html#jani) model, the properties are embedded in the model in the appropriate format.
 
 {:.alert .alert-info}
-For DFTs, GSPNs and probabilistic programs, domain-specific properties can be given. For this, we refer to the guide on how to [run Storm]({{ site.github.url }}/documentation/usage/running-storm.html){:.alert-link} on those inputs.
+For DFTs, GSPNs and probabilistic programs, domain-specific properties can be given. For this, we refer to the guide on how to [run Storm]({{ '/documentation/usage/running-storm.html' | relative_url }}){:.alert-link} on those inputs.
 
 ## Identifying States
 
@@ -112,7 +112,7 @@ To illustrate how the formulae can be used, we give some examples of syntactical
 ## Multi-objective Model Checking
 
 Storm supports multi-objective model checking: In nondeterministic models, different objectives might require different choices of actions in order to satisfy the property.
-This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve, as explained in our [example]({{ site.github.url }}/documentation/usage/running-storm.html#multi-objective-model-checking-of-a-markov-automaton).
+This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve, as explained in our [example]({{ '/documentation/usage/running-storm.html#multi-objective-model-checking-of-a-markov-automaton' | relative_url }}).
 
 The simplest way of asking about these trade-offs are achievability queries: They ask whether there exists a strategy which fulfils all thresholds.
 

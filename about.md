@@ -6,7 +6,7 @@ layout: default
 
 ## Description
 
-Storm is a tool for the analysis of systems involving random or probabilistic phenomena.[^1] Such models arise, for example, in distributed algorithms (where randomization breaks symmetry between processes), security (randomized key generation), systems biology (species/molecules interact randomly depending on their concentration) or embedded systems (involving hardware failures). To ensure that such systems behave *correctly*, typically the quantitative aspects of the model have to be considered. For example, it may be inevitable that the system fails due to hardware failures under certain circumstances, but this may be tolerable as long as it only happens rarely, i.e. with a low probability.
+Storm is a tool for the analysis of systems involving random or probabilistic phenomena {% cite Kat16 %}. Such models arise, for example, in distributed algorithms (where randomization breaks symmetry between processes), security (randomized key generation), systems biology (species/molecules interact randomly depending on their concentration) or embedded systems (involving hardware failures). To ensure that such systems behave *correctly*, typically the quantitative aspects of the model have to be considered. For example, it may be inevitable that the system fails due to hardware failures under certain circumstances, but this may be tolerable as long as it only happens rarely, i.e. with a low probability.
 
 Formal methods --- and in particular model checking --- has proved to discover intricate system errors. Probabilistic model checking has matured immensely in the past decade and has been identified as a key challenge by experts.
 
@@ -47,7 +47,7 @@ and have been developed with different target objectives. We believe the charact
 
 ### <i class="fa fa-tachometer" aria-hidden="true"></i> Efficient Core
 
-Model checking is both a data- and compute-intense task. In the worst case, the state space of the system has to be searched exhaustively. Probabilistic model checking is even harder in the sense that most techniques require an in-memory representation of the full system to be available and that it relies on solving gigantic equation systems. A crucial aspect of a probabilistic model checker therefore is it's efficiency in terms of time and memory. One of Storm's development goals is to provide a good space-time tradeoff and be faster than other competing tools. As the properties of the systems to analyze vary drastically, Storm has --- similar to [PRISM](related-tools.html) --- several [engines]({{ site.github.url }}/documentation/background/engines.html) that determine which data structures are used to build and analyze a model.
+Model checking is both a data- and compute-intense task. In the worst case, the state space of the system has to be searched exhaustively. Probabilistic model checking is even harder in the sense that most techniques require an in-memory representation of the full system to be available and that it relies on solving gigantic equation systems. A crucial aspect of a probabilistic model checker therefore is it's efficiency in terms of time and memory. One of Storm's development goals is to provide a good space-time tradeoff and be faster than other competing tools. As the properties of the systems to analyze vary drastically, Storm has --- similar to [PRISM](related-tools.html) --- several [engines]({{ '/documentation/background/engines.html' | relative_url }}) that determine which data structures are used to build and analyze a model.
 
 ### <i class="fa fa-cogs" aria-hidden="true"></i> Modularity
 
@@ -65,7 +65,7 @@ Encapsulating solvers like this has several key advantages. First of all, it pro
 
 Let us assume a user is interested in verifying a particular system. In order for a probabilistic model checker to understand the behavior of the system, it needs to be modeled in some formal language the tool is capable of treating. However, different communities and different tools often favor or even demand different input languages. Besides, different modeling languages have different strengths and weaknesses and it depends on the system at hand which language is suited best. Sometimes, the model has already been created by another tool and it cannot be forwarded to another tool without transcription, because the target tool requires the input to be in a different language.
 
-Storm tries to mitigate this problem by offering support for several major input [languages]({{ site.github.url }}/documentation/background/languages.html). While some of them are rewritten to one of the other input languages, others are supported *natively*. That is, Storm has specific model builders (and sometimes even analysis procedures) tailored towards different inputs. This allows Storm to make domain-specific optimizations as the structure of the original problem is preserved and is therefore accessible to Storm.
+Storm tries to mitigate this problem by offering support for several major input [languages]({{ '/documentation/background/languages.html' | relative_url }}). While some of them are rewritten to one of the other input languages, others are supported *natively*. That is, Storm has specific model builders (and sometimes even analysis procedures) tailored towards different inputs. This allows Storm to make domain-specific optimizations as the structure of the original problem is preserved and is therefore accessible to Storm.
 
 ### <i class="icon-python"></i> Easy Interface
 
@@ -123,6 +123,3 @@ RWTH Aachen University, Aachen, Germany
 E-mail: support [at] stormchecker [dot] org
 Phone: +49 241 8021203
 ```
-## References
-
-[^1]: [J.-P. Katoen: *The Probabilistic Model Checking Landscape*, 2016](http://www-i2.informatik.rwth-aachen.de/pub/index.php?type=download&pub_id=1296)

@@ -1,0 +1,8 @@
+<meta charset="utf-8">
+{% assign link = page.link %}
+{% if page.relative %}
+	{% assign link = page.link | relative_url %}
+{% endif %}
+<title>Redirecting to {{ link }}</title>
+<meta http-equiv="refresh" content="0; URL={{ link }}">
+<link rel="canonical" href="{{ link }}">

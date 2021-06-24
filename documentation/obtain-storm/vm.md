@@ -97,7 +97,7 @@ A `README` file is provided on the desktop. In the virtual machine, Storm is loc
 ```console
 $ cd $STORM_DIR
 ```
-will take you to the folders containing Storm's binaries. For more information on how to run Storm, please read our [guide]({{ site.github.url }}/documentation/usage/running-storm.html).
+will take you to the folders containing Storm's binaries. For more information on how to run Storm, please read our [guide]({{ '/documentation/usage/running-storm.html' | relative_url }}).
 
 <h3>Changelog</h3>
 
@@ -108,7 +108,7 @@ The VM has been updated to include bug fixes, new versions, and so on. When the 
 	- added description to README how to use the scripts
 * Update on Feb 1, 2017
 	- updated to newest Storm version
-	- added files containing all tool invocations used in [benchmarks]({{ site.github.url }}/benchmarks.html)
+	- added files containing all tool invocations used in [benchmarks]({{ '/benchmarks.html' | relative_url }})
 	- installed latest version of [IMCA](https://github.com/buschko/imca){:target="_blank"} and added its benchmark files
 *  Update on January 22, 2017
 	- installed Storm

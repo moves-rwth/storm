@@ -12,7 +12,7 @@ categories: [Background]
 
 ## PRISM
 
-The PRISM language can be used to specify [DTMCs, CTMCs and MDPs]({{ site.github.url }}/documentation/background/models.html). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata]({{ site.github.url }}/documentation/background/models.html#markov-automata-mas).
+The PRISM language can be used to specify [DTMCs, CTMCs and MDPs]({{ '/documentation/background/models.html' | relative_url }}). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata]({{ '/documentation/background/models.html#markov-automata-mas' | relative_url }}).
 
 For more information, please read the [PRISM manual](http://www.prismmodelchecker.org/manual/ThePRISMLanguage/Introduction){:target="_blank"}. A rich collection of examples is available at the [PRISM benchmark suite](http://www.prismmodelchecker.org/benchmarks/){:target="_blank"}.
 
@@ -41,7 +41,7 @@ The format is a simple textual format naming the root of the tree and then lists
 
 ## cpGCL
 
-The conditional probabilistic guarded command language, cpGCL for short, is an extension of Dijkstra's guarded command language and pGCL[^1] to also accommodate probabilistic choice and conditional observations. Examples can be found in some of the folders in the [JANI repository](#jani). For example, the famous coupon collector example encoded as a cpGCL program can be found [here](https://github.com/ahartmanns/jani-models/blob/master/CouponCollector/MultiAllowed/coupon_m_03_02.pgcl){:target="_blank"}.
+The conditional probabilistic guarded command language, cpGCL for short, is an extension of Dijkstra's guarded command language and pGCL {% cite HSM97 %} to also accommodate probabilistic choice and conditional observations. Examples can be found in some of the folders in the [JANI repository](#jani). For example, the famous coupon collector example encoded as a cpGCL program can be found [here](https://github.com/ahartmanns/jani-models/blob/master/CouponCollector/MultiAllowed/coupon_m_03_02.pgcl){:target="_blank"}.
 
 ## Explicit
 
@@ -87,7 +87,3 @@ one two goal
 ```
 
 This creates three distinct labels, called ```one```, ```two``` and ```goal```. State 0 is labeled with both ```one``` and ```two```, while state 1 only carries the ```goal``` label.
-
-## References
-
-[^1]: [Jifeng He, K. Seidel, A. McIver: *Probabilistic models for the guarded command language*, 1997](https://www.sciencedirect.com/science/article/pii/S0167642396000196){:target="_blank"}

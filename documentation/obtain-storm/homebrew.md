@@ -32,7 +32,7 @@ After installing the package, you should directly be able to invoke
 $ storm
 ```
 
-and continue with the guide on how to [run Storm]({{ site.github.url }}/documentation/usage/running-storm.html).
+and continue with the guide on how to [run Storm]({{ '/documentation/usage/running-storm.html' | relative_url }}).
 
 ### Additional steps for ARM-based Apple Silicon CPUs
 For ARM-based Apple Silicon CPUs, installing Storm currently requires a homebrew installation that uses default x86 installation paths. One valid executable location would be ```/usr/local/bin/brew```. 

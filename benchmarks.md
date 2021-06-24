@@ -6,8 +6,7 @@ layout: default
 
 On this page, you can find (extended) benchmark results accompanying paper submissions.
 
-### The Probabilistic Model Checker Storm (2020)[^1]
-
+## The Probabilistic Model Checker Storm {% cite HJKQV20 %}
 #### Setup
 The benchmarks were run on 4 cores of an Intel Xeon Platinum 8160 Processor with 12GB of memory available. The timeout was 1800 seconds.
 
@@ -19,13 +18,13 @@ All benchmarks from [QComp 2019](http://qcomp.org/competition/2019/index.html) w
 <a target="_blank" href="https://doi.org/10.5281/zenodo.4017717" class="btn btn-primary btn-md active" role="button">Download raw data and replication package</a>
 
 
-### QComp 2019[^2]
+## QComp 2019 {% cite HHHKKKPQRS19 %}
 
 Storm participated in the *2019 Comparison of Tools for the Analysis of Quantitative Formal Models (QComp 2019)*.
 Details on the competition, the participating tools and the QComp benchmark set can be found on the [competition website](http://qcomp.org/competition/2019/index.html){:target="_blank"}.
 Detailed results are available in the [interactive results table](http://qcomp.org/competition/2019/results/index.html){:target="_blank"}.
 
-### A Storm is Coming: A Modern Probabilistic Model Checker (2017)[^3]
+## A Storm is Coming: A Modern Probabilistic Model Checker {% cite DJKV17 %}
 
 #### Setup
 
@@ -47,11 +46,3 @@ however just a displaying issue. Newer versions of Storm correctly display "inf"
 <a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/index_mdp.html" class="btn btn-primary btn-md active" role="button">Show MDP table</a>
 <a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/index_ma.html" class="btn btn-primary btn-md active" role="button">Show MA table</a>
 <a target="_blank" href="https://www.github.com/moves-rwth/storm-benchmark-logs/" class="btn btn-primary btn-md active" role="button">Show log files</a>
-
-### References
-
-[^1]: [C. Hensel, S. Junges, J.-P. Katoen, T. Quatmann, M. Volk: *The Probabilistic Model Checker Storm*, 2020](https://arxiv.org/abs/2002.07080)
-
-[^2]: [E. M. Hahn, A. Hartmanns, C. Hensel, M. Klauck, J. Klein, J. Křetínský, D. Parker, T. Quatmann, E. Ruijters, M. Steinmetz: *The 2019 Comparison of Tools for the Analysis of Quantitative Formal Models*, 2019](https://doi.org/10.1007/978-3-030-17502-3_5){:target="_blank"}
-
-[^3]: [C. Dehnert, S. Junges, J.-P. Katoen, M. Volk: *A Storm is Coming: A Modern Probabilistic Model Checker*, 2017](https://arxiv.org/abs/1702.04311){:target="_blank"}

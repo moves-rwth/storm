@@ -6,7 +6,7 @@
     {% include includes/navbar.html %}
     <div class="container">
         <ul class="breadcrumb">
-            <li><a href="{{ site.github.url }}/index.html">Home</a></li>
+            <li><a href="{{ '/index.html' | relative_url }}">Home</a></li>
             {% if page.categories and page.categories != empty %}
             <li>{{ page.categories }}</li>
             {% endif %}
@@ -22,18 +22,11 @@
                 
         <div class="content">
             {{ content }}
+			{% include includes/references.html %}
         </div>
     </div>
 
     {% include includes/footer.html %}
-    <script>
-        $(function(){
-          $("#papers_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_paper&years=0&author_url=");
-          $("#papers_storm_competition").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_competition&years=0&author_url=");
-          $("#papers_storm_techniques").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_techniques&years=0&author_url=");
-          $("#papers_use_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=use_storm&years=0&author_url=");
-        });
-    </script>
 
   </body>
 </html>
