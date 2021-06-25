@@ -1,6 +1,10 @@
 ---
 ---
-{{ reference }}<br>
+{{ reference }}
+{% if entry.note %}
+({{ entry.note }})
+{% endif %}
+<br>
 {% if link %}
 <a href="{{link}}" target="_blank">
 	<img alt="{{key}}.pdf" src="https://img.shields.io/static/v1?label=&message=PDF&color=orange">
