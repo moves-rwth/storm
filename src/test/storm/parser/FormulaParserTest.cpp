@@ -2,7 +2,9 @@
 #include "storm-config.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/automata/DeterministicAutomaton.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 TEST(FormulaParserTest, LabelTest) {
@@ -30,7 +32,7 @@ TEST(FormulaParserTest, ExpressionTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
     manager->declareBooleanVariable("x");
     manager->declareIntegerVariable("y");
-    
+
     storm::parser::FormulaParser formulaParser(manager);
     
     std::string input = "!(x | y > 3)";
@@ -337,7 +339,6 @@ TEST(FormulaParserTest, TemporalNegationTest) {
 TEST(FormulaParserTest, ComplexPathFormulaTest) {
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
-    formula = formulaParser.parseSingleFormulaFromString( "P=? [(X \"a\") U ( \"b\"& \"c\")]");
 
     std::string input = "P<0.9 [(X !\"a\") & (F ( X \"b\" U G \"c\" & \"d\"))]";  // ((X ! a) & (F ( (X b) U (G (c & d)))))
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
@@ -352,4 +353,62 @@ TEST(FormulaParserTest, ComplexPathFormulaTest) {
     auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
     ASSERT_TRUE(nested2.asBinaryPathFormula().getLeftSubformula().isBinaryPathFormula());
     ASSERT_TRUE(nested2.asBinaryPathFormula().getRightSubformula().isUntilFormula());
+
+    input = "P=? [(X \"a\") U ( \"b\"& \"c\")]";
+    formula = formulaParser.parseSingleFormulaFromString(input);
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested3 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested3.asBinaryPathFormula().isUntilFormula());
+    EXPECT_TRUE(nested3.asBinaryPathFormula().getLeftSubformula().isNextFormula());
+}
+
+TEST(FormulaParserTest, HOAPathFormulaTest) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+    manager->declareIntegerVariable("x");
+    manager->declareIntegerVariable("y");
+    storm::parser::FormulaParser formulaParser(manager);
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+
+    std::string input = "P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_Fandp0Xp1.hoa\", \"p0\" -> !\"a\", \"p1\" -> \"b\" | \"c\" }]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested1.isHOAPathFormula());
+    EXPECT_TRUE(nested1.isPathFormula());
+
+    ASSERT_NO_THROW(std::string af = nested1.asHOAPathFormula().getAutomatonFile());
+    storm::automata::DeterministicAutomaton::ptr da1;
+    ASSERT_NO_THROW(da1 = nested1.asHOAPathFormula().readAutomaton());
+    EXPECT_EQ(3, da1->getNumberOfStates());
+    EXPECT_EQ(4, da1->getNumberOfEdgesPerState());
+
+    std::map<std::string, std::shared_ptr<storm::logic::Formula const>> apFormulaMap1 = nested1.asHOAPathFormula().getAPMapping();
+    EXPECT_TRUE(apFormulaMap1["p0"]->isUnaryBooleanStateFormula());
+    EXPECT_TRUE(apFormulaMap1["p1"]->isBinaryBooleanStateFormula());
+
+    input = "P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_UXp0p1.hoa\", \"p0\" -> (x < 7) & !(y = 2), \"p1\" -> (x > 0) }]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested2.isHOAPathFormula());
+    EXPECT_TRUE(nested2.isPathFormula());
+
+    ASSERT_NO_THROW(std::string af = nested2.asHOAPathFormula().getAutomatonFile());
+    storm::automata::DeterministicAutomaton::ptr da2;
+    ASSERT_NO_THROW(da2 = nested2.asHOAPathFormula().readAutomaton());
+    EXPECT_EQ(4, da2->getNumberOfStates());
+    EXPECT_EQ(4, da2->getNumberOfEdgesPerState());
+
+    std::map<std::string, std::shared_ptr<storm::logic::Formula const>> apFormulaMap2 = nested2.asHOAPathFormula().getAPMapping();
+    EXPECT_TRUE(apFormulaMap2["p0"]->isBinaryBooleanStateFormula());
+    EXPECT_TRUE(apFormulaMap2["p1"]->isAtomicExpressionFormula());
+
+    // Wrong format: p1 -> path formula
+    input = "P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_UXp0p1.hoa\", \"p0\" -> (x > 0), \"p1\" -> (x < 7) & (X y = 2) }]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    // Exception: p1 not assigned
+    input = "P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_UXp0p1.hoa\", \"p0\" -> (x > 0)}]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested3 = formula->asProbabilityOperatorFormula().getSubformula();
+    storm::automata::DeterministicAutomaton::ptr da3;
+    STORM_SILENT_EXPECT_THROW(da3 = nested3.asHOAPathFormula().readAutomaton(), storm::exceptions::ExpressionEvaluationException);
 }
