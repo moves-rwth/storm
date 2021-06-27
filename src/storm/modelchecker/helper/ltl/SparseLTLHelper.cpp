@@ -26,6 +26,23 @@ namespace storm {
                 // Intentionally left empty.
             }
 
+            template<typename ValueType, bool Nondeterministic>
+            std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker){
+                std::map<std::string, storm::storage::BitVector> apSets;
+                for (auto& p: extracted) {
+                    STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
+
+                    std::unique_ptr<CheckResult> subResultPointer = formulaChecker(p.second);
+
+                    ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+                    auto sat = subResult.getTruthValuesVector();
+
+                    apSets[p.first] = std::move(sat);
+                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
+                }
+                return apSets;
+            }
+
 
             template <typename ValueType, bool Nondeterministic>
             storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeAcceptingECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
@@ -308,22 +325,6 @@ namespace storm {
                 return numericResult;
             }
 
-            template<typename ValueType, bool Nondeterministic>
-            std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker){
-                std::map<std::string, storm::storage::BitVector> apSets;
-                for (auto& p: extracted) {
-                    STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
-
-                    std::unique_ptr<CheckResult> subResultPointer = formulaChecker(p.second);
-
-                    ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-                    auto sat = subResult.getTruthValuesVector();
-
-                    apSets[p.first] = std::move(sat);
-                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
-                }
-                return apSets;
-            }
 
             template class SparseLTLHelper<double, false>;
             template class SparseLTLHelper<double, true>;

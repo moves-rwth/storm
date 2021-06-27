@@ -821,6 +821,8 @@ namespace {
         formulasString += "; P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_Fandp0Xp1.hoa\", \"p0\" -> (s=6), \"p1\" -> !\"done\" }]";
         // "P=? [ (F (s=4 | s=5)) & (X (\"three\" | \"five\"))]"
         formulasString += "; P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_Fandp0Xp1.hoa\", \"p0\" -> (s=4 | s=5), \"p1\" -> s=7 & (d=3 | d=5) }]";
+        // "P=? [ (F (s=4 | s=5)) & (X (\"three\" | \"five\"))]"
+        formulasString += "; P>0.3[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_Fandp0Xp1.hoa\", \"p0\" -> (s=4 | s=5), \"p1\" -> s=7 & (d=3 | d=5) }]";
 
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", formulasString);
         auto model = std::move(modelFormulas.first);
@@ -850,6 +852,9 @@ namespace {
 
             result = checker->check(tasks[5]);
             EXPECT_NEAR(this->parseNumber("1/3"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(tasks[6]);
+            EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }

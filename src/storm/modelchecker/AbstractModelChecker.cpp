@@ -59,6 +59,11 @@ namespace storm {
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
 
+            //TODO if this is not checked first, computeStateFormulaProbabilities(...) is called (hasQualitativeResult true)
+            if (formula.isHOAPathFormula()) {
+                return this->computeHOAPathProbabilities(env, checkTask.substituteFormula(formula.asHOAPathFormula()));
+            }
+
             if (formula.isStateFormula() || formula.hasQualitativeResult()) {
                 return this->computeStateFormulaProbabilities(env, checkTask.substituteFormula(formula));
             }
@@ -77,6 +82,7 @@ namespace storm {
             } else if (formula.isUntilFormula()) {
                 return this->computeUntilProbabilities(env, checkTask.substituteFormula(formula.asUntilFormula()));
             } else if (formula.isHOAPathFormula()) {
+                // TODO checked earlier?
                 return this->computeHOAPathProbabilities(env, checkTask.substituteFormula(formula.asHOAPathFormula()));
             } else if (formula.isNextFormula()) {
                 return this->computeNextProbabilities(env, checkTask.substituteFormula(formula.asNextFormula()));
