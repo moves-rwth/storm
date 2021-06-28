@@ -69,7 +69,7 @@ namespace storm {
             }
             
             bool returnValue = true;
-            if (this->sortedSccDecomposition->size() == 1 && (!this->fixedStates || this->fixedStates.get().empty())) {
+            if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForState || this->choiceFixedForState.get().empty())) {
                 // Handle the case where there is just one large SCC, as there are no fixed states, we solve it like this
                 returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
             } else {
@@ -99,14 +99,14 @@ namespace storm {
                             bool allIgnored = true;
                             sccRowGroupsAsBitVector.set(group, true);
 
-                            if (!this->fixedStates || !this->fixedStates.get()[group]) {
+                            if (!this->choiceFixedForState || !this->choiceFixedForState.get()[group]) {
                                 for (uint64_t row = this->A->getRowGroupIndices()[group]; row < this->A->getRowGroupIndices()[group + 1]; ++row) {
                                     sccRowsAsBitVector.set(row, true);
                                 }
                             } else {
                                 auto row = this->A->getRowGroupIndices()[group]+this->getInitialScheduler()[group];
                                 sccRowsAsBitVector.set(row, true);
-                                STORM_LOG_INFO("Fixing state " << group << " to option " << this->getInitialScheduler()[group] << " because of local monotonicity.");
+                                STORM_LOG_INFO("Fixing state " << group << " to choice " << this->getInitialScheduler()[group] << ".");
                             }
                         }
                         returnValue = solveScc(sccSolverEnvironment, dir, sccRowGroupsAsBitVector, sccRowsAsBitVector, x, b) && returnValue;
@@ -150,7 +150,7 @@ namespace storm {
             ValueType& xi = globalX[sccState];
             bool firstRow = true;
             uint64_t bestRow;
-            if (this->fixedStates && this->fixedStates.get()[sccState]) {
+            if (this->choiceFixedForState && this->choiceFixedForState.get()[sccState]) {
                 assert (this->hasInitialScheduler());
                 uint64_t row = this->A->getRowGroupIndices()[sccState] + this->initialScheduler.get()[sccState];
                 ValueType rowValue = globalB[row];
@@ -175,7 +175,7 @@ namespace storm {
                 } else {
                     xi = std::move(rowValue);
                 }
-                STORM_LOG_INFO("Ignoring state" << sccState << " as the scheduler is fixed by monotonicity, current probability for this state is: " << this->schedulerChoices.get()[sccState]);
+                STORM_LOG_INFO("Ignoring state" << sccState << " as the choice is fixed, current probability for this state is: " << this->schedulerChoices.get()[sccState]);
             } else {
                 for (uint64_t row = this->A->getRowGroupIndices()[sccState]; row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
                     ValueType rowValue = globalB[row];
@@ -277,16 +277,16 @@ namespace storm {
                 this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
                 this->sccSolver->setCachingEnabled(true);
             }
-            if (this->fixedStates) {
+            if (this->choiceFixedForState) {
                 // convert fixed states to only fixed states of sccs
-                storm::storage::BitVector fixedStatesSCC(sccRowGroups.getNumberOfSetBits());
+                storm::storage::BitVector choiceFixedForStateSCC(sccRowGroups.getNumberOfSetBits());
                 auto j = 0;
                 for (auto i : sccRowGroups) {
-                    fixedStatesSCC.set(j, this->fixedStates.get()[i]);
+                    choiceFixedForStateSCC.set(j, this->choiceFixedForState.get()[i]);
                     j++;
                 }
                 assert (j = sccRowGroups.getNumberOfSetBits());
-                this->sccSolver->setFixedStates(std::move(fixedStatesSCC));
+                this->sccSolver->setChoiceFixedForStates(std::move(choiceFixedForStateSCC));
             }
             this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
             this->sccSolver->setHasNoEndComponents(this->hasNoEndComponents());
@@ -294,7 +294,7 @@ namespace storm {
             
             // SCC Matrix
             storm::storage::SparseMatrix<ValueType> sccA;
-            if (this->fixedStates) {
+            if (this->choiceFixedForState) {
                 sccA = this->A->getSubmatrix(false, sccRows, sccRowGroups);
             } else {
                 sccA = this->A->getSubmatrix(true, sccRowGroups, sccRowGroups);
@@ -325,8 +325,8 @@ namespace storm {
             if (this->hasInitialScheduler()) {
                 auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
                 this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
-                if (this->fixedStates) {
-                    this->sccSolver->updateScheduler();
+                if (this->choiceFixedForState) {
+                    this->sccSolver->setFixedChoicesToFirst();
                 }
             }
             

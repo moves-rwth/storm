@@ -98,11 +98,11 @@ namespace storm {
             // Resolve the nondeterminism according to the given scheduler.
             bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem;
             storm::storage::SparseMatrix<ValueType> submatrix;
-            if (this->fixedStates) {
-                for (auto state : this->fixedStates.get()) {
-                    assert (this->A->getRowGroupSize(state) == 1);
-                }
-            }
+//            if (this->choiceFixedForState) {
+//                for (auto state : this->choiceFixedForState.get()) {
+//                    assert (this->A->getRowGroupSize(state) == 1);
+//                }
+//            }
 
             submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
             if (convertToEquationSystem) {
@@ -176,7 +176,7 @@ namespace storm {
                 for (uint_fast64_t group = 0; group < this->A->getRowGroupCount(); ++group) {
                     uint_fast64_t currentChoice = scheduler[group];
                     // TODO: remove, as this should already be fixed by implementation to determine matrix/vector
-                    if (!this->fixedStates || (this->fixedStates && !(this->fixedStates.get()[group]))) {
+                    if (!this->choiceFixedForState || (this->choiceFixedForState && !(this->choiceFixedForState.get()[group]))) {
                         for (uint_fast64_t choice = this->A->getRowGroupIndices()[group];
                              choice < this->A->getRowGroupIndices()[group + 1]; ++choice) {
                             // If the choice is the currently selected one, we can skip it.
@@ -201,7 +201,7 @@ namespace storm {
                             }
                         }
                     } else {
-                        STORM_LOG_INFO("Ignoring state" << group << " as this state is locally monotone");
+                        STORM_LOG_INFO("Ignoring state" << group << " as the choice of this state is fixed");
                     }
                 }
                 

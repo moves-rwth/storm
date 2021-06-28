@@ -305,7 +305,7 @@ namespace storm {
                 solver->setTrackScheduler(true);
 
                 if (localMonotonicityResult != nullptr && !this->isOnlyGlobalSet()) {
-                    storm::storage::BitVector fixedStates(parameterLifter->getRowGroupCount(), false);
+                    storm::storage::BitVector choiceFixedForStates(parameterLifter->getRowGroupCount(), false);
 
                     bool useMinimize = storm::solver::minimize(dirForParameters);
                     if (useMinimize && !minSchedChoices) {
@@ -346,10 +346,10 @@ namespace storm {
                             }
                         }
                         if (allMonotone) {
-                            fixedStates.set(state);
+                            choiceFixedForStates.set(state);
                         }
                     }
-                    solver->setFixedStates(std::move(fixedStates));
+                    solver->setChoiceFixedForStates(std::move(choiceFixedForStates));
                 }
 
                 if (storm::solver::minimize(dirForParameters) && minSchedChoices)
