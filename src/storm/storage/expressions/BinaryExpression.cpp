@@ -12,7 +12,7 @@ namespace storm {
         bool BinaryExpression::isFunctionApplication() const {
             return true;
         }
-        
+
         bool BinaryExpression::containsVariables() const {
             return this->getFirstOperand()->containsVariables() || this->getSecondOperand()->containsVariables();
 		}

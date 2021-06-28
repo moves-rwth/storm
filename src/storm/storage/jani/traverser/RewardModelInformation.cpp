@@ -3,7 +3,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
@@ -43,7 +43,7 @@ namespace storm {
             auto const& vars = *boost::any_cast<std::set<storm::expressions::Variable>*>(data);
             if (!hasStateRewards()) {
                 for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
-                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    storm::jani::Variable const& assignedVariable = assignment.getVariable();
                     if (vars.count(assignedVariable.getExpressionVariable()) > 0) {
                         stateRewards = true;
                         break;
@@ -56,7 +56,7 @@ namespace storm {
             auto const& vars = *boost::any_cast<std::set<storm::expressions::Variable>*>(data);
             if (!hasActionRewards()) {
                 for (auto const& assignment : templateEdge.getAssignments().getTransientAssignments()) {
-                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    storm::jani::Variable const& assignedVariable = assignment.getVariable();
                     if (vars.count(assignedVariable.getExpressionVariable()) > 0) {
                         actionRewards = true;
                         break;
@@ -72,7 +72,7 @@ namespace storm {
             auto const& vars = *boost::any_cast<std::set<storm::expressions::Variable>*>(data);
             if (!hasTransitionRewards()) {
                 for (auto const& assignment : templateEdgeDestination.getOrderedAssignments().getTransientAssignments()) {
-                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    storm::jani::Variable const& assignedVariable = assignment.getVariable();
                     if (vars.count(assignedVariable.getExpressionVariable()) > 0) {
                         transitionRewards = true;
                         break;

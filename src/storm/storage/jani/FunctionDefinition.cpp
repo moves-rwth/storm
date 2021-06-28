@@ -1,5 +1,5 @@
 #include "storm/storage/jani/FunctionDefinition.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 
 #include "storm/utility/macros.h"

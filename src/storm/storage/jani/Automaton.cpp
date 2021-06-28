@@ -3,7 +3,7 @@
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/Location.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/utility/macros.h"
@@ -46,44 +46,6 @@ namespace storm {
         }
 
         Variable const& Automaton::addVariable(Variable const &variable) {
-            if (variable.isBooleanVariable()) {
-                return addVariable(variable.asBooleanVariable());
-            } else if (variable.isBoundedIntegerVariable()) {
-                return addVariable(variable.asBoundedIntegerVariable());
-            } else if (variable.isUnboundedIntegerVariable()) {
-                return addVariable(variable.asUnboundedIntegerVariable());
-            } else if (variable.isRealVariable()) {
-                return addVariable(variable.asRealVariable());
-            } else if (variable.isArrayVariable()) {
-                return addVariable(variable.asArrayVariable());
-            } else if (variable.isClockVariable()) {
-                return addVariable(variable.asClockVariable());
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
-            }
-        }
-        
-        BooleanVariable const& Automaton::addVariable(BooleanVariable const& variable) {
-            return variables.addVariable(variable);
-        }
-        
-        BoundedIntegerVariable const& Automaton::addVariable(BoundedIntegerVariable const& variable) {
-            return variables.addVariable(variable);
-        }
-
-        UnboundedIntegerVariable const& Automaton::addVariable(UnboundedIntegerVariable const& variable) {
-            return variables.addVariable(variable);
-        }
-
-        RealVariable const& Automaton::addVariable(RealVariable const& variable) {
-            return variables.addVariable(variable);
-        }
-        
-        ArrayVariable const& Automaton::addVariable(ArrayVariable const& variable) {
-            return variables.addVariable(variable);
-        }
-        
-        ClockVariable const& Automaton::addVariable(ClockVariable const& variable) {
             return variables.addVariable(variable);
         }
 

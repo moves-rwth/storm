@@ -1,9 +1,9 @@
-#include "storm/storage/jani/FunctionEliminator.h"
+#include "FunctionEliminator.h"
 
 #include <unordered_map>
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
 #include "storm/storage/jani/Variable.h"
 #include "storm/storage/jani/traverser/JaniTraverser.h"
@@ -40,6 +40,13 @@ namespace storm {
                 storm::expressions::Expression eliminate(storm::expressions::Expression const& expression) {
                     auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(expression.accept(*this, boost::any())));
                     return res.simplify();
+                }
+
+                storm::expressions::Expression eliminate(std::vector<storm::expressions::Expression> const& expression) {
+                    assert (false);
+                    // TODO: fix this
+//                    auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(expression.accept(*this, boost::any())));
+//                    return res.simplify();
                 }
      
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
@@ -131,21 +138,41 @@ namespace storm {
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
                     STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
-                    uint64_t size = expression.size()->evaluateAsInt();
                     std::vector<BaseExprPtr> elements;
-                    bool changed = false;
-                    for (uint64_t i = 0; i<size; ++i) {
-                        BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
-                        if (element.get() != expression.at(i).get()) {
-                            changed = true;
-                        }
-                        elements.push_back(element);
-                    }
-                    if (changed) {
-                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ValueArrayExpression(expression.getManager(), expression.getType(), elements)));
-                    } else {
-                        return expression.getSharedPointer();
-                    }
+//                    bool changed = false;
+                    assert (false);
+//                    for (uint64_t i = 0; i<size; ++i) {
+//                        BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
+//                        if (element.get() != expression.at(i).get()) {
+//                            changed = true;
+//                        }
+//                        elements.push_back(element);
+//                    }
+//                    if (changed) {
+//                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ValueArrayExpression(expression.getManager(), expression.getType(), elements)));
+//                    } else {
+//                        return expression.getSharedPointer();
+//                    }
+                }
+
+                virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const& data) override {
+//                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
+//                    uint64_t size = expression.size()->evaluateAsInt();
+//                    std::vector<BaseExprPtr> elements;
+//                    bool changed = false;
+                    assert (false);
+//                    for (uint64_t i = 0; i<size; ++i) {
+//                        BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
+//                        if (element.get() != expression.at(i).get()) {
+//                            changed = true;
+//                        }
+//                        elements.push_back(element);
+//                    }
+//                    if (changed) {
+//                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ValueArrayExpression(expression.getManager(), expression.getType(), elements)));
+//                    } else {
+//                        return expression.getSharedPointer();
+//                    }
                 }
                 
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
@@ -156,14 +183,30 @@ namespace storm {
                     if (sizeExpression.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
                         return expression.getSharedPointer();
                     } else {
-                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ConstructorArrayExpression(expression.getManager(), expression.getType(), sizeExpression, expression.getIndexVar(), elementExpression)));
+                        assert (false);
+                        // TODO: how to deal with arrays?
+//                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ConstructorArrayExpression(expression.getManager(), expression.getType(), sizeExpression, expression.getIndexVar(), elementExpression)));
                     }
                 }
                 
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
+                    assert (false);
                     BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
                     BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
                     
+                    // If the arguments did not change, we simply push the expression itself.
+                    if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ArrayAccessExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression)));
+                    }
+                }
+
+                virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data) override {
+                    assert (false);
+                    BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
+                    BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+
                     // If the arguments did not change, we simply push the expression itself.
                     if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
                         return expression.getSharedPointer();
@@ -322,60 +365,19 @@ namespace storm {
                     }
                 }
                 
-                void traverse(BooleanVariable& variable, boost::any const& data) override {
-                    if (variable.hasInitExpression()) {
-                        FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                }
-                
-                void traverse(BoundedIntegerVariable& variable, boost::any const& data) override {
+                void traverse(Variable& variable, boost::any const& data) override {
                     FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
                     if (variable.hasInitExpression()) {
                         variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
                     }
-                    if (variable.hasLowerBound()) {
+                    if (variable.isBoundedVariable() && variable.hasLowerBound()) {
                         variable.setLowerBound(functionEliminationVisitor->eliminate(variable.getLowerBound()));
                     }
-                    if (variable.hasUpperBound()) {
+                    if (variable.isBoundedVariable() && variable.hasUpperBound()) {
                         variable.setUpperBound(functionEliminationVisitor->eliminate(variable.getUpperBound()));
                     }
                 }
-                
-                void traverse(UnboundedIntegerVariable& variable, boost::any const& data) override {
-                    if (variable.hasInitExpression()) {
-                        FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                }
-                
-                void traverse(RealVariable& variable, boost::any const& data) override {
-                     if (variable.hasInitExpression()) {
-                        FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                }
-                
-                void traverse(ArrayVariable& variable, boost::any const& data) override {
-                    FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                    if (variable.hasInitExpression()) {
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                    if (variable.hasLowerElementTypeBound()) {
-                        variable.setLowerElementTypeBound(functionEliminationVisitor->eliminate(variable.getLowerElementTypeBound()));
-                    }
-                    if (variable.hasUpperElementTypeBound()) {
-                        variable.setUpperElementTypeBound(functionEliminationVisitor->eliminate(variable.getUpperElementTypeBound()));
-                    }
-                }
-                
-                void traverse(ClockVariable& variable, boost::any const& data) override {
-                    FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                    if (variable.hasInitExpression()) {
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                }
-                
+
                 void traverse(TemplateEdge& templateEdge, boost::any const& data) override {
                     FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
                     templateEdge.setGuard(functionEliminationVisitor->eliminate(templateEdge.getGuard()));
@@ -409,7 +411,9 @@ namespace storm {
                 void traverse(LValue& lValue, boost::any const& data) override {
                     if (lValue.isArrayAccess()) {
                         FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                        lValue.setArrayIndex(functionEliminationVisitor->eliminate(lValue.getArrayIndex()));
+                        std::vector<storm::expressions::Expression> arrayIndex;
+                        arrayIndex.push_back(functionEliminationVisitor->eliminate(lValue.getArrayIndex()));
+                        lValue.setArrayIndex(arrayIndex);
                     }
                 }
                 

@@ -17,7 +17,7 @@
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/JSONExporter.h"
+#include "storm/storage/jani/visitor/JSONExporter.h"
 #include <fstream>
 #include <iostream>
 #include <string>

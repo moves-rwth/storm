@@ -4,7 +4,7 @@
 #include "storm/storage/jani/LValue.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
@@ -35,7 +35,7 @@ namespace storm {
                     highestAssignmentLevel = std::max(highestAssignmentLevel, destination.getOrderedAssignments().getHighestLevel());
                 }
                 for (auto const& assignment : destination.getOrderedAssignments().getAllAssignments()) {
-                    Variable const& var = assignment.getLValue().isVariable() ? assignment.getLValue().getVariable() : assignment.getLValue().getArray();
+                    Variable const& var = assignment.getVariable();
                     if (containingModel.getGlobalVariables().hasVariable(var.getExpressionVariable())) {
                         writtenGlobalVariables.insert(var.getExpressionVariable());
                     }

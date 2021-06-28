@@ -8,6 +8,8 @@
 #include "storm/exceptions/FileIoException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/adapters/JsonAdapter.h"
+#include "storm/storage/jani/expressions/ValueArrayExpression.h"
+
 
 namespace storm {
     namespace jani {
@@ -79,17 +81,20 @@ namespace storm {
                 enum class BasicType {Bool, Int, Real};
                 boost::optional<BasicType> basicType;
                 boost::optional<std::pair<storm::expressions::Expression, storm::expressions::Expression>> bounds;
-                std::unique_ptr<ParsedType> arrayBase;
+                std::shared_ptr<ParsedType> arrayBase;
                 storm::expressions::Type expressionType;
             };
             void parseType(ParsedType& result, storm::json<ValueType> const& typeStructure, std::string variableName, Scope const& scope);
             storm::jani::LValue parseLValue(storm::json<ValueType> const& lValueStructure, Scope const& scope);
             std::shared_ptr<storm::jani::Variable>  parseVariable(storm::json<ValueType> const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix = "");
+            storm::jani::JaniType* parseArrayVariable(std::shared_ptr<ParsedType> type);
             storm::expressions::Expression parseExpression(storm::json<ValueType> const& expressionStructure, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
-            
+
         private:
             std::shared_ptr<storm::jani::Constant> parseConstant(storm::json<ValueType> const& constantStructure, Scope const& scope);
             storm::jani::FunctionDefinition parseFunctionDefinition(storm::json<ValueType> const& functionDefinitionStructure, Scope const& scope, bool firstPass, std::string const& parameterNamePrefix = "");
+
+            storm::expressions::ValueArrayExpression::ValueArrayElements parseAV(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables);
 
             /**
              * Helper for parsing the actions of a model.
@@ -107,8 +112,6 @@ namespace storm {
             
             std::shared_ptr<storm::jani::Composition> parseComposition(storm::json<ValueType> const& compositionStructure);
             storm::expressions::Variable getVariableOrConstantExpression(std::string const& ident, Scope const& scope, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
-
-
             
             /**
              * The overall structure currently under inspection.
@@ -119,7 +122,10 @@ namespace storm {
              */
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
             
+
             std::set<std::string> labels = {};
+
+            std::map<std::string, std::vector<size_t>> sizeMap;
 
             bool allowRecursion = true;
 

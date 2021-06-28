@@ -4,7 +4,7 @@
 #include "storm/storage/jani/Model.h"
 
 #include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -17,15 +17,15 @@
 
 namespace storm {
     namespace generator {
-        
+
         BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable) : variable(variable), bitOffset(bitOffset), global(global), observable(observable) {
             // Intentionally left empty.
         }
 
         IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global, bool observable, bool forceOutOfBoundsCheck) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth), global(global), observable(observable), forceOutOfBoundsCheck(forceOutOfBoundsCheck) {
-             // Intentionally left empty.
+            // Intentionally left empty.
         }
-        
+
         LocationVariableInformation::LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool observable) : variable(variable), highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth), observable(observable) {
             // Intentionally left empty.
         }
@@ -33,7 +33,7 @@ namespace storm {
         ObservationLabelInformation::ObservationLabelInformation(const std::string &name) : name(name) {
             // Intentionally left empty.
         }
-        
+
         /*!
          * Small helper function that sets unspecified lower/upper bounds for an integer variable based on the provided reservedBitsForUnboundedVariables and returns the number of bits required to represent the final variable range
          * @pre If has[Lower,Upper]Bound is true, [lower,upper]Bound must be set to the corresponding bound.
@@ -119,10 +119,10 @@ namespace storm {
             for (auto const& oblab : program.getObservationLabels()) {
                 observationLabels.emplace_back(oblab.getName());
             }
-            
+
             sortVariables();
         }
-        
+
         VariableInformation::VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState) : totalBitOffset(0) {
             // Check that the model does not contain non-transient real variables.
             STORM_LOG_THROW(!model.getGlobalVariables().containsNonTransientRealVariables(), storm::exceptions::InvalidArgumentException, "Cannot build model from JANI model that contains global non-transient real variables.");
@@ -136,16 +136,16 @@ namespace storm {
             } else {
                 outOfBoundsBit = boost::none;
             }
-            
+
             createVariablesForVariableSet(model.getGlobalVariables(), reservedBitsForUnboundedVariables, true);
-            
+
             for (auto const& automatonRef : parallelAutomata) {
                 createVariablesForAutomaton(automatonRef.get(), reservedBitsForUnboundedVariables);
             }
-                        
+
             sortVariables();
         }
-        
+
         void VariableInformation::registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData) {
             arrayVariableToElementInformations.clear();
             // Find for each replaced array variable the corresponding references in this variable information
@@ -183,27 +183,27 @@ namespace storm {
                 }
             }
         }
-        
+
         BooleanVariableInformation const& VariableInformation::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
             std::vector<uint64_t> const& boolInfoIndices = arrayVariableToElementInformations.at(arrayVariable);
             STORM_LOG_THROW(arrayIndex < boolInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << boolInfoIndices.size());
             return booleanVariables[boolInfoIndices[arrayIndex]];
         }
-        
+
         IntegerVariableInformation const& VariableInformation::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
             std::vector<uint64_t> const& intInfoIndices = arrayVariableToElementInformations.at(arrayVariable);
             STORM_LOG_THROW(arrayIndex < intInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << intInfoIndices.size());
             return integerVariables[intInfoIndices[arrayIndex]];
         }
-        
+
         void VariableInformation::createVariablesForAutomaton(storm::jani::Automaton const& automaton, uint64_t reservedBitsForUnboundedVariables) {
             uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
             locationVariables.emplace_back(automaton.getLocationExpressionVariable(), automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth, true);
             totalBitOffset += bitwidth;
-            
+
             createVariablesForVariableSet(automaton.getVariables(), reservedBitsForUnboundedVariables, false);
         }
-        
+
         void VariableInformation::createVariablesForVariableSet(storm::jani::VariableSet const& variableSet, uint64_t reservedBitsForUnboundedVariables, bool global) {
             for (auto const& variable : variableSet.getBooleanVariables()) {
                 if (!variable.isTransient()) {
@@ -235,7 +235,7 @@ namespace storm {
                 }
             }
         }
-        
+
         uint_fast64_t VariableInformation::getTotalBitOffset(bool roundTo64Bit) const {
             uint_fast64_t result = totalBitOffset;
             if (roundTo64Bit & ((result & ((1ull << 6) - 1)) != 0)) {
@@ -253,7 +253,7 @@ namespace storm {
             return outOfBoundsBit.get();
         }
 
-        
+
         void VariableInformation::sortVariables() {
             // Sort the variables so we can make some assumptions when iterating over them (in the next-state generators).
             std::sort(booleanVariables.begin(), booleanVariables.end(), [] (BooleanVariableInformation const& a, BooleanVariableInformation const& b) { return a.variable < b.variable; } );

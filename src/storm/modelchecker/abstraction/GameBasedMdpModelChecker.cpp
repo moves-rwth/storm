@@ -18,7 +18,7 @@
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 
 #include "storm/storage/dd/DdManager.h"
 
@@ -121,7 +121,7 @@ namespace storm {
                 storm::jani::Model const& janiModel = preprocessedModel.asJaniModel();
                 for (auto const& variable : janiModel.getGlobalVariables().getBooleanVariables()) {
                     if (variable.isTransient()) {
-                        labelToExpressionMapping[variable.getName()] = janiModel.getLabelExpression(variable.asBooleanVariable());
+                        labelToExpressionMapping[variable.getName()] = janiModel.getLabelExpression(variable);
                     }
                 }
             }
@@ -142,7 +142,7 @@ namespace storm {
                 storm::jani::Model const& janiModel = preprocessedModel.asJaniModel();
                 for (auto const& variable : janiModel.getGlobalVariables().getBooleanVariables()) {
                     if (variable.isTransient()) {
-                        labelToExpressionMapping[variable.getName()] = janiModel.getLabelExpression(variable.asBooleanVariable());
+                        labelToExpressionMapping[variable.getName()] = janiModel.getLabelExpression(variable);
                     }
                 }
             }

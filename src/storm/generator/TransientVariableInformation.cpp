@@ -3,13 +3,12 @@
 #include "storm/storage/jani/Model.h"
 
 #include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/utility/macros.h"
-#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 
@@ -18,35 +17,35 @@
 
 namespace storm {
     namespace generator {
-        
+
         template <>
-        TransientVariableData<storm::RationalFunction>::TransientVariableData(storm::expressions::Variable const& variable,  boost::optional<storm::RationalFunction> const& lowerBound, boost::optional<storm::RationalFunction> const& upperBound, storm::RationalFunction const& defaultValue, bool global) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), defaultValue(defaultValue) {
+        TransientVariableData<storm::RationalFunction>::TransientVariableData(storm::expressions::Variable const& variable,  boost::optional<storm::RationalFunction> const& lowerBound, boost::optional<storm::RationalFunction> const& upperBound, storm::RationalFunction const& defaultValue, bool global) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), defaultValue(defaultValue), global(global) {
             // There is no '<=' for rational functions. Therefore, do not check the bounds for this ValueType
         }
-        
+
         template <typename VariableType>
-        TransientVariableData<VariableType>::TransientVariableData(storm::expressions::Variable const& variable,  boost::optional<VariableType> const& lowerBound, boost::optional<VariableType> const& upperBound, VariableType const& defaultValue, bool global) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), defaultValue(defaultValue) {
+        TransientVariableData<VariableType>::TransientVariableData(storm::expressions::Variable const& variable,  boost::optional<VariableType> const& lowerBound, boost::optional<VariableType> const& upperBound, VariableType const& defaultValue, bool global) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), defaultValue(defaultValue), global(global) {
             STORM_LOG_THROW(!lowerBound.is_initialized() || lowerBound.get() <= defaultValue, storm::exceptions::OutOfRangeException, "The default value for transient variable " << variable.getName() << " is smaller than its lower bound.");
             STORM_LOG_THROW(!upperBound.is_initialized() || defaultValue <= upperBound.get(), storm::exceptions::OutOfRangeException, "The default value for transient variable " << variable.getName() << " is higher than its upper bound.");
         }
-        
+
         template <typename VariableType>
         TransientVariableData<VariableType>::TransientVariableData(storm::expressions::Variable const& variable, VariableType const& defaultValue, bool global) : variable(variable), defaultValue(defaultValue) {
             // Intentionally left empty.
         }
-        
+
         template <typename ValueType>
         TransientVariableInformation<ValueType>::TransientVariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata) {
-            
+
             createVariablesForVariableSet(model.getGlobalVariables(), true);
-            
+
             for (auto const& automatonRef : parallelAutomata) {
                 createVariablesForAutomaton(automatonRef.get());
             }
-            
+
             sortVariables();
         }
-        
+
         template <typename ValueType>
         void TransientVariableInformation<ValueType>::registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData) {
             arrayVariableToElementInformations.clear();
@@ -95,33 +94,33 @@ namespace storm {
                 }
             }
         }
-        
+
         template <typename ValueType>
         TransientVariableData<bool> const& TransientVariableInformation<ValueType>::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
             std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
             STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
             return booleanVariableInformation[indices[arrayIndex]];
         }
-        
+
         template <typename ValueType>
         TransientVariableData<int64_t> const& TransientVariableInformation<ValueType>::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
             std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
             STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
             return integerVariableInformation[indices[arrayIndex]];
         }
-        
+
         template <typename ValueType>
         TransientVariableData<ValueType> const& TransientVariableInformation<ValueType>::getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
             std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
             STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
             return rationalVariableInformation[indices[arrayIndex]];
         }
-        
+
         template <typename ValueType>
         void TransientVariableInformation<ValueType>::createVariablesForAutomaton(storm::jani::Automaton const& automaton) {
             createVariablesForVariableSet(automaton.getVariables(), false);
         }
-        
+
         template <typename ValueType>
         void TransientVariableInformation<ValueType>::createVariablesForVariableSet(storm::jani::VariableSet const& variableSet, bool global) {
             for (auto const& variable : variableSet.getBooleanVariables()) {
@@ -153,7 +152,7 @@ namespace storm {
                 }
             }
         }
-        
+
         template <typename ValueType>
         void TransientVariableInformation<ValueType>::sortVariables() {
             // Sort the variables so we can make some assumptions when iterating over them (in the next-state generators).
@@ -161,7 +160,7 @@ namespace storm {
             std::sort(integerVariableInformation.begin(), integerVariableInformation.end(), [] (TransientVariableData<int64_t> const& a, TransientVariableData<int64_t> const& b) { return a.variable < b.variable; } );
             std::sort(rationalVariableInformation.begin(), rationalVariableInformation.end(), [] (TransientVariableData<ValueType> const& a, TransientVariableData<ValueType> const& b) { return a.variable < b.variable; } );
         }
-        
+
         template<typename ValueType>
         void TransientVariableInformation<ValueType>::setDefaultValuesInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator) const {
             for (auto const& variableData : booleanVariableInformation) {
@@ -174,10 +173,10 @@ namespace storm {
                 evaluator.setRationalValue(variableData.variable, variableData.defaultValue);
             }
         }
-        
+
         template struct TransientVariableInformation<double>;
         template struct TransientVariableInformation<storm::RationalNumber>;
         template struct TransientVariableInformation<storm::RationalFunction>;
-        
+
     }
 }

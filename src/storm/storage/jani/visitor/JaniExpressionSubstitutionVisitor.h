@@ -2,7 +2,7 @@
 
 #include "storm/storage/expressions/SubstitutionVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "JaniExpressionVisitor.h"
 
 namespace storm {
     
@@ -24,8 +24,10 @@ namespace storm {
             using SubstitutionVisitor<MapType>::visit;
             
             virtual boost::any visit(ValueArrayExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) override;
             virtual boost::any visit(ConstructorArrayExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(ArrayAccessExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(ArrayAccessIndexExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(FunctionCallExpression const& expression, boost::any const& data) override;
         };
     }

@@ -8,7 +8,7 @@
 #include <boost/lexical_cast.hpp>
 #include "storm-pgcl/builder/ProgramGraphBuilder.h"
 #include "storm-pgcl/builder/JaniProgramGraphBuilder.h"
-#include "storm/storage/jani/JSONExporter.h"
+#include "storm/storage/jani/visitor/JSONExporter.h"
 
 #include "storm/exceptions/FileIoException.h"
 

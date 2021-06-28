@@ -13,7 +13,7 @@ namespace storm {
     }
     
     namespace prism {
-        
+
         class Program;
         
         class ToJaniConverter {
