@@ -175,8 +175,7 @@ namespace storm {
                 // Group staat voor de states?
                 for (uint_fast64_t group = 0; group < this->A->getRowGroupCount(); ++group) {
                     uint_fast64_t currentChoice = scheduler[group];
-                    // TODO: remove, as this should already be fixed by implementation to determine matrix/vector
-                    if (!this->choiceFixedForState || (this->choiceFixedForState && !(this->choiceFixedForState.get()[group]))) {
+                    assert (!this->choiceFixedForState || (this->choiceFixedForState && (!(this->choiceFixedForState.get()[group]) || this->A->getRowGroupSize(group) == 1)));
                         for (uint_fast64_t choice = this->A->getRowGroupIndices()[group];
                              choice < this->A->getRowGroupIndices()[group + 1]; ++choice) {
                             // If the choice is the currently selected one, we can skip it.
@@ -200,9 +199,6 @@ namespace storm {
                                 x[group] = std::move(choiceValue);
                             }
                         }
-                    } else {
-                        STORM_LOG_INFO("Ignoring state" << group << " as the choice of this state is fixed");
-                    }
                 }
                 
                 // If the scheduler did not improve, we are done.
