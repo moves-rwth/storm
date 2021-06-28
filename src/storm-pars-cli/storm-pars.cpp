@@ -567,7 +567,6 @@ namespace storm {
 
                 auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
                 auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
-                auto engine = regionSettings.getRegionCheckEngine();
 
                 std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> verificationCallback;
                 std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> postprocessingCallback;

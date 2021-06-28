@@ -115,8 +115,6 @@ namespace storm {
                                                                      RegionResult::Unknown);
 
                                 currentRegion.split(currentRegion.getCenterPoint(), newRegions);
-
-                                bool first = true;
                                 for (auto& newRegion : newRegions) {
                                     unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
                                     refinementDepths.push(currentDepth + 1);
