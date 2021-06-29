@@ -43,6 +43,10 @@ namespace storm {
             return true;
         }
 
+        bool HOAPathFormula::hasQualitativeResult() const {
+            return false;
+        }
+
         boost::any HOAPathFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }

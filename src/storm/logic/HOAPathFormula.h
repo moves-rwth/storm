@@ -32,6 +32,7 @@ namespace storm {
             virtual bool isHOAPathFormula() const override;
             virtual bool isProbabilityPathFormula() const override;
             virtual bool hasQuantitativeResult() const override;
+            virtual bool hasQualitativeResult() const override;
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
 
