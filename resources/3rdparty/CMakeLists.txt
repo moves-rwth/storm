@@ -51,7 +51,7 @@ ExternalProject_Add(
         eigen_src
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
 		GIT_SHALLOW 1
-        GIT_TAG 21ae2afd4edaa1b69782c67a54182d34efe43f9c
+        GIT_TAG 0fd6b4f71dd85b2009ee4d1aeb296e2c11fc9d68
         SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.7
 		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen.patch
