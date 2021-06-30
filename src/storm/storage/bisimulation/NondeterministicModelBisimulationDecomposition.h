@@ -7,10 +7,6 @@
 #include "storm/storage/DistributionWithReward.h"
 
 namespace storm {
-    namespace utility {
-        template <typename ValueType> class ConstantsComparator;
-    }
-    
     namespace storage {
         
         /*!

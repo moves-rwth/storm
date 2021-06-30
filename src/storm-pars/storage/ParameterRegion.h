@@ -57,8 +57,8 @@ namespace storm {
              */
             Valuation getCenterPoint() const;
 
-            void setSplitThreshold(int splitThreshold);
-            int getSplitThreshold() const;
+            void setSplitThreshold(size_t splitThreshold);
+            size_t getSplitThreshold() const;
 
             /*!
              * Returns the area of this region
@@ -89,7 +89,7 @@ namespace storm {
             void init();
 
             bool lastSplitMonotone = false;
-            int splitThreshold;
+            size_t splitThreshold;
             
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
