@@ -22,7 +22,7 @@ namespace storm {
             const std::string refineOption = "refine";
             const std::string explorationTimeLimitOption = "exploration-time";
             const std::string resolutionOption = "resolution";
-            const std::string culGridResolutionOption = "cul-resolution";
+            const std::string clipGridResolutionOption = "clip-resolution";
             const std::string sizeThresholdOption = "size-threshold";
             const std::string gapThresholdOption = "gap-threshold";
             const std::string schedulerThresholdOption = "scheduler-threshold";
@@ -42,7 +42,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, resolutionOption, false,"Sets the resolution of the discretization and how it is increased in case of refinement").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("init","the initial resolution (higher means more precise)").setDefaultValueUnsignedInteger(3).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the resolution of refined observations (higher means more precise).").setDefaultValueDouble(2).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, culGridResolutionOption, false,"Sets the resolution of the clipping grid").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("resolution","the resolution (higher means more precise)").setDefaultValueUnsignedInteger(3).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, clipGridResolutionOption, false, "Sets the resolution of the clipping grid").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("resolution", "the resolution (higher means more precise)").setDefaultValueUnsignedInteger(2).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, observationThresholdOption, false,"Only observations whose score is below this threshold will be refined.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means more precise").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Controlls how fast the threshold is increased in each refinement step (higher means more precise).").setDefaultValueDouble(0.1).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).build());
                 
@@ -96,7 +96,7 @@ namespace storm {
             }
 
             uint64_t BeliefExplorationSettings::getClippingGridResolution() const {
-                return this->getOption(culGridResolutionOption).getArgumentByName("resolution").getValueAsUnsignedInteger();
+                return this->getOption(clipGridResolutionOption).getArgumentByName("resolution").getValueAsUnsignedInteger();
             }
 
             double BeliefExplorationSettings::getResolutionFactor() const {
@@ -211,7 +211,7 @@ namespace storm {
                 options.optimalChoiceValueThresholdFactor = storm::utility::convertNumber<ValueType>(getOptimalChoiceValueThresholdFactor());
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
-                options.hybridClipping = isGridClippingModeSet();
+                options.useGridClipping = isGridClippingModeSet();
 
                 options.disableClippingReduction = isDisableClippingReductionSet();
 

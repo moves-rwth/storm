@@ -10,27 +10,26 @@ namespace storm {
         namespace modelchecker {
             template<typename ValueType>
             struct BeliefExplorationPomdpModelCheckerOptions {
-                BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold, bool gridClipping = false) : discretize(discretize), unfold(unfold), gridClipping(gridClipping) {
+                BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold) : discretize(discretize), unfold(unfold) {
                     // Intentionally left empty
                 }
                 
                 bool discretize;
                 bool unfold;
-                bool gridClipping;
-                bool hybridClipping;
+                bool useGridClipping;
                 bool refine = false;
                 boost::optional<uint64_t> refineStepLimit;
                 ValueType refinePrecision = storm::utility::zero<ValueType>();
                 boost::optional<uint64_t> explorationTimeLimit;
                 
-                // Controlparameters for the refinement heuristic
+                // Control parameters for the refinement heuristic
                 // Discretization Resolution
                 uint64_t  resolutionInit = 2;
                 ValueType resolutionFactor = storm::utility::convertNumber<ValueType, uint64_t>(2);
                 // The maximal number of newly expanded MDP states in a refinement step
                 uint64_t sizeThresholdInit = 0;
                 ValueType sizeThresholdFactor = storm::utility::convertNumber<ValueType,uint64_t>(4);
-                // Controls how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore
+                // Controls how large the gap between known lower- and upper bounds at a belief state needs to be in order to explore
                 ValueType gapThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
                 ValueType gapThresholdFactor = storm::utility::convertNumber<ValueType>(0.25);
                 // Controls whether "almost optimal" choices will be considered optimal

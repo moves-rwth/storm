@@ -102,7 +102,7 @@ namespace storm {
                 initialValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
-                if((options.clippingThresholdInit > 0 || options.hybridClipping || options.gridClipping) && formula.isRewardOperatorFormula()){
+                if((options.clippingThresholdInit > 0 || options.useGridClipping) && formula.isRewardOperatorFormula()){
                     initialValueBounds.extremePomdpValueBound = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp()).getExtremeValueBound(formula, formulaInfo);
                     STORM_LOG_INFO("Extreme Bound in Init: " << initialValueBounds.extremePomdpValueBound.getValueForState(initialPomdpState));
                 }
@@ -141,10 +141,10 @@ namespace storm {
                     computeReachabilityOTF(targetObservations, formulaInfo.minimize(), rewardModelName, initialValueBounds, result);
                 }
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
-                if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold && !options.gridClipping)) {
+                if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
                     result.lowerBound = -storm::utility::infinity<ValueType>();
                 }
-                if ((formulaInfo.maximize() && !options.discretize) || (formulaInfo.minimize() && !options.unfold && !options.gridClipping)) {
+                if ((formulaInfo.maximize() && !options.discretize) || (formulaInfo.minimize() && !options.unfold)) {
                     result.upperBound = storm::utility::infinity<ValueType>();
                 }
 
@@ -264,31 +264,7 @@ namespace storm {
                         resultValue = approx->getComputedValueAtInitialState();
                     }
                 }
-                if(options.gridClipping){ // Grid-based Underapproximation
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision,
-                                                                       options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic
-                                                                                                    : BeliefManagerType::TriangulationMode::Static);
-                    if (rewardModelName) {
-                        manager->setRewardModel(rewardModelName);
-                    }
-                    auto approx = std::make_shared<ExplorerType>(manager, trivialPOMDPBounds, options.explorationHeuristic);
-                    HeuristicParameters heuristicParameters;
-                    heuristicParameters.gapThreshold = options.gapThresholdInit;
-                    heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
-                    std::vector<uint64_t> observationResolutionVector(pomdp().getNrObservations(), options.clippingGridRes);
-                    buildGridUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx, observationResolutionVector);
-                    if (approx->hasComputedValues()) {
-                        auto printInfo = [&approx]() {
-                            std::stringstream str;
-                            str << "Explored and checked Grid Under-Approximation MDP:" << std::endl;
-                            approx->getExploredMdp()->printModelInformationToStream(str);
-                            return str.str();
-                        };
-                        STORM_LOG_INFO(printInfo());
-                        ValueType &resultValue = min ? result.upperBound : result.lowerBound;
-                        resultValue = approx->getComputedValueAtInitialState();
-                    }
-                } else if (options.unfold) { // Underapproximation (uses a fresh Belief manager)
+                if (options.unfold) { // Underapproximation (uses a fresh Belief manager)
                     auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision,
                                                                        options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic
                                                                                                     : BeliefManagerType::TriangulationMode::Static);
@@ -311,7 +287,7 @@ namespace storm {
                         }
                     }
                     // If we clip and compute rewards
-                    if((options.clippingThresholdInit > 0 || options.hybridClipping) && rewardModelName.is_initialized()) {
+                    if((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
                         approx->setExtremeValueBound(pomdpValueBounds.extremePomdpValueBound);
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
@@ -379,7 +355,7 @@ namespace storm {
                         // Select a decent value automatically
                         underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
-                    if((options.clippingThresholdInit > 0 || options.hybridClipping) && rewardModelName.is_initialized()) {
+                    if((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
                         underApproximation->setExtremeValueBound(pomdpValueBounds.extremePomdpValueBound);
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
@@ -808,7 +784,7 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
-                bool useBeliefClipping = heuristicParameters.clippingThreshold > storm::utility::zero<ValueType>() || options.hybridClipping;
+                bool useBeliefClipping = heuristicParameters.clippingThreshold > storm::utility::zero<ValueType>() || options.useGridClipping;
                 statistics.underApproximationBuildTime.start();
                 if(useBeliefClipping){
                     STORM_PRINT_AND_LOG("Use Belief Clipping with threshold " << storm::utility::to_string(heuristicParameters.clippingThreshold) << std::endl);
@@ -880,7 +856,7 @@ namespace storm {
                             }
                         }
                         if(clipBelief){
-                            if(options.hybridClipping){
+                            if(options.useGridClipping){
                                 // Add all transitions to states which are already in the MDP, clip all others to a grid
                                 for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                     auto rewardBound = storm::utility::zero<ValueType>();
@@ -995,153 +971,41 @@ namespace storm {
                                 } // end isClippable
                             }
                         }
-                        //if (!options.hybridClipping || !stopExploration || gridClippingOpenStates.find(currId) != gridClippingOpenStates.end()) {
-                            // Add successor transitions or cut-off transitions when exploration is stopped
-                            for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
-                                // Always restore old behavior if available
-                                if (stateAlreadyExplored) {
-                                    underApproximation->restoreOldBehaviorAtCurrentState(action);
-                                } else {
-                                    auto truncationProbability = storm::utility::zero<ValueType>();
-                                    auto truncationValueBound = storm::utility::zero<ValueType>();
-                                    auto successors = beliefManager->expand(currId, action);
-                                    for (auto const &successor : successors) {
-                                        bool added = underApproximation->addTransitionToBelief(addedActions + action, successor.first, successor.second, stopExploration);
-                                        if (!added) {
-                                            STORM_LOG_ASSERT(stopExploration, "Didn't add a transition although exploration shouldn't be stopped.");
-                                            // We did not explore this successor state. Get a bound on the "missing" value
-                                            truncationProbability += successor.second;
-                                            // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other
-                                            // under-approximation values. In general, this does not yield a sound underapproximation anymore.
-                                            // However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
-                                            truncationValueBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
-                                                                                            : underApproximation->computeLowerValueBoundAtBelief(successor.first));
-                                        }
-                                    }
-                                    if (stopExploration) {
-                                        if (computeRewards) {
-                                            underApproximation->addTransitionsToExtraStates(addedActions + action, truncationProbability);
-                                        } else {
-                                            underApproximation->addTransitionsToExtraStates(addedActions + action, truncationValueBound, truncationProbability - truncationValueBound);
-                                        }
-                                    }
-                                    if (computeRewards) {
-                                        // The truncationValueBound will be added on top of the reward introduced by the current belief state.
-                                        if(!clipBelief) {
-                                            underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
-                                        } else {
-                                            underApproximation->addRewardToCurrentState(addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
-                                        }
-                                    }
-                                }
-                            }
-                       // }
-                    }
-                    if (storm::utility::resources::isTerminate()) {
-                        break;
-                    }
-                }
-
-                if (storm::utility::resources::isTerminate()) {
-                    // don't overwrite statistics of a previous, successful computation
-                    if (!statistics.underApproximationStates) {
-                        statistics.underApproximationBuildAborted = true;
-                        statistics.underApproximationStates = underApproximation->getCurrentNumberOfMdpStates();
-                    }
-                    statistics.underApproximationBuildTime.stop();
-                    return false;
-                }
-
-                underApproximation->finishExploration();
-                statistics.underApproximationBuildTime.stop();
-                // FOR DEBUGGING, ALWAYS OUTPUT BELIEF-MDP
-                /*if (useBeliefClipping) {
-                    storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(underApproximation->getExploredMdp()), "underapprox.dot");
-                    storm::api::exportSparseModelAsDrn(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(underApproximation->getExploredMdp()), "underapprox.drn");
-                }*/
-
-                statistics.underApproximationCheckTime.start();
-                underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
-                statistics.underApproximationCheckTime.stop();
-                if (underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits() > 0) {
-                    statistics.nrTruncatedStates = underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits();
-                }
-                // don't overwrite statistics of a previous, successful computation
-                if (!storm::utility::resources::isTerminate() || !statistics.underApproximationStates) {
-                    statistics.underApproximationStates = underApproximation->getExploredMdp()->getNumberOfStates();
-                }
-                return fixPoint;
-
-            }
-
-            template<typename PomdpModelType, typename BeliefValueType>
-            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildGridUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation, std::vector<uint64_t>& observationResolutionVector) {
-                STORM_LOG_THROW(!refine, storm::exceptions::NotImplementedException, "Refinement is not yet supported for grid-based under-approximation");
-                statistics.underApproximationBuildTime.start();
-
-                bool fixPoint = true;
-                if (!refine) {
-                    // Build a new under approximation
-                    if (computeRewards) {
-                        underApproximation->startNewExploration(storm::utility::zero<ValueType>());
-                    } else {
-                        underApproximation->startNewExploration(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
-                    }
-                } else {
-                    // Restart the building process
-                    underApproximation->restartExploration();
-                }
-
-                // Expand the beliefs
-                storm::utility::Stopwatch explorationTime;
-                if (options.explorationTimeLimit) {
-                    explorationTime.start();
-                }
-                bool timeLimitExceeded = false;
-                while (underApproximation->hasUnexploredState()) {
-                    if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
-                        STORM_LOG_INFO("Exploration time limit exceeded.");
-                        timeLimitExceeded = true;
-                    }
-                    uint64_t currId = underApproximation->exploreNextState();
-
-                    uint32_t currObservation = beliefManager->getBeliefObservation(currId);
-                    bool stateAlreadyExplored = refine && underApproximation->currentStateHasOldBehavior() && !underApproximation->getCurrentStateWasTruncated();
-                    if (!stateAlreadyExplored || timeLimitExceeded) {
-                        fixPoint = false;
-                    }
-                    if (targetObservations.count(currObservation) != 0) {
-                        underApproximation->setCurrentStateIsTarget();
-                        underApproximation->addSelfloopTransition();
-                    } else {
+                        // Add successor transitions or cut-off transitions when exploration is stopped
                         for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                             // Always restore old behavior if available
                             if (stateAlreadyExplored) {
                                 underApproximation->restoreOldBehaviorAtCurrentState(action);
                             } else {
-                                // TODO Make this smarter (look at hybrid clipping above)
-                                auto probSum = storm::utility::zero<ValueType>();
+                                auto truncationProbability = storm::utility::zero<ValueType>();
                                 auto truncationValueBound = storm::utility::zero<ValueType>();
-                                auto successors = beliefManager->expandAndClip(currId, action, observationResolutionVector);
+                                auto successors = beliefManager->expand(currId, action);
                                 for (auto const &successor : successors) {
-                                    bool added = underApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
-                                    probSum += successor.second;
+                                    bool added = underApproximation->addTransitionToBelief(addedActions + action, successor.first, successor.second, stopExploration);
+                                    if (!added) {
+                                        STORM_LOG_ASSERT(stopExploration, "Didn't add a transition although exploration shouldn't be stopped.");
+                                        // We did not explore this successor state. Get a bound on the "missing" value
+                                        truncationProbability += successor.second;
+                                        // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other
+                                        // under-approximation values. In general, this does not yield a sound underapproximation anymore.
+                                        // However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
+                                        truncationValueBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
+                                                                                        : underApproximation->computeLowerValueBoundAtBelief(successor.first));
+                                    }
+                                }
+                                if (stopExploration) {
+                                    if (computeRewards) {
+                                        underApproximation->addTransitionsToExtraStates(addedActions + action, truncationProbability);
+                                    } else {
+                                        underApproximation->addTransitionsToExtraStates(addedActions + action, truncationValueBound, truncationProbability - truncationValueBound);
+                                    }
                                 }
                                 if (computeRewards) {
-                                    if(!cc.isOne(probSum)) {
-                                        underApproximation->addTransitionsToExtraStates(action, storm::utility::one<ValueType>() - probSum);
-                                        auto currRewardBound = beliefManager->getBeliefActionReward(currId, action);
-                                        auto realSuccessors = beliefManager->expand(currId, action);
-                                        for (auto const &successor : realSuccessors) {
-                                            currRewardBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
-                                                                                       : underApproximation->computeLowerValueBoundAtBelief(successor.first));
-                                        }
-                                        underApproximation->addClippingRewardToCurrentState(action, currRewardBound);
-                                    }
-                                    underApproximation->computeRewardAtCurrentState(action);
-                                } else {
-                                    if(!cc.isOne(probSum)) {
-                                        underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), storm::utility::one<ValueType>() - probSum);
+                                    // The truncationValueBound will be added on top of the reward introduced by the current belief state.
+                                    if(!clipBelief) {
+                                        underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
+                                    } else {
+                                        underApproximation->addRewardToCurrentState(addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
                                     }
                                 }
                             }
@@ -1168,12 +1032,9 @@ namespace storm {
                 statistics.underApproximationCheckTime.start();
                 underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.underApproximationCheckTime.stop();
-                if(underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits() > 0){
+                if (underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits() > 0) {
                     statistics.nrTruncatedStates = underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits();
                 }
-                // FOR DEBUGGING, ALWAYS OUTPUT BELIEF-MDP
-                storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(underApproximation->getExploredMdp()), "underapprox.dot");
-
                 // don't overwrite statistics of a previous, successful computation
                 if (!storm::utility::resources::isTerminate() || !statistics.underApproximationStates) {
                     statistics.underApproximationStates = underApproximation->getExploredMdp()->getNumberOfStates();
@@ -1181,7 +1042,7 @@ namespace storm {
                 return fixPoint;
 
             }
-            
+
             template<typename PomdpModelType, typename BeliefValueType>
             PomdpModelType const& BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::pomdp() const {
                 if (preprocessedPomdp) {

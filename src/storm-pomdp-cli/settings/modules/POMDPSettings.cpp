@@ -16,7 +16,7 @@ namespace storm {
             const std::string noCanonicOption = "nocanonic";
             const std::string exportAsParametricModelOption = "parametric-drn";
             const std::string beliefExplorationOption = "belief-exploration";
-            std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold", "cul-grid"};
+            std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold"};
             const std::string qualitativeReductionOption = "qualitativereduction";
             const std::string analyzeUniqueObservationsOption = "uniqueobservations";
             const std::string selfloopReductionOption = "selfloopreduction";
@@ -77,11 +77,6 @@ namespace storm {
                 return isBeliefExplorationSet() && (arg == "unfold" || arg == "both");
             }
 
-            bool POMDPSettings::isBeliefExplorationCulGridSet() const {
-                std::string arg = this->getOption(beliefExplorationOption).getArgumentByName("mode").getValueAsString();
-                return isBeliefExplorationSet() && (arg == "cul-grid");
-            }
-
             bool POMDPSettings::isCheckFullyObservableSet() const {
                 return this->getOption(checkFullyObservableOption).getHasOptionBeenSet();
             }
@@ -89,7 +84,6 @@ namespace storm {
             bool POMDPSettings::isQualitativeAnalysisSet() const {
                 return this->getOption(isQualitativeOption).getHasOptionBeenSet();
             }
-
 
             uint64_t POMDPSettings::getMemoryBound() const {
                 return this->getOption(memoryBoundOption).getArgumentByName("bound").getValueAsUnsignedInteger();
