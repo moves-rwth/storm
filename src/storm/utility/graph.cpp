@@ -1674,7 +1674,7 @@ namespace storm {
                 std::vector<uint_fast64_t> result;
                 result.reserve(matrix.getRowGroupCount());
 
-                storm::storage::sparse::state_type currentPosition = 0;
+//                storm::storage::sparse::state_type currentPosition = 0;
                 auto count = matrix.getRowGroupCount() - 1;
                 for (auto const& state : firstStates) {
                     stateQueue.push_back(state);

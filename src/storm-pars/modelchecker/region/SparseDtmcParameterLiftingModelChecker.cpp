@@ -305,7 +305,7 @@ namespace storm {
                 solver->setTrackScheduler(true);
 
                 if (localMonotonicityResult != nullptr && !this->isOnlyGlobalSet()) {
-                    storm::storage::BitVector fixedStates(parameterLifter->getRowGroupCount(), false);
+                    storm::storage::BitVector choiceFixedForStates(parameterLifter->getRowGroupCount(), false);
 
                     bool useMinimize = storm::solver::minimize(dirForParameters);
                     if (useMinimize && !minSchedChoices) {
@@ -317,7 +317,7 @@ namespace storm {
 
                     // TODO: this only works since we decided to keep all columns
                     auto const & occuringVariables = parameterLifter->getOccurringVariablesAtState();
-                    for (auto state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
+                    for (uint_fast64_t state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
                         auto oldStateNumber = parameterLifter->getOriginalStateNumber(state);
                         auto& variables = occuringVariables.at(oldStateNumber);
                         // point at which we start with rows for this state
@@ -346,10 +346,10 @@ namespace storm {
                             }
                         }
                         if (allMonotone) {
-                            fixedStates.set(state);
+                            choiceFixedForStates.set(state);
                         }
                     }
-                    solver->setFixedStates(std::move(fixedStates));
+                    solver->setChoiceFixedForStates(std::move(choiceFixedForStates));
                 }
 
                 if (storm::solver::minimize(dirForParameters) && minSchedChoices)
@@ -410,10 +410,6 @@ namespace storm {
             auto const& matrix = parameterLifter->getMatrix();
             auto const& vector = parameterLifter->getVector();
 
-            auto i = 0;
-            for (auto & x : vector) {
-                ++i;
-            }
             std::vector<ConstantType> stateResults;
             for (uint64_t state = 0; state < schedulerChoices.size(); ++state) {
                 uint64_t rowOffset = matrix.getRowGroupIndices()[state];
@@ -591,7 +587,6 @@ namespace storm {
                 bool done = true;
                 for (auto const& state : states) {
                     done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != Monotonicity::Unknown;
-                    auto check = localMonotonicityResult->getMonotonicity(state, var);
                     if (!done) {
                         break;
                     }
