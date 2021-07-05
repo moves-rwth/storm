@@ -19,10 +19,6 @@ namespace storm {
     // fwd
     class Environment;
 
-    namespace automata {
-        class DeterministicAutomaton;
-    }
-
     namespace models {
         namespace sparse {
             template <typename ValueType, typename RewardModelType> class Dtmc;

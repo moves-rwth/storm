@@ -172,7 +172,7 @@ namespace storm {
                         }
                         // Print the memory state info
                         if (!isMemorylessScheduler()) {
-                            out << "m" << std::setw(8) << memoryState;
+                            out << "m" << std::setw(8) << memoryState; // TODO print memoryState labels?
                         }
                         
                         // Print choice info
@@ -212,7 +212,8 @@ namespace storm {
                         } else {
                             out << "undefined.";
                         }
-                        
+
+
                         // Todo: print memory updates
                         out << std::endl;
                     }
@@ -221,6 +222,10 @@ namespace storm {
                 out << "Skipped " << numOfSkippedStatesWithUniqueChoice << " deterministic states with unique choice." << std::endl;
             }
             out << "___________________________________________________________________" << std::endl;
+
+            // TODO only for tests:
+            out << memoryStructure->toString();
+            out << std::endl;
         }
 
         template <>

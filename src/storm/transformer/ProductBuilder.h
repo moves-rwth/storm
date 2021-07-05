@@ -33,7 +33,6 @@ namespace storm {
                 // use of the SparseMatrixBuilder that can only handle linear addNextValue
                 // calls
                 std::deque<state_type> todo;
-
                 for (state_type s_0 : statesOfInterest) {
                     state_type q_0 = prodOp.getInitialState(s_0);
 

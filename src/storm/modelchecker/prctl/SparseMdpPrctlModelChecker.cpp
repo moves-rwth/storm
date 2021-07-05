@@ -14,9 +14,7 @@
 
 #include "storm/logic/FragmentSpecification.h"
 
-#include "storm/transformer/DAProductBuilder.h"
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
-#include "storm/automata/LTL2DeterministicAutomaton.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -176,6 +174,7 @@ namespace storm {
                 modelDot.close();
             }
 
+
             storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(mdp.getTransitionMatrix(), mdp.getNumberOfStates());
             storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, mdp);
 
@@ -185,7 +184,13 @@ namespace storm {
 
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            //TODO for MA too
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            if (checkTask.isProduceSchedulersSet()) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::make_unique<storm::storage::Scheduler<ValueType>>(helper.extractScheduler(mdp)));
+            }
+
+            return result;
         }
 
         template<typename SparseMdpModelType>

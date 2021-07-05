@@ -1,10 +1,12 @@
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
+#include "storm/transformer/DAProductBuilder.h"
 
 
 namespace storm {
@@ -33,6 +35,14 @@ namespace storm {
                  * @param the number of states of the model
                  */
                 SparseLTLHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::size_t numberOfSates);
+
+
+                /*!
+                 * @pre before calling this, a computation call should have been performed during which scheduler production was enabled.
+                 * @param TODO
+                 * @return a new scheduler containing optimal choices for each state that yield the long run average values of the most recent call.
+                 */
+                storm::storage::Scheduler<ValueType> extractScheduler(storm::models::sparse::Model<ValueType> const& model);
 
                 /*!
                  * todo computes Sat sets of AP
@@ -73,18 +83,23 @@ namespace storm {
                  * @param the transition matrix of the model
                  * @param the reversed transition relation
                  */
-                static storm::storage::BitVector computeAcceptingECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+                storm::storage::BitVector computeAcceptingECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
 
                 /**
                 * Compute a set S of states that are contained in BSCCs that satisfy the given acceptance conditon.
                 * @tparam the acceptance condition
                 * @tparam the transition matrix of the model
                 */
-                static storm::storage::BitVector computeAcceptingBCCs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
+                storm::storage::BitVector computeAcceptingBCCs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
 
 
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
-                std::size_t _numberOfStates;
+                std::size_t _numberOfStates;  //TODO just use _transitionMatrix.getRowGroupCount instead?
+
+                // scheduler
+                boost::optional<std::map<std::pair<uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q> --> choice
+                boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _memoryTransitions;  // BitVector contains the model states that lead from startState to goalSate of teh DA
+                boost::optional<std::vector<uint_fast64_t>> _memoryInitialStates; // Saves for each modelState which automaton state is reached from the initial state //TODO improve
 
             };
         }

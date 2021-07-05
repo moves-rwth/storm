@@ -1,8 +1,5 @@
-#include <modelchecker/results/ExplicitQualitativeCheckResult.h>
-#include <logic/ExtractMaximalStateFormulasVisitor.h>
 #include "SparseLTLHelper.h"
 
-#include "storm/transformer/DAProductBuilder.h"
 #include "storm/automata/LTL2DeterministicAutomaton.h"
 
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
@@ -10,6 +7,8 @@
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/DebugSettings.h"
@@ -22,10 +21,59 @@ namespace storm {
         namespace helper {
 
             template <typename ValueType, bool Nondeterministic>
-            SparseLTLHelper<ValueType, Nondeterministic>::SparseLTLHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::size_t numberOfStates) : _transitionMatrix(transitionMatrix), _numberOfStates(numberOfStates) {
+            SparseLTLHelper<ValueType, Nondeterministic>::SparseLTLHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::size_t numberOfStates) : _transitionMatrix(transitionMatrix), _numberOfStates(numberOfStates){
                 // Intentionally left empty.
             }
 
+
+            template <typename ValueType, bool Nondeterministic>
+            storm::storage::Scheduler<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::SparseLTLHelper::extractScheduler(storm::models::sparse::Model<ValueType> const& model) {
+                STORM_LOG_ASSERT(this->isProduceSchedulerSet(), "Trying to get the produced optimal choices although no scheduler was requested.");
+                STORM_LOG_ASSERT(this->_productChoices.is_initialized(), "Trying to extract the produced scheduler but none is available. Was there a computation call before?");
+                STORM_LOG_ASSERT(this->_memoryTransitions.is_initialized(), "Trying to extract the DA transition structure but none is available. Was there a computation call before?");
+                STORM_LOG_ASSERT(this->_memoryInitialStates.is_initialized(), "Trying to extract the initial states of the DA but there are none available. Was there a computation call before?");
+
+                // Create a memory structure for the MDP scheduler with memory.
+                typename storm::storage::MemoryStructureBuilder<ValueType>::MemoryStructureBuilder memoryBuilder(this->_memoryTransitions.get().size(), model);
+
+                // Build the transitions between the memory states:  startState--- modelStates (transitionVector) --->goalState
+                for (storm::storage::sparse::state_type startState = 0; startState < this->_memoryTransitions.get().size(); ++startState) {
+                    for (storm::storage::sparse::state_type goalState = 0; goalState < this->_memoryTransitions.get().size(); ++goalState) {
+                        // Bitvector that represents modelStates the model states that trigger this transition.
+                        memoryBuilder.setTransition(startState, goalState, this->_memoryTransitions.get()[startState][goalState]);
+                    }
+                }
+
+                /*
+                memoryStateLabeling: Label the memory states to specify, e.g., accepting states // TODO where are these labels used?
+                for (storm::storage::sparse::state_type q : set) {
+                    memoryBuilder.setLabel(q,//todo);
+                }
+                */
+
+                // initialMemoryStates: Assign an initial memory state to each initial state of the model.
+                for (uint_fast64_t s0 : model.getInitialStates()) {
+                    // Label the state as initial TODO unnecessary?
+                    //memoryBuilder.setLabel(q, "Initial for model state " s0)
+                    memoryBuilder.setInitialMemoryState(s0, this->_memoryInitialStates.get()[s0]);
+                }
+
+
+                // Finally, we can build the memoryStructure.
+                storm::storage::MemoryStructure memoryStructure = memoryBuilder.build();
+
+                // Create a scheduler (with memory of size DA) for the model from the scheduler of the MDP-DA-product model.
+                storm::storage::Scheduler<ValueType> scheduler(this->_transitionMatrix.getRowGroupCount(), memoryStructure);
+
+                // Use choices in the product model to create a choice based on model state and memory state
+                for (const auto &choice : this->_productChoices.get()) {
+                    uint_fast64_t modelState = choice.first.first;
+                    uint_fast64_t memoryState = choice.first.second;
+                    scheduler.setChoice(choice.second, modelState, memoryState);
+                }
+
+                return scheduler;
+            }
             template<typename ValueType, bool Nondeterministic>
             std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker){
                 std::map<std::string, storm::storage::BitVector> apSets;
@@ -141,7 +189,10 @@ namespace storm {
                         if (accepting) {
                             accMECs++;
                             STORM_LOG_DEBUG("MEC is accepting");
+
                             for (auto const& stateChoicePair : mec) {
+                                // TODO extend scheduler by mec choices (which?)
+                                //  need adversary which forces (to remain in mec and) to visit all states of the mec inf. often with prob. 1
                                 acceptingStates.set(stateChoicePair.first);
                             }
                         }
@@ -180,12 +231,13 @@ namespace storm {
             std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeDAProductProbabilities(Environment const& env, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets) {
                 const storm::automata::APSet& apSet = da.getAPSet();
 
-                std::vector<storm::storage::BitVector> apLabels;
+
+                std::vector<storm::storage::BitVector> statesForAP;
                 for (const std::string& ap : apSet.getAPs()) {
                     auto it = apSatSets.find(ap);
                     STORM_LOG_THROW(it != apSatSets.end(), storm::exceptions::InvalidOperationException, "Deterministic automaton has AP " << ap << ", does not appear in formula");
 
-                    apLabels.push_back(std::move(it->second));
+                    statesForAP.push_back(std::move(it->second));
                 }
 
                 storm::storage::BitVector statesOfInterest;
@@ -199,9 +251,10 @@ namespace storm {
 
 
                 STORM_LOG_INFO("Building "+ (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) +"product with deterministic automaton, starting from " << statesOfInterest.getNumberOfSetBits() << " model states...");
-                storm::transformer::DAProductBuilder productBuilder(da, apLabels);
+                transformer::DAProductBuilder productBuilder(da, statesForAP);
 
-                auto product = productBuilder.build<productModelType>(this->_transitionMatrix, statesOfInterest);
+                typename transformer::DAProduct<productModelType>::ptr product = productBuilder.build<productModelType>(this->_transitionMatrix, statesOfInterest);
+
 
                 STORM_LOG_INFO("Product "+ (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) +" has " << product->getProductModel().getNumberOfStates() << " states and "
                                                    << product->getProductModel().getNumberOfTransitions() << " transitions.");
@@ -254,15 +307,56 @@ namespace storm {
 
 
                 if (Nondeterministic) {
-                    prodNumericResult = std::move(storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(env,
-                                                                                                                                          std::move(solveGoalProduct),
-                                                                                                                                          product->getProductModel().getTransitionMatrix(),
-                                                                                                                                          product->getProductModel().getBackwardTransitions(),
-                                                                                                                                          bvTrue,
-                                                                                                                                          acceptingStates,
-                                                                                                                                          this->isQualitativeSet(),
-                                                                                                                                          false  // no schedulers (at the moment)
-                                                                                                                                ).values);
+                    MDPSparseModelCheckingHelperReturnType<ValueType> prodCheckResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(env,
+                                                                                                                              std::move(solveGoalProduct),
+                                                                                                                              product->getProductModel().getTransitionMatrix(),
+                                                                                                                              product->getProductModel().getBackwardTransitions(),
+                                                                                                                              bvTrue,
+                                                                                                                              acceptingStates,
+                                                                                                                              this->isQualitativeSet(),
+                                                                                                                              this->isProduceSchedulerSet() // Whether to create memoryless scheduler for the Model-DA Product.
+                                                                                                                              );
+                    prodNumericResult = std::move(prodCheckResult.values);
+
+                    if (this->isProduceSchedulerSet()) {
+                        // Extract the choices of the scheduler for the MDP-DA product: <s,q> -> choice
+                        this->_productChoices.emplace();
+                        for (storm::storage::sparse::state_type pState = 0;
+                            pState < product->getProductModel().getNumberOfStates(); ++pState) {
+                            this->_productChoices.get().insert({std::make_pair(product->getModelState(pState), product->getAutomatonState(pState)), prodCheckResult.scheduler->getChoice(pState)});
+                        }
+
+
+                        // Prepare the memory structure. For that, we need: transitions,  initialMemoryStates (and todo: memoryStateLabeling)
+
+                        // The next move function of the memory, will be build based on the transitions of the DA.
+                        this->_memoryTransitions.emplace(da.getNumberOfStates(), std::vector<storm::storage::BitVector>(da.getNumberOfStates()));
+
+                        for (storm::storage::sparse::state_type startState = 0; startState < da.getNumberOfStates(); ++startState) {
+                            for (storm::storage::sparse::state_type goalState = 0;
+                                 goalState < da.getNumberOfStates(); ++goalState) {
+                                // Bitvector that represents modelStates the model states that trigger this transition.
+                                storm::storage::BitVector modelStates(this->_transitionMatrix.getRowGroupCount(), false);
+                                for (storm::storage::sparse::state_type modelState = 0;
+                                    modelState < this->_transitionMatrix.getRowGroupCount(); ++modelState) {
+                                    if (goalState == productBuilder.getSuccessor(modelState, startState, modelState)) {
+                                        modelStates.set(modelState);
+                                    }
+                                }
+                                // Insert a transition: startState--{modelStates}-->goalState
+                                this->_memoryTransitions.get()[startState][goalState] = std::move(modelStates);
+                            }
+                        }
+
+                        this->_memoryInitialStates.emplace();
+                        this->_memoryInitialStates->resize(this->_transitionMatrix.getRowGroupCount());
+                        // Save for each automaton state for which model state it is initial.
+                        for (storm::storage::sparse::state_type modelState = 0; modelState< this->_transitionMatrix.getRowGroupCount(); ++modelState) {
+                            this->_memoryInitialStates.get().at(modelState) = productBuilder.getInitialState(modelState);
+                        }
+
+                        // TODO labels (e.g. the accepting set?) for the automaton states
+                    }
 
                 } else {
                     prodNumericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(env,
@@ -275,6 +369,7 @@ namespace storm {
                     }
 
                 std::vector<ValueType> numericResult = product->projectToOriginalModel(this->_numberOfStates, prodNumericResult);
+
                 return numericResult;
             }
 
