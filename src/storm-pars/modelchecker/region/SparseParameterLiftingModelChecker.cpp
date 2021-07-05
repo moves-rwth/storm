@@ -508,7 +508,6 @@ namespace storm {
                                                                                                              std::set<VariableType>& possibleNotMonotoneParameters,
                                                                                                              std::set<VariableType>const& consideredVariables,
                                                                                                              storm::solver::OptimizationDirection const& dir) {
-            bool minimize = storm::solver::minimize(dir);
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation Valuation;
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
             ConstantType value = storm::solver::minimize(dir) ? 1 : 0;

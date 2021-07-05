@@ -585,6 +585,7 @@ namespace storm {
                     }
                     ecQuotient->ecqStayInEcChoices = std::move(ecElimResult.sinkRows);
                     ecQuotient->origReward0Choices = std::move(newReward0Choices);
+                    ecQuotient->origTotalReward0Choices = std::move(newTotalReward0Choices);
                     ecQuotient->rowsWithSumLessOne = std::move(rowsWithSumLessOne);
                     ecQuotient->auxStateValues.resize(ecQuotient->matrix.getRowGroupCount());
                     ecQuotient->auxChoiceValues.resize(ecQuotient->matrix.getRowCount());
@@ -741,7 +742,7 @@ namespace storm {
                                     unprocessedStates.set(state, false);
                                     originalSolution[state] = ecqSolution[ecqState];
                                 }
-                                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices);
+                                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices, &ecQuotient->origTotalReward0Choices);
                                 // Clear bitvectors for next ecqState.
                                 ecStatesToProcess.clear();
                                 ecStatesToReach.clear();
@@ -801,7 +802,7 @@ namespace storm {
                                 unprocessedStates.set(state, false);
                                 originalSolution[state] = ecqSolution[ecqState];
                             }
-                            computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices);
+                            computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices, &ecQuotient->origTotalReward0Choices);
                             // Clear bitvectors for next ecqState.
                             ecStatesToProcess.clear();
                             ecStatesToReach.clear();
