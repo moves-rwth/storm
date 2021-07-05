@@ -224,8 +224,10 @@ namespace storm {
             out << "___________________________________________________________________" << std::endl;
 
             // TODO only for tests:
-            out << memoryStructure->toString();
-            out << std::endl;
+            if(!isMemorylessScheduler()) {
+                out << memoryStructure->toString();
+                out << std::endl;
+            }
         }
 
         template <>
