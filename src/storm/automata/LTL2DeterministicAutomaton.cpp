@@ -47,6 +47,7 @@ namespace storm {
                 aut = to_generalized_rabin(aut,true);
             }
 
+            STORM_LOG_INFO("The deterministic automaton has acceptance condition:  "<< aut->get_acceptance());
 
             STORM_LOG_INFO(aut->get_acceptance());
 

@@ -38,7 +38,7 @@ namespace storm {
                     auto sat = subResult.getTruthValuesVector();
 
                     apSets[p.first] = std::move(sat);
-                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
+                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << apSets[p.first].getNumberOfSetBits() << " states.");
                 }
                 return apSets;
             }
