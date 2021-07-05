@@ -159,7 +159,8 @@ namespace storm {
                     std::vector<uint_fast64_t> originalToEcqStateMapping;
                     std::vector<storm::storage::FlatSetStateContainer> ecqToOriginalStateMapping;
                     storm::storage::BitVector ecqStayInEcChoices;
-                    storm::storage::BitVector origReward0Choices;
+                    storm::storage::BitVector origReward0Choices; // includes total and LRA rewards
+                    storm::storage::BitVector origTotalReward0Choices; // considers just total rewards
                     storm::storage::BitVector rowsWithSumLessOne;
                     
                     std::vector<ValueType> auxStateValues;
