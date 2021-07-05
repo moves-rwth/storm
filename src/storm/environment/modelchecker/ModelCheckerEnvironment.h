@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <boost/optional.hpp>
 
 #include "storm/environment/Environment.h"
