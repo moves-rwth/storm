@@ -7,6 +7,7 @@
 
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
+#include "storm/storage/expressions/BaseExpression.h"
 
 namespace storm {
     namespace expressions {
@@ -93,7 +94,10 @@ namespace storm {
              * @return The index of the variable.
              */
             uint_fast64_t getIndex() const;
-            
+
+            void setArraySizes(std::vector<size_t>& sizes);
+            size_t getArraySize(size_t number) const;
+
             /*!
              * Retrieves the offset of the variable in the group of all equally typed variables.
              *
@@ -142,6 +146,8 @@ namespace storm {
             
             // The index of the variable.
             uint_fast64_t index;
+
+            std::vector<size_t> arraySizes;
         };
     }
 }

@@ -13,7 +13,7 @@ namespace storm {
             /*!
              * Creates an assignment of the given expression to the given LValue.
              */
-            Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const& expression, int64_t level = 0);
+            Assignment(storm::jani::LValue const& lValue, storm::expressions::Expression const & expression, int64_t level = 0);
 
             /*!
              * Creates an assignment of the given expression to the given Variable.
@@ -43,6 +43,8 @@ namespace storm {
              * Retrieves the lValue that is written in this assignment.
              */
             storm::jani::LValue& getLValue();
+
+            std::string getName() const;
             
             /*!
              * Retrieves the Variable that is written in this assignment.
@@ -60,7 +62,7 @@ namespace storm {
              * Retrieves the expression whose value is assigned to the target variable.
              */
             storm::expressions::Expression const& getAssignedExpression() const;
-            
+
             /*!
              * Sets a new expression that is assigned to the target LValue.
              */
@@ -99,7 +101,7 @@ namespace storm {
             
             // The expression that is being assigned to the lValue.
             storm::expressions::Expression expression;
-            
+
             // The level of the assignment.
             int64_t level;
         };

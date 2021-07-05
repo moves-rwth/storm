@@ -5,10 +5,6 @@
 #include "storm/storage/bisimulation/DeterministicBlockData.h"
 
 namespace storm {
-    namespace utility {
-        template <typename ValueType> class ConstantsComparator;
-    }
-    
     namespace storage {
         
         /*!

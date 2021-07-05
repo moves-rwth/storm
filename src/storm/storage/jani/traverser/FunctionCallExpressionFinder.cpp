@@ -1,7 +1,7 @@
 #include "storm/storage/jani/traverser/FunctionCallExpressionFinder.h"
 
 #include "storm/storage/jani/traverser/JaniTraverser.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
 #include "storm/storage/jani/Model.h"
 
@@ -64,13 +64,25 @@ namespace storm {
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
                     STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
-                    uint64_t size = expression.size()->evaluateAsInt();
-                    for (uint64_t i = 0; i < size; ++i) {
-                        expression.at(i)->accept(*this, data);
+                    expression.size()->accept(*this, data);
+                    visit(expression.getElements(), data);
+                    return boost::any();
+                }
+
+                virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) override {
+                    if (elements.elementsWithValue) {
+                        for (auto const& elem : elements.elementsWithValue.get()) {
+                            elem->accept(*this, data);
+                        }
+                    } else {
+                        assert (elements.elementsOfElements);
+                        for (auto const& elem : elements.elementsOfElements.get()) {
+                            visit(*elem, data);
+                        }
                     }
                     return boost::any();
                 }
-                
+
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
                     expression.getElementExpression()->accept(*this, data);
                     expression.size()->accept(*this, data);
@@ -80,6 +92,16 @@ namespace storm {
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
                     expression.getFirstOperand()->accept(*this, data);
                     expression.getSecondOperand()->accept(*this, data);
+                    return boost::any();
+                }
+
+                virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data) override {
+                    if (expression.getFirstOperand() == expression.getSecondOperand()) {
+                        expression.getFirstOperand()->accept(*this, data);
+                    } else {
+                        expression.getFirstOperand()->accept(*this, data);
+                        expression.getSecondOperand()->accept(*this, data);
+                    }
                     return boost::any();
                 }
                 

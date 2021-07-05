@@ -85,51 +85,19 @@ namespace storm {
             }
         }
         
-        void JaniTraverser::traverse(BooleanVariable& variable, boost::any const& data) {
+        void JaniTraverser::traverse(Variable& variable, boost::any const& data) {
             if (variable.hasInitExpression()) {
                 traverse(variable.getInitExpression(), data);
             }
-        }
-        
-        void JaniTraverser::traverse(BoundedIntegerVariable& variable, boost::any const& data) {
-            if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-            if (variable.hasLowerBound()) {
+            if (variable.isBoundedVariable() && variable.hasLowerBound()) {
                 traverse(variable.getLowerBound(), data);
             }
-            if (variable.hasUpperBound()) {
+            if (variable.isBoundedVariable() && variable.hasUpperBound()) {
                 traverse(variable.getUpperBound(), data);
             }
-        }
-        
-        void JaniTraverser::traverse(UnboundedIntegerVariable& variable, boost::any const& data) {
-            if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-        }
-        
-        void JaniTraverser::traverse(RealVariable& variable, boost::any const& data) {
-             if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-        }
-        
-        void JaniTraverser::traverse(ArrayVariable& variable, boost::any const& data) {
-            if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-            if (variable.hasLowerElementTypeBound()) {
-                traverse(variable.getLowerElementTypeBound(), data);
-            }
-            if (variable.hasUpperElementTypeBound()) {
-                traverse(variable.getUpperElementTypeBound(), data);
-            }
-        }
-        
-        void JaniTraverser::traverse(ClockVariable& variable, boost::any const& data) {
-            if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
+            if (variable.isArrayVariable()) {
+                //TODO: @Jip fix this
+                assert(false);
             }
         }
         
@@ -181,7 +149,9 @@ namespace storm {
         
         void JaniTraverser::traverse(LValue& lValue, boost::any const& data) {
             if (lValue.isArrayAccess()) {
-                traverse(lValue.getArrayIndex(), data);
+                assert (false);
+                // TODO: what to do here? what does data look like
+//                traverse(lValue.getArrayIndex(), data);
             }
         }
         
@@ -270,54 +240,18 @@ namespace storm {
             }
         }
         
-        void ConstJaniTraverser::traverse(BooleanVariable const& variable, boost::any const& data) {
+        void ConstJaniTraverser::traverse(Variable const& variable, boost::any const& data) {
             if (variable.hasInitExpression()) {
                 traverse(variable.getInitExpression(), data);
             }
-        }
-        
-        void ConstJaniTraverser::traverse(BoundedIntegerVariable const& variable, boost::any const& data) {
-            if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-            if (variable.hasLowerBound()) {
+            if (variable.isBoundedVariable() && variable.hasLowerBound()) {
                 traverse(variable.getLowerBound(), data);
             }
-            if (variable.hasUpperBound()) {
+            if (variable.isBoundedVariable() && variable.hasUpperBound()) {
                 traverse(variable.getUpperBound(), data);
             }
         }
-        
-        void ConstJaniTraverser::traverse(UnboundedIntegerVariable const& variable, boost::any const& data) {
-            if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-        }
-        
-        void ConstJaniTraverser::traverse(RealVariable const& variable, boost::any const& data) {
-             if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-        }
-        
-        void ConstJaniTraverser::traverse(ArrayVariable const& variable, boost::any const& data) {
-            if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-            if (variable.hasLowerElementTypeBound()) {
-                traverse(variable.getLowerElementTypeBound(), data);
-            }
-            if (variable.hasUpperElementTypeBound()) {
-                traverse(variable.getUpperElementTypeBound(), data);
-            }
-        }
-        
-        void ConstJaniTraverser::traverse(ClockVariable const& variable, boost::any const& data) {
-            if (variable.hasInitExpression()) {
-                traverse(variable.getInitExpression(), data);
-            }
-        }
-        
+
         void ConstJaniTraverser::traverse(EdgeContainer const& edgeContainer, boost::any const& data) {
             for (auto const& templateEdge : edgeContainer.getTemplateEdges()) {
                 traverse(*templateEdge, data);
@@ -365,7 +299,9 @@ namespace storm {
         
         void ConstJaniTraverser::traverse(LValue const& lValue, boost::any const& data) {
             if (lValue.isArrayAccess()) {
-                traverse(lValue.getArrayIndex(), data);
+                for (auto& index: lValue.getArrayIndexVector()) {
+                    traverse(index, data);
+                }
             }
         }
         

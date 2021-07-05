@@ -11,7 +11,7 @@ namespace storm {
         public:
             
             ArrayAccessExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& arrayExpression, std::shared_ptr<BaseExpression const> const& indexExpression);
-            
+
             // Instantiate constructors and assignments with their default implementations.
             ArrayAccessExpression(ArrayAccessExpression const& other) = default;
             ArrayAccessExpression& operator=(ArrayAccessExpression const& other) = delete;

@@ -1,6 +1,6 @@
 #include "storm/storage/jani/Location.h"
 
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidJaniException.h"
 #include "storm/exceptions/InvalidArgumentException.h"

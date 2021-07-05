@@ -115,7 +115,7 @@ namespace storm {
                     }
                     if (timeOut > )
 #endif
-                    if (timeOut > 0 && totalTime.getTimeInMilliseconds() > timeOut) {
+                    if (timeOut > 0 && static_cast<uint64_t>(totalTime.getTimeInMilliseconds()) > timeOut) {
                         for (uint64_t remainingPoint = pointIndex + 1; remainingPoint < input.size(); ++remainingPoint) {
                             vertices.set(remainingPoint);
                         }

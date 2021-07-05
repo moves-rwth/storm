@@ -70,8 +70,18 @@ namespace storm {
              */
             void unsetOptimizationDirection();
 
-            void setFixedStates(storm::storage::BitVector&& states);
-            void updateScheduler();
+            /*!
+             * Sets the states for which the choices are fixed.
+             * Expecting the matrix to only have one choice for the states which are fixed.
+             * @param states bitvector with the states where the choices are fixed.
+             */
+            void setChoiceFixedForStates(storm::storage::BitVector&& states);
+
+            /*!
+             * Sets the initialChoices for the states of which the choices are fixed on the first choice available (0)
+             * Expecting the matrix to only have one choice for the state
+             */
+            void setFixedChoicesToFirst();
 
             /*!
              * Sets whether the solution to the min max equation system is known to be unique.
@@ -186,7 +196,7 @@ namespace storm {
             // A scheduler that can be used by solvers that require a valid initial scheduler.
             boost::optional<std::vector<uint_fast64_t>> initialScheduler;
 
-            boost::optional<storm::storage::BitVector> fixedStates;
+            boost::optional<storm::storage::BitVector> choiceFixedForState;
 
         private:
             /// Whether the solver can assume that the min-max equation system has a unique solution

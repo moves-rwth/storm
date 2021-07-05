@@ -36,7 +36,7 @@ namespace storm {
                         *result = varSet.count(lValue.getVariable().getExpressionVariable()) > 0;
                     } else {
                         STORM_LOG_ASSERT(lValue.isArrayAccess(), "lValue has unexpected type.");
-                        *result = varSet.count(lValue.getArray().getExpressionVariable()) > 0;
+                        *result = varSet.count(lValue.getVariable().getExpressionVariable()) > 0;
                     }
                 }
 

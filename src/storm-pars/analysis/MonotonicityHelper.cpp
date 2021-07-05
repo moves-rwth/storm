@@ -70,7 +70,7 @@ namespace storm {
                 // TODO @Jip Warning that we can't do anything that isnt a dtmc or an mdp bc else we might have a null pointer exception at some point
             }
 
-            for (auto i = 0; i < matrix.getRowCount(); ++i) {
+            for (size_t i = 0; i < matrix.getRowCount(); ++i) {
                 std::set<VariableType> occurringVariables;
 
                 for (auto &entry : matrix.getRow(i)) {

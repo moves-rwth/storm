@@ -12,7 +12,7 @@
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
 #include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
@@ -98,10 +98,9 @@ namespace storm {
             if (this->options.hasTerminalStates()) {
                 for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
                     if (expressionOrLabelAndBool.first.isExpression()) {
-                        this->terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
+                        this->terminalStates.emplace_back(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second);
                     } else {
-                        // If it's a label, i.e. refers to a transient boolean variable we need to derive the expression
-                        // for the label so we can cut off the exploration there.
+                        // If it's a label, i.e. refers to a transient boolean variable we do some sanity checks first
                         if (expressionOrLabelAndBool.first.getLabel() != "init" && expressionOrLabelAndBool.first.getLabel() != "deadlock") {
                             STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()) , storm::exceptions::InvalidSettingsException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
@@ -109,7 +108,11 @@ namespace storm {
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
-                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata), expressionOrLabelAndBool.second));
+//<<<<<<< HEAD //TODO @Jip: fix
+                            this->terminalStates.emplace_back(variable.getExpressionVariable().getExpression(), expressionOrLabelAndBool.second);
+//=======
+//                            this->terminalStates.emplace_back(this->model.getLabelExpression(variable, this->parallelAutomata), expressionOrLabelAndBool.second));
+//>>>>>>> 3eb2bc84852b636663c4176a21624eb7f5d701f1
                         }
                     }
                 }
@@ -366,9 +369,9 @@ namespace storm {
             }
             // Iterate over all array access assignments and carry them out.
             for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
-                int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
+                auto arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
                 if (assignmentIt->getAssignedExpression().hasIntegerType()) {
-                    IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndex);
                     int_fast64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
 
                     if (this->options.isAddOutOfBoundsStateSet()) {
@@ -382,7 +385,7 @@ namespace storm {
                     state.setFromInt(intInfo.bitOffset, intInfo.bitWidth, assignedValue - intInfo.lowerBound);
                     STORM_LOG_ASSERT(static_cast<int_fast64_t>(state.getAsInt(intInfo.bitOffset, intInfo.bitWidth)) + intInfo.lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << state.getAsInt(intInfo.bitOffset, intInfo.bitWidth) << " but wrote " << assignedValue << ").");
                 } else if (assignmentIt->getAssignedExpression().hasBooleanType()) {
-                    BooleanVariableInformation const& boolInfo = this->variableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    BooleanVariableInformation const& boolInfo = this->variableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndex);
                     state.set(boolInfo.bitOffset, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
@@ -431,10 +434,10 @@ namespace storm {
             
             // Iterate over all array access assignments and carry them out.
             for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
-                int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
-                storm::expressions::Type const& baseType = assignmentIt->getLValue().getArray().getExpressionVariable().getType();
+                auto arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
+                storm::expressions::Type const& baseType = assignmentIt->getLValue().getVariable().getExpressionVariable().getType();
                 if (baseType.isIntegerType()) {
-                    auto const& intInfo = this->transientVariableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    auto const& intInfo = this->transientVariableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndex);
                     int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
                     if (this->options.isExplorationChecksSet()) {
                         STORM_LOG_THROW(assignedValue >= intInfo.lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
@@ -442,10 +445,10 @@ namespace storm {
                     }
                     transientValuation.integerValues.emplace_back(&intInfo, assignedValue);
                 } else if (baseType.isBooleanType()) {
-                    auto const& boolInfo = this->transientVariableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    auto const& boolInfo = this->transientVariableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndex);
                     transientValuation.booleanValues.emplace_back(&boolInfo, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
                 } else if (baseType.isRationalType()) {
-                    auto const& rationalInfo = this->transientVariableInformation.getRationalArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    auto const& rationalInfo = this->transientVariableInformation.getRationalArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndex);
                     transientValuation.rationalValues.emplace_back(&rationalInfo, expressionEvaluator.asRational(assignmentIt->getAssignedExpression()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
@@ -550,6 +553,8 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
+            // The evaluator should have the default values of the transient variables right now.
+            
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
             
@@ -561,17 +566,21 @@ namespace storm {
             auto transientVariableValuation = getTransientVariableValuationAtLocations(locations, *this->evaluator);
             transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
             result.addStateRewards(evaluateRewardExpressions());
-            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
 
-            
             // If a terminal expression was set and we must not expand this state, return now.
+            // Terminal state expressions do not consider transient variables.
             if (!this->terminalStates.empty()) {
                 for (auto const& expressionBool : this->terminalStates) {
                     if (this->evaluator->asBool(expressionBool.first) == expressionBool.second) {
+                        // Set back transient variables to default values so we are ready to process the next state
+                        this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
                         return result;
                     }
                 }
             }
+            
+            // Set back transient variables to default values so we are ready to process the transition assignments
+            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             
             // Get all choices for the state.
             result.setExpanded();

@@ -1,5 +1,5 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 #include "storm-parsers/parser/PrismParser.h"
 
 #include "storm/utility/solver.h"
@@ -162,5 +162,8 @@ TEST(PrismProgramTest, ConvertToJani) {
     ASSERT_NO_THROW(janiModel = prismProgram.toJani());
 
     ASSERT_NO_THROW(prismProgram = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/nand-5-2.pm"));
+    ASSERT_NO_THROW(janiModel = prismProgram.toJani());
+
+    ASSERT_NO_THROW(prismProgram = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm"));
     ASSERT_NO_THROW(janiModel = prismProgram.toJani());
 }

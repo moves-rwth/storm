@@ -8,7 +8,7 @@
 #include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/Constant.h"
-#include "storm/storage/jani/Composition.h"
+#include "Composition.h"
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/FunctionDefinition.h"
 #include "storm/storage/jani/Location.h"
@@ -27,10 +27,6 @@ namespace storm {
     namespace jani {
 
         class Variable;
-        class BooleanVariable;
-        class BoundedIntegerVariable;
-        class UnboundedIntegerVariable;
-        class RealVariable;
         class Automaton;
         class Exporter;
         class SynchronizationVector;
@@ -195,36 +191,6 @@ namespace storm {
              * Adds the given variable to this model.
              */
             Variable const& addVariable(Variable const& variable);
-
-            /*!
-             * Adds the given boolean variable to this model.
-             */
-            BooleanVariable const& addVariable(BooleanVariable const& variable);
-            
-            /*!
-             * Adds the given bounded integer variable to this model.
-             */
-            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
-            
-            /*!
-             * Adds the given unbounded integer variable to this model.
-             */
-            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
-
-            /*!
-             * Adds the given real variable to this model.
-             */
-            RealVariable const& addVariable(RealVariable const& variable);
-
-            /*!
-             * Adds the given array variable to this model.
-             */
-            ArrayVariable const& addVariable(ArrayVariable const& variable);
-
-            /*!
-             * Adds the given array variable to this model.
-             */
-            ClockVariable const& addVariable(ClockVariable const& variable);
 
             /*!
              * Retrieves the variables of this automaton.
@@ -600,13 +566,13 @@ namespace storm {
              * Creates the expression that characterizes all states in which the provided transient boolean variable is
              * true. The provided location variables are used to encode the location of the automata.
              */
-            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const;
+            storm::expressions::Expression getLabelExpression(Variable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const;
 
             /*!
              * Creates the expression that characterizes all states in which the provided transient boolean variable is
              * true. The provided location variables are used to encode the location of the automata.
              */
-            storm::expressions::Expression getLabelExpression(BooleanVariable const& transientVariable) const;
+            storm::expressions::Expression getLabelExpression(Variable const& transientVariable) const;
 
             /*!
              * Checks that undefined constants (parameters) of the model preserve the graph of the underlying model.

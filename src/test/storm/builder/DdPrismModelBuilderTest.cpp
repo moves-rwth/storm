@@ -319,3 +319,14 @@ TEST(DdPrismModelBuilderTest_Cudd, Composition) {
     EXPECT_EQ(21ul, mdp->getNumberOfChoices());
 }
 
+TEST(UnboundedTest_Sylvan, Mdp) {
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
+    storm::prism::Program program = modelDescription.preprocess("N=1").asPrismProgram();
+    EXPECT_FALSE(storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().canHandle(program));
+}
+
+TEST(UnboundedTest_Cudd, Mdp) {
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
+    storm::prism::Program program = modelDescription.preprocess("N=1").asPrismProgram();
+    EXPECT_FALSE(storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().canHandle(program));
+}

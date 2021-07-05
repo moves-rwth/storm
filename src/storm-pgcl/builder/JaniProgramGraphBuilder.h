@@ -43,7 +43,7 @@ namespace storm {
             
             virtual ~JaniProgramGraphBuilder() {
                 for (auto& var : variables ) {
-                    delete var.second;
+                    var.second.reset();
                 }
             }
             
@@ -131,10 +131,10 @@ namespace storm {
             
             std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> addProcedureLocations(storm::jani::Model& model, storm::jani::Automaton& automaton) {
                 std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> result;
-                std::map<std::string, storm::jani::BooleanVariable const*> labelVars;
+                std::map<std::string, storm::jani::Variable const*> labelVars;
                 std::set<std::string> labels = programGraph.getLabels();
                 for(auto const& label : labels) {
-                    storm::jani::BooleanVariable janiVar(label, expManager->declareBooleanVariable(label), expManager->boolean(false), true);
+                    storm::jani::Variable janiVar = *storm::jani::Variable::makeBasicVariable(label, storm::jani::JaniType::ElementType::Bool, expManager->declareBooleanVariable(label), expManager->boolean(false), true);
                     labelVars.emplace(label, &model.addVariable(janiVar));
                 }
                 
@@ -174,7 +174,7 @@ namespace storm {
             /// Locations for variables that would have gone out of bounds
             std::map<uint64_t, uint64_t> varOutOfBoundsLocations;
             std::map<storm::ppg::ProgramLocationIdentifier, uint64_t> janiLocId;
-            std::map<storm::ppg::ProgramVariableIdentifier, storm::jani::Variable*> variables;
+            std::map<storm::ppg::ProgramVariableIdentifier, std::shared_ptr<storm::jani::Variable>> variables;
             
             /// The expression manager
             std::shared_ptr<storm::expressions::ExpressionManager> expManager;
@@ -182,7 +182,6 @@ namespace storm {
             storm::ppg::ProgramGraph const& programGraph;
             /// Settings
             JaniProgramGraphBuilderSetting pgbs;
-            
             
         };
     }
