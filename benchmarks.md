@@ -6,7 +6,7 @@ layout: default
 
 On this page, you can find (extended) benchmark results accompanying paper submissions.
 
-## The Probabilistic Model Checker Storm {% cite HJKQV20 %}
+## The Probabilistic Model Checker Storm {% cite HJKQV21 %}
 #### Setup
 The benchmarks were run on 4 cores of an Intel Xeon Platinum 8160 Processor with 12GB of memory available. The timeout was 1800 seconds.
 
