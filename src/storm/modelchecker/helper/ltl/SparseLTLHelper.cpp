@@ -71,9 +71,11 @@ namespace storm {
                     uint_fast64_t memoryState = choice.first.second;
                     scheduler.setChoice(choice.second, modelState, memoryState);
                 }
+                // TODO set non-reachable (modelState,memoryState)-Pairs (i.e. those that are not contained in _productChoices) to "unreachable", (extend Scheduler by something like std::vector<std::Bitvector>> reachableSchedulerChoices; und isChoiceReachable(..))
 
                 return scheduler;
             }
+
             template<typename ValueType, bool Nondeterministic>
             std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker){
                 std::map<std::string, storm::storage::BitVector> apSets;
@@ -191,8 +193,6 @@ namespace storm {
                             STORM_LOG_DEBUG("MEC is accepting");
 
                             for (auto const& stateChoicePair : mec) {
-                                // TODO extend scheduler by mec choices (which?)
-                                //  need adversary which forces (to remain in mec and) to visit all states of the mec inf. often with prob. 1
                                 acceptingStates.set(stateChoicePair.first);
                             }
                         }
@@ -339,7 +339,7 @@ namespace storm {
                                 storm::storage::BitVector modelStates(this->_transitionMatrix.getRowGroupCount(), false);
                                 for (storm::storage::sparse::state_type modelState = 0;
                                     modelState < this->_transitionMatrix.getRowGroupCount(); ++modelState) {
-                                    if (goalState == productBuilder.getSuccessor(modelState, startState, modelState)) {
+                                    if (goalState == productBuilder.getSuccessor(modelState, startState, modelState)) {  //todo remove first parameter
                                         modelStates.set(modelState);
                                     }
                                 }

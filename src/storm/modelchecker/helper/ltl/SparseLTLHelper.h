@@ -96,10 +96,14 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
                 std::size_t _numberOfStates;  //TODO just use _transitionMatrix.getRowGroupCount instead?
 
-                // scheduler
+                // REACH scheduler
                 boost::optional<std::map<std::pair<uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q> --> choice
-                boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _memoryTransitions;  // BitVector contains the model states that lead from startState to goalSate of teh DA
+                boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _memoryTransitions;  // BitVector contains the model states that lead from startState to goalSate of the DA
                 boost::optional<std::vector<uint_fast64_t>> _memoryInitialStates; // Saves for each modelState which automaton state is reached from the initial state //TODO improve
+
+                // MEC scheduler
+                boost::optional<std::map <std::pair<uint_fast64_t,std::pair<uint_fast64_t, uint_fast64_t>> , storm::storage::SchedulerChoice<ValueType>>> _mecProductChoices;   //  <#literal, <s, daState>> ---> choice
+                boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _mecMemoryTransitions;  // BitVector contains the model states that lead from #INF(i) to #INF(i+1) of the AccCondition (#INF(1) AND #INF(2) ....) OR (..)
 
             };
         }
