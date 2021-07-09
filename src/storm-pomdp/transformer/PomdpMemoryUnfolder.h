@@ -13,8 +13,8 @@ namespace storm {
         public:
             
             PomdpMemoryUnfolder(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::PomdpMemory const& memory, bool addMemoryLabels = false, bool keepStateValuations = false);
-            
-            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> transform() const;
+
+            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> transform(bool dropUnreachableStates = true) const;
 
         private:
             storm::storage::SparseMatrix<ValueType> transformTransitions() const;
