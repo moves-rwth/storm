@@ -74,8 +74,8 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(uint_fast64_t val1, uint_fast64_t val2,std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValues) const {
             // First check if based on sample points the assumption can be discharged
-            assert (val1 == std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
-            assert (val2 == std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
+            assert (val1 == std::stoull(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
+            assert (val2 == std::stoull(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
             AssumptionStatus result = AssumptionStatus::UNKNOWN;
             if (useSamples) {
                 result = checkOnSamples(assumption);
