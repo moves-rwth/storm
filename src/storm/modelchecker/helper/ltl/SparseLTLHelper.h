@@ -83,7 +83,7 @@ namespace storm {
                  * @param the transition matrix of the model
                  * @param the reversed transition relation
                  */
-                storm::storage::BitVector computeAcceptingECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+                storm::storage::BitVector computeAcceptingECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, typename transformer::DAProduct<productModelType>::ptr product);
 
                 /**
                 * Compute a set S of states that are contained in BSCCs that satisfy the given acceptance conditon.
@@ -96,14 +96,13 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
                 std::size_t _numberOfStates;  //TODO just use _transitionMatrix.getRowGroupCount instead?
 
-                // REACH scheduler
-                boost::optional<std::map<std::pair<uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q> --> choice
-                boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _memoryTransitions;  // BitVector contains the model states that lead from startState to goalSate of the DA
-                boost::optional<std::vector<uint_fast64_t>> _memoryInitialStates; // Saves for each modelState which automaton state is reached from the initial state //TODO improve
-
-                // MEC scheduler
-                boost::optional<std::map <std::pair<uint_fast64_t,std::pair<uint_fast64_t, uint_fast64_t>> , storm::storage::SchedulerChoice<ValueType>>> _mecProductChoices;   //  <#literal, <s, daState>> ---> choice
-                boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _mecMemoryTransitions;  // BitVector contains the model states that lead from #INF(i) to #INF(i+1) of the AccCondition (#INF(1) AND #INF(2) ....) OR (..)
+                // REACH scheduler and MEC scheduler
+                boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q, MEC, InfSet> --->  ReachChoice   and    <s, q, MEC, InfSet> --->  MecChoice
+                boost::optional<std::map <uint_fast64_t, std::pair<storm::storage::BitVector, std::vector<storm::storage::BitVector>>>> _mecStatesInfSets; // Save for each accepting mec, its states <s, q> and the infinity sets that need to be visited inf. often (mec 0 corresponds to NoMec)
+                // Memory structure
+                boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _memoryTransitions;  // The BitVector contains the model states that lead from startState <q, mec, infSet> to <q', mec', infSet'>. This is deterministic, because each state <s, q> is assigned to a unique MEC (scheduler).
+                boost::optional<std::vector<uint_fast64_t>> _memoryInitialStates; // Save for each stateOfInterest s its initial memory state (which memory state is reached from the initial state after reading s)
+                boost::optional<std::size_t> _numberOfDaStates;
 
             };
         }

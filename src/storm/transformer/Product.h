@@ -36,6 +36,14 @@ namespace storm {
                 return productIndexToProductState.at(productStateIndex).second;
             }
 
+            state_type getProductStateIndex(state_type modelState, state_type automatonState) const {
+                return productStateToProductIndex.at(product_state_type(modelState, automatonState));  //TODO does this work?
+            }
+
+            bool isValidProductState(state_type modelState, state_type automatonState) const {
+                return (productStateToProductIndex.count(product_state_type(modelState, automatonState)) >0);  //TODO does this work?
+            }
+
             storm::storage::BitVector liftFromAutomaton(const storm::storage::BitVector& vector) const {
                 state_type n = productModel.getNumberOfStates();
                 storm::storage::BitVector lifted(n, false);

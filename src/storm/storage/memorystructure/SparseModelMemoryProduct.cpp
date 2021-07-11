@@ -288,7 +288,7 @@ namespace storm {
                             uint64_t transitionId = entryIt - model.getTransitionMatrix().begin();
                             uint64_t successorMemoryState = memorySuccessors[transitionId * memoryStateCount + memoryState];
                             builder.addNextValue(currentRow, getResultState(entryIt->getColumn(), successorMemoryState), entryIt->getValue());
-                        } //TODO  successor MemoryState is a problem here 8382838738483264 oder so
+                        }
                     } else {
                         std::map<uint64_t, ValueType> transitions;
                         for (auto const& choiceIndex : choice.getChoiceAsDistribution()) {
