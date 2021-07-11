@@ -145,7 +145,7 @@ namespace storm {
             }
             out << ":" << std::endl;
             STORM_LOG_WARN_COND(!(skipUniqueChoices && model == nullptr), "Can not skip unique choices if the model is not given.");
-            out << std::setw(widthOfStates) << "model state:" << "    " << (isMemorylessScheduler() ? "" : " memory:     ") << "choice(s)" << std::endl;
+            out << std::setw(widthOfStates) << "model state:" << "    " << (isMemorylessScheduler() ? "" : " memory:     ") << "choice(s)" << (isMemorylessScheduler() ? "" : "     memory updates:     ") << std::endl;
                 for (uint_fast64_t state = 0; state < schedulerChoices.front().size(); ++state) {
                     // Check whether the state is skipped
                     if (skipUniqueChoices && model != nullptr && model->getTransitionMatrix().getRowGroupSize(state) == 1) {
@@ -172,7 +172,7 @@ namespace storm {
                         }
                         // Print the memory state info
                         if (!isMemorylessScheduler()) {
-                            out << "m" << std::setw(8) << memoryState; // TODO print memoryState labels?
+                            out << "m="<< memoryState << std::setw(8) << "";
                         }
                         
                         // Print choice info
@@ -213,8 +213,16 @@ namespace storm {
                             out << "undefined.";
                         }
 
+                        if(!isMemorylessScheduler()) {
+                            out << "    ";
+                            for (auto const& choiceProbPair : choice.getChoiceAsDistribution()) {
+                                for (auto entryIt = model->getTransitionMatrix().getRow(state + choiceProbPair.first).begin(); entryIt < model->getTransitionMatrix().getRow(state +  choiceProbPair.first).end(); ++entryIt) {
+                                    out << ", model state' = " << entryIt->getColumn() << ": (transition = " << state+choiceProbPair.first << ") -> " << "(m' = "<<this->memoryStructure->getSuccessorMemoryState(memoryState, entryIt - model->getTransitionMatrix().begin()) <<")";
+                                }
 
-                        // Todo: print memory updates
+                            }
+
+                        }
                         out << std::endl;
                     }
             }
