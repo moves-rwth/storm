@@ -1,0 +1,10 @@
+dtmc
+
+module main
+    counter: [0..10] init 0;
+    on: bool init false;
+    
+    [] !on & counter!=10-> 0.5: (on'=true) & (counter'=counter+1) + 0.5: (counter'=counter+1);
+    [] on & counter!=10-> 1: (counter'=counter+1);
+    [] counter=10 -> true;
+endmodule

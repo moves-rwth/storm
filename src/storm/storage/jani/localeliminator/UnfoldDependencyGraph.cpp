@@ -80,7 +80,7 @@ namespace storm {
                         for (auto dep : variableGroups[current].dependencies) {
                             if (variableGroups[dep].unfolded)
                                 continue;
-                            if (closedSet.count(dep) == 0) {
+                            if (closedSet.count(dep) == 0 && current != dep) {
                                 isLeaf = false;
                                 current = dep;
                                 break;

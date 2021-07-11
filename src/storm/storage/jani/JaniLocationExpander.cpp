@@ -4,6 +4,7 @@
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 
 
@@ -39,11 +40,11 @@ namespace storm {
             bool isBoundedInteger = var.isBoundedIntegerVariable();
             bool isBool = var.isBooleanVariable();
 
-            STORM_LOG_THROW(isBoundedInteger || isBool, storm::exceptions::IllegalArgumentException,
+            STORM_LOG_THROW(isBoundedInteger || isBool, storm::exceptions::InvalidOperationException,
                             "Variable to be eliminated has to be an bounded integer or boolean variable.");
-            STORM_LOG_THROW(var.hasInitExpression(), storm::exceptions::IllegalArgumentException,
+            STORM_LOG_THROW(var.hasInitExpression(), storm::exceptions::InvalidOperationException,
                             "Variable to be eliminated has to have an initexpression.");
-            STORM_LOG_THROW(!var.isTransient(), storm::exceptions::IllegalArgumentException,
+            STORM_LOG_THROW(!var.isTransient(), storm::exceptions::InvalidOperationException,
                             "Cannot eliminate transient variable");
 
             storm::expressions::Variable eliminatedExpressionVariable = var.getExpressionVariable();
@@ -59,7 +60,7 @@ namespace storm {
                 int64_t variableUpperBound = biVariable.getUpperBound().evaluateAsInt();
                 int64_t variableLowerBound = biVariable.getLowerBound().evaluateAsInt();
                 int64_t initialVariableValue = biVariable.getInitExpression().evaluateAsInt();
-                for (uint64_t i = variableLowerBound; i <= variableUpperBound; i++) {
+                for (int64_t i = variableLowerBound; i <= variableUpperBound; i++) {
                     variableDomain.push_back(original.getExpressionManager().integer(i));
                 }
                 initialValueIndex = initialVariableValue - variableLowerBound;
@@ -190,10 +191,12 @@ namespace storm {
                     }
 
                     if (!isEdgeInvalid){
+                        templateEdge->finalize(newModel);
                         newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate()
                                                                                                       ? boost::optional<storm::expressions::Expression>(
                                         substituteJaniExpression(edge.getRate(), substitutionMap)) : boost::none,
                                                                templateEdge, destinationLocationsAndProbabilities));
+                        newAutomaton.registerTemplateEdge(templateEdge);
                     }
                 }
             }

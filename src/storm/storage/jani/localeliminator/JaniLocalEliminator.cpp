@@ -3,15 +3,25 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/expressions/Expression.h"
 #include <storm/solver/Z3SmtSolver.h>
+#include <exceptions/NotSupportedException.h>
 #include "FinishAction.h"
 
 namespace storm {
     namespace jani {
-        JaniLocalEliminator::JaniLocalEliminator(const Model &original, std::vector<storm::jani::Property>& properties) : original(original) {
-            if (properties.size() != 1){
+
+        JaniLocalEliminator::JaniLocalEliminator(Model const& original, storm::jani::Property &property, bool addMissingGuards) : original(original), addMissingGuards(addMissingGuards) {
+            setProperty(property);
+            scheduler = EliminationScheduler();
+        }
+
+        JaniLocalEliminator::JaniLocalEliminator(const Model &original, std::vector<storm::jani::Property>& properties, bool addMissingGuards) : original(original), addMissingGuards(addMissingGuards) {
+            if (properties.size() > 1) {
                 STORM_LOG_WARN("Only the first property will be used for local elimination.");
             }
-            property = properties[0];
+            STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException,
+                            "Local elimination requires at least one property");
+
+            setProperty(properties[0]);
 
             scheduler = EliminationScheduler();
         }
@@ -20,6 +30,11 @@ namespace storm {
             newModel = original; // TODO: Make copy instead?
 
             Session session = Session(newModel, property);
+
+            if (addMissingGuards){
+                session.addMissingGuards(session.getModel().getAutomaton(0).getName());
+            }
+
             while (!session.getFinished()) {
                 std::unique_ptr<Action> action = scheduler.getNextAction();
                 action->doAction(session);
@@ -33,7 +48,7 @@ namespace storm {
         }
 
         bool JaniLocalEliminator::Session::isEliminable(const std::string &automatonName, std::string const& locationName) {
-            return !isPossiblyInitial(automatonName, locationName) && !hasLoops(automatonName, locationName) && isPartOfProp(automatonName, locationName);
+            return !isPossiblyInitial(automatonName, locationName) && !hasLoops(automatonName, locationName) && !isPartOfProp(automatonName, locationName);
         }
         bool JaniLocalEliminator::Session::hasLoops(const std::string &automatonName, std::string const& locationName) {
             Automaton &automaton = model.getAutomaton(automatonName);
@@ -107,6 +122,7 @@ namespace storm {
             storm::solver::Z3SmtSolver solver(model.getExpressionManager());
             auto propertyFormula = property.getRawFormula()->substitute(substitutionMap);
             auto atomicFormulas = propertyFormula->getAtomicExpressionFormulas();
+            // TODO: Since formulas are now checked in the beginning, it shouldn't be necessary to put this check here.
             STORM_LOG_THROW(atomicFormulas.size() == 1, storm::exceptions::NotImplementedException, "Formulas with more than one (or zero) atomic formulas are not implemented");
             auto simplified = atomicFormulas[0]->getExpression().simplify();
             if (simplified.isLiteral()) {
@@ -170,6 +186,45 @@ namespace storm {
             return log;
         }
 
+        void JaniLocalEliminator::setProperty(storm::jani::Property &newProperty) {
+            auto raw = newProperty.getRawFormula();
+            bool supported = false;
+
+            if (raw->isProbabilityOperatorFormula()) {
+                auto subformula = &raw->asProbabilityOperatorFormula().getSubformula();
+                if (subformula->isEventuallyFormula()) {
+                    if (subformula->asEventuallyFormula().getSubformula().isAtomicExpressionFormula()) {
+                        supported = true;
+                    }
+                }
+                else if (subformula->isUntilFormula()){
+                    const auto& untilFormula = subformula->asUntilFormula();
+                    if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()){
+                        supported = true;
+                    }
+                }
+            }
+            if (raw->isRewardOperatorFormula()) {
+                auto subformula = &raw->asRewardOperatorFormula().getSubformula();
+                if (subformula->isEventuallyFormula()) {
+                    if (subformula->asEventuallyFormula().getSubformula().isAtomicExpressionFormula()) {
+                        supported = true;
+                    }
+                }
+                else if (subformula->isUntilFormula()){
+                    const auto& untilFormula = subformula->asUntilFormula();
+                    if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()){
+                        supported = true;
+                    }
+                }
+            }
+
+            STORM_LOG_THROW(supported, storm::exceptions::NotSupportedException,
+                            "This type of property is not supported for location elimination");
+
+            this->property = newProperty;
+        }
+
         JaniLocalEliminator::EliminationScheduler::EliminationScheduler() {
         }
 
@@ -187,6 +242,10 @@ namespace storm {
         }
 
         JaniLocalEliminator::Session::Session(Model model, Property property) : model(model), property(property), finished(false){
+            if (model.getNumberOfAutomata() > 1){
+                flatten_automata();
+            }
+
             buildAutomataInfo();
 
             if (property.getRawFormula()->isRewardOperatorFormula()) {
@@ -305,8 +364,6 @@ namespace storm {
             automataInfo.clear();
             buildAutomataInfo();
         }
-
-
 
         void JaniLocalEliminator::Session::addMissingGuards(const std::string& automatonName) {
             auto &automaton = model.getAutomaton(automatonName);

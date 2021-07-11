@@ -561,7 +561,6 @@ namespace storm {
             auto transientVariableValuation = getTransientVariableValuationAtLocations(locations, *this->evaluator);
             transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
             result.addStateRewards(evaluateRewardExpressions());
-            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
 
             
             // If a terminal expression was set and we must not expand this state, return now.
@@ -942,7 +941,7 @@ namespace storm {
             std::vector<EdgeSetWithIndices const*> edgeSetsMemory;
             // This vector will store the 'first' combination of edges that is productive.
             std::vector<typename EdgeSetWithIndices::const_iterator> edgeIteratorMemory;
-            
+
             for (OutputAndEdges const& outputAndEdges : edges) {
                 auto const& edges = outputAndEdges.second;
                 if (edges.size() == 1) {
@@ -962,7 +961,7 @@ namespace storm {
                             if (!this->evaluator->asBool(indexAndEdge.second->getGuard())) {
                                 continue;
                             }
-                        
+
                             result.push_back(expandNonSynchronizingEdge(*indexAndEdge.second, outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex(), automatonIndex, state, stateToIdCallback));
 
                             if (this->getOptions().isBuildChoiceOriginsSet()) {

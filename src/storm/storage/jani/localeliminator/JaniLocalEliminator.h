@@ -80,7 +80,8 @@ namespace storm {
             };
 
             EliminationScheduler scheduler;
-            explicit JaniLocalEliminator(Model const& original, std::vector<storm::jani::Property>& properties);
+            explicit JaniLocalEliminator(Model const& original, storm::jani::Property &property, bool addMissingGuards = false);
+            explicit JaniLocalEliminator(Model const& original, std::vector<storm::jani::Property>& properties, bool addMissingGuards = false);
             void eliminate();
             Model const& getResult();
             std::vector<std::string> getLog();
@@ -89,11 +90,13 @@ namespace storm {
             Model const& original;
             Model newModel;
             Property property;
+            bool addMissingGuards;
             // TODO: Currently, the log is duplicated, as the log entries are stored in the session, but the session
             // is only created during elimination, so the log would go out of scope before it is needed.
             std::vector<std::string> log;
 
             void cleanUpAutomaton(std::string const &automatonName);
+            void setProperty(storm::jani::Property &property);
         };
 
 
