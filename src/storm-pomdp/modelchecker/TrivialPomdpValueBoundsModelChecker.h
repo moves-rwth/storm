@@ -1,8 +1,11 @@
 #pragma once
 
 #include "storm-pomdp/analysis/FormulaInformation.h"
+#include "storm-pomdp/storage/PomdpMemory.h"
+#include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
 
 #include "storm/api/verification.h"
+#include "storm/api/export.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -124,6 +127,77 @@ namespace storm {
                     std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
                     return pomdpSchedulerResult;
                 }
+
+                std::vector<ValueType> computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound){
+                    // Consider memoryless policy on memory-unfolded POMDP
+                    storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates() * memoryBound);
+
+                    STORM_LOG_DEBUG("Computing the unfolding for memory bound " << memoryBound);
+                    storm::storage::PomdpMemory memory = storm::storage::PomdpMemoryBuilder().build(storm::storage::PomdpMemoryPattern::Full, memoryBound);
+                    storm::transformer::PomdpMemoryUnfolder<ValueType> memoryUnfolder(pomdp, memory);
+                    // We keep unreachable states to not mess with the state ordering and capture potential better choices
+                    auto memPomdp = memoryUnfolder.transform(false);
+
+                    // Determine an observation-based policy by choosing any of the enabled actions uniformly at random
+                    std::vector<uint64_t> obsChoiceVector(memPomdp->getNrObservations());
+                    std::random_device rd;
+                    auto engine = std::mt19937(rd());
+                    for(uint64_t obs = 0; obs < memPomdp->getNrObservations(); ++obs) {
+                        uint64_t nrChoices = memPomdp->getNumberOfChoices(memPomdp->getStatesWithObservation(obs).front());
+                        std::uniform_int_distribution<uint64_t> uniform_dist(0, nrChoices - 1);
+                        obsChoiceVector[obs] = uniform_dist(engine);
+                    }
+                    for(uint64_t state = 0; state < memPomdp->getNumberOfStates(); ++state) {
+                        pomdpScheduler.setChoice(obsChoiceVector[memPomdp->getObservation(state)], state);
+                    }
+
+                    // Model check the DTMC resulting from the policy
+                    auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(memPomdp->getTransitionMatrix(), memPomdp->getStateLabeling(), memPomdp->getRewardModels());
+                    auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
+                    auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                    STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
+                    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
+                    std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+
+                    // Take the optimal value in ANY of the unfolded states for a POMDP state as the resulting state value
+                    std::vector<ValueType> res(pomdp.getNumberOfStates(), info.minimize() ? storm::utility::infinity<ValueType>() : -storm::utility::infinity<ValueType>());
+                    for(uint64_t memPomdpState = 0; memPomdpState < pomdpSchedulerResult.size(); ++memPomdpState){
+                        uint64_t modelState = memPomdpState / memoryBound;
+                        if((info.minimize() && pomdpSchedulerResult[memPomdpState] < res[modelState]) || (!info.minimize() && pomdpSchedulerResult[memPomdpState] > res[modelState])){
+                            res[modelState] = pomdpSchedulerResult[memPomdpState];
+                        }
+                    }
+                    return res;
+                }
+
+                std::vector<ValueType> computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp){
+                    storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates());
+                    std::vector<uint64_t> obsChoiceVector(pomdp.getNrObservations());
+
+                    std::random_device rd;
+                    auto engine = std::mt19937(rd());
+                    for(uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
+                        uint64_t nrChoices = pomdp.getNumberOfChoices(pomdp.getStatesWithObservation(obs).front());
+                        std::uniform_int_distribution<uint64_t> uniform_dist(0, nrChoices - 1);
+                        obsChoiceVector[obs] = uniform_dist(engine);
+                    }
+
+                    for(uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
+                        STORM_LOG_DEBUG("State " << state << " -- Random Choice " << obsChoiceVector[pomdp.getObservation(state)]);
+                        pomdpScheduler.setChoice(obsChoiceVector[pomdp.getObservation(state)], state);
+                    }
+
+                    auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
+
+                    auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                    STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
+                    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
+                    std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+
+                    STORM_LOG_DEBUG("Initial Value for guessed Policy: " << pomdpSchedulerResult[pomdp.getInitialStates().getNextSetIndex(0)]);
+
+                    return pomdpSchedulerResult;
+                }
                 
                 ValueBounds getValueBounds(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
                     STORM_LOG_THROW(info.isNonNestedReachabilityProbability() || info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "The property type is not supported for this analysis.");
@@ -163,6 +237,13 @@ namespace storm {
                     guessedSchedulerValues.push_back(computeValuesForGuessedScheduler(guessedSchedulerValues[bestGuess], actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
                     guessedSchedulerValues.push_back(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
                     guessedSchedulerValues.push_back(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
+
+                    // TODO Make this a setting
+                    uint64_t maxMem = 10;
+                    uint64_t guessesPerMem = 10;
+                    for (uint64_t i = 0; i < maxMem * guessesPerMem; ++i) {
+                        guessedSchedulerValues.push_back(computeValuesForRandomFMPolicy(formula, info, i / guessesPerMem + 1));
+                    }
 
                     // Check if one of the guesses is worse than one of the others (and potentially delete it)
                     // Avoid deleting entries during the loop to ensure that indices remain valid
