@@ -163,24 +163,26 @@ namespace storm {
                 return true;
             }
 
-            std::map<std::string, uint32_t> AutomaticAction::getAssignmentCountByVariable(JaniLocalEliminator::Session &session, std::string const& automatonName) {
-                std::map<std::string, uint32_t> res;
+            std::map<std::string, double> AutomaticAction::getAssignmentCountByVariable(JaniLocalEliminator::Session &session, std::string const& automatonName) {
+                std::map<std::string, double> res;
                 auto automaton = session.getModel().getAutomaton(automatonName);
                 for (auto edge : automaton.getEdges()) {
-                    for (auto dest : edge.getDestinations()){
-                        for (auto asg : dest.getOrderedAssignments()){
+                    size_t numDest = edge.getNumberOfDestinations();
+                    double factor = 1.0 / numDest;
+                    for (const auto& dest : edge.getDestinations()){
+                        for (const auto& asg : dest.getOrderedAssignments()){
                             auto name = asg.getExpressionVariable().getName();
                             if (res.count(name) == 0) {
                                 res[name] = 0;
                             }
-                            res[name] += 1;
+                            res[name] += factor;
                         }
                     }
 
                 }
 
                 session.addToLog("\tNumber of (left-side) variable occurences: ");
-                for (auto entry : res){
+                for (const auto& entry : res){
                     session.addToLog("\t\t" + entry.first + ": " + std::to_string(entry.second));
                 }
 
@@ -188,7 +190,7 @@ namespace storm {
             }
 
             boost::optional<uint32_t> AutomaticAction::chooseNextUnfold(JaniLocalEliminator::Session &session, std::string const& automatonName, UnfoldDependencyGraph &dependencyGraph) {
-                std::map<std::string, uint32_t> variableOccurrenceCounts = getAssignmentCountByVariable(session, automatonName);
+                std::map<std::string, double> variableOccurrenceCounts = getAssignmentCountByVariable(session, automatonName);
                 session.addToLog(dependencyGraph.toString());
                 std::set<uint32_t> groupsWithoutDependencies = dependencyGraph.getGroupsWithNoDependencies();
 
@@ -198,8 +200,8 @@ namespace storm {
                 session.addToLog("\tAnalysing groups without dependencies:");
                 for (auto groupIndex : groupsWithoutDependencies){
                     UnfoldDependencyGraph::VariableGroup &group = dependencyGraph.variableGroups[groupIndex];
-                    uint32_t totalOccurences = 0;
-                    for (auto var : group.variables){
+                    double totalOccurences = 0;
+                    for (const auto& var : group.variables){
                         if (variableOccurrenceCounts.count(var.expressionVariableName) > 0){
                             totalOccurences += variableOccurrenceCounts[var.expressionVariableName];
                         }

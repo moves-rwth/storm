@@ -68,23 +68,28 @@ namespace storm {
 
                         bool done = false;
                         while (!done) {
-                            int minNewEdges = INT_MAX;
+                            uint64_t minNewEdges = LONG_LONG_MAX; // TODO: Use actual uint64_t max, as long long isn't guaranteed to be 64 bits
                             int bestLocIndex = -1;
                             for (const auto& loc : automaton->getLocations()) {
                                 if (uneliminable[loc.getName()])
                                     continue;
 
                                 int locIndex = automaton->getLocationIndex(loc.getName());
-                                int outgoing = automaton->getEdgesFromLocation(locIndex).size();
-                                int incoming = 0;
+                                uint64_t outgoing = automaton->getEdgesFromLocation(locIndex).size();
+                                uint64_t incoming = 0;
                                 for (const auto& edge : automaton->getEdges()) {
                                     int addedTransitions = 1;
                                     for (const auto& dest : edge.getDestinations())
                                         if (dest.getLocationIndex() == locIndex)
                                             addedTransitions *= outgoing;
-                                    incoming += addedTransitions;
+                                    incoming += addedTransitions - 1;
                                 }
-                                int newEdges = incoming * outgoing;
+                                uint64_t newEdges = incoming * outgoing;
+
+                                if (newEdges < 0){
+                                    std::cout << "nE: " << std::to_string(newEdges) <<", i: " << std::to_string(incoming) <<", o: " << std::to_string(outgoing) <<std::endl;
+                                }
+
                                 if (newEdges <= minNewEdges){
                                     minNewEdges = newEdges;
                                     bestLocIndex = locIndex;

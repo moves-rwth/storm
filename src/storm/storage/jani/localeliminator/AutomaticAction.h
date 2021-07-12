@@ -26,7 +26,7 @@ namespace storm{
                 bool unfoldPropertyVariable(JaniLocalEliminator::Session &session, std::string const& autName, UnfoldDependencyGraph& dependencyGraph);
 
                 boost::optional<uint32_t> chooseNextUnfold(JaniLocalEliminator::Session &session, std::string const& automatonName, UnfoldDependencyGraph &dependencyGraph);
-                std::map<std::string, uint32_t> getAssignmentCountByVariable(JaniLocalEliminator::Session &session, std::string const& automatonName);
+                std::map<std::string, double> getAssignmentCountByVariable(JaniLocalEliminator::Session &session, std::string const& automatonName);
             };
         }
     }
