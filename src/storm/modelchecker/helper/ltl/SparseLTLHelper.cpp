@@ -50,7 +50,7 @@ namespace storm {
                 }
 
                 // initialMemoryStates: Assign an initial memory state to each initial state of the model.
-                for (uint_fast64_t s0 : model.getInitialStates()) {
+                for (uint_fast64_t s0 : model.getInitialStates()) {  // TODO should be relevantStates?
                     memoryBuilder.setInitialMemoryState(s0, this->_memoryInitialStates.get()[s0]);
                 }
 

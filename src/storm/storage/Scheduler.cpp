@@ -152,7 +152,7 @@ namespace storm {
                         ++numOfSkippedStatesWithUniqueChoice;
                         continue;
                     }
-                    
+
                     // Print the state info
                     if (stateValuationsGiven) {
                         out << std::setw(widthOfStates)  << (std::to_string(state) + ": " + model->getStateValuations().getStateInfo(state));
@@ -163,6 +163,15 @@ namespace storm {
                     
                     bool firstMemoryState = true;
                     for (uint_fast64_t memoryState = 0; memoryState < getNumberOfMemoryStates(); ++memoryState) {
+
+                        // Get choice info
+                        SchedulerChoice<ValueType> const& choice = schedulerChoices[memoryState][state];
+
+                        // Check whether the state is TODO h undefined (later: not reachable), for no memory, too?
+                        if(!choice.isDefined() | isMemorylessScheduler()) {
+                            continue;
+                        }
+
                         // Indent if this is not the first memory state
                         if (firstMemoryState) {
                             firstMemoryState = false;
@@ -174,9 +183,9 @@ namespace storm {
                         if (!isMemorylessScheduler()) {
                             out << "m="<< memoryState << std::setw(8) << "";
                         }
-                        
+
                         // Print choice info
-                        SchedulerChoice<ValueType> const& choice = schedulerChoices[memoryState][state];
+
                         if (choice.isDefined()) {
                             if (choice.isDeterministic()) {
                                 if (choiceOriginsGiven) {
@@ -213,11 +222,12 @@ namespace storm {
                             out << "undefined.";
                         }
 
+                        // Print memory updates
                         if(!isMemorylessScheduler()) {
                             out << "    ";
                             for (auto const& choiceProbPair : choice.getChoiceAsDistribution()) {
                                 for (auto entryIt = model->getTransitionMatrix().getRow(state + choiceProbPair.first).begin(); entryIt < model->getTransitionMatrix().getRow(state +  choiceProbPair.first).end(); ++entryIt) {
-                                    out << ", model state' = " << entryIt->getColumn() << ": (transition = " << state+choiceProbPair.first << ") -> " << "(m' = "<<this->memoryStructure->getSuccessorMemoryState(memoryState, entryIt - model->getTransitionMatrix().begin()) <<")";
+                                    out << ", model state' = " << entryIt->getColumn() << ": (transition = " << entryIt - model->getTransitionMatrix().begin() << ") -> " << "(m' = "<<this->memoryStructure->getSuccessorMemoryState(memoryState, entryIt - model->getTransitionMatrix().begin()) <<")";
                                 }
 
                             }
