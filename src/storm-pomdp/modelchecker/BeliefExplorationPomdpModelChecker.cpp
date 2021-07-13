@@ -94,7 +94,7 @@ namespace storm {
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
                 
                 // Compute some initial bounds on the values for each state of the pomdp
-                auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp()).getValueBounds(formula, formulaInfo);
+                auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<ValueType>(pomdp()).getValueBounds(formula, formulaInfo);
                 uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
                 Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
                 STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " << result.upperBound << "]");
@@ -103,7 +103,7 @@ namespace storm {
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
                 if((options.clippingThresholdInit > 0 || options.useGridClipping) && formula.isRewardOperatorFormula()){
-                    initialValueBounds.extremePomdpValueBound = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp()).getExtremeValueBound(formula, formulaInfo);
+                    initialValueBounds.extremePomdpValueBound = TrivialPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
                     STORM_LOG_INFO("Extreme Bound in Init: " << initialValueBounds.extremePomdpValueBound.getValueForState(initialPomdpState));
                 }
 
