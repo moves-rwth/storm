@@ -349,13 +349,20 @@ namespace storm {
                             choiceFixedForStates.set(state);
                         }
                     }
+                    // We need to set the scheduler before we set the states for which the choices are fixed
+                    if (storm::solver::minimize(dirForParameters) && minSchedChoices)
+                        solver->setInitialScheduler(std::move(minSchedChoices.get()));
+                    if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
+                        solver->setInitialScheduler(std::move(maxSchedChoices.get()));
                     solver->setChoiceFixedForStates(std::move(choiceFixedForStates));
+                } else {
+                    if (storm::solver::minimize(dirForParameters) && minSchedChoices)
+                        solver->setInitialScheduler(std::move(minSchedChoices.get()));
+                    if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
+                        solver->setInitialScheduler(std::move(maxSchedChoices.get()));
                 }
 
-                if (storm::solver::minimize(dirForParameters) && minSchedChoices)
-                    solver->setInitialScheduler(std::move(minSchedChoices.get()));
-                if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
-                    solver->setInitialScheduler(std::move(maxSchedChoices.get()));
+
                 if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
                     // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
                     std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;

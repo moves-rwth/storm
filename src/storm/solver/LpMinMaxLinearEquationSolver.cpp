@@ -64,10 +64,13 @@ namespace storm {
             
             // Add a constraint for each row
             for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
-                for (uint64_t rowIndex = this->A->getRowGroupIndices()[rowGroup]; rowIndex < this->A->getRowGroupIndices()[rowGroup + 1]; ++rowIndex) {
+                // The rowgroup refers to the state number
+                if (this->choiceFixedForState && this->choiceFixedForState.get()[rowGroup]) {
+                    // The choice is fixed
+                    auto rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->getInitialScheduler()[rowGroup];
                     auto row = this->A->getRow(rowIndex);
                     std::vector<storm::expressions::Expression> summands;
-                    summands.reserve(1+row.getNumberOfEntries());
+                    summands.reserve(1 + row.getNumberOfEntries());
                     summands.push_back(solver->getConstant(b[rowIndex]));
                     for (auto const& entry : row) {
                         summands.push_back(solver->getConstant(entry.getValue()) * variableExpressions[entry.getColumn()]);
@@ -79,6 +82,24 @@ namespace storm {
                         rowConstraint = variableExpressions[rowGroup] >= rowConstraint;
                     }
                     solver->addConstraint("", rowConstraint);
+                } else {
+                    // The choice is not fixed, so we should add constraints for every entry
+                    for (uint64_t rowIndex = this->A->getRowGroupIndices()[rowGroup]; rowIndex < this->A->getRowGroupIndices()[rowGroup + 1]; ++rowIndex) {
+                        auto row = this->A->getRow(rowIndex);
+                        std::vector<storm::expressions::Expression> summands;
+                        summands.reserve(1 + row.getNumberOfEntries());
+                        summands.push_back(solver->getConstant(b[rowIndex]));
+                        for (auto const& entry : row) {
+                            summands.push_back(solver->getConstant(entry.getValue()) * variableExpressions[entry.getColumn()]);
+                        }
+                        storm::expressions::Expression rowConstraint = storm::expressions::sum(summands);
+                        if (minimize(dir)) {
+                            rowConstraint = variableExpressions[rowGroup] <= rowConstraint;
+                        } else {
+                            rowConstraint = variableExpressions[rowGroup] >= rowConstraint;
+                        }
+                        solver->addConstraint("", rowConstraint);
+                    }
                 }
             }
             
@@ -106,21 +127,23 @@ namespace storm {
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
                 for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
-                    uint64_t row = this->A->getRowGroupIndices()[rowGroup];
-                    uint64_t optimalChoiceIndex = 0;
-                    uint64_t currChoice = 0;
-                    ValueType optimalGroupValue = this->A->multiplyRowWithVector(row, x) + b[row];
-                    for (++row, ++currChoice; row < this->A->getRowGroupIndices()[rowGroup + 1]; ++row, ++currChoice) {
-                        ValueType rowValue = this->A->multiplyRowWithVector(row, x) + b[row];
-                        if ((minimize(dir) && rowValue < optimalGroupValue) || (maximize(dir) && rowValue > optimalGroupValue)) {
-                            optimalGroupValue = rowValue;
-                            optimalChoiceIndex = currChoice;
+                    if (!this->choiceFixedForState || !this->choiceFixedForState.get()[rowGroup]) {
+                        // Only update scheduler choice for the states that don't have a fixed choice
+                        uint64_t row = this->A->getRowGroupIndices()[rowGroup];
+                        uint64_t optimalChoiceIndex = 0;
+                        uint64_t currChoice = 0;
+                        ValueType optimalGroupValue = this->A->multiplyRowWithVector(row, x) + b[row];
+                        for (++row, ++currChoice; row < this->A->getRowGroupIndices()[rowGroup + 1]; ++row, ++currChoice) {
+                            ValueType rowValue = this->A->multiplyRowWithVector(row, x) + b[row];
+                            if ((minimize(dir) && rowValue < optimalGroupValue) || (maximize(dir) && rowValue > optimalGroupValue)) {
+                                optimalGroupValue = rowValue;
+                                optimalChoiceIndex = currChoice;
+                            }
                         }
+                        this->schedulerChoices.get()[rowGroup] = optimalChoiceIndex;
                     }
-                    this->schedulerChoices.get()[rowGroup] = optimalChoiceIndex;
                 }
             }
-
             return true;
         }
        

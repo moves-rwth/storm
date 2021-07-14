@@ -78,12 +78,6 @@ namespace storm {
             void setChoiceFixedForStates(storm::storage::BitVector&& states);
 
             /*!
-             * Sets the initialChoices for the states of which the choices are fixed on the first choice available (0)
-             * Expecting the matrix to only have one choice for the state
-             */
-            void setFixedChoicesToFirst();
-
-            /*!
              * Sets whether the solution to the min max equation system is known to be unique.
              */
             void setHasUniqueSolution(bool value = true);

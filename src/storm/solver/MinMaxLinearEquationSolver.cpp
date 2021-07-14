@@ -128,7 +128,6 @@ namespace storm {
                 
         template<typename ValueType>
         void MinMaxLinearEquationSolver<ValueType>::setInitialScheduler(std::vector<uint_fast64_t>&& choices) {
-            assert (!this->choiceFixedForState || this->choiceFixedForState.get().size() == choices.size());
             initialScheduler = std::move(choices);
         }
         
@@ -159,16 +158,8 @@ namespace storm {
 
         template<class ValueType>
         void MinMaxLinearEquationSolver<ValueType>::setChoiceFixedForStates(storm::storage::BitVector&& states) {
+            STORM_LOG_ASSERT(this->hasInitialScheduler(), "Expecting an initial scheduler to be set before setting the states for which the choices are fixed");
             this->choiceFixedForState = std::move(states);
-            assert (this->choiceFixedForState);
-        }
-
-        template<class ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::setFixedChoicesToFirst() {
-            assert (this->initialScheduler && this->choiceFixedForState);
-            for (auto state : this->choiceFixedForState.get()) {
-                this->initialScheduler.get()[state] = 0;
-            }
         }
 
         template<typename ValueType>
