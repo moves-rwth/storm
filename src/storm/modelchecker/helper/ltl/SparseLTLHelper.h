@@ -97,12 +97,13 @@ namespace storm {
                 std::size_t _numberOfStates;  //TODO just use _transitionMatrix.getRowGroupCount instead?
 
                 // REACH scheduler and MEC scheduler
-                boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q, MEC, InfSet> --->  ReachChoice   and    <s, q, MEC, InfSet> --->  MecChoice
-                boost::optional<std::map <uint_fast64_t, std::pair<storm::storage::BitVector, std::vector<storm::storage::BitVector>>>> _mecStatesInfSets; // Save for each accepting mec, its states <s, q> and the infinity sets that need to be visited inf. often (mec 0 corresponds to NoMec)
+                boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q, len(_infSets)> --->  ReachChoice   and    <s, q, InfSet> --->  MecChoice
+                boost::optional<std::vector<storm::storage::BitVector>> _infSets; // Save the InfSets of the Acceptance condition.
+                boost::optional<std::vector<boost::optional<std::set<uint_fast64_t>>>> _accInfSets; // Save for each product state (which is assigned to an acceptingMEC), the infSets that need to be visited inf often to satisfy the acceptance condition. Remaining states belonging to no accepting EC, are assigned  len(_infSets) (REACH scheduler)
+
                 // Memory structure
                 boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _memoryTransitions;  // The BitVector contains the model states that lead from startState <q, mec, infSet> to <q', mec', infSet'>. This is deterministic, because each state <s, q> is assigned to a unique MEC (scheduler).
-                boost::optional<std::vector<uint_fast64_t>> _memoryInitialStates; // Save for each stateOfInterest s its initial memory state (which memory state is reached from the initial state after reading s)
-                boost::optional<std::size_t> _numberOfDaStates;
+                boost::optional<std::vector<uint_fast64_t>> _memoryInitialStates; // Save for each relevant state (initial or all) s its unique initial memory state (which memory state is reached from the initial state after reading s)
 
             };
         }

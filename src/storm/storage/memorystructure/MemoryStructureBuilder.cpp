@@ -24,7 +24,7 @@ namespace storm {
             STORM_LOG_THROW(model.getInitialStates().get(initialModelState), storm::exceptions::InvalidOperationException, "Invalid index of initial model state: " << initialMemoryState << ". This is not an initial state of the model.");
             STORM_LOG_THROW(initialMemoryState < transitions.size(), storm::exceptions::InvalidOperationException, "Invalid index of initial memory state: " << initialMemoryState << ". There are only " << transitions.size() << " states in this memory structure.");
             
-            auto initMemStateIt = initialMemoryStates.begin();
+            auto initMemStateIt = initialMemoryStates.begin(); // TODO allow all
             for (auto initState : model.getInitialStates()) {
                 if (initState == initialModelState) {
                     *initMemStateIt = initialMemoryState;

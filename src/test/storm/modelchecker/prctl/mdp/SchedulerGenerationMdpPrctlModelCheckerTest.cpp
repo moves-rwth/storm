@@ -232,7 +232,7 @@ namespace {
             auto inducedModel = mdp->applyScheduler(scheduler);
 
             ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Mdp);
-            auto const &inducedMdp = inducedModel->template as<storm::models::sparse::Mdp<ValueType>>(); // TODO DTMC!
+            auto const &inducedMdp = inducedModel->template as<storm::models::sparse::Mdp<ValueType>>();
             EXPECT_EQ(inducedMdp->getNumberOfChoices(), inducedMdp->getNumberOfStates());
 
             storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> inducedChecker(*inducedMdp);
