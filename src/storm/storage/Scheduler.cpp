@@ -223,16 +223,26 @@ namespace storm {
                         }
 
                         // Print memory updates
+
                         if(!isMemorylessScheduler()) {
-                            out << "    ";
+                            out << std::setw(30); //todo set width
                             for (auto const& choiceProbPair : choice.getChoiceAsDistribution()) {
-                                for (auto entryIt = model->getTransitionMatrix().getRow(state + choiceProbPair.first).begin(); entryIt < model->getTransitionMatrix().getRow(state +  choiceProbPair.first).end(); ++entryIt) {
-                                    out << ", model state' = " << entryIt->getColumn() << ": (transition = " << entryIt - model->getTransitionMatrix().begin() << ") -> " << "(m' = "<<this->memoryStructure->getSuccessorMemoryState(memoryState, entryIt - model->getTransitionMatrix().begin()) <<")";
+                                uint64_t row = model->getTransitionMatrix().getRowGroupIndices()[state] + choiceProbPair.first;
+                                bool firstUpdate = true;
+                                for (auto entryIt = model->getTransitionMatrix().getRow(row).begin(); entryIt < model->getTransitionMatrix().getRow(row).end(); ++entryIt) {
+                                    if (firstUpdate) {
+                                        firstUpdate = false;
+                                    } else {
+                                        out << ", ";
+                                    }
+                                    out << "model state' = " << entryIt->getColumn() << ": (transition = " << entryIt - model->getTransitionMatrix().begin() << ") -> " << "(m' = "<<this->memoryStructure->getSuccessorMemoryState(memoryState, entryIt - model->getTransitionMatrix().begin()) <<")";
+                                    //out << ", model state' = " << entryIt->getColumn() << ": (transition = " << entryIt - model->getTransitionMatrix().begin()  << ") -> " << "(m' = ?) ";
                                 }
 
                             }
 
                         }
+
                         out << std::endl;
                     }
             }
