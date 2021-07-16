@@ -96,11 +96,12 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
                 std::size_t _numberOfStates;  //TODO just use _transitionMatrix.getRowGroupCount instead?
 
-                // REACH scheduler and MEC scheduler
+                // scheduler
+                bool _randomScheduler = false;
                 boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q, len(_infSets)> --->  ReachChoice   and    <s, q, InfSet> --->  MecChoice
+
                 boost::optional<std::vector<storm::storage::BitVector>> _infSets; // Save the InfSets of the Acceptance condition.
                 boost::optional<std::vector<boost::optional<std::set<uint_fast64_t>>>> _accInfSets; // Save for each product state (which is assigned to an acceptingMEC), the infSets that need to be visited inf often to satisfy the acceptance condition. Remaining states belonging to no accepting EC, are assigned  len(_infSets) (REACH scheduler)
-
                 // Memory structure
                 boost::optional<std::vector<std::vector<storm::storage::BitVector>>> _memoryTransitions;  // The BitVector contains the model states that lead from startState <q, mec, infSet> to <q', mec', infSet'>. This is deterministic, because each state <s, q> is assigned to a unique MEC (scheduler).
                 boost::optional<std::vector<uint_fast64_t>> _memoryInitialStates; // Save for each relevant state (initial or all) s its unique initial memory state (which memory state is reached from the initial state after reading s)
