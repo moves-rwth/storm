@@ -143,9 +143,11 @@ namespace storm {
                 case PredicateExpression::PredicateType::AtLeastOneOf: stream << "atLeastOneOf(";
                 case PredicateExpression::PredicateType::ExactlyOneOf: stream << "exactlyOneOf(";
             }
-            stream << *operands[0];
-            for (uint64_t i = 1; i < operands.size(); i++) {
-                stream << ", " << *operands[i];
+            if (!operands.empty()) {
+                stream << *operands[0];
+                for (uint64_t i = 1; i < operands.size(); i++) {
+                    stream << ", " << *operands[i];
+                }
             }
             stream << ")";
         }
