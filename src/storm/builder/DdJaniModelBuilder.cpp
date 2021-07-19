@@ -434,6 +434,7 @@ namespace storm {
             }
             
             void createBoundedIntegerVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
+                STORM_LOG_THROW(variable.hasUpperBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() <<" has no upper bound.");
                 int_fast64_t low = variable.getLowerBound().evaluateAsInt();
                 int_fast64_t high = variable.getUpperBound().evaluateAsInt();
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName(), low, high);
