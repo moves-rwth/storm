@@ -816,6 +816,14 @@ namespace storm {
             // TODO: maybe extend this
             return yesThereIsHope;
         }
+        template<typename ValueType, typename ConstantType>
+        MonotonicityChecker<ValueType>& OrderExtender<ValueType, ConstantType>::getMonotoncityChecker() {
+            return monotonicityChecker;
+        }
+        template<typename ValueType, typename ConstantType>
+        const vector<std::set<typename OrderExtender<ValueType, ConstantType>::VariableType>>& OrderExtender<ValueType, ConstantType>::getVariablesOccuringAtState() {
+            return occuringVariablesAtState;
+        }
 
         template class OrderExtender<RationalFunction, double>;
         template class OrderExtender<RationalFunction, RationalNumber>;

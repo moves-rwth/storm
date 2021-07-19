@@ -70,6 +70,7 @@ namespace storm {
                     result = solveEquationsOptimisticValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::PolicyIteration:
+                    // This one is done
                     result = solveEquationsPolicyIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::RationalSearch:
@@ -79,6 +80,7 @@ namespace storm {
                     result = solveEquationsIntervalIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::SoundValueIteration:
+                    // this one is done
                     result = solveEquationsSoundValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::ViToPi:
@@ -304,6 +306,7 @@ namespace storm {
             STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
             if (this->choiceFixedForState) {
                 STORM_LOG_WARN("Choices are fixed help I don't know what to do");
+//                assert (false);
             }
 
             // Get handle to multiplier.
@@ -691,9 +694,6 @@ namespace storm {
         
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->choiceFixedForState) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-            }
             // Prepare the solution vectors and the helper.
             assert(x.size() == this->A->getRowGroupCount());
             if (!this->auxiliaryRowGroupVector) {
@@ -721,10 +721,14 @@ namespace storm {
             SolverStatus status = SolverStatus::InProgress;
             this->startMeasureProgress();
             uint64_t iterations = 0;
-            
+
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 ++iterations;
-                this->soundValueIterationHelper->performIterationStep(dir, b);
+                if (this->choiceFixedForState) {
+                    this->soundValueIterationHelper->performIterationStep(dir, b, this->choiceFixedForState, this->getInitialScheduler());
+                } else {
+                    this->soundValueIterationHelper->performIterationStep(dir, b);
+                }
                 if (this->soundValueIterationHelper->checkConvergenceUpdateBounds(dir, relevantValuesPtr)) {
                     status = SolverStatus::Converged;
                 } else {

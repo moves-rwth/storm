@@ -18,8 +18,6 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) : assumptionMaker(model->getTransitionMatrix()){
             assert (model != nullptr);
-            STORM_LOG_THROW(regions.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple regions");
-            STORM_LOG_THROW(formulas.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple formulas");
 
             this->model = model;
             this->formulas = formulas;
@@ -146,6 +144,18 @@ namespace storm {
                 }
             }
             return monResults;
+        }
+
+        template<typename ValueType, typename ConstantType>
+        std::shared_ptr<LocalMonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>> MonotonicityHelper<ValueType, ConstantType>::createLocalMonotonicityResult(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
+            LocalMonotonicityResult<VariableType> localMonRes(model->getNumberOfStates());
+            for (uint_fast64_t state = 0; state < model->getNumberOfStates(); ++state) {
+                for (auto& var : extender->getVariablesOccuringAtState()[state]) {
+                    localMonRes.setMonotonicity(state, var, extender->getMonotoncityChecker().checkLocalMonotonicity(order, state, var, region));
+                }
+            }
+            localMonRes.setDone(order->getDoneBuilding());
+            return std::make_shared<LocalMonotonicityResult<VariableType>>(localMonRes);
         }
 
         /*** Private methods ***/

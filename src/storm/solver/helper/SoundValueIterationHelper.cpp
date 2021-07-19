@@ -84,12 +84,14 @@ namespace storm {
             }
             
             template<typename ValueType>
-            void SoundValueIterationHelper<ValueType>::performIterationStep(OptimizationDirection const& dir, std::vector<ValueType> const& b) {
+            void SoundValueIterationHelper<ValueType>::performIterationStep(OptimizationDirection const& dir, std::vector<ValueType> const& b,
+                                                                            boost::optional<storage::BitVector> const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
+                STORM_LOG_ASSERT((!schedulerFixedForRowgroup && !scheduler) || (schedulerFixedForRowgroup && scheduler), "Expecting scheduler and schedulerFixedForRowgroup to be both set or unset");
                 if (rowGroupIndices) {
                     if (minimize(dir)) {
-                        performIterationStep<InternalOptimizationDirection::Minimize>(b);
+                        performIterationStep<InternalOptimizationDirection::Minimize>(b, schedulerFixedForRowgroup, scheduler);
                     } else {
-                        performIterationStep<InternalOptimizationDirection::Maximize>(b);
+                        performIterationStep<InternalOptimizationDirection::Maximize>(b, schedulerFixedForRowgroup, scheduler);
                     }
                 } else {
                     performIterationStep(b);
@@ -111,9 +113,11 @@ namespace storm {
             
             template<typename ValueType>
             template<typename SoundValueIterationHelper<ValueType>::InternalOptimizationDirection dir>
-            void SoundValueIterationHelper<ValueType>::performIterationStep(std::vector<ValueType> const& b) {
+            void SoundValueIterationHelper<ValueType>::performIterationStep(std::vector<ValueType> const& b, boost::optional<storm::storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
+                STORM_LOG_ASSERT((!schedulerFixedForRowgroup && !scheduler) || (schedulerFixedForRowgroup && scheduler), "Expecting scheduler and schedulerFixedForRowgroup to be both set or unset");
+
                 if (!decisionValueBlocks) {
-                    performIterationStepUpdateDecisionValue<dir>(b);
+                    performIterationStepUpdateDecisionValue<dir>(b, schedulerFixedForRowgroup, scheduler);
                 } else {
                     assert(decisionValue == getPrimaryBound<dir>());
                     auto xIt = x.rbegin();
@@ -121,76 +125,119 @@ namespace storm {
                     auto groupStartIt = rowGroupIndices->rbegin();
                     uint64_t groupEnd = *groupStartIt;
                     ++groupStartIt;
+                    auto rowGroupIndex = x.size()-1;
+
                     for (auto groupStartIte = rowGroupIndices->rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
-                        // Perform the iteration for the first row in the group
-                        IndexType row = *groupStartIt;
-                        ValueType xBest, yBest;
-                        multiplyRow(row, b[row], xBest, yBest);
-                        ++row;
-                        // Only do more work if there are still rows in this row group
-                        if (row != groupEnd) {
-                            ValueType xi, yi;
-                            ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
-                            for (;row < groupEnd; ++row) {
-                                // Get the multiplication results
-                                multiplyRow(row, b[row], xi, yi);
-                                ValueType currentValue = xi + yi * getPrimaryBound<dir>();
-                                // Check if the current row is better then the previously found one
-                                if (better<dir>(currentValue, bestValue)) {
-                                    xBest = std::move(xi);
-                                    yBest = std::move(yi);
-                                    bestValue = std::move(currentValue);
-                                } else if (currentValue == bestValue && yBest > yi) {
-                                    // If the value for this row is not strictly better, it might still be equal and have a better y value
-                                    xBest = std::move(xi);
-                                    yBest = std::move(yi);
+                        auto rowGroupIndex = groupStartIt - rowGroupIndices->rbegin() - 1;
+
+                        if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[rowGroupIndex]) {
+                            // The scheduler is fixed for this rowgroup so we perform iteration only on this row.
+                            IndexType row = *groupStartIt + scheduler.get()[rowGroupIndex];
+                            ValueType xBest, yBest;
+                            multiplyRow(row, b[row], xBest, yBest);
+                            *xIt = std::move(xBest);
+                            *yIt = std::move(yBest);
+                        } else {
+                            // Perform the iteration for the first row in the group
+                            IndexType row = *groupStartIt;
+                            ValueType xBest, yBest;
+                            multiplyRow(row, b[row], xBest, yBest);
+                            ++row;
+                            // Only do more work if there are still rows in this row group
+                            if (row != groupEnd) {
+                                ValueType xi, yi;
+                                ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
+                                for (; row < groupEnd; ++row) {
+                                    // Get the multiplication results
+                                    multiplyRow(row, b[row], xi, yi);
+                                    ValueType currentValue = xi + yi * getPrimaryBound<dir>();
+                                    // Check if the current row is better then the previously found one
+                                    if (better<dir>(currentValue, bestValue)) {
+                                        xBest = std::move(xi);
+                                        yBest = std::move(yi);
+                                        bestValue = std::move(currentValue);
+                                    } else if (currentValue == bestValue && yBest > yi) {
+                                        // If the value for this row is not strictly better, it might still be equal and have a better y value
+                                        xBest = std::move(xi);
+                                        yBest = std::move(yi);
+                                    }
                                 }
                             }
+                            *xIt = std::move(xBest);
+                            *yIt = std::move(yBest);
                         }
-                        *xIt = std::move(xBest);
-                        *yIt = std::move(yBest);
                     }
                 }
             }
             
             template<typename ValueType>
             template<typename SoundValueIterationHelper<ValueType>::InternalOptimizationDirection dir>
-            void SoundValueIterationHelper<ValueType>::performIterationStepUpdateDecisionValue(std::vector<ValueType> const& b) {
+            void SoundValueIterationHelper<ValueType>::performIterationStepUpdateDecisionValue(std::vector<ValueType> const& b, boost::optional<storm::storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
+                STORM_LOG_ASSERT((!schedulerFixedForRowgroup && !scheduler) || (schedulerFixedForRowgroup && scheduler), "Expecting scheduler and schedulerFixedForRowgroup to be both set or unset");
                 auto xIt = x.rbegin();
                 auto yIt = y.rbegin();
                 auto groupStartIt = rowGroupIndices->rbegin();
+
                 uint64_t groupEnd = *groupStartIt;
                 ++groupStartIt;
-                for (auto groupStartIte = rowGroupIndices->rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
-                    // Perform the iteration for the first row in the group
-                    uint64_t row = *groupStartIt;
-                    ValueType xBest, yBest;
-                    multiplyRow(row, b[row], xBest, yBest);
-                    ++row;
-                    // Only do more work if there are still rows in this row group
-                    if (row != groupEnd) {
-                        ValueType xi, yi;
-                        uint64_t xyTmpIndex = 0;
-                        if (hasPrimaryBound<dir>()) {
-                            ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
-                            for (;row < groupEnd; ++row) {
-                                // Get the multiplication results
-                                multiplyRow(row, b[row], xi, yi);
-                                ValueType currentValue = xi + yi * getPrimaryBound<dir>();
-                                // Check if the current row is better then the previously found one
-                                if (better<dir>(currentValue, bestValue)) {
-                                    if (yBest < yi) {
-                                        // We need to store the 'old' best value as it might be relevant for the decision value
+                auto rowGroupIndex = x.size()-1;
+
+                for (auto groupStartIte = rowGroupIndices->rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt, --rowGroupIndex) {
+
+                    if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[rowGroupIndex]) {
+                        // The scheduler is fixed for this rowgroup so we perform iteration only on this entry.
+                        IndexType row = *groupStartIt + scheduler.get()[rowGroupIndex];
+                        ValueType xBest, yBest;
+                        multiplyRow(row, b[row], xBest, yBest);
+                        *xIt = std::move(xBest);
+                        *yIt = std::move(yBest);
+                    } else {
+                        // Perform the iteration for the first row in the group
+                        uint64_t row = *groupStartIt;
+                        ValueType xBest, yBest;
+                        multiplyRow(row, b[row], xBest, yBest);
+                        ++row;
+                        // Only do more work if there are still rows in this row group
+                        if (row != groupEnd) {
+                            ValueType xi, yi;
+                            uint64_t xyTmpIndex = 0;
+                            if (hasPrimaryBound<dir>()) {
+                                ValueType bestValue = xBest + yBest * getPrimaryBound<dir>();
+                                for (; row < groupEnd; ++row) {
+                                    // Get the multiplication results
+                                    multiplyRow(row, b[row], xi, yi);
+                                    ValueType currentValue = xi + yi * getPrimaryBound<dir>();
+                                    // Check if the current row is better then the previously found one
+                                    if (better<dir>(currentValue, bestValue)) {
+                                        if (yBest < yi) {
+                                            // We need to store the 'old' best value as it might be relevant for the decision value
+                                            xTmp[xyTmpIndex] = std::move(xBest);
+                                            yTmp[xyTmpIndex] = std::move(yBest);
+                                            ++xyTmpIndex;
+                                        }
+                                        xBest = std::move(xi);
+                                        yBest = std::move(yi);
+                                        bestValue = std::move(currentValue);
+                                    } else if (yBest > yi) {
+                                        // If the value for this row is not strictly better, it might still be equal and have a better y value
+                                        if (currentValue == bestValue) {
+                                            xBest = std::move(xi);
+                                            yBest = std::move(yi);
+                                        } else {
+                                            xTmp[xyTmpIndex] = std::move(xi);
+                                            yTmp[xyTmpIndex] = std::move(yi);
+                                            ++xyTmpIndex;
+                                        }
+                                    }
+                                }
+                            } else {
+                                for (; row < groupEnd; ++row) {
+                                    multiplyRow(row, b[row], xi, yi);
+                                    // Update the best choice
+                                    if (yi > yBest || (yi == yBest && better<dir>(xi, xBest))) {
                                         xTmp[xyTmpIndex] = std::move(xBest);
                                         yTmp[xyTmpIndex] = std::move(yBest);
                                         ++xyTmpIndex;
-                                    }
-                                    xBest = std::move(xi);
-                                    yBest = std::move(yi);
-                                    bestValue = std::move(currentValue);
-                                } else if (yBest > yi) {
-                                    // If the value for this row is not strictly better, it might still be equal and have a better y value
-                                    if (currentValue == bestValue) {
                                         xBest = std::move(xi);
                                         yBest = std::move(yi);
                                     } else {
@@ -200,39 +247,23 @@ namespace storm {
                                     }
                                 }
                             }
-                        } else {
-                            for (;row < groupEnd; ++row) {
-                                multiplyRow(row, b[row], xi, yi);
-                                // Update the best choice
-                                if (yi > yBest || (yi == yBest && better<dir>(xi, xBest))) {
-                                        xTmp[xyTmpIndex] = std::move(xBest);
-                                        yTmp[xyTmpIndex] = std::move(yBest);
-                                        ++xyTmpIndex;
-                                    xBest = std::move(xi);
-                                    yBest = std::move(yi);
-                                } else {
-                                    xTmp[xyTmpIndex] = std::move(xi);
-                                    yTmp[xyTmpIndex] = std::move(yi);
-                                    ++xyTmpIndex;
+
+                            // Update the decision value
+                            for (uint64_t i = 0; i < xyTmpIndex; ++i) {
+                                ValueType deltaY = yBest - yTmp[i];
+                                if (deltaY > storm::utility::zero<ValueType>()) {
+                                    ValueType newDecisionValue = (xTmp[i] - xBest) / deltaY;
+                                    if (!hasDecisionValue || better<dir>(newDecisionValue, decisionValue)) {
+                                        decisionValue = std::move(newDecisionValue);
+                                        STORM_LOG_TRACE("Update decision value to " << decisionValue);
+                                        hasDecisionValue = true;
+                                    }
                                 }
                             }
                         }
-                        
-                        // Update the decision value
-                        for (uint64_t i = 0; i < xyTmpIndex; ++i) {
-                            ValueType deltaY = yBest - yTmp[i];
-                            if (deltaY > storm::utility::zero<ValueType>()) {
-                                ValueType newDecisionValue = (xTmp[i] - xBest) / deltaY;
-                                if (!hasDecisionValue || better<dir>(newDecisionValue, decisionValue)) {
-                                    decisionValue = std::move(newDecisionValue);
-                                    STORM_LOG_TRACE("Update decision value to " << decisionValue);
-                                    hasDecisionValue = true;
-                                }
-                            }
-                        }
+                        *xIt = std::move(xBest);
+                        *yIt = std::move(yBest);
                     }
-                    *xIt = std::move(xBest);
-                    *yIt = std::move(yBest);
                 }
             }
 

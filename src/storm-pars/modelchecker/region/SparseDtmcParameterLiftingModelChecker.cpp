@@ -315,7 +315,6 @@ namespace storm {
                         maxSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
                     }
 
-                    // TODO: this only works since we decided to keep all columns
                     auto const & occuringVariables = parameterLifter->getOccurringVariablesAtState();
                     for (uint_fast64_t state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
                         auto oldStateNumber = parameterLifter->getOriginalStateNumber(state);
@@ -354,7 +353,7 @@ namespace storm {
                         solver->setInitialScheduler(std::move(minSchedChoices.get()));
                     if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
                         solver->setInitialScheduler(std::move(maxSchedChoices.get()));
-                    solver->setChoiceFixedForStates(std::move(choiceFixedForStates));
+                    solver->setSchedulerFixedForRowGroup(std::move(choiceFixedForStates));
                 } else {
                     if (storm::solver::minimize(dirForParameters) && minSchedChoices)
                         solver->setInitialScheduler(std::move(minSchedChoices.get()));

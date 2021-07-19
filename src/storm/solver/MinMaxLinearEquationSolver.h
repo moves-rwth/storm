@@ -73,9 +73,9 @@ namespace storm {
             /*!
              * Sets the states for which the choices are fixed.
              * Expecting the matrix to only have one choice for the states which are fixed.
-             * @param states bitvector with the states where the choices are fixed.
+             * @param schedulerFixedForRowGroup bitvector with the states where the choices are fixed.
              */
-            void setChoiceFixedForStates(storm::storage::BitVector&& states);
+            virtual void setSchedulerFixedForRowGroup(storm::storage::BitVector&& schedulerFixedForRowGroup);
 
             /*!
              * Sets whether the solution to the min max equation system is known to be unique.

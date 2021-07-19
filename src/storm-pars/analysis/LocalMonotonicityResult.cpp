@@ -13,6 +13,15 @@ namespace storm {
         }
 
         template <typename VariableType>
+        LocalMonotonicityResult<VariableType>::LocalMonotonicityResult(std::shared_ptr<MonotonicityResult<VariableType>> globalResult, uint_fast64_t numberOfStates) {
+            stateMonRes = std::vector<std::shared_ptr<MonotonicityResult<VariableType>>>(numberOfStates);
+            globalMonotonicityResult = globalResult;
+            statesMonotone = storm::storage::BitVector(numberOfStates, false);
+            dummyPointer = std::make_shared<MonotonicityResult<VariableType>>();
+            done = globalResult->isDone();
+        }
+
+        template <typename VariableType>
         typename LocalMonotonicityResult<VariableType>::Monotonicity LocalMonotonicityResult<VariableType>::getMonotonicity(uint_fast64_t state, VariableType var) const {
             if (stateMonRes[state] == dummyPointer) {
                 return Monotonicity::Constant;
@@ -161,6 +170,7 @@ namespace storm {
         template<typename VariableType>
         void LocalMonotonicityResult<VariableType>::setDone(bool done) {
             this->done = done;
+            globalMonotonicityResult->setDone(done);
         }
 
         template<typename VariableType>
