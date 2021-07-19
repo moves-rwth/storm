@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "storm/solver/Multiplier.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 namespace storm {
 

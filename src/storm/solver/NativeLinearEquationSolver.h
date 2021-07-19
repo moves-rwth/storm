@@ -6,10 +6,10 @@
 #include "storm/solver/LinearEquationSolver.h"
 
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/solver/NativeMultiplier.h"
 #include "storm/solver/SolverStatus.h"
-#include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
+#include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "storm/solver/multiplier/NativeMultiplier.h"
 
 #include "storm/utility/NumberTraits.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/solver/Multiplier.h"
+#include "Multiplier.h"
 
 #include "storm/adapters/GmmxxAdapter.h"
 
