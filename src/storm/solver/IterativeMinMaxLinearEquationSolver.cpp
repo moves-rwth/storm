@@ -64,23 +64,23 @@ namespace storm {
             bool result = false;
             switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
                 case MinMaxMethod::ValueIteration:
+                    // Throws error when choices for scheduler are fixed
                     result = solveEquationsValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::OptimisticValueIteration:
                     result = solveEquationsOptimisticValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::PolicyIteration:
-                    // This one is done
                     result = solveEquationsPolicyIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::RationalSearch:
                     result = solveEquationsRationalSearch(env, dir, x, b);
                     break;
                 case MinMaxMethod::IntervalIteration:
+                    // Throws error when choices for scheduler are fixed
                     result = solveEquationsIntervalIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::SoundValueIteration:
-                    // this one is done
                     result = solveEquationsSoundValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::ViToPi:
@@ -304,10 +304,8 @@ namespace storm {
         template<typename ValueType>
         typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maximalNumberOfIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
             STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
-            if (this->choiceFixedForState) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-//                assert (false);
-            }
+            STORM_LOG_THROW(!this->choiceFixedForState, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for interval iteration, please pick a different solver");
+
 
             // Get handle to multiplier.
             storm::solver::Multiplier<ValueType> const& multiplier = *this->multiplierA;
@@ -368,9 +366,6 @@ namespace storm {
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->choiceFixedForState) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-            }
             if (!storm::utility::vector::hasNonZeroEntry(b)) {
                 // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
                 x.assign(x.size(), storm::utility::zero<ValueType>());
@@ -401,7 +396,9 @@ namespace storm {
                                                      storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
                                                      env.solver().minMax().getMaximalNumberOfIterations(),
                                                      dir,
-                                                     this->getOptionalRelevantValues());
+                                                     this->getOptionalRelevantValues(),
+                                                     this->choiceFixedForState,
+                                                     this->initialScheduler);
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
 
@@ -422,6 +419,8 @@ namespace storm {
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_THROW(!this->choiceFixedForState, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for interval iteration, please pick a different solver");
+
             if (!this->multiplierA) {
                 this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
             }
@@ -518,9 +517,7 @@ namespace storm {
          */
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->choiceFixedForState) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-            }
+            STORM_LOG_THROW(!this->choiceFixedForState, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for interval iteration, please pick a different solver");
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
 
             if (!this->multiplierA) {
@@ -757,9 +754,6 @@ namespace storm {
         
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsViToPi(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->choiceFixedForState) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-            }
             // First create an (inprecise) vi solver to get a good initial strategy for the (potentially precise) policy iteration solver.
             std::vector<storm::storage::sparse::state_type> initialSched;
             {
@@ -999,9 +993,6 @@ namespace storm {
         template<typename ValueType>
         template<typename RationalType, typename ImpreciseType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, IterativeMinMaxLinearEquationSolver<ImpreciseType> const& impreciseSolver, storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX, std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A, std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const {
-            if (this->choiceFixedForState) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-            }
             std::vector<ImpreciseType> const* originalX = &x;
 
             std::vector<ImpreciseType>* currentX = &x;
@@ -1059,9 +1050,6 @@ namespace storm {
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->choiceFixedForState) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-            }
             return solveEquationsRationalSearchHelper<double>(env, dir, x, b);
         }
         

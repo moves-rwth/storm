@@ -52,29 +52,34 @@ namespace storm {
                 }
                 
                 template <typename ValueType>
-                ValueType IterationHelper<ValueType>::singleIterationWithDiff(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff) {
-                    return singleIterationWithDiffInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, computeRelativeDiff);
+                ValueType IterationHelper<ValueType>::singleIterationWithDiff(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
+                    return singleIterationWithDiffInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, computeRelativeDiff, schedulerFixedForRowgroup, scheduler);
                 }
                 
                 template <typename ValueType>
-                ValueType IterationHelper<ValueType>::singleIterationWithDiff(storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff) {
+                ValueType IterationHelper<ValueType>::singleIterationWithDiff(storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                     if (minimize(dir)) {
-                        return singleIterationWithDiffInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, computeRelativeDiff);
+                        return singleIterationWithDiffInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, computeRelativeDiff, schedulerFixedForRowgroup, scheduler);
                     } else {
-                        return singleIterationWithDiffInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, computeRelativeDiff);
+                        return singleIterationWithDiffInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, computeRelativeDiff, schedulerFixedForRowgroup, scheduler);
                     }
                 }
                 
                 template <typename ValueType>
                 template<bool HasRowGroups, storm::solver::OptimizationDirection Dir>
-                ValueType IterationHelper<ValueType>::singleIterationWithDiffInternal(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff) {
+                ValueType IterationHelper<ValueType>::singleIterationWithDiffInternal(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                     STORM_LOG_ASSERT(x.size() > 0, "Empty equation system not expected.");
                     ValueType diff = storm::utility::zero<ValueType>();
                     
                     IndexType i = x.size();
                     while (i > 0) {
                         --i;
-                        ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                        ValueType newXi;
+                        if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
+                            ValueType newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                        } else {
+                            ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                        }
                         ValueType& oldXi = x[i];
                         if (computeRelativeDiff) {
                             if (storm::utility::isZero(newXi)) {
@@ -96,28 +101,33 @@ namespace storm {
                 }
                 
                 template <typename ValueType>
-                uint64_t IterationHelper<ValueType>::repeatedIterate(storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType precision, bool relative) {
+                uint64_t IterationHelper<ValueType>::repeatedIterate(storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType precision, bool relative, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                     if (minimize(dir)) {
-                        return repeatedIterateInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, precision, relative);
+                        return repeatedIterateInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, precision, relative, schedulerFixedForRowgroup, scheduler);
                     } else {
-                        return repeatedIterateInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, precision, relative);
+                        return repeatedIterateInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, precision, relative, schedulerFixedForRowgroup, scheduler);
                     }
                 }
                 
                 template <typename ValueType>
-                uint64_t IterationHelper<ValueType>::repeatedIterate(std::vector<ValueType>& x, const std::vector<ValueType>& b, ValueType precision, bool relative) {
+                uint64_t IterationHelper<ValueType>::repeatedIterate(std::vector<ValueType>& x, const std::vector<ValueType>& b, ValueType precision, bool relative, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                     return repeatedIterateInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, precision, relative);
                 }
                 
                 template <typename ValueType>
                 template<bool HasRowGroups, storm::solver::OptimizationDirection Dir>
-                uint64_t IterationHelper<ValueType>::repeatedIterateInternal(std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType precision, bool relative) {
+                uint64_t IterationHelper<ValueType>::repeatedIterateInternal(std::vector<ValueType>& x, std::vector<ValueType> const& b, ValueType precision, bool relative, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                     // Do a backwards gauss-seidel style iteration
                     bool convergence = true;
                     IndexType i = x.size();
                     while (i > 0) {
                         --i;
-                        ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                        ValueType newXi;
+                        if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
+                            ValueType newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                        } else {
+                            ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                        }
                         ValueType& oldXi = x[i];
                         // Check if we converged
                         if (relative) {
@@ -141,14 +151,19 @@ namespace storm {
                         // we now know that we did not converge. We still need to set the remaining values
                         while (i > 0) {
                             --i;
-                            x[i] = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                            if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
+                                x[i] = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                            } else {
+                                x[i] = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                            }
+
                         }
                     }
                     return convergence;
                 }
                 
                 template <typename ValueType>
-                typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpper(storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew) {
+                typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpper(storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                     if (minimize(dir)) {
                         return iterateUpperInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, takeMinOfOldAndNew);
                     } else {
@@ -157,20 +172,25 @@ namespace storm {
                 }
                 
                 template <typename ValueType>
-                typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpper(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew) {
+                typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpper(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                     return iterateUpperInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, takeMinOfOldAndNew);
                 }
                 
                 template <typename ValueType>
                 template<bool HasRowGroups, storm::solver::OptimizationDirection Dir>
-                typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpperInternal(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew) {
+                typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpperInternal(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                     // For each row compare the new upper bound candidate with the old one
                     bool newUpperBoundAlwaysHigherEqual = true;
                     bool newUpperBoundAlwaysLowerEqual = true;
                     // Do a backwards gauss-seidel style iteration
                     for (IndexType i = x.size(); i > 0;) {
                         --i;
-                        ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                        ValueType newXi;
+                        if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
+                            ValueType newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                        } else {
+                            ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                        }
                         ValueType& oldXi = x[i];
                         if (newXi > oldXi) {
                             newUpperBoundAlwaysLowerEqual = false;
@@ -235,7 +255,7 @@ namespace storm {
             }
                 
             template<typename ValueType>
-                std::pair<SolverStatus, uint64_t> OptimisticValueIterationHelper<ValueType>::solveEquations(Environment const& env, std::vector<ValueType>* lowerX, std::vector<ValueType>* upperX, std::vector<ValueType> const& b, bool relative, ValueType precision, uint64_t maxOverallIterations, boost::optional<storm::solver::OptimizationDirection> dir, boost::optional<storm::storage::BitVector> const& relevantValues) {
+                std::pair<SolverStatus, uint64_t> OptimisticValueIterationHelper<ValueType>::solveEquations(Environment const& env, std::vector<ValueType>* lowerX, std::vector<ValueType>* upperX, std::vector<ValueType> const& b, bool relative, ValueType precision, uint64_t maxOverallIterations, boost::optional<storm::solver::OptimizationDirection> dir, boost::optional<storm::storage::BitVector> const& relevantValues, boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>>  const& scheduler) {
                 STORM_LOG_ASSERT(lowerX->size() == upperX->size(), "Dimension missmatch.");
                 
                 // As we will shuffle pointers around, let's store the original positions here.
@@ -265,7 +285,7 @@ namespace storm {
                 progress.startNewMeasurement(0);
                 while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
                     // Perform value iteration until convergence
-                    lastValueIterationIterations = dir ? iterationHelper.repeatedIterate(dir.get(), *lowerX, b, iterationPrecision, relative) : iterationHelper.repeatedIterate(*lowerX, b, iterationPrecision, relative);
+                    lastValueIterationIterations = dir ? iterationHelper.repeatedIterate(dir.get(), *lowerX, b, iterationPrecision, relative, schedulerFixedForRowgroup, scheduler) : iterationHelper.repeatedIterate(*lowerX, b, iterationPrecision, relative, schedulerFixedForRowgroup, scheduler);
                     overallIterations += lastValueIterationIterations;
 
                     bool intervalIterationNeeded = false;
