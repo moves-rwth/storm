@@ -58,7 +58,7 @@ namespace storm {
 
             this->extender = new analysis::OrderExtender<ValueType, ConstantType>(model, formulas[0]);
 
-            for (size_t i = 0; i < matrix.getRowCount(); ++i) {
+            for (uint_fast64_t i = 0; i < matrix.getRowCount(); ++i) {
                 std::set<VariableType> occurringVariables;
 
                 for (auto &entry : matrix.getRow(i)) {

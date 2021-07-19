@@ -66,7 +66,7 @@ namespace storm {
         template <typename VariableType>
         std::shared_ptr<LocalMonotonicityResult<VariableType>> LocalMonotonicityResult<VariableType>::copy() {
             std::shared_ptr<LocalMonotonicityResult<VariableType>> copy = std::make_shared<LocalMonotonicityResult<VariableType>>(stateMonRes.size());
-            for (size_t state = 0; state < stateMonRes.size(); state++) {
+            for (uint_fast64_t state = 0; state < stateMonRes.size(); state++) {
                 if (stateMonRes[state] != nullptr) {
                     copy->setMonotonicityResult(state, stateMonRes[state]->copy());
                 }
@@ -147,7 +147,7 @@ namespace storm {
         template <typename VariableType>
         std::string LocalMonotonicityResult<VariableType>::toString() const {
             std::string result = "Local Monotonicity Result: \n";
-            for (size_t i = 0; i < stateMonRes.size(); ++i) {
+            for (uint_fast64_t i = 0; i < stateMonRes.size(); ++i) {
                 result += "state ";
                 result += std::to_string(i);
                 if (stateMonRes[i] != nullptr) {
