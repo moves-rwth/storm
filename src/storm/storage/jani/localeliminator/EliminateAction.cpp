@@ -46,7 +46,6 @@ namespace storm {
                             if (dest.getLocationIndex() == locIndex) {
                                 detail::Edges outgoingEdges = automaton.getEdgesFromLocation(locationName);
                                 eliminateDestination(session, automaton, edges[edgeIndex], j, outgoingEdges);
-
                                 // eliminateDestination adds new edges to the edge container, so we need to get the
                                 // new list of edges:
                                 edges = automaton.getEdges();

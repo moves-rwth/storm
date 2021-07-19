@@ -61,19 +61,19 @@ void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> pro
         EXPECT_EQ(transitions, explicitModel->getNumberOfTransitions());
     }
 
-    auto trans_matr = explicitModel->getTransitionMatrix();
-    for (uint64_t  state = 0; state < explicitModel->getNumberOfStates(); state++){
-        std::cout << state << "(";
-        for (auto label : explicitModel->getLabelsOfState(state)){
-            std::cout << label << ", ";
-        }
-        std::cout << ") -> ";
-        for (auto trans : trans_matr.getRow(state)) {
-            std::cout << trans.getValue() << ": " << trans.getColumn() << ", ";
-        }
-        std::cout << std::endl;
-
-    }
+//    auto trans_matr = explicitModel->getTransitionMatrix();
+//    for (uint64_t  state = 0; state < explicitModel->getNumberOfStates(); state++){
+//        std::cout << state << "(";
+//        for (auto label : explicitModel->getLabelsOfState(state)){
+//            std::cout << label << ", ";
+//        }
+//        std::cout << ") -> ";
+//        for (auto trans : trans_matr.getRow(state)) {
+//            std::cout << trans.getValue() << ": " << trans.getColumn() << ", ";
+//        }
+//        std::cout << std::endl;
+//
+//    }
 
     auto task = storm::modelchecker::CheckTask<>(*(formulae[0]), true);
     storm::Environment env;
@@ -451,12 +451,19 @@ TEST(JaniLocalEliminator, IsPartOfPropPropagationUnfolding) {
 // This test verifies that combining the two guards during elimination works correctly.
 TEST(JaniLocalEliminator, EliminationNewGuardTest) {
 
-    auto modelAndProps = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/leader_sync.5-4-custom-prop.jani",
+    auto modelAndProps = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/leader_sync.4-8.jani",
                                                     storm::jani::getAllKnownModelFeatures(), boost::none);
-    auto eliminator = JaniLocalEliminator(modelAndProps.first, modelAndProps.second, true);
-    // eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("main", "s"));
-    eliminator.scheduler.addAction(std::make_unique<AutomaticAction>());
+    auto eliminator = JaniLocalEliminator(modelAndProps.first, modelAndProps.second, false);
+    eliminator.scheduler.addAction(std::make_unique<AutomaticAction>(15, 100));
     eliminator.eliminate();
+    auto result = eliminator.getResult();
+    result.finalize();
+    for (auto log : eliminator.getLog()){
+        std::cout << log << std::endl;
+    }
+    EXPECT_EQ(2, result.getAutomaton(0).getNumberOfLocations());
+    checkModel(result, modelAndProps.second, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.875);
+
     // TODO
 }
 

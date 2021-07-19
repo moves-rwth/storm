@@ -10,7 +10,10 @@ using namespace boost;
 namespace storm {
     namespace jani {
         namespace elimination_actions {
-            AutomaticAction::AutomaticAction() {
+            AutomaticAction::AutomaticAction(): locationLimit(30), newTransitionLimit(20000) {
+
+            }
+            AutomaticAction::AutomaticAction(uint64_t locationLimit, uint64_t newTransitionLimit): locationLimit(locationLimit), newTransitionLimit(newTransitionLimit){
 
             }
 
@@ -26,9 +29,6 @@ namespace storm {
 
                 std::string const &autName = session.getModel().getAutomata()[0].getName();
 
-                session.addToLog("Adding missing guards");
-                session.addMissingGuards(autName);
-
                 session.addToLog("Generating variable dependency graph");
                 UnfoldDependencyGraph dependencyGraph(session.getModel());
                 session.addToLog(dependencyGraph.toString());
@@ -42,13 +42,13 @@ namespace storm {
 
                 EliminateAutomaticallyAction eliminatePropertyAction(autName,
                                                                      EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
-                                                                     20000);
+                                                                     newTransitionLimit);
                 eliminatePropertyAction.doAction(session);
 
                 RebuildWithoutUnreachableAction rebuildAfterPropertyAction;
                 rebuildAfterPropertyAction.doAction(session);
 
-                while (session.getModel().getAutomaton(0).getLocations().size() < 40) {
+                while (session.getModel().getAutomaton(0).getLocations().size() < locationLimit) {
                     auto nextUnfold = chooseNextUnfold(session, autName, dependencyGraph);
                     if (!nextUnfold) {
                         break;
@@ -58,7 +58,7 @@ namespace storm {
 
                     EliminateAutomaticallyAction eliminateAction(autName,
                                                                  EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
-                                                                 20000);
+                                                                 newTransitionLimit);
                     eliminateAction.doAction(session);
 
                     RebuildWithoutUnreachableAction rebuildAction;
