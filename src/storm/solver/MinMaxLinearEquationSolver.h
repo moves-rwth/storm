@@ -190,7 +190,7 @@ namespace storm {
             // A scheduler that can be used by solvers that require a valid initial scheduler.
             boost::optional<std::vector<uint_fast64_t>> initialScheduler;
 
-            boost::optional<storm::storage::BitVector> choiceFixedForState;
+            boost::optional<storm::storage::BitVector> choiceFixedForRowGroup;
 
         private:
             /// Whether the solver can assume that the min-max equation system has a unique solution

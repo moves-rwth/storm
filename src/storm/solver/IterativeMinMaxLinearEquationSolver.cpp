@@ -170,7 +170,7 @@ namespace storm {
                 bool schedulerImproved = false;
                 // Group refers to the state number
                 for (uint_fast64_t group = 0; group < this->A->getRowGroupCount(); ++group) {
-                    if (!this->choiceFixedForState || !this->choiceFixedForState.get()[group]) {
+                    if (!this->choiceFixedForRowGroup || !this->choiceFixedForRowGroup.get()[group]) {
                         //  Only update when the choice is not fixed
                         uint_fast64_t currentChoice = scheduler[group];
                         for (uint_fast64_t choice = this->A->getRowGroupIndices()[group]; choice < this->A->getRowGroupIndices()[group + 1]; ++choice) {
@@ -304,8 +304,6 @@ namespace storm {
         template<typename ValueType>
         typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maximalNumberOfIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
             STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
-            STORM_LOG_THROW(!this->choiceFixedForState, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for interval iteration, please pick a different solver");
-
 
             // Get handle to multiplier.
             storm::solver::Multiplier<ValueType> const& multiplier = *this->multiplierA;
@@ -315,23 +313,35 @@ namespace storm {
             
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = currentIterations;
-            
+
             SolverStatus status = SolverStatus::InProgress;
             while (status == SolverStatus::InProgress) {
-                // Compute x' = min/max(A*x + b).
-                if (useGaussSeidelMultiplication) {
-                    // Copy over the current vector so we can modify it in-place.
-                    *newX = *currentX;
-                    multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
+
+                // TODO: integrate fixed choices for the scheduler for a rowgroup in multiplier
+                if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get().full()) {
+                    std::size_t rowGroup = currentX->size();
+                    while (rowGroup != 0) {
+                        --rowGroup;
+                        *newX = *currentX;
+                        uint_fast64_t rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->initialScheduler.get()[rowGroup];
+                        multiplier.multiplyRow(rowIndex, *currentX, (*newX)[rowGroup]);
+                    }
                 } else {
-                    multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
+                    // Compute x' = min/max(A*x + b).
+                    if (useGaussSeidelMultiplication) {
+                        // Copy over the current vector so we can modify it in-place.
+                        *newX = *currentX;
+                        multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
+                    } else {
+                        multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
+                    }
                 }
-                
+
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
                     status = SolverStatus::Converged;
                 }
-                
+
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
@@ -397,7 +407,7 @@ namespace storm {
                                                      env.solver().minMax().getMaximalNumberOfIterations(),
                                                      dir,
                                                      this->getOptionalRelevantValues(),
-                                                     this->choiceFixedForState,
+                                                     this->choiceFixedForRowGroup,
                                                      this->initialScheduler);
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
@@ -419,7 +429,6 @@ namespace storm {
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            STORM_LOG_THROW(!this->choiceFixedForState, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for interval iteration, please pick a different solver");
 
             if (!this->multiplierA) {
                 this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
@@ -517,7 +526,7 @@ namespace storm {
          */
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            STORM_LOG_THROW(!this->choiceFixedForState, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for interval iteration, please pick a different solver");
+            STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for interval iteration, please pick a different solver");
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
 
             if (!this->multiplierA) {
@@ -721,8 +730,8 @@ namespace storm {
 
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 ++iterations;
-                if (this->choiceFixedForState) {
-                    this->soundValueIterationHelper->performIterationStep(dir, b, this->choiceFixedForState, this->getInitialScheduler());
+                if (this->choiceFixedForRowGroup) {
+                    this->soundValueIterationHelper->performIterationStep(dir, b, this->choiceFixedForRowGroup, this->getInitialScheduler());
                 } else {
                     this->soundValueIterationHelper->performIterationStep(dir, b);
                 }
@@ -883,7 +892,7 @@ namespace storm {
         template<typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->choiceFixedForState) {
+            if (this->choiceFixedForRowGroup) {
                 STORM_LOG_WARN("Choices are fixed help I don't know what to do");
             }
             // Version for when the overall value type is exact and the imprecise one is not. We first try to solve the

@@ -76,9 +76,9 @@ namespace storm {
                         --i;
                         ValueType newXi;
                         if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                            ValueType newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                            newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
                         } else {
-                            ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                            newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
                         }
                         ValueType& oldXi = x[i];
                         if (computeRelativeDiff) {
@@ -124,9 +124,9 @@ namespace storm {
                         --i;
                         ValueType newXi;
                         if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                            ValueType newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                            newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
                         } else {
-                            ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                            newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
                         }
                         ValueType& oldXi = x[i];
                         // Check if we converged
@@ -187,9 +187,9 @@ namespace storm {
                         --i;
                         ValueType newXi;
                         if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                            ValueType newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                            newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
                         } else {
-                            ValueType newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
+                            newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
                         }
                         ValueType& oldXi = x[i];
                         if (newXi > oldXi) {

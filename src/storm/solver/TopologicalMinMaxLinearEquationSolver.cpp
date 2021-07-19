@@ -70,7 +70,7 @@ namespace storm {
             }
             
             bool returnValue = true;
-            if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForState || this->choiceFixedForState.get().empty())) {
+            if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty())) {
                 // Handle the case where there is just one large SCC, as there are no fixed choices for states, we solve it like this
                 returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
             } else {
@@ -98,7 +98,7 @@ namespace storm {
                         for (auto const& group : scc) { // Group refers to state
                             sccRowGroupsAsBitVector.set(group, true);
 
-                            if (!this->choiceFixedForState || !this->choiceFixedForState.get()[group]) {
+                            if (!this->choiceFixedForRowGroup || !this->choiceFixedForRowGroup.get()[group]) {
                                 for (uint64_t row = this->A->getRowGroupIndices()[group]; row < this->A->getRowGroupIndices()[group + 1]; ++row) {
                                     sccRowsAsBitVector.set(row, true);
                                 }
@@ -147,7 +147,7 @@ namespace storm {
         template<typename ValueType>
         bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveTrivialScc(uint64_t const& sccState, OptimizationDirection dir, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const {
             ValueType& xi = globalX[sccState];
-            if (this->choiceFixedForState && this->choiceFixedForState.get()[sccState]) {
+            if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[sccState]) {
                 // if the choice in the scheduler is fixed we only update for the fixed choice
                 uint_fast64_t row = this->A->getRowGroupIndices()[sccState] + this->getInitialScheduler()[sccState];
                 ValueType rowValue = globalB[row];
@@ -232,7 +232,7 @@ namespace storm {
         
         template<typename ValueType>
         bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            STORM_LOG_ASSERT(!this->choiceFixedForState || this->choiceFixedForState.get().empty(), "Expecting no fixed choices for states when solving the fully connected equation system");
+            STORM_LOG_ASSERT(!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty(), "Expecting no fixed choices for states when solving the fully connected equation system");
             if (!this->sccSolver) {
                 this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
                 this->sccSolver->setCachingEnabled(true);
@@ -281,12 +281,12 @@ namespace storm {
             this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
 
             storm::storage::SparseMatrix<ValueType> sccA;
-            if (this->choiceFixedForState) {
+            if (this->choiceFixedForRowGroup) {
                 // Obtain choiceFixedForState bitvector containing only the states of the scc.
                 storm::storage::BitVector choiceFixedForStateSCC(sccRowGroups.getNumberOfSetBits());
                 auto j = 0;
                 for (auto i : sccRowGroups) {
-                    choiceFixedForStateSCC.set(j, this->choiceFixedForState.get()[i]);
+                    choiceFixedForStateSCC.set(j, this->choiceFixedForRowGroup.get()[i]);
                     j++;
                 }
                 assert (j = sccRowGroups.getNumberOfSetBits());
@@ -297,8 +297,8 @@ namespace storm {
                     auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
                     // As we removed the entries where the choice was fixed, we need to change the scheduler.
                     // We set the scheduler to 0 for those states.
-                    if (this->choiceFixedForState) {
-                        for (auto const choice : this->choiceFixedForState.get()) {
+                    if (this->choiceFixedForRowGroup) {
+                        for (auto const choice : this->choiceFixedForRowGroup.get()) {
                             sccInitChoices[choice] = 0;
                         }
                     }

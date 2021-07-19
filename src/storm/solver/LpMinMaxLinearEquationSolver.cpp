@@ -65,7 +65,7 @@ namespace storm {
             // Add a constraint for each row
             for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
                 // The rowgroup refers to the state number
-                if (this->choiceFixedForState && this->choiceFixedForState.get()[rowGroup]) {
+                if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[rowGroup]) {
                     // The choice is fixed
                     auto rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->getInitialScheduler()[rowGroup];
                     auto row = this->A->getRow(rowIndex);
@@ -127,7 +127,7 @@ namespace storm {
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
                 for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
-                    if (!this->choiceFixedForState || !this->choiceFixedForState.get()[rowGroup]) {
+                    if (!this->choiceFixedForRowGroup || !this->choiceFixedForRowGroup.get()[rowGroup]) {
                         // Only update scheduler choice for the states that don't have a fixed choice
                         uint64_t row = this->A->getRowGroupIndices()[rowGroup];
                         uint64_t optimalChoiceIndex = 0;

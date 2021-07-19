@@ -159,7 +159,7 @@ namespace storm {
         template<class ValueType>
         void MinMaxLinearEquationSolver<ValueType>::setSchedulerFixedForRowGroup(storm::storage::BitVector&& schedulerFixedForRowGroup) {
             STORM_LOG_ASSERT(this->hasInitialScheduler(), "Expecting an initial scheduler to be set before setting the states for which the choices are fixed");
-            this->choiceFixedForState = std::move(schedulerFixedForRowGroup);
+            this->choiceFixedForRowGroup = std::move(schedulerFixedForRowGroup);
         }
 
         template<typename ValueType>
