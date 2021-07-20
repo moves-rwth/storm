@@ -19,7 +19,7 @@ namespace storm {
              * @param numberOfMemoryStates The number of states the resulting memory structure should have
              */
             MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model);
-            
+            // TODO: Add variant with a flag: Consider non-initial model states
             /*!
              * Initializes a new builder with the data from the provided memory structure
              */

@@ -608,7 +608,7 @@ namespace storm {
                 
                 // Check if the values of the maybe states are relevant for the SolveGoal
                 bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
-                
+                // TODO: if a scheduler is to be produced and maybestatesNotRelevant is true, we have to set the scheduler for maybsetsates as "unreachable"
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative || maybeStatesNotRelevant) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
