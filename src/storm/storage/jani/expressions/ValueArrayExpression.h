@@ -12,7 +12,7 @@ namespace storm {
             struct ValueArrayElements {
                 boost::optional<std::vector<std::shared_ptr<BaseExpression const>>> elementsWithValue = boost::none;
                 boost::optional<std::vector<std::shared_ptr<ValueArrayElements const>>> elementsOfElements = boost::none;
-                std::vector<uint_fast64_t> getSizes() const;
+                std::vector<std::size_t> getSizes() const;
             };
             
             ValueArrayExpression(ExpressionManager const& manager, Type const& type);
@@ -33,7 +33,7 @@ namespace storm {
             
             // Returns the size of the array
             virtual std::shared_ptr<BaseExpression const> size() const override;
-            std::vector<uint_fast64_t> getSizes() const;
+            std::vector<std::size_t> getSizes() const;
             ValueArrayElements const& getElements() const;
 
             // Returns the element at position i
@@ -46,7 +46,7 @@ namespace storm {
         private:
             ValueArrayElements simplify(ValueArrayElements const& elements) const;
             bool containsVariables(ValueArrayElements const& elementsToCheck) const;
-            uint_fast64_t size(ValueArrayElements const& elementsToCheck) const;
+            std::size_t size(ValueArrayElements const& elementsToCheck) const;
             void gatherVariables(std::set<storm::expressions::Variable>& variables, ValueArrayElements const& elementsToCheck) const;
             void printToStream(std::ostream& stream, ValueArrayElements const& element) const;
 

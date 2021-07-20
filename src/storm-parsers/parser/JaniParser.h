@@ -125,7 +125,7 @@ namespace storm {
 
             std::set<std::string> labels = {};
 
-            std::map<std::string, std::vector<uint_fast64_t>> sizeMap;
+            std::map<std::string, std::vector<std::size_t>> sizeMap;
 
             bool allowRecursion = true;
 

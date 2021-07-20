@@ -13,18 +13,18 @@ namespace storm {
             // Intentionally left empty
         }
 
-        LValue::LValue(storm::jani::Variable const& variable, std::vector<storm::expressions::Expression> const index, std::vector<uint_fast64_t> const& sizes) : variable(&variable), arrayIndexVector(index), sizes(sizes) {
+        LValue::LValue(storm::jani::Variable const& variable, std::vector<storm::expressions::Expression> const index, std::vector<std::size_t> const& sizes) : variable(&variable), arrayIndexVector(index), sizes(sizes) {
             STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             STORM_LOG_ASSERT(arrayIndexVector->size() <= sizes.size(), "Expecting arrayIndexVector size to be smaller or equal than the size of the sizes vector for variable: " << variable.getName());
             // Intentionally left empty
         }
 
-        LValue::LValue(storm::jani::Variable const& variable, std::vector<uint_fast64_t> const& sizes) : variable(&variable), sizes(sizes) {
+        LValue::LValue(storm::jani::Variable const& variable, std::vector<std::size_t> const& sizes) : variable(&variable), sizes(sizes) {
             STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             arrayIndexVector = std::vector<storm::expressions::Expression>();
         }
 
-        LValue::LValue(storm::jani::Variable const& variable, storm::expressions::Expression const& index, uint_fast64_t size) : variable(&variable) {
+        LValue::LValue(storm::jani::Variable const& variable, storm::expressions::Expression const& index, std::size_t size) : variable(&variable) {
             STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             arrayIndexVector = {index};
             sizes = {size};
@@ -59,19 +59,19 @@ namespace storm {
             return res;
         }
 
-        const std::vector<uint_fast64_t> & LValue::getSizes() const {
+        const std::vector<std::size_t> & LValue::getSizes() const {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to get sizes of an LValue that is not an array access.");
             return sizes;
         }
 
-        const uint_fast64_t & LValue::getSizeAt(uint_fast64_t i) const {
+        const std::size_t & LValue::getSizeAt(uint_fast64_t i) const {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to get size of arrayindex " << i << " of an LValue that is not an array access.");
             STORM_LOG_ASSERT(i < sizes.size(), "Tried to get size of arrayindex " << i << " but there are only" << sizes.size() << " entries");
             return sizes.at(i);
         }
 
-        uint_fast64_t LValue::getTotalSize() const {
-            uint_fast64_t result = 1;
+        std::size_t LValue::getTotalSize() const {
+            std::size_t result = 1;
             for (auto& array : sizes) {
                 result *= array;
             }

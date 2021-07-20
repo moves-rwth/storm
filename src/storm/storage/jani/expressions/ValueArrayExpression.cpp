@@ -119,7 +119,7 @@ namespace storm {
             return getManager().integer(size(elements)).getBaseExpressionPointer();
         }
 
-        std::vector<uint_fast64_t> ValueArrayExpression::getSizes() const {
+        std::vector<std::size_t> ValueArrayExpression::getSizes() const {
             return elements.getSizes();
         }
 
@@ -127,8 +127,8 @@ namespace storm {
             return elements;
         }
 
-        std::vector<uint_fast64_t> ValueArrayExpression::ValueArrayElements::getSizes() const {
-            std::vector<uint_fast64_t> result;
+        std::vector<std::size_t> ValueArrayExpression::ValueArrayElements::getSizes() const {
+            std::vector<std::size_t> result;
             if (elementsOfElements) {
                 result.push_back(elementsOfElements->size());
                 auto element = elementsOfElements->at(0);
@@ -144,7 +144,7 @@ namespace storm {
             return result;
         }
 
-        uint_fast64_t ValueArrayExpression::size(ValueArrayElements const& elementsToCheck) const {
+        std::size_t ValueArrayExpression::size(ValueArrayElements const& elementsToCheck) const {
             if (elementsToCheck.elementsWithValue) {
                 return elementsToCheck.elementsWithValue->size();
             } else {

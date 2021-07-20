@@ -7,7 +7,6 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm/api/storm.h"
 

@@ -77,12 +77,12 @@ namespace storm {
             return this->getType().isNumericalType();
         }
 
-        void Variable::setArraySizes(std::vector<uint_fast64_t> & arraySizes) {
+        void Variable::setArraySizes(std::vector<std::size_t> & arraySizes) {
             STORM_LOG_THROW(this->getType().isArrayType(), storm::exceptions::IllegalFunctionCallException, "Setting arraysize for variable that is not an array is not possible");
             this->arraySizes = arraySizes;
         }
 
-        uint_fast64_t Variable::getArraySize(uint_fast64_t number) const {
+        std::size_t Variable::getArraySize(uint_fast64_t number) const {
             STORM_LOG_THROW(this->getType().isArrayType(), storm::exceptions::IllegalFunctionCallException, "Getting arraysize for variable that is not an array is not possible");
             return this->arraySizes.at(number);
         }

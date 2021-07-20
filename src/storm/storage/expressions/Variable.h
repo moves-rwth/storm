@@ -95,8 +95,8 @@ namespace storm {
              */
             uint_fast64_t getIndex() const;
 
-            void setArraySizes(std::vector<uint_fast64_t>& sizes);
-            uint_fast64_t getArraySize(uint_fast64_t number) const;
+            void setArraySizes(std::vector<std::size_t>& sizes);
+            std::size_t getArraySize(uint_fast64_t number) const;
 
             /*!
              * Retrieves the offset of the variable in the group of all equally typed variables.
@@ -145,9 +145,9 @@ namespace storm {
             ExpressionManager const* manager;
             
             // The index of the variable.
-            uint_fast64_t index;
+            std::size_t index;
 
-            std::vector<uint_fast64_t> arraySizes;
+            std::vector<std::size_t> arraySizes;
         };
     }
 }

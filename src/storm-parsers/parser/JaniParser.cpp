@@ -1425,7 +1425,7 @@ namespace storm {
                         std::string indexVarName;
 
                         std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> lengths;
-                        std::vector<uint_fast64_t> sizes;
+                        std::vector<std::size_t> sizes;
                         STORM_LOG_THROW(expressionStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
 
                         Json subStructure = expressionStructure;
