@@ -37,7 +37,10 @@ namespace storm {
              */
             MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates);
             MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling, std::vector<uint_fast64_t>&& initialMemoryStates);
-            
+            MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates, bool onlyInitialStatesRelevant);
+            MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling, std::vector<uint_fast64_t>&& initialMemoryStates, bool onlyInitialStatesRelevant);
+
+            bool IsOnlyInitialStatesRelevantSet () const;
             TransitionMatrix const& getTransitionMatrix() const;
             storm::models::sparse::StateLabeling const& getStateLabeling() const;
             std::vector<uint_fast64_t> const& getInitialMemoryStates() const;
@@ -65,6 +68,7 @@ namespace storm {
             TransitionMatrix transitions;
             storm::models::sparse::StateLabeling stateLabeling;
             std::vector<uint_fast64_t> initialMemoryStates;
+            bool onlyInitialStatesRelevant; // Whether initial memory states are only defined for initial model states or for all model states
         };
         
     }

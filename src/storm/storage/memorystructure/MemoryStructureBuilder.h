@@ -19,7 +19,14 @@ namespace storm {
              * @param numberOfMemoryStates The number of states the resulting memory structure should have
              */
             MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model);
-            // TODO: Add variant with a flag: Consider non-initial model states
+
+            /*!
+             * Initializes a new builder with the data from the provided memory structure
+             * @param numberOfMemoryStates The number of states the resulting memory structure should have
+             * @param allModelStatesRelevant Consider non-initial model states
+             */
+            MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool onlyInitialStatesRelevant);
+
             /*!
              * Initializes a new builder with the data from the provided memory structure
              */
@@ -73,6 +80,7 @@ namespace storm {
             MemoryStructure::TransitionMatrix transitions;
             storm::models::sparse::StateLabeling stateLabeling;
             std::vector<uint_fast64_t> initialMemoryStates;
+            bool onlyInitialStatesRelevant;
         };
         
     }

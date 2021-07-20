@@ -38,9 +38,17 @@ namespace storm {
                 // Get the initial states and reachable states. A stateIndex s corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
                 storm::storage::BitVector initialStates(modelStateCount * memoryStateCount, false);
                 auto memoryInitIt = memory.getInitialMemoryStates().begin();
-                for (auto modelInit : model.getInitialStates()) {
-                    initialStates.set(modelInit * memoryStateCount + *memoryInitIt, true);
-                    ++memoryInitIt;
+                if (memory.IsOnlyInitialStatesRelevantSet()) {
+                    for (auto modelInit : model.getInitialStates()) {
+                        initialStates.set(modelInit * memoryStateCount + *memoryInitIt, true);
+                        ++memoryInitIt;
+                    }
+                } else {
+                    // Build Product from all model states
+                    for (uint_fast64_t modelState = 0; modelState < model.getNumberOfStates(); ++modelState) {
+                        initialStates.set(modelState * memoryStateCount + *memoryInitIt, true);
+                        ++memoryInitIt;
+                    }
                 }
                 STORM_LOG_ASSERT(memoryInitIt == memory.getInitialMemoryStates().end(), "Unexpected number of initial states.");
                 
