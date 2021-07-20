@@ -4,7 +4,7 @@
 namespace storm {
     namespace jani {
 
-        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), variable(variable),  transient(transient), init(init), type(type){
+        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), variable(variable), type(type), init(init), transient(transient) {
             if (type->isArrayType()) {
                 arrayType = type;
                 while (type->isArrayType()) {
@@ -13,7 +13,7 @@ namespace storm {
             }
         }
 
-        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable) : name(name), variable(variable), transient(false), init(), type(type) {
+        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable) : name(name), variable(variable), type(type), init(), transient(false) {
             if (type->isArrayType()) {
                 arrayType = type;
                 while (type->isArrayType()) {
@@ -182,7 +182,7 @@ namespace storm {
                 auto res = std::make_shared<Variable>(name, new storm::jani::BoundedType(type, lowerBound ? lowerBound.get() : storm::expressions::Expression(), upperBound ? upperBound.get() : storm::expressions::Expression()), variable, initValue.get(), transient);
                 return res;
             } else {
-                assert(!transient);
+                STORM_LOG_ASSERT(!transient, "Expecting bounded variable without init value to be not a transient variable");
                 auto res = std::make_shared<Variable>(name, new storm::jani::BoundedType(type, lowerBound ? lowerBound.get() : storm::expressions::Expression(), upperBound ? upperBound.get() : storm::expressions::Expression()), variable);
                 return res;
             }
@@ -192,7 +192,7 @@ namespace storm {
             if (initValue) {
                 return std::make_shared<Variable>(name, new storm::jani::BasicType(type), variable, initValue.get(), transient);
             } else {
-                assert(!transient);
+                STORM_LOG_ASSERT(!transient, "Expecting bounded variable without init value to be not a transient variable");
                 return std::make_shared<Variable>(name, new storm::jani::BasicType(type), variable);
             }
         }
@@ -201,7 +201,7 @@ namespace storm {
             if (initValue) {
                 return std::make_shared<Variable>(name, new storm::jani::ClockType(), variable, initValue.get(), transient);
             } else {
-                assert(!transient);
+                STORM_LOG_ASSERT(!transient, "Expecting bounded variable without init value to be not a transient variable");
                 return std::make_shared<Variable>(name, new storm::jani::ClockType(), variable);
             }
         }
@@ -211,7 +211,7 @@ namespace storm {
             if (initValue) {
                 return std::make_shared<Variable>(name, type, variable, initValue.get(), transient);
             } else {
-                assert(!transient);
+                STORM_LOG_ASSERT(!transient, "Expecting bounded variable without init value to be not a transient variable");
                 return std::make_shared<Variable>(name, type, variable);
             }
         }

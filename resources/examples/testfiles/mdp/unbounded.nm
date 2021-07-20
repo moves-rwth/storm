@@ -1,0 +1,8 @@
+mdp
+const int N;
+module main
+	x : int;
+	[] x<=0 -> (x'=x+1);
+	[] x>0 -> (x'=N*x);
+endmodule
+

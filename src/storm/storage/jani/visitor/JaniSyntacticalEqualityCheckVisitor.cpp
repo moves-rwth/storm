@@ -24,13 +24,13 @@ namespace storm {
                 auto other = boost::any_cast<ValueArrayExpression::ValueArrayElements>(data);
                 if (elements.elementsWithValue) {
                     bool result = other.elementsWithValue && elements.elementsWithValue->size() == other.elementsWithValue->size();
-                    for (auto i = 0; result && i < elements.elementsOfElements->size(); ++i) {
+                    for (uint_fast64_t i = 0; result && i < elements.elementsOfElements->size(); ++i) {
                         result &= boost::any_cast<bool>(elements.elementsWithValue->at(i)->accept(*this, other.elementsWithValue->at(i)));
                     }
                     return result;
                 } else {
                     bool result = other.elementsOfElements && elements.elementsOfElements->size() == other.elementsOfElements->size();
-                    for (auto i = 0; result && i < elements.elementsOfElements->size(); ++i) {
+                    for (uint_fast64_t i = 0; result && i < elements.elementsOfElements->size(); ++i) {
                         result &= boost::any_cast<bool>(visit(*elements.elementsOfElements->at(i), *other.elementsOfElements->at(i)));
                     }
                     return result;

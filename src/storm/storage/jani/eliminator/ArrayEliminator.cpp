@@ -451,7 +451,7 @@ namespace storm {
                     if (expression.getFirstOperand() == expression.getSecondOperand()) {
                         // Last array, so resultSecond will not be initialized
                         if (expression.getFirstOperand()->containsVariables()) {
-                            for (auto index = 0; index < size; ++index) {
+                            for (uint_fast64_t index = 0; index < size; ++index) {
                                 storm::expressions::Expression isCurrentIndex = boost::any_cast<ResultType>(expression.getFirstOperand()->accept(*this, boost::any())).expr()->toExpression() == expression.getManager().integer(index);
                                 expressions[index] = std::move(isCurrentIndex);
                             }
@@ -460,7 +460,7 @@ namespace storm {
                         }
                     } else {
                         if (expression.getFirstOperand()->containsVariables()) {
-                            for (auto index = 0; index < size; ++index) {
+                            for (uint_fast64_t index = 0; index < size; ++index) {
                                 storm::expressions::Expression isCurrentIndex = boost::any_cast<ResultType>(expression.getFirstOperand()->accept(*this, boost::any())).expr()->toExpression() == expression.getManager().integer(index);
                                 for (auto& entry : resultSecond->first) {
                                     expressions[index * sizeSoFar + entry.first] = (isCurrentIndex && entry.second).simplify();
@@ -848,7 +848,7 @@ namespace storm {
                 }
                 // TODO: hack
                 auto size = model.getConstants().size();
-                for (auto i = 0; i < size; ++i) {
+                for (uint_fast64_t i = 0; i < size; ++i) {
                     auto constant = model.getConstants().at(i);
                     if (constant.isDefined() && containsArrayExpression(constant.getExpression())) {
                         // We hope we don't need this one any longer however this could break everything :D Breaking things is fun :D

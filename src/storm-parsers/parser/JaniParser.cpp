@@ -125,7 +125,7 @@ namespace storm {
             storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
             STORM_LOG_THROW(type != storm::jani::ModelType::UNDEFINED, storm::exceptions::InvalidJaniException, "model type " + modeltypestring + " not recognized");
             storm::jani::Model model(name, type, version, expressionManager);
-            size_t featuresCount = parsedStructure.count("features");
+            uint_fast64_t featuresCount = parsedStructure.count("features");
             STORM_LOG_THROW(featuresCount < 2, storm::exceptions::InvalidJaniException, "features-declarations can be given at most once.");
             if (featuresCount == 1) {
                 auto allKnownModelFeatures = storm::jani::getAllKnownModelFeatures();
@@ -142,7 +142,7 @@ namespace storm {
                     STORM_LOG_THROW(found, storm::exceptions::NotSupportedException, "Storm does not support the model feature " << featureStr);
                 }
             }
-            size_t actionCount = parsedStructure.count("actions");
+            uint_fast64_t actionCount = parsedStructure.count("actions");
             STORM_LOG_THROW(actionCount < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once.");
             if (actionCount > 0) {
                 parseActions(parsedStructure.at("actions"), model);
@@ -153,7 +153,7 @@ namespace storm {
             // Parse constants
             ConstantsMap constants;
             scope.constants = &constants;
-            size_t constantsCount = parsedStructure.count("constants");
+            uint_fast64_t constantsCount = parsedStructure.count("constants");
             STORM_LOG_THROW(constantsCount < 2, storm::exceptions::InvalidJaniException, "Constant-declarations can be given at most once.");
             if (constantsCount == 1) {
                 // Reserve enough space to make sure that pointers to constants remain valid after adding new ones.
@@ -167,7 +167,7 @@ namespace storm {
             }
             
             // Parse variables
-            size_t variablesCount = parsedStructure.count("variables");
+            uint_fast64_t variablesCount = parsedStructure.count("variables");
             STORM_LOG_THROW(variablesCount < 2, storm::exceptions::InvalidJaniException, "Variable-declarations can be given at most once for global variables.");
             VariablesMap globalVars;
             scope.globalVars = &globalVars;
@@ -682,7 +682,7 @@ namespace storm {
             // TODO check existance of name.
             // TODO store prefix in variable.
             std::string exprManagerName = name;
-            size_t valueCount = constantStructure.count("value");
+            uint_fast64_t valueCount = constantStructure.count("value");
             storm::expressions::Expression definingExpression;
             STORM_LOG_THROW(valueCount < 2, storm::exceptions::InvalidJaniException, "Value for constant '" + name +  "' (scope: " + scope.description + ") must be given at most once.");
             if (valueCount == 1) {
@@ -832,7 +832,7 @@ namespace storm {
             // TODO store prefix in variable.
             std::string exprManagerName = namePrefix + name;
             bool transientVar = defaultVariableTransient; // Default value for variables.
-            size_t tvarcount = variableStructure.count("transient");
+            uint_fast64_t tvarcount = variableStructure.count("transient");
             STORM_LOG_THROW(tvarcount <= 1, storm::exceptions::InvalidJaniException, "Multiple definitions of transient not allowed in variable '" + name  + "' (scope: " + scope.description + ").");
             if(tvarcount == 1) {
                 transientVar = getBoolean<ValueType>(variableStructure.at("transient"), "transient-attribute in variable '" + name  + "' (scope: " + scope.description + ").");
@@ -841,7 +841,7 @@ namespace storm {
             ParsedType type;
             parseType(type, variableStructure.at("type"), name, scope);
 
-            size_t initvalcount = variableStructure.count("initial-value");
+            uint_fast64_t initvalcount = variableStructure.count("initial-value");
             if(transientVar) {
                 STORM_LOG_THROW(initvalcount == 1, storm::exceptions::InvalidJaniException, "Initial value must be given once for transient variable '" + name + "' (scope: " + scope.description + ") "+ name + "' (scope: " + scope.description + ").");
             } else {
@@ -924,7 +924,7 @@ namespace storm {
                 STORM_LOG_THROW(sizeMap.at(name).size() != 0, storm::exceptions::InvalidJaniException, "For nested arrays, we require initialisation");
                 variable.setArraySizes(sizeMap.at(name));
 
-                auto i =1;
+                uint_fast64_t i =1;
                 auto checkType = arrayType->getChildType();
                 while (checkType->isArrayType()) {
                     checkType = checkType->getChildType();
@@ -939,7 +939,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        storm::jani::JaniType * const JaniParser<ValueType>::parseArrayVariable(std::shared_ptr<ParsedType> type) {
+        storm::jani::JaniType* JaniParser<ValueType>::parseArrayVariable(std::shared_ptr<ParsedType> type) {
             if (type->basicType) {
                 switch (type->basicType.get()) {
                     case ParsedType::BasicType::Real:
@@ -1393,7 +1393,7 @@ namespace storm {
                             finalType = finalType.getElementType();
                         } else if (index.size() > 1) {
                             // we create an arrayaccessindexexpression (AAI) which looks as follows: AAI(1, (AAI(4))
-                            for (int i = 0; i < index.size(); ++i) {
+                            for (uint_fast64_t i = 0; i < index.size(); ++i) {
                                 if (i == 0) {
                                     assert (indexExpression == nullptr);
                                     indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[i].getBaseExpressionPointer());
@@ -1425,7 +1425,7 @@ namespace storm {
                         std::string indexVarName;
 
                         std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> lengths;
-                        std::vector<size_t> sizes;
+                        std::vector<uint_fast64_t> sizes;
                         STORM_LOG_THROW(expressionStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
 
                         Json subStructure = expressionStructure;

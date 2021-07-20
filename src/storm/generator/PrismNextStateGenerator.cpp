@@ -33,7 +33,7 @@ namespace storm {
 
             // Only after checking validity of the program, we initialize the variable information.
             this->checkValid();
-            this->variableInformation = VariableInformation(program, options.isAddOutOfBoundsStateSet());
+            this->variableInformation = VariableInformation(program, options.getReservedBitsForUnboundedVariables(), options.isAddOutOfBoundsStateSet());
 
             // Create a proper evalator.
             this->evaluator = std::make_unique<storm::expressions::ExpressionEvaluator<ValueType>>(program.getManager());

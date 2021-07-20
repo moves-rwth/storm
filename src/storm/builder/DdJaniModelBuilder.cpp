@@ -434,12 +434,14 @@ namespace storm {
             }
             
             void createBoundedIntegerVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
+                STORM_LOG_THROW(variable.hasLowerBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() << " has no lower bound.");
+                STORM_LOG_THROW(variable.hasUpperBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() <<" has no upper bound.");
                 int_fast64_t low = variable.getLowerBound().evaluateAsInt();
                 int_fast64_t high = variable.getUpperBound().evaluateAsInt();
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName(), low, high);
                 
                 STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
-                
+
                 result.rowMetaVariables.insert(variablePair.first);
                 result.variableToRowMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.first);
                 
@@ -454,7 +456,7 @@ namespace storm {
                 
                 result.allGlobalVariables.insert(variable.getExpressionVariable());
             }
-            
+
             void createBooleanVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName());
                 

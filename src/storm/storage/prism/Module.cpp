@@ -15,6 +15,15 @@ namespace storm {
             this->createMappings();
         }
         
+        bool Module::hasUnboundedVariables() const {
+            for (auto const& integerVariable : this->integerVariables) {
+                if (!integerVariable.hasLowerBoundExpression() || !integerVariable.hasUpperBoundExpression()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         std::size_t Module::getNumberOfBooleanVariables() const {
             return this->booleanVariables.size();
         }
@@ -74,7 +83,9 @@ namespace storm {
         std::vector<storm::expressions::Expression> Module::getAllRangeExpressions() const {
             std::vector<storm::expressions::Expression> result;
             for (auto const& integerVariable : this->integerVariables) {
-                result.push_back(integerVariable.getRangeExpression());
+                if (integerVariable.hasLowerBoundExpression() || integerVariable.hasUpperBoundExpression()) {
+                    result.push_back(integerVariable.getRangeExpression());
+                }
             }
             return result;
         }
@@ -246,10 +257,10 @@ namespace storm {
                 if (integerVariable.hasInitialValue() && integerVariable.getInitialValueExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
                 }
-                if (integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
+                if (integerVariable.hasLowerBoundExpression() && integerVariable.getLowerBoundExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
                 }
-                if (integerVariable.getUpperBoundExpression().containsVariable(undefinedConstantVariables)) {
+                if (integerVariable.hasUpperBoundExpression() && integerVariable.getUpperBoundExpression().containsVariable(undefinedConstantVariables)) {
                     return false;
                 }
             }

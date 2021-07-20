@@ -95,8 +95,8 @@ namespace storm {
              */
             uint_fast64_t getIndex() const;
 
-            void setArraySizes(std::vector<size_t>& sizes);
-            size_t getArraySize(int number) const;
+            void setArraySizes(std::vector<uint_fast64_t>& sizes);
+            uint_fast64_t getArraySize(uint_fast64_t number) const;
 
             /*!
              * Retrieves the offset of the variable in the group of all equally typed variables.
@@ -147,7 +147,7 @@ namespace storm {
             // The index of the variable.
             uint_fast64_t index;
 
-            std::vector<size_t> arraySizes;
+            std::vector<uint_fast64_t> arraySizes;
         };
     }
 }
@@ -156,7 +156,7 @@ namespace std {
     // Provide a hashing operator, so we can put variables in unordered collections.
     template <>
     struct hash<storm::expressions::Variable> {
-        std::size_t operator()(storm::expressions::Variable const& variable) const {
+        std::uint_fast64_t operator()(storm::expressions::Variable const& variable) const {
             return std::hash<uint_fast64_t>()(variable.getIndex());
         }
     };

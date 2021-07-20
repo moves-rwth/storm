@@ -52,7 +52,7 @@ namespace storm {
             std::shared_ptr<BaseExpression const> elementExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getElementExpression()->accept(*this, data));
             std::vector<std::shared_ptr<const BaseExpression>> newSizes;
             bool same = true;
-            for (auto i = 0; i < expression.getNumberOfArrays(); ++i) {
+            for (uint_fast64_t i = 0; i < expression.getNumberOfArrays(); ++i) {
                 std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.size(i)->accept(*this, data));
                 same &= newSize.get() == expression.size().get();
                 newSizes.push_back(newSize);

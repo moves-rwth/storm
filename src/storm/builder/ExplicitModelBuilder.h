@@ -32,9 +32,6 @@
 #include "storm/generator/VariableInformation.h"
 
 namespace storm {
-    namespace utility {
-        template<typename ValueType> class ConstantsComparator;
-    }
     
     namespace builder {
         

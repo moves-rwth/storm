@@ -94,6 +94,12 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(37ul, model->getNumberOfStates());
     EXPECT_EQ(59ul, model->getNumberOfTransitions());
+    
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
+    program = modelDescription.preprocess("N=-7").asPrismProgram();
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(9ul, model->getNumberOfStates());
+    EXPECT_EQ(9ul, model->getNumberOfTransitions());
 }
 
 TEST(ExplicitPrismModelBuilderTest, Ma) {
@@ -123,5 +129,11 @@ TEST(ExplicitPrismModelBuilderTest, Ma) {
 TEST(ExplicitPrismModelBuilderTest, FailComposition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
 
+    STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(program).build(), storm::exceptions::WrongFormatException);
+}
+
+TEST(ExplicitPrismModelBuilderTest, FailUnbounded) {
+    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
+    storm::prism::Program program = modelDescription.preprocess("N=7").asPrismProgram();
     STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(program).build(), storm::exceptions::WrongFormatException);
 }

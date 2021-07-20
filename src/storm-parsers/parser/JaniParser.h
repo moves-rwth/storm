@@ -87,7 +87,7 @@ namespace storm {
             void parseType(ParsedType& result, storm::json<ValueType> const& typeStructure, std::string variableName, Scope const& scope);
             storm::jani::LValue parseLValue(storm::json<ValueType> const& lValueStructure, Scope const& scope);
             std::shared_ptr<storm::jani::Variable>  parseVariable(storm::json<ValueType> const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix = "");
-            storm::jani::JaniType * const parseArrayVariable(std::shared_ptr<ParsedType> type);
+            storm::jani::JaniType*  parseArrayVariable(std::shared_ptr<ParsedType> type);
             storm::expressions::Expression parseExpression(storm::json<ValueType> const& expressionStructure, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
 
         private:
@@ -125,7 +125,7 @@ namespace storm {
 
             std::set<std::string> labels = {};
 
-            std::map<std::string, std::vector<size_t>> sizeMap;
+            std::map<std::string, std::vector<uint_fast64_t>> sizeMap;
 
             bool allowRecursion = true;
 

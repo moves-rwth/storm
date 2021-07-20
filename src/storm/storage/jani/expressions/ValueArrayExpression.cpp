@@ -119,7 +119,7 @@ namespace storm {
             return getManager().integer(size(elements)).getBaseExpressionPointer();
         }
 
-        std::vector<size_t> ValueArrayExpression::getSizes() const {
+        std::vector<uint_fast64_t> ValueArrayExpression::getSizes() const {
             return elements.getSizes();
         }
 
@@ -127,8 +127,8 @@ namespace storm {
             return elements;
         }
 
-        std::vector<size_t> ValueArrayExpression::ValueArrayElements::getSizes() const {
-            std::vector<size_t> result;
+        std::vector<uint_fast64_t> ValueArrayExpression::ValueArrayElements::getSizes() const {
+            std::vector<uint_fast64_t> result;
             if (elementsOfElements) {
                 result.push_back(elementsOfElements->size());
                 auto element = elementsOfElements->at(0);
@@ -144,7 +144,7 @@ namespace storm {
             return result;
         }
 
-        size_t ValueArrayExpression::size(ValueArrayElements const& elementsToCheck) const {
+        uint_fast64_t ValueArrayExpression::size(ValueArrayElements const& elementsToCheck) const {
             if (elementsToCheck.elementsWithValue) {
                 return elementsToCheck.elementsWithValue->size();
             } else {
@@ -154,7 +154,7 @@ namespace storm {
         
         std::shared_ptr<BaseExpression const> ValueArrayExpression::at(std::vector<uint64_t>& index) const {
             ValueArrayElements result = elements;
-            for (auto i = 0; i < index.size() - 1; ++i) {
+            for (uint_fast64_t i = 0; i < index.size() - 1; ++i) {
                 assert (!elements.elementsWithValue);
                 if (elements.elementsOfElements) {
                     STORM_LOG_THROW(index[i] < elements.elementsOfElements->size(), storm::exceptions::InvalidArgumentException, "Tried to access the element with index " << i << " of an array of size " << elements.elementsOfElements->size() << ".");

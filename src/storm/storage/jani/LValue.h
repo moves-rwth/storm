@@ -9,9 +9,9 @@ namespace storm {
         class LValue {
         public:
             explicit LValue(storm::jani::Variable const& variable);
-            LValue(storm::jani::Variable const&, std::vector<storm::expressions::Expression> const index, std::vector<size_t> const& sizes);
-            LValue(storm::jani::Variable const&, std::vector<size_t> const & sizes);
-            LValue(storm::jani::Variable const&, storm::expressions::Expression const& expression, size_t size);
+            LValue(storm::jani::Variable const&, std::vector<storm::expressions::Expression> const index, std::vector<uint_fast64_t> const& sizes);
+            LValue(storm::jani::Variable const&, std::vector<uint_fast64_t> const & sizes);
+            LValue(storm::jani::Variable const&, storm::expressions::Expression const& expression, uint_fast64_t size);
 
             LValue(LValue const&) = default;
             bool operator==(LValue const& other) const;
@@ -27,9 +27,9 @@ namespace storm {
             bool isFullArrayAccess() const;
             std::vector<storm::expressions::Expression> const& getArrayIndexVector() const;
             storm::expressions::Expression getArrayIndex() const;
-            std::vector<size_t> const& getSizes() const;
-            size_t const& getSizeAt(int i) const;
-            size_t const getTotalSize() const;
+            std::vector<uint_fast64_t> const& getSizes() const;
+            uint_fast64_t const& getSizeAt(uint_fast64_t i) const;
+            uint_fast64_t getTotalSize() const;
             std::string getName() const;
 
             bool arrayIndexContainsVariable() const;
@@ -51,7 +51,7 @@ namespace storm {
 
             // In case of an array access LValue, this is the accessed index of the array (if existing)
             boost::optional<std::vector<storm::expressions::Expression>> arrayIndexVector;
-            std::vector<size_t> sizes;
+            std::vector<uint_fast64_t> sizes;
         };
     }
 }

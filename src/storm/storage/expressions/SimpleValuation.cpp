@@ -122,7 +122,7 @@ namespace storm {
                 sstr << "[" << std::endl;
                 sstr << getManager() << std::endl;
                 if (!booleanValues.empty()) {
-                    for (auto const& element : booleanValues) {
+                    for (auto element : booleanValues) {
                         sstr << element << " ";
                     }
                     sstr << std::endl;

@@ -13,18 +13,18 @@ namespace storm {
             // Intentionally left empty
         }
 
-        LValue::LValue(storm::jani::Variable const& variable, std::vector<storm::expressions::Expression> const index, std::vector<size_t> const& sizes) : variable(&variable), arrayIndexVector(index), sizes(sizes) {
+        LValue::LValue(storm::jani::Variable const& variable, std::vector<storm::expressions::Expression> const index, std::vector<uint_fast64_t> const& sizes) : variable(&variable), arrayIndexVector(index), sizes(sizes) {
             STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             STORM_LOG_ASSERT(arrayIndexVector->size() <= sizes.size(), "Expecting arrayIndexVector size to be smaller or equal than the size of the sizes vector for variable: " << variable.getName());
             // Intentionally left empty
         }
 
-        LValue::LValue(storm::jani::Variable const& variable, std::vector<size_t> const& sizes) : variable(&variable), sizes(sizes) {
+        LValue::LValue(storm::jani::Variable const& variable, std::vector<uint_fast64_t> const& sizes) : variable(&variable), sizes(sizes) {
             STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             arrayIndexVector = std::vector<storm::expressions::Expression>();
         }
 
-        LValue::LValue(storm::jani::Variable const& variable, storm::expressions::Expression const& index, size_t size) : variable(&variable) {
+        LValue::LValue(storm::jani::Variable const& variable, storm::expressions::Expression const& index, uint_fast64_t size) : variable(&variable) {
             STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             arrayIndexVector = {index};
             sizes = {size};
@@ -53,25 +53,25 @@ namespace storm {
         storm::expressions::Expression LValue::getArrayIndex() const {
             STORM_LOG_ASSERT(isFullArrayAccess(), "Tried to get the array index of an LValue that is not a full array access.");
             auto res = arrayIndexVector->at(0);
-            for (auto i = 1; i < sizes.size(); ++i) {
+            for (uint_fast64_t i = 1; i < sizes.size(); ++i) {
                 res = res * res.getManager().integer(sizes.at(i)) + arrayIndexVector->at(i);
             }
             return res;
         }
 
-        const std::vector<size_t> & LValue::getSizes() const {
+        const std::vector<uint_fast64_t> & LValue::getSizes() const {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to get sizes of an LValue that is not an array access.");
             return sizes;
         }
 
-        const size_t & LValue::getSizeAt(int i) const {
+        const uint_fast64_t & LValue::getSizeAt(uint_fast64_t i) const {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to get size of arrayindex " << i << " of an LValue that is not an array access.");
             STORM_LOG_ASSERT(i < sizes.size(), "Tried to get size of arrayindex " << i << " but there are only" << sizes.size() << " entries");
             return sizes.at(i);
         }
 
-        const size_t LValue::getTotalSize() const {
-            size_t result = 1;
+        uint_fast64_t LValue::getTotalSize() const {
+            uint_fast64_t result = 1;
             for (auto& array : sizes) {
                 result *= array;
             }
@@ -125,7 +125,7 @@ namespace storm {
         std::string LValue::getName() const {
             std::string result = getVariable().getName();;
             if (isArrayAccess()) {
-                for (auto i = 0; i < getArrayIndexVector().size(); ++i) {
+                for (uint_fast64_t i = 0; i < getArrayIndexVector().size(); ++i) {
                     result += "[" + getArrayIndexVector().at(i).toString() + "]";
                 }
             }
@@ -133,7 +133,6 @@ namespace storm {
         }
 
         bool LValue::operator<(LValue const& other) const {
-            // TODO: is this correct in this way?
             if (isVariable()) {
                 return !other.isVariable() || variable->getExpressionVariable() < other.getVariable().getExpressionVariable();
             } else {
@@ -151,7 +150,7 @@ namespace storm {
                         return false;
                     } else {
                         bool less = false;
-                        int i = 0;
+                        uint_fast64_t i = 0;
                         while (!less && i < arrayIndexVector->size()) {
                             less = std::less<storm::expressions::Expression>()(arrayIndexVector.get().at(i), other.getArrayIndexVector().at(i));
                             if (!less && std::less<storm::expressions::Expression>()(other.getArrayIndexVector().at(i), arrayIndexVector.get().at(i))) {
@@ -174,7 +173,7 @@ namespace storm {
                 if (isArrayAccess() && other.isArrayAccess()) {
                     // Either for both there are array access indices available
                     equal &= getArrayIndexVector().size() == other.getArrayIndexVector().size();
-                    int i = 0;
+                    uint_fast64_t i = 0;
                     storm::expressions::JaniSyntacticalEqualityCheckVisitor checker;
                     while (equal && i < arrayIndexVector->size()) {
                         equal &= (getSizeAt(i) == other.getSizeAt(i) && checker.isSyntacticallyEqual(getArrayIndexVector().at(i), other.getArrayIndexVector().at(i)));
@@ -193,7 +192,7 @@ namespace storm {
 
             if (lValue.isArray()) {
                 if (lValue.isArrayAccess()) {
-                    for (auto i = 0; i < lValue.getArrayIndexVector().size(); ++i) {
+                    for (uint_fast64_t i = 0; i < lValue.getArrayIndexVector().size(); ++i) {
                         stream << "[" << lValue.getArrayIndexVector().at(i) << "]";
                     }
                 }

@@ -16,7 +16,6 @@ namespace storm {
 
         private:
             ElementType type;
-            bool bounded;
         };
     }
 }

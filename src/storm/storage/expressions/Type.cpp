@@ -214,6 +214,11 @@ namespace storm {
             STORM_LOG_THROW(!this->isBitVectorType() && !other.isBitVectorType(), storm::exceptions::InvalidTypeException, "Operator requires non-bitvector operands.");
             return std::max(*this, other);
         }
+
+        Type Type::modulo(Type const& other) const {
+            STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
+            return std::max(*this, other);
+        }
         
         Type Type::power(Type const& other, bool allowIntegerType) const {
             STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");

@@ -77,7 +77,7 @@ namespace storm {
         
         void ConstructorArrayExpression::printToStream(std::ostream& stream) const {
             stream << "array[elementValue: " << *elementExpression << " | index: ";
-            for (auto i = 0; i < indexVars.size(); ++i) {
+            for (uint_fast64_t i = 0; i < indexVars.size(); ++i) {
                 assert (i < sizeExpressions.size());
                 stream << indexVars.at(i)->getExpression() << " < bound: " << *sizeExpressions.at(i);
                 if (i < (indexVars.size() - 1)) {
@@ -102,7 +102,7 @@ namespace storm {
         std::shared_ptr<const BaseExpression> ConstructorArrayExpression::at(std::vector<uint64_t> &indices) const {
             assert (indices.size() == indexVars.size());
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
-            for (auto i = 0; i < indices.size(); ++i) {
+            for (uint_fast64_t i = 0; i < indices.size(); ++i) {
                 substitution.emplace(*indexVars.at(i), this->getManager().integer(indices.at(i)));
             }
             return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution).getBaseExpressionPointer();
