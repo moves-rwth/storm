@@ -68,7 +68,7 @@ namespace storm {
 
                         bool done = false;
                         while (!done) {
-                            uint64_t minNewEdges = LONG_LONG_MAX; // TODO: Use actual uint64_t max, as long long isn't guaranteed to be 64 bits
+                            uint64_t minNewEdges = LONG_MAX; // TODO: Use actual uint64_t max, as long long isn't guaranteed to be 64 bits
                             int bestLocIndex = -1;
                             for (const auto& loc : automaton->getLocations()) {
                                 if (uneliminable[loc.getName()])
