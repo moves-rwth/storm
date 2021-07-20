@@ -302,11 +302,8 @@ namespace storm {
                                     // States that already reached the InfSet: Prob1E sets an arbitrary choice for the psi states, but we want to stay in this accepting mec.
 
                                     for (auto pState : (newMecStates & _infSets.get()[id])) {
-                                        // If we are in the InfSet, we stay in mec-states
-                                        // TODO  these are global?
-                                        storm::storage::FlatSet<uint_fast64_t> test = mec.getChoicesForState(pState);
-                                        mecScheduler.setChoice(0, pState); //todo get first choice from mec.getChoicesForState(pState); but need local
-
+                                        // If we are in the InfSet, we move to some state in this MEC.
+                                        mecScheduler.setChoice(*mec.getChoicesForState(pState).begin() - transitionMatrix.getRowGroupIndices()[pState], pState);
                                     }
 
                                     // Extract scheduler choices (only for states that are already assigned a scheduler, i.e are in another MEC)
@@ -580,7 +577,7 @@ namespace storm {
                     da = storm::automata::LTL2DeterministicAutomaton::ltl2daSpot(*ltlFormula, Nondeterministic);
                 }
 
-                STORM_PRINT("Deterministic automaton for LTL formula has "
+                STORM_LOG_DEBUG("Deterministic automaton for LTL formula has "
                                        << da->getNumberOfStates() << " states, "
                                        << da->getAPSet().size() << " atomic propositions and "
                                        << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition." << std::endl);
