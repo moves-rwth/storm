@@ -233,11 +233,17 @@ namespace storm {
                 guessedSchedulerValues.push_back(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
 
                 // TODO Make this a setting
-                uint64_t maxMem = 10;
-                uint64_t guessesPerMem = 10;
+                /*uint64_t maxMem = 5;
+                uint64_t guessesPerMem = 1;
+                //uint64_t count = 0;
                 for (uint64_t i = 0; i < maxMem * guessesPerMem; ++i) {
                     guessedSchedulerValues.push_back(computeValuesForRandomFMPolicy(formula, info, i / guessesPerMem + 1));
-                }
+                    ++count;
+                    if(count == 3 && guessesPerMem > 0){
+                        count = 0;
+                        --guessesPerMem;
+                    }
+                }*/
 
                 // Check if one of the guesses is worse than one of the others (and potentially delete it)
                 // Avoid deleting entries during the loop to ensure that indices remain valid

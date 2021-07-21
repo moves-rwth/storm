@@ -83,9 +83,9 @@ namespace storm {
 
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
 
-            BeliefClipping clipBelief(BeliefId const &beliefId, ValueType threshold = storm::utility::one<ValueType>(), boost::optional<std::vector<BeliefId>> const &targets = boost::none);
+            BeliefClipping clipBelief(BeliefId const &beliefId, BeliefValueType threshold = storm::utility::one<BeliefValueType>(), boost::optional<std::vector<BeliefId>> const &targets = boost::none);
 
-            ValueType computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2);
+            BeliefValueType computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2);
 
             BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution);
 
@@ -96,7 +96,7 @@ namespace storm {
             template<typename DistributionType>
             void adjustDistribution(DistributionType &distr);
 
-            ValueType computeDifference1normInternal(BeliefType const &belief1, BeliefType const &belief2);
+            BeliefValueType computeDifference1normInternal(BeliefType const &belief1, BeliefType const &belief2);
 
             struct BeliefHash {
                 std::size_t operator()(const BeliefType &belief) const;
@@ -149,9 +149,9 @@ namespace storm {
             std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash, Belief_equal_to>> beliefToIdMap;
             BeliefId initialBeliefId;
             
-            storm::utility::ConstantsComparator<ValueType> cc;
+            storm::utility::ConstantsComparator<BeliefValueType> cc;
 
-            std::shared_ptr<storm::solver::LpSolver<ValueType>> lpSolver;
+            std::shared_ptr<storm::solver::LpSolver<BeliefValueType>> lpSolver;
             
             TriangulationMode triangulationMode;
             

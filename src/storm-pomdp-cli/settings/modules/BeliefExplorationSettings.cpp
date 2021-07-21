@@ -18,7 +18,8 @@ namespace storm {
         namespace modules {
             
             const std::string BeliefExplorationSettings::moduleName = "belexpl";
-            
+
+            const std::string beliefTypeOption = "belieftype";
             const std::string refineOption = "refine";
             const std::string explorationTimeLimitOption = "exploration-time";
             const std::string resolutionOption = "resolution";
@@ -64,6 +65,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableClippingReductionOption, false, "Disable the reduction of clipping candidate sets by difference 1-norm heuristic").build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, beliefTypeOption, false,"Sets number type used to handle probabilities in beliefs").setIsAdvanced().addArgument(
+                        storm::settings::ArgumentBuilder::createStringArgument("value","the number type. 'default' is the POMDP datatype").setDefaultValueString("default").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"default", "float", "rational"})).build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -229,6 +233,24 @@ namespace storm {
                 options.dynamicTriangulation = isDynamicTriangulationModeSet();
 
                 options.explorationHeuristic = getExplorationHeuristic();
+            }
+
+            bool BeliefExplorationSettings::isBeliefTypeSetFromDefault() const {
+                return this->getOption(beliefTypeOption).getArgumentByName("value").getValueAsString() != "default";
+            }
+
+            storm::pomdp::BeliefNumberType BeliefExplorationSettings::getBeliefType() const {
+                if(this->getOption(beliefTypeOption).getArgumentByName("value").getValueAsString() == "default") {
+                    return storm::pomdp::Default;
+                }
+                if(this->getOption(beliefTypeOption).getArgumentByName("value").getValueAsString() == "float") {
+                    return storm::pomdp::Float;
+                }
+                if(this->getOption(beliefTypeOption).getArgumentByName("value").getValueAsString() == "rational") {
+                    return storm::pomdp::Rational;
+                }
+                STORM_LOG_WARN("Number Type for belief unknown, use default.");
+                return storm::pomdp::Default;
             }
 
             template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<double>& options) const;

@@ -135,7 +135,8 @@ namespace storm {
                 std::shared_ptr<PomdpModelType> preprocessedPomdp;
                 
                 Options options;
-                storm::utility::ConstantsComparator<ValueType> cc;
+                storm::utility::ConstantsComparator<BeliefValueType> beliefTypeCC;
+                storm::utility::ConstantsComparator<ValueType> valueTypeCC;
             };
 
         }

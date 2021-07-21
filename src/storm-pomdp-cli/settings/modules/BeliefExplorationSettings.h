@@ -10,6 +10,10 @@ namespace storm {
             template<typename ValueType>
             struct BeliefExplorationPomdpModelCheckerOptions;
         }
+
+        enum BeliefNumberType {
+            Default, Float, Rational
+        };
     }
     
     namespace settings {
@@ -71,6 +75,10 @@ namespace storm {
                 
                 bool isDynamicTriangulationModeSet() const;
                 bool isStaticTriangulationModeSet() const;
+
+                /// Used to determine whether two beliefs are equal
+                bool isBeliefTypeSetFromDefault() const;
+                storm::pomdp::BeliefNumberType getBeliefType() const;
 
                 bool isClassicClippingModeSet() const;
                 bool isGridClippingModeSet() const;

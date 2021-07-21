@@ -1086,6 +1086,12 @@ namespace storm {
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>>;
 
         template
+        class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>, storm::RationalNumber>;
+
+        template
+        class BeliefMdpExplorer<storm::models::sparse::Pomdp<storm::RationalNumber>, double>;
+
+        template
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<storm::RationalNumber>>;
     }
 }

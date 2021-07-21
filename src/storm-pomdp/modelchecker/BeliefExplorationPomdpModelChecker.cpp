@@ -77,7 +77,8 @@ namespace storm {
                 STORM_LOG_ASSERT(inputPomdp, "The given POMDP is not initialized.");
                 STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not known to be canonic. This might lead to unexpected verification results.");
 
-                cc = storm::utility::ConstantsComparator<ValueType>(storm::utility::convertNumber<ValueType>(this->options.numericPrecision), false);
+                beliefTypeCC = storm::utility::ConstantsComparator<BeliefValueType>(storm::utility::convertNumber<BeliefValueType>(this->options.numericPrecision), false);
+                valueTypeCC = storm::utility::ConstantsComparator<ValueType>(this->options.numericPrecision, false);
             }
 
             template<typename PomdpModelType, typename BeliefValueType>
@@ -237,7 +238,7 @@ namespace storm {
                 if (options.discretize) {
                     std::vector<BeliefValueType> observationResolutionVector(pomdp().getNrObservations(),
                                                                              storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision,
+                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), storm::utility::convertNumber<BeliefValueType>(options.numericPrecision),
                                                                        options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic
                                                                                                     : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
@@ -265,7 +266,7 @@ namespace storm {
                     }
                 }
                 if (options.unfold) { // Underapproximation (uses a fresh Belief manager)
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision,
+                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), storm::utility::convertNumber<BeliefValueType>(options.numericPrecision),
                                                                        options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic
                                                                                                     : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
@@ -316,7 +317,7 @@ namespace storm {
                 HeuristicParameters overApproxHeuristicPar;
                 if (options.discretize) { // Setup and build first OverApproximation
                     observationResolutionVector = std::vector<BeliefValueType>(pomdp().getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
-                    overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp(), storm::utility::convertNumber<BeliefValueType>(options.numericPrecision), options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         overApproxBeliefManager->setRewardModel(rewardModelName);
                     }
@@ -341,7 +342,7 @@ namespace storm {
                 std::shared_ptr<ExplorerType> underApproximation;
                 HeuristicParameters underApproxHeuristicPar;
                 if (options.unfold) { // Setup and build first UnderApproximation
-                    underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp(), storm::utility::convertNumber<BeliefValueType>(options.numericPrecision), options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         underApproxBeliefManager->setRewardModel(rewardModelName);
                     }
@@ -569,12 +570,12 @@ namespace storm {
                     // current maximal resolution (needed for refinement heuristic)
                     auto obsRatings = getObservationRatings(overApproximation, observationResolutionVector);
                     // If there is a score < 1, we have not reached a fixpoint, yet
-                    BeliefValueType numericPresicion = storm::utility::convertNumber<BeliefValueType>(options.numericPrecision);
-                    if (std::any_of(obsRatings.begin(), obsRatings.end(), [&numericPresicion](ValueType const& value){return value + numericPresicion < storm::utility::one<ValueType>();})) {
+                    auto numericPrecision = storm::utility::convertNumber<BeliefValueType>(options.numericPrecision);
+                    if (std::any_of(obsRatings.begin(), obsRatings.end(), [&numericPrecision](BeliefValueType const& value){return value + numericPrecision < storm::utility::one<BeliefValueType>();})) {
                         STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because there are still observations to refine.");
                         fixPoint = false;
                     }
-                    refinedObservations = storm::utility::vector::filter<ValueType>(obsRatings, [&heuristicParameters](ValueType const& r) { return r <= heuristicParameters.observationThreshold;});
+                    refinedObservations = storm::utility::vector::filter<BeliefValueType>(obsRatings, [&heuristicParameters](BeliefValueType const& r) { return r <= storm::utility::convertNumber<BeliefValueType>(heuristicParameters.observationThreshold);});
                     STORM_LOG_DEBUG("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
                     for (auto const& obs : refinedObservations) {
                         // Increment the resolution at the refined observations.
@@ -849,7 +850,7 @@ namespace storm {
                             if (gap < heuristicParameters.gapThreshold) {
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
-                            } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold) {
+                            } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold /*&& !statistics.beliefMdpDetectedToBeFinite*/) {
                                 clipBelief = useBeliefClipping;
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
@@ -859,9 +860,9 @@ namespace storm {
                             if(options.useGridClipping){
                                 // Add all transitions to states which are already in the MDP, clip all others to a grid
                                 for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
-                                    auto rewardBound = storm::utility::zero<ValueType>();
+                                    auto rewardBound = storm::utility::zero<BeliefValueType>();
                                     auto successors = beliefManager->expand(currId, action);
-                                    auto absDelta = storm::utility::zero<ValueType>();
+                                    auto absDelta = storm::utility::zero<BeliefValueType>();
                                     for (auto const &successor : successors) {
                                         // Add transition if successor is in explored space.
                                         // We can directly add the transitions as there is at most one successor for each observation
@@ -872,14 +873,15 @@ namespace storm {
                                             auto clipping = beliefManager->clipBeliefToGrid(successor.first, options.clippingGridRes);
                                             if (clipping.isClippable) {
                                                 statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
-                                                underApproximation->addTransitionToBelief(action, clipping.targetBelief, (storm::utility::one<ValueType>() - clipping.delta) * successor.second, false);
-                                                absDelta += clipping.delta * successor.second;
+                                                BeliefValueType transitionProb = (storm::utility::one<BeliefValueType>() - clipping.delta) * storm::utility::convertNumber<BeliefValueType>(successor.second);
+                                                underApproximation->addTransitionToBelief(action, clipping.targetBelief, storm::utility::convertNumber<ValueType>(transitionProb), false);
+                                                absDelta += clipping.delta * storm::utility::convertNumber<BeliefValueType>(successor.second);
                                                 if (computeRewards) {
-                                                    auto localRew = storm::utility::zero<ValueType>();
+                                                    auto localRew = storm::utility::zero<BeliefValueType>();
                                                     for (auto const &deltaValue : clipping.deltaValues) {
-                                                        localRew += (deltaValue.second * ((underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first))));
+                                                        localRew += deltaValue.second * storm::utility::convertNumber<BeliefValueType>((underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first)));
                                                     }
-                                                    rewardBound += localRew * successor.second;
+                                                    rewardBound += localRew * storm::utility::convertNumber<BeliefValueType>(successor.second);
                                                 }
                                             } else {
                                                 // If we get false, the belief is on the grid and may need to be explored, too
@@ -891,13 +893,14 @@ namespace storm {
                                     if (absDelta != storm::utility::zero<ValueType>()) {
                                         if (computeRewards) {
                                                 if(rewardBound == storm::utility::infinity<ValueType>()){
-                                                    underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), absDelta);
+                                                    underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(absDelta));
                                                 } else {
-                                                    underApproximation->addTransitionsToExtraStates(action, absDelta);
-                                                    underApproximation->addClippingRewardToCurrentState(action, rewardBound / absDelta);
+                                                    underApproximation->addTransitionsToExtraStates(action, storm::utility::convertNumber<ValueType>(absDelta));
+                                                    BeliefValueType totalRewardVal = rewardBound / absDelta;
+                                                    underApproximation->addClippingRewardToCurrentState(action, storm::utility::convertNumber<ValueType>(totalRewardVal));
                                                 }
                                         } else {
-                                            underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), absDelta);
+                                            underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(absDelta));
                                         }
                                     }
                                     if(computeRewards){
@@ -908,7 +911,7 @@ namespace storm {
                             } else {
                                 // Use classic clipping
                                 // Preprocess suitable candidate beliefs
-                                std::priority_queue<std::pair<ValueType, uint64_t>, std::vector<std::pair<ValueType, uint64_t>>, std::less<>> restrictedCandidates;
+                                std::priority_queue<std::pair<BeliefValueType, uint64_t>, std::vector<std::pair<BeliefValueType, uint64_t>>, std::less<>> restrictedCandidates;
                                 uint64_t nrCandidates = 10;
                                 std::vector<uint64_t> candidates(nrCandidates);
                                 statistics.clippingPreTime.start();
@@ -929,7 +932,6 @@ namespace storm {
 
                                     while (!restrictedCandidates.empty()) {
                                         candidates.push_back(restrictedCandidates.top().second);
-                                        //STORM_PRINT(beliefManager->toString(restrictedCandidates.top().second) << std::endl)
                                         restrictedCandidates.pop();
                                     }
                                 }
@@ -937,35 +939,36 @@ namespace storm {
                                 // Belief is to be clipped, find the best candidate from the restricted list
                                 statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
                                 statistics.clipWatch.start();
-                                auto clippingResult = beliefManager->clipBelief(currId, heuristicParameters.clippingThreshold, options.disableClippingReduction ? underApproximation->getBeliefsInMdp() : candidates);
+                                auto clippingResult = beliefManager->clipBelief(currId, storm::utility::convertNumber<BeliefValueType>(heuristicParameters.clippingThreshold), options.disableClippingReduction ? underApproximation->getBeliefsInMdp() : candidates);
                                 statistics.clipWatch.stop();
                                 if (clippingResult.isClippable) {
                                     underApproximation->setCurrentStateIsClipped();
                                     statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
-                                    bool addedSucc = underApproximation->addTransitionToBelief(0, clippingResult.targetBelief, storm::utility::one<ValueType>() - clippingResult.delta, true);
+                                    BeliefValueType transitionProb = storm::utility::one<BeliefValueType>() - clippingResult.delta;
+                                    bool addedSucc = underApproximation->addTransitionToBelief(0, clippingResult.targetBelief, storm::utility::convertNumber<ValueType>(transitionProb) , true);
                                     if (computeRewards) {
                                         //Determine a sound reward bound for the transition to the target state
                                         //Compute an over-/underapproximation for the original belief
-                                        auto rewardBound = storm::utility::zero<ValueType>();
+                                        auto rewardBound = storm::utility::zero<BeliefValueType>();
                                         for (auto const &deltaValue : clippingResult.deltaValues) {
-                                            if(cc.isEqual(underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first), storm::utility::infinity<ValueType>())){
-                                                rewardBound = storm::utility::infinity<ValueType>();
+                                            if(valueTypeCC.isEqual(underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first), storm::utility::infinity<ValueType>())){
+                                                rewardBound = storm::utility::infinity<BeliefValueType>();
                                                 break;
                                             } else {
-                                                rewardBound += deltaValue.second * (underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first));
+                                                rewardBound += deltaValue.second * storm::utility::convertNumber<BeliefValueType>(underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first));
                                             }
                                         }
-                                        if(cc.isEqual(rewardBound, storm::utility::infinity<ValueType>())){
-                                            underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), clippingResult.delta);
+                                        if(beliefTypeCC.isEqual(rewardBound, storm::utility::infinity<BeliefValueType>())){
+                                            underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(clippingResult.delta));
                                         } else {
                                             rewardBound /= clippingResult.delta;
 
-                                            underApproximation->addTransitionsToExtraStates(0, clippingResult.delta);
-                                            underApproximation->addClippingRewardToCurrentState(0, rewardBound);
+                                            underApproximation->addTransitionsToExtraStates(0, storm::utility::convertNumber<ValueType>(clippingResult.delta));
+                                            underApproximation->addClippingRewardToCurrentState(0, storm::utility::convertNumber<ValueType>(rewardBound));
                                         }
                                         underApproximation->addRewardToCurrentState(0, storm::utility::zero<ValueType>());
                                     } else {
-                                        underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), clippingResult.delta);
+                                        underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(clippingResult.delta));
                                     }
                                     ++addedActions;
                                 } // end isClippable
@@ -1054,6 +1057,12 @@ namespace storm {
 
             template
             class BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<double>>;
+
+            template
+            class BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<double>, storm::RationalNumber>;
+
+            template
+            class BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<storm::RationalNumber>, double>;
 
             template
             class BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<storm::RationalNumber>>;

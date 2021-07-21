@@ -219,7 +219,7 @@ namespace storm {
                 }
             }
             
-            template<typename ValueType, storm::dd::DdType DdType>
+            template<typename ValueType, storm::dd::DdType DdType, typename BeliefType>
             bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool analysisPerformed = false;
@@ -228,7 +228,7 @@ namespace storm {
                     auto options = storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
                     auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
                     beliefExplorationSettings.setValuesInOptionsStruct(options);
-                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(pomdp, options);
+                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>, BeliefType> checker(pomdp, options);
                     auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
                     if (storm::utility::resources::isTerminate()) {
@@ -393,9 +393,29 @@ namespace storm {
                     }
                     
                     sw.restart();
-                    if (performAnalysis<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
-                        sw.stop();
-                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s." << std::endl);
+                    auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
+                    switch(beliefExplorationSettings.getBeliefType()){
+
+                        case Default:
+                            if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
+                                sw.stop();
+                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s." << std::endl);
+                            }
+                            break;
+                        case Float:
+                            STORM_PRINT_AND_LOG("Use floating point numbers for belief probabilties." << std::endl);
+                            if (performAnalysis<ValueType, DdType, double>(pomdp, formulaInfo, *formula)) {
+                                sw.stop();
+                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s." << std::endl);
+                            }
+                            break;
+                        case Rational:
+                            STORM_PRINT_AND_LOG("Use exact numbers for belief probabilties." << std::endl);
+                            if (performAnalysis<ValueType, DdType, storm::RationalNumber>(pomdp, formulaInfo, *formula)) {
+                                sw.stop();
+                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s." << std::endl);
+                            }
+                            break;
                     }
                     
 
