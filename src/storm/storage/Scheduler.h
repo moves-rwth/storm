@@ -59,6 +59,27 @@ namespace storm {
             SchedulerChoice<ValueType> const& getChoice(uint_fast64_t modelState, uint_fast64_t memoryState = 0) const;
 
             /*!
+             * Set the combination of model state and memoryStructure state to unreachable.
+             *
+             * @param modelState The state of the model.
+             * @param memoryState The state of the memoryStructure.
+             */
+            void setStateUnreachable(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
+
+            /*!
+             * Set the combination of model state and memoryStructure state to reachable.
+             *
+             * @param modelState The state of the model.
+             * @param memoryState The state of the memoryStructure.
+             */
+            void setStateReachable(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
+
+            /*!
+            * Is the combination of model state and memoryStructure state to reachable?
+            */
+            bool isStateReachable(uint_fast64_t modelState, uint64_t memoryState = 0) const;
+
+            /*!
              * Compute the Action Support: A bit vector that indicates all actions that are selected with positive probability in some memory state
              */
             storm::storage::BitVector computeActionSupport(std::vector<uint64_t> const& nondeterministicChoiceIndicies) const;

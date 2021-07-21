@@ -221,7 +221,7 @@ namespace {
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*mdp);
 
         {
-            tasks[0].setOnlyInitialStatesRelevant(true); // TODO for false, but need equivalent inducedModel state for model state
+            tasks[0].setOnlyInitialStatesRelevant(true);
             auto result = checker.check(this->env(), tasks[0]);
             ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
             EXPECT_NEAR(this->parseNumber("81/100"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
@@ -244,7 +244,7 @@ namespace {
             EXPECT_NEAR(this->parseNumber("81/100"), inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedMdp->getInitialStates().begin()],storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
         }
         {
-            tasks[1].setOnlyInitialStatesRelevant(true);
+            tasks[1].setOnlyInitialStatesRelevant(false);
             auto result = checker.check(this->env(), tasks[1]);
             ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
             EXPECT_NEAR(this->parseNumber("1/2"), result->template asExplicitQuantitativeCheckResult<ValueType>()[*mdp->getInitialStates().begin()],storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
@@ -258,7 +258,7 @@ namespace {
             ASSERT_EQ(inducedModel->getType(), storm::models::ModelType::Mdp);
             auto const &inducedMdp = inducedModel->template as<storm::models::sparse::Mdp<ValueType>>();
             EXPECT_EQ(inducedMdp->getNumberOfChoices(), inducedMdp->getNumberOfStates());
-            storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> inducedChecker( *inducedMdp);
+            storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> inducedChecker(*inducedMdp);
             auto inducedResult = inducedChecker.check(this->env(), tasks[1]);
             ASSERT_TRUE(inducedResult->isExplicitQuantitativeCheckResult());
             EXPECT_NEAR(this->parseNumber("1/2"),inducedResult->template asExplicitQuantitativeCheckResult<ValueType>()[*inducedMdp->getInitialStates().begin()],storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());

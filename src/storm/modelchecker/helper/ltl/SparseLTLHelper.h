@@ -70,7 +70,6 @@ namespace storm {
                 std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets);
 
             private:
-
                 /*!
                  * Compute a set S of states that admit a probability 1 strategy of satisfying the given acceptance condition (in DNF).
                  * More precisely, let
@@ -99,6 +98,7 @@ namespace storm {
                 // scheduler
                 bool _randomScheduler = false;
                 boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q, len(_infSets)> --->  ReachChoice   and    <s, q, InfSet> --->  MecChoice
+                boost::optional<std::vector<storm::storage::BitVector>> _unreachableStates; // unreachable memory state and model state combinations
 
                 boost::optional<std::vector<storm::storage::BitVector>> _infSets; // Save the InfSets of the Acceptance condition.
                 boost::optional<std::vector<boost::optional<std::set<uint_fast64_t>>>> _accInfSets; // Save for each product state (which is assigned to an acceptingMEC), the infSets that need to be visited inf often to satisfy the acceptance condition. Remaining states belonging to no accepting EC, are assigned  len(_infSets) (REACH scheduler)
