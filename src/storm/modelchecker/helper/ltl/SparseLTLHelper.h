@@ -97,9 +97,12 @@ namespace storm {
 
                 // scheduler
                 bool _randomScheduler = false;
-                boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _productChoices;   // <s, q, len(_infSets)> --->  ReachChoice   and    <s, q, InfSet> --->  MecChoice
+                // todo directly memstate, state -> choice
+                boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _producedChoices; // <s, q, len(_infSets)> --->  ReachChoice   and    <s, q, InfSet> --->  MecChoice
                 boost::optional<std::vector<storm::storage::BitVector>> _unreachableStates; // unreachable memory state and model state combinations
 
+                // Mec Scheduler
+                // _mecProductChoices  <pstate> -> choice
                 boost::optional<std::vector<storm::storage::BitVector>> _infSets; // Save the InfSets of the Acceptance condition.
                 boost::optional<std::vector<boost::optional<std::set<uint_fast64_t>>>> _accInfSets; // Save for each product state (which is assigned to an acceptingMEC), the infSets that need to be visited inf often to satisfy the acceptance condition. Remaining states belonging to no accepting EC, are assigned  len(_infSets) (REACH scheduler)
                 // Memory structure

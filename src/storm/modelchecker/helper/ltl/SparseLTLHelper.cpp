@@ -42,13 +42,13 @@ namespace storm {
                 }
 
                 // Otherwise, we compute a scheduler with memory.
-                STORM_LOG_ASSERT(this->_productChoices.is_initialized(), "Trying to extract the produced scheduler but none is available. Was there a computation call before?");
+                STORM_LOG_ASSERT(this->_producedChoices.is_initialized(), "Trying to extract the produced scheduler but none is available. Was there a computation call before?");
                 STORM_LOG_ASSERT(this->_memoryTransitions.is_initialized(), "Trying to extract the DA transition structure but none is available. Was there a computation call before?");
                 STORM_LOG_ASSERT(this->_memoryInitialStates.is_initialized(), "Trying to extract the initial states of the DA but there are none available. Was there a computation call before?");
 
 
                 // Create a memory structure for the MDP scheduler with memory. If hasRelevantStates is set, we only consider initial model states relevant.
-                typename storm::storage::MemoryStructureBuilder<ValueType>::MemoryStructureBuilder memoryBuilder(this->_memoryTransitions.get().size(), model, this->hasRelevantStates());
+                auto memoryBuilder = storm::storage::MemoryStructureBuilder<ValueType>(this->_memoryTransitions.get().size(), model, this->hasRelevantStates());
 
                 // Build the transitions between the memory states:  startState--- modelStates (transitionVector) --->goalState
                 for (storm::storage::sparse::state_type startState = 0; startState < this->_memoryTransitions.get().size(); ++startState) {
@@ -79,7 +79,7 @@ namespace storm {
                 storm::storage::Scheduler<ValueType> scheduler(this->_transitionMatrix.getRowGroupCount(), memoryStructure);
 
                 // Use choices in the product model to create a choice based on model state and memory state
-                for (const auto &choice : this->_productChoices.get()) {
+                for (const auto &choice : this->_producedChoices.get()) {
                     // <s, q, InfSet> -> choice
                     storm::storage::sparse::state_type modelState = std::get<0>(choice.first);
                     storm::storage::sparse::state_type automatonState = std::get<1>(choice.first);
@@ -104,7 +104,7 @@ namespace storm {
 
                 // Sanity check for created scheduler.
                 STORM_LOG_ASSERT(scheduler.isDeterministicScheduler(), "Expected a deterministic scheduler");
-                STORM_LOG_ASSERT(!scheduler.isPartialScheduler(), "Expected a fully defined scheduler");
+                // TODO STORM_LOG_ASSERT(!scheduler.isPartialScheduler(), "Expected a fully defined scheduler");
                 return scheduler;
 
             }
@@ -149,7 +149,7 @@ namespace storm {
                 if (this->isProduceSchedulerSet()) {
                     _infSets.emplace();
                     _accInfSets.emplace(product->getProductModel().getNumberOfStates(), boost::none);
-                    _productChoices.emplace();
+                    _producedChoices.emplace();
                 }
 
                 for (auto const& conjunction : dnf) {
@@ -243,7 +243,7 @@ namespace storm {
                             if (this->isProduceSchedulerSet()) {
 
                                 // Save all states contained in this MEC
-                                storm::storage::BitVector mecStates(product->getProductModel().getNumberOfStates(), false);
+                                storm::storage::BitVector mecStates(transitionMatrix.getRowGroupCount(), false);
                                 for (auto const &stateChoicePair : mec) {
                                     mecStates.set(stateChoicePair.first);
                                 }
@@ -254,7 +254,7 @@ namespace storm {
                                     storm::storage::BitVector infSet;
                                     if (literal->isTRUE()) {
                                         // All states
-                                        infSet = storm::storage::BitVector(product->getProductModel().getNumberOfStates(), true);
+                                        infSet = storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true);
 
                                     } else if (literal->isAtom()) {
                                         const cpphoafparser::AtomAcceptance &atom = literal->getAtom();
@@ -286,7 +286,7 @@ namespace storm {
                                 }
 
                                 // Save the InfSets into the _accInfSets for states in this MEC, but only if there weren't assigned to any other MEC yet.
-                                storm::storage::BitVector newMecStates(product->getProductModel().getNumberOfStates(), false);
+                                storm::storage::BitVector newMecStates(transitionMatrix.getRowGroupCount(), false);
                                 for (auto const &stateChoicePair : mec) {
                                     if (_accInfSets.get()[stateChoicePair.first] == boost::none) {
                                         // state wasn't  assigned to any other MEC yet.
@@ -315,7 +315,8 @@ namespace storm {
                                     // Extract scheduler choices (only for states that are already assigned a scheduler, i.e are in another MEC)
                                     for (auto pState : newMecStates) {
                                         // We want to reach the InfSet, save choice:  <s, q, InfSetID> --->  choice
-                                        this->_productChoices.get().insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), id),  mecScheduler.getChoice(pState)});
+                                        // TODO _mecChoices <pState, InfSetID>   --->  choice  (remove product arg, transform directly to memoryState)
+                                        this->_producedChoices.get().insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), id), mecScheduler.getChoice(pState)});
                                     }
                                 }
                             }
@@ -398,7 +399,7 @@ namespace storm {
                 storm::storage::BitVector acceptingStates;
                 if (Nondeterministic) {
                     STORM_LOG_INFO("Computing MECs and checking for acceptance...");
-                    acceptingStates = computeAcceptingECs(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), product); //TODO product is only needed for ->getModelState(pState) and DAStates for scheduler creation (maybe lambda instead)
+                    acceptingStates = computeAcceptingECs(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), product); //TODO product is only needed for ->getModelState(pState) (remove arg)
 
                     } else {
                     STORM_LOG_INFO("Computing BSCCs and checking for acceptance...");
@@ -448,21 +449,31 @@ namespace storm {
 
                         // Compute size of the resulting memory structure: a state corresponds to <q, infSet>> encoded as (q* (|infSets|+1))+infSet
                         uint64 numMemoryStates = (da.getNumberOfStates() * (_infSets.get().size()+1)) + _infSets.get().size()+1; //+1 for states outside accECs
-
                         _unreachableStates.emplace(numMemoryStates, storm::storage::BitVector(this->_transitionMatrix.getRowGroupCount(), false));
 
 
+
                         // Extract the choices of the REACH-scheduler (choices to reach an acc. MEC) for the MDP-DA product: <s,q> -> choice
-                        for (storm::storage::sparse::state_type pState : ~acceptingStates) {
+                        for (storm::storage::sparse::state_type pState = 0; pState < this->_transitionMatrix.getRowGroupCount(); ++pState) {
 
-                            // For non-accepting states that are not in any accepting EC we use the 'last' copy of the DA
-                            this->_accInfSets.get()[pState] = {_infSets.get().size()};
 
-                            // For state <s,q> not in any accEC <s,q, REACH> --->  choice. Do not overwrite choices of states in an accepting MEC.
-                            this->_productChoices.get().insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), _infSets.get().size()), prodCheckResult.scheduler->getChoice(pState)});
-                            if (!prodCheckResult.scheduler->isStateReachable(pState)) {
-                                //TODO
-                                this->_unreachableStates.get()[(product->getAutomatonState(pState)) * (_infSets.get().size()+1) + _infSets.get().size()].set(product->getModelState(pState));
+                            // set _producedChoices <s, <memory state>> --->  choice.
+                            if (acceptingStates.get(pState)) {
+                                // TODO extract _mecProductChoices // TODO directly translate into memstate , modelstate
+                            } else {
+                                // For non-accepting states that are not in any accepting EC we use the 'last' copy of the DA
+                                this->_accInfSets.get()[pState] = {_infSets.get().size()};
+
+                                // For state <s,q> not in any accEC: <s,q, REACH> --->  choice.
+                                // TODO directly translate into memstate , modelstate
+                                this->_producedChoices.get().insert({std::make_tuple(product->getModelState(pState),
+                                                                                     product->getAutomatonState(pState),
+                                                                                     _infSets.get().size()),
+                                                                     prodCheckResult.scheduler->getChoice(pState)});
+                                if (!prodCheckResult.scheduler->isStateReachable(pState)) {
+                                    //TODO
+                                    // this->_unreachableStates.get()[(product->getAutomatonState(pState)) * (_infSets.get().size()+1) + _infSets.get().size()].set(product->getModelState(pState));
+                                }
                             }
                         }
 
