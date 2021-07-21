@@ -131,22 +131,18 @@ namespace storm {
             static std::shared_ptr<Variable> makeClockVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
 
         private:
-            // The name of the variable.
+            /// The name of the variable.
             std::string name;
-            
-            // The expression variable associated with this variable.
-            storm::expressions::Variable variable;
-
+            /// The type of the variable (for arrays this is the underlying type, e.g. int for int[][])
             JaniType* type;
-
+            /// The array type
             JaniType* arrayType;
-
-            /// Whether this is a transient variable.
-            bool transient;
-
+            /// The expression variable associated with this jani variable.
+            storm::expressions::Variable variable;
             /// Expression for initial values
             boost::optional<storm::expressions::Expression> init;
-
+            /// Whether this is a transient variable.
+            bool transient;
         };
 
         bool operator==(Variable const& lhs, Variable const& rhs);

@@ -4,7 +4,7 @@
 namespace storm {
     namespace jani {
 
-        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), variable(variable), type(type), init(init), transient(transient) {
+        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), type(type), variable(variable), init(init), transient(transient) {
             if (type->isArrayType()) {
                 arrayType = type;
                 while (type->isArrayType()) {
@@ -13,7 +13,7 @@ namespace storm {
             }
         }
 
-        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable) : name(name), variable(variable), type(type), init(), transient(false) {
+        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable) : name(name), type(type), variable(variable), init(), transient(false) {
             if (type->isArrayType()) {
                 arrayType = type;
                 while (type->isArrayType()) {
