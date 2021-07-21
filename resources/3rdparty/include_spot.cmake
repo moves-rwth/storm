@@ -21,7 +21,7 @@ if(STORM_USE_SPOT AND NOT STORM_SHIPPED_SPOT AND NOT STORM_FORCE_SHIPPED_SPOT)
     endif()
 
     if (SPOT_FOUND)
-        message(STATUS "Storm - Linking with shipped Spot ${SPOT_VERSION} (include: ${SPOT_INCLUDE_DIR}, library: ${SPOT_LIBRARIES}).")
+        message(STATUS "Storm - Using system version of Spot ${SPOT_VERSION} (include: ${SPOT_INCLUDE_DIR}, library: ${SPOT_LIBRARIES}).")
         set(STORM_HAVE_SPOT ON)
     elseif(NOT STORM_FORCE_LTL_SUPPORT)
         message (WARNING "Storm - Could not find Spot. Model checking of LTL formulas (beyond PCTL) will not be supported. You may want to set cmake option STORM_FORCE_LTL_SUPPORT to install Spot automatically. If you already installed Spot, consider setting cmake option SPOT_ROOT")
@@ -54,7 +54,7 @@ if(STORM_FORCE_SHIPPED_SPOT OR (STORM_FORCE_LTL_SUPPORT AND NOT STORM_HAVE_SPOT)
     set(STORM_HAVE_SPOT ON)
     set(STORM_SHIPPED_SPOT ON)
 
-    message(STATUS "Storm - Linking with shipped Spot 2.9.6 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
+    message(STATUS "Storm - Using shipped version of Spot 2.9.6 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
 
 endif()
 
