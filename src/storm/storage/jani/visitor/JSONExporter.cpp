@@ -694,26 +694,28 @@ namespace storm {
         boost::any ExpressionToJson::visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) {
             ExportJsonType opDecl;
             opDecl["op"] = "av";
-            std::vector<ExportJsonType> elements;
-            uint64_t size = expression.size()->evaluateAsInt();
-            for (uint64_t i = 0; i < size; ++i) {
-                elements.push_back(anyToJson(expression.at(i)->accept(*this, data)));
-            }
-            opDecl["elements"] = std::move(elements);
+            opDecl["elements"] = anyToJson(this->visit(expression.getElements(), data));
             return opDecl;
         }
 
         boost::any ExpressionToJson::visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) {
-            assert (false);
-//            ExportJsonType opDecl;
-//            opDecl["op"] = "av";
-//            std::vector<ExportJsonType> elements;
-//            uint64_t size = expression.size()->evaluateAsInt();
-//            for (uint64_t i = 0; i < size; ++i) {
-//                elements.push_back(anyToJson(expression.at(i)->accept(*this, data)));
-//            }
-//            opDecl["elements"] = std::move(elements);
-//            return opDecl;
+            if (elements.elementsOfElements) {
+                std::vector<ExportJsonType> jsonElements;
+                for (uint64_t i = 0; i < elements.elementsWithValue->size(); ++i) {
+                    jsonElements.push_back(anyToJson(elements.elementsWithValue->at(i)->accept(*this, data)));
+                }
+                return jsonElements;
+
+            } else {
+                ExportJsonType opDecl;
+                opDecl["op"] = "av";
+                std::vector<ExportJsonType> jsonElements;
+                for (uint64_t i = 0; i < elements.elementsOfElements->size(); ++i) {
+                    jsonElements.push_back(anyToJson(visit(*elements.elementsOfElements->at(i).get(), data)));
+                }
+                opDecl["elements"] = std::move(jsonElements);
+                return opDecl;
+            }
         }
         
         boost::any ExpressionToJson::visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) {
@@ -913,7 +915,7 @@ namespace storm {
             } else if (type.isContinuousType()) {
                 typeDesc = "continuous";
             } else {
-                assert (false);
+                STORM_LOG_ASSERT(false, "Unexpected array type");
             }
             return typeDesc;
         }
@@ -940,7 +942,7 @@ namespace storm {
                     typeDesc["upper-bound"] = buildExpression(variable.getUpperBound(), constants, globalVariables, localVariables);
                 } else if (variable.isArrayVariable()) {
                     typeDesc["kind"] = "array";
-                    assert (variable.getType()->isArrayType());
+                    STORM_LOG_ASSERT(variable.getType()->isArrayType(), "Expecting variable to have type array");
                     typeDesc["base"] = buildArray(variable, *(variable.getType()->getChildType()), constants, globalVariables, localVariables);
                 } else if (variable.isClockVariable()) {
                     typeDesc = "clock";

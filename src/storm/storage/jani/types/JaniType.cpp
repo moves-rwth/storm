@@ -56,8 +56,7 @@ namespace storm {
         }
 
         JaniType* JaniType::getChildType() const {
-            assert (false);
-            return nullptr;
+            STORM_LOG_ASSERT(false, "Type doesn't have a child type");
         }
 
         std::string JaniType::getStringRepresentation() const {

@@ -95,10 +95,6 @@ namespace storm {
             if (variable.isBoundedVariable() && variable.hasUpperBound()) {
                 traverse(variable.getUpperBound(), data);
             }
-            if (variable.isArrayVariable()) {
-                //TODO: @Jip fix this
-                assert(false);
-            }
         }
         
         void JaniTraverser::traverse(EdgeContainer& edgeContainer, boost::any const& data) {
@@ -149,9 +145,9 @@ namespace storm {
         
         void JaniTraverser::traverse(LValue& lValue, boost::any const& data) {
             if (lValue.isArrayAccess()) {
-                assert (false);
-                // TODO: what to do here? what does data look like
-//                traverse(lValue.getArrayIndex(), data);
+                for (auto& index: lValue.getArrayIndexVector()) {
+                    traverse(index, data);
+                }
             }
         }
         

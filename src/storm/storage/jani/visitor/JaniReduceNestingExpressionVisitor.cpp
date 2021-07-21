@@ -1,5 +1,6 @@
 #include "JaniReduceNestingExpressionVisitor.h"
 
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
@@ -48,9 +49,12 @@ namespace storm {
             if (newSize.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
                 return expression.getSharedPointer();
             } else {
-                assert (false);
-                // TODO: How to deal with arrays
-//				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ConstructorArrayExpression(expression.getManager(), expression.getType(), newSize, expression.getIndexVar(), elementExpression)));
+                if (expression.getIndexVars().size() == 1) {
+                return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(
+                    new ConstructorArrayExpression(expression.getManager(), expression.getType(), {newSize}, {expression.getIndexVars()}, elementExpression)));
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Reducing the nesting not implemented for nested arrays");
+                }
             }
         }
 

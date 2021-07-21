@@ -40,17 +40,15 @@ namespace storm {
         }
     
         boost::any JaniSyntacticalEqualityCheckVisitor::visit(ConstructorArrayExpression const& expression, boost::any const& data) {
-            assert (false);
-            std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.size()->accept(*this, data));
-            std::shared_ptr<BaseExpression const> elementExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getElementExpression()->accept(*this, data));
-            
-            // If the arguments did not change, we simply push the expression itself.
-            if (newSize.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
-                return expression.getSharedPointer();
+            if (data.type() == typeid(ConstructorArrayExpression)) {
+                auto other = boost::any_cast<ConstructorArrayExpression>(data);
+                auto result = expression.getType() == other.getType() && boost::any_cast<bool>(expression.getElementExpression()->accept(*this, other.getElementExpression()));
+                for (uint_fast64_t i = 0; result && i < expression.getNumberOfArrays(); ++i) {
+                    result &= boost::any_cast<bool>(expression.size(i)->accept(*this, other.size(i)));
+                    result &= expression.getIndexVars().at(i) == other.getIndexVars().at(i);
+                }
             } else {
-                assert (false);
-                // TODO: How to deal with arrays
-//				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ConstructorArrayExpression(expression.getManager(), expression.getType(), newSize, expression.getIndexVar(), elementExpression)));
+                return false;
             }
         }
 

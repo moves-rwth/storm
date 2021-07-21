@@ -42,11 +42,13 @@ namespace storm {
                     return res.simplify();
                 }
 
-                storm::expressions::Expression eliminate(std::vector<storm::expressions::Expression> const& expression) {
-                    assert (false);
-                    // TODO: fix this
-//                    auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(expression.accept(*this, boost::any())));
-//                    return res.simplify();
+                std::vector<storm::expressions::Expression> eliminate(std::vector<storm::expressions::Expression> const& expressions) {
+                    std::vector<storm::expressions::Expression> res;
+                    res.reserve(expressions.size());
+                    for (auto& expression : expressions) {
+                        res.push_back(expression.simplify());
+                    }
+                    return res;
                 }
      
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
@@ -138,42 +140,42 @@ namespace storm {
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
                     STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
-                    uint64_t size = expression.size()->evaluateAsInt();
-                    std::vector<BaseExprPtr> elements;
                     bool changed = false;
-                    assert (false);
-//                    for (uint64_t i = 0; i<size; ++i) {
-//                        BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
-//                        if (element.get() != expression.at(i).get()) {
-//                            changed = true;
-//                        }
-//                        elements.push_back(element);
-//                    }
-//                    if (changed) {
-//                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ValueArrayExpression(expression.getManager(), expression.getType(), elements)));
-//                    } else {
-//                        return expression.getSharedPointer();
-//                    }
+                    storm::expressions::ValueArrayExpression::ValueArrayElements elements;
+                    auto & oldElements = expression.getElements();
+                    if (oldElements.elementsWithValue) {
+                        for (uint_fast64_t i = 0; i < oldElements.elementsWithValue->size(); ++i) {
+                            BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
+                            if (element.get() != expression.at(i).get()) {
+                                changed = true;
+                            }
+                            elements.elementsWithValue->push_back(element);
+                        }
+                    } else {
+                        STORM_LOG_THROW(oldElements.elementsOfElements.get().at(0).get()->elementsWithValue, storm::exceptions::NotImplementedException, "More than two nested arrays not implemented");
+                        uint_fast64_t newIndex = 0;
+                        for (uint_fast64_t i = 0; i < oldElements.elementsOfElements->size(); ++i) {
+                            storm::expressions::ValueArrayExpression::ValueArrayElements elementsWithValue;
+                            for (uint_fast64_t j = 0; j < oldElements.elementsOfElements->at(i)->elementsWithValue->size(); ++j) {
+                                BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(newIndex)->accept(*this, data));
+                                if (element.get() != expression.at(i).get()) {
+                                    changed = true;
+                                }
+                                elementsWithValue.elementsWithValue->push_back(element);
+                                ++newIndex;
+                            }
+                            elements.elementsOfElements->push_back(std::make_shared<storm::expressions::ValueArrayExpression::ValueArrayElements const>(elementsWithValue));
+                        }
+                    }
+                    if (changed) {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ValueArrayExpression(expression.getManager(), expression.getType(), elements)));
+                    } else {
+                        return expression.getSharedPointer();
+                    }
                 }
 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const& data) override {
-//                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
-//                    uint64_t size = expression.size()->evaluateAsInt();
-//                    std::vector<BaseExprPtr> elements;
-//                    bool changed = false;
-                    assert (false);
-//                    for (uint64_t i = 0; i<size; ++i) {
-//                        BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
-//                        if (element.get() != expression.at(i).get()) {
-//                            changed = true;
-//                        }
-//                        elements.push_back(element);
-//                    }
-//                    if (changed) {
-//                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ValueArrayExpression(expression.getManager(), expression.getType(), elements)));
-//                    } else {
-//                        return expression.getSharedPointer();
-//                    }
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found value array elements expression, this is unexpected as we visit them in the value array expression");
                 }
                 
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
@@ -184,17 +186,20 @@ namespace storm {
                     if (sizeExpression.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
                         return expression.getSharedPointer();
                     } else {
-                        assert (false);
-                        // TODO: how to deal with arrays?
-//                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ConstructorArrayExpression(expression.getManager(), expression.getType(), sizeExpression, expression.getIndexVar(), elementExpression)));
+                        if (expression.getSizes().size() == 1) {
+                            return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ConstructorArrayExpression(expression.getManager(), expression.getType(), {sizeExpression}, expression.getIndexVars(), elementExpression)));
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                                            "Eliminating function calls in constructor array expressions not yet implemented for nested arrays");
+                            return false;
+                        }
                     }
                 }
                 
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
-                    assert (false);
                     BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
                     BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
-                    
+
                     // If the arguments did not change, we simply push the expression itself.
                     if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
                         return expression.getSharedPointer();
@@ -204,15 +209,29 @@ namespace storm {
                 }
 
                 virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data) override {
-                    assert (false);
-                    BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-                    BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+                    if (expression.getFirstOperand() == expression.getSecondOperand()) {
+                        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
 
-                    // If the arguments did not change, we simply push the expression itself.
-                    if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
-                        return expression.getSharedPointer();
+                        // If the arguments did not change, we simply push the expression itself.
+                        if (firstExpression.get() == expression.getFirstOperand().get()) {
+                            return expression.getSharedPointer();
+                        } else {
+                            return std::const_pointer_cast<storm::expressions::BaseExpression const>(
+                                std::shared_ptr<storm::expressions::BaseExpression>(
+                                    new storm::expressions::ArrayAccessIndexExpression(expression.getManager(), expression.getType(), firstExpression, firstExpression)));
+                        }
                     } else {
-                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ArrayAccessExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression)));
+                        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
+                        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+
+                        // If the arguments did not change, we simply push the expression itself.
+                        if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
+                            return expression.getSharedPointer();
+                        } else {
+                            return std::const_pointer_cast<storm::expressions::BaseExpression const>(
+                                std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ArrayAccessIndexExpression(
+                                    expression.getManager(), expression.getType(), firstExpression, secondExpression)));
+                        }
                     }
                 }
                 
