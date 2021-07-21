@@ -6,6 +6,7 @@
 #  SPOT_VERSION - The version of spot
 
 # use pkg-config to get the directories and then use these values
+
 # in the find_path() and find_library() calls
 find_package(PkgConfig QUIET)
 PKG_CHECK_MODULES(PC_SPOT QUIET spot)
