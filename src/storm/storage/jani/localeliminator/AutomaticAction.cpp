@@ -56,6 +56,9 @@ namespace storm {
 
                     unfoldGroupAndDependencies(session, autName, dependencyGraph, nextUnfold.get());
 
+                    RebuildWithoutUnreachableAction rebuildAfterPropertyAction;
+                    rebuildAfterPropertyAction.doAction(session);
+
                     EliminateAutomaticallyAction eliminateAction(autName,
                                                                  EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
                                                                  newTransitionLimit);
