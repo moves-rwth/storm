@@ -80,7 +80,7 @@ namespace storm {
                                 for (const auto& edge : automaton->getEdges()) {
                                     int addedTransitions = 1;
                                     for (const auto& dest : edge.getDestinations())
-                                        if (dest.getLocationIndex() == locIndex){
+                                        if (dest.getLocationIndex() == locIndex)
                                             addedTransitions *= outgoing;
                                             // Stop once we hit the threshold -- otherwise there is a risk of causing
                                             // an overflow due to the exponential growth of addedTransitions:
@@ -105,7 +105,7 @@ namespace storm {
                             } else if (minNewEdges > transitionCountThreshold) {
                                 done = true;
                                 session.addToLog(
-                                        "Cannot eliminate more locations without creating too many new transitions (best: >" +
+                                        "Cannot eliminate more locations without creating too many new transitions (best: " +
                                         std::to_string(minNewEdges) + " new transitions)");
                             } else {
                                 std::string locName = automaton->getLocation(bestLocIndex).getName();
