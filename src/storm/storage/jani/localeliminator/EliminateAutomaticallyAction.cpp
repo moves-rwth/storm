@@ -68,7 +68,7 @@ namespace storm {
 
                         bool done = false;
                         while (!done) {
-                            uint64_t minNewEdges = LONG_LONG_MAX; // TODO: Use actual uint64_t max, as long long isn't guaranteed to be 64 bits
+                            uint64_t minNewEdges = LLONG_MAX; // TODO: Use actual uint64_t max, as long long isn't guaranteed to be 64 bits
                             int bestLocIndex = -1;
                             for (const auto& loc : automaton->getLocations()) {
                                 if (uneliminable[loc.getName()])
@@ -80,15 +80,17 @@ namespace storm {
                                 for (const auto& edge : automaton->getEdges()) {
                                     int addedTransitions = 1;
                                     for (const auto& dest : edge.getDestinations())
-                                        if (dest.getLocationIndex() == locIndex)
+                                        if (dest.getLocationIndex() == locIndex){
                                             addedTransitions *= outgoing;
+                                            // Stop once we hit the threshold -- otherwise there is a risk of causing
+                                            // an overflow due to the exponential growth of addedTransitions:
+                                            if (addedTransitions > transitionCountThreshold){
+                                                break;
+                                            }
+                                        }
                                     incoming += addedTransitions - 1;
                                 }
                                 uint64_t newEdges = incoming * outgoing;
-
-                                if (newEdges < 0){
-                                    std::cout << "nE: " << std::to_string(newEdges) <<", i: " << std::to_string(incoming) <<", o: " << std::to_string(outgoing) <<std::endl;
-                                }
 
                                 if (newEdges <= minNewEdges){
                                     minNewEdges = newEdges;
@@ -103,7 +105,7 @@ namespace storm {
                             } else if (minNewEdges > transitionCountThreshold) {
                                 done = true;
                                 session.addToLog(
-                                        "Cannot eliminate more locations without creating too many new transitions (best: " +
+                                        "Cannot eliminate more locations without creating too many new transitions (best: >" +
                                         std::to_string(minNewEdges) + " new transitions)");
                             } else {
                                 std::string locName = automaton->getLocation(bestLocIndex).getName();
