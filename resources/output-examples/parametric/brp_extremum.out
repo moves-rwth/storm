@@ -1,0 +1,25 @@
+Storm-pars 1.6.4 (dev)
+
+Date: Wed Feb 10 14:57:21 2021
+Command line arguments: --prism brp.pm --prop 'P=? [F s=5]' --region '0.1 <= pL <= 0.9, 0.1 <=pK <=0.9' --extremum max 0.01
+Current working directory: ~/storm/build
+
+Time for model input parsing: 0.002s.
+
+Time for model construction: 0.011s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	135
+Transitions: 	175
+Reward Models:  none
+State Labels: 	3 labels
+   * deadlock -> 5 item(s)
+   * init -> 1 item(s)
+   * (s = 5) -> 4 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+Computing extremal value for property 1: P=? [F (s = 5)] within region 1/10<=pK<=9/10,1/10<=pL<=9/10;...
+Total number of plaCalls: 10
+Result at initial state: 4451506352734141/4503599627370496 ( approx. 0.9884329694) at [pK=3/20, pL=3/20].
+Time for model checking: 0.001s.

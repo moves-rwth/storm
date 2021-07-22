@@ -1,0 +1,57 @@
+Storm-pars 1.6.4 (dev)
+
+Date: Wed Feb 10 14:39:02 2021
+Command line arguments: --prism brp.pm --prop 'P=? [F s=5]' --region '0.1 <= pL <= 0.9, 0.1 <=pK <=0.9' --monotonicity-analysis --bisimulation
+Current working directory: ~/storm/build
+
+Time for model input parsing: 0.004s.
+
+Time for model construction: 0.017s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	135
+Transitions: 	175
+Reward Models:  none
+State Labels: 	3 labels
+   * deadlock -> 5 item(s)
+   * init -> 1 item(s)
+   * (s = 5) -> 4 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+
+Time for model simplification: 0.000s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	43
+Transitions: 	83
+Reward Models:  none
+State Labels: 	4 labels
+   * (s = 5) -> 1 item(s)
+   * deadlock -> 1 item(s)
+   * target -> 1 item(s)
+   * init -> 1 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+
+Time for model preprocessing: 0.000s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	23
+Transitions: 	43
+Reward Models:  none
+State Labels: 	2 labels
+   * init -> 1 item(s)
+   * (s = 5) -> 1 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+Number of done states: 23
+No Assumptions
+Monotonicity Result:
+    #Incr: 0 #Decr: 2
+pK MonDecr; pL MonDecr;
+
+
+Total time for monotonicity checking: 0.000s.

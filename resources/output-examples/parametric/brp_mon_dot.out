@@ -1,0 +1,57 @@
+Assumptions:
+
+Dot Output:
+digraph model {
+	n0 [ label = "=(" ];
+	n1 [ label = "=)" ];
+	n2 [ label = "[s2]" ];
+	n3 [ label = "s3" ];
+	n4 [ label = "s4" ];
+	n5 [ label = "s5" ];
+	n6 [ label = "s6" ];
+	n7 [ label = "s7" ];
+	n8 [ label = "s8" ];
+	n9 [ label = "s9" ];
+	n10 [ label = "s10" ];
+	n11 [ label = "s11" ];
+	n12 [ label = "s12" ];
+	n13 [ label = "s13" ];
+	n14 [ label = "s14" ];
+	n15 [ label = "s15" ];
+	n16 [ label = "s16" ];
+	n17 [ label = "s17" ];
+	n18 [ label = "s18" ];
+	n19 [ label = "s19" ];
+	n20 [ label = "s20" ];
+	n21 [ label = "s21" ];
+	n0 ->  n5;
+	n0 ->  n6;
+	n0 ->  n9;
+	n0 ->  n11;
+	n0 ->  n13;
+	n2 ->  n20;
+	n3 ->  n4;
+	n4 ->  n1;
+	n5 ->  n14;
+	n6 ->  n7;
+	n7 ->  n1;
+	n8 ->  n7;
+	n9 ->  n8;
+	n10 ->  n8;
+	n11 ->  n10;
+	n12 ->  n10;
+	n13 ->  n12;
+	n14 ->  n3;
+	n14 ->  n12;
+	n14 ->  n15;
+	n14 ->  n17;
+	n14 ->  n19;
+	n14 ->  n21;
+	n15 ->  n16;
+	n16 ->  n4;
+	n17 ->  n18;
+	n18 ->  n16;
+	n19 ->  n20;
+	n20 ->  n18;
+	n21 ->  n2;
+}

@@ -2,7 +2,7 @@
 title: Troubleshooting
 layout: default
 documentation: true
-category_weight: 3
+category_weight: 4
 categories: [Use Storm]
 ---
 

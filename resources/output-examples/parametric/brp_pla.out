@@ -1,0 +1,105 @@
+Storm-pars 1.6.4 (dev)
+
+Date: Wed Feb 10 14:41:07 2021
+Command line arguments: --prism brp.pm --prop 'P>0.5 [F s=5]' --region '0.1 <= pL <= 0.9, 0.1 <=pK <=0.9' --refine 0.01 10
+Current working directory: ~/storm/build
+
+Time for model input parsing: 0.003s.
+
+Time for model construction: 0.015s.
+
+--------------------------------------------------------------
+Model type: 	DTMC (sparse)
+States: 	135
+Transitions: 	175
+Reward Models:  none
+State Labels: 	3 labels
+   * deadlock -> 5 item(s)
+   * init -> 1 item(s)
+   * (s = 5) -> 4 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+
+Analyzing parameter region 1/10<=pK<=9/10,1/10<=pL<=9/10; using Parameter Lifting with iterative refinement until 99% is covered. Depth limit is 10.
+
+Model checking property "1": P>1/2 [F (s = 5)] ...
+Result (initial states):   Fraction of satisfied area: 51.6495%
+Fraction of unsatisfied area: 47.3511%
+            Unknown fraction: 0.999451%
+     Total number of regions: 1822
+                     Unknown: 468
+                   ExistsSat: 392
+              ExistsViolated: 356
+                      AllSat: 321
+                 AllViolated: 285
+
+Region refinement Check result (visualization):
+ 	 x-axis: pK  	 y-axis: pL  	 S=safe, [ ]=unsafe, -=ambiguous
+##################################################################################################################################
+#SSSSSSSSSSSSSSSSSSSSSS--                                                                                                        #
+#SSSSSSSSSSSSSSSSSSSSSSS-                                                                                                        #
+#SSSSSSSSSSSSSSSSSSSSSSS--                                                                                                       #
+#SSSSSSSSSSSSSSSSSSSSSSSS-                                                                                                       #
+#SSSSSSSSSSSSSSSSSSSSSSSS--                                                                                                      #
+#SSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                                     #
+#SSSSSSSSSSSSSSSSSSSSSSSSSS-                                                                                                     #
+#SSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                                    #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                                   #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSS-                                                                                                   #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                                  #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                                 #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                                #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                               #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS-                                                                                               #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                              #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                             #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                            #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                           #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                          #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                         #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                        #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                       #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                                     #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                    #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                   #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                                  #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                                #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                               #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                             #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--                                                                            #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                          #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                        #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                      #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                    #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                  #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                                #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                              #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS----                                                           #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS----                                                        #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS---                                                      #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS----                                                   #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS-----                                               #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS----                                            #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS-----                                        #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS-----                                    #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS-----                                #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS------                           #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS------                      #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS------                 #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS-------           #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS--------    #
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS-----#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+#SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS#
+##################################################################################################################################
+
+Time for model checking: 0.080s.
