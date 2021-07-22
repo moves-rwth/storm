@@ -29,7 +29,7 @@ Storm takes [many languages]({{ '/documentation/background/languages.html' | rel
         <td><a href="{{ '/documentation/background/languages.html#prism' | relative_url }}">PRISM</a>, <a href="{{ '/documentation/background/languages.html#jani' | relative_url }}">JANI</a>, <a href="{{ '/documentation/background/languages.html#explicit' | relative_url }}">explicit</a></td>
         <td>storm-pars</td>
         <td>storm-pars-cli</td>
-        <td><a href="running-storm.html#running-storm-on-parametric-models">Running Storm on parametric models</a></td>
+        <td><a href="running-storm-on-parametric-models">Running Storm on parametric models</a></td>
     </tr>
     <tr>
         <td><a href="{{ '/documentation/background/languages.html#dfts' | relative_url }}">DFTs</a>
