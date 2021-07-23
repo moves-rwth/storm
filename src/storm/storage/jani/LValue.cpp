@@ -26,7 +26,8 @@ namespace storm {
 
         LValue::LValue(storm::jani::Variable const& variable, storm::expressions::Expression const& index, std::size_t size) : variable(&variable) {
             STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
-            arrayIndexVector = {index};
+            std::vector<storm::expressions::Expression> indexVec = {index};
+            arrayIndexVector = std::move(indexVec);
             sizes = {size};
         }
 
