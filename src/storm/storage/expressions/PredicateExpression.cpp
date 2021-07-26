@@ -64,19 +64,15 @@ namespace storm {
                     simplifiedOperands.push_back(res);
                 }
             }
-            if (trueCount > 1 && (predicate == PredicateType::ExactlyOneOf || predicate == PredicateType::AtMostOneOf)) {
-                return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(),
-                                                                                    false));
-            }
 
             if (simplifiedOperands.size() == 0) {
                 switch(predicate) {
                     case PredicateType::ExactlyOneOf: return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(),
-                                                                                                                          false));
+                                                                                                                          trueCount == 1));
                     case PredicateType::AtLeastOneOf: return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(),
-                                                                                                                          false));
+                                                                                                                          trueCount >= 1));
                     case PredicateType::AtMostOneOf: return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(),
-                                                                                                                          true));
+                                                                                                                         trueCount <= 1));
                 }
             }
             // Return new expression if something changed.
