@@ -44,6 +44,15 @@ namespace storm {
                 return Formula(this->getName(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
             }
         }
+
+        Formula Formula::substituteNonStandardPredicates() const {
+            assert(this->getExpression().isInitialized());
+            if (hasExpressionVariable()) {
+                return Formula(this->getExpressionVariable(), this->getExpression().substituteNonStandardPredicates(), this->getFilename(), this->getLineNumber());
+            } else {
+                return Formula(this->getName(), this->getExpression().substituteNonStandardPredicates(), this->getFilename(), this->getLineNumber());
+            }
+        }
         
         std::ostream& operator<<(std::ostream& stream, Formula const& formula) {
             stream << "formula " << formula.getName() << " = " << formula.getExpression() << ";";
