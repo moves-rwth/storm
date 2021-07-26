@@ -125,7 +125,6 @@ namespace storm {
                     auto groupStartIt = rowGroupIndices->rbegin();
                     uint64_t groupEnd = *groupStartIt;
                     ++groupStartIt;
-                    auto rowGroupIndex = x.size()-1;
 
                     for (auto groupStartIte = rowGroupIndices->rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
                         auto rowGroupIndex = groupStartIt - rowGroupIndices->rbegin() - 1;
