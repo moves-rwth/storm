@@ -31,7 +31,8 @@ namespace storm {
                 BeliefExplorationSettings();
 
                 virtual ~BeliefExplorationSettings() = default;
-                
+
+                bool isCutZeroGapSet() const;
                 bool isRefineSet() const;
                 double getRefinePrecision() const;
                 bool isRefineStepLimitSet() const;

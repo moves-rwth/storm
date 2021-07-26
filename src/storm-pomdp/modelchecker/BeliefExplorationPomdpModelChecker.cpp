@@ -847,7 +847,7 @@ namespace storm {
                         } else if (!stateAlreadyExplored) {
                             // Check whether we want to explore the state now!
                             ValueType gap = getGap(underApproximation->getLowerValueBoundAtCurrentState(), underApproximation->getUpperValueBoundAtCurrentState());
-                            if (gap < heuristicParameters.gapThreshold) {
+                            if ((gap < heuristicParameters.gapThreshold) || (gap == 0 && options.cutZeroGap)) {
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold /*&& !statistics.beliefMdpDetectedToBeFinite*/) {
@@ -1032,6 +1032,7 @@ namespace storm {
                 underApproximation->finishExploration();
                 statistics.underApproximationBuildTime.stop();
 
+                STORM_PRINT("Finished exploring Underapproximation MDP." << std::endl << "Start analysis..." << std::endl)
                 statistics.underApproximationCheckTime.start();
                 underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.underApproximationCheckTime.stop();

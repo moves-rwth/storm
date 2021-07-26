@@ -34,6 +34,7 @@ namespace storm {
             const std::string explHeuristicOption = "expl-heuristic";
             const std::string clippingModeOption = "clipping-mode";
             const std::string disableClippingReductionOption = "disable-clipping-reduction";
+            const std::string cutZeroGapOption = "cut-zero-gap";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -65,9 +66,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableClippingReductionOption, false, "Disable the reduction of clipping candidate sets by difference 1-norm heuristic").build());
-
                 this->addOption(storm::settings::OptionBuilder(moduleName, beliefTypeOption, false,"Sets number type used to handle probabilities in beliefs").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the number type. 'default' is the POMDP datatype").setDefaultValueString("default").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"default", "float", "rational"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, cutZeroGapOption, false,"Cut beliefs where the gap between over- and underapproximation is 0.").build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -189,6 +190,10 @@ namespace storm {
             bool BeliefExplorationSettings::isDisableClippingReductionSet() const {
                 return this->getOption(disableClippingReductionOption).getHasOptionBeenSet();
             }
+
+            bool BeliefExplorationSettings::isCutZeroGapSet() const {
+                return this->getOption(cutZeroGapOption).getHasOptionBeenSet();
+            }
             
             template<typename ValueType>
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
@@ -233,6 +238,8 @@ namespace storm {
                 options.dynamicTriangulation = isDynamicTriangulationModeSet();
 
                 options.explorationHeuristic = getExplorationHeuristic();
+
+                options.cutZeroGap = isCutZeroGapSet();
             }
 
             bool BeliefExplorationSettings::isBeliefTypeSetFromDefault() const {
