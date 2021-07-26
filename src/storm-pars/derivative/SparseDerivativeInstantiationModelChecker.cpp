@@ -109,13 +109,13 @@ namespace storm {
             this->currentFormula = checkTask.getFormula().asSharedPointer();
             this->currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, FunctionType>>(checkTask.substituteFormula(*currentFormula).template convertValueType<FunctionType>());
             this->parameters = storm::models::sparse::getProbabilityParameters(model);
-            if (checkTask.isRewardModelSet()) {
+            if (checkTask.getFormula().isRewardOperatorFormula()) {
                 for (auto const& rewardParameter : storm::models::sparse::getRewardParameters(model)) {
                     this->parameters.insert(rewardParameter);
                 }
             }
             storm::logic::OperatorInformation opInfo(boost::none, boost::none);
-            if (checkTask.isRewardModelSet()) {
+            if (checkTask.getFormula().isRewardOperatorFormula()) {
                 model.reduceToStateBasedRewards();
             } else {
                 /* this->formulaWithoutBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>( */
@@ -134,7 +134,7 @@ namespace storm {
             storage::BitVector target = model.getStates("target");
             initialState = model.getStates("init").getNextSetIndex(0);
 
-            if (!checkTask.isRewardModelSet()) {
+            if (!checkTask.getFormula().isRewardOperatorFormula()) {
                 next = target;
                 next.complement();
                 storm::storage::BitVector atSomePointTarget = storm::utility::graph::performProbGreater0(model.getBackwardTransitions(), storm::storage::BitVector(model.getNumberOfStates(), true), target);
@@ -216,7 +216,7 @@ namespace storm {
                     // PROBABILITY -> For every state, the one-step probability to reach the target goes into the output vector
                     // REWARD -> For every state, the reward goes into the output vector
                     FunctionType rationalFunction;
-                    if (!checkTask.isRewardModelSet()) {
+                    if (!checkTask.getFormula().isRewardOperatorFormula()) {
                         FunctionType vectorValue = utility::zero<FunctionType>();
                         for (auto const& entry : transitionMatrix.getRow(state)) {
                             if (target.get(entry.getColumn())) {
@@ -225,7 +225,13 @@ namespace storm {
                         }
                         rationalFunction = vectorValue;
                     } else {
-                        auto stateRewards = model.getRewardModel(checkTask.getRewardModel()).getStateRewardVector();
+                        std::vector<FunctionType> stateRewards;
+                        if (checkTask.isRewardModelSet()) {
+                            stateRewards = model.getRewardModel(checkTask.getRewardModel()).getStateRewardVector();
+                        } else {
+                            stateRewards = model.getRewardModel("").getStateRewardVector();
+                        }
+                        
                         rationalFunction = stateRewards[state];
                     }
                     for (auto const& var : rationalFunction.gatherVariables()) {

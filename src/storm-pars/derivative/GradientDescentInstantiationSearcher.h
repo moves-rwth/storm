@@ -139,7 +139,7 @@ namespace storm {
                 this->currentFormula = checkTask.getFormula().asSharedPointer();
                 this->currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, FunctionType>>(checkTask.substituteFormula(*currentFormula).template convertValueType<FunctionType>());
 
-                if (!checkTask.isRewardModelSet()) {
+                if (!checkTask.getFormula().isRewardOperatorFormula()) {
                     this->currentFormulaNoBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
                         checkTask.getFormula().asProbabilityOperatorFormula().getSubformula().asSharedPointer(), storm::logic::OperatorInformation(boost::none, boost::none));
                 } else {
@@ -151,7 +151,7 @@ namespace storm {
                 this->currentCheckTaskNoBoundConstantType = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(*currentFormulaNoBound);
 
                 this->parameters = storm::models::sparse::getProbabilityParameters(model);
-                if (checkTask.isRewardModelSet()) {
+                if (checkTask.getFormula().isRewardOperatorFormula()) {
                     for (auto const& rewardParameter : storm::models::sparse::getRewardParameters(model)) {
                         this->parameters.insert(rewardParameter);
                     }
