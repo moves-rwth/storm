@@ -13,20 +13,20 @@ namespace storm {
         Scheduler<ValueType>::Scheduler(uint_fast64_t numberOfModelStates, boost::optional<storm::storage::MemoryStructure> const& memoryStructure) : memoryStructure(memoryStructure) {
             uint_fast64_t numOfMemoryStates = memoryStructure ? memoryStructure->getNumberOfStates() : 1;
             schedulerChoices = std::vector<std::vector<SchedulerChoice<ValueType>>>(numOfMemoryStates, std::vector<SchedulerChoice<ValueType>>(numberOfModelStates));
-            reachableStates =  std::vector<storm::storage::BitVector>(numOfMemoryStates, storm::storage::BitVector(numberOfModelStates, true));
+            dontCareStates =  std::vector<storm::storage::BitVector>(numOfMemoryStates, storm::storage::BitVector(numberOfModelStates, false));
             numOfUndefinedChoices = numOfMemoryStates * numberOfModelStates;
             numOfDeterministicChoices = 0;
-            numOfUnreachableStates = 0;
+            numOfDontCareStates = 0;
         }
         
         template <typename ValueType>
         Scheduler<ValueType>::Scheduler(uint_fast64_t numberOfModelStates, boost::optional<storm::storage::MemoryStructure>&& memoryStructure) : memoryStructure(std::move(memoryStructure)) {
             uint_fast64_t numOfMemoryStates = this->memoryStructure ? this->memoryStructure->getNumberOfStates() : 1;
             schedulerChoices = std::vector<std::vector<SchedulerChoice<ValueType>>>(numOfMemoryStates, std::vector<SchedulerChoice<ValueType>>(numberOfModelStates));
-            reachableStates =  std::vector<storm::storage::BitVector>(numOfMemoryStates, storm::storage::BitVector(numberOfModelStates, true));
+            dontCareStates =  std::vector<storm::storage::BitVector>(numOfMemoryStates, storm::storage::BitVector(numberOfModelStates, false));
             numOfUndefinedChoices = numOfMemoryStates * numberOfModelStates;
             numOfDeterministicChoices = 0;
-            numOfUnreachableStates = 0;
+            numOfDontCareStates = 0;
         }
         
         template <typename ValueType>
@@ -35,7 +35,7 @@ namespace storm {
             STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
 
             auto& schedulerChoice = schedulerChoices[memoryState][modelState];
-            if (reachableStates[memoryState].get(modelState)) {
+            if (!dontCareStates[memoryState].get(modelState)) {
                 if (schedulerChoice.isDefined()) {
                     if (!choice.isDefined()) {
                         ++numOfUndefinedChoices;
@@ -87,13 +87,13 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void Scheduler<ValueType>::setStateUnreachable(uint_fast64_t modelState, uint_fast64_t memoryState) {
+        void Scheduler<ValueType>::setDontCare(uint_fast64_t modelState, uint_fast64_t memoryState) {
             STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
             STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
             auto& schedulerChoice = schedulerChoices[memoryState][modelState];
-            if (reachableStates[memoryState].get(modelState)) {
-                reachableStates[memoryState].set(modelState, false);
-                ++numOfUnreachableStates;
+            if (!dontCareStates[memoryState].get(modelState)) {
+                dontCareStates[memoryState].set(modelState, true);
+                ++numOfDontCareStates;
 
                 // Choices for unreachable states are not considered undefined or deterministic
                 if (!schedulerChoice.isDefined()) {
@@ -106,27 +106,8 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void Scheduler<ValueType>::setStateReachable(uint_fast64_t modelState, uint_fast64_t memoryState) {
-            STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
-            STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
-            auto& schedulerChoice = schedulerChoices[memoryState][modelState];
-            if (!reachableStates[memoryState].get(modelState)) {
-                reachableStates[memoryState].set(modelState, true);
-                --numOfUnreachableStates;
-
-                // Choices for unreachable states are not considered undefined or deterministic
-                if (!schedulerChoice.isDefined()) {
-                    ++numOfUndefinedChoices;
-                } else if (schedulerChoice.isDeterministic()) {
-                    ++numOfDeterministicChoices;
-                }
-
-            }
-        }
-
-        template <typename ValueType>
-        bool Scheduler<ValueType>::isStateReachable(uint_fast64_t modelState, uint64_t memoryState) const {
-            return reachableStates[memoryState].get(modelState);
+        bool Scheduler<ValueType>::isDontCare(uint_fast64_t modelState, uint64_t memoryState) const {
+            return dontCareStates[memoryState].get(modelState);
         }
 
         template<typename ValueType>
@@ -154,7 +135,7 @@ namespace storm {
         
         template <typename ValueType>
         bool Scheduler<ValueType>::isDeterministicScheduler() const {
-            return numOfDeterministicChoices == (schedulerChoices.size() * schedulerChoices.begin()->size()) - numOfUndefinedChoices - numOfUnreachableStates;
+            return numOfDeterministicChoices == (schedulerChoices.size() * schedulerChoices.begin()->size()) - numOfUndefinedChoices - numOfDontCareStates;
         }
         
         template <typename ValueType>
@@ -174,7 +155,6 @@ namespace storm {
 
         template <typename ValueType>
         void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices) const {
-            // TODO ignore unreachable states
             STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException, "The given model is not compatible with this scheduler.");
             
             bool const stateValuationsGiven = model != nullptr && model->hasStateValuations();
@@ -215,11 +195,8 @@ namespace storm {
                     bool firstMemoryState = true;
                     for (uint_fast64_t memoryState = 0; memoryState < getNumberOfMemoryStates(); ++memoryState) {
 
-                        // Get choice info
-                        SchedulerChoice<ValueType> const& choice = schedulerChoices[memoryState][state];
-
-                        // Check whether the state is TODO h undefined (later: not reachable), for no memory, too?
-                        if(!choice.isDefined() | isMemorylessScheduler()) {
+                        // Ignore dontCare states
+                        if((!isMemorylessScheduler()) && isDontCare(state, memoryState)) {
                             continue;
                         }
 
@@ -236,7 +213,7 @@ namespace storm {
                         }
 
                         // Print choice info
-
+                        SchedulerChoice<ValueType> const& choice = schedulerChoices[memoryState][state];
                         if (choice.isDefined()) {
                             if (choice.isDeterministic()) {
                                 if (choiceOriginsGiven) {
@@ -274,9 +251,8 @@ namespace storm {
                         }
 
                         // Print memory updates
-
                         if(!isMemorylessScheduler()) {
-                            out << std::setw(30); //todo set width
+                            out << std::setw(8);
                             for (auto const& choiceProbPair : choice.getChoiceAsDistribution()) {
                                 uint64_t row = model->getTransitionMatrix().getRowGroupIndices()[state] + choiceProbPair.first;
                                 bool firstUpdate = true;

@@ -59,25 +59,18 @@ namespace storm {
             SchedulerChoice<ValueType> const& getChoice(uint_fast64_t modelState, uint_fast64_t memoryState = 0) const;
 
             /*!
-             * Set the combination of model state and memoryStructure state to unreachable.
+             * Set the combination of model state and memoryStructure state to dontCare.
+             * This means the corresponding choices are neither considered undefined nor deterministic.
              *
              * @param modelState The state of the model.
              * @param memoryState The state of the memoryStructure.
              */
-            void setStateUnreachable(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
-
-            /*!
-             * Set the combination of model state and memoryStructure state to reachable.
-             *
-             * @param modelState The state of the model.
-             * @param memoryState The state of the memoryStructure.
-             */
-            void setStateReachable(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
+            void setDontCare(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
 
             /*!
             * Is the combination of model state and memoryStructure state to reachable?
             */
-            bool isStateReachable(uint_fast64_t modelState, uint64_t memoryState = 0) const;
+            bool isDontCare(uint_fast64_t modelState, uint64_t memoryState = 0) const;
 
             /*!
              * Compute the Action Support: A bit vector that indicates all actions that are selected with positive probability in some memory state
@@ -143,10 +136,10 @@ namespace storm {
             
             boost::optional<storm::storage::MemoryStructure> memoryStructure;
             std::vector<std::vector<SchedulerChoice<ValueType>>> schedulerChoices;
-            std::vector<storm::storage::BitVector> reachableStates;
-            uint_fast64_t numOfUndefinedChoices; // Only consider reachable ones
+            std::vector<storm::storage::BitVector> dontCareStates; // Their choices are neither considered deterministic nor undefined
+            uint_fast64_t numOfUndefinedChoices;
             uint_fast64_t numOfDeterministicChoices;
-            uint_fast64_t numOfUnreachableStates;
+            uint_fast64_t numOfDontCareStates;
         };
     }
 }
