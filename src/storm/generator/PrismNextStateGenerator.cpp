@@ -22,12 +22,12 @@ namespace storm {
     namespace generator {
 
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : PrismNextStateGenerator<ValueType, StateType>(program.substituteConstantsFormulas(), options, false) {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, std::shared_ptr<ActionMask<ValueType,StateType>> const& mask) : PrismNextStateGenerator<ValueType, StateType>(program.substituteConstantsFormulas(), options, mask, false) {
             // Intentionally left empty.
         }
 
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(program.getManager(), options), program(program), rewardModels(), hasStateActionRewards(false) {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options,  std::shared_ptr<ActionMask<ValueType,StateType>> const& mask, bool) : NextStateGenerator<ValueType, StateType>(program.getManager(), options, mask), program(program), rewardModels(), hasStateActionRewards(false) {
             STORM_LOG_TRACE("Creating next-state generator for PRISM program: " << program);
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
 
@@ -296,16 +296,16 @@ namespace storm {
             std::vector<Choice<ValueType>> allChoices;
             if (this->getOptions().isApplyMaximalProgressAssumptionSet()) {
                 // First explore only edges without a rate
-                allChoices = getUnlabeledChoices(*this->state, stateToIdCallback, CommandFilter::Probabilistic);
-                addLabeledChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Probabilistic);
+                allChoices = getAsynchronousChoices(*this->state, stateToIdCallback, CommandFilter::Probabilistic);
+                addSynchronousChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Probabilistic);
                 if (allChoices.empty()) {
                     // Expand the Markovian edges if there are no probabilistic ones.
-                    allChoices = getUnlabeledChoices(*this->state, stateToIdCallback, CommandFilter::Markovian);
-                    addLabeledChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Markovian);
+                    allChoices = getAsynchronousChoices(*this->state, stateToIdCallback, CommandFilter::Markovian);
+                    addSynchronousChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Markovian);
                 }
             } else {
-                allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
-                addLabeledChoices(allChoices, *this->state, stateToIdCallback);
+                allChoices = getAsynchronousChoices(*this->state, stateToIdCallback);
+                addSynchronousChoices(allChoices, *this->state, stateToIdCallback);
             }
 
             std::size_t totalNumberOfChoices = allChoices.size();
@@ -482,6 +482,9 @@ namespace storm {
                 bool hasOneEnabledCommand = false;
                 for (auto commandIndexIt = commandIndices.begin(), commandIndexIte = commandIndices.end(); commandIndexIt != commandIndexIte; ++commandIndexIt) {
                     storm::prism::Command const& command = module.getCommand(*commandIndexIt);
+                    if (!isCommandPotentiallySynchronizing(command)) {
+                        continue;
+                    }
                     if (commandFilter != CommandFilter::All) {
                         STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
                         if ((commandFilter == CommandFilter::Markovian) != command.isMarkovian()) {
@@ -535,7 +538,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
+        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getAsynchronousChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
             std::vector<Choice<ValueType>> result;
 
             // Iterate over all modules.
@@ -546,12 +549,17 @@ namespace storm {
                 for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
                     storm::prism::Command const& command = module.getCommand(j);
 
-                    // Only consider unlabeled commands.
-                    if (command.isLabeled()) continue;
+                    // Only consider commands that are not possibly synchronizing.
+                    if (isCommandPotentiallySynchronizing(command)) continue;
 
                     if (commandFilter != CommandFilter::All) {
                         STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
                         if ((commandFilter == CommandFilter::Markovian) != command.isMarkovian()) {
+                            continue;
+                        }
+                    }
+                    if (this->actionMask != nullptr) {
+                        if (!this->actionMask->query(*this, command.getActionIndex())) {
                             continue;
                         }
                     }
@@ -602,6 +610,10 @@ namespace storm {
                         choice.addReward(stateActionRewardValue);
                     }
 
+                    if (this->options.isBuildChoiceLabelsSet() && command.isLabeled()) {
+                        choice.addLabel(program.getActionName(command.getActionIndex()));
+                    }
+
                     if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
                         storm::storage::PlayerIndex const& playerOfModule = moduleIndexToPlayerIndexMap.at(i);
                         STORM_LOG_THROW(playerOfModule != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException, "Module " << module.getName() << " is not owned by any player but has at least one enabled, unlabeled command.");
@@ -638,9 +650,14 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
+        void PrismNextStateGenerator<ValueType, StateType>::addSynchronousChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
 
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
+                if (this->actionMask != nullptr) {
+                    if (!this->actionMask->query(*this, actionIndex)) {
+                        continue;
+                    }
+                }
                 boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(actionIndex, commandFilter);
 
                 // Only process this action label, if there is at least one feasible solution.
@@ -763,13 +780,24 @@ namespace storm {
         template<typename ValueType, typename StateType>
         storm::storage::BitVector PrismNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
             // TODO consider to avoid reloading by computing these bitvectors in an earlier build stage
-            unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
-
             storm::storage::BitVector result(program.getNumberOfObservationLabels() * 64);
+
+            if (program.getNumberOfObservationLabels() == 0) {
+                return result;
+            }
+            unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
             for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
                 result.setFromInt(64*i,64,this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression()));
             }
             return result;
+        }
+
+        template<typename ValueType, typename StateType>
+        void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>& result) const {
+
+            for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
+                result[program.getObservationLabels()[i].getName()] = this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression());
+            }
         }
 
 
@@ -815,6 +843,11 @@ namespace storm {
             }
 
             return std::make_shared<storm::storage::sparse::PrismChoiceOrigins>(std::make_shared<storm::prism::Program>(program), std::move(identifiers), std::move(identifierToCommandSetMapping));
+        }
+
+        template<typename ValueType, typename StateType>
+        bool PrismNextStateGenerator<ValueType, StateType>::isCommandPotentiallySynchronizing(const prism::Command &command) const {
+            return program.getPossiblySynchronizingCommands().get(command.getGlobalIndex());
         }
 
 

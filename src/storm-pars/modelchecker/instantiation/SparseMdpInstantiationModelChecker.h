@@ -18,7 +18,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         class SparseMdpInstantiationModelChecker : public SparseInstantiationModelChecker<SparseModelType, ConstantType> {
         public:
-            SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel);
+            SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel, bool produceScheduler = true);
             
             virtual std::unique_ptr<CheckResult> check(Environment const& env, storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
@@ -29,6 +29,7 @@ namespace storm {
             std::unique_ptr<CheckResult> checkBoundedUntilFormula(Environment const& env, storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker);
             
             storm::utility::ModelInstantiator<SparseModelType, storm::models::sparse::Mdp<ConstantType>> modelInstantiator;
+            bool produceScheduler;
         };
     }
 }

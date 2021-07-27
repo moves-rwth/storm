@@ -15,7 +15,7 @@ namespace storm {
     namespace modelchecker {
         
         template <typename SparseModelType, typename ConstantType>
-        SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel) : SparseInstantiationModelChecker<SparseModelType, ConstantType>(parametricModel), modelInstantiator(parametricModel) {
+        SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel, bool produceScheduler) : SparseInstantiationModelChecker<SparseModelType, ConstantType>(parametricModel), modelInstantiator(parametricModel), produceScheduler(produceScheduler) {
             //Intentionally left empty
         }
 
@@ -40,9 +40,11 @@ namespace storm {
         
         template <typename SparseModelType, typename ConstantType>
         std::unique_ptr<CheckResult> SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>::checkReachabilityProbabilityFormula(Environment const& env, storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker, storm::models::sparse::Mdp<ConstantType> const& instantiatedModel) {
-            
-            this->currentCheckTask->setProduceSchedulers(true);
-            
+
+            if (produceScheduler) {
+                this->currentCheckTask->setProduceSchedulers(true);
+            }
+
             if (!this->currentCheckTask->getHint().isExplicitModelCheckerHint()) {
                 this->currentCheckTask->setHint(std::make_shared<ExplicitModelCheckerHint<ConstantType>>());
             }
@@ -82,16 +84,21 @@ namespace storm {
             // For qualitative properties, we still want a quantitative result hint. Hence we perform the check on the subformula
             if (this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
                 result = modelChecker.check(env, *this->currentCheckTask);
-                storm::storage::Scheduler<ConstantType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                 hint.setResultHint(result->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                hint.setSchedulerHint(dynamic_cast<storm::storage::Scheduler<ConstantType> const&>(scheduler));
+                if (produceScheduler) {
+                    storm::storage::Scheduler<ConstantType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
+                    hint.setSchedulerHint(dynamic_cast<storm::storage::Scheduler<ConstantType> const &>(scheduler));
+                }
             } else {
                 auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula()).setOnlyInitialStatesRelevant(false);
                 std::unique_ptr<storm::modelchecker::CheckResult> quantitativeResult = modelChecker.computeProbabilities(env, newCheckTask);
                 result = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
-                storm::storage::Scheduler<ConstantType>& scheduler = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                 hint.setResultHint(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()));
-                hint.setSchedulerHint(std::move(dynamic_cast<storm::storage::Scheduler<ConstantType>&>(scheduler)));
+                if (produceScheduler) {
+                    storm::storage::Scheduler<ConstantType>& scheduler = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
+                    hint.setSchedulerHint(
+                            std::move(dynamic_cast<storm::storage::Scheduler<ConstantType> &>(scheduler)));
+                }
             }
             
             return result;

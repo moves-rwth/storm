@@ -90,6 +90,13 @@ namespace storm {
                  * @return The initial states of the model represented by a bit vector.
                  */
                 storm::storage::BitVector const& getInitialStates() const;
+
+                /*!
+                 * Overwrites the initial states of the model.
+                 *
+                 * @param states the new initial states
+                 */
+                void setInitialStates(storm::storage::BitVector const& states);
                 
                 /*!
                  * Returns the sets of states labeled with the given label.
@@ -149,6 +156,13 @@ namespace storm {
                  * @return The reward model with the given name, if it exists.
                  */
                 RewardModelType const& getRewardModel(std::string const& rewardModelName) const;
+
+                /*!
+                 * Retrieves the reward model with the given name, if one exists. Otherwise, an exception is thrown.
+                 *
+                 * @return The reward model with the given name, if it exists.
+                 */
+                RewardModelType& getRewardModel(std::string const& rewardModelName);
 
                 /*!
                  * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.

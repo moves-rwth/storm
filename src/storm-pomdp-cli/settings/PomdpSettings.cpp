@@ -48,6 +48,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
+            storm::settings::addModule<storm::settings::modules::SylvanSettings>();
         
             storm::settings::addModule<storm::settings::modules::POMDPSettings>();
             storm::settings::addModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
