@@ -35,8 +35,7 @@ namespace storm {
                 return da.getSuccessor(da.getInitialState(), getLabelForState(modelState));
             }
 
-            storm::storage::sparse::state_type getSuccessor(storm::storage::sparse::state_type modelFrom,
-                                                            storm::storage::sparse::state_type automatonFrom,
+            storm::storage::sparse::state_type getSuccessor(storm::storage::sparse::state_type automatonFrom,
                                                             storm::storage::sparse::state_type modelTo) const {
                 return da.getSuccessor(automatonFrom, getLabelForState(modelTo));
             }

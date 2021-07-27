@@ -58,7 +58,7 @@ namespace storm {
                         typename matrix_type::const_rows row = originalMatrix.getRow(from.first);
                         for (auto const& entry : row) {
                             state_type t = entry.getColumn();
-                            state_type p = prodOp.getSuccessor(from.first, from.second, t);
+                            state_type p = prodOp.getSuccessor(from.second, t);
                             // std::cout << " p = " << p << "\n";
                             product_state_type t_p(t, p);
                             state_type prodIndexTo;
@@ -84,7 +84,7 @@ namespace storm {
                             auto const& row = originalMatrix.getRow(from.first, i);
                             for (auto const& entry : row) {
                                 state_type t = entry.getColumn();
-                                state_type p = prodOp.getSuccessor(from.first, from.second, t);
+                                state_type p = prodOp.getSuccessor(from.second, t);
                                 // std::cout << " p = " << p << "\n";
                                 product_state_type t_p(t, p);
                                 state_type prodIndexTo;

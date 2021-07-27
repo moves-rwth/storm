@@ -92,11 +92,13 @@ namespace storm {
                 storm::storage::BitVector computeAcceptingBCCs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
 
                 /**
-                * Helper function, creates the memory structure for the LTL-Scheduler.
-                * @param the acceptance condition
-                * @param the transition matrix of the model
+                * Helper function, extracts scheduler choices and creates the memory structure for the LTL-Scheduler.
+                * @param
+                * @param
+                * @param the scheduler enuring to reach some acceptingState, defined on the model-DA product
+                * @param
                 */
-                void createMemoryStructure(uint_fast64_t numDaStates, transformer::DAProductBuilder const& productBuilder, typename transformer::DAProduct<productModelType>::ptr product, storm::storage::BitVector const& acceptingProductStates, storm::storage::BitVector const& modelStatesOfInterest);
+                void prepareScheduler(uint_fast64_t numDaStates, storm::storage::BitVector const& acceptingProductStates, std::unique_ptr<storm::storage::Scheduler<ValueType>> reachScheduler, transformer::DAProductBuilder const& productBuilder, typename transformer::DAProduct<productModelType>::ptr product, storm::storage::BitVector const& modelStatesOfInterest);
 
 
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
