@@ -133,7 +133,7 @@ namespace storm {
                     << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
 
             const SparseDtmcModelType& dtmc = this->getModel();
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix(), dtmc.getNumberOfStates());
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix());
             storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, dtmc);
 
             // Compute Satisfaction sets for APs
@@ -165,7 +165,7 @@ namespace storm {
                 modelDot.close();
             }
 
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix(), dtmc.getNumberOfStates());
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix());
             storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, dtmc);
 
             // Compute Satisfaction sets for APs

@@ -25,8 +25,8 @@ namespace storm {
             public:
 
                 /*!
-                 * The type of the product automaton (DTMC or MDP) that is used during the computation.
-                 */
+     * The type of the product automaton (DTMC or MDP) that is used during the computation.
+     */
                 using productModelType = typename std::conditional<Nondeterministic, storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Dtmc<ValueType>>::type;
 
                 /*!
@@ -34,21 +34,21 @@ namespace storm {
                  * @param the transition matrix of the model
                  * @param the number of states of the model
                  */
-                SparseLTLHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::size_t numberOfSates);
+                SparseLTLHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
 
 
                 /*!
                  * @pre before calling this, a computation call should have been performed during which scheduler production was enabled.
-                 * @param TODO
+                 * @param the model
                  * @return a new scheduler containing optimal choices for each state that yield the long run average values of the most recent call.
                  */
                 storm::storage::Scheduler<ValueType> extractScheduler(storm::models::sparse::Model<ValueType> const& model);
 
                 /*!
-                 * todo computes Sat sets of AP
-                 * @param
-                 * @param
-                 * @return
+                 * Computes the states that are satisfying the AP.
+                 * @param mapping from Ap to formula
+                 * @param lambda that checks the provided formula
+                 * @return mapping from AP to satisfaction sets
                  */
                 static std::map<std::string, storm::storage::BitVector> computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker);
 
@@ -71,7 +71,7 @@ namespace storm {
 
             private:
                 /*!
-                 * Compute a set S of states that admit a probability 1 strategy of satisfying the given acceptance condition (in DNF).
+                 * Computes a set S of states that admit a probability 1 strategy of satisfying the given acceptance condition (in DNF).
                  * More precisely, let
                  *   accEC be the set of states that are contained in end components that satisfy the acceptance condition
                  *  and let
@@ -85,24 +85,27 @@ namespace storm {
                 storm::storage::BitVector computeAcceptingECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, typename transformer::DAProduct<productModelType>::ptr product);
 
                 /**
-                * Compute a set S of states that are contained in BSCCs that satisfy the given acceptance conditon.
-                * @tparam the acceptance condition
-                * @tparam the transition matrix of the model
+                * Computes a set S of states that are contained in BSCCs that satisfy the given acceptance conditon.
+                * @param the acceptance condition
+                * @param the transition matrix of the model
                 */
                 storm::storage::BitVector computeAcceptingBCCs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
 
+                /**
+                * Helper function, creates the memory structure for the LTL-Scheduler.
+                * @param the acceptance condition
+                * @param the transition matrix of the model
+                */
+                void createMemoryStructure(uint_fast64_t numDaStates, transformer::DAProductBuilder const& productBuilder, typename transformer::DAProduct<productModelType>::ptr product, storm::storage::BitVector const& acceptingProductStates, storm::storage::BitVector const& modelStatesOfInterest);
+
 
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
-                std::size_t _numberOfStates;  //TODO just use _transitionMatrix.getRowGroupCount instead?
 
                 // scheduler
                 bool _randomScheduler = false;
-                // todo directly memstate, state -> choice
-                boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _producedChoices; // <s, q, len(_infSets)> --->  ReachChoice   and    <s, q, InfSet> --->  MecChoice
-                boost::optional<std::vector<storm::storage::BitVector>> _unreachableStates; // unreachable memory state and model state combinations
+                boost::optional<std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>>> _producedChoices;   // <s, q, len(_infSets)> --->  ReachChoice   and    <s, q, InfSet> --->  MecChoice
+                boost::optional<std::vector<storm::storage::BitVector>> _dontCareStates; // memory state combinations that are never visited
 
-                // Mec Scheduler
-                // _mecProductChoices  <pstate> -> choice
                 boost::optional<std::vector<storm::storage::BitVector>> _infSets; // Save the InfSets of the Acceptance condition.
                 boost::optional<std::vector<boost::optional<std::set<uint_fast64_t>>>> _accInfSets; // Save for each product state (which is assigned to an acceptingMEC), the infSets that need to be visited inf often to satisfy the acceptance condition. Remaining states belonging to no accepting EC, are assigned  len(_infSets) (REACH scheduler)
                 // Memory structure

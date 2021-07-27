@@ -608,10 +608,10 @@ namespace storm {
                 std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
                 if (produceScheduler) {
                     scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(transitionMatrix.getRowGroupCount());
-                    // If maybeStatesNotRelevant is true, we have to set the scheduler for maybe states as "unreachable"
+                    // If maybeStatesNotRelevant is true, we have to set the scheduler for maybe states as "dontCare"
                     if (maybeStatesNotRelevant) {
                         for (auto state : qualitativeStateSets.maybeStates) {
-                            scheduler->setStateUnreachable(state);
+                            scheduler->setDontCare(state);
                         }
 
                     }

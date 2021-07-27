@@ -175,7 +175,7 @@ namespace storm {
             }
 
 
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(mdp.getTransitionMatrix(), mdp.getNumberOfStates());
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(mdp.getTransitionMatrix());
             storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, mdp);
 
             // Compute Satisfaction sets for APs

@@ -130,7 +130,7 @@ namespace storm {
                 modelDot.close();
             }
 
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(embeddedDtmc.getTransitionMatrix(), embeddedDtmc.getNumberOfStates());
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(embeddedDtmc.getTransitionMatrix());
             storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, embeddedDtmc);
 
             // Compute Satisfaction sets for APs
