@@ -45,7 +45,7 @@ namespace storm {
                 STORM_LOG_ASSERT(this->_producedChoices.is_initialized(), "Trying to extract the produced scheduler but none is available. Was there a computation call before?");
                 STORM_LOG_ASSERT(this->_memoryTransitions.is_initialized(), "Trying to extract the DA transition structure but none is available. Was there a computation call before?");
                 STORM_LOG_ASSERT(this->_memoryInitialStates.is_initialized(), "Trying to extract the initial states of the DA but there are none available. Was there a computation call before?");
-                STORM_LOG_ASSERT(this->_dontCareStates.is_initialized(), "Trying to extract the dontCare states of the Scheduler but there are none available. Was there a computation call before?");
+                STORM_LOG_ASSERT(this->_dontCareStates.is_initialized(), "Trying to extract the Scheduler-dontCare states but there are none available. Was there a computation call before?");
 
 
                 // Create a memory structure for the MDP scheduler with memory. If hasRelevantStates is set, we only consider initial model states relevant.
@@ -147,7 +147,7 @@ namespace storm {
                 }
 
                 for (auto const& conjunction : dnf) {
-                    // determine the set of states of the subMDP that can satisfy the condition, remove all states that would violate Fins in the conjunction
+                    // Determine the set of states of the subMDP that can satisfy the condition, remove all states that would violate Fins in the conjunction.
                     storm::storage::BitVector allowed(transitionMatrix.getRowGroupCount(), true);
 
                     STORM_LOG_INFO("Handle conjunction " << i);
@@ -182,7 +182,7 @@ namespace storm {
 
                     STORM_LOG_DEBUG(" Allowed states: " << allowed);
 
-                    // compute MECs in the allowed fragment
+                    // Compute MECs in the allowed fragment
                     storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions, allowed);
                     allMECs += mecs.size();
                     for (const auto& mec : mecs) {
@@ -387,7 +387,6 @@ namespace storm {
 
                                 }
                             }
-
                         }
                     }
                 }

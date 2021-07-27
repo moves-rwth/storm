@@ -25,8 +25,8 @@ namespace storm {
             public:
 
                 /*!
-     * The type of the product automaton (DTMC or MDP) that is used during the computation.
-     */
+                 * The type of the product automaton (DTMC or MDP) that is used during the computation.
+                 */
                 using productModelType = typename std::conditional<Nondeterministic, storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Dtmc<ValueType>>::type;
 
                 /*!
