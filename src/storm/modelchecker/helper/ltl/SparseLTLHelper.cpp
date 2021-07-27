@@ -27,6 +27,10 @@ namespace storm {
                 // Intentionally left empty.
             }
 
+            template <typename ValueType, bool Nondeterministic>
+            uint_fast64_t SparseLTLHelper<ValueType, Nondeterministic>::SparseLTLHelper::getMemoryState(uint_fast64_t daState, uint_fast64_t infSet) {
+                return (daState * (_infSets.get().size()+1))+ infSet;
+            }
 
             template <typename ValueType, bool Nondeterministic>
             storm::storage::Scheduler<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::SparseLTLHelper::extractScheduler(storm::models::sparse::Model<ValueType> const& model) {
@@ -51,7 +55,7 @@ namespace storm {
                 // Create a memory structure for the MDP scheduler with memory. If hasRelevantStates is set, we only consider initial model states relevant.
                 auto memoryBuilder = storm::storage::MemoryStructureBuilder<ValueType>(this->_memoryTransitions.get().size(), model, this->hasRelevantStates());
 
-                // Build the transitions between the memory states:  startState--- modelStates (transitionVector) --->goalState
+                // Build the transitions between the memory states: startState to goalState using modelStates (transitionVector).
                 for (storm::storage::sparse::state_type startState = 0; startState < this->_memoryTransitions.get().size(); ++startState) {
                     for (storm::storage::sparse::state_type goalState = 0; goalState < this->_memoryTransitions.get().size(); ++goalState) {
                         // Bitvector that represents modelStates the model states that trigger this transition.
@@ -59,7 +63,7 @@ namespace storm {
                     }
                 }
 
-                // initialMemoryStates: Assign an initial memory state model states
+                // InitialMemoryStates: Assign an initial memory state model states
                 if (this->hasRelevantStates()) {
                     // Only consider initial model states
                     for (uint_fast64_t modelState : model.getInitialStates()) {
@@ -82,13 +86,13 @@ namespace storm {
                 for (const auto &choice : this->_producedChoices.get()) {
                     // <s, q, InfSet> -> choice
                     storm::storage::sparse::state_type modelState = std::get<0>(choice.first);
-                    storm::storage::sparse::state_type automatonState = std::get<1>(choice.first);
+                    storm::storage::sparse::state_type daState = std::get<1>(choice.first);
                     uint_fast64_t infSet = std::get<2>(choice.first);
-                    STORM_LOG_ASSERT(!this->_dontCareStates.get()[(automatonState*(_infSets.get().size()+1))+ infSet].get(modelState), "Tried to set choice for dontCare state.");
-                    scheduler.setChoice(choice.second, modelState, (automatonState*(_infSets.get().size()+1))+ infSet);
+                    STORM_LOG_ASSERT(!this->_dontCareStates.get()[getMemoryState(daState, infSet)].get(modelState), "Tried to set choice for dontCare state.");
+                    scheduler.setChoice(choice.second, modelState, getMemoryState(daState, infSet));
                 }
 
-                // Set "don't care" states
+                // Set "dontCare" states
                 for (uint_fast64_t memoryState = 0; memoryState < this->_dontCareStates.get().size(); ++memoryState) {
                     for (auto state : this->_dontCareStates.get()[memoryState]) {
                         scheduler.setDontCare(state, memoryState);
@@ -219,7 +223,7 @@ namespace storm {
                                     }
 
                                 } else if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_FIN) {
-                                    // do only sanity checks here
+                                    // Do only sanity checks here.
                                     STORM_LOG_ASSERT(atom.isNegated() ? !mec.containsAnyState(~accSet) : !mec.containsAnyState(accSet), "MEC contains Fin-states, which should have been removed");
                                 }
                             }
@@ -241,7 +245,7 @@ namespace storm {
                                     mecStates.set(stateChoicePair.first);
                                 }
 
-                                // We know the MEC satisfied the conjunction: Save InfSets
+                                // We know the MEC satisfied the conjunction: Save InfSets.
                                 std::set<uint_fast64_t> infSetIds;
                                 for (auto const& literal : conjunction) {
                                     storm::storage::BitVector infSet;
@@ -359,7 +363,7 @@ namespace storm {
                         if (!product->isValidProductState(modelState, automatonState)) {
                             // If the state <s,q> does not occur in the product model, all the infSet combinations are irrelevant for the scheduler.
                             for (uint_fast64_t infSet = 0; infSet < _infSets.get().size()+1; ++infSet) {
-                                _dontCareStates.get()[automatonState * (_infSets.get().size() + 1) + infSet].set(modelState, true);
+                                _dontCareStates.get()[getMemoryState(automatonState, infSet)].set(modelState, true);
                             }
                         } else {
                             auto pState = product->getProductStateIndex(modelState, automatonState);
@@ -367,7 +371,7 @@ namespace storm {
                                 // For states in accepting ECs set the missing MEC-scheduler combinations are "dontCare", they are not reachable using the scheduler choices. //TODO is this correct?
                                 for (uint_fast64_t infSet = 0; infSet < _infSets.get().size()+1; ++infSet) {
                                     if (_producedChoices.get().find(std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), infSet)) == _producedChoices.get().end() ) {
-                                        _dontCareStates.get()[(product->getAutomatonState(pState)) * (_infSets.get().size()+1) + infSet].set(product->getModelState(pState), true);
+                                        _dontCareStates.get()[getMemoryState(product->getAutomatonState(pState), infSet)].set(product->getModelState(pState), true);
                                     }
                                 }
 
@@ -376,14 +380,14 @@ namespace storm {
                                 this->_accInfSets.get()[pState] = {_infSets.get().size()};
                                 if (reachScheduler->isDontCare(pState)) {
                                     // Mark the maybe States of the untilProbability scheduler as "dontCare"
-                                    _dontCareStates.get()[(product->getAutomatonState(pState)) * (_infSets.get().size()+1) + _infSets.get().size()].set(product->getModelState(pState), true);
+                                    _dontCareStates.get()[getMemoryState(product->getAutomatonState(pState), _infSets.get().size())].set(product->getModelState(pState), true);
                                 } else {
                                     // Set choice For non-accepting states that are not in any accepting EC
                                     this->_producedChoices.get().insert({std::make_tuple(product->getModelState(pState),product->getAutomatonState(pState),_infSets.get().size()),reachScheduler->getChoice(pState)});
                                 };
                                 // All other InfSet combinations are unreachable (dontCare)
                                 for (uint_fast64_t infSet = 0; infSet < _infSets.get().size(); ++infSet) {
-                                    _dontCareStates.get()[(product->getAutomatonState(pState)) * (_infSets.get().size()+1) + infSet].set(product->getModelState(pState), true);
+                                    _dontCareStates.get()[getMemoryState(product->getAutomatonState(pState), infSet)].set(product->getModelState(pState), true);
 
                                 }
                             }
@@ -411,14 +415,14 @@ namespace storm {
                                 if (_accInfSets.get()[product->getProductStateIndex(modelState, automatonTo)].get().count(infSet) == 0) {
                                     // the state is is in a different accepting MEC with a different accepting conjunction of InfSets.
                                     auto newInfSet = _accInfSets.get()[product->getProductStateIndex(modelState, automatonTo)].get().begin();
-                                    _memoryTransitions.get()[(automatonFrom *  (_infSets.get().size()+1)) + infSet][(automatonTo *  (_infSets.get().size()+1)) + *newInfSet].set(modelState);
+                                    _memoryTransitions.get()[getMemoryState(automatonFrom, infSet)][getMemoryState(automatonTo, *newInfSet)].set(modelState);
 
                                 } else {
                                     // Continue looking for any accepting EC (if we haven't reached one yet) or stay in the corresponding accepting EC, test whether we have reached the next infSet.
                                     if (infSet == _infSets.get().size() || !(_infSets.get()[infSet].get(product->getProductStateIndex(modelState, automatonTo)))) {
                                         // <modelState, automatonTo> is not in any accepting EC or does not satisfy the InfSet, we stay there.
                                         // Add modelState to the transition from <automatonFrom, InfSet> to <automatonTo, InfSet>
-                                        _memoryTransitions.get()[(automatonFrom * (_infSets.get().size()+1)) + infSet][(automatonTo * (_infSets.get().size()+1)) + infSet].set(modelState);
+                                        _memoryTransitions.get()[getMemoryState(automatonFrom, infSet)][getMemoryState(automatonTo, infSet)].set(modelState);
 
                                     } else {
                                         STORM_LOG_ASSERT(_accInfSets.get()[product->getProductStateIndex(modelState, automatonTo)] != boost::none, "The list of InfSets for the product state <" <<modelState<< ", " << automatonTo<<"> is undefined.");
@@ -431,7 +435,7 @@ namespace storm {
                                             nextInfSet = _accInfSets.get()[product->getProductStateIndex(modelState, automatonTo)].get().begin();
                                         }
                                         // Add modelState to the transition from <automatonFrom <mec, InfSet>> to  <automatonTo, <mec, NextInfSet>>.
-                                        _memoryTransitions.get()[(automatonFrom *  (_infSets.get().size()+1)) + infSet][(automatonTo *  (_infSets.get().size()+1)) + *nextInfSet].set(modelState);
+                                        _memoryTransitions.get()[getMemoryState(automatonFrom, infSet)][getMemoryState(automatonTo, *nextInfSet)].set(modelState);
                                     }
                                 }
                             }
@@ -452,14 +456,13 @@ namespace storm {
                         STORM_LOG_ASSERT(_accInfSets.get()[product->getProductStateIndex(modelState, automatonState)] != boost::none, "The list of InfSets for the product state <" <<modelState<< ", " << automatonState<<"> is undefined.");
                         // If <s, q> is an accepting state start in the first InfSet of <s, q>.
                         auto infSet = _accInfSets.get()[product->getProductStateIndex(modelState, automatonState)].get().begin();
-                        _memoryInitialStates.get()[modelState] = (automatonState * (_infSets.get().size()+1)) + *infSet;
+                        _memoryInitialStates.get()[modelState] = getMemoryState(automatonState, *infSet);
 
                     } else {
-                        _memoryInitialStates.get()[modelState] = (automatonState * (_infSets.get().size()+1)) + _infSets.get().size();
+                        _memoryInitialStates.get()[modelState] = getMemoryState(automatonState, _infSets.get().size());
                     }
 
                 }
-                // Finished creation of initial states.
 
             }
 

@@ -93,13 +93,22 @@ namespace storm {
 
                 /**
                 * Helper function, extracts scheduler choices and creates the memory structure for the LTL-Scheduler.
-                * @param
-                * @param
-                * @param the scheduler enuring to reach some acceptingState, defined on the model-DA product
-                * @param
+                * @param number of DA-states
+                * @param states in accepting end components of the model-DA product
+                * @param the scheduler ensuring to reach some acceptingState, defined on the model-DA product
+                * @param the product builder
+                * @param the model-DA product
+                * @param relevant states of the model
                 */
                 void prepareScheduler(uint_fast64_t numDaStates, storm::storage::BitVector const& acceptingProductStates, std::unique_ptr<storm::storage::Scheduler<ValueType>> reachScheduler, transformer::DAProductBuilder const& productBuilder, typename transformer::DAProduct<productModelType>::ptr product, storm::storage::BitVector const& modelStatesOfInterest);
 
+                /**
+                 * Helper function, computes the memory state for a given DA-state and infSet ID.
+                 * Encoded as (DA-state * (numberOfInfSets+1)) + infSet. (+1 because an additional "copy" of the DA is used for states outside accepting ECs)
+                 * @param DA-state
+                 * @param infSet ID
+                 */
+                uint_fast64_t getMemoryState(uint_fast64_t daState, uint_fast64_t infSet);
 
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
 
