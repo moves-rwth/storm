@@ -34,7 +34,8 @@ namespace storm {
              * @return The resulting boolean variable.
              */
             BooleanVariable substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
-            
+            BooleanVariable substituteNonStandardPredicates() const;
+
             virtual void createMissingInitialValue() override;
             
             friend std::ostream& operator<<(std::ostream& stream, BooleanVariable const& variable);

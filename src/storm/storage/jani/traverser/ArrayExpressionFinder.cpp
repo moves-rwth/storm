@@ -11,6 +11,8 @@ namespace storm {
         namespace detail {
             class ArrayExpressionFinderExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             public:
+                using storm::expressions::ExpressionVisitor::visit;
+
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
                     return
                         boost::any_cast<bool>(expression.getCondition()->accept(*this, data)) ||

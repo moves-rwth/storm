@@ -48,6 +48,25 @@ namespace storm {
             return result;
         }
 
+        CompressedState packStateFromValuation(expressions::SimpleValuation const& valuation, VariableInformation const& variableInformation, bool checkOutOfBounds) {
+            CompressedState result(variableInformation.getTotalBitOffset(true));
+            STORM_LOG_THROW(variableInformation.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented");
+            for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                result.set(booleanVariable.bitOffset, valuation.getBooleanValue(booleanVariable.variable));
+            }
+            for (auto const& integerVariable : variableInformation.integerVariables) {
+                int64_t assignedValue = valuation.getIntegerValue(integerVariable.variable);
+                if (checkOutOfBounds) {
+                    STORM_LOG_THROW(assignedValue >= integerVariable.lowerBound, storm::exceptions::InvalidArgumentException, "The assignment leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << integerVariable.getName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerVariable.upperBound, storm::exceptions::InvalidArgumentException, "The assignment leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << integerVariable.getName() << "'.");
+                }
+                result.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, assignedValue - integerVariable.lowerBound);
+                STORM_LOG_ASSERT(static_cast<int_fast64_t>(result.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << result.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) << " but wrote " << assignedValue << ").");
+            }
+
+            return result;
+        }
+
         void extractVariableValues(CompressedState const& state, VariableInformation const& variableInformation, std::vector<int64_t>& locationValues, std::vector<bool>& booleanValues, std::vector<int64_t>& integerValues) {
             for (auto const& locationVariable : variableInformation.locationVariables) {
                 if (locationVariable.bitWidth != 0) {
@@ -126,8 +145,35 @@ namespace storm {
             }
         }
 
+        template<typename ValueType>
+        storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, VariableInformation const& variableInformation, bool onlyObservable) {
+            storm::json<ValueType> result;
+            for (auto const& locationVariable : variableInformation.locationVariables) {
+                if (onlyObservable && !locationVariable.observable)  {
+                    continue;
+                }
+                if (locationVariable.bitWidth != 0) {
+                    result[locationVariable.variable.getName()] = state.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth);
+                } else {
+                    result[locationVariable.variable.getName()] = 0;
+                }
+            }
+            for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                if (onlyObservable && !booleanVariable.observable)  {
+                    continue;
+                }
+                result[booleanVariable.getName()] = state.get(booleanVariable.bitOffset);
+            }
+            for (auto const& integerVariable : variableInformation.integerVariables) {
+                if (onlyObservable && !integerVariable.observable)  {
+                    continue;
+                }
+                STORM_LOG_ASSERT(integerVariable.bitWidth <= 63, "Only integer variables with at most 63 bits are supported");
+                result[integerVariable.getName()] = static_cast<int64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound;
+            }
+            return result;
+        }
 
-        template void unpackStateIntoEvaluator<double>(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<double>& evaluator);
         storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionManager const& manager);
 
         CompressedState createOutOfBoundsState(VariableInformation const& varInfo, bool roundTo64Bit) {
@@ -164,7 +210,11 @@ namespace storm {
             return result;
         }
 
+        template storm::json<double> unpackStateIntoJson<double>(CompressedState const& state, VariableInformation const& variableInformation, bool onlyObservable);
+        template void unpackStateIntoEvaluator<double>(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<double>& evaluator);
 #ifdef STORM_HAVE_CARL
+        template storm::json<storm::RationalNumber> unpackStateIntoJson<storm::RationalNumber>(CompressedState const& state, VariableInformation const& variableInformation, bool onlyObservable);
+        template storm::json<storm::RationalFunction> unpackStateIntoJson<storm::RationalFunction>(CompressedState const& state, VariableInformation const& variableInformation, bool onlyObservable);
         template void unpackStateIntoEvaluator<storm::RationalNumber>(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<storm::RationalNumber>& evaluator);
         template void unpackStateIntoEvaluator<storm::RationalFunction>(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<storm::RationalFunction>& evaluator);
 #endif

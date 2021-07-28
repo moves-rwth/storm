@@ -98,7 +98,28 @@ namespace storm {
 
             return RewardModel(this->getName(), this->getStateRewards(), newStateActionRewards, newTransitionRewards, this->getFilename(), this->getLineNumber());
         }
-        
+
+        RewardModel RewardModel::labelUnlabelledCommands(std::vector<std::pair<uint64_t, std::string>> const& newActions) const {
+            std::vector<StateActionReward> newStateActionRewards;
+            std::vector<TransitionReward> newTransitionRewards;
+
+            for (auto const& reward : getStateActionRewards()) {
+                if(reward.getActionIndex() == 0) {
+                    for (auto const& newAction : newActions) {
+                        newStateActionRewards.emplace_back(newAction.first, newAction.second, reward.getStatePredicateExpression(), reward.getRewardValueExpression(), reward.getFilename(), reward.getLineNumber());
+                    }
+                } else {
+                    newStateActionRewards.push_back(reward);
+                }
+            }
+
+            assert(transitionRewards.empty()); // Not implemented.
+
+
+            return RewardModel(this->getName(), this->getStateRewards(), newStateActionRewards, newTransitionRewards, this->getFilename(), this->getLineNumber());
+        }
+
+
         std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel) {
             stream << "rewards";
             if (rewardModel.getName() != "") {

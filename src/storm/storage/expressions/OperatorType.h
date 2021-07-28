@@ -29,7 +29,10 @@ namespace storm {
             Not,
             Floor,
             Ceil,
-            Ite
+            Ite,
+            AtLeastOneOf,
+            AtMostOneOf,
+            ExactlyOneOf
         };
         
         std::ostream& operator<<(std::ostream& stream, OperatorType const& operatorType);

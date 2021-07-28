@@ -49,6 +49,14 @@ namespace storm {
                                    this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substitute(substitution) : this->getInitialValueExpression(),
                                    this->isObservable(), this->getFilename(), this->getLineNumber());
         }
+
+        IntegerVariable IntegerVariable::substituteNonStandardPredicates() const {
+            return IntegerVariable(this->getExpressionVariable(),
+                                   this->hasLowerBoundExpression() ? this->getLowerBoundExpression().substituteNonStandardPredicates() : storm::expressions::Expression(),
+                                   this->hasUpperBoundExpression() ? this->getUpperBoundExpression().substituteNonStandardPredicates() : storm::expressions::Expression(),
+                                   this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substituteNonStandardPredicates() : this->getInitialValueExpression(),
+                                   this->isObservable(), this->getFilename(), this->getLineNumber());
+        }
         
         void IntegerVariable::createMissingInitialValue() {
             if (!this->hasInitialValue()) {

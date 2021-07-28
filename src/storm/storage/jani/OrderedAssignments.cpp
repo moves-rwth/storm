@@ -87,7 +87,10 @@ namespace storm {
             return getLowestLevel(onlyTransient) != 0 || getHighestLevel(onlyTransient) != 0;
         }
         
-        bool OrderedAssignments::empty() const {
+        bool OrderedAssignments::empty(bool onlyTransient) const {
+            if (onlyTransient) {
+                return transientAssignments.empty();
+            }
             return allAssignments.empty();
         }
         

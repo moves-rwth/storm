@@ -23,6 +23,7 @@ namespace storm {
             const std::string printWinningRegionOption = "printwinningregion";
             const std::string exportWinningRegionOption = "exportwinningregion";
             const std::string preventGraphPreprocessing = "nographprocessing";
+            const std::string beliefSupportMCOption = "belsupmc";
             const std::string memlessSearchOption = "memlesssearch";
             std::vector<std::string> memlessSearchMethods = {"one-shot", "iterative"};
 
@@ -33,6 +34,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSATCallsOption, false, "Export the SAT calls?.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "The name of the path to which to write the models.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, lookaheadHorizonOption, false, "In reachability in combination with a discrete ranking function, a lookahead is necessary.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("bound", "The lookahead. Use 0 for the number of states.").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, onlyDeterministicOption, false, "Search only for deterministic schedulers").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, beliefSupportMCOption, false, "Create a symbolic description of the belief-support MDP to use for analysis purposes").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, winningRegionOption, false, "Search for the winning region").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, lookaheadTypeOption, false, "What type to use for the ranking function").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type.").setDefaultValueString("real").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"bool", "int", "real"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, validationLevel, true, "Validate algorithm during runtime (for debugging)").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("level", "how regular to apply this validation. Use 0 for never, 1 for the end, and >=2 within computation steps.").setDefaultValueUnsignedInteger(0).build()).build());
@@ -64,6 +66,10 @@ namespace storm {
 
             bool QualitativePOMDPAnalysisSettings::isWinningRegionSet() const {
                 return this->getOption(winningRegionOption).getHasOptionBeenSet();
+            }
+
+            bool QualitativePOMDPAnalysisSettings::isComputeOnBeliefSupportSet() const {
+                return this->getOption(beliefSupportMCOption).getHasOptionBeenSet();
             }
 
             bool QualitativePOMDPAnalysisSettings::validateIntermediateSteps() const {

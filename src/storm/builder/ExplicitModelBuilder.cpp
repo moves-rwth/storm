@@ -41,8 +41,16 @@ namespace storm {
         template<typename StateType>
         StateType ExplicitStateLookup<StateType>::lookup(std::map<storm::expressions::Variable, storm::expressions::Expression> const& stateDescription) const {
             auto cs = storm::generator::createCompressedState(this->varInfo, stateDescription, true);
-            STORM_LOG_THROW(stateToId.contains(cs), storm::exceptions::IllegalArgumentException, "State unknown.");
+            //TODO search once
+            if (!stateToId.contains(cs)) {
+                return static_cast<StateType>(this->size());
+            }
             return this->stateToId.getValue(cs);
+        }
+
+        template<typename StateType>
+        uint64_t ExplicitStateLookup<StateType>::size() const {
+            return this->stateToId.size();
         }
 
         template <typename ValueType, typename RewardModelType, typename StateType>

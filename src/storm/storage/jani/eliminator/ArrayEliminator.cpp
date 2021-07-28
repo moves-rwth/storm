@@ -24,6 +24,8 @@ namespace storm {
             
             class MaxArraySizeExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             public:
+                using storm::expressions::ExpressionVisitor::visit;
+
                 MaxArraySizeExpressionVisitor() = default;
                 virtual ~MaxArraySizeExpressionVisitor() = default;
 
@@ -170,7 +172,8 @@ namespace storm {
             
             class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             public:
-                
+                using storm::expressions::ExpressionVisitor::visit;
+
                 typedef std::shared_ptr<storm::expressions::BaseExpression const> BaseExprPtr;
                 class ResultType {
                 public:

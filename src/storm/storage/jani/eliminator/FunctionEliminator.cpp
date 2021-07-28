@@ -26,7 +26,9 @@ namespace storm {
             
             class FunctionEliminationExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             public:
-                
+                using storm::expressions::ExpressionVisitor::visit;
+
+
                 typedef std::shared_ptr<storm::expressions::BaseExpression const> BaseExprPtr;
 
                 FunctionEliminationExpressionVisitor(std::unordered_map<std::string, FunctionDefinition> const* globalFunctions, std::unordered_map<std::string, FunctionDefinition> const* localFunctions = nullptr) : globalFunctions(globalFunctions), localFunctions(localFunctions) {}
