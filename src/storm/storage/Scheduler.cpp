@@ -102,6 +102,8 @@ namespace storm {
                     --numOfDeterministicChoices;
                 }
 
+                // Set an arbitrary choice
+                schedulerChoices[memoryState][modelState] = SchedulerChoice<ValueType>(0);
             }
         }
 
