@@ -95,7 +95,7 @@ namespace storm {
                 dontCareStates[memoryState].set(modelState, true);
                 ++numOfDontCareStates;
 
-                // Choices for unreachable states are not considered undefined or deterministic
+                // Choices for dontCare states are not considered undefined or deterministic
                 if (!schedulerChoice.isDefined()) {
                     --numOfUndefinedChoices;
                 } else if (schedulerChoice.isDeterministic()) {

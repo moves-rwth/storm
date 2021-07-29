@@ -516,15 +516,7 @@ namespace storm {
                 components.exitRates = std::move(resultExitRates);
             }
             
-            storm::models::ModelType resultType = model.getType();
-            if (scheduler && !scheduler->isPartialScheduler()) {
-                if (model.isOfType(storm::models::ModelType::Mdp)) {
-                    resultType = storm::models::ModelType::Dtmc;
-                }
-                // Note that converting deterministic MAs to CTMCs via state elimination does not preserve all properties (e.g. step bounded)
-            }
-            
-            return storm::utility::builder::buildModelFromComponents(resultType, std::move(components));
+            return storm::utility::builder::buildModelFromComponents(model.getType(), std::move(components));
         }
         
         template <typename ValueType, typename RewardModelType>
