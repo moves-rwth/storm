@@ -166,7 +166,6 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted, cached);
 
             const SparseMdpModelType& mdp = this->getModel();
-            // TODO ?
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                 STORM_LOG_TRACE("Writing model to model.dot");
                 std::ofstream modelDot("model.dot");
@@ -184,7 +183,6 @@ namespace storm {
 
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
-            //TODO for MA too
             std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
             if (checkTask.isProduceSchedulersSet()) {
                 result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::make_unique<storm::storage::Scheduler<ValueType>>(helper.extractScheduler(mdp)));

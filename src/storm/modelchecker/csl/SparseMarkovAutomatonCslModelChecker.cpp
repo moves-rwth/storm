@@ -136,7 +136,6 @@ namespace storm {
 
             STORM_LOG_INFO("Performing ltl probability computations in embedded MDP...");
 
-            // TODO ?
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                 STORM_LOG_TRACE("Writing model to model.dot");
                 std::ofstream modelDot("model.dot");
@@ -153,8 +152,13 @@ namespace storm {
 
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            if (checkTask.isProduceSchedulersSet()) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::make_unique<storm::storage::Scheduler<ValueType>>(helper.extractScheduler(embeddedMdp)));
+            }
+
             // We can directly return the numericResult vector as the state space of the CTMC and the embedded MDP are exactly the same
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            return result;
         }
 
                 
