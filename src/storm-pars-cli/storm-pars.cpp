@@ -659,7 +659,7 @@ namespace storm {
             } else if (derSettings.isFeasibleInstantiationSearchSet()) {
                 STORM_PRINT("Finding an extremum using Gradient Descent" << std::endl);
                 storm::utility::Stopwatch derivativeWatch(true);
-                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(*dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, derSettings.isPrintJsonSet());
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(*dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, !derSettings.isNoProjectGradientSet(), derSettings.isPrintJsonSet());
                 storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask(*formula);
                 derivativeChecker.specifyFormula(Environment(), checkTask);
                 auto instantiationAndValue = derivativeChecker.gradientDescent(Environment());

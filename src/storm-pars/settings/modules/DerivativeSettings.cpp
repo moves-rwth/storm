@@ -26,6 +26,7 @@ namespace storm {
             const std::string DerivativeSettings::gradientDescentMethod = "descent-method";
             const std::string DerivativeSettings::omitInconsequentialParams = "omit-inconsequential-params";
             const std::string DerivativeSettings::startPoint = "start-point";
+            const std::string DerivativeSettings::noProjectGradient = "no-project-gradient";
 
             DerivativeSettings::DerivativeSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, feasibleInstantiationSearch, false, "Search for a feasible instantiation (restart with new instantiation while not feasible)").build());
@@ -46,6 +47,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, terminationEpsilon, false, "The change in value that constitutes as a \"tiny change\", after a few of which the gradient descent will terminate")
                     .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(terminationEpsilon, "The epsilon").setDefaultValueDouble(1e-6).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, omitInconsequentialParams, false, "Parameters that are removed in minimization because they have no effect on the rational function are normally set to 0.5 in the final instantiation. If this flag is set, they will be omitted from the final instantiation entirely.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, noProjectGradient, false, "Do not Project Gradient (WIP, not recommended)").setIsAdvanced().build());
             }
 
             bool DerivativeSettings::isFeasibleInstantiationSearchSet() const {
@@ -91,6 +93,10 @@ namespace storm {
 
             bool DerivativeSettings::areInconsequentialParametersOmitted() const  {
                 return this->getOption(omitInconsequentialParams).getHasOptionBeenSet();
+            }
+
+            bool DerivativeSettings::isNoProjectGradientSet() const {
+                return this->getOption(noProjectGradient).getHasOptionBeenSet();
             }
 
             boost::optional<std::string> DerivativeSettings::getStartPoint() const  {

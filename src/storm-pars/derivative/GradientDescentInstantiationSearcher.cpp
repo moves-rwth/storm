@@ -42,11 +42,16 @@ namespace storm {
             auto const oldPos = position[steppingParameter];
 
             // Project gradient
-            const ConstantType constantOldPos = utility::convertNumber<ConstantType>(oldPos);
-            ConstantType newPlainPosition = constantOldPos + precisionAsConstant * gradient.at(steppingParameter);
-            newPlainPosition = utility::max<ConstantType>(utility::zero<ConstantType>() + precisionAsConstant, newPlainPosition);
-            newPlainPosition = utility::min<ConstantType>(utility::one<ConstantType>() - precisionAsConstant, newPlainPosition);
-            ConstantType projectedGradient = (newPlainPosition - constantOldPos) / precisionAsConstant;
+            ConstantType projectedGradient;
+            if (projectGradient) {
+                const ConstantType constantOldPos = utility::convertNumber<ConstantType>(oldPos);
+                ConstantType newPlainPosition = constantOldPos + precisionAsConstant * gradient.at(steppingParameter);
+                newPlainPosition = utility::max<ConstantType>(utility::zero<ConstantType>() + precisionAsConstant, newPlainPosition);
+                newPlainPosition = utility::min<ConstantType>(utility::one<ConstantType>() - precisionAsConstant, newPlainPosition);
+                projectedGradient = (newPlainPosition - constantOldPos) / precisionAsConstant;
+            } else {
+                projectedGradient = gradient.at(steppingParameter);
+            }
 
             /* if (utility::abs<ConstantType>(projectedGradient - gradient.at(steppingParameter)) > precisionAsConstant) { */
             /*     std::cout << "Diff: " << projectedGradient - gradient.at(steppingParameter) << std::endl; */

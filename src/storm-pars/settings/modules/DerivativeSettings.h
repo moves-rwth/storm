@@ -57,6 +57,11 @@ namespace storm {
                  */
                 bool isPrintJsonSet() const;
 
+								/*!
+								 * Retrieves whether the gradient should not be projected.
+								 */
+								bool isNoProjectGradientSet() const;
+
                 /*!
                  * Retrieves the termination epsilon.
                  */
@@ -97,6 +102,7 @@ namespace storm {
                 const static std::string gradientDescentMethod;
                 const static std::string omitInconsequentialParams;
                 const static std::string startPoint;
+                const static std::string noProjectGradient;
                 boost::optional<derivative::GradientDescentMethod> methodFromString(const std::string &str) const;
             };
 

@@ -50,6 +50,7 @@ namespace storm {
                     uint_fast64_t miniBatchSize = 32,
                     double terminationEpsilon = 1e-6,
                     boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>> startPoint = boost::none,
+                    bool projectGradient = true,
                     bool recordRun = false
             ) : model(model)
               , derivativeEvaluationHelper(std::make_unique<SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>>(model))
@@ -57,6 +58,7 @@ namespace storm {
               , startPoint(startPoint)
               , miniBatchSize(miniBatchSize)
               , terminationEpsilon(terminationEpsilon)
+              , projectGradient(projectGradient)
               , recordRun(recordRun) {
                 switch (method) {
                     case GradientDescentMethod::ADAM: {
@@ -232,6 +234,7 @@ namespace storm {
             boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>> startPoint;
             const uint_fast64_t miniBatchSize;
             const double terminationEpsilon;
+            const bool projectGradient;
 
             // This is for visualizing data
             const bool recordRun;
