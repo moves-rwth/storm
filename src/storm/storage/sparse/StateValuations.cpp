@@ -214,8 +214,10 @@ namespace storm {
                         result[valIt.getName()] = valIt.getBooleanValue();
                     } else if (valIt.isInteger()) {
                         result[valIt.getName()] = valIt.getIntegerValue();
+                    } else if (valIt.isLabelAssignment()) {
+                        result[valIt.getLabel()] = valIt.getLabelValue();
                     } else {
-                        STORM_LOG_ASSERT(valIt.isRational(), "Unexpected variable type.");
+                        STORM_LOG_ASSERT(valIt.isRational(), "Unexpected variable type for variable " << valIt.getName());
                         result[valIt.getName()] = storm::utility::convertNumber<JsonRationalType>(valIt.getRationalValue());
                     }
                 
