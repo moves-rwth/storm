@@ -377,7 +377,7 @@ namespace storm {
 
                             } else {
                                 // Extract the choices of the REACH-scheduler (choices to reach an acc. MEC) for the MDP-DA product: <s,q> -> choice. The memory structure corresponds to the "last" copy of the DA (_infSets.get().size()).
-                                this->_accInfSets.get()[pState] = {_infSets.get().size()};
+                                this->_accInfSets.get()[pState] = std::set<uint_fast64_t>({_infSets.get().size()});
                                 if (reachScheduler->isDontCare(pState)) {
                                     // Mark the maybe States of the untilProbability scheduler as "dontCare"
                                     _dontCareStates.get()[getMemoryState(product->getAutomatonState(pState), _infSets.get().size())].set(product->getModelState(pState), true);
