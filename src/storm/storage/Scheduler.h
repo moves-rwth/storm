@@ -60,12 +60,20 @@ namespace storm {
 
             /*!
              * Set the combination of model state and memoryStructure state to dontCare.
-             * This means the corresponding choices are neither considered undefined nor deterministic.
+             * Set an arbitrary choice an arbitrary choice if no choice exists.
              *
              * @param modelState The state of the model.
              * @param memoryState The state of the memoryStructure.
              */
             void setDontCare(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
+
+            /*!
+             * Unset the combination of model state and memoryStructure state to dontCare.
+             *
+             * @param modelState The state of the model.
+             * @param memoryState The state of the memoryStructure.
+             */
+            void unSetDontCare(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
 
             /*!
             * Is the combination of model state and memoryStructure state to reachable?

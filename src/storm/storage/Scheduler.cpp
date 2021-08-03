@@ -57,7 +57,7 @@ namespace storm {
                     }
                 }
             }
-            
+
             schedulerChoice = choice;
         }
 
@@ -90,22 +90,34 @@ namespace storm {
         void Scheduler<ValueType>::setDontCare(uint_fast64_t modelState, uint_fast64_t memoryState) {
             STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
             STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
-            auto& schedulerChoice = schedulerChoices[memoryState][modelState];
+
             if (!dontCareStates[memoryState].get(modelState)) {
+                auto& schedulerChoice = schedulerChoices[memoryState][modelState];
+                if (!schedulerChoice.isDefined()) {
+                    // Set an arbitrary choice
+                    this->setChoice(0, modelState, memoryState);
+                }
                 dontCareStates[memoryState].set(modelState, true);
                 ++numOfDontCareStates;
-
-                // Choices for dontCare states are not considered undefined or deterministic
-                if (!schedulerChoice.isDefined()) {
-                    --numOfUndefinedChoices;
-                } else if (schedulerChoice.isDeterministic()) {
-                    --numOfDeterministicChoices;
-                }
-
-                // Set an arbitrary choice
-                schedulerChoices[memoryState][modelState] = SchedulerChoice<ValueType>(0);
             }
         }
+
+        template <typename ValueType>
+        void Scheduler<ValueType>::unSetDontCare(uint_fast64_t modelState, uint_fast64_t memoryState) {
+            STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
+            STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
+
+            if (dontCareStates[memoryState].get(modelState)) {
+                auto& schedulerChoice = schedulerChoices[memoryState][modelState];
+                if (!schedulerChoice.isDefined()) {
+                    ++numOfUndefinedChoices;
+                }
+                dontCareStates[memoryState].set(modelState, false);
+                --numOfDontCareStates;
+
+            }
+        }
+
 
         template <typename ValueType>
         bool Scheduler<ValueType>::isDontCare(uint_fast64_t modelState, uint64_t memoryState) const {
@@ -137,7 +149,7 @@ namespace storm {
         
         template <typename ValueType>
         bool Scheduler<ValueType>::isDeterministicScheduler() const {
-            return numOfDeterministicChoices == (schedulerChoices.size() * schedulerChoices.begin()->size()) - numOfUndefinedChoices - numOfDontCareStates;
+            return numOfDeterministicChoices == (schedulerChoices.size() * schedulerChoices.begin()->size()) - numOfUndefinedChoices;
         }
         
         template <typename ValueType>
