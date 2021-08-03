@@ -57,7 +57,9 @@ namespace storm {
              * @return The resulting assignment.
              */
             Assignment substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
-            
+
+            Assignment substituteNonStandardPredicates() const;
+
             /*!
              * Checks whether the assignment is an identity (lhs equals rhs)
              * 

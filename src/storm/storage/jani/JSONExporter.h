@@ -17,6 +17,7 @@ namespace storm {
         class ExpressionToJson : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             
         public:
+            using storm::expressions::ExpressionVisitor::visit;
             static ExportJsonType translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, std::unordered_set<std::string> const& auxiliaryVariables);
             
             virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data);

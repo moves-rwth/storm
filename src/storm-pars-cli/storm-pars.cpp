@@ -501,7 +501,7 @@ namespace storm {
                 verifyPropertiesAtSamplePoints<storm::modelchecker::SparseDtmcInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
             } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
                 verifyPropertiesAtSamplePoints<storm::modelchecker::SparseCtmcInstantiationModelChecker, storm::models::sparse::Ctmc<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Ctmc<ValueType>>(), input, samples);
-            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+            } else if (model->isOfType(storm::models::ModelType::Mdp)) {
                 verifyPropertiesAtSamplePoints<storm::modelchecker::SparseMdpInstantiationModelChecker, storm::models::sparse::Mdp<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Mdp<ValueType>>(), input, samples);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling is currently only supported for DTMCs, CTMCs and MDPs.");

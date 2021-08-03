@@ -7,6 +7,7 @@
 #include <set>
 #include <boost/optional.hpp>
 
+#include "storm/storage/BitVector.h"
 #include "storm/storage/prism/Constant.h"
 #include "storm/storage/prism/Formula.h"
 #include "storm/storage/prism/Label.h"
@@ -675,6 +676,11 @@ namespace storm {
             Program substituteFormulas() const;
 
             /*!
+             * Substitutes all nonstandard predicates in expressions of the program by their defining expressions
+             */
+             Program substituteNonStandardPredicates() const;
+
+            /*!
              * Substitutes all constants and/or formulas appearing in the expressions of the program by their defining expressions. For
              * this to work, all constants need to be defined prior to calling this.
              *
@@ -701,6 +707,16 @@ namespace storm {
              * @return The resulting program.
              */
             Program flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::shared_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
+
+            /*!
+             * Give commands that do not have an action name an action,
+             * which can be helpful for debugging and understanding traces.
+             *
+             * @param nameSuggestions Optional suggestions that map command indices to names
+             * @return
+             */
+            Program labelUnlabelledCommands(std::map<uint64_t,std::string> const& nameSuggestions = {}) const;
+
 
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
 
@@ -729,6 +745,12 @@ namespace storm {
              */
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal = true, std::string suffix = "") const;
 
+            /*!
+             * Compute the (labelled) commands in the program that may be synchronizing
+             * @return A bitvector representing the set of commands by global command index
+             */
+            storm::storage::BitVector const& getPossiblySynchronizingCommands() const;
+
         private:
             /*!
              * This function builds a command that corresponds to the synchronization of the given list of commands.
@@ -752,6 +774,8 @@ namespace storm {
 
             // Creates the internal mappings.
             void createMappings();
+
+            uint64_t getHighestCommandIndex() const;
 
             // The type of the model.
             ModelType modelType;
@@ -830,6 +854,8 @@ namespace storm {
 
             // A mapping from variable names to the modules in which they were declared.
             std::map<std::string, uint_fast64_t> variableToModuleIndexMap;
+
+            storage::BitVector possiblySynchronizingCommands;
 
             bool prismCompatibility;
         };

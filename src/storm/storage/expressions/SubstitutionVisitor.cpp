@@ -104,6 +104,26 @@ namespace storm {
 				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
             }
         }
+
+        template<typename MapType>
+        boost::any SubstitutionVisitor<MapType>::visit(PredicateExpression const& expression, boost::any const& data) {
+            bool changed = false;
+            std::vector<std::shared_ptr<BaseExpression const>> newExpressions;
+            for (uint64_t i = 0; i < expression.getArity(); ++i) {
+                newExpressions.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getOperand(i)->accept(*this, data)));
+                if (!changed && newExpressions.back() == expression.getOperand(i)) {
+                    changed = true;
+                }
+            }
+
+            // If the arguments did not change, we simply push the expression itself.
+            if (!changed) {
+                return expression.getSharedPointer();
+            } else {
+                return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new PredicateExpression(expression.getManager(), expression.getType(), newExpressions, expression.getPredicateType())));
+            }
+        }
+
         
 		template<typename MapType>
         boost::any SubstitutionVisitor<MapType>::visit(BooleanLiteralExpression const& expression, boost::any const&) {

@@ -13,6 +13,11 @@ Version 1.6.x
 - Added an export of check results to json. Use `--exportresult` in the command line interface.
 - Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
 - Implemented parsing and model building of Stochastic multiplayer games (SMGs) in the PRISM language. No model checking implemented, for now.
+- API: Simulation of prism-models 
+- API: Model-builder takes a callback function to prevent extension of particular actions, prism-to-explicit mapping can be exported
+- API: Export of dice-formatted expressions
+- Prism-language/explicit builder: Allow action names in commands writing to global variables if these (clearly) do not conflict with assignments of synchronizing commads.
+- Prism-language: n-ary predicates are supported (e.g., ExactlyOneOf)
 - Added support for continuous integration with Github Actions.
 - `storm-pars`: Exploit monotonicity for computing extremal values and parameter space partitioning.
 

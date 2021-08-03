@@ -35,16 +35,16 @@ namespace storm {
 
         template <typename ValueType>
         void IterativePolicySearch<ValueType>::Statistics::print() const {
-            STORM_PRINT_AND_LOG("Total time: " << totalTimer);
-            STORM_PRINT_AND_LOG("SAT Calls " << satCalls);
-            STORM_PRINT_AND_LOG("SAT Calls time: " << smtCheckTimer);
-            STORM_PRINT_AND_LOG("Outer iterations: " << outerIterations);
-            STORM_PRINT_AND_LOG("Solver initialization time: " << initializeSolverTimer);
-            STORM_PRINT_AND_LOG("Obtain partial scheduler time: " << evaluateExtensionSolverTime);
-            STORM_PRINT_AND_LOG("Update solver to extend partial scheduler time: " << encodeExtensionSolverTime);
-            STORM_PRINT_AND_LOG("Update solver with new scheduler time: " << updateNewStrategySolverTime);
-            STORM_PRINT_AND_LOG("Winning regions update time: " << winningRegionUpdatesTimer);
-            STORM_PRINT_AND_LOG("Graph search time: " << graphSearchTime);
+            STORM_PRINT_AND_LOG("#STATS Total time: " << totalTimer << std::endl);
+            STORM_PRINT_AND_LOG("#STATS SAT Calls: " << satCalls << std::endl);
+            STORM_PRINT_AND_LOG("#STATS SAT Calls time: " << smtCheckTimer << std::endl);
+            STORM_PRINT_AND_LOG("#STATS Outer iterations: " << outerIterations << std::endl);
+            STORM_PRINT_AND_LOG("#STATS Solver initialization time: " << initializeSolverTimer << std::endl);
+            STORM_PRINT_AND_LOG("#STATS Obtain partial scheduler time: " << evaluateExtensionSolverTime << std::endl );
+            STORM_PRINT_AND_LOG("#STATS Update solver to extend partial scheduler time: " << encodeExtensionSolverTime << std::endl);
+            STORM_PRINT_AND_LOG("#STATS Update solver with new scheduler time: " << updateNewStrategySolverTime << std::endl);
+            STORM_PRINT_AND_LOG("#STATS Winning regions update time: " << winningRegionUpdatesTimer << std::endl);
+            STORM_PRINT_AND_LOG("#STATS Graph search time: " << graphSearchTime << std::endl);
         }
 
         template <typename ValueType>
@@ -203,8 +203,6 @@ namespace storm {
                 ++obs;
             }
 
-
-
             // Update at least one observation.
             // PAPER COMMENT: 2
             smtSolver->add(storm::expressions::disjunction(observationUpdatedExpressions));
@@ -264,8 +262,6 @@ namespace storm {
                     rowindex++;
                 }
             }
-
-
 
             rowindex = 0;
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
@@ -334,7 +330,6 @@ namespace storm {
                                 actPathDisjunction.push_back(storm::expressions::disjunction(pathDisjunction) && actionSelectionVarExpressions.at(pomdp.getObservation(state)).at(action));
                                 rowindex++;
                             }
-                            // TODO reconsider if this next add is sound
                             actPathDisjunction.push_back(switchVarExpressions.at(pomdp.getObservation(state)));
                             actPathDisjunction.push_back(followVarExpressions[pomdp.getObservation(state)]);
                             actPathDisjunction.push_back(!reachVarExpressions[state]);
@@ -349,7 +344,6 @@ namespace storm {
                             }
                         } else {
                             smtSolver->add(pathVarExpressions[state][0] == expressionManager->integer(0));
-                            //assert(false);
                         }
                     }
                     smtSolver->add(reachVars[state]);

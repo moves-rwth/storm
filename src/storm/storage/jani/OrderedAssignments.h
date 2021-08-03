@@ -57,7 +57,7 @@ namespace storm {
             /*!
              * Retrieves whether this set of assignments is empty.
              */
-            bool empty() const;
+            bool empty(bool onlyTransient = false) const;
             
             /*!
              * Removes all assignments from this set.
