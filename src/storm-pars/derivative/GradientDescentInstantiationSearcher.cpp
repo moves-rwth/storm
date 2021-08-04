@@ -21,6 +21,7 @@
 #include <cln/random.h>
 #include <cln/real.h>
 #include <random>
+#include <cmath>
 
 namespace storm {
     namespace derivative {
@@ -41,16 +42,24 @@ namespace storm {
             const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
             auto const oldPos = position[steppingParameter];
 
-            // Project gradient
             ConstantType projectedGradient;
             if (projectGradient) {
+                // Project gradient
                 const ConstantType constantOldPos = utility::convertNumber<ConstantType>(oldPos);
                 ConstantType newPlainPosition = constantOldPos + precisionAsConstant * gradient.at(steppingParameter);
                 newPlainPosition = utility::max<ConstantType>(utility::zero<ConstantType>() + precisionAsConstant, newPlainPosition);
                 newPlainPosition = utility::min<ConstantType>(utility::one<ConstantType>() - precisionAsConstant, newPlainPosition);
                 projectedGradient = (newPlainPosition - constantOldPos) / precisionAsConstant;
             } else {
-                projectedGradient = gradient.at(steppingParameter);
+                const double x = utility::convertNumber<double>(oldPos);
+                const double sigmoidDerivative = std::exp(x) / std::pow((1 + std::exp(x)), 2);
+                projectedGradient = sigmoidDerivative * gradient.at(steppingParameter);
+                /* projectedGradient = gradient.at(steppingParameter); */
+                /* if (constantOldPos <= utility::zero<ConstantType>() + precisionAsConstant) { */
+                /*     projectedGradient -= stepNum * utility::abs<ConstantType>((utility::zero<ConstantType>() + precisionAsConstant) - constantOldPos); */
+                /* } else if (constantOldPos >= utility::one<ConstantType>() - precisionAsConstant) { */
+                /*     projectedGradient -= stepNum * utility::abs<ConstantType>(constantOldPos - (utility::one<ConstantType>() - precisionAsConstant)); */
+                /* } */
             }
 
             /* if (utility::abs<ConstantType>(projectedGradient - gradient.at(steppingParameter)) > precisionAsConstant) { */
@@ -169,8 +178,10 @@ namespace storm {
             const CoefficientType<FunctionType> newPos = position[steppingParameter] + convertedStep;
             position[steppingParameter] = newPos;
             // Map parameter back to (0, 1).
-            position[steppingParameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, position[steppingParameter]);
-            position[steppingParameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, position[steppingParameter]);
+            if (projectGradient) {
+                position[steppingParameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, position[steppingParameter]);
+                position[steppingParameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, position[steppingParameter]);
+            }
             return utility::abs(utility::convertNumber<ConstantType>(oldPos - position[steppingParameter]));
         }
 
@@ -227,14 +238,20 @@ namespace storm {
                 }
                 
                 ConstantType oldValue = currentValue;
+                const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
                 // If nesterov is enabled, we need to compute the gradient on the predicted position
                 std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> nesterovPredictedPosition(position);
+                // Apply sigmoid function
+                if (!projectGradient) {
+                    for (auto const& parameter : parameters) {
+                        nesterovPredictedPosition[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-nesterovPredictedPosition[parameter]))));
+                    }
+                }
                 if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
                     for (auto const& parameter : miniBatch) {
                         nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->momentumTerm)
                             * storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->pastStep[parameter]);
-                        const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
                         nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, nesterovPredictedPosition[parameter]);
                         nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, nesterovPredictedPosition[parameter]);
                     }
@@ -249,6 +266,15 @@ namespace storm {
                 // Second, to compute the valueVector at the nesterovPredictedPosition.
                 
                 // If nesterov is deactivated, then nesterovPredictedPosition == position.
+                bool stochasticPosition = true;
+                for (auto const& parameter : parameters) {
+                    if (nesterovPredictedPosition[parameter] < 0 + precision || nesterovPredictedPosition[parameter] > 1 - precision) {
+                        stochasticPosition = false;
+                        break;
+                    }
+                }
+
+                /* if (stochasticPosition) { */
                 std::unique_ptr<storm::modelchecker::CheckResult> intermediateResult = instantiationModelChecker->check(env, nesterovPredictedPosition);
                 std::vector<ConstantType> valueVector = intermediateResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
@@ -258,8 +284,11 @@ namespace storm {
                 } else {
                     currentValue = valueVector[initialState];
                 }
+                /* } else { */
+                    
+                /* } */
 
-                if (currentCheckTask->getBound().isSatisfied(currentValue)) {
+                if (currentCheckTask->getBound().isSatisfied(currentValue) && stochasticPosition) {
                     break;
                 }
 

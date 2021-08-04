@@ -161,6 +161,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             2,
             1e-6,
             boost::none,
+            true,
             true
     );
     adamChecker.specifyFormula(this->env(), checkTask);
@@ -200,6 +201,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             2,
             1e-6,
             boost::none,
+            true,
             true
     );
     radamChecker.specifyFormula(this->env(), checkTask);
@@ -225,6 +227,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             2,
             1e-6,
             boost::none,
+            true,
             true
     );
     momentumChecker.specifyFormula(this->env(), checkTask);
@@ -250,6 +253,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             2,
             1e-6,
             boost::none,
+            true,
             true
     );
     nesterovChecker.specifyFormula(this->env(), checkTask);
