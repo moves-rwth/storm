@@ -10,7 +10,7 @@ Version 1.6.x
 -------------
 ## Version 1.6.4 (20xx/xx)
 - Added support for model checking LTL properties in the sparse (and dd-to-sparse) engine. Requires building with Spot.
-- Added cmake options `STORM_USE_SPOT` and `STORM_FORCE_SHIPPED_SPOT` to facilitate building Storm with [Spot](https://spot.lrde.epita.fr/).
+- Added cmake options `STORM_USE_SPOT_SYSTEM` and `STORM_USE_SPOT_SHIPPED` to facilitate building Storm with [Spot](https://spot.lrde.epita.fr/).
 - Improved parsing of formulas in PRISM-style syntax.
 - Added export of schedulers that use memory (in particular optimizing schedulers for LTL properties)
 - Added support for PRISM models that use unbounded integer variables.

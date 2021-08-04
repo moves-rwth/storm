@@ -1,16 +1,6 @@
 set(STORM_HAVE_SPOT OFF)
 
-
-if (STORM_FORCE_SHIPPED_SPOT AND NOT STORM_USE_SPOT)
-    message(FATAL_ERROR "Storm - Incompatible cmake options: STORM_FORCE_SHIPPED_SPOT=ON and STORM_USE_SPOT=OFF.")
-endif()
-
-if (STORM_FORCE_LTL_SUPPORT AND NOT STORM_USE_SPOT)
-    message(FATAL_ERROR "Storm - Incompatible cmake options: STORM_FORCE_LTL_SUPPORT=ON and STORM_USE_SPOT=OFF. LTL support requires Spot.")
-endif()
-
-if(STORM_USE_SPOT AND NOT STORM_SHIPPED_SPOT AND NOT STORM_FORCE_SHIPPED_SPOT)
-
+if(STORM_USE_SPOT_SYSTEM)
     # try to find Spot on the system
     if (NOT "${SPOT_ROOT}" STREQUAL "")
         message(STATUS "Storm - searching for Spot in ${SPOT_ROOT}")
@@ -23,14 +13,14 @@ if(STORM_USE_SPOT AND NOT STORM_SHIPPED_SPOT AND NOT STORM_FORCE_SHIPPED_SPOT)
     if (SPOT_FOUND)
         message(STATUS "Storm - Using system version of Spot ${SPOT_VERSION} (include: ${SPOT_INCLUDE_DIR}, library: ${SPOT_LIBRARIES}).")
         set(STORM_HAVE_SPOT ON)
-    elseif(NOT STORM_FORCE_LTL_SUPPORT)
-        message (WARNING "Storm - Could not find Spot. Model checking of LTL formulas (beyond PCTL) will not be supported. You may want to set cmake option STORM_FORCE_LTL_SUPPORT to install Spot automatically. If you already installed Spot, consider setting cmake option SPOT_ROOT")
+    elseif(NOT STORM_USE_SPOT_SHIPPED)
+        message (WARNING "Storm - Could not find Spot. Model checking of LTL formulas (beyond PCTL) will not be supported. You may want to set cmake option STORM_USE_SPOT_SHIPPED to install Spot automatically. If you already installed Spot, consider setting cmake option SPOT_ROOT. Unset STORM_USE_SPOT_SYSTEM to silence this warning.")
     endif()
 elseif()
 endif()
 
 set(STORM_SHIPPED_SPOT OFF)
-if(STORM_FORCE_SHIPPED_SPOT OR (STORM_FORCE_LTL_SUPPORT AND NOT STORM_HAVE_SPOT))
+if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
 
     # download and install shipped Spot
     ExternalProject_Add(spot
