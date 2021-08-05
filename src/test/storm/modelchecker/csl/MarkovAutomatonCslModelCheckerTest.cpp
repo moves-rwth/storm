@@ -351,6 +351,7 @@ namespace {
     }
 
     TYPED_TEST(MarkovAutomatonCslModelCheckerTest, LtlSimple) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
         std::string formulasString = "Pmax=? [X X s=3]";
         formulasString += "; Pmax=? [X X G s>2]";
         formulasString += "; Pmin=? [X X G s>2]";
@@ -382,6 +383,8 @@ namespace {
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
-
+#else
+        GTEST_SKIP();
+#endif
     }
 }
