@@ -23,6 +23,7 @@ include(RegisterSourceGroup)
 include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
+include(ProcessorCount)
 
 #############################################################
 ##
@@ -83,6 +84,17 @@ set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(USE_XERCESC ${XML_SUPPORT})
 mark_as_advanced(USE_XERCESC)
+
+# Get an approximation of the number of available processors (used for parallel build of shipped resources)
+ProcessorCount(STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT)
+# To be safe, we only take a little more than half of the resources.
+# This also correctly deals with the case where ProcessorCount is unable to find the correct number (and thus returns 0)
+MATH(EXPR STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT "${STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT}/2 + 1")
+set(STORM_RESOURCES_BUILD_JOBCOUNT "${STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT}" CACHE STRING "The number of jobs used when building external resources")
+mark_as_advanced(STORM_RESOURCES_BUILD_JOBCOUNT)
+if(NOT STORM_RESOURCES_BUILD_JOBCOUNT GREATER 0)
+	message(FATAL_ERROR "STORM_RESOURCES_BUILD_JOBCOUNT must be a positive number. Got '${STORM_RESOURCES_BUILD_JOBCOUNT}' instead." )
+endif()
 
 # Set some CMAKE Variables as advanced
 mark_as_advanced(CMAKE_OSX_ARCHITECTURES)
