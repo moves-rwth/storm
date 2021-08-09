@@ -111,57 +111,45 @@ namespace storm {
             return result;
         }
 
+        template<typename SparseMarkovAutomatonModelType>
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) {
+            storm::logic::HOAPathFormula const& pathFormula = checkTask.getFormula();
+            
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            auto apSets = helper.computeApSets(pathFormula.getAPMapping(), formulaChecker);
+            std::vector<ValueType> numericResult = helper.computeDAProductProbabilities(env, *pathFormula.readAutomaton(), apSets);
+            
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+            if (checkTask.isProduceSchedulersSet()) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::make_unique<storm::storage::Scheduler<ValueType>>(helper.extractScheduler(this->getModel())));
+            }
 
+            return result;
+        }
+        
         template<typename SparseMarkovAutomatonModelType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
             storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
-            STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
-            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
-            // Maintain a mapping from formula-strings to labels in order to reuse labels of equivalent (compared as strings) formulas
-            std::map<std::string, std::string> cached;
-            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted, cached);
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
 
-            const SparseMarkovAutomatonModelType& ma = this->getModel();
-            typedef typename storm::models::sparse::Mdp<typename SparseMarkovAutomatonModelType::ValueType> SparseMdpModelType;
-
-            STORM_LOG_INFO("Computing embedded MDP...");
-            storm::storage::SparseMatrix<ValueType> probabilityMatrix = ma.getTransitionMatrix();
-            // Copy of the state labelings of the MDP
-            storm::models::sparse::StateLabeling labeling(ma.getStateLabeling());
-            // The embedded MDP, used for building the product and computing the probabilities in the product
-            SparseMdpModelType embeddedMdp(std::move(probabilityMatrix), std::move(labeling));
-
-            storm::solver::SolveGoal<ValueType> goal(embeddedMdp, checkTask);
-
-            STORM_LOG_INFO("Performing ltl probability computations in embedded MDP...");
-
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
-                STORM_LOG_TRACE("Writing model to model.dot");
-                std::ofstream modelDot("model.dot");
-                embeddedMdp.writeDotToStream(modelDot);
-                modelDot.close();
-            }
-
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(embeddedMdp.getTransitionMatrix());
-            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, embeddedMdp);
-
-            // Compute Satisfaction sets for APs
-            auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) { return this->check(env, *formula); };
-            std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
-
-            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
+            
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, pathFormula, formulaChecker);
 
             std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
             if (checkTask.isProduceSchedulersSet()) {
-                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::make_unique<storm::storage::Scheduler<ValueType>>(helper.extractScheduler(embeddedMdp)));
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::make_unique<storm::storage::Scheduler<ValueType>>(helper.extractScheduler(this->getModel())));
             }
 
-            // We can directly return the numericResult vector as the state space of the CTMC and the embedded MDP are exactly the same
             return result;
         }
-
-                
+        
         template<typename SparseMarkovAutomatonModelType>
         std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();

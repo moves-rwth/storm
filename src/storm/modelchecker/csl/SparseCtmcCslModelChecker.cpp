@@ -97,53 +97,34 @@ namespace storm {
         }
         
         template<typename SparseCtmcModelType>
-        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
-            storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
-
-            STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
-            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
-            // Maintain a mapping from formula-strings to labels in order to reuse labels of equivalent (compared as strings) formulas
-            std::map<std::string, std::string> cached;
-            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted, cached);
-
-
-            const SparseCtmcModelType& ctmc = this->getModel();
-            typedef typename storm::models::sparse::Dtmc<typename SparseCtmcModelType::ValueType> SparseDtmcModelType;
-
-            STORM_LOG_INFO("Computing embedded DTMC...");
-            // Compute probability matrix (embedded DTMC)
-            storm::storage::SparseMatrix<ValueType> probabilityMatrix = storm::modelchecker::helper::SparseCtmcCslHelper::computeProbabilityMatrix(ctmc.getTransitionMatrix(), ctmc.getExitRateVector());
-            // Copy of the state labelings of the CTMC
-            storm::models::sparse::StateLabeling labeling(ctmc.getStateLabeling());
-
-            // The embedded DTMC, used for building the product and computing the probabilities in the product
-            SparseDtmcModelType embeddedDtmc(std::move(probabilityMatrix), std::move(labeling));
-            storm::solver::SolveGoal<ValueType> goal(embeddedDtmc, checkTask);
-
-            STORM_LOG_INFO("Performing ltl probability computations in embedded DTMC...");
-
-            // TODO ?
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
-                STORM_LOG_TRACE("Writing model to model.dot");
-                std::ofstream modelDot("model.dot");
-                embeddedDtmc.writeDotToStream(modelDot);
-                modelDot.close();
-            }
-
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(embeddedDtmc.getTransitionMatrix());
-            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, embeddedDtmc);
-
-            // Compute Satisfaction sets for APs
-            auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) { return this->check(env, *formula); };
-            std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
-
-            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
-
-            // We can directly return the numericResult vector as the state space of the CTMC and the embedded DTMC are exactly the same
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) {
+            storm::logic::HOAPathFormula const& pathFormula = checkTask.getFormula();
+            
+            auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(probabilisticTransitions);
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            auto apSets = helper.computeApSets(pathFormula.getAPMapping(), formulaChecker);
+            std::vector<ValueType> numericResult = helper.computeDAProductProbabilities(env, *pathFormula.readAutomaton(), apSets);
+            
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
 
+        template<typename SparseCtmcModelType>
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
+            storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
+            auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(probabilisticTransitions);
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, pathFormula, formulaChecker);
+
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+        
         template <typename SparseCtmcModelType>
         std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeInstantaneousRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) {
             storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();

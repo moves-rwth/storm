@@ -7,11 +7,11 @@
 namespace storm {
     namespace logic {
 
-        ExtractMaximalStateFormulasVisitor::ExtractMaximalStateFormulasVisitor(ApToFormulaMap& extractedFormulas, std::map<std::string, std::string>& cachedFormulas) : extractedFormulas(extractedFormulas), cachedFormulas(cachedFormulas), nestingLevel(0) {
+        ExtractMaximalStateFormulasVisitor::ExtractMaximalStateFormulasVisitor(ApToFormulaMap& extractedFormulas) : extractedFormulas(extractedFormulas), nestingLevel(0) {
         }
 
-        std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(PathFormula const& f, ApToFormulaMap& extractedFormulas, std::map<std::string, std::string>& cachedFormulas) {
-            ExtractMaximalStateFormulasVisitor visitor(extractedFormulas, cachedFormulas);
+        std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(PathFormula const& f, ApToFormulaMap& extractedFormulas) {
+            ExtractMaximalStateFormulasVisitor visitor(extractedFormulas);
             boost::any result = f.accept(visitor, boost::any());
             return boost::any_cast<std::shared_ptr<Formula>>(result);
         }

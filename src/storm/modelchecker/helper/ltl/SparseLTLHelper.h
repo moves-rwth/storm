@@ -1,15 +1,23 @@
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/automata/DeterministicAutomaton.h"
+
 #include "storm/storage/SparseMatrix.h"
-#include "storm/solver/SolveGoal.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 #include "storm/transformer/DAProductBuilder.h"
 
 
 namespace storm {
+
+    class Environment;
+    
+    namespace logic {
+        class Formula;
+        class PathFormula;
+    }
+    namespace automata {
+        class DeterministicAutomaton;
+    }
 
     namespace modelchecker {
         namespace helper {
@@ -23,6 +31,8 @@ namespace storm {
             class SparseLTLHelper: public SingleValueModelCheckerHelper<ValueType, storm::models::ModelRepresentation::Sparse> {
 
             public:
+
+             typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
 
                 /*!
                  * The type of the product automaton (DTMC or MDP) that is used during the computation.
@@ -45,12 +55,21 @@ namespace storm {
                 storm::storage::Scheduler<ValueType> extractScheduler(storm::models::sparse::Model<ValueType> const& model);
 
                 /*!
+                 * Computes the LTL probabilities
+                 * @param the LTL formula (allowing PCTL* like nesting)
+                 * @param formulaChecker lambda that evaluates sub-formulas checks the provided formula and returns the set of states in which the formula holds
+                 * @param the atomic propositions occuring in the formula together with the satisfaction sets
+                 * @return a value for each state
+                 */
+                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::PathFormula const& formula, CheckFormulaCallback const& formulaChecker);
+
+                /*!
                  * Computes the states that are satisfying the AP.
-                 * @param mapping from Ap to formula
-                 * @param lambda that checks the provided formula
+                 * @param extracted mapping from Ap to formula
+                 * @param formulaChecker lambda that checks the provided formula and returns the set of states in which the formula holds
                  * @return mapping from AP to satisfaction sets
                  */
-                static std::map<std::string, storm::storage::BitVector> computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker);
+                static std::map<std::string, storm::storage::BitVector> computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker);
 
                 /*!
                  * Computes the (maximizing) probabilities for the constructed DA product
@@ -63,11 +82,11 @@ namespace storm {
 
                 /*!
                  * Computes the LTL probabilities
-                 * @param the LTL formula
-                 * @param the atomic propositions and satisfaction sets
+                 * @param formula the LTL formula (without PCTL*-like nesting)
+                 * @param apSatSets a mapping from all atomic propositions occuring in the formula to the corresponding satisfaction set
                  * @return a value for each state
                  */
-                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets);
+                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::PathFormula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets);
 
             private:
                 /*!

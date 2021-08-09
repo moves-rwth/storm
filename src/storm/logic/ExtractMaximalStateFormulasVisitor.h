@@ -6,12 +6,18 @@
 
 namespace storm {
     namespace logic {
-
+    
         class ExtractMaximalStateFormulasVisitor : public CloneVisitor {
         public:
             typedef std::map<std::string, std::shared_ptr<Formula const>> ApToFormulaMap;
-
-            static std::shared_ptr<Formula> extract(PathFormula const& f, ApToFormulaMap& extractedFormulas, std::map<std::string, std::string>& cachedFormulas);
+            
+            /*!
+             * Finds state subformulae in f and replaces them by atomic propositions.
+             * @param extractedFormulas will be the mapping of atomic propositions to the subformulae they replace
+             * @return the formula with replaced state subformulae
+             * @note identical subformulae will be replaced by the same atomic proposition
+             */
+            static std::shared_ptr<Formula> extract(PathFormula const& f, ApToFormulaMap& extractedFormulas);
 
             virtual boost::any visit(BinaryBooleanPathFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(BoundedUntilFormula const& f, boost::any const& data) const override;
@@ -28,7 +34,7 @@ namespace storm {
             virtual boost::any visit(RewardOperatorFormula const& f, boost::any const& data) const override;
 
         private:
-            ExtractMaximalStateFormulasVisitor(ApToFormulaMap& extractedFormulas, std::map<std::string, std::string>& cachedFormulas);
+            ExtractMaximalStateFormulasVisitor(ApToFormulaMap& extractedFormulas);
 
             std::shared_ptr<Formula> extract(std::shared_ptr<Formula> f) const;
             void incrementNestingLevel() const;
@@ -36,7 +42,7 @@ namespace storm {
 
             ApToFormulaMap& extractedFormulas;
             // A mapping from formula-strings to labels in order to use the same label for the equivalent formulas (as strings)
-            std::map<std::string, std::string>& cachedFormulas;
+            mutable std::map<std::string, std::string> cachedFormulas;
             std::size_t nestingLevel;
         };
 

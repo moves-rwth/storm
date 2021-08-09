@@ -124,24 +124,14 @@ namespace storm {
         template<typename SparseDtmcModelType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) {
             storm::logic::HOAPathFormula const& pathFormula = checkTask.getFormula();
-            STORM_LOG_INFO("Obtaining HOA automaton...");
-            storm::automata::DeterministicAutomaton::ptr da = pathFormula.readAutomaton();
-
-            STORM_LOG_INFO("Deterministic automaton from HOA file has "
-                    << da->getNumberOfStates() << " states, "
-                    << da->getAPSet().size() << " atomic propositions and "
-                    << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
-
-            const SparseDtmcModelType& dtmc = this->getModel();
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix());
-            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, dtmc);
-
-            // Compute Satisfaction sets for APs
-            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted = pathFormula.getAPMapping();
-            auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {return this->check(*formula); };
-            std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
-
-            std::vector<ValueType> numericResult = helper.computeDAProductProbabilities(env, *da, apSets);
+            
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            auto apSets = helper.computeApSets(pathFormula.getAPMapping(), formulaChecker);
+            std::vector<ValueType> numericResult = helper.computeDAProductProbabilities(env, *pathFormula.readAutomaton(), apSets);
+            
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
 
@@ -149,30 +139,12 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
             storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
-            STORM_LOG_INFO("Extracting maximal state formulas for path formula: " << pathFormula);
-            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
-            // Maintain a mapping from formula-strings to labels in order to reuse labels of equivalent (compared as strings) formulas
-            std::map<std::string, std::string> cached;
-            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted, cached);
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, pathFormula, formulaChecker);
 
-            const SparseDtmcModelType& dtmc = this->getModel();
-
-            // TODO ?
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
-                STORM_LOG_TRACE("Writing model to model.dot");
-                std::ofstream modelDot("model.dot");
-                dtmc.writeDotToStream(modelDot);
-                modelDot.close();
-            }
-
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix());
-            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, dtmc);
-
-            // Compute Satisfaction sets for APs
-            auto formulaChecker = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) { return this->check(env, *formula); };
-            std::map<std::string, storm::storage::BitVector> apSets = helper.computeApSets(extracted, formulaChecker);
-
-            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
 

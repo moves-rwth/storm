@@ -1,9 +1,13 @@
 #include "SparseLTLHelper.h"
 
 #include "storm/automata/LTL2DeterministicAutomaton.h"
+#include "storm/automata/DeterministicAutomaton.h"
 
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+
+#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
+#include "storm/solver/SolveGoal.h"
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
@@ -108,18 +112,29 @@ namespace storm {
             }
 
             template<typename ValueType, bool Nondeterministic>
-            std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, std::function<std::unique_ptr<CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> formulaChecker){
+            std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const &env, storm::logic::PathFormula const& formula, CheckFormulaCallback const& formulaChecker) {
+                // Replace state-subformulae by atomic propositions (APs)
+                storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
+                std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(formula, extracted);
+                STORM_LOG_ASSERT(ltlFormula->isPathFormula(), "Unexpected formula type.");
+
+
+                // Compute Satisfaction sets for the APs (which represent the state-subformulae
+                auto apSets = computeApSets(extracted, formulaChecker);
+                
+                STORM_LOG_INFO("Computing LTL probabilities for formula with " << apSets.size() << " atomic proposition(s).");
+                
+                // Compute the resulting LTL probabilities
+                return computeLTLProbabilities(env, ltlFormula->asPathFormula(), apSets);
+
+            }
+            
+            template<typename ValueType, bool Nondeterministic>
+            std::map<std::string, storm::storage::BitVector> SparseLTLHelper<ValueType, Nondeterministic>::computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker) {
                 std::map<std::string, storm::storage::BitVector> apSets;
                 for (auto& p: extracted) {
-                    STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
-
-                    std::unique_ptr<CheckResult> subResultPointer = formulaChecker(p.second);
-
-                    ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
-                    auto sat = subResult.getTruthValuesVector();
-
-                    apSets[p.first] = std::move(sat);
-                    STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << apSets[p.first].getNumberOfSetBits() << " states.");
+                    STORM_LOG_DEBUG(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
+                    apSets[p.first] = formulaChecker(*p.second);
                 }
                 return apSets;
             }
@@ -579,7 +594,7 @@ namespace storm {
 
 
             template<typename ValueType, bool Nondeterministic>
-            std::vector <ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const& env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
+            std::vector <ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const& env, storm::logic::PathFormula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
                 std::shared_ptr<storm::logic::Formula const> ltlFormula;
                 STORM_LOG_THROW((!Nondeterministic) || this->isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
                 if (Nondeterministic && this->getOptimizationDirection() == OptimizationDirection::Minimize) {
