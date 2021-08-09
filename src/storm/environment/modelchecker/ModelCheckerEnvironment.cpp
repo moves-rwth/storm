@@ -14,8 +14,8 @@ namespace storm {
     
     ModelCheckerEnvironment::ModelCheckerEnvironment() {
         auto const& mcSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
-        if (mcSettings.isLtl2daSet()) {
-            ltl2da = mcSettings.getLtl2da();
+        if (mcSettings.isLtl2daToolSet()) {
+            ltl2daTool = mcSettings.getLtl2daTool();
         }
     }
     
@@ -31,20 +31,20 @@ namespace storm {
         return multiObjectiveModelCheckerEnvironment.get();
     }
 
-    bool ModelCheckerEnvironment::isLtl2daSet() const {
-        return ltl2da.is_initialized();
+    bool ModelCheckerEnvironment::isLtl2daToolSet() const {
+        return ltl2daTool.is_initialized();
     }
 
-    boost::optional<std::string> const& ModelCheckerEnvironment::getLtl2da() const {
-        return ltl2da;
+    std::string const& ModelCheckerEnvironment::getLtl2daTool() const {
+        return ltl2daTool.get();
     }
 
-    void ModelCheckerEnvironment::setLtl2da(std::string const& value) {
-        ltl2da = value;
+    void ModelCheckerEnvironment::setLtl2daTool(std::string const& value) {
+        ltl2daTool = value;
     }
 
-    void ModelCheckerEnvironment::unsetLtl2da() {
-        ltl2da = boost::none;
+    void ModelCheckerEnvironment::unsetLtl2daTool() {
+        ltl2daTool = boost::none;
     }
 
 

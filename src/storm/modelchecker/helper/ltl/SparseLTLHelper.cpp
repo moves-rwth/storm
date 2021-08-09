@@ -595,10 +595,9 @@ namespace storm {
 
                 // Convert LTL formula to a deterministic automaton
                 std::shared_ptr<storm::automata::DeterministicAutomaton> da;
-                if (env.modelchecker().isLtl2daSet()) {
+                if (env.modelchecker().isLtl2daToolSet()) {
                     // Use the external tool given via ltl2da
-                    std::string ltl2da = env.modelchecker().getLtl2da().get();
-                    da = storm::automata::LTL2DeterministicAutomaton::ltl2daExternalTool(*ltlFormula, ltl2da);
+                    da = storm::automata::LTL2DeterministicAutomaton::ltl2daExternalTool(*ltlFormula, env.modelchecker().getLtl2daTool());
                 }
                 else {
                     // Use the internal tool (Spot)
