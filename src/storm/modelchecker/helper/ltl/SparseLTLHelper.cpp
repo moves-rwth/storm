@@ -157,7 +157,6 @@ namespace storm {
 
                 std::size_t accMECs = 0;
                 std::size_t allMECs = 0;
-                std::size_t i = 0;
 
                 if (this->isProduceSchedulerSet()) {
                     _infSets.emplace();
@@ -168,11 +167,8 @@ namespace storm {
                 for (auto const& conjunction : dnf) {
                     // Determine the set of states of the subMDP that can satisfy the condition, remove all states that would violate Fins in the conjunction.
                     storm::storage::BitVector allowed(transitionMatrix.getRowGroupCount(), true);
-
-                    STORM_LOG_INFO("Handle conjunction " << i);
-
+                    
                     for (auto const& literal : conjunction) {
-                        STORM_LOG_INFO(" " << *literal);
                         if (literal->isTRUE()) {
                             // skip
                         } else if (literal->isFALSE()) {
@@ -198,14 +194,11 @@ namespace storm {
                         // skip
                         continue;
                     }
-
-                    STORM_LOG_DEBUG(" Allowed states: " << allowed);
-
+                    
                     // Compute MECs in the allowed fragment
                     storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions, allowed);
                     allMECs += mecs.size();
                     for (const auto& mec : mecs) {
-                        STORM_LOG_DEBUG("Inspect MEC: " << mec);
 
                         bool accepting = true;
                         for (auto const& literal : conjunction) {
@@ -220,17 +213,12 @@ namespace storm {
                                 const storm::storage::BitVector& accSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
                                 if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_INF) {
                                     if (atom.isNegated()) {
-                                        STORM_LOG_DEBUG("Checking against " << ~accSet);
                                         if (!mec.containsAnyState(~accSet)) {
-                                            STORM_LOG_DEBUG("  -> not satisfied");
                                             accepting = false;
                                             break;
                                         }
-
                                     } else {
-                                        STORM_LOG_DEBUG("Checking against " << accSet);
                                         if (!mec.containsAnyState(accSet)) {
-                                            STORM_LOG_DEBUG("  -> not satisfied");
                                             accepting = false;
                                             break;
                                         }
@@ -246,7 +234,6 @@ namespace storm {
 
                         if (accepting) {
                             accMECs++;
-                            STORM_LOG_DEBUG("MEC is accepting");
 
                             for (auto const &stateChoicePair : mec) {
                                 acceptingStates.set(stateChoicePair.first);
@@ -335,7 +322,6 @@ namespace storm {
                     }
                 }
 
-                STORM_LOG_DEBUG("Accepting states: " << acceptingStates);
                 STORM_LOG_INFO("Found " << acceptingStates.getNumberOfSetBits() << " states in " << accMECs << " accepting MECs (considered " << allMECs << " MECs).");
 
                 return acceptingStates;
@@ -512,18 +498,6 @@ namespace storm {
 
                 STORM_LOG_INFO("Product "+ (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) +" has " << product->getProductModel().getNumberOfStates() << " states and "
                                                                                                                         << product->getProductModel().getNumberOfTransitions() << " transitions.");
-
-                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
-                    STORM_LOG_TRACE("Writing product model to product.dot");
-                    std::ofstream productDot("product.dot");
-                    product->getProductModel().writeDotToStream(productDot);
-                    productDot.close();
-
-                    STORM_LOG_TRACE("Product model mapping:");
-                    std::stringstream str;
-                    product->printMapping(str);
-                    STORM_LOG_TRACE(str.str());
-                }
 
                 // Compute accepting states
                 storm::storage::BitVector acceptingStates;
