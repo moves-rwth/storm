@@ -331,7 +331,6 @@ namespace storm {
         boost::any FragmentChecker::visit(HOAPathFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areHOAPathFormulasAllowed();
-            // TODO: check
             for (auto& mapped : f.getAPMapping()) {
                 result = result && boost::any_cast<bool>(mapped.second->accept(*this, data));
             }

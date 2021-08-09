@@ -130,12 +130,11 @@ namespace storm {
         }
         
         boost::any FormulaInformationVisitor::visit(QuantileFormula const& f, boost::any const& data) const {
-            // TODO (joachim): check is this correct?
             if (recurseIntoOperators) {
                 return f.getSubformula().accept(*this, data);
-	    } else {
-	        return FormulaInformation();
-	    }
+            } else {
+                return FormulaInformation();
+            }
         }
         
         boost::any FormulaInformationVisitor::visit(NextFormula const& f, boost::any const& data) const {
