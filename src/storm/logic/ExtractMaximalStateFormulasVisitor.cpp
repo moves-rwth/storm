@@ -150,7 +150,9 @@ namespace storm {
         }
 
         std::shared_ptr<Formula> ExtractMaximalStateFormulasVisitor::extract(std::shared_ptr<Formula> f) const {
-            // TODO can be optimized
+            // We use the string representation of formulae to check if they are equivalent.
+            // Of course, this could be made more elegant if there were an actual operator< and/or operator== for formulae
+
             std::string label;
 
             // Find equivalent formula in cache
