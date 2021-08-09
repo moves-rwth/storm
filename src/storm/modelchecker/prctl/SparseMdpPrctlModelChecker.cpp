@@ -1,7 +1,5 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
-#include <sstream>
-
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -27,15 +25,9 @@
 
 #include "storm/solver/SolveGoal.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
-
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/storage/expressions/Expressions.h"
-
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 

@@ -6,8 +6,6 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 
-#include "storm/models/sparse/Dtmc.h"
-
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/DynamicPriorityQueue.h"
 #include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"

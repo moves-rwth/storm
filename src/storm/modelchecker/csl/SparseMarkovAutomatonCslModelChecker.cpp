@@ -13,24 +13,15 @@
 #include "storm/utility/FilteredRewardModel.h"
 #include "storm/utility/macros.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
-
 #include "storm/solver/SolveGoal.h"
-
-#include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "storm/logic/FragmentSpecification.h"
-#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
-
-#include "storm/api/storm.h"
 
 namespace storm {
     namespace modelchecker {

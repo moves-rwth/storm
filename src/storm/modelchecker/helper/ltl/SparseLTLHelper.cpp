@@ -3,24 +3,22 @@
 #include "storm/automata/LTL2DeterministicAutomaton.h"
 #include "storm/automata/DeterministicAutomaton.h"
 
-#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
-#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
-#include "storm/solver/SolveGoal.h"
+
+#include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
+#include "storm/solver/SolveGoal.h"
+#include "storm/utility/graph.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/DebugSettings.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 
-#include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
-
-#include "storm/utility/graph.h"
 
 namespace storm {
     namespace modelchecker {
