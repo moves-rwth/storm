@@ -22,12 +22,9 @@
 
 #include "storm/environment/solver/SolverEnvironment.h"
 
-#include "storm/transformer/DAProductBuilder.h"
-
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 
@@ -44,7 +41,6 @@
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 #include "storm/exceptions/NotSupportedException.h"
-
 
 namespace storm {
     namespace modelchecker {

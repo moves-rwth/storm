@@ -600,7 +600,6 @@ namespace storm {
                 // Set values of resulting vector that are known exactly.
                 storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.statesWithProbability1, storm::utility::one<ValueType>());
 
-                
                 // Check if the values of the maybe states are relevant for the SolveGoal
                 bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
 
@@ -613,7 +612,6 @@ namespace storm {
                         for (auto state : qualitativeStateSets.maybeStates) {
                             scheduler->setDontCare(state);
                         }
-
                     }
                 }
 

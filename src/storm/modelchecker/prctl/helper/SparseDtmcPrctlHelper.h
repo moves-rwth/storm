@@ -16,14 +16,7 @@
 #include "storm/solver/SolveGoal.h"
 
 namespace storm {
-    // fwd
     class Environment;
-
-    namespace models {
-        namespace sparse {
-            template <typename ValueType, typename RewardModelType> class Dtmc;
-        }
-    }
 
     namespace modelchecker {
         class CheckResult;
