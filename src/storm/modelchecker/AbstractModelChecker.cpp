@@ -2,6 +2,9 @@
 
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -11,6 +14,7 @@
 
 #include "storm/environment/Environment.h"
 
+#include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
@@ -130,7 +134,17 @@ namespace storm {
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
+            // recurse
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, checkTask.getFormula());
+            if (resultPointer->isExplicitQualitativeCheckResult()) {
+                STORM_LOG_ASSERT(ModelType::Representation == storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
+                return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(resultPointer->asExplicitQualitativeCheckResult());
+            } else {
+                STORM_LOG_ASSERT(resultPointer->isSymbolicQualitativeCheckResult(), "Unexpected result type.");
+                STORM_LOG_ASSERT(ModelType::Representation != storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
+                auto const& qualRes = resultPointer->asSymbolicQualitativeCheckResult<storm::models::GetDdType<ModelType::Representation>::ddType>();
+                return std::make_unique<SymbolicQuantitativeCheckResult<storm::models::GetDdType<ModelType::Representation>::ddType, ValueType>>(qualRes);
+            }
         }
 
         template<typename ModelType>
