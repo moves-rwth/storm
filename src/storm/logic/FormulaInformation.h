@@ -18,6 +18,10 @@ namespace storm {
             bool containsCumulativeRewardFormula() const;
             bool containsRewardBoundedFormula() const;
             bool containsLongRunFormula() const;
+            
+            /*!
+             * @return true iff the formula contains nested temporal operators and/or boolean combinations of path formulas (e.g. '"safe" & F "goal"')
+             */
             bool containsComplexPathFormula() const;
             
             FormulaInformation join(FormulaInformation const& other);
