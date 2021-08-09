@@ -1,9 +1,14 @@
 #include "storm/automata/DeterministicAutomaton.h"
-#include "storm/automata/AcceptanceCondition.h"
-#include "storm/automata/HOAConsumerDA.h"
+
 #include "cpphoafparser/parser/hoa_parser.hh"
 #include "cpphoafparser/parser/hoa_parser_helper.hh"
 #include "cpphoafparser/consumer/hoa_intermediate_check_validity.hh"
+
+#include "storm/automata/AcceptanceCondition.h"
+#include "storm/automata/HOAConsumerDA.h"
+#include "storm/utility/macros.h"
+
+#include "storm/exceptions/FileIoException.h"
 
 namespace storm {
     namespace automata {
@@ -93,7 +98,14 @@ namespace storm {
 
         DeterministicAutomaton::ptr DeterministicAutomaton::parseFromFile(const std::string& filename) {
             std::ifstream in(filename);
-            return parse(in);
+            STORM_LOG_THROW(in.good(), storm::exceptions::FileIoException, "Can not open '" << filename << "' for reading.");
+            auto da = parse(in);
+            
+            STORM_LOG_INFO("Deterministic automaton from HOA file '" << filename << "' has "
+                    << da->getNumberOfStates() << " states, "
+                    << da->getAPSet().size() << " atomic propositions and "
+                    << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
+            return da;
         }
 
     }
