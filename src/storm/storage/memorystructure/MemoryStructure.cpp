@@ -11,14 +11,6 @@
 namespace storm {
     namespace storage {
         
-        MemoryStructure::MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates) : transitions(transitionMatrix), stateLabeling(memoryStateLabeling), initialMemoryStates(initialMemoryStates), onlyInitialStatesRelevant(true) {
-            // intentionally left empty
-        }
-        
-        MemoryStructure::MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling, std::vector<uint_fast64_t>&& initialMemoryStates) : transitions(std::move(transitionMatrix)), stateLabeling(std::move(memoryStateLabeling)), initialMemoryStates(std::move(initialMemoryStates)), onlyInitialStatesRelevant(true) {
-            // intentionally left empty
-        }
-
         MemoryStructure::MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates, bool onlyInitialStatesRelevant) : transitions(transitionMatrix), stateLabeling(memoryStateLabeling), initialMemoryStates(initialMemoryStates), onlyInitialStatesRelevant(onlyInitialStatesRelevant) {
             // intentionally left empty
         }
@@ -27,7 +19,7 @@ namespace storm {
             // intentionally left empty
         }
 
-        bool MemoryStructure::IsOnlyInitialStatesRelevantSet() const {
+        bool MemoryStructure::isOnlyInitialStatesRelevantSet() const {
             return onlyInitialStatesRelevant;
         }
 

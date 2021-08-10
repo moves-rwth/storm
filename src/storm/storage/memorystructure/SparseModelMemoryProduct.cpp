@@ -38,7 +38,7 @@ namespace storm {
                 // Get the initial states and reachable states. A stateIndex s corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
                 storm::storage::BitVector initialStates(modelStateCount * memoryStateCount, false);
                 auto memoryInitIt = memory.getInitialMemoryStates().begin();
-                if (memory.IsOnlyInitialStatesRelevantSet()) {
+                if (memory.isOnlyInitialStatesRelevantSet()) {
                     for (auto modelInit : model.getInitialStates()) {
                         initialStates.set(modelInit * memoryStateCount + *memoryInitIt, true);
                         ++memoryInitIt;

@@ -14,18 +14,12 @@ namespace storm {
         class MemoryStructureBuilder {
         public:
             
-            /*!
-             * Initializes a new builder for a memory structure
-             * @param numberOfMemoryStates The number of states the resulting memory structure should have
-             */
-            MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model);
-
-            /*!
+             /*!
              * Initializes a new builder with the data from the provided memory structure
              * @param numberOfMemoryStates The number of states the resulting memory structure should have
-             * @param allModelStatesRelevant Consider non-initial model states
+             * @param onlyInitialStatesRelevant If true, assume that we only consider the fragment reachable from initial model states. If false, initial memory states need to be provided for *all* model states.
              */
-            MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool onlyInitialStatesRelevant);
+            MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool onlyInitialStatesRelevant = true);
 
             /*!
              * Initializes a new builder with the data from the provided memory structure
@@ -33,11 +27,11 @@ namespace storm {
             MemoryStructureBuilder(MemoryStructure const& memoryStructure, storm::models::sparse::Model<ValueType, RewardModelType> const& model);
             
             /*!
-             * Specifies for the given initial state of the model the corresponding initial memory state.
+             * Specifies for the given state of the model the corresponding initial memory state.
              *
              * @note The default initial memory state is 0.
              *
-             * @param initialModelState the index of an initial state of the model.
+             * @param initialModelState the index of a state of the model. Has to be an initial state iff `onlyInitialStatesRelevant` is true.
              * @param initialMemoryState the initial memory state associated to the corresponding model state.
              */
             void setInitialMemoryState(uint_fast64_t initialModelState, uint_fast64_t initialMemoryState);
