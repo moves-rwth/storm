@@ -30,6 +30,7 @@
 #define CPPHOAFPARSER_HOAPARSEREXCEPTION_H
 
 #include <stdexcept>
+#include <cassert>
 
 namespace cpphoafparser {
 
