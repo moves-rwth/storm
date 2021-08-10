@@ -11,6 +11,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableExpression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
     namespace analysis {
