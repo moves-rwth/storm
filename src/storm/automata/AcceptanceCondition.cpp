@@ -42,7 +42,7 @@ bool AcceptanceCondition::isAccepting(const storm::storage::StateBlock& scc, acc
     case acceptance_expr::EXP_AND:
         return isAccepting(scc, expr->getLeft()) && isAccepting(scc, expr->getRight());
     case acceptance_expr::EXP_OR:
-        return isAccepting(scc, expr->getLeft()) && isAccepting(scc, expr->getRight());
+        return isAccepting(scc, expr->getLeft()) || isAccepting(scc, expr->getRight());
     case acceptance_expr::EXP_NOT:
         return !isAccepting(scc, expr->getLeft());
     case acceptance_expr::EXP_TRUE:
