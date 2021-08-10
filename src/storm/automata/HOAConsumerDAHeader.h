@@ -32,7 +32,7 @@ public:
     }
 
     /** Called by the parser for the "HOA: version" item [mandatory, once]. */
-    virtual void notifyHeaderStart(const std::string& version) {
+    virtual void notifyHeaderStart(const std::string& /*version*/) {
         // TODO: Check version
     }
 
@@ -101,7 +101,7 @@ public:
   /**
    * Called by the parser for the "name: ..." item [optional, once].
    **/
-  virtual void setName(const std::string& name) {
+  virtual void setName(const std::string& /*name*/) {
       // IGNORE
   }
 
@@ -110,7 +110,7 @@ public:
    * @param name the tool name
    * @param version the tool version (option, empty pointer if not provided)
    **/
-  virtual void setTool(const std::string& name, std::shared_ptr<std::string> version) {
+  virtual void setTool(const std::string& /*name*/, std::shared_ptr<std::string> /*version*/) {
       // IGNORE
   }
 
@@ -118,7 +118,7 @@ public:
    * Called by the parser for the "properties: ..." item [optional, multiple].
    * @param properties a list of properties
    */
-  virtual void addProperties(const std::vector<std::string>& properties) {
+  virtual void addProperties(const std::vector<std::string>& /*properties*/) {
       // TODO: check supported
   }
 
@@ -127,7 +127,7 @@ public:
    * @param name the name of the header (without ':')
    * @param content a list of extra information provided by the header
    */
-  virtual void addMiscHeader(const std::string& name, const std::vector<cpphoafparser::IntOrString>& content) {
+  virtual void addMiscHeader(const std::string& /*name*/, const std::vector<cpphoafparser::IntOrString>& /*content*/) {
       // TODO: Check semantic headers
   }
 
@@ -145,7 +145,7 @@ public:
    * @param labelExpr an optional boolean expression over labels (state-labeled) (empty pointer if not provided)
    * @param accSignature an optional list of acceptance set indizes (state-labeled acceptance) (empty pointer if not provided)
    */
-  virtual void addState(unsigned int id, std::shared_ptr<std::string> info, label_expr::ptr labelExpr, std::shared_ptr<int_list> accSignature) {
+  virtual void addState(unsigned int /*id*/, std::shared_ptr<std::string> /*info*/, label_expr::ptr /*labelExpr*/, std::shared_ptr<int_list> /*accSignature*/) {
       // IGNORE
   }
 
@@ -161,7 +161,7 @@ public:
    * @param conjSuccessors a list of successor state indizes, interpreted as a conjunction
    * @param accSignature an optional list of acceptance set indizes (transition-labeled acceptance) (empty pointer if not provided)
    */
-  virtual void addEdgeImplicit(unsigned int stateId, const int_list& conjSuccessors, std::shared_ptr<int_list> accSignature) {
+  virtual void addEdgeImplicit(unsigned int /*stateId*/, const int_list& /*conjSuccessors*/, std::shared_ptr<int_list> /*accSignature*/) {
       // IGNORE
   }
 
@@ -174,7 +174,7 @@ public:
    * @param conjSuccessors a list of successors state indizes, interpreted as a conjunction
    * @param accSignature an optional list of acceptance set indizes (transition-labeled acceptance) (empty pointer if none provided)
    */
-  virtual void addEdgeWithLabel(unsigned int stateId, label_expr::ptr labelExpr, const int_list& conjSuccessors, std::shared_ptr<int_list> accSignature) {
+  virtual void addEdgeWithLabel(unsigned int /*stateId*/, label_expr::ptr /*labelExpr*/, const int_list& /*conjSuccessors*/, std::shared_ptr<int_list> /*accSignature*/) {
       // IGNORE
   }
 
@@ -182,7 +182,7 @@ public:
    * Called by the parser to notify the consumer that the definition for state `stateId`
    * has ended [multiple].
    */
-  virtual void notifyEndOfState(unsigned int stateId) {
+  virtual void notifyEndOfState(unsigned int /*stateId*/) {
       // IGNORE
   }
 
