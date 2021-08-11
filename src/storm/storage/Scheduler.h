@@ -133,13 +133,13 @@ namespace storm {
              * @param skipUniqueChoices If true, the (unique) choice for deterministic states (i.e., states with only one enabled choice) is not printed explicitly.
              *                          Requires a model to be given.
              */
-            void printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false) const;
+            void printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false, bool skipDontCareStates = false) const;
 
             
             /*!
              * Prints the scheduler in json format to the given output stream.
              */
-             void printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false) const;
+            void printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false,  bool skipDontCareStates = false) const;
             
         private:
             

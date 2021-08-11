@@ -162,7 +162,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices) const {
+        void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices, bool skipDontCareStates) const {
             STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException, "The given model is not compatible with this scheduler.");
             
             bool const stateValuationsGiven = model != nullptr && model->hasStateValuations();
@@ -204,7 +204,7 @@ namespace storm {
                     for (uint_fast64_t memoryState = 0; memoryState < getNumberOfMemoryStates(); ++memoryState) {
 
                         // Ignore dontCare states
-                        if((!isMemorylessScheduler()) && isDontCare(state, memoryState)) {
+                        if(skipDontCareStates && isDontCare(state, memoryState)) {
                             continue;
                         }
 
@@ -261,6 +261,7 @@ namespace storm {
                         // Print memory updates
                         if(!isMemorylessScheduler()) {
                             out << std::setw(widthOfStates) << "";
+                            // The memory updates do not depend on the actual choice, they only depend on the current model- and memory state as well as the successor model state.
                             for (auto const& choiceProbPair : choice.getChoiceAsDistribution()) {
                                 uint64_t row = model->getTransitionMatrix().getRowGroupIndices()[state] + choiceProbPair.first;
                                 bool firstUpdate = true;
@@ -289,12 +290,12 @@ namespace storm {
         }
 
         template <>
-        void Scheduler<float>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<float>> model, bool skipUniqueChoices) const {
+        void Scheduler<float>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<float>> model, bool skipUniqueChoices, bool skipDontCareStates) const {
             STORM_LOG_THROW(isMemorylessScheduler(), storm::exceptions::NotImplementedException, "Json export of schedulers not implemented for this value type.");
         }
 
         template <typename ValueType>
-        void Scheduler<ValueType>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices) const {
+        void Scheduler<ValueType>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices, bool skipDontCareStates) const {
             STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException, "The given model is not compatible with this scheduler.");
             STORM_LOG_WARN_COND(!(skipUniqueChoices && model == nullptr), "Can not skip unique choices if the model is not given.");
             storm::json<storm::RationalNumber> output;
@@ -306,7 +307,7 @@ namespace storm {
 
                 for (uint_fast64_t memoryState = 0; memoryState < getNumberOfMemoryStates(); ++memoryState) {
                     // Ignore dontCare states
-                    if ((!isMemorylessScheduler()) && isDontCare(state, memoryState)) {
+                    if (skipDontCareStates && isDontCare(state, memoryState)) {
                         continue;
                     }
 
