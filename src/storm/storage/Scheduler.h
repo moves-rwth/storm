@@ -60,6 +60,7 @@ namespace storm {
 
             /*!
              * Set the combination of model state and memoryStructure state to dontCare.
+             * These states are considered unreachable and are ignored when printing the scheduler.
              * If not specified otherwise, an arbitrary choice is set if no choice exists.
              *
              * @param modelState The state of the model.
@@ -126,12 +127,13 @@ namespace storm {
 				return newScheduler;
 			}
         
-            /*!
+			/*!
              * Prints the scheduler to the given output stream.
              * @param out The output stream
              * @param model If given, provides additional information for printing (e.g., displaying the state valuations instead of state indices)
              * @param skipUniqueChoices If true, the (unique) choice for deterministic states (i.e., states with only one enabled choice) is not printed explicitly.
              *                          Requires a model to be given.
+             * @param skipDontCareStates If true, the choice for dontCareStates states is not printed explicitly.
              */
             void printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false, bool skipDontCareStates = false) const;
 
