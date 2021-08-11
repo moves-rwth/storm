@@ -52,6 +52,7 @@ namespace storm {
             pctlstar.setUnaryBooleanPathFormulasAllowed(true);
             pctlstar.setNestedOperatorsAllowed(true);
             pctlstar.setNestedPathFormulasAllowed(true);
+            pctlstar.setHOAPathFormulasAllowed(true);
 
             return pctlstar;
         }
@@ -121,6 +122,7 @@ namespace storm {
             cslstar.setUnaryBooleanPathFormulasAllowed(true);
             cslstar.setNestedOperatorsAllowed(true);
             cslstar.setNestedPathFormulasAllowed(true);
+            cslstar.setHOAPathFormulasAllowed(true);
 
             return cslstar;
         }
