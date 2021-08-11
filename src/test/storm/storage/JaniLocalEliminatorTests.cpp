@@ -25,7 +25,9 @@
 
 
 typedef storm::models::sparse::Dtmc<double> Dtmc;
+typedef storm::models::sparse::Mdp<double> Mdp;
 typedef storm::modelchecker::SparseDtmcPrctlModelChecker<Dtmc> DtmcModelChecker;
+typedef storm::modelchecker::SparseMdpPrctlModelChecker<Dtmc> MdpModelChecker;
 
 using storm::jani::JaniLocalEliminator;
 using namespace storm::jani::elimination_actions;
@@ -86,6 +88,50 @@ void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> pro
         EXPECT_NEAR(expectedValue, quantResult[*state], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     }
 }
+
+void checkMdpModel(storm::jani::Model model, std::vector<storm::jani::Property> properties, std::map<storm::expressions::Variable, storm::expressions::Expression> consts, double expectedValue, int states = -1, int transitions = -1){
+    model = model.defineUndefinedConstants(consts);
+    properties[0] = properties[0].substitute(consts);
+
+    auto formulae = storm::api::extractFormulasFromProperties(properties);
+    storm::builder::BuilderOptions  options(formulae, model);
+    options.setBuildAllLabels(true);
+    auto explicitModel = storm::api::buildSparseModel<double>(model, formulae); //->template as<Mdp>();
+   // auto explicitModel = storm::api::buildSparseModel<double>(model, options)->template as<Mdp>();
+
+    if (states != -1){
+        EXPECT_EQ(states, explicitModel->getNumberOfStates());
+    }
+    if (transitions != -1){
+        EXPECT_EQ(transitions, explicitModel->getNumberOfTransitions());
+    }
+
+//    auto trans_matr = explicitModel->getTransitionMatrix();
+//    for (uint64_t  state = 0; state < explicitModel->getNumberOfStates(); state++){
+//        std::cout << state << "(";
+//        for (auto label : explicitModel->getLabelsOfState(state)){
+//            std::cout << label << ", ";
+//        }
+//        std::cout << ") -> ";
+//        for (auto trans : trans_matr.getRow(state)) {
+//            std::cout << trans.getValue() << ": " << trans.getColumn() << ", ";
+//        }
+//        std::cout << std::endl;
+//
+//    }
+
+    auto task = storm::modelchecker::CheckTask<>(*(formulae[0]), true);
+    storm::Environment env;
+    auto checkResult = storm::api::verifyWithSparseEngine<double>(env, explicitModel, task);
+    auto quantResult = checkResult->asExplicitQuantitativeCheckResult<double>();
+
+    auto initialStates = explicitModel->getInitialStates();
+    EXPECT_EQ(1, initialStates.getNumberOfSetBits());
+    for (auto state = initialStates.begin(); state != initialStates.end(); ++state){
+        EXPECT_NEAR(expectedValue, quantResult[*state], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    }
+}
+
 
 // *******************************
 // Tests for input behaviour:
@@ -451,10 +497,10 @@ TEST(JaniLocalEliminator, IsPartOfPropPropagationUnfolding) {
 // This test verifies that combining the two guards during elimination works correctly.
 TEST(JaniLocalEliminator, EliminationNewGuardTest) {
 
-    auto modelAndProps = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/leader_sync.4-8.jani",
+    auto modelAndProps = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/hospital.jani",
                                                     storm::jani::getAllKnownModelFeatures(), boost::none);
     auto eliminator = JaniLocalEliminator(modelAndProps.first, modelAndProps.second, false);
-    eliminator.scheduler.addAction(std::make_unique<AutomaticAction>(15, 100));
+    eliminator.scheduler.addAction(std::make_unique<AutomaticAction>(20, 2000));
     eliminator.eliminate();
     auto result = eliminator.getResult();
     result.finalize();
@@ -462,7 +508,7 @@ TEST(JaniLocalEliminator, EliminationNewGuardTest) {
         std::cout << log << std::endl;
     }
     EXPECT_EQ(2, result.getAutomaton(0).getNumberOfLocations());
-    checkModel(result, modelAndProps.second, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.875);
+    checkMdpModel(result, modelAndProps.second, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.875, 1, 1);
 
     // TODO
 }
