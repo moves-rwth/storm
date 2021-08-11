@@ -96,8 +96,6 @@ namespace storm {
                 }
                 STORM_LOG_THROW(rv == 0, storm::exceptions::FileIoException, "Could not construct deterministic automaton for " << prefixLtl << ", return code = " << rv);
 
-                // Transition-based acceptance is required.
-                // For MDP-MC the acceptance condition must be in DNF, otherwise an exception is thrown during computation if accepting ECs
                 STORM_LOG_INFO("Reading automaton for " << prefixLtl << " from da.hoa");
 
                 return DeterministicAutomaton::parseFromFile("da.hoa");
