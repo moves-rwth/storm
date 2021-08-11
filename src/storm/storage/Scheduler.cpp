@@ -35,26 +35,25 @@ namespace storm {
             STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
 
             auto& schedulerChoice = schedulerChoices[memoryState][modelState];
-            if (!dontCareStates[memoryState].get(modelState)) {
-                if (schedulerChoice.isDefined()) {
-                    if (!choice.isDefined()) {
-                        ++numOfUndefinedChoices;
-                    }
-                } else {
-                    if (choice.isDefined()) {
-                        assert(numOfUndefinedChoices > 0);
-                        --numOfUndefinedChoices;
-                    }
+
+            if (schedulerChoice.isDefined()) {
+                if (!choice.isDefined()) {
+                    ++numOfUndefinedChoices;
                 }
-                if (schedulerChoice.isDeterministic()) {
-                    if (!choice.isDeterministic()) {
-                        assert(numOfDeterministicChoices > 0);
-                        --numOfDeterministicChoices;
-                    }
-                } else {
-                    if (choice.isDeterministic()) {
-                        ++numOfDeterministicChoices;
-                    }
+            } else {
+                if (choice.isDefined()) {
+                    assert(numOfUndefinedChoices > 0);
+                    --numOfUndefinedChoices;
+                }
+            }
+            if (schedulerChoice.isDeterministic()) {
+                if (!choice.isDeterministic()) {
+                    assert(numOfDeterministicChoices > 0);
+                    --numOfDeterministicChoices;
+                }
+            } else {
+                if (choice.isDeterministic()) {
+                    ++numOfDeterministicChoices;
                 }
             }
 
@@ -87,13 +86,13 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void Scheduler<ValueType>::setDontCare(uint_fast64_t modelState, uint_fast64_t memoryState) {
+        void Scheduler<ValueType>::setDontCare(uint_fast64_t modelState, uint_fast64_t memoryState, bool setArbitraryChoice) {
             STORM_LOG_ASSERT(memoryState < getNumberOfMemoryStates(), "Illegal memory state index");
             STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
 
             if (!dontCareStates[memoryState].get(modelState)) {
                 auto& schedulerChoice = schedulerChoices[memoryState][modelState];
-                if (!schedulerChoice.isDefined()) {
+                if (!schedulerChoice.isDefined() && setArbitraryChoice) {
                     // Set an arbitrary choice
                     this->setChoice(0, modelState, memoryState);
                 }
@@ -108,13 +107,8 @@ namespace storm {
             STORM_LOG_ASSERT(modelState < schedulerChoices[memoryState].size(), "Illegal model state index");
 
             if (dontCareStates[memoryState].get(modelState)) {
-                auto& schedulerChoice = schedulerChoices[memoryState][modelState];
-                if (!schedulerChoice.isDefined()) {
-                    ++numOfUndefinedChoices;
-                }
                 dontCareStates[memoryState].set(modelState, false);
                 --numOfDontCareStates;
-
             }
         }
 
