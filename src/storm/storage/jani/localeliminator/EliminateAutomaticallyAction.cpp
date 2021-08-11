@@ -79,8 +79,8 @@ namespace storm {
                                 uint64_t incoming = 0;
                                 for (const auto& edge : automaton->getEdges()) {
                                     int addedTransitions = 1;
-                                    for (const auto& dest : edge.getDestinations())
-                                        if (dest.getLocationIndex() == locIndex)
+                                    for (const auto& dest : edge.getDestinations()) {
+                                        if (dest.getLocationIndex() == locIndex) {
                                             addedTransitions *= outgoing;
                                             // Stop once we hit the threshold -- otherwise there is a risk of causing
                                             // an overflow due to the exponential growth of addedTransitions:
@@ -88,6 +88,7 @@ namespace storm {
                                                 break;
                                             }
                                         }
+                                    }
                                     incoming += addedTransitions - 1;
                                 }
                                 uint64_t newEdges = incoming * outgoing;

@@ -81,7 +81,7 @@ namespace storm {
                     }
 
                     for (auto initialLocIndex : oldAutomaton.getInitialLocationIndices()){
-                        newAutomaton.addInitialLocation(initialLocIndex);
+                        newAutomaton.addInitialLocation(oldToNewLocationIndices[initialLocIndex]);
                     }
 
                     for (auto& oldEdge : oldAutomaton.getEdges()) {
