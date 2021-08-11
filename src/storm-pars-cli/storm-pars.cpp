@@ -597,6 +597,12 @@ namespace storm {
                 }
             }
 
+            boost::optional<derivative::GradientDescentConstraintMethod> constraintMethod = derSettings.getConstraintMethod();
+            if (!constraintMethod) {
+                STORM_LOG_ERROR("Unknown Gradient Descent Constraint method: " << derSettings.getConstraintMethodAsString());
+                return;
+            }
+
             boost::optional<derivative::GradientDescentMethod> method = derSettings.getGradientDescentMethod();
             if (!method) {
                 STORM_LOG_ERROR("Unknown Gradient Descent method: " << derSettings.getGradientDescentMethodAsString());
@@ -659,7 +665,7 @@ namespace storm {
             } else if (derSettings.isFeasibleInstantiationSearchSet()) {
                 STORM_PRINT("Finding an extremum using Gradient Descent" << std::endl);
                 storm::utility::Stopwatch derivativeWatch(true);
-                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(*dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, !derSettings.isNoProjectGradientSet(), derSettings.isPrintJsonSet());
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(*dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, derSettings.isPrintJsonSet());
                 storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask(*formula);
                 derivativeChecker.specifyFormula(Environment(), checkTask);
                 auto instantiationAndValue = derivativeChecker.gradientDescent(Environment());

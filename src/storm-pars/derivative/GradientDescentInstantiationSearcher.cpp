@@ -43,14 +43,14 @@ namespace storm {
             auto const oldPos = position[steppingParameter];
 
             ConstantType projectedGradient;
-            if (projectGradient) {
+            if (constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
                 // Project gradient
                 const ConstantType constantOldPos = utility::convertNumber<ConstantType>(oldPos);
                 ConstantType newPlainPosition = constantOldPos + precisionAsConstant * gradient.at(steppingParameter);
                 newPlainPosition = utility::max<ConstantType>(utility::zero<ConstantType>() + precisionAsConstant, newPlainPosition);
                 newPlainPosition = utility::min<ConstantType>(utility::one<ConstantType>() - precisionAsConstant, newPlainPosition);
                 projectedGradient = (newPlainPosition - constantOldPos) / precisionAsConstant;
-            } else {
+            } else if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                 const double x = utility::convertNumber<double>(oldPos);
                 const double sigmoidDerivative = std::exp(x) / std::pow((1 + std::exp(x)), 2);
                 projectedGradient = sigmoidDerivative * gradient.at(steppingParameter);
@@ -60,6 +60,8 @@ namespace storm {
                 /* } else if (constantOldPos >= utility::one<ConstantType>() - precisionAsConstant) { */
                 /*     projectedGradient -= stepNum * utility::abs<ConstantType>(constantOldPos - (utility::one<ConstantType>() - precisionAsConstant)); */
                 /* } */
+            } else {
+                projectedGradient = gradient.at(steppingParameter);
             }
 
             /* if (utility::abs<ConstantType>(projectedGradient - gradient.at(steppingParameter)) > precisionAsConstant) { */
@@ -178,7 +180,8 @@ namespace storm {
             const CoefficientType<FunctionType> newPos = position[steppingParameter] + convertedStep;
             position[steppingParameter] = newPos;
             // Map parameter back to (0, 1).
-            if (projectGradient) {
+            if (constraintMethod == GradientDescentConstraintMethod::PROJECT || constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
+                std::cout << "Projecting back position" << std::endl;
                 position[steppingParameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, position[steppingParameter]);
                 position[steppingParameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, position[steppingParameter]);
             }
@@ -242,8 +245,8 @@ namespace storm {
 
                 // If nesterov is enabled, we need to compute the gradient on the predicted position
                 std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> nesterovPredictedPosition(position);
-                // Apply sigmoid function
-                if (!projectGradient) {
+                if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
+                    // Apply sigmoid function
                     for (auto const& parameter : parameters) {
                         nesterovPredictedPosition[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-nesterovPredictedPosition[parameter]))));
                     }
