@@ -76,6 +76,8 @@ namespace storm {
                         int currentValue = asg.getAssignedExpression().evaluateAsInt();
                         if (initValue != currentValue)
                             return false;
+                    } else{
+                        STORM_LOG_WARN("Variable " + asg.getVariable().getName() + " has no init expression. The result may not be correct.");
                     }
                 }
                 else if (asg.getVariable().isBooleanVariable()){
@@ -84,6 +86,8 @@ namespace storm {
                         bool currentValue = asg.getAssignedExpression().evaluateAsBool();
                         if (initValue != currentValue)
                             return false;
+                    } else{
+                        STORM_LOG_WARN("Variable " + asg.getVariable().getName() + " has no init expression. The result may not be correct.");
                     }
                 }
             }
