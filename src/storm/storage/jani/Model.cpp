@@ -288,7 +288,7 @@ namespace storm {
                     for (uint_fast64_t innerIndex = 0; innerIndex < possibleEdges[outerIndex].size(); ++innerIndex) {
                         edgeVariables[outerIndex].push_back(newModel.getManager().declareFreshBooleanVariable());
                         allEdgeVariables.push_back(edgeVariables[outerIndex].back());
-                        storm::expressions::Expression guard = eliminateFunctionCallsInExpression(possibleEdges[outerIndex][innerIndex].get().getGuard(), *this)
+                        storm::expressions::Expression guard = eliminateFunctionCallsInExpression(possibleEdges[outerIndex][innerIndex].get().getGuard(), oldModel);
                         solver.add(implies(edgeVariables[outerIndex].back(), guard));
                     }
                     
@@ -444,7 +444,7 @@ namespace storm {
             STORM_LOG_WARN_COND(!this->getModelFeatures().hasArrays(), "Flattening JANI model with arrays is not supported. We'll try but there might be unexpected errors.");
             if (this->getModelFeatures().hasFunctions()) {
                 for (auto const& aut : automata) {
-                    STORM_LOG_THROW(aut.getFunctionDefinitions().empty(), storm::exceptions::NotImplementedException "Flattening JANI model with local function declarations not implemented. Try to eliminate functions first or make them global.");
+                    STORM_LOG_THROW(aut.getFunctionDefinitions().empty(), storm::exceptions::NotImplementedException, "Flattening JANI model with local function declarations not implemented. Try to eliminate functions first or make them global.");
                 }
             }
             
