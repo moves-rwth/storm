@@ -1,0 +1,102 @@
+#include "storm/storage/Scheduler.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/storage/MaximalEndComponent.h"
+#include "storm/transformer/DAProductBuilder.h"
+
+namespace storm {
+
+
+    namespace modelchecker {
+        namespace helper {
+            namespace internal {
+
+                /*!
+                 * Helper class for scheduler construction in LTL model checking
+                 * @tparam ValueType the type a value can have
+                 * @tparam Nondeterministic A flag indicating if there is nondeterminism in the Model (MDP)
+                 */
+                template<typename ValueType, bool Nondeterministic>
+                class SparseLTLSchedulerHelper {
+
+                public:
+                    /*!
+                     * The type of the product model (DTMC or MDP) that is used during the computation.
+                     */
+                    using productModelType = typename std::conditional<Nondeterministic, storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Dtmc<ValueType>>::type;
+
+                    /*!
+                     * Initializes the helper.
+                     * @param numProductStates number of product states
+                     */
+                    SparseLTLSchedulerHelper(uint_fast64_t numProductStates);
+
+
+                    /*!
+                     * Set the scheduler choices to random.
+                     */
+                    void setRandom();
+
+                    /*!
+                     * Save choices for states in the accepting end component of the DA-Model product,
+                     * but only set new choices for states that are not in any other EC yet.
+                     * We know the EC satisfies the given conjunction of the acceptance condition. Therefore, we want to reach each infinity set in the conjunction infinitely often.
+                     * Choices are of the Form <s, q, InfSetID> -> choice.
+                     *
+                     * @param acceptance the acceptance condition (in DNF)
+                     * @param mec the accepting end component
+                     * @param conjunction the conjunction satisfied by the end component
+                     * @param product the product model
+                     */
+                    void saveProductEcChoices(automata::AcceptanceCondition const& acceptance, storm::storage::MaximalEndComponent const& mec, std::vector<automata::AcceptanceCondition::acceptance_expr::ptr> const& conjunction, typename transformer::DAProduct<productModelType>::ptr product);
+
+                    /*!
+                    * Extracts scheduler choices and creates the memory structure for the LTL-Scheduler.
+                    *
+                    * @param numDaStates number of DA-states
+                    * @param acceptingProductStates states in accepting end components of the model-DA product
+                    * @param reachScheduler the scheduler ensuring to reach some acceptingState, defined on the model-DA product
+                    * @param productBuilder the product builder
+                    * @param product the model-DA product
+                    * @param modelStatesOfInterest relevant states of the model
+                    * @param transitionMatrix the transition matrix of the model
+                    */
+                    void prepareScheduler(uint_fast64_t numDaStates, storm::storage::BitVector const& acceptingProductStates, std::unique_ptr<storm::storage::Scheduler<ValueType>> reachScheduler, transformer::DAProductBuilder const& productBuilder, typename transformer::DAProduct<productModelType>::ptr product, storm::storage::BitVector const& modelStatesOfInterest, storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
+
+                    /*!
+                     * Returns a deterministic fully defined scheduler (except for dontCareStates) for the given model.
+                     * The choices are random if isRandom was set to true.
+                     *
+                     * @param model the model to construct the scheduler for
+                     * @param onlyInitialStatesRelevant flag indicating whether we only consider the fragment reachable from initial model states.
+                     * @return the scheduler
+                     */
+                    storm::storage::Scheduler<ValueType> extractScheduler(storm::models::sparse::Model<ValueType> const& model, bool onlyInitialStatesRelevant);
+
+                private:
+
+                    /**
+                     * Computes the memory state for a given DA-state and infSet ID.
+                     * Encoded as (DA-state * (numberOfInfSets+1)) + infSet. (+1 because an additional "copy" of the DA is used for states outside accepting ECs)
+                     * @param daState DA-state
+                     * @param infSet infSet ID
+                     */
+                    uint_fast64_t getMemoryState(uint_fast64_t daState, uint_fast64_t infSet);
+
+
+                    bool _randomScheduler;
+                    std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>> _producedChoices;   // <s, q, len(_infSets)> -> ReachChoice   and    <s, q, InfSet> -> MecChoice
+                    std::vector<storm::storage::BitVector> _dontCareStates; // memorySate-modelState combinations that are never visited
+
+                    std::vector<storm::storage::BitVector> _infSets; // Save the InfSets of the acceptance condition. The BitVector contains the product model states that are contained in the infSet
+                    std::vector<boost::optional<std::set<uint_fast64_t>>> _accInfSets; // Save for each product state (which is assigned to an acceptingMEC), the infSets that need to be visited inf often to satisfy the acceptance condition. Remaining states belonging to no accepting EC, are assigned  len(_infSets) (REACH scheduler)
+
+                    // Memory structure
+                    std::vector<std::vector<storm::storage::BitVector>> _memoryTransitions;  // The BitVector contains the model states that lead from startState <q, mec, infSet> to <q', mec', infSet'>. This is deterministic, because each state <s, q> is assigned to a unique MEC (scheduler).
+                    std::vector<uint_fast64_t> _memoryInitialStates; // Save for each relevant state (initial or all) s its unique initial memory state (which memory state is reached from the initial state after reading s)
+
+                };
+            }
+        }
+    }
+}
