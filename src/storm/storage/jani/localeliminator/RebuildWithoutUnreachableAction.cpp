@@ -1,4 +1,5 @@
 #include "RebuildWithoutUnreachableAction.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace jani {
@@ -13,13 +14,20 @@ namespace storm {
 
             void RebuildWithoutUnreachableAction::doAction(JaniLocalEliminator::Session &session) {
                 session.addToLog("Rebuilding model without unreachable locations");
-                for (auto oldAutomaton : session.getModel().getAutomata()) {
+                for (const auto &oldAutomaton : session.getModel().getAutomata()) {
                     Automaton newAutomaton(oldAutomaton.getName(), oldAutomaton.getLocationExpressionVariable());
-                    for (auto const& localVariable : oldAutomaton.getVariables())
+
+                    std::map<Variable const*, std::reference_wrapper<Variable const>> variableRemapping;
+
+                    for (auto const &localVariable : oldAutomaton.getVariables()){
                         newAutomaton.addVariable(localVariable);
+                        std::reference_wrapper<Variable const> ref_w = std::cref(newAutomaton.getVariables().getVariable(localVariable.getName()));
+                        variableRemapping.insert(std::pair<Variable const*, std::reference_wrapper<Variable const>>(&localVariable, ref_w));
+                    }
+
                     newAutomaton.setInitialStatesRestriction(oldAutomaton.getInitialStatesRestriction());
 
-                    std::unordered_set<Edge*> satisfiableEdges;
+                    std::unordered_set<const Edge*> satisfiableEdges;
 
                     for (auto &oldEdge : oldAutomaton.getEdges()) {
                         if (!oldEdge.getGuard().containsVariables() && !oldEdge.getGuard().evaluateAsBool())
@@ -92,7 +100,10 @@ namespace storm {
                         if (satisfiableEdges.count(&oldEdge) == 0)
                             continue;
 
+                        oldEdge.getDestination(0).getOrderedAssignments().clone();
+
                         std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(oldEdge.getGuard());
+                        oldEdge.getDestination(0).getOrderedAssignments().clone();
 
                         STORM_LOG_THROW(oldEdge.getAssignments().empty(), storm::exceptions::NotImplementedException, "Support for oldEdge-assignments is not implemented");
 
@@ -108,7 +119,10 @@ namespace storm {
 
                         uint64_t newSource = oldToNewLocationIndices[oldEdge.getSourceLocationIndex()];
                         newAutomaton.addEdge(storm::jani::Edge(newSource, oldEdge.getActionIndex(), oldEdge.hasRate() ? boost::optional<storm::expressions::Expression>(oldEdge.getRate()) : boost::none, templateEdge, destinationLocationsAndProbabilities));
+                        newAutomaton.registerTemplateEdge(templateEdge);
                     }
+
+                    newAutomaton.changeAssignmentVariables(variableRemapping);
 
                     // We now update which locations might satisfy the property (based on which old locations did and
                     // the old-to-new map.
@@ -128,6 +142,7 @@ namespace storm {
                     }
 
                     session.addToLog("\tNew automaton has " +  std::to_string(newAutomaton.getEdges().size()) + " edges.");
+
                     session.getModel().replaceAutomaton(session.getModel().getAutomatonIndex(oldAutomaton.getName()), newAutomaton);
                 }
             }

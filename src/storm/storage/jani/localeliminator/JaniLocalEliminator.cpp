@@ -68,19 +68,23 @@ namespace storm {
             for (const auto& asg : location.getAssignments()){
                 if (!asg.isTransient())
                     continue;
-                if (asg.getAssignedExpression().containsVariables() || asg.getVariable().getInitExpression().containsVariables())
+                if (asg.getAssignedExpression().containsVariables() || (asg.getVariable().hasInitExpression() && asg.getVariable().getInitExpression().containsVariables()))
                     continue;
                 if (asg.getVariable().isBoundedIntegerVariable()){
-                    int initValue = asg.getVariable().getInitExpression().evaluateAsInt();
-                    int currentValue = asg.getAssignedExpression().evaluateAsInt();
-                    if (initValue != currentValue)
-                        return false;
+                    if (asg.getVariable().hasInitExpression()){
+                        int initValue = asg.getVariable().getInitExpression().evaluateAsInt();
+                        int currentValue = asg.getAssignedExpression().evaluateAsInt();
+                        if (initValue != currentValue)
+                            return false;
+                    }
                 }
                 else if (asg.getVariable().isBooleanVariable()){
-                    bool initValue = asg.getVariable().getInitExpression().evaluateAsBool();
-                    bool currentValue = asg.getAssignedExpression().evaluateAsBool();
-                    if (initValue != currentValue)
-                        return false;
+                    if (asg.getVariable().hasInitExpression()){
+                        bool initValue = asg.getVariable().getInitExpression().evaluateAsBool();
+                        bool currentValue = asg.getAssignedExpression().evaluateAsBool();
+                        if (initValue != currentValue)
+                            return false;
+                    }
                 }
             }
 

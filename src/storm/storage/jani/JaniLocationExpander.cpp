@@ -27,11 +27,18 @@ namespace storm {
         }
 
         Automaton JaniLocationExpander::transformAutomaton(Automaton const& automaton, std::string const& variableName, bool useTransientVariables) {
-
             Automaton newAutomaton(automaton.getName(), automaton.getLocationExpressionVariable());
-            for (auto const &localVariable : automaton.getVariables())
+
+            std::map<Variable const*, std::reference_wrapper<Variable const>> variableRemapping;
+
+            for (auto const &localVariable : automaton.getVariables()){
                 newAutomaton.addVariable(
                         localVariable); // The expanded variable is also added, but will be set to transient later
+
+                std::reference_wrapper<Variable const> ref_w = std::cref(newAutomaton.getVariables().getVariable(localVariable.getName()));
+
+                variableRemapping.insert(std::pair<Variable const*, std::reference_wrapper<Variable const>>(&localVariable, ref_w));
+            }
 
             bool isGlobalVariable = !automaton.hasVariable(variableName);
             VariableSet &containingSet = isGlobalVariable ? newModel.getGlobalVariables() : newAutomaton.getVariables();
@@ -200,6 +207,9 @@ namespace storm {
                     }
                 }
             }
+
+            newAutomaton.changeAssignmentVariables(variableRemapping);
+
             return newAutomaton;
         }
 
