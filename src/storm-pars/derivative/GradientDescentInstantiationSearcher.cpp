@@ -51,15 +51,41 @@ namespace storm {
                 newPlainPosition = utility::min<ConstantType>(utility::one<ConstantType>() - precisionAsConstant, newPlainPosition);
                 projectedGradient = (newPlainPosition - constantOldPos) / precisionAsConstant;
             } else if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
+                // We want the derivative of f(logit(x)), this happens to be exp(x) * f'(logit(x)) / (exp(x) + 1)^2
                 const double x = utility::convertNumber<double>(oldPos);
-                const double sigmoidDerivative = std::exp(x) / std::pow((1 + std::exp(x)), 2);
-                projectedGradient = sigmoidDerivative * gradient.at(steppingParameter);
-                /* projectedGradient = gradient.at(steppingParameter); */
-                /* if (constantOldPos <= utility::zero<ConstantType>() + precisionAsConstant) { */
-                /*     projectedGradient -= stepNum * utility::abs<ConstantType>((utility::zero<ConstantType>() + precisionAsConstant) - constantOldPos); */
-                /* } else if (constantOldPos >= utility::one<ConstantType>() - precisionAsConstant) { */
-                /*     projectedGradient -= stepNum * utility::abs<ConstantType>(constantOldPos - (utility::one<ConstantType>() - precisionAsConstant)); */
-                /* } */
+                // This is f'(logit(x))
+                const double gradientAtLogitX = utility::convertNumber<double>((ConstantType) gradient.at(steppingParameter));
+                projectedGradient = std::exp(x) * gradientAtLogitX / std::pow(std::exp(x) + 1, 2);
+            } else if (constraintMethod == GradientDescentConstraintMethod::BARRIER_INFINITY) {
+                const double x = utility::convertNumber<double>(oldPos);
+                if (x < utility::zero<ConstantType>() + precisionAsConstant) {
+                    projectedGradient = 1000;
+                } else if (x > utility::one<ConstantType>() - precisionAsConstant) {
+                    projectedGradient = -1000;
+                } else {
+                    projectedGradient = gradient.at(steppingParameter);
+                }
+            } else if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
+                const double x = utility::convertNumber<double>(oldPos);
+                // Our barrier is:
+                // log(x) if 0 < x < 0.5
+                // log(1 - x) if 0.5 <= x < 1
+                // -infinity otherwise
+                // The gradient of this is
+                // 1/x, 1/(1-x), +/-infinity respectively
+                if (x >= utility::zero<ConstantType>() + precisionAsConstant && x <= utility::one<ConstantType>() - precisionAsConstant) {
+                    if (x < 0.5) {
+                        projectedGradient = gradient.at(steppingParameter) + 1 / x;
+                    } else {
+                        projectedGradient = gradient.at(steppingParameter) + 1 / (1 - x);
+                    }
+                } else {
+                    if (x < utility::zero<ConstantType>() + precisionAsConstant) {
+                        projectedGradient = utility::infinity<ConstantType>();
+                    } else if (x > utility::one<ConstantType>() - precisionAsConstant) {
+                        projectedGradient = -utility::infinity<ConstantType>();
+                    }
+                }
             } else {
                 projectedGradient = gradient.at(steppingParameter);
             }
@@ -181,7 +207,6 @@ namespace storm {
             position[steppingParameter] = newPos;
             // Map parameter back to (0, 1).
             if (constraintMethod == GradientDescentConstraintMethod::PROJECT || constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
-                std::cout << "Projecting back position" << std::endl;
                 position[steppingParameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, position[steppingParameter]);
                 position[steppingParameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, position[steppingParameter]);
             }
@@ -267,8 +292,9 @@ namespace storm {
                 //
                 // If nesterov is activated, we need to do this twice. First, to check the value of the current position.
                 // Second, to compute the valueVector at the nesterovPredictedPosition.
-                
                 // If nesterov is deactivated, then nesterovPredictedPosition == position.
+                
+                // Are we at a stochastic (in bounds) position?
                 bool stochasticPosition = true;
                 for (auto const& parameter : parameters) {
                     if (nesterovPredictedPosition[parameter] < 0 + precision || nesterovPredictedPosition[parameter] > 1 - precision) {
@@ -277,31 +303,42 @@ namespace storm {
                     }
                 }
 
-                /* if (stochasticPosition) { */
-                std::unique_ptr<storm::modelchecker::CheckResult> intermediateResult = instantiationModelChecker->check(env, nesterovPredictedPosition);
-                std::vector<ConstantType> valueVector = intermediateResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
-                    std::unique_ptr<storm::modelchecker::CheckResult> terminationResult = instantiationModelChecker->check(env, position);
-                    std::vector<ConstantType> terminationValueVector = terminationResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                    currentValue = terminationValueVector[initialState];
-                } else {
-                    currentValue = valueVector[initialState];
-                }
-                /* } else { */
-                    
-                /* } */
-
-                if (currentCheckTask->getBound().isSatisfied(currentValue) && stochasticPosition) {
-                    break;
-                }
-
-                for (auto const& parameter : miniBatch) {
-                    auto checkResult = derivativeEvaluationHelper->check(env, nesterovPredictedPosition, parameter, valueVector);
-                    ConstantType delta = checkResult->getValueVector()[0];
-                    if (currentCheckTask->getBound().comparisonType == logic::ComparisonType::Less || currentCheckTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
-                        delta *= -1;
+                bool computeValue = true;
+                if (constraintMethod == GradientDescentConstraintMethod::BARRIER_INFINITY || constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
+                    if (!stochasticPosition) {
+                        computeValue = false;
                     }
-                    deltaVector[parameter] = delta;
+                }
+
+                if (computeValue) {
+                    std::unique_ptr<storm::modelchecker::CheckResult> intermediateResult = instantiationModelChecker->check(env, nesterovPredictedPosition);
+                    std::vector<ConstantType> valueVector = intermediateResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                    if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+                        std::unique_ptr<storm::modelchecker::CheckResult> terminationResult = instantiationModelChecker->check(env, position);
+                        std::vector<ConstantType> terminationValueVector = terminationResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                        currentValue = terminationValueVector[initialState];
+                    } else {
+                        currentValue = valueVector[initialState];
+                    }
+
+                    if (currentCheckTask->getBound().isSatisfied(currentValue) && stochasticPosition) {
+                        break;
+                    }
+
+                    for (auto const& parameter : miniBatch) {
+                        auto checkResult = derivativeEvaluationHelper->check(env, nesterovPredictedPosition, parameter, valueVector);
+                        ConstantType delta = checkResult->getValueVector()[0];
+                        if (currentCheckTask->getBound().comparisonType == logic::ComparisonType::Less || currentCheckTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
+                            delta *= -1;
+                        }
+                        deltaVector[parameter] = delta;
+                    }
+                } else {
+                    if (currentCheckTask->getBound().comparisonType == logic::ComparisonType::Less || currentCheckTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
+                        currentValue = utility::infinity<ConstantType>();
+                    } else {
+                        currentValue = -utility::infinity<ConstantType>();
+                    }
                 }
 
                 // Log position and probability information for later use in visualizing the descent, if wished.
@@ -420,6 +457,13 @@ namespace storm {
                 } else {
                     std::cout << "Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << std::endl;
                     continue;
+                }
+            }
+
+            if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
+                // Apply sigmoid function
+                for (auto const& parameter : parameters) {
+                    bestInstantiation[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-bestInstantiation[parameter]))));
                 }
             }
 

@@ -140,7 +140,7 @@ namespace storm {
             
             boost::optional<derivative::GradientDescentConstraintMethod> DerivativeSettings::constraintMethodFromString(const std::string &str) const {
                 derivative::GradientDescentConstraintMethod method;
-                if (str == "project-with-gradient") {
+                if (str == "project-gradient") {
                     method = derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT;
                 } else if (str == "project") {
                     method = derivative::GradientDescentConstraintMethod::PROJECT;
@@ -152,6 +152,8 @@ namespace storm {
                     method = derivative::GradientDescentConstraintMethod::BARRIER_INFINITY;
                 } else if (str == "logistic-sigmoid") {
                     method = derivative::GradientDescentConstraintMethod::LOGISTIC_SIGMOID;
+                } else {
+                    return boost::none;
                 }
                 return method;
             }
