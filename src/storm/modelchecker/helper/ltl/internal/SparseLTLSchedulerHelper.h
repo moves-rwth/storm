@@ -38,13 +38,16 @@ namespace storm {
                     void setRandom();
 
                     /*!
-                     * Save choices for states in the accepting end component of the DA-Model product,
-                     * but only set new choices for states that are not in any other EC yet.
+                     * Save choices for states in the accepting end component of the DA-Model product.
                      * We know the EC satisfies the given conjunction of the acceptance condition. Therefore, we want to reach each infinity set in the conjunction infinitely often.
                      * Choices are of the Form <s, q, InfSetID> -> choice.
                      *
+                     * @note The given end component might overlap with another accepting EC (that potentially satisfies another conjunction of the DNF-acceptance condition).
+                     * If this is the case, this method will set a scheduler under which the states of the overlapping EC are reached almost surely.
+                     * This method only sets new choices for states that are not in any other accepting EC (yet).
+                     *
                      * @param acceptance the acceptance condition (in DNF)
-                     * @param mec the accepting end component
+                     * @param mec the accepting end component which shall only contain states that can be visited infinitely often (without violating the acc cond.)
                      * @param conjunction the conjunction satisfied by the end component
                      * @param product the product model
                      */
@@ -52,6 +55,8 @@ namespace storm {
 
                     /*!
                     * Extracts scheduler choices and creates the memory structure for the LTL-Scheduler.
+                    *
+                    * @pre saveProductEcChoices has been called on some mec before, in particular there must be at least one accepting product state.
                     *
                     * @param numDaStates number of DA-states
                     * @param acceptingProductStates states in accepting end components of the model-DA product
@@ -82,13 +87,44 @@ namespace storm {
                      * @param infSet infSet ID
                      */
                     uint_fast64_t getMemoryState(uint_fast64_t daState, uint_fast64_t infSet);
-
-
+                    
+                    
+                    /*!
+                     * Manages the InfSets of the acceptance condition by maintaining an assignment from infSets to unique indices
+                     * An infSet is a BitVector that encodes the product model states that are contained in the infSet
+                     */
+                    class InfSetPool {
+                       public:
+                           InfSetPool() = default;
+                           
+                           /*!
+                            * If the given infSet has been seen before, the corresponding index is returned. Otherwise, a new index is assigned to the infset.
+                            * Indices are assigned in a consecutive way starting from 0
+                            */
+                           uint_fast64_t  getOrCreateIndex(storm::storage::BitVector&& infSet);
+                           /*!
+                            * Gets the inf set from the given index.
+                            * @param index
+                            * @return
+                            */
+                           storm::storage::BitVector const& get(uint_fast64_t index) const;
+                           
+                           /*!
+                            * @return The current number of stored infSets (which coincides with the index of the most recently added infSet (or 0 if there is none)
+                            */
+                           uint_fast64_t size() const;
+                           
+                       private:
+                            std::vector<storm::storage::BitVector> _storage;
+                    } _infSets;
+                    
+                    static const uint_fast64_t DEFAULT_INFSET; /// Some arbitrary fixed infset index that will be used e.g. for states that are not in any accepting EC
+                    
                     bool _randomScheduler;
-                    std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>> _producedChoices;   // <s, q, len(_infSets)> -> ReachChoice   and    <s, q, InfSet> -> MecChoice
                     std::vector<storm::storage::BitVector> _dontCareStates; // memorySate-modelState combinations that are never visited
 
-                    std::vector<storm::storage::BitVector> _infSets; // Save the InfSets of the acceptance condition. The BitVector contains the product model states that are contained in the infSet
+                    std::map <std::tuple<uint_fast64_t, uint_fast64_t, uint_fast64_t>, storm::storage::SchedulerChoice<ValueType>> _producedChoices;   // <s, q, DEFAULT_INFSET)> -> ReachChoice  and    <s, q, InfSetIndex> -> MecChoice
+                    
                     std::vector<boost::optional<std::set<uint_fast64_t>>> _accInfSets; // Save for each product state (which is assigned to an acceptingMEC), the infSets that need to be visited inf often to satisfy the acceptance condition. Remaining states belonging to no accepting EC, are assigned  len(_infSets) (REACH scheduler)
 
                     // Memory structure

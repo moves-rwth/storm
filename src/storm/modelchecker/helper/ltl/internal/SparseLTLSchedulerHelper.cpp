@@ -12,14 +12,38 @@ namespace storm {
             namespace internal {
 
                 template<typename ValueType, bool Nondeterministic>
-                SparseLTLSchedulerHelper<ValueType, Nondeterministic>::SparseLTLSchedulerHelper(uint_fast64_t numProductStates) : _randomScheduler(false), _producedChoices(), _infSets(), _accInfSets(numProductStates, boost::none) {
+                const uint_fast64_t SparseLTLSchedulerHelper<ValueType, Nondeterministic>::DEFAULT_INFSET = 0;
+                
+                template<typename ValueType, bool Nondeterministic>
+                uint_fast64_t  SparseLTLSchedulerHelper<ValueType, Nondeterministic>::InfSetPool::getOrCreateIndex(storm::storage::BitVector&& infSet) {
+                    auto it = std::find(_storage.begin(), _storage.end(), infSet);
+                    if (it == _storage.end()) {
+                        _storage.push_back(std::move(infSet));
+                        return _storage.size() - 1;
+                    } else {
+                        return distance(_storage.begin(), it);
+                    }
+                }
+                
+                template<typename ValueType, bool Nondeterministic>
+                storm::storage::BitVector const& SparseLTLSchedulerHelper<ValueType, Nondeterministic>::InfSetPool::get(uint_fast64_t index) const {
+                    STORM_LOG_ASSERT(index < size(), "inf set index " << index << " is invalid.");
+                    return _storage[index];
+                }
+                
+                template<typename ValueType, bool Nondeterministic>
+                uint_fast64_t SparseLTLSchedulerHelper<ValueType, Nondeterministic>::InfSetPool::size() const {
+                    return _storage.size();
+                }
+            
+                template<typename ValueType, bool Nondeterministic>
+                SparseLTLSchedulerHelper<ValueType, Nondeterministic>::SparseLTLSchedulerHelper(uint_fast64_t numProductStates) : _randomScheduler(false), _accInfSets(numProductStates, boost::none) {
                     // Intentionally left empty.
                 }
 
-
                 template<typename ValueType, bool Nondeterministic>
                 uint_fast64_t SparseLTLSchedulerHelper<ValueType, Nondeterministic>::SparseLTLSchedulerHelper::getMemoryState(uint_fast64_t daState, uint_fast64_t infSet) {
-                    return (daState * (_infSets.size()+1))+ infSet;
+                    return (daState * _infSets.size())+ infSet;
                 }
 
                 template<typename ValueType, bool Nondeterministic>
@@ -29,79 +53,94 @@ namespace storm {
 
                 template<typename ValueType, bool Nondeterministic>
                 void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::saveProductEcChoices(automata::AcceptanceCondition const& acceptance, storm::storage::MaximalEndComponent const& mec, std::vector<automata::AcceptanceCondition::acceptance_expr::ptr> const& conjunction, typename transformer::DAProduct<productModelType>::ptr product) {
-                    // Save all states contained in this MEC
+                    // Save all states contained in this MEC and find out whether there is some overlap with another, already processed accepting mec
                     storm::storage::BitVector mecStates(product->getProductModel().getNumberOfStates(), false);
+                    storm::storage::BitVector overlapStates;
+
                     for (auto const &stateChoicePair : mec) {
-                        mecStates.set(stateChoicePair.first);
+                        if (_accInfSets[stateChoicePair.first].is_initialized()) {
+                            overlapStates.resize(product->getProductModel().getNumberOfStates(), false);
+                            overlapStates.set(stateChoicePair.first);
+                        } else {
+                            mecStates.set(stateChoicePair.first);
+                        }
                     }
+                    
+                    if (!overlapStates.empty()) {
+                        // If all the states in mec are overlapping, we are done already.
+                        if (!mecStates.empty()) {
+                            // Simply Reach the overlapStates almost surely
+                            // set inf sets
+                            for (auto mecState : mecStates) {
+                                STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "accepting inf sets were already defined for a MEC state which is not expected.");
+                                _accInfSets[mecState] = std::set<uint_fast64_t>({DEFAULT_INFSET});
+                            }
+    
+                            // Define scheduler choices for the states in this MEC (that are not in any other MEC)
+                            // Compute a scheduler that, with prob=1 reaches the overlap states
+                            storm::storage::Scheduler<ValueType> mecScheduler(product->getProductModel().getNumberOfStates());
+                            storm::utility::graph::computeSchedulerProb1E<ValueType>(mecStates, product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), mecStates, overlapStates, mecScheduler);
+    
+                            // Extract scheduler choices
+                            for (auto pState : mecStates) {
+                                this->_producedChoices.insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), DEFAULT_INFSET), mecScheduler.getChoice(pState)});
+                            }
+                        }
+                    } else {
+                        // No overlap! Let's do actual work.
 
-                    // We know the MEC satisfied the conjunction: Save InfSets.
-                    std::set<uint_fast64_t> infSetIds;
-                    for (auto const& literal : conjunction) {
-                        storm::storage::BitVector infSet;
-                        if (literal->isTRUE()) {
-                            // All states
-                            infSet = storm::storage::BitVector(product->getProductModel().getNumberOfStates(), true);
-
-                        } else if (literal->isAtom()) {
-                            const cpphoafparser::AtomAcceptance &atom = literal->getAtom();
-                            if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_INF) {
-                                if (atom.isNegated()) {
-                                    infSet =  ~acceptance.getAcceptanceSet(atom.getAcceptanceSet());
-
-                                } else {
-                                    infSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
+                        // We know the MEC satisfied the conjunction: Save InfSets.
+                        std::set<uint_fast64_t> infSetIds;
+                        for (auto const& literal : conjunction) {
+                            if (literal->isAtom()) {
+                                const cpphoafparser::AtomAcceptance &atom = literal->getAtom();
+                                if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_INF) {
+                                    storm::storage::BitVector infSet;
+                                    if (atom.isNegated()) {
+                                        infSet =  ~acceptance.getAcceptanceSet(atom.getAcceptanceSet());
+                                    } else {
+                                        infSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
+                                    }
+                                    // Save new InfSet
+                                    infSetIds.insert(_infSets.getOrCreateIndex(std::move(infSet)));
                                 }
+                                // A TEMPORAL_FIN atom can be ignored at this point since the mec is already known to only contain "allowed" states
                             }
-                            else if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_FIN) {
-                                //  If there are FinSets in the conjunction we use the InfSet containing all states in this MEC
-                                infSet = mecStates;
+                            // TRUE literals can be ignored since those will be satisfied anyway
+                            // FALSE literals are not possible here since the MEC is known to be accepting.
+                        }
+                        if (infSetIds.empty()) {
+                            // There might not be any infSet at this point (e.g. because all literals are TEMPORAL_FIN atoms). We need at least one infset, though
+                            infSetIds.insert(_infSets.getOrCreateIndex(storm::storage::BitVector(product->getProductModel().getNumberOfStates(), true)));
+                        }
+    
+                        //  Save the InfSets into the _accInfSets for states in this MEC
+                        for (auto const &mecState : mecStates) {
+                            STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "accepting inf sets were already defined for a MEC state which is not expected.");
+                            _accInfSets[mecState].emplace(infSetIds);
+                        }
+    
+                        // Define scheduler choices for the states in this MEC (that are not in any other MEC)
+                        // The resulting scheduler will  visit each InfSet inf often
+                        for (uint_fast64_t id : infSetIds) {
+                            // Scheduler that satisfies the MEC acceptance condition
+                            storm::storage::Scheduler<ValueType> mecScheduler(product->getProductModel().getNumberOfStates());
+    
+                            storm::storage::BitVector infStatesWithinMec = _infSets.get(id) & mecStates;
+                            // States not in InfSet: Compute a scheduler that, with prob=1, reaches the infSet via mecStates
+                            storm::utility::graph::computeSchedulerProb1E<ValueType>(mecStates, product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), mecStates, infStatesWithinMec, mecScheduler);
+    
+                            // States that already reached the InfSet
+                            for (auto pState : infStatesWithinMec) {
+                                // Prob1E sets an arbitrary choice for the psi states, but we want to stay in this accepting MEC.
+                                mecScheduler.setChoice(*mec.getChoicesForState(pState).begin() - product->getProductModel().getTransitionMatrix().getRowGroupIndices()[pState], pState);
                             }
-                        }
-
-                        // Save new InfSets
-                        if (infSet.size() > 0) {
-                            auto it = std::find(_infSets.begin(), _infSets.end(), infSet);
-                            if (it == _infSets.end()) {
-                                infSetIds.insert(_infSets.size());
-                                _infSets.emplace_back(infSet);
-                            } else {
-                                // save ID for accCond of the MEC states
-                                infSetIds.insert(distance(_infSets.begin(), it));
+    
+                            // Extract scheduler choices
+                            for (auto pState : mecStates) {
+                                // We want to reach the InfSet, save choice:  <s, q, InfSetID> --->  choice
+                                this->_producedChoices.insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), id), mecScheduler.getChoice(pState)});
                             }
-                        }
-                    }
-
-                    // Save the InfSets into the _accInfSets for states in this MEC, but only if there weren't assigned to any other MEC yet.
-                    storm::storage::BitVector newMecStates(product->getProductModel().getNumberOfStates(), false);
-                    for (auto const &stateChoicePair : mec) {
-
-                        if (_accInfSets[stateChoicePair.first] == boost::none) {
-                            // state wasn't  assigned to any other MEC yet.
-                            _accInfSets[stateChoicePair.first].emplace(infSetIds);
-                            newMecStates.set(stateChoicePair.first);
-                        }
-                    }
-
-
-                    // Define scheduler choices for the states in this MEC (that are not in any other MEC)
-                    for (uint_fast64_t id : infSetIds) {
-                        // Scheduler that satisfies the MEC acceptance condition (visit each InfSet inf often, or switch to scheduler of another MEC)
-                        storm::storage::Scheduler<ValueType> mecScheduler(product->getProductModel().getNumberOfStates());
-
-                        // States not in InfSet: Compute a scheduler that, with prob=1, reaches the infSet via mecStates starting from states that are not yet in other MEC
-                        storm::utility::graph::computeSchedulerProb1E<ValueType>(newMecStates, product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), mecStates, _infSets[id] & mecStates, mecScheduler);
-
-                        // States that already reached the InfSet
-                        for (auto pState : (newMecStates & _infSets[id])) {
-                            // Prob1E sets an arbitrary choice for the psi states, but we want to stay in this accepting MEC.
-                            mecScheduler.setChoice(*mec.getChoicesForState(pState).begin() - product->getProductModel().getTransitionMatrix().getRowGroupIndices()[pState], pState);
-                        }
-
-                        // Extract scheduler choices (only for states that are already assigned a scheduler, i.e are in another MEC)
-                        for (auto pState : newMecStates) {
-                            // We want to reach the InfSet, save choice:  <s, q, InfSetID> --->  choice
-                            this->_producedChoices.insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), id), mecScheduler.getChoice(pState)});
                         }
                     }
                 }
@@ -109,8 +148,10 @@ namespace storm {
 
                 template<typename ValueType, bool Nondeterministic>
                 void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::prepareScheduler(uint_fast64_t numDaStates, storm::storage::BitVector const& acceptingProductStates, std::unique_ptr<storm::storage::Scheduler<ValueType>> reachScheduler, transformer::DAProductBuilder const& productBuilder, typename transformer::DAProduct<productModelType>::ptr product, storm::storage::BitVector const& modelStatesOfInterest, storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
-                    // Compute size of the resulting memory structure: A state <q, infSet> is encoded as (q* (|infSets|+1))+ |infSet|
-                    uint64 numMemoryStates = (numDaStates) * (_infSets.size()+1); //+1 for states outside accECs
+                    STORM_LOG_ASSERT(_infSets.size() > 0, "There is no inf set. Were the accepting ECs processed before?");
+                    
+                    // Compute size of the resulting memory structure: A state <q, infSet> is encoded as (q* (|infSets|))+ |infSet|
+                    uint64 numMemoryStates = (numDaStates) * (_infSets.size());
                     _dontCareStates = std::vector<storm::storage::BitVector>(numMemoryStates, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false));
 
                     // Set choices for states or consider them "dontCare"
@@ -119,39 +160,38 @@ namespace storm {
 
                             if (!product->isValidProductState(modelState, automatonState)) {
                                 // If the state <s,q> does not occur in the product model, all the infSet combinations are irrelevant for the scheduler.
-                                for (uint_fast64_t infSet = 0; infSet < _infSets.size()+1; ++infSet) {
+                                for (uint_fast64_t infSet = 0; infSet < _infSets.size(); ++infSet) {
                                     _dontCareStates[getMemoryState(automatonState, infSet)].set(modelState, true);
                                 }
                             } else {
                                 auto pState = product->getProductStateIndex(modelState, automatonState);
                                 if (acceptingProductStates.get(pState)) {
-                                    // For states in accepting ECs set the missing MEC-scheduler combinations are "dontCare", they are not reachable using the scheduler choices.
-                                    for (uint_fast64_t infSet = 0; infSet < _infSets.size()+1; ++infSet) {
-                                        if (_producedChoices.find(std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), infSet)) == _producedChoices.end() ) {
+                                    // For states in accepting ECs set the MEC-scheduler. Missing combinations are "dontCare", they are not reachable using the scheduler choices.
+                                    for (uint_fast64_t infSet = 0; infSet < _infSets.size(); ++infSet) {
+                                        if (_producedChoices.count(std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), infSet)) == 0 ) {
                                             _dontCareStates[getMemoryState(product->getAutomatonState(pState), infSet)].set(product->getModelState(pState), true);
                                         }
                                     }
 
                                 } else {
-                                    // Extract the choices of the REACH-scheduler (choices to reach an acc. MEC) for the MDP-DA product: <s,q> -> choice. The memory structure corresponds to the "last" copy of the DA (_infSets.get().size()).
-                                    this->_accInfSets[pState] = std::set<uint_fast64_t>({_infSets.size()});
+                                    // Extract the choices of the REACH-scheduler (choices to reach an acc. MEC) for the MDP-DA product: <s,q> -> choice. The memory structure corresponds to the "0th" copy of the DA (DEFAULT_INFSET).
+                                    this->_accInfSets[pState] = std::set<uint_fast64_t>({DEFAULT_INFSET});
                                     if (reachScheduler->isDontCare(pState)) {
                                         // Mark the maybe States of the untilProbability scheduler as "dontCare"
-                                        _dontCareStates[getMemoryState(product->getAutomatonState(pState), _infSets.size())].set(product->getModelState(pState), true);
+                                        _dontCareStates[getMemoryState(product->getAutomatonState(pState), DEFAULT_INFSET)].set(product->getModelState(pState), true);
                                     } else {
                                         // Set choice For non-accepting states that are not in any accepting EC
-                                        this->_producedChoices.insert({std::make_tuple(product->getModelState(pState),product->getAutomatonState(pState),_infSets.size()),reachScheduler->getChoice(pState)});
+                                        this->_producedChoices.insert({std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), DEFAULT_INFSET), reachScheduler->getChoice(pState)});
                                     };
                                     // All other InfSet combinations are unreachable (dontCare)
-                                    for (uint_fast64_t infSet = 0; infSet < _infSets.size(); ++infSet) {
+                                    static_assert(DEFAULT_INFSET == 0, "This code assumes that the default infset is 0");
+                                    for (uint_fast64_t infSet = 1; infSet < _infSets.size(); ++infSet) {
                                         _dontCareStates[getMemoryState(product->getAutomatonState(pState), infSet)].set(product->getModelState(pState), true);
-
                                     }
                                 }
                             }
                         }
                     }
-
 
                     // Prepare the memory structure. For that, we need: transitions,  initialMemoryStates (and memoryStateLabeling)
 
@@ -162,42 +202,37 @@ namespace storm {
                             uint_fast64_t automatonTo = productBuilder.getSuccessor(automatonFrom, modelState);
 
                             if (product->isValidProductState(modelState, automatonTo)) {
-                                // Add the modelState to one outgoing transition of all states of the form <automatonFrom, InfSet> (Inf=lenInfSet equals not in MEC)
-                                // For non-accepting states that are not in any accepting EC we use the 'last' copy of the DA
-                                // and for the accepting states we jump through copies of the DA wrt. the infinity sets.
-                                for (uint_fast64_t infSet = 0; infSet < _infSets.size()+1; ++infSet) {
-                                    // Check if we need to switch the acceptance condition
-                                    STORM_LOG_ASSERT(_accInfSets[product->getProductStateIndex(modelState, automatonTo)] != boost::none, "The list of InfSets for the product state <" <<modelState<< ", " << automatonTo<<"> is undefined.");
-
-                                    if (_accInfSets[product->getProductStateIndex(modelState, automatonTo)].get().count(infSet) == 0) {
-                                        // the state is is in a different accepting MEC with a different accepting conjunction of InfSets.
-                                        auto newInfSet = _accInfSets[product->getProductStateIndex(modelState, automatonTo)].get().begin();
-                                        _memoryTransitions[getMemoryState(automatonFrom, infSet)][getMemoryState(automatonTo, *newInfSet)].set(modelState);
-
-                                    } else {
-                                        // Continue looking for any accepting EC (if we haven't reached one yet) or stay in the corresponding accepting EC, test whether we have reached the next infSet.
-                                        if (infSet == _infSets.size() || !(_infSets[infSet].get(product->getProductStateIndex(modelState, automatonTo)))) {
-                                            // <modelState, automatonTo> is not in any accepting EC or does not satisfy the InfSet, we stay there.
-                                            // Add modelState to the transition from <automatonFrom, InfSet> to <automatonTo, InfSet>
-                                            _memoryTransitions[getMemoryState(automatonFrom, infSet)][getMemoryState(automatonTo, infSet)].set(modelState);
-
-                                        } else {
-                                            STORM_LOG_ASSERT(_accInfSets[product->getProductStateIndex(modelState, automatonTo)] != boost::none, "The list of InfSets for the product state <" <<modelState<< ", " << automatonTo<<"> is undefined.");
-                                            //  <modelState, automatonTo> satisfies the InfSet, find the next one.
-                                            auto nextInfSet = std::find(_accInfSets[product->getProductStateIndex(modelState, automatonTo)].get().begin(), _accInfSets[product->getProductStateIndex(modelState, automatonTo)].get().end(), infSet);
-                                            STORM_LOG_ASSERT(nextInfSet != _accInfSets[product->getProductStateIndex(modelState, automatonTo)].get().end(), "The list of InfSets for the product state <" <<modelState<< ", " << automatonTo<<"> does not contain the infSet " << infSet);
-                                            nextInfSet++;
-                                            if (nextInfSet == _accInfSets[product->getProductStateIndex(modelState, automatonTo)].get().end()) {
-                                                // Start again.
-                                                nextInfSet = _accInfSets[product->getProductStateIndex(modelState, automatonTo)].get().begin();
-                                            }
-                                            // Add modelState to the transition from <automatonFrom <mec, InfSet>> to  <automatonTo, <mec, NextInfSet>>.
-                                            _memoryTransitions[getMemoryState(automatonFrom, infSet)][getMemoryState(automatonTo, *nextInfSet)].set(modelState);
+                                uint_fast64_t daProductState = product->getProductStateIndex(modelState, automatonTo);
+                                STORM_LOG_ASSERT(_accInfSets[daProductState] != boost::none, "The list of InfSets for the product state <" <<modelState<< ", " << automatonTo<<"> is undefined.");
+                                std::set<uint_fast64_t> const& daProductStateInfSets = _accInfSets[daProductState].get();
+                                // Add the modelState to one outgoing transition of all states of the form <automatonFrom, InfSet>
+                                // For non-accepting states that are not in any accepting EC and for overlapping accepting ECs we always use the '0th' copy of the DA.
+                                // For the states in accepting ECs that do not overlap we cycle through copies 0,1,2, ... k of the DA (skipping copies whose inf-sets are not needed for the accepting EC).
+                                for (uint_fast64_t currentInfSet = 0; currentInfSet < _infSets.size(); ++currentInfSet) {
+                                    uint_fast64_t newInfSet;
+                                    // Check if we need to switch the inf set (i.e. the DA copy)
+                                    if (daProductStateInfSets.count(currentInfSet) == 0) {
+                                        // This infSet is not relevant for the daProductState. We need to switch to a copy representing a relevant infset.
+                                        newInfSet = *daProductStateInfSets.begin();
+                                    } else if (daProductStateInfSets.size() > 1 && (_infSets.get(currentInfSet).get(daProductState))) {
+                                        // We have reached a state from the current infSet and thus need to move on to the next infSet in the list.
+                                        // Note that if the list contains just a single item, the switch would have no effect.
+                                        // In particular, this is the case for states that are not in an accepting MEC as those only have DEFAULT_INFSET in their list
+                                        auto nextInfSetIt = daProductStateInfSets.find(currentInfSet);
+                                        STORM_LOG_ASSERT(nextInfSetIt != daProductStateInfSets.end(), "The list of InfSets for the product state <" <<modelState<< ", " << automatonTo<<"> does not contain the infSet " << currentInfSet);
+                                        nextInfSetIt++;
+                                        if (nextInfSetIt == daProductStateInfSets.end()) {
+                                            // Start again.
+                                            nextInfSetIt = daProductStateInfSets.begin();
                                         }
+                                        newInfSet = *nextInfSetIt;
+                                    } else {
+                                        // In all other cases we can keep the current inf set (i.e. the DA copy)
+                                        newInfSet = currentInfSet;
                                     }
+                                    _memoryTransitions[getMemoryState(automatonFrom, currentInfSet)][getMemoryState(automatonTo, newInfSet)].set(modelState);
                                 }
                             }
-
                         }
                     }
                     // Finished creation of transitions.
@@ -208,20 +243,12 @@ namespace storm {
                     for (storm::storage::sparse::state_type modelState : modelStatesOfInterest) {
                         storm::storage::sparse::state_type automatonState = productBuilder.getInitialState(modelState);
                         STORM_LOG_ASSERT(product->isValidProductState(modelState, automatonState), "The memory successor state for the model state "<< modelState << "does not exist in the DA-Model Product.");
-                        if (acceptingProductStates[product->getProductStateIndex(modelState, automatonState)]) {
-                            STORM_LOG_ASSERT(_accInfSets[product->getProductStateIndex(modelState, automatonState)] != boost::none, "The list of InfSets for the product state <" <<modelState<< ", " << automatonState<<"> is undefined.");
-                            // If <s, q> is an accepting state start in the first InfSet of <s, q>.
-                            auto infSet = _accInfSets[product->getProductStateIndex(modelState, automatonState)].get().begin();
-                            _memoryInitialStates[modelState] = getMemoryState(automatonState, *infSet);
-
-                        } else {
-                            _memoryInitialStates[modelState] = getMemoryState(automatonState, _infSets.size());
-                        }
-
+                        STORM_LOG_ASSERT(_accInfSets[product->getProductStateIndex(modelState, automatonState)] != boost::none, "The list of InfSets for the product state <" <<modelState<< ", " << automatonState<<"> is undefined.");
+                        // Start in the first InfSet of <s, q>
+                        auto infSet = _accInfSets[product->getProductStateIndex(modelState, automatonState)].get().begin();
+                        _memoryInitialStates[modelState] = getMemoryState(automatonState, *infSet);
                     }
-
                 }
-
 
                 template<typename ValueType, bool Nondeterministic>
                 storm::storage::Scheduler<ValueType> SparseLTLSchedulerHelper<ValueType, Nondeterministic>::SparseLTLSchedulerHelper::extractScheduler(storm::models::sparse::Model<ValueType> const& model, bool onlyInitialStatesRelevant) {
