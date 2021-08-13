@@ -74,16 +74,17 @@ namespace storm {
                 // The gradient of this is
                 // 1/x, 1/(1-x), +/-infinity respectively
                 if (x >= utility::zero<ConstantType>() + precisionAsConstant && x <= utility::one<ConstantType>() - precisionAsConstant) {
+                    /* const double mu = (double) parameters.size() / (double) stepNum; */
                     if (x < 0.5) {
-                        projectedGradient = gradient.at(steppingParameter) + 1 / x;
+                        projectedGradient = gradient.at(steppingParameter) + logarithmicBarrierTerm / (x - precisionAsConstant);
                     } else {
-                        projectedGradient = gradient.at(steppingParameter) + 1 / (1 - x);
+                        projectedGradient = gradient.at(steppingParameter) - logarithmicBarrierTerm / (1 - precisionAsConstant - x);
                     }
                 } else {
                     if (x < utility::zero<ConstantType>() + precisionAsConstant) {
-                        projectedGradient = utility::infinity<ConstantType>();
+                        projectedGradient = 1.0 / logarithmicBarrierTerm;
                     } else if (x > utility::one<ConstantType>() - precisionAsConstant) {
-                        projectedGradient = -utility::infinity<ConstantType>();
+                        projectedGradient = -1.0 / logarithmicBarrierTerm;
                     }
                 }
             } else {
@@ -298,6 +299,7 @@ namespace storm {
                 bool stochasticPosition = true;
                 for (auto const& parameter : parameters) {
                     if (nesterovPredictedPosition[parameter] < 0 + precision || nesterovPredictedPosition[parameter] > 1 - precision) {
+                        /* std::cout << "Moved to non-stochastic position" << std::endl; */
                         stochasticPosition = false;
                         break;
                     }
@@ -407,29 +409,34 @@ namespace storm {
             std::default_random_engine engine(device());
             std::uniform_real_distribution<> dist(0, 1);
             bool initialGuess = true;
+            std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
             while (true) {
                 std::cout << "Trying out a new starting point" << std::endl;
                 if (initialGuess) {
                     std::cout << "Trying initial guess (p->0.5 for every parameter p or set start point)" << std::endl;
                 }
                 // Generate random starting point
-                std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
                 for (auto const& param : this->parameters) {
                     if (initialGuess) {
+                        logarithmicBarrierTerm = 0.1;
                         if (startPoint) {
                             point[param] = (*startPoint)[param];
                         } else {
                             point[param] = utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
                         }
+                    } else if (!initialGuess && constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC && logarithmicBarrierTerm > 0.00001) {
+                        // Do nothing
                     } else {
+                        logarithmicBarrierTerm = 0.1;
                         point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
                     }
                 }
                 initialGuess = false;
 
-                walk.clear();                   
+                /* walk.clear(); */                   
 
                 stochasticWatch.start();
+                std::cout << "Starting at " << point << std::endl;
                 ConstantType prob = stochasticGradientDescent(env, point);
                 stochasticWatch.stop();
 
@@ -455,6 +462,13 @@ namespace storm {
                 } else if (storm::utility::resources::isTerminate()) {
                     break;
                 } else {
+                    if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
+                        logarithmicBarrierTerm /= 10;
+                        std::cout << "Smaller term" << std::endl;
+                        std::cout << bestValue << std::endl;
+                        std::cout << logarithmicBarrierTerm << std::endl;
+                        continue;
+                    }
                     std::cout << "Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << std::endl;
                     continue;
                 }

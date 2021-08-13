@@ -279,6 +279,8 @@ namespace storm {
             // Only respected by some Gradient Descent methods, the ones that have a "sign" version in the GradientDescentMethod enum
             bool useSignsOnly;
 
+            double logarithmicBarrierTerm;
+
             ConstantType stochasticGradientDescent(
                 Environment const& env,
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> &position
