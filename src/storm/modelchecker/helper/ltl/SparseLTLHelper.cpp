@@ -237,7 +237,7 @@ namespace storm {
                 storm::storage::BitVector acceptingStates;
                 if (Nondeterministic) {
                     STORM_LOG_INFO("Computing MECs and checking for acceptance...");
-                    acceptingStates = computeAcceptingECs(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), product); //TODO product is only needed for ->getModelState(pState) (remove arg)
+                    acceptingStates = computeAcceptingECs(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), product);
 
                 } else {
                     STORM_LOG_INFO("Computing BSCCs and checking for acceptance...");
