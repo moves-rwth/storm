@@ -35,10 +35,25 @@ namespace storm {
                 session.addMissingGuards(session.getModel().getAutomaton(0).getName());
             }
 
+            for (auto &automaton : session.getModel().getAutomata()){
+                bool hasTransientAssignments = false;
+                for (auto loc : automaton.getLocations()){
+                    if (loc.getAssignments().hasTransientAssignment()){
+                        hasTransientAssignments = true;
+                    }
+                }
+                if (hasTransientAssignments){
+                    session.addToLog("Pusing transient location assignments to edge destinations");
+                    automaton.pushTransientRealLocationAssignmentsToEdges();
+                    automaton.pushEdgeAssignmentsToDestinations();
+                }
+            }
+
             while (!session.getFinished()) {
                 std::unique_ptr<Action> action = scheduler.getNextAction();
                 action->doAction(session);
             }
+
             log = session.getLog();
             newModel = session.getModel();
         }
