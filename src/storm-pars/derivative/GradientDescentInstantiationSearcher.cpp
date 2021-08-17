@@ -271,18 +271,18 @@ namespace storm {
 
                 // If nesterov is enabled, we need to compute the gradient on the predicted position
                 std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> nesterovPredictedPosition(position);
-                if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
-                    // Apply sigmoid function
-                    for (auto const& parameter : parameters) {
-                        nesterovPredictedPosition[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-nesterovPredictedPosition[parameter]))));
-                    }
-                }
                 if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
                     for (auto const& parameter : miniBatch) {
                         nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->momentumTerm)
                             * storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->pastStep[parameter]);
                         nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, nesterovPredictedPosition[parameter]);
                         nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, nesterovPredictedPosition[parameter]);
+                    }
+                }
+                if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
+                    // Apply sigmoid function
+                    for (auto const& parameter : parameters) {
+                        nesterovPredictedPosition[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-nesterovPredictedPosition[parameter]))));
                     }
                 }
 
@@ -316,7 +316,13 @@ namespace storm {
                     std::unique_ptr<storm::modelchecker::CheckResult> intermediateResult = instantiationModelChecker->check(env, nesterovPredictedPosition);
                     std::vector<ConstantType> valueVector = intermediateResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                     if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
-                        std::unique_ptr<storm::modelchecker::CheckResult> terminationResult = instantiationModelChecker->check(env, position);
+                        std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> modelCheckPosition(position);
+                        if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
+                            for (auto const& parameter : parameters) {
+                                modelCheckPosition[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-modelCheckPosition[parameter]))));
+                            }
+                        }
+                        std::unique_ptr<storm::modelchecker::CheckResult> terminationResult = instantiationModelChecker->check(env, modelCheckPosition);
                         std::vector<ConstantType> terminationValueVector = terminationResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                         currentValue = terminationValueVector[initialState];
                     } else {
