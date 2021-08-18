@@ -209,7 +209,7 @@ namespace storm {
                             totalOccurences += variableOccurrenceCounts[var.expressionVariableName];
                         }
                     }
-                    if (totalOccurences > bestValue){
+                    if (totalOccurences > bestValue && dependencyGraph.variableGroups[groupIndex].domainSize < 100){
                         bestValue = totalOccurences;
                         bestGroup = groupIndex;
                     }
