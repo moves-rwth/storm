@@ -72,6 +72,7 @@ namespace storm {
             storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;
             storm::expressions::Expression createRoundExpression(storm::expressions::Expression const& e1, bool& pass) const;
             storm::expressions::Expression getIdentifierExpression(std::string const& identifier, bool& pass) const;
+            storm::expressions::Expression createPredicateExpression(storm::expressions::OperatorType const& opTyp, std::vector<storm::expressions::Expression> const& operands, bool& pass) const;
             
             
         private:

@@ -69,7 +69,7 @@ namespace storm {
             }
             
             bool returnValue = true;
-            if (this->sortedSccDecomposition->size() == 1 && (!this->fixedStates || this->fixedStates.get().empty())) {
+            if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForState || this->choiceFixedForState.get().empty())) {
                 // Handle the case where there is just one large SCC, as there are no fixed states, we solve it like this
                 returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
             } else {
@@ -89,24 +89,22 @@ namespace storm {
                 progress.startNewMeasurement(0);
                 for (auto const& scc : *this->sortedSccDecomposition) {
                     if (scc.size() == 1) {
-                        // TODO: directly use localMonRes on this
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
                     } else {
                         STORM_LOG_TRACE("Solving SCC of size " << scc.size() << ".");
                         sccRowGroupsAsBitVector.clear();
                         sccRowsAsBitVector.clear();
                         for (auto const& group : scc) { // Group refers to state
-                            bool allIgnored = true;
                             sccRowGroupsAsBitVector.set(group, true);
 
-                            if (!this->fixedStates || !this->fixedStates.get()[group]) {
+                            if (!this->choiceFixedForState || !this->choiceFixedForState.get()[group]) {
                                 for (uint64_t row = this->A->getRowGroupIndices()[group]; row < this->A->getRowGroupIndices()[group + 1]; ++row) {
                                     sccRowsAsBitVector.set(row, true);
                                 }
                             } else {
                                 auto row = this->A->getRowGroupIndices()[group]+this->getInitialScheduler()[group];
                                 sccRowsAsBitVector.set(row, true);
-                                STORM_LOG_INFO("Fixing state " << group << " to option " << this->getInitialScheduler()[group] << " because of local monotonicity.");
+                                STORM_LOG_INFO("Fixing state " << group << " to choice " << this->getInitialScheduler()[group] << ".");
                             }
                         }
                         returnValue = solveScc(sccSolverEnvironment, dir, sccRowGroupsAsBitVector, sccRowsAsBitVector, x, b) && returnValue;
@@ -150,13 +148,12 @@ namespace storm {
             ValueType& xi = globalX[sccState];
             bool firstRow = true;
             uint64_t bestRow;
-            if (this->fixedStates && this->fixedStates.get()[sccState]) {
-                assert (this->hasInitialScheduler());
-                uint64_t row = this->A->getRowGroupIndices()[sccState] + this->initialScheduler.get()[sccState];
+            assert (!this->choiceFixedForState || !this->choiceFixedForState.get()[sccState] || (this->hasInitialScheduler() && this->A->getRowGroupSize(sccState) == 1));
+            for (uint64_t row = this->A->getRowGroupIndices()[sccState]; row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
                 ValueType rowValue = globalB[row];
                 bool hasDiagonalEntry = false;
                 ValueType denominator;
-                for (auto const &entry : this->A->getRow(row)) {
+                for (auto const& entry : this->A->getRow(row)) {
                     if (entry.getColumn() == sccState) {
                         hasDiagonalEntry = true;
                         denominator = storm::utility::one<ValueType>() - entry.getValue();
@@ -165,69 +162,41 @@ namespace storm {
                     }
                 }
                 if (hasDiagonalEntry) {
-                    STORM_LOG_WARN_COND_DEBUG( storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) ||
-                            storm::utility::isZero(denominator), "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
-                    assert (!storm::utility::isZero(denominator));
-                    rowValue /= denominator;
-                }
-                if (minimize(dir)) {
-                    xi = std::move(rowValue);
-                } else {
-                    xi = std::move(rowValue);
-                }
-                STORM_LOG_INFO("Ignoring state" << sccState << " as the scheduler is fixed by monotonicity, current probability for this state is: " << this->schedulerChoices.get()[sccState]);
-            } else {
-                for (uint64_t row = this->A->getRowGroupIndices()[sccState]; row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
-                    ValueType rowValue = globalB[row];
-                    bool hasDiagonalEntry = false;
-                    ValueType denominator;
-                    for (auto const &entry : this->A->getRow(row)) {
-                        if (entry.getColumn() == sccState) {
-                            hasDiagonalEntry = true;
-                            denominator = storm::utility::one<ValueType>() - entry.getValue();
-                        } else {
-                            rowValue += entry.getValue() * globalX[entry.getColumn()];
-                        }
-                    }
-                    if (hasDiagonalEntry) {
-                        STORM_LOG_WARN_COND_DEBUG(
-                                storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) ||
-                                storm::utility::isZero(denominator),
-                                "State " << sccState << " has a selfloop with probability '1-(" << denominator
-                                         << ")'. This could be an indication for numerical issues.");
-                        if (storm::utility::isZero(denominator)) {
-                            // In this case we have a selfloop on this state. This can never an optimal choice:
-                            // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
-                            // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
-                            continue;
-                        } else {
-                            rowValue /= denominator;
-                        }
-                    }
-                    if (firstRow) {
-                        xi = std::move(rowValue);
-                        bestRow = row;
-                        firstRow = false;
+                    STORM_LOG_WARN_COND_DEBUG(
+                        storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator),
+                        "State " << sccState << " has a selfloop with probability '1-(" << denominator
+                                 << ")'. This could be an indication for numerical issues.");
+                    if (storm::utility::isZero(denominator)) {
+                        // In this case we have a selfloop on this state. This can never an optimal choice:
+                        // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
+                        // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
+                        continue;
                     } else {
-                        if (minimize(dir)) {
-                            if (rowValue < xi) {
-                                xi = std::move(rowValue);
-                                bestRow = row;
-                            }
-                        } else {
-                            if (rowValue > xi) {
-                                xi = std::move(rowValue);
-                                bestRow = row;
-                            }
+                        rowValue /= denominator;
+                    }
+                }
+                if (firstRow) {
+                    xi = std::move(rowValue);
+                    bestRow = row;
+                    firstRow = false;
+                } else {
+                    if (minimize(dir)) {
+                        if (rowValue < xi) {
+                            xi = std::move(rowValue);
+                            bestRow = row;
+                        }
+                    } else {
+                        if (rowValue > xi) {
+                            xi = std::move(rowValue);
+                            bestRow = row;
                         }
                     }
                 }
-                if (this->isTrackSchedulerSet()) {
-                    this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
-                }
-                STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             }
-            //std::cout << "Solved trivial scc " << sccState << " with result " << globalX[sccState] << std::endl;
+            if (this->isTrackSchedulerSet()) {
+                this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
+            }
+            STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             return true;
         }
         
@@ -277,16 +246,16 @@ namespace storm {
                 this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
                 this->sccSolver->setCachingEnabled(true);
             }
-            if (this->fixedStates) {
+            if (this->choiceFixedForState) {
                 // convert fixed states to only fixed states of sccs
-                storm::storage::BitVector fixedStatesSCC(sccRowGroups.getNumberOfSetBits());
+                storm::storage::BitVector choiceFixedForStateSCC(sccRowGroups.getNumberOfSetBits());
                 auto j = 0;
                 for (auto i : sccRowGroups) {
-                    fixedStatesSCC.set(j, this->fixedStates.get()[i]);
+                    choiceFixedForStateSCC.set(j, this->choiceFixedForState.get()[i]);
                     j++;
                 }
                 assert (j = sccRowGroups.getNumberOfSetBits());
-                this->sccSolver->setFixedStates(std::move(fixedStatesSCC));
+                this->sccSolver->setChoiceFixedForStates(std::move(choiceFixedForStateSCC));
             }
             this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
             this->sccSolver->setHasNoEndComponents(this->hasNoEndComponents());
@@ -294,14 +263,12 @@ namespace storm {
             
             // SCC Matrix
             storm::storage::SparseMatrix<ValueType> sccA;
-            if (this->fixedStates) {
+            if (this->choiceFixedForState) {
                 sccA = this->A->getSubmatrix(false, sccRows, sccRowGroups);
             } else {
                 sccA = this->A->getSubmatrix(true, sccRowGroups, sccRowGroups);
 
             }
-
-//            std::cout << "Matrix is " << sccA << std::endl;
 
             this->sccSolver->setMatrix(std::move(sccA));
             
@@ -325,8 +292,8 @@ namespace storm {
             if (this->hasInitialScheduler()) {
                 auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
                 this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
-                if (this->fixedStates) {
-                    this->sccSolver->updateScheduler();
+                if (this->choiceFixedForState) {
+                    this->sccSolver->setFixedChoicesToFirst();
                 }
             }
             
