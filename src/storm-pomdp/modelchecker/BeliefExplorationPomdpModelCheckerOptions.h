@@ -19,6 +19,7 @@ namespace storm {
                 bool useGridClipping;
                 bool refine = false;
                 bool cutZeroGap = false;
+                bool useParametricPreprocessing = false;
                 boost::optional<uint64_t> refineStepLimit;
                 ValueType refinePrecision = storm::utility::zero<ValueType>();
                 boost::optional<uint64_t> explorationTimeLimit;

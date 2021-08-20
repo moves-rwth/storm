@@ -59,7 +59,7 @@ namespace storm {
                 /// Controls how large the delta is allowed to be for clipping
                 double getClippingThresholdInit() const;
 
-                /// Controls if the clipping set reduction heuristic is usec
+                /// Controls if the clipping set reduction heuristic is used
                 bool isDisableClippingReductionSet() const;
                 
                 /// Controls whether "almost optimal" choices will be considered optimal
@@ -83,6 +83,8 @@ namespace storm {
 
                 bool isClassicClippingModeSet() const;
                 bool isGridClippingModeSet() const;
+
+                bool isUseParametricPreprocessingSet() const;
 
                 storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
     
