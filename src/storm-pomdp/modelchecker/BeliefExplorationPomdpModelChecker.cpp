@@ -30,18 +30,18 @@ namespace storm {
     namespace pomdp {
         namespace modelchecker {
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result::Result(ValueType lower, ValueType upper) : lowerBound(lower), upperBound(upper) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result::Result(ValueType lower, ValueType upper) : lowerBound(lower), upperBound(upper) {
                 // Intentionally left empty
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::ValueType
-            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result::diff(bool relative) const {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::ValueType
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result::diff(bool relative) const {
                 ValueType diff = upperBound - lowerBound;
                 if (diff < storm::utility::zero<ValueType>()) {
                     STORM_LOG_WARN_COND(diff >= storm::utility::convertNumber<ValueType>(1e-6), "Upper bound '" << upperBound << "' is smaller than lower bound '" << lowerBound << "': Difference is " << diff << ".");
-                    diff = storm::utility::zero<ValueType >();
+                    diff = storm::utility::zero<ValueType>();
                 }
                 if (relative && !storm::utility::isZero(upperBound)) {
                     diff /= upperBound;
@@ -49,8 +49,8 @@ namespace storm {
                 return diff;
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result::updateLowerBound(ValueType const& value) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result::updateLowerBound(ValueType const& value) {
                 if (value > lowerBound) {
                     lowerBound = value;
                     return true;
@@ -58,8 +58,8 @@ namespace storm {
                 return false;
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result::updateUpperBound(ValueType const& value) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result::updateUpperBound(ValueType const& value) {
                 if (value < upperBound) {
                     upperBound = value;
                     return true;
@@ -67,13 +67,13 @@ namespace storm {
                 return false;
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Statistics::Statistics() :  beliefMdpDetectedToBeFinite(false), refinementFixpointDetected(false), overApproximationBuildAborted(false), underApproximationBuildAborted(false), aborted(false) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Statistics::Statistics() :  beliefMdpDetectedToBeFinite(false), refinementFixpointDetected(false), overApproximationBuildAborted(false), underApproximationBuildAborted(false), aborted(false) {
                 // intentionally left empty;
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options) : inputPomdp(pomdp), options(options) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options) : inputPomdp(pomdp), options(options) {
                 STORM_LOG_ASSERT(inputPomdp, "The given POMDP is not initialized.");
                 STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not known to be canonic. This might lead to unexpected verification results.");
 
@@ -81,8 +81,8 @@ namespace storm {
                 valueTypeCC = storm::utility::ConstantsComparator<ValueType>(this->options.numericPrecision, false);
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::check(storm::logic::Formula const& formula) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(storm::logic::Formula const& formula) {
                 STORM_LOG_ASSERT(options.unfold || options.discretize, "Invoked belief exploration but no task (unfold or discretize) given.");
                 
                 // Potentially reset preprocessed model from previous call
@@ -95,6 +95,7 @@ namespace storm {
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
                 
                 // Compute some initial bounds on the values for each state of the pomdp
+                // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
                 auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<ValueType>(pomdp()).getValueBounds(formula, formulaInfo);
                 uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
                 Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
@@ -156,8 +157,8 @@ namespace storm {
                 return result;
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::printStatisticsToStream(std::ostream& stream) const {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::printStatisticsToStream(std::ostream& stream) const {
                 stream << "##### Grid Approximation Statistics ######" << std::endl;
                 stream << "# Input model: " << std::endl;
                 pomdp().printModelInformationToStream(stream);
@@ -232,8 +233,8 @@ namespace storm {
                 stream << "##########################################" << std::endl;
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& pomdpValueBounds, Result &result) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& pomdpValueBounds, Result &result) {
                 auto trivialPOMDPBounds = pomdpValueBounds.trivialPomdpValueBounds;
                 if (options.discretize) {
                     std::vector<BeliefValueType> observationResolutionVector(pomdp().getNrObservations(),
@@ -306,8 +307,8 @@ namespace storm {
                 }
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const &pomdpValueBounds, Result &result) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const &pomdpValueBounds, Result &result) {
                 statistics.refinementSteps = 0;
                 auto trivialPOMDPBounds = pomdpValueBounds.trivialPomdpValueBounds;
                 // Set up exploration data
@@ -475,8 +476,8 @@ namespace storm {
              * Heuristically rates the quality of the approximation described by the given successor observation info.
              * Here, 0 means a bad approximation and 1 means a good approximation.
              */
-            template<typename PomdpModelType, typename BeliefValueType>
-            BeliefValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            BeliefValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
                 auto n = storm::utility::convertNumber<BeliefValueType, uint64_t>(info.support.size());
                 auto one = storm::utility::one<BeliefValueType>();
                 if (storm::utility::isOne(n)) {
@@ -496,8 +497,8 @@ namespace storm {
                 }
             }
             
-            template<typename PomdpModelType, typename BeliefValueType>
-            std::vector<BeliefValueType> BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            std::vector<BeliefValueType> BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector) {
                 uint64_t numMdpStates = overApproximation->getExploredMdp()->getNumberOfStates();
                 auto const& choiceIndices = overApproximation->getExploredMdp()->getNondeterministicChoiceIndices();
                 BeliefValueType maxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
@@ -548,8 +549,8 @@ namespace storm {
                 }
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
 
                 // Detect whether the refinement reached a fixpoint.
                 bool fixPoint = true;
@@ -783,8 +784,8 @@ namespace storm {
                 return fixPoint;
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
                 bool useBeliefClipping = heuristicParameters.clippingThreshold > storm::utility::zero<ValueType>() || options.useGridClipping;
                 statistics.underApproximationBuildTime.start();
                 if(useBeliefClipping){
@@ -1047,8 +1048,8 @@ namespace storm {
 
             }
 
-            template<typename PomdpModelType, typename BeliefValueType>
-            PomdpModelType const& BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::pomdp() const {
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            PomdpModelType const& BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::pomdp() const {
                 if (preprocessedPomdp) {
                     return *preprocessedPomdp;
                 } else {

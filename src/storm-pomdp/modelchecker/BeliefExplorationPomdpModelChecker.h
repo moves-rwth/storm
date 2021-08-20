@@ -24,10 +24,10 @@ namespace storm {
                 storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremePomdpValueBound;
             };
             
-            template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType>
+            template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType, typename BeliefMDPType = typename PomdpModelType::ValueType>
             class BeliefExplorationPomdpModelChecker {
             public:
-                typedef typename PomdpModelType::ValueType ValueType;
+                typedef BeliefMDPType ValueType;
                 typedef typename PomdpModelType::RewardModelType RewardModelType;
                 typedef storm::storage::BeliefManager<PomdpModelType, BeliefValueType> BeliefManagerType;
                 typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;

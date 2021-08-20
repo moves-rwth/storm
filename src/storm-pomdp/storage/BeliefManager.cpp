@@ -242,7 +242,6 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         std::string BeliefManager<PomdpType, BeliefValueType, StateType>::toString(BeliefType const &belief) const {
-            std::setprecision(std::numeric_limits<double>::max_digits10);
             std::stringstream str;
             str << "{ ";
             bool first = true;
@@ -252,7 +251,7 @@ namespace storm {
                 } else {
                     str << ", ";
                 }
-                str << entry.first << ": " << entry.second;
+                str << entry.first << ": " <<  std::setprecision(std::numeric_limits<double>::max_digits10 + 1) << entry.second;
             }
             str << " }";
             return str.str();
