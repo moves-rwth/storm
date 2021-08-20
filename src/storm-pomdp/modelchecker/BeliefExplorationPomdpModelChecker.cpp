@@ -21,6 +21,7 @@
 #include "storm/api/export.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 #include "storm-pomdp/modelchecker/TrivialPomdpValueBoundsModelChecker.h"
+#include "storm-pomdp/modelchecker/PomdpParametricTransformationModelChecker.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/SignalHandler.h"
@@ -100,6 +101,15 @@ namespace storm {
                 uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
                 Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
                 STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " << result.upperBound << "]");
+
+                if(options.useParametricPreprocessing){
+                    auto pMCValueBound = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, 2, storm::storage::PomdpMemoryPattern::Full, 0.0001);
+                    if(formulaInfo.maximize()){
+                        initialPomdpValueBounds.lower.push_back(pMCValueBound);
+                    } else {
+                        initialPomdpValueBounds.upper.push_back(pMCValueBound);
+                    }
+                }
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> initialValueBounds;
                 initialValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
