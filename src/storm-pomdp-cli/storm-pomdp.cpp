@@ -343,10 +343,10 @@ namespace storm {
                 if (transformSettings.isTransformBinarySet() || transformSettings.isTransformSimpleSet()) {
                     if (transformSettings.isTransformSimpleSet()) {
                         STORM_PRINT_AND_LOG("Transforming the POMDP to a simple POMDP.");
-                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, true);
+                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, true).transformedPomdp;
                     } else {
                         STORM_PRINT_AND_LOG("Transforming the POMDP to a binary POMDP.");
-                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, false);
+                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, false).transformedPomdp;
                     }
                     pomdp->printModelInformationToStream(std::cout);
                     STORM_PRINT_AND_LOG(" done." << std::endl);
