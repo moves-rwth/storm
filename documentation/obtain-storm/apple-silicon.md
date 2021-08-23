@@ -12,7 +12,7 @@ Native ARM compilation is work in progress.
 ##  Installing Dependencies
 
 ### Development Tools
-Similarly to the x86-based preperations, you first need to download either the command line tools (CLT) or Xcode. Installing the CLT can be done using the terminal by executing
+Similarly to the x86-based preparations, you first need to download either the command line tools (CLT) or Xcode. Installing the CLT can be done using the terminal by executing
 ``` console
 $ xcode-select --install
 ```
