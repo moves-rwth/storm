@@ -13,8 +13,14 @@ Of course, you can also write us an email :email: `support at stormchecker.org`
 
 
 # Building the website locally
-If you want to check your local changes before making them public, you have to install [jekyll and its prerequisites](https://jekyllrb.com/docs/installation/). Then run (assuming that you are currently in the `storm` directory with the `website/src` branch checked out)
+If you want to check your local changes before making them public, you have to install [jekyll and its prerequisites](https://jekyllrb.com/docs/installation/).
+Make sure to be in the `storm` directory with the `website/src` branch checked out.
+You can then use the provided Gemfile in the directory via:
+```console
+bundle install
+```
 
+To build the website (and automatically rebuild after each modification) run the following:
 ```console
 bundle exec jekyll serve --livereload
 ```
