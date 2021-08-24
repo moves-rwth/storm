@@ -473,7 +473,10 @@ namespace storm {
                     storm::json<JsonValueType> stateRewardsJson;
                     for (auto const& rm : rewardModels) {
                         if (rm.second.hasStateRewards()) {
-                            stateRewardsJson[rm.first] = storm::utility::to_string(rm.second.getStateReward(state));
+                            auto r = rm.second.getStateReward(state);
+                            if (!storm::utility::isZero(r)) {
+                                stateRewardsJson[rm.first] = storm::utility::to_string(r);
+                            }
                         }
                     }
                     if (!stateRewardsJson.empty()) {
@@ -502,18 +505,21 @@ namespace storm {
                         if (hasChoiceLabeling()) {
                             auto choiceLabels = getChoiceLabeling().getLabelsOfChoice(choiceIndex);
                             if (!choiceLabels.empty()) {
-                                choiceJson["labels"] = choiceLabels;
+                                choiceJson["lab"] = choiceLabels;
                             }
                         }
-                        choiceJson["index"] = choiceIndex;
+                        choiceJson["id"] = choiceIndex;
                         storm::json<JsonValueType> choiceRewardsJson;
                         for (auto const& rm : rewardModels) {
                             if (rm.second.hasStateActionRewards()) {
-                                choiceRewardsJson[rm.first] = storm::utility::to_string(rm.second.getStateActionReward(choiceIndex));
+                                auto r = rm.second.getStateActionReward(choiceIndex);
+                                if (!storm::utility::isZero(r)) {
+                                    choiceRewardsJson[rm.first] = storm::utility::to_string(r);
+                                }
                             }
                         }
                         if (!choiceRewardsJson.empty()) {
-                            choiceRewardsJson["rewards"] = std::move(choiceRewardsJson);
+                            choiceRewardsJson["rew"] = std::move(choiceRewardsJson);
                         }
                         storm::json<JsonValueType> successors;
                         for (auto const& entry : transitionMatrix.getRow(choiceIndex)) {
@@ -522,7 +528,7 @@ namespace storm {
                             successor["prob"] = storm::utility::to_string<ValueType>(entry.getValue() / rate);
                             successors.push_back(successor);
                         }
-                        choiceJson["successors"] = std::move(successors);
+                        choiceJson["succ"] = std::move(successors);
                         choicesJson.push_back(choiceJson);
                     }
                 stateChoicesJson["c"] = std::move(choicesJson);
