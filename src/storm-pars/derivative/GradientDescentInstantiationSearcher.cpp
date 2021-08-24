@@ -47,9 +47,11 @@ namespace storm {
                 // Project gradient
                 const ConstantType constantOldPos = utility::convertNumber<ConstantType>(oldPos);
                 ConstantType newPlainPosition = constantOldPos + precisionAsConstant * gradient.at(steppingParameter);
-                newPlainPosition = utility::max<ConstantType>(utility::zero<ConstantType>() + precisionAsConstant, newPlainPosition);
-                newPlainPosition = utility::min<ConstantType>(utility::one<ConstantType>() - precisionAsConstant, newPlainPosition);
-                projectedGradient = (newPlainPosition - constantOldPos) / precisionAsConstant;
+                if (newPlainPosition < utility::zero<ConstantType>() + precisionAsConstant || newPlainPosition > utility::one<ConstantType>() - precisionAsConstant) {
+                    projectedGradient = 0;
+                } else {
+                    projectedGradient = gradient.at(steppingParameter);
+                }
             } else if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                 // We want the derivative of f(logit(x)), this happens to be exp(x) * f'(logit(x)) / (exp(x) + 1)^2
                 const double x = utility::convertNumber<double>(oldPos);
@@ -90,10 +92,6 @@ namespace storm {
             } else {
                 projectedGradient = gradient.at(steppingParameter);
             }
-
-            /* if (utility::abs<ConstantType>(projectedGradient - gradient.at(steppingParameter)) > precisionAsConstant) { */
-            /*     std::cout << "Diff: " << projectedGradient - gradient.at(steppingParameter) << std::endl; */
-            /* } */
 
             // Compute step based on used gradient descent method
             ConstantType step; 
