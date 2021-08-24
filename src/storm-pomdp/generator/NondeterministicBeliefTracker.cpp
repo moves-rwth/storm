@@ -139,7 +139,7 @@ namespace storm {
             if (lhs.belief.size() != rhs.belief.size()) {
                 return false;
             }
-            storm::utility::ConstantsComparator<ValueType> cmp(0.00001, true);
+            storm::utility::ConstantsComparator<ValueType> cmp(storm::utility::convertNumber<ValueType>(0.00001), true);
             auto lhsIt = lhs.belief.begin();
             auto rhsIt = rhs.belief.begin();
             while(lhsIt != lhs.belief.end()) {
