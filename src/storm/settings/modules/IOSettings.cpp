@@ -19,6 +19,7 @@ namespace storm {
             const std::string IOSettings::moduleName = "io";
             const std::string IOSettings::exportDotOptionName = "exportdot";
             const std::string IOSettings::exportDotMaxWidthOptionName = "dot-maxwidth";
+            const std::string IOSettings::exportJsonOptionName = "exportjson";
             const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
             const std::string IOSettings::exportDdOptionName = "exportdd";
             const std::string IOSettings::exportJaniDotOptionName = "exportjanidot";
@@ -60,6 +61,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotMaxWidthOptionName, false, "The maximal width for labels in the dot format. For longer lines a linebreak is inserted. Value 0 represents no linebreaks.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("width", "The maximal line width for the dot format. Default is 0 meaning no linebreaks.").setDefaultValueUnsignedInteger(0).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportJsonOptionName, false, "If given, the loaded model will be written to the specified file in json format.").setIsAdvanced()
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, false, "If given, the loaded jani model will be written to the specified file in the dot format.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setIsAdvanced().setShortName(exportCdfOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory where the cdf files will be stored.").build()).build());
@@ -128,6 +131,14 @@ namespace storm {
 
             size_t IOSettings::getExportDotMaxWidth() const {
                 return this->getOption(exportDotMaxWidthOptionName).getArgumentByName("width").getValueAsUnsignedInteger();
+            }
+            
+            bool IOSettings::isExportJsonSet() const {
+                return this->getOption(exportJsonOptionName).getHasOptionBeenSet();
+            }
+
+            std::string IOSettings::getExportJsonFilename() const {
+                return this->getOption(exportJsonOptionName).getArgumentByName("filename").getValueAsString();
             }
 
             bool IOSettings::isExportJaniDotSet() const {

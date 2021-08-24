@@ -586,6 +586,10 @@ namespace storm {
             if (ioSettings.isExportDotSet()) {
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
             }
+            
+            if (ioSettings.isExportJsonSet()) {
+                storm::api::exportSparseModelAsJson(model, ioSettings.getExportJsonFilename());
+            }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

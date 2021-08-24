@@ -11,6 +11,7 @@ Version 1.6.x
 ## Version 1.6.4 (20xx/xx)
 - Added support for PRISM models that use unbounded integer variables.
 - Added an export of check results to json. Use `--exportresult` in the command line interface.
+- Added model export in .json using `--exportjson` which can be used to debug and explore the model.
 - Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
 - Implemented parsing and model building of Stochastic multiplayer games (SMGs) in the PRISM language. No model checking implemented, for now.
 - API: Simulation of prism-models 

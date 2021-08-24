@@ -45,6 +45,16 @@ namespace storm {
                 size_t getExportDotMaxWidth() const;
 
                 /*!
+                 * Retrieves whether the export-to-json option was set.
+                 */
+                bool isExportJsonSet() const;
+
+                /*!
+                 * Retrieves the name in which to write the model in json format, if export-to-json option was set.
+                 */
+                std::string getExportJsonFilename() const;
+                
+                /*!
                  * Retrieves whether the export-to-dot option for jani was set.
                  *
                  * @return True if the export-to-jani-dot option was set.
@@ -359,6 +369,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string exportDotOptionName;
                 static const std::string exportDotMaxWidthOptionName;
+                static const std::string exportJsonOptionName;
                 static const std::string exportJaniDotOptionName;
                 static const std::string exportExplicitOptionName;
                 static const std::string exportDdOptionName;
