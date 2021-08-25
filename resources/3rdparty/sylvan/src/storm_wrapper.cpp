@@ -357,6 +357,7 @@ void print_storm_rational_number(storm_rational_number_ptr a) {
 #endif
 
     storm::RationalNumber const& srn_a = *static_cast<storm::RationalNumber const*>(a);
+    std::cout << srn_a << std::flush;
 }
 
 void print_storm_rational_number_to_file(storm_rational_number_ptr a, FILE* out) {
