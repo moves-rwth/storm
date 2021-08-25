@@ -414,11 +414,11 @@ char* storm_rational_function_to_str(storm_rational_function_ptr val, char* buf,
     ss << srf_a;
     std::string s = ss.str();
     if (s.size() + 1 < buflen) {
-        std::strcpy(buf, s.c_str());
+        std::memcpy(buf, s.c_str(), s.size() + 1);
         return buf;
     } else {
         char* result = static_cast<char*>(malloc(s.size() + 1));
-        std::strcpy(result, s.c_str());
+        std::memcpy(result, s.c_str(), s.size() + 1);
         return result;
     }
 }
