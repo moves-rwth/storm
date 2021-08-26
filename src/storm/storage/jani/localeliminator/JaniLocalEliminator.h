@@ -19,7 +19,7 @@ namespace storm {
         public:
             class Session {
             public:
-                explicit Session(Model model, Property property);
+                explicit Session(Model model, Property property, bool flatten = true);
                 Model &getModel();
                 void setModel(const Model &model);
                 Property &getProperty();
@@ -82,7 +82,7 @@ namespace storm {
             EliminationScheduler scheduler;
             explicit JaniLocalEliminator(Model const& original, storm::jani::Property &property, bool addMissingGuards = false);
             explicit JaniLocalEliminator(Model const& original, std::vector<storm::jani::Property>& properties, bool addMissingGuards = false);
-            void eliminate();
+            void eliminate(bool flatten = true);
             Model const& getResult();
             std::vector<std::string> getLog();
 

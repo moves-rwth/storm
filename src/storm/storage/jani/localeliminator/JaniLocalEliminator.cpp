@@ -26,10 +26,10 @@ namespace storm {
             scheduler = EliminationScheduler();
         }
 
-        void JaniLocalEliminator::eliminate() {
+        void JaniLocalEliminator::eliminate(bool flatten) {
             newModel = original; // TODO: Make copy instead?
 
-            Session session = Session(newModel, property);
+            Session session = Session(newModel, property, flatten);
 
             if (addMissingGuards){
                 session.addMissingGuards(session.getModel().getAutomaton(0).getName());
@@ -264,8 +264,8 @@ namespace storm {
             actionQueue.push(std::move(action));
         }
 
-        JaniLocalEliminator::Session::Session(Model model, Property property) : model(model), property(property), finished(false){
-            if (model.getNumberOfAutomata() > 1){
+        JaniLocalEliminator::Session::Session(Model model, Property property, bool flatten) : model(model), property(property), finished(false){
+            if (flatten && model.getNumberOfAutomata() > 1){
                 flatten_automata();
             }
 
@@ -375,6 +375,7 @@ namespace storm {
         }
 
         void JaniLocalEliminator::Session::addToLog(const std::string& item) {
+            std::cout << item << std::endl;
             log.push_back(item);
         }
 

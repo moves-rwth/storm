@@ -497,18 +497,34 @@ TEST(JaniLocalEliminator, IsPartOfPropPropagationUnfolding) {
 // This test verifies that combining the two guards during elimination works correctly.
 TEST(JaniLocalEliminator, EliminationNewGuardTest) {
 
-    auto modelAndProps = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/hospital.jani",
-                                                    storm::jani::getAllKnownModelFeatures(), boost::none);
-    auto eliminator = JaniLocalEliminator(modelAndProps.first, modelAndProps.second, false);
-    eliminator.scheduler.addAction(std::make_unique<AutomaticAction>(20, 2000));
-    eliminator.eliminate();
+    auto model = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/benchmarks/6_dice.jani",
+                                                    storm::jani::getAllKnownModelFeatures(), boost::none).first;
+
+    storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
+            "Pmax=? [F s1=7 & s2=7 & s3=7 & s4=7 & s5=7 & s6=7 & (d1+d2+d3+d4+d5+d6=6)]");
+    auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
+
+    auto eliminator = JaniLocalEliminator(model, property, false);
+    // eliminator.scheduler.addAction(std::make_unique<AutomaticAction>(20, 2000));
+    for (int i = 1; i <= 6; i++){
+        auto atm_name = "die" + std::to_string(i);
+        auto var_name = "s" + std::to_string(i);
+        auto loc_name = "l_s" + std::to_string(i);
+        eliminator.scheduler.addAction(std::make_unique<UnfoldAction>(atm_name, var_name));
+        eliminator.scheduler.addAction(std::make_unique<EliminateAction>(atm_name, loc_name + "_4"));
+        eliminator.scheduler.addAction(std::make_unique<EliminateAction>(atm_name, loc_name + "_5"));
+        eliminator.scheduler.addAction(std::make_unique<EliminateAction>(atm_name, loc_name + "_3"));
+        eliminator.scheduler.addAction(std::make_unique<EliminateAction>(atm_name, loc_name + "_6"));
+    }
+    eliminator.eliminate(false);
     auto result = eliminator.getResult();
     result.finalize();
-    for (auto log : eliminator.getLog()){
+    for (auto log : eliminator.getLog()) {
         std::cout << log << std::endl;
     }
     EXPECT_EQ(2, result.getAutomaton(0).getNumberOfLocations());
-    checkMdpModel(result, modelAndProps.second, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.875, 1, 1);
+    checkMdpModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.875, 1, 1);
 
     // TODO
 }
