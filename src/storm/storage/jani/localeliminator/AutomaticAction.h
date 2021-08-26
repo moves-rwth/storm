@@ -15,13 +15,15 @@ namespace storm{
             class AutomaticAction : public JaniLocalEliminator::Action {
             public:
                 explicit AutomaticAction();
-                explicit AutomaticAction(uint64_t locationLimit, uint64_t newTransitionLimit);
+                explicit AutomaticAction(uint64_t locationLimit, uint64_t newTransitionLimit, uint64_t maxDomainSize = 100, bool flatten = true);
 
                 std::string getDescription() override;
 
                 void doAction(JaniLocalEliminator::Session &session) override;
 
             private:
+                bool flatten;
+                uint64_t maxDomainSize;
                 uint64_t locationLimit;
                 uint64_t newTransitionLimit;
 
