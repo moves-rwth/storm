@@ -39,6 +39,7 @@ namespace storm {
                 OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then, std::set<std::string> &rewardVariables);
                 bool isEliminable(const std::string &automatonName, std::string const& locationName);
                 bool hasLoops(const std::string &automatonName, std::string const& locationName);
+                bool hasNamedActions(const std::string &automatonName, std::string const& locationName);
                 bool isPossiblyInitial(const std::string &automatonName, std::string const &locationName);
                 bool isPartOfProp(const std::string &automatonName, std::string const &locationName);
                 bool isPartOfProp(const std::string &automatonName, uint64_t locationIndex);

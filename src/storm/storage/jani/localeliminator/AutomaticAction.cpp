@@ -29,34 +29,63 @@ namespace storm {
             }
 
             void AutomaticAction::doAction(JaniLocalEliminator::Session &session) {
-                if (session.getModel().getAutomata().size() > 1) {
-                    session.addToLog("Flattening model");
-                    session.flatten_automata();
+                if (flatten){
+                    if (session.getModel().getAutomata().size() > 1) {
+                        session.addToLog("Flattening model");
+                        session.flatten_automata();
+                    }
+                    std::string const &autName = session.getModel().getAutomata()[0].getName();
+                    processAutomaton(session, autName);
+                }
+                else{
+                    for (uint64_t i = 0; i < session.getModel().getNumberOfAutomata(); i++){
+                        std::string const &autName = session.getModel().getAutomata()[i].getName();
+                        session.addToLog("Processing automaton " + autName);
+                        processAutomaton(session, autName);
+                    }
                 }
 
-                std::string const &autName = session.getModel().getAutomata()[0].getName();
+
+                session.addToLog("Finished automatic state-space reduction.");
+                if (session.getModel().getNumberOfAutomata() == 1) {
+                    session.addToLog("Final model size: "
+                                     + std::to_string(session.getModel().getAutomaton(0).getNumberOfEdges()) +
+                                     " edges, " +
+                                     std::to_string(session.getModel().getAutomaton(0).getNumberOfLocations()) +
+                                     " locations");
+                }
+            }
+
+            void AutomaticAction::processAutomaton(JaniLocalEliminator::Session &session, const std::string &autName) {
+                bool isOnlyAutomaton = session.getModel().getNumberOfAutomata() == 1;
 
                 session.addToLog("Generating variable dependency graph");
                 UnfoldDependencyGraph dependencyGraph(session.getModel());
                 session.addToLog(dependencyGraph.toString());
 
-
-                if (!unfoldPropertyVariable(session, autName, dependencyGraph)) {
+                auto nextUnfold = chooseNextUnfold(session, autName, dependencyGraph, true);
+                if (!nextUnfold) {
+                    session.addToLog("No property variable can be unfolded.");
                     return;
                 }
+                unfoldGroupAndDependencies(session, autName, dependencyGraph, nextUnfold.get());
+
+//                if (!unfoldPropertyVariable(session, autName, dependencyGraph)) {
+//                    return;
+//                }
 
                 session.addToLog("Performing automatic elimination");
 
                 EliminateAutomaticallyAction eliminatePropertyAction(autName,
                                                                      EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
-                                                                     newTransitionLimit);
+                                                                     newTransitionLimit, !isOnlyAutomaton);
                 eliminatePropertyAction.doAction(session);
 
                 RebuildWithoutUnreachableAction rebuildAfterPropertyAction;
                 rebuildAfterPropertyAction.doAction(session);
 
                 while (session.getModel().getAutomaton(0).getLocations().size() < locationLimit) {
-                    auto nextUnfold = chooseNextUnfold(session, autName, dependencyGraph);
+                    auto nextUnfold = chooseNextUnfold(session, autName, dependencyGraph, false);
                     if (!nextUnfold) {
                         break;
                     }
@@ -68,20 +97,11 @@ namespace storm {
 
                     EliminateAutomaticallyAction eliminateAction(autName,
                                                                  EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
-                                                                 newTransitionLimit);
+                                                                 newTransitionLimit, !isOnlyAutomaton);
                     eliminateAction.doAction(session);
 
                     RebuildWithoutUnreachableAction rebuildAction;
                     rebuildAction.doAction(session);
-                }
-
-                session.addToLog("Finished automatic state-space reduction.");
-                if (session.getModel().getNumberOfAutomata() == 1) {
-                    session.addToLog("Final model size: "
-                                     + std::to_string(session.getModel().getAutomaton(0).getNumberOfEdges()) +
-                                     " edges, " +
-                                     std::to_string(session.getModel().getAutomaton(0).getNumberOfLocations()) +
-                                     " locations");
                 }
             }
 
@@ -197,20 +217,21 @@ namespace storm {
                     }
 
                 }
-
-                session.addToLog("\tNumber of (left-side) variable occurences: ");
-                for (const auto &entry : res) {
-                    session.addToLog("\t\t" + entry.first + ": " + std::to_string(entry.second));
-                }
-
                 return res;
             }
 
             boost::optional<uint32_t>
             AutomaticAction::chooseNextUnfold(JaniLocalEliminator::Session &session, std::string const &automatonName,
-                                              UnfoldDependencyGraph &dependencyGraph) {
+                                              UnfoldDependencyGraph &dependencyGraph, bool onlyPropertyVariables) {
                 std::map<std::string, double> variableOccurrenceCounts = getAssignmentCountByVariable(session,
                                                                                                       automatonName);
+
+                auto propertyVariables = session.getProperty().getUsedVariablesAndConstants();
+
+                session.addToLog("Choosing next unfold");
+                if (onlyPropertyVariables){
+                    session.addToLog("\tOnly groups containing a variable from the property will be considered");
+                }
                 session.addToLog(dependencyGraph.toString());
                 std::set<uint32_t> groupsWithoutDependencies = dependencyGraph.getGroupsWithNoDependencies();
 
@@ -219,19 +240,33 @@ namespace storm {
 
                 session.addToLog("\tAnalysing groups without dependencies:");
                 for (auto groupIndex : groupsWithoutDependencies) {
+                    bool containsPropertyVariable = false;
                     UnfoldDependencyGraph::VariableGroup &group = dependencyGraph.variableGroups[groupIndex];
                     double totalOccurences = 0;
                     for (const auto &var : group.variables) {
                         if (variableOccurrenceCounts.count(var.expressionVariableName) > 0) {
                             totalOccurences += variableOccurrenceCounts[var.expressionVariableName];
                         }
+                        for (const auto &propertyVar : propertyVariables){
+                            if (propertyVar.getName() == var.expressionVariableName){
+                                containsPropertyVariable = true;
+                            }
+                        }
                     }
-                    if (totalOccurences > bestValue && dependencyGraph.variableGroups[groupIndex].domainSize < maxDomainSize) {
-                        bestValue = totalOccurences;
-                        bestGroup = groupIndex;
+                    if (onlyPropertyVariables && !containsPropertyVariable){
+                        continue;
                     }
+
                     session.addToLog("\t\t{" + group.getVariablesAsString() + "}: " + std::to_string(totalOccurences) +
                                      " occurences");
+                    if (dependencyGraph.variableGroups[groupIndex].domainSize < maxDomainSize){
+                        if (totalOccurences > bestValue) {
+                            bestValue = totalOccurences;
+                            bestGroup = groupIndex;
+                        }
+                    } else {
+                        session.addToLog("\t\t\tSkipped (domain size too large)");
+                    }
                 }
 
                 if (bestValue == 0) {

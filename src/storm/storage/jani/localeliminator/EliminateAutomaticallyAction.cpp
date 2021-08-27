@@ -4,10 +4,11 @@
 namespace storm {
     namespace jani {
         namespace elimination_actions {
-            EliminateAutomaticallyAction::EliminateAutomaticallyAction(const std::string &automatonName, EliminateAutomaticallyAction::EliminationOrder order, uint32_t transitionCountThreshold)
+            EliminateAutomaticallyAction::EliminateAutomaticallyAction(const std::string &automatonName, EliminateAutomaticallyAction::EliminationOrder order, uint32_t transitionCountThreshold, bool restrictToUnnamedActions)
                     : automatonName(automatonName),
                       eliminationOrder(order),
-                      transitionCountThreshold(transitionCountThreshold){
+                      transitionCountThreshold(transitionCountThreshold),
+                      restrictToUnnamedActions(restrictToUnnamedActions) {
             }
 
             std::string EliminateAutomaticallyAction::getDescription() {
@@ -18,6 +19,8 @@ namespace storm {
                 Automaton* automaton = &session.getModel().getAutomaton(automatonName);
                 switch (eliminationOrder){
                     case EliminationOrder::Arbitrary: {
+                        STORM_LOG_THROW(!restrictToUnnamedActions, storm::exceptions::NotImplementedException, "Cannot perform automatic elimination if restrictToUnnamedActions is true and elimination order is arbitrary");
+
                         for (const auto& loc : automaton->getLocations()) {
                             if (session.isEliminable(automatonName, loc.getName())) {
                                 session.addToLog("Eliminating location " + loc.getName());
@@ -42,8 +45,9 @@ namespace storm {
                             bool partOfProp = session.isPartOfProp(automatonName, loc.getName());
                             bool hasLoops = session.hasLoops(automatonName, loc.getName());
                             bool isDeadlock = automaton->getEdgesFromLocation(loc.getName()).empty();
+                            bool hasNamedAction = restrictToUnnamedActions && session.hasNamedActions(automatonName, loc.getName());
 
-                            bool isUneliminable = possiblyInitial || partOfProp || hasLoops || isDeadlock;
+                            bool isUneliminable = possiblyInitial || partOfProp || hasLoops || isDeadlock || hasNamedAction;
                             uneliminable.insert(std::pair<std::string, bool>(loc.getName(), isUneliminable));
 
                             std::string eliminationStatus = "\t" + loc.getName() + ": ";
@@ -57,6 +61,8 @@ namespace storm {
                                     eliminationStatus += "has loops, ";
                                 if (isDeadlock)
                                     eliminationStatus += "has no outgoing edges, ";
+                                if (hasNamedAction)
+                                    eliminationStatus += "has named action, ";
                                 eliminationStatus = eliminationStatus.substr(0, eliminationStatus.size() - 2) + ")";
                             }else{
                                 eliminationStatus += "Eliminable";
@@ -122,6 +128,10 @@ namespace storm {
                                         if (session.hasLoops(automatonName, loc.getName())){
                                             uneliminable[loc.getName()] = true;
                                             session.addToLog("\t" + loc.getName() + " now has a loop");
+                                        }
+                                        if (restrictToUnnamedActions && session.hasNamedActions(automatonName, loc.getName())){
+                                            uneliminable[loc.getName()] = true;
+                                            session.addToLog("\t" + loc.getName() + " now has a named action");
                                         }
                                     }
                                 }

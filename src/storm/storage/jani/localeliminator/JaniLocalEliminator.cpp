@@ -76,6 +76,16 @@ namespace storm {
             }
             return false;
         }
+        bool JaniLocalEliminator::Session::hasNamedActions(const std::string &automatonName, std::string const& locationName) {
+            Automaton &automaton = model.getAutomaton(automatonName);
+            uint64_t locationIndex = automaton.getLocationIndex(locationName);
+            for (Edge edge : automaton.getEdgesFromLocation(locationIndex)) {
+                if (!edge.hasSilentAction()){
+                    return true;
+                }
+            }
+            return false;
+        }
 
         bool JaniLocalEliminator::Session::isPossiblyInitial(const std::string &automatonName, std::string const& locationName) {
             Automaton &automaton = model.getAutomaton(automatonName);
@@ -375,7 +385,7 @@ namespace storm {
         }
 
         void JaniLocalEliminator::Session::addToLog(const std::string& item) {
-            std::cout << item << std::endl;
+//            std::cout << item << std::endl;
             log.push_back(item);
         }
 

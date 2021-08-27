@@ -27,11 +27,13 @@ namespace storm{
                 uint64_t locationLimit;
                 uint64_t newTransitionLimit;
 
+                void processAutomaton(JaniLocalEliminator::Session &session, std::string const& autName);
+
                 void unfoldGroupAndDependencies(JaniLocalEliminator::Session &session, std::string autName,
                                                 UnfoldDependencyGraph &dependencyGraph, uint32_t groupIndex);
                 bool unfoldPropertyVariable(JaniLocalEliminator::Session &session, std::string const& autName, UnfoldDependencyGraph& dependencyGraph);
 
-                boost::optional<uint32_t> chooseNextUnfold(JaniLocalEliminator::Session &session, std::string const& automatonName, UnfoldDependencyGraph &dependencyGraph);
+                boost::optional<uint32_t> chooseNextUnfold(JaniLocalEliminator::Session &session, std::string const& automatonName, UnfoldDependencyGraph &dependencyGraph, bool onlyPropertyVariables);
                 std::map<std::string, double> getAssignmentCountByVariable(JaniLocalEliminator::Session &session, std::string const& automatonName);
             };
         }
