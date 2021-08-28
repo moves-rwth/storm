@@ -647,7 +647,7 @@ namespace storm {
                     STORM_LOG_INFO("Splitting based on region split estimates");
                     ConstantType diff = this->lastValue - (this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
                     for (auto &entry : regionSplitEstimates) {
-                        if ((!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) && entry.second > diff) {
+                        if ((!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) && storm::utility::convertNumber<ConstantType>(entry.second) > diff) {
                             sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)) * storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
                         }
                     }

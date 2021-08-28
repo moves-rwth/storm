@@ -53,7 +53,7 @@ namespace storm {
                                    expressionManager->rational(1));
                 } else {
                     smtSolver->add(storm::expressions::sum(weightVariableExpressions) <=
-                                   expressionManager->rational(1.0 + wiggle));
+                                   expressionManager->rational(1 + wiggle));
                     smtSolver->add(storm::expressions::sum(weightVariableExpressions) >=
                                    expressionManager->rational(1 - wiggle));
                 }

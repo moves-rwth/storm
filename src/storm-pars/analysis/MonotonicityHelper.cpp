@@ -266,7 +266,7 @@ namespace storm {
                             auto lb = region.getLowerBoundary(itr->name());
                             auto ub = region.getUpperBoundary(itr->name());
                             // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
-                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1));
+                            valuation[*itr2] = (lb + i*(ub-lb)/(numberOfSamples-1));
                         } else {
                             auto lb = region.getLowerBoundary(itr2->name());
                             valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
