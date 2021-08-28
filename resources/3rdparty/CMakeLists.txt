@@ -439,7 +439,7 @@ get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
 ##
 #############################################################
 
-if(STORM_USE_CLN_RF OR STORM_USE_CLN_EA)
+if(STORM_HAVE_CLN)
 	get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
 endif()
 

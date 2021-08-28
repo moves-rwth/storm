@@ -429,7 +429,7 @@ namespace storm {
                 if (solver->hasUpperBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Local)) {
                     auto resultIt = x.begin();
                     for (auto const& entry : solver->getUpperBounds()) {
-                        STORM_LOG_ASSERT(*resultIt <= entry + env.solver().minMax().getPrecision(), "Expecting result value for state " << std::distance(x.begin(), resultIt) << " to be <= " << entry << ", but got " << *resultIt << ".");
+                        STORM_LOG_ASSERT(*resultIt <= entry + storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), "Expecting result value for state " << std::distance(x.begin(), resultIt) << " to be <= " << entry << ", but got " << *resultIt << ".");
                         ++resultIt;
                     }
                 }
