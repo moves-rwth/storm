@@ -5,6 +5,7 @@ set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include/resources/3rdparty)
 
+message(STATUS "Storm - Building external resources with ${STORM_RESOURCES_BUILD_JOBCOUNT} job(s) in parallel.")
 
 #############################################################
 ##
@@ -138,6 +139,16 @@ foreach(HEADER ${SPARSEPP_HEADERS})
     )
     list(APPEND SPARSEPP_BINDIR_HEADERS ${SPARSEPP_BINDIR_DIR}/sparsepp/${HEADER_FILENAME})
 endforeach()
+
+#############################################################
+##
+##	cpphoafparser
+##
+#############################################################
+
+# Use the shipped version of cpphoafparser
+message (STATUS "storm - Including cpphoafparser 0.99.2")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cpphoafparser-0.99.2/include")
 
 #############################################################
 ##
@@ -328,7 +339,7 @@ if (STORM_SHIPPED_CARL)
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE 1
             BUILD_COMMAND make lib_carl
-            INSTALL_COMMAND make install
+            INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
             LOG_BUILD ON
 			LOG_INSTALL ON
             BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
@@ -503,6 +514,15 @@ endif()
 #############################################################
 
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_xerces.cmake)
+
+
+#############################################################
+##
+##	Spot
+##
+#############################################################
+
+include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
 
 #############################################################
 ##

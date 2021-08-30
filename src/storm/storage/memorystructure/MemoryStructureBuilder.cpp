@@ -10,28 +10,42 @@ namespace storm {
     namespace storage {
         
         template <typename ValueType, typename RewardModelType>
-        MemoryStructureBuilder<ValueType, RewardModelType>::MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model) : model(model), transitions(numberOfMemoryStates, std::vector<boost::optional<storm::storage::BitVector>>(numberOfMemoryStates)), stateLabeling(numberOfMemoryStates), initialMemoryStates(model.getInitialStates().getNumberOfSetBits(), 0) {
+        MemoryStructureBuilder<ValueType, RewardModelType>::MemoryStructureBuilder(uint_fast64_t numberOfMemoryStates, storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool onlyInitialStatesRelevant) : model(model), transitions(numberOfMemoryStates, std::vector<boost::optional<storm::storage::BitVector>>(numberOfMemoryStates)), stateLabeling(numberOfMemoryStates), initialMemoryStates(onlyInitialStatesRelevant ? model.getInitialStates().getNumberOfSetBits() :  model.getNumberOfStates(), 0), onlyInitialStatesRelevant(onlyInitialStatesRelevant) {
             // Intentionally left empty
         }
         
         template <typename ValueType, typename RewardModelType>
-        MemoryStructureBuilder<ValueType, RewardModelType>::MemoryStructureBuilder(MemoryStructure const& memoryStructure, storm::models::sparse::Model<ValueType, RewardModelType> const& model) : model(model), transitions(memoryStructure.getTransitionMatrix()), stateLabeling(memoryStructure.getStateLabeling()), initialMemoryStates(memoryStructure.getInitialMemoryStates()) {
+        MemoryStructureBuilder<ValueType, RewardModelType>::MemoryStructureBuilder(MemoryStructure const& memoryStructure, storm::models::sparse::Model<ValueType, RewardModelType> const& model) : model(model), transitions(memoryStructure.getTransitionMatrix()), stateLabeling(memoryStructure.getStateLabeling()), initialMemoryStates(memoryStructure.getInitialMemoryStates()), onlyInitialStatesRelevant(memoryStructure.isOnlyInitialStatesRelevantSet()) {
             // Intentionally left empty
         }
+
         
         template <typename ValueType, typename RewardModelType>
         void MemoryStructureBuilder<ValueType, RewardModelType>::setInitialMemoryState(uint_fast64_t initialModelState, uint_fast64_t initialMemoryState) {
-            STORM_LOG_THROW(model.getInitialStates().get(initialModelState), storm::exceptions::InvalidOperationException, "Invalid index of initial model state: " << initialMemoryState << ". This is not an initial state of the model.");
+            STORM_LOG_THROW(!onlyInitialStatesRelevant || model.getInitialStates().get(initialModelState), storm::exceptions::InvalidOperationException, "Invalid index of initial model state: " << initialMemoryState << ". This is not an initial state of the model.");
             STORM_LOG_THROW(initialMemoryState < transitions.size(), storm::exceptions::InvalidOperationException, "Invalid index of initial memory state: " << initialMemoryState << ". There are only " << transitions.size() << " states in this memory structure.");
             
             auto initMemStateIt = initialMemoryStates.begin();
-            for (auto initState : model.getInitialStates()) {
-                if (initState == initialModelState) {
-                    *initMemStateIt = initialMemoryState;
-                    break;
+
+            if (onlyInitialStatesRelevant) {
+                for (auto initState : model.getInitialStates()) {
+                    if (initState == initialModelState) {
+                        *initMemStateIt = initialMemoryState;
+                        break;
+                    }
+                    ++initMemStateIt;
                 }
-                ++initMemStateIt;
+            } else {
+                // Consider non-initial model states
+                for (uint_fast64_t state = 0; state < model.getNumberOfStates(); ++state) {
+                    if (state == initialModelState) {
+                        *initMemStateIt = initialMemoryState;
+                        break;
+                    }
+                    ++initMemStateIt;
+                }
             }
+
             assert(initMemStateIt != initialMemoryStates.end());
         }
         
@@ -85,7 +99,7 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType>
         MemoryStructure MemoryStructureBuilder<ValueType, RewardModelType>::build() {
-            return MemoryStructure(std::move(transitions), std::move(stateLabeling), std::move(initialMemoryStates));
+            return MemoryStructure(std::move(transitions), std::move(stateLabeling), std::move(initialMemoryStates), onlyInitialStatesRelevant);
         }
         
         template <typename ValueType, typename RewardModelType>

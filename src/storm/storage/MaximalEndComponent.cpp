@@ -1,4 +1,5 @@
 #include "storm/storage/MaximalEndComponent.h"
+#include "storm/storage/BitVector.h"
 #include "storm/exceptions/InvalidStateException.h"
 
 namespace storm {
@@ -67,6 +68,16 @@ namespace storm {
                 return false;
             }
             return true;
+        }
+
+        bool MaximalEndComponent::containsAnyState(storm::storage::BitVector stateSet) const {
+            // TODO: iteration over unordered_map is potentially inefficient?
+            for (auto const& stateChoicesPair : stateToChoicesMapping) {
+                if (stateSet.get(stateChoicesPair.first)) {
+                    return true;
+                }
+            }
+            return false;
         }
         
         void MaximalEndComponent::removeState(uint_fast64_t state) {

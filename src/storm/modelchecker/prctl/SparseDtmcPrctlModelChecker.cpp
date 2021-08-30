@@ -15,15 +15,15 @@
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/QuantileHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
+ #include "storm/solver/SolveGoal.h"
+
+#include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/settings/modules/GeneralSettings.h"
-
-#include "storm/exceptions/InvalidStateException.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
 
@@ -37,7 +37,7 @@ namespace storm {
         template<typename SparseDtmcModelType>
         bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setConditionalRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true))) {
+            if (formula.isInFragment(storm::logic::prctlstar().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setConditionalRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true).setHOAPathFormulasAllowed(true))) {
                 return true;
             } else if (checkTask.isOnlyInitialStatesRelevantSet() && formula.isInFragment(storm::logic::quantiles())) {
                 if (requiresSingleInitialState) {
@@ -115,7 +115,35 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) {
+            storm::logic::HOAPathFormula const& pathFormula = checkTask.getFormula();
+            
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            auto apSets = helper.computeApSets(pathFormula.getAPMapping(), formulaChecker);
+            std::vector<ValueType> numericResult = helper.computeDAProductProbabilities(env, *pathFormula.readAutomaton(), apSets);
+            
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+
+        template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
+            storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
+
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, pathFormula, formulaChecker);
+
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+
+        template<typename SparseDtmcModelType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
+
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             if (rewardPathFormula.isMultiDimensional() || rewardPathFormula.getTimeBoundReference().isRewardBound()) {
                 STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException, "Checking non-trivial bounded until probabilities can only be computed for the initial states of the model.");
@@ -171,7 +199,6 @@ namespace storm {
 
         template<typename SparseDtmcModelType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeLongRunAverageProbabilities(Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
-            
             storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
 			std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
 			ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();

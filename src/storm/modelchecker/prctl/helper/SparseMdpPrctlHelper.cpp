@@ -599,16 +599,22 @@ namespace storm {
                 
                 // Set values of resulting vector that are known exactly.
                 storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.statesWithProbability1, storm::utility::one<ValueType>());
-                
+
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
+
                 // If requested, we will produce a scheduler.
                 std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
                 if (produceScheduler) {
                     scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(transitionMatrix.getRowGroupCount());
+                    // If maybeStatesNotRelevant is true, we have to set the scheduler for maybe states as "dontCare"
+                    if (maybeStatesNotRelevant) {
+                        for (auto state : qualitativeStateSets.maybeStates) {
+                            scheduler->setDontCare(state);
+                        }
+                    }
                 }
-                
-                // Check if the values of the maybe states are relevant for the SolveGoal
-                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
-                
+
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative || maybeStatesNotRelevant) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.

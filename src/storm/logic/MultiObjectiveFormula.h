@@ -1,11 +1,11 @@
 #ifndef STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
 #define STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
 
-#include "storm/logic/Formula.h"
+#include "storm/logic/StateFormula.h"
 
 namespace storm {
     namespace logic {
-        class MultiObjectiveFormula : public Formula {
+        class MultiObjectiveFormula : public StateFormula {
         public:
             MultiObjectiveFormula(std::vector<std::shared_ptr<Formula const>> const& subformulas);
             
@@ -27,7 +27,7 @@ namespace storm {
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
             
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
         private:
             std::vector<std::shared_ptr<Formula const>> subformulas;
         };
