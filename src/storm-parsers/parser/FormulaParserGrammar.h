@@ -10,6 +10,7 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm-parsers/parser/ExpressionParser.h"
+#include "storm-parsers/parser/ConstantDataType.h"
 
 #include "storm/modelchecker/results/FilterType.h"
 
@@ -19,17 +20,17 @@ namespace storm {
     namespace logic {
         class Formula;
     }
-    
+
     namespace parser {
-        
+
         class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jani::Property>(), Skipper> {
         public:
             FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager);
             FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager> const& manager);
-            
+
             FormulaParserGrammar(FormulaParserGrammar const& other) = delete;
             FormulaParserGrammar& operator=(FormulaParserGrammar const& other) = delete;
-            
+
             /*!
              * Adds an identifier and the expression it is supposed to be replaced with. This can, for example be used
              * to substitute special identifiers in the formula by expressions.
@@ -38,10 +39,10 @@ namespace storm {
              * @param expression The expression it is to be substituted with.
              */
             void addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression);
-            
+
         private:
             void initialize();
-            
+
             struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
                 keywordsStruct() {
                     add
@@ -62,7 +63,7 @@ namespace storm {
             };
             // A parser used for recognizing the standard keywords (that also apply to e.g. PRISM). These shall not coincide with expression variables
             keywordsStruct keywords_;
-            
+
             struct nonStandardKeywordsStruct : qi::symbols<char, uint_fast64_t> {
                 nonStandardKeywordsStruct() {
                     add
@@ -77,7 +78,7 @@ namespace storm {
             // A parser used for recognizing non-standard Storm-specific keywords.
             // For compatibility, we still try to parse expression variables whose identifier is such a keyword and just issue a warning.
             nonStandardKeywordsStruct nonStandardKeywords_;
-            
+
             struct relationalOperatorStruct : qi::symbols<char, storm::logic::ComparisonType> {
                 relationalOperatorStruct() {
                     add
@@ -87,10 +88,10 @@ namespace storm {
                     ("<", storm::logic::ComparisonType::Less);
                 }
             };
-            
+
             // A parser used for recognizing the operators at the "relational" precedence level.
             relationalOperatorStruct relationalOperator_;
-            
+
             struct optimalityOperatorStruct : qi::symbols<char, storm::OptimizationDirection> {
                 optimalityOperatorStruct() {
                     add
@@ -98,10 +99,10 @@ namespace storm {
                     ("max", storm::OptimizationDirection::Maximize);
                 }
             };
-            
+
             // A parser used for recognizing the optimality operators.
             optimalityOperatorStruct optimalityOperator_;
-            
+
             struct rewardMeasureTypeStruct : qi::symbols<char, storm::logic::RewardMeasureType> {
                 rewardMeasureTypeStruct() {
                     add
@@ -109,10 +110,10 @@ namespace storm {
                     ("var", storm::logic::RewardMeasureType::Variance);
                 }
             };
-            
+
             // A parser used for recognizing the reward measure types.
             rewardMeasureTypeStruct rewardMeasureType_;
-            
+
             struct filterTypeStruct : qi::symbols<char, storm::modelchecker::FilterType> {
                 filterTypeStruct() {
                     add
@@ -131,7 +132,7 @@ namespace storm {
 
             // A parser used for recognizing the filter type.
             filterTypeStruct filterType_;
-            
+
             struct operatorKeyword : qi::symbols<char, storm::logic::FormulaContext> {
                 operatorKeyword() {
                     add
@@ -143,7 +144,7 @@ namespace storm {
                 }
             };
             operatorKeyword operatorKeyword_;
-            
+
             enum class FormulaKind {
                 State, /// PCTL*-like (boolean) state formula
                 Path, /// PCTL*-like (boolean) path formula (include state formulae)
@@ -153,30 +154,30 @@ namespace storm {
             // The manager used to parse expressions.
             std::shared_ptr<storm::expressions::ExpressionManager const> constManager;
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
-            
+
             // Parser and manager used for recognizing expressions.
             storm::parser::ExpressionParser expressionParser;
-            
+
             // A symbol table that is a mapping from identifiers that can be used in expressions to the expressions
             // they are to be replaced with.
             qi::symbols<char, storm::expressions::Expression> identifiers_;
- 
-            
+
+
             // Rules
-            
+
             // Auxiliary helpers
             qi::rule<Iterator, qi::unused_type(std::shared_ptr<storm::logic::Formula const>, std::string), Skipper> noAmbiguousNonAssociativeOperator;
             qi::rule<Iterator, std::string(), Skipper> identifier;
             qi::rule<Iterator, std::string(), Skipper> label;
             qi::rule<Iterator, std::string(), Skipper> quotedString;
-            
+
             // PCTL-like Operator Formulas
             qi::rule<Iterator, storm::logic::OperatorInformation(), qi::locals<boost::optional<storm::OptimizationDirection>>, Skipper> operatorInformation;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> operatorSubFormula;
             qi::rule<Iterator, std::string(storm::logic::FormulaContext), Skipper> rewardModelName;
             qi::rule<Iterator, storm::logic::RewardMeasureType(storm::logic::FormulaContext), Skipper> rewardMeasureType;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), qi::locals<storm::logic::FormulaContext>, Skipper> operatorFormula;
-            
+
             // Atomic propositions
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> labelFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> expressionFormula;
@@ -189,7 +190,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(FormulaKind, storm::logic::FormulaContext), Skipper> andLevelPropositionalFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(FormulaKind, storm::logic::FormulaContext), Skipper> orLevelPropositionalFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(FormulaKind, storm::logic::FormulaContext), Skipper> propositionalFormula;
-            
+
             // Path operators
             qi::rule<Iterator, std::shared_ptr<storm::logic::TimeBoundReference>, Skipper> timeBoundReference;
             qi::rule<Iterator, std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>>(), qi::locals<bool, bool>, Skipper> timeBound;
@@ -204,13 +205,13 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> basicPathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> untilLevelPathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> pathFormula;
-            
+
             // Quantitative path operators (reward)
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> longRunAverageRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> instantaneousRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> cumulativeRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> totalRewardFormula;
-            
+
             // Game Formulae
             qi::rule<Iterator, storm::logic::PlayerCoalition(), qi::locals<std::vector<boost::variant<std::string, storm::storage::PlayerIndex>>>, Skipper> playerCoalition;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> gameFormula;
@@ -219,7 +220,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> multiOperatorFormula;
             qi::rule<Iterator, storm::expressions::Variable(), Skipper> quantileBoundVariable;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> quantileFormula;
-            
+
             // General formulae
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(FormulaKind, storm::logic::FormulaContext), Skipper> formula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> topLevelFormula;
@@ -227,16 +228,12 @@ namespace storm {
             // Properties
             qi::rule<Iterator, std::string(), Skipper> formulaName;
             qi::rule<Iterator, storm::jani::Property(), Skipper> filterProperty;
-            
-            // Constant declarations
-            enum class ConstantDataType {
-                Bool, Integer, Rational
-            };
+
             qi::rule<Iterator, qi::unused_type(), qi::locals<ConstantDataType>, Skipper> constantDefinition;
 
             // Start symbol
             qi::rule<Iterator, std::vector<storm::jani::Property>(), Skipper> start;
-            
+
             void addHoaAPMapping(storm::logic::Formula const& hoaFormula, const std::string& ap, std::shared_ptr<storm::logic::Formula const>& expression) const;
 
             storm::logic::PlayerCoalition createPlayerCoalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const;
@@ -281,19 +278,19 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createMultiOperatorFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
             storm::expressions::Variable createQuantileBoundVariables(boost::optional<storm::solver::OptimizationDirection> const& dir, std::string const& variableName);
             std::shared_ptr<storm::logic::Formula const> createQuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables, std::shared_ptr<storm::logic::Formula const> const& subformula);
-            
+
             std::set<storm::expressions::Variable> getUndefinedConstants(std::shared_ptr<storm::logic::Formula const> const& formula) const;
             storm::jani::Property createProperty(boost::optional<std::string> const& propertyName, storm::modelchecker::FilterType const& filterType, std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states);
             storm::jani::Property createPropertyWithDefaultFilterTypeAndStates(boost::optional<std::string> const& propertyName, std::shared_ptr<storm::logic::Formula const> const& formula);
-            
+
             bool isBooleanReturnType(std::shared_ptr<storm::logic::Formula const> const& formula, bool raiseErrorMessage = false);
             bool raiseAmbiguousNonAssociativeOperatorError(std::shared_ptr<storm::logic::Formula const> const& formula, std::string const& op);
-            
+
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;
-            
+
             uint64_t propertyCount;
-            
+
             std::set<storm::expressions::Variable> undefinedConstants;
             std::set<storm::expressions::Variable> quantileFormulaVariables;
         };
