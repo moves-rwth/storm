@@ -102,13 +102,9 @@ namespace storm {
                 Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
                 STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " << result.upperBound << "]");
 
+                std::vector<ValueType> pMCValueBound;
                 if(options.useParametricPreprocessing){
-                    auto pMCValueBound = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, 2, storm::storage::PomdpMemoryPattern::Full, 0.0001);
-                    if(formulaInfo.maximize()){
-                        initialPomdpValueBounds.lower.push_back(pMCValueBound);
-                    } else {
-                        initialPomdpValueBounds.upper.push_back(pMCValueBound);
-                    }
+                    initialPomdpValueBounds.parametric = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, 2, storm::storage::PomdpMemoryPattern::Full, 0.1);
                 }
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> initialValueBounds;
                 initialValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
@@ -1009,6 +1005,18 @@ namespace storm {
                                     }
                                 }
                                 if (stopExploration) {
+                                    // Check if a parametric preprocessing result exists and is better
+                                    if(underApproximation->hasParametricBounds()){
+                                        if(min && storm::utility::min(truncationValueBound, underApproximation->computeParametricBoundAtBelief(currId)) != truncationValueBound){
+                                            STORM_LOG_DEBUG("BEL " << currId << " -- choose PARAMETRIC BOUND -- " << underApproximation->computeParametricBoundAtBelief(currId) << " vs. " << truncationValueBound);
+                                        } else if (!min && storm::utility::max(truncationValueBound, underApproximation->computeParametricBoundAtBelief(currId)) != truncationValueBound){
+                                            STORM_LOG_DEBUG("BEL " << currId << " -- choose PARAMETRIC BOUND -- " << underApproximation->computeParametricBoundAtBelief(currId) << " vs. " << truncationValueBound);
+                                        }
+                                        truncationValueBound = min ?
+                                                storm::utility::min(truncationValueBound, underApproximation->computeParametricBoundAtBelief(currId)) :
+                                                               storm::utility::max(truncationValueBound, underApproximation->computeParametricBoundAtBelief(currId));
+                                    }
+
                                     if (computeRewards) {
                                         underApproximation->addTransitionsToExtraStates(addedActions + action, truncationProbability);
                                     } else {
