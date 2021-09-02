@@ -36,8 +36,8 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
 
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(dtmc->getNumberOfStates(), 193ul);
-    ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ul);
+    ASSERT_EQ(193ul, dtmc->getNumberOfStates());
+    ASSERT_EQ(383ul, dtmc->getNumberOfTransitions());
 
     // Create the region
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
@@ -118,8 +118,8 @@ TEST(AssumptionCheckerTest, Simple1) {
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(dtmc->getNumberOfStates(), 5);
-    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
+    ASSERT_EQ(5ul,dtmc->getNumberOfStates());
+    ASSERT_EQ(8ul,dtmc->getNumberOfTransitions());
 
     // Create the region
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
@@ -202,8 +202,8 @@ TEST(AssumptionCheckerTest, Casestudy1) {
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(dtmc->getNumberOfStates(), 5);
-    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
+    ASSERT_EQ(5ul, dtmc->getNumberOfStates());
+    ASSERT_EQ(8ul, dtmc->getNumberOfTransitions());
 
     // Create the region
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
@@ -353,8 +353,8 @@ TEST(AssumptionCheckerTest, Casestudy3) {
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(dtmc->getNumberOfStates(), 5);
-    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
+    ASSERT_EQ(5ul, dtmc->getNumberOfStates());
+    ASSERT_EQ(8ul,dtmc->getNumberOfTransitions());
 
     // Create the region
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);

@@ -210,33 +210,33 @@ TEST(OrderTest, sort_states) {
 
     std::vector<uint_fast64_t> statesToSort = std::vector<uint_fast64_t> {0,1,5,6};
     auto sortedStates = order.sortStates(&statesToSort);
-    EXPECT_EQ(sortedStates.size(), 4);
+    EXPECT_EQ(4ul, sortedStates.size());
 
     auto itr = sortedStates.begin();
-    EXPECT_EQ(*itr, 0);
-    EXPECT_EQ(*(++itr), 5);
-    EXPECT_EQ(*(++itr), 6);
-    EXPECT_EQ(*(++itr), 1);
+    EXPECT_EQ(0ul, *itr);
+    EXPECT_EQ(5ul,*(++itr));
+    EXPECT_EQ(6ul, *(++itr));
+    EXPECT_EQ(1ul, *(++itr));
 
     statesToSort = std::vector<uint_fast64_t> {0,1,5,6,2};
     sortedStates = order.sortStates(&statesToSort);
-    EXPECT_EQ(sortedStates.size(), 5);
+    EXPECT_EQ(5ul,sortedStates.size());
 
     itr = sortedStates.begin();
-    EXPECT_EQ(*itr, 0);
-    EXPECT_EQ(*(++itr), 5);
-    EXPECT_EQ(*(++itr), 6);
-    EXPECT_EQ(*(++itr), 1);
-    EXPECT_EQ(*(++itr), 7);
+    EXPECT_EQ(0ul, *itr);
+    EXPECT_EQ(5ul, *(++itr));
+    EXPECT_EQ(6ul, *(++itr));
+    EXPECT_EQ(1ul, *(++itr));
+    EXPECT_EQ(7ul, *(++itr));
 
     statesToSort = std::vector<uint_fast64_t> {0,2,1,5,6};
     sortedStates = order.sortStates(&statesToSort);
-    EXPECT_EQ(sortedStates.size(), 5);
+    EXPECT_EQ(5ul, sortedStates.size());
 
     itr = sortedStates.begin();
-    EXPECT_EQ(*itr, 0);
-    EXPECT_EQ(*(++itr), 2);
-    EXPECT_EQ(*(++itr), 1);
-    EXPECT_EQ(*(++itr), 7);
-    EXPECT_EQ(*(++itr), 7);
+    EXPECT_EQ(0ul, *itr);
+    EXPECT_EQ(2ul, *(++itr));
+    EXPECT_EQ(1ul, *(++itr));
+    EXPECT_EQ(7ul, *(++itr));
+    EXPECT_EQ(7ul, *(++itr));
 }
