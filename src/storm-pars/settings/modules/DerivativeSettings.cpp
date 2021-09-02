@@ -1,6 +1,7 @@
 #include "storm-pars/settings/modules/DerivativeSettings.h"
 
 #include "storm-pars/derivative/GradientDescentMethod.h"
+#include "storm-pars/derivative/GradientDescentConstraintMethod.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
@@ -26,6 +27,7 @@ namespace storm {
             const std::string DerivativeSettings::gradientDescentMethod = "descent-method";
             const std::string DerivativeSettings::omitInconsequentialParams = "omit-inconsequential-params";
             const std::string DerivativeSettings::startPoint = "start-point";
+            const std::string DerivativeSettings::constraintMethod = "constraint-method";
 
             DerivativeSettings::DerivativeSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, feasibleInstantiationSearch, false, "Search for a feasible instantiation (restart with new instantiation while not feasible)").build());
@@ -46,6 +48,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, terminationEpsilon, false, "The change in value that constitutes as a \"tiny change\", after a few of which the gradient descent will terminate")
                     .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(terminationEpsilon, "The epsilon").setDefaultValueDouble(1e-6).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, omitInconsequentialParams, false, "Parameters that are removed in minimization because they have no effect on the rational function are normally set to 0.5 in the final instantiation. If this flag is set, they will be omitted from the final instantiation entirely.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, constraintMethod, false, "Constraint Method").setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(constraintMethod, "Method for dealing with constraints").setDefaultValueString("project-gradient").build()).build());
             }
 
             bool DerivativeSettings::isFeasibleInstantiationSearchSet() const {
@@ -93,6 +97,14 @@ namespace storm {
                 return this->getOption(omitInconsequentialParams).getHasOptionBeenSet();
             }
 
+            boost::optional<derivative::GradientDescentConstraintMethod> DerivativeSettings::getConstraintMethod() const {
+                return constraintMethodFromString(this->getOption(constraintMethod).getArgumentByName(constraintMethod).getValueAsString());
+            }
+
+            std::string DerivativeSettings::getConstraintMethodAsString() const {
+                return this->getOption(constraintMethod).getArgumentByName(constraintMethod).getValueAsString();
+            }
+
             boost::optional<std::string> DerivativeSettings::getStartPoint() const  {
                 if (this->getOption(startPoint).getHasOptionBeenSet()) {
                     return this->getOption(startPoint).getArgumentByName(startPoint).getValueAsString();
@@ -125,6 +137,27 @@ namespace storm {
                   }
                   return method;
             }
+            
+            boost::optional<derivative::GradientDescentConstraintMethod> DerivativeSettings::constraintMethodFromString(const std::string &str) const {
+                derivative::GradientDescentConstraintMethod method;
+                if (str == "project-gradient") {
+                    method = derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT;
+                } else if (str == "project") {
+                    method = derivative::GradientDescentConstraintMethod::PROJECT;
+                } else if (str == "penalty-quadratic") {
+                    method = derivative::GradientDescentConstraintMethod::PENALTY_QUADRATIC;
+                } else if (str == "barrier-logarithmic") {
+                    method = derivative::GradientDescentConstraintMethod::BARRIER_LOGARITHMIC;
+                } else if (str == "barrier-infinity") {
+                    method = derivative::GradientDescentConstraintMethod::BARRIER_INFINITY;
+                } else if (str == "logistic-sigmoid") {
+                    method = derivative::GradientDescentConstraintMethod::LOGISTIC_SIGMOID;
+                } else {
+                    return boost::none;
+                }
+                return method;
+            }
+
         } // namespace modules
     } // namespace settings
 } // namespace storm

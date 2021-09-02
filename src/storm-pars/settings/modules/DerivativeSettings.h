@@ -3,6 +3,7 @@
 
 #include "adapters/RationalFunctionAdapter.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
+#include "storm-pars/derivative/GradientDescentConstraintMethod.h"
 #include "storm/settings/modules/ModuleSettings.h"
 #include <boost/optional.hpp>
 #include <boost/none.hpp>
@@ -57,6 +58,16 @@ namespace storm {
                  */
                 bool isPrintJsonSet() const;
 
+								/*!
+                 * Retrieves the gradient descent method constraint method.
+								 */
+                boost::optional<derivative::GradientDescentConstraintMethod> getConstraintMethod() const;
+
+                /*!
+                 * Retrieves the gradient descent method constraint method as a string.
+                 */
+                std::string getConstraintMethodAsString() const;
+
                 /*!
                  * Retrieves the termination epsilon.
                  */
@@ -97,7 +108,9 @@ namespace storm {
                 const static std::string gradientDescentMethod;
                 const static std::string omitInconsequentialParams;
                 const static std::string startPoint;
+                const static std::string constraintMethod;
                 boost::optional<derivative::GradientDescentMethod> methodFromString(const std::string &str) const;
+                boost::optional<derivative::GradientDescentConstraintMethod> constraintMethodFromString(const std::string &str) const;
             };
 
         } // namespace modules

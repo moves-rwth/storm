@@ -161,6 +161,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             2,
             1e-6,
             boost::none,
+            storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
             true
     );
     adamChecker.specifyFormula(this->env(), checkTask);
@@ -200,6 +201,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             2,
             1e-6,
             boost::none,
+            storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
             true
     );
     radamChecker.specifyFormula(this->env(), checkTask);
@@ -225,6 +227,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             2,
             1e-6,
             boost::none,
+            storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
             true
     );
     momentumChecker.specifyFormula(this->env(), checkTask);
@@ -250,6 +253,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             2,
             1e-6,
             boost::none,
+            storm::derivative::GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
             true
     );
     nesterovChecker.specifyFormula(this->env(), checkTask);

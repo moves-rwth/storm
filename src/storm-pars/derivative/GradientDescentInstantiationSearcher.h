@@ -16,7 +16,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/utility/Stopwatch.h"
 #include "GradientDescentMethod.h"
-
+#include "GradientDescentConstraintMethod.h"
 
 namespace storm {
     namespace derivative {
@@ -50,6 +50,7 @@ namespace storm {
                     uint_fast64_t miniBatchSize = 32,
                     double terminationEpsilon = 1e-6,
                     boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>> startPoint = boost::none,
+                    GradientDescentConstraintMethod constraintMethod = GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
                     bool recordRun = false
             ) : model(model)
               , derivativeEvaluationHelper(std::make_unique<SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>>(model))
@@ -57,6 +58,7 @@ namespace storm {
               , startPoint(startPoint)
               , miniBatchSize(miniBatchSize)
               , terminationEpsilon(terminationEpsilon)
+              , constraintMethod(constraintMethod)
               , recordRun(recordRun) {
                 switch (method) {
                     case GradientDescentMethod::ADAM: {
@@ -240,6 +242,7 @@ namespace storm {
             boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>> startPoint;
             const uint_fast64_t miniBatchSize;
             const double terminationEpsilon;
+            const GradientDescentConstraintMethod constraintMethod;
 
             // This is for visualizing data
             const bool recordRun;
@@ -283,6 +286,8 @@ namespace storm {
             GradientDescentType gradientDescentType;
             // Only respected by some Gradient Descent methods, the ones that have a "sign" version in the GradientDescentMethod enum
             bool useSignsOnly;
+
+            double logarithmicBarrierTerm;
 
             ConstantType stochasticGradientDescent(
                 Environment const& env,
