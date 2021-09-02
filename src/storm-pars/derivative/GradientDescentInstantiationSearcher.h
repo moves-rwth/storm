@@ -199,6 +199,14 @@ namespace storm {
             );
 
             /**
+            * Perform Gradient Descent for optimization.
+            * @param env The environment. Pass the same environment as to specifyFormula.
+            */
+            std::pair<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>, ConstantType> gradientDescentOpt(
+                    Environment const& env
+            );
+
+            /**
              * Print the previously done run as JSON. This run can be retrieved using getVisualizationWalk.
              */
             void printRunAsJson();
@@ -280,6 +288,12 @@ namespace storm {
                 Environment const& env,
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> &position
             );
+
+            ConstantType stochasticGradientDescentOpt(
+                    Environment const& env,
+                    std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> &position
+            );
+
             ConstantType doStep(
                 typename utility::parametric::VariableType<FunctionType>::type steppingParameter,
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type> &position,

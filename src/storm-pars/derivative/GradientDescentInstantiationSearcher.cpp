@@ -379,6 +379,209 @@ namespace storm {
         }
 
         template<typename FunctionType, typename ConstantType>
+        std::pair<std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>, ConstantType> GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescentOpt(
+                Environment const& env
+        ) {
+            //TODO find a good breaking condition, for now, just iterate a bit
+            uint64_t maxIters = 2;
+            uint64_t currIter = 0;
+            STORM_LOG_ASSERT(this->currentCheckTask, "Call specifyFormula before calling gradientDescent");
+
+            resetDynamicValues();
+
+            STORM_LOG_ASSERT(this->currentCheckTask->isOptimizationDirectionSet(), "No optimization direction in formula!");
+
+            std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> bestInstantiation;
+            ConstantType bestValue;
+            switch (this->currentCheckTask->getOptimizationDirection()) {
+                case storm::OptimizationDirection::Maximize:
+                    bestValue = -utility::infinity<ConstantType>();
+                    break;
+                case storm::OptimizationDirection::Minimize:
+                    bestValue = utility::infinity<ConstantType>();
+                    break;
+            }
+
+            std::random_device device;
+            std::default_random_engine engine(device());
+            std::uniform_real_distribution<> dist(0, 1);
+            bool initialGuess = true;
+            while (true) {
+                std::cout << "Trying out a new starting point" << std::endl;
+                if (initialGuess) {
+                    std::cout << "Trying initial guess (p->0.5 for every parameter p or set start point)" << std::endl;
+                }
+                // Generate random starting point
+                std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
+                for (auto const& param : this->parameters) {
+                    if (initialGuess) {
+                        if (startPoint) {
+                            point[param] = (*startPoint)[param];
+                        } else {
+                            point[param] = utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
+                        }
+                    } else {
+                        point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
+                    }
+                }
+                initialGuess = false;
+
+                walk.clear();
+
+                stochasticWatch.start();
+                ConstantType prob = stochasticGradientDescentOpt(env, point);
+                stochasticWatch.stop();
+
+                bool isFoundPointBetter = false;
+                switch (this->currentCheckTask->getOptimizationDirection()) {
+                    case storm::OptimizationDirection::Maximize:
+                        isFoundPointBetter = prob > bestValue;
+                        break;
+                    case storm::OptimizationDirection::Minimize:
+                        isFoundPointBetter = prob < bestValue;
+                        break;
+                }
+                if (isFoundPointBetter) {
+                    bestInstantiation = point;
+                    bestValue = prob;
+                }
+                ++currIter;
+                if (currIter >= maxIters) {
+                    std::cout << "Aborting with value " << bestValue << " as max. number of iterations (" << maxIters << ") reached." << std::endl;
+                    break;
+                } else if (storm::utility::resources::isTerminate()) {
+                    break;
+                } else {
+                    std::cout << "Best found value so far: " << bestValue << std::endl;
+                    continue;
+                }
+            }
+
+            return std::make_pair(bestInstantiation, bestValue);
+        }
+
+        template<typename FunctionType, typename ConstantType>
+        ConstantType GradientDescentInstantiationSearcher<FunctionType, ConstantType>::stochasticGradientDescentOpt(
+                Environment const& env,
+                std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> &position
+        ) {
+            uint_fast64_t initialState;
+            const storm::storage::BitVector initialVector = model.getInitialStates();
+            for (uint_fast64_t x : initialVector) {
+                initialState = x;
+                break;
+            }
+
+            ConstantType currentValue;
+            switch (this->currentCheckTask->getOptimizationDirection()) {
+                case storm::OptimizationDirection::Maximize:
+                    currentValue = -utility::infinity<ConstantType>();
+                    break;
+                case storm::OptimizationDirection::Minimize:
+                    currentValue = utility::infinity<ConstantType>();
+                    break;
+            }
+            // We count the number of iterations where the value changes less than the threshold, and terminate if it is large enough.
+            uint64_t tinyChangeIterations = 0;
+
+            std::map<VariableType<FunctionType>, ConstantType> deltaVector;
+
+            std::vector<VariableType<FunctionType>> parameterEnumeration;
+            for (auto parameter : this->parameters) {
+                parameterEnumeration.push_back(parameter);
+            }
+
+            utility::Stopwatch printUpdateStopwatch;
+            printUpdateStopwatch.start();
+
+            // The index to keep track of what parameter(s) to consider next.
+            // The "mini-batch", so the parameters to consider, are parameterNum..parameterNum+miniBatchSize-1
+            uint_fast64_t parameterNum = 0;
+            for (uint_fast64_t stepNum = 0; true; ++stepNum) {
+                if (printUpdateStopwatch.getTimeInSeconds() >= 15) {
+                    printUpdateStopwatch.restart();
+                    std::cout << "Currently at ";
+                    std::cout << currentValue << std::endl;
+                }
+
+                std::vector<VariableType<FunctionType>> miniBatch;
+                for (uint_fast64_t i = parameterNum; i < std::min((uint_fast64_t) parameterEnumeration.size(), parameterNum + miniBatchSize); i++) {
+                    miniBatch.push_back(parameterEnumeration[i]);
+                }
+
+                ConstantType oldValue = currentValue;
+
+                // If nesterov is enabled, we need to compute the gradient on the predicted position
+                std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> nesterovPredictedPosition(position);
+                if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+                    for (auto const& parameter : miniBatch) {
+                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->momentumTerm)
+                                                                * storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->pastStep[parameter]);
+                        const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                        nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, nesterovPredictedPosition[parameter]);
+                        nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, nesterovPredictedPosition[parameter]);
+                    }
+                }
+                // Compute the value of our position and terminate if it satisfies the bound or is
+                // zero or one when computing probabilities. The "valueVector" (just the probability/expected
+                // reward for eventually reaching the target from every state) is also used for computing
+                // the gradient later. We only need one computation of the "valueVector" per mini-batch.
+                //
+                // If nesterov is activated, we need to do this twice. First, to check the value of the current position.
+                // Second, to compute the valueVector at the nesterovPredictedPosition.
+
+                // If nesterov is deactivated, then nesterovPredictedPosition == position.
+                std::unique_ptr<storm::modelchecker::CheckResult> intermediateResult = instantiationModelChecker->check(env, nesterovPredictedPosition);
+                std::vector<ConstantType> valueVector = intermediateResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+                    std::unique_ptr<storm::modelchecker::CheckResult> terminationResult = instantiationModelChecker->check(env, position);
+                    std::vector<ConstantType> terminationValueVector = terminationResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                    currentValue = terminationValueVector[initialState];
+                } else {
+                    currentValue = valueVector[initialState];
+                }
+
+                for (auto const& parameter : miniBatch) {
+                    auto checkResult = derivativeEvaluationHelper->check(env, nesterovPredictedPosition, parameter, valueVector);
+                    ConstantType delta = checkResult->getValueVector()[0];
+                    if (this->currentCheckTask->getOptimizationDirection() == storm::OptimizationDirection::Minimize) {
+                        delta *= -1;
+                    }
+                    deltaVector[parameter] = delta;
+                }
+
+                // Perform the step. The actualChange is the change in position the step caused. This is different from the
+                // delta in multiple ways: First, it's multiplied with the learning rate and stuff. Second, if the current value
+                // is at epsilon, and the delta would step out of the constrained which is then corrected, the actualChange is the
+                // change from the last to the current corrected position (so might be zero while the delta is not).
+                for (auto const& parameter : miniBatch) {
+                    doStep(parameter, position, deltaVector, stepNum);
+                }
+
+                if (storm::utility::abs<ConstantType>(oldValue - currentValue) < terminationEpsilon) {
+                    tinyChangeIterations += miniBatch.size();
+                    if (tinyChangeIterations > parameterEnumeration.size()) {
+                        break;
+                    }
+                } else {
+                    tinyChangeIterations = 0;
+                }
+
+                // Consider the next parameter
+                parameterNum = parameterNum + miniBatchSize;
+                if (parameterNum >= parameterEnumeration.size()) {
+                    parameterNum = 0;
+                }
+
+                if (storm::utility::resources::isTerminate()) {
+                    STORM_LOG_WARN("Aborting Gradient Descent, returning non-optimal value.");
+                    break;
+                }
+            }
+            return currentValue;
+        }
+
+        template<typename FunctionType, typename ConstantType>
         void GradientDescentInstantiationSearcher<FunctionType, ConstantType>::resetDynamicValues() {
             if (Adam* adam = boost::get<Adam>(&gradientDescentType)) {
                 for (auto const& parameter : this->parameters) {
