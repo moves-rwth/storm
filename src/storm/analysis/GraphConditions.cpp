@@ -96,7 +96,7 @@ namespace storm {
                             graphPreservingConstraintSet.emplace(transition.getValue().nominator().polynomialWithCoefficient(), storm::CompareRelation::NEQ);
                         }
                     }
-                    STORM_LOG_ASSERT(!storm::utility::isConstant(sum) || storm::utility::isOne(sum), "If the sum is a constant, it must be equal to 1.");
+                    STORM_LOG_ASSERT(!storm::utility::isConstant(sum) || storm::utility::isOne(sum), "If the sum is a constant, it must be equal to 1. Sum value: " << sum);
                     if(!storm::utility::isConstant(sum)) {
                         // Assert: sum == 1
                         wellformedConstraintSet.emplace((sum.nominator() - sum.denominator()).polynomialWithCoefficient(), storm::CompareRelation::EQ);
