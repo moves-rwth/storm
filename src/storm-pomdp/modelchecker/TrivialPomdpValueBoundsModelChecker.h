@@ -16,7 +16,7 @@ namespace storm {
                 // Vectors containing upper and lower bound values for the POMDP states
                 std::vector<std::vector<ValueType>> lower;
                 std::vector<std::vector<ValueType>> upper;
-
+                std::vector<ValueType> parametric;
                 /**
                  * Picks the largest precomputed lower bound for a given state of the POMDP
                  * @param state the state ID
@@ -29,6 +29,9 @@ namespace storm {
                  * @return the smallest upper bound value
                  */
                 ValueType getSmallestUpperBound(uint64_t const& state);
+
+                ValueType getParametricBound(uint64_t const& state);
+
             };
 
             /**

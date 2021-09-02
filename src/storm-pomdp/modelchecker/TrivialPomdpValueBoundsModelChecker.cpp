@@ -41,6 +41,12 @@ namespace storm {
             }
 
             template<typename ValueType>
+            ValueType TrivialPomdpValueBounds<ValueType>::getParametricBound(uint64_t const& state) {
+                STORM_LOG_ASSERT(!parametric.empty(), "requested a parametric bound but none was available");
+                return parametric[state];
+            }
+
+            template<typename ValueType>
             ValueType ExtremePOMDPValueBound<ValueType>::getValueForState(uint64_t const& state) {
                 STORM_LOG_ASSERT(!values.empty(), "requested an extreme bound but none were available");
                 return values[state];
