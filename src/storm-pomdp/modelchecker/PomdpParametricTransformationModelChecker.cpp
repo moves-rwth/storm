@@ -6,7 +6,9 @@
 #include "storm-pars/api/region.h"
 #include "storm/analysis/GraphConditions.h"
 
-#include <storm-pars/settings/modules/MonotonicitySettings.h>
+#include "storm-pars/settings/modules/MonotonicitySettings.h"
+#include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 namespace storm {
     namespace pomdp {
@@ -44,7 +46,24 @@ namespace storm {
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 pmc->printModelInformationToStream(std::cout);
 
-                //storm::api::exportSparseModelAsDot(pmc, "test.dot");
+                // END TRANSFORMATION
+
+                storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>> simplifier(*(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
+
+                if (!simplifier.simplify(formula)){
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+                }
+                auto modelSimplified = simplifier.getSimplifiedModel();
+
+                modelSimplified->printModelInformationToStream(std::cout);
+
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gradientDescentInstantiationSearcher(*(modelSimplified->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
+
+                gradientDescentInstantiationSearcher.specifyFormula(Environment(), storm::api::createTask<storm::RationalFunction>(formula.asSharedPointer(), false));
+
+                auto gradDescResult = gradientDescentInstantiationSearcher.gradientDescentOpt(Environment());
+
+                /*
                 std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> lowerBoundaries;
                 std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> upperBoundaries;
 
@@ -52,7 +71,7 @@ namespace storm {
                 auto const& parameterSet = constraints.getVariables();
                 std::vector<storm::RationalFunctionVariable> parameters(parameterSet.begin(), parameterSet.end());
                 //TODO bound
-                storm::RationalFunctionCoefficient bound = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(precision);
+                storm::RationalFunctionCoefficient bound = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.01);
                 for (auto const& parameter : parameters) {
                     lowerBoundaries.emplace(std::make_pair(parameter, 0+bound));
                     upperBoundaries.emplace(std::make_pair(parameter, 1-bound));
@@ -62,15 +81,18 @@ namespace storm {
                 boost::optional<storm::RationalFunction> prec;
                 prec = storm::utility::convertNumber<storm::RationalFunction>(precision);
 
-                auto extremalValues = storm::api::computeExtremalValue(pmc, storm::api::createTask<storm::RationalFunction>(formula.asSharedPointer(), false), parRegion, storm::modelchecker::RegionCheckEngine::ExactParameterLifting, formulaInfo.getOptimizationDirection(), prec , storm::api::MonotonicitySetting(true, true, false), true);
-
+                auto extremalValues = storm::api::computeExtremalValue(pmc, storm::api::createTask<storm::RationalFunction>(formula.asSharedPointer(), false), parRegion, storm::modelchecker::RegionCheckEngine::ParameterLifting, formulaInfo.getOptimizationDirection(), prec , storm::api::MonotonicitySetting(false, false, false), true);
+*/
                 // the POMDPs we consider are binary, thus one value suffices for each observation
                 std::vector<double> obsChoiceWeight(memPomdp->getNrObservations(), 1);
 
-                for(auto const &parVal : extremalValues.second){
+                //for(auto const &parVal : extremalValues.second){
+                for(auto const &parVal : gradDescResult.first){
+
                     auto par = parVal.first;
                     auto val = parVal.second;
                     std::string parName = par.name();
+                    STORM_LOG_DEBUG("PAR " << parName << " --  VAL: " << val);
                     parName.erase (std::remove(parName.begin(), parName.end(), 'p'), parName.end());
 
                     std::vector<std::string> splitValues;
@@ -101,6 +123,12 @@ namespace storm {
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+
+                std::stringstream resStr;
+                resStr << "Parametric Preprocessing Result: ";
+                resStr << (formulaInfo.maximize() ? "≥ " : "≤ ");
+                resStr << pomdpSchedulerResult[0];
+                STORM_PRINT_AND_LOG(resStr.str() << std::endl);
 
                 std::vector<ValueType> result(pomdp.getNumberOfStates());
 
