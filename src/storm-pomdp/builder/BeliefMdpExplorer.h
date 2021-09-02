@@ -162,6 +162,8 @@ namespace storm {
 
             ValueType computeUpperValueBoundAtBelief(BeliefId const &beliefId) const;
 
+            ValueType computeParametricBoundAtBelief(BeliefId const &beliefId) const;
+
             void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir);
 
             bool hasComputedValues() const;
@@ -200,6 +202,10 @@ namespace storm {
             ValueType getTrivialUpperBoundAtPOMDPState(uint64_t const &pomdpState);
 
             ValueType getTrivialLowerBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            ValueType getParametricBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            bool hasParametricBounds();
 
             void setExtremeValueBound(storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> valueBound);
 
