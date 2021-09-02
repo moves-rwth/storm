@@ -256,12 +256,12 @@ namespace storm {
                         manager->setRewardModel(rewardModelName);
                     }
                     auto approx = std::make_shared<ExplorerType>(manager, trivialPOMDPBounds);
-                    HeuristicParameters heuristicParameters;
-                    heuristicParameters.gapThreshold = options.gapThresholdInit;
-                    heuristicParameters.observationThreshold = options.obsThresholdInit; // Actually not relevant without refinement
-                    heuristicParameters.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
-                    heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
-                    heuristicParameters.clippingThreshold = options.clippingThresholdInit;
+                    HeuristicParameters heuristicParameters = {
+                            .gapThreshold = options.gapThresholdInit,
+                            .observationThreshold = options.obsThresholdInit, // Actually not relevant without refinement
+                            .sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit,
+                            .clippingThreshold = options.clippingThresholdInit,
+                            .optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit,};
 
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, observationResolutionVector, manager, approx);
                     if (approx->hasComputedValues()) {
@@ -285,11 +285,12 @@ namespace storm {
                     }
 
                     auto approx = std::make_shared<ExplorerType>(manager, trivialPOMDPBounds, options.explorationHeuristic);
-                    HeuristicParameters heuristicParameters;
-                    heuristicParameters.gapThreshold = options.gapThresholdInit;
-                    heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
-                    heuristicParameters.sizeThreshold = options.sizeThresholdInit;
-                    heuristicParameters.clippingThreshold = options.clippingThresholdInit;
+                    HeuristicParameters heuristicParameters = {
+                            .gapThreshold = options.gapThresholdInit,
+                            .observationThreshold = options.obsThresholdInit, // Actually not relevant without refinement
+                            .sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit,
+                            .clippingThreshold = options.clippingThresholdInit,
+                            .optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit,};
                     if (heuristicParameters.sizeThreshold == 0) {
                         if (options.explorationTimeLimit) {
                             heuristicParameters.sizeThreshold = std::numeric_limits<uint64_t>::max();
