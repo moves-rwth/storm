@@ -36,9 +36,9 @@ namespace storm {
                         auto state = *itr;
                         auto &successors = this->stateMap[state][0];
                         bool all = true;
-                        for (auto i = 0; i < successors.size(); ++i) {
+                        for (uint_fast64_t i = 0; i < successors.size(); ++i) {
                             auto state1 = successors[i];
-                            for (auto j = i + 1; j < successors.size(); ++j) {
+                            for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
                                 auto state2 = successors[j];
                                 if (min[state1] > max[state2]) {
                                     if (!order->contains(state1)) {

@@ -50,9 +50,9 @@ namespace storm {
                             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Insufficient scheduler to continue extending order.");
                         }
                         bool all = true;
-                        for (auto i = 0; i < successors.size(); ++i) {
+                        for (uint_fast64_t i = 0; i < successors.size(); ++i) {
                             auto state1 = successors[i];
-                            for (auto j = i + 1; j < successors.size(); ++j) {
+                            for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
                                 auto state2 = successors[j];
                                 if (min[state1] > max[state2]) {
                                     if (!order->contains(state1)) {
@@ -241,7 +241,7 @@ namespace storm {
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[0];
                         boost::optional<storm::RationalFunction> bestFunc;
-                        auto index = 0;
+                        uint_fast64_t index = 0;
                         auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
                         while (index < numberOfOptionsForState) {
                             auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
@@ -265,12 +265,12 @@ namespace storm {
                         } else {
                             // else use SMT solver
                             std::vector<uint64_t> candidates;
-                            auto index = 0;
+                            uint_fast64_t index = 0;
                             auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
                             while (index < numberOfOptionsForState) {
                                 auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
                                 bool in = true;
-                                for (auto i = 0; i < candidates.size(); i++){
+                                for (uint_fast64_t i = 0; i < candidates.size(); i++){
                                     auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
                                     auto compRes = actionSmtCompare(&rowA, &rowB, orderedSuccs, order);
                                     if(compRes == GEQ){
@@ -340,7 +340,7 @@ namespace storm {
                             while (index < numberOfOptionsForState) {
                                 auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
                                 bool in = true;
-                                for (auto i = 0; i < candidates.size(); i++){
+                                for (uint_fast64_t i = 0; i < candidates.size(); i++){
                                     auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
                                     auto compRes = actionSmtCompare(&rowA, &rowB, orderedSuccs, order);
                                     if(compRes == LEQ){
@@ -447,7 +447,7 @@ namespace storm {
             uint64_t bestAct;
             std::vector<storage::BitVector> bitVecTable = std::vector<storage::BitVector>(noa);
             bool foundOne = false;
-            for (auto i = 0; i < noa; i++) {
+            for (uint_fast64_t i = 0; i < noa; i++) {
                 storage::BitVector hitSuccs = getHitSuccs(state, i, orderedSuccs);
                 if (hitSuccs[0]){
                     if (foundOne) {
@@ -461,7 +461,7 @@ namespace storm {
             }
             storage::BitVector candidate = bitVecTable[bestAct];
             storage::BitVector others = storage::BitVector(orderedSuccs.size(), false);
-            for (auto i = 0; i < noa; i++) {
+            for (uint_fast64_t i = 0; i < noa; i++) {
                 if(i != bestAct) others |= bitVecTable[i];
             }
 
@@ -492,7 +492,7 @@ namespace storm {
             // Turn everything we know about our succs into expressions
             expressions::Expression exprStateVars = manager->boolean(true);
             std::set<std::string> stateVarNames;
-            for (auto i = 0; i < occSuccs.size(); i++) {
+            for (uint_fast64_t i = 0; i < occSuccs.size(); i++) {
                 std::string varName = "s" + std::to_string(occSuccs[i]);
                 stateVarNames.insert(varName);
                 auto var = manager->declareRationalVariable(varName);

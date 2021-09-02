@@ -36,8 +36,8 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
 
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(dtmc->getNumberOfStates(), 193);
-    ASSERT_EQ(dtmc->getNumberOfTransitions(), 383);
+    ASSERT_EQ(dtmc->getNumberOfStates(), 193ul);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ul);
 
     // Create the region
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
