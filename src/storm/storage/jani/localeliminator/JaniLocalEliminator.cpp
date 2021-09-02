@@ -93,11 +93,22 @@ namespace storm {
                     automaton.finalize(newModel);
 
                     automaton.pushEdgeAssignmentsToDestinations();
+
+                    for (auto &var : automaton.getVariables()){
+                        if (var.isBoundedIntegerVariable()){
+                            var.setTransient(false);
+                        }
+                    }
                 }
 
                 for (auto &var : newModel.getGlobalVariables()){
-                    var.setTransient(false);
+                    // Only make integer variables non-transient, as those are the only variables added during the
+                    // process and all others were present since the beginning.
+                    if (var.isBoundedIntegerVariable()){
+                        var.setTransient(false);
+                    }
                 }
+
                 newModel.finalize();
             }
             log = session.getLog();
