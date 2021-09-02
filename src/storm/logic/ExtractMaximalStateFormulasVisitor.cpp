@@ -39,7 +39,7 @@ namespace storm {
                 return CloneVisitor::visit(f, data);
             }
 
-            STORM_LOG_THROW(true, storm::exceptions::InvalidOperationException, "Can not extract maximal state formulas for bounded until");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not extract maximal state formulas for bounded until");
             // never reached
             return boost::any();
         }

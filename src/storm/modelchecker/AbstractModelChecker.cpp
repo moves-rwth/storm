@@ -67,12 +67,14 @@ namespace storm {
                 return this->computeStateFormulaProbabilities(env, checkTask.substituteFormula(formula));
             }
 
-            if (formula.info(false).containsComplexPathFormula()) {
+            if (formula.isHOAPathFormula()) {
+               return this->computeHOAPathProbabilities(env, checkTask.substituteFormula(formula.asHOAPathFormula()));
+            } else if (formula.isConditionalProbabilityFormula()) {
+                return this->computeConditionalProbabilities(env, checkTask.substituteFormula(formula.asConditionalFormula()));
+            } else if (formula.info(false).containsComplexPathFormula()) {
                 // we need to do LTL model checking
                 return this->computeLTLProbabilities(env, checkTask.substituteFormula(formula.asPathFormula()));
-            }
-
-            if (formula.isBoundedUntilFormula()) {
+            } else if (formula.isBoundedUntilFormula()) {
                 return this->computeBoundedUntilProbabilities(env, checkTask.substituteFormula(formula.asBoundedUntilFormula()));
             } else if (formula.isReachabilityProbabilityFormula()) {
                 return this->computeReachabilityProbabilities(env, checkTask.substituteFormula(formula.asReachabilityProbabilityFormula()));
@@ -80,12 +82,8 @@ namespace storm {
                 return this->computeGloballyProbabilities(env, checkTask.substituteFormula(formula.asGloballyFormula()));
             } else if (formula.isUntilFormula()) {
                 return this->computeUntilProbabilities(env, checkTask.substituteFormula(formula.asUntilFormula()));
-            } else if (formula.isHOAPathFormula()) {
-                return this->computeHOAPathProbabilities(env, checkTask.substituteFormula(formula.asHOAPathFormula()));
             } else if (formula.isNextFormula()) {
                 return this->computeNextProbabilities(env, checkTask.substituteFormula(formula.asNextFormula()));
-            } else if (formula.isConditionalProbabilityFormula()) {
-                return this->computeConditionalProbabilities(env, checkTask.substituteFormula(formula.asConditionalFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
