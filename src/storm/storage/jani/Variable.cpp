@@ -78,6 +78,10 @@ namespace storm {
         void Variable::setInitExpression(storm::expressions::Expression const& initialExpression) {
             this->init = initialExpression;
         }
+
+        void Variable::setTransient(bool transient) {
+            this->transient = transient;
+        }
         
         BooleanVariable& Variable::asBooleanVariable() {
             return static_cast<BooleanVariable&>(*this);

@@ -4,6 +4,7 @@
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/storage/jani/JaniScopeChanger.h"
 #include "storm/storage/jani/JSONExporter.h"
 
@@ -55,6 +56,12 @@ namespace storm {
 
             if (options.simplifyComposition) {
                 janiModel.simplifyComposition();
+            }
+
+            if (options.reduceStateSpace) {
+                jani::JaniLocalEliminator eliminator = jani::JaniLocalEliminator(janiModel, properties);
+                eliminator.eliminate();
+                janiModel = eliminator.getResult();
             }
             
             if (options.flatten) {

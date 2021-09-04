@@ -58,6 +58,10 @@ namespace storm {
         storm::expressions::Expression const& Edge::getGuard() const {
             return templateEdge->getGuard();
         }
+
+        void Edge::setGuard(const expressions::Expression &guard) {
+            templateEdge->setGuard(guard);
+        }
         
         EdgeDestination const& Edge::getDestination(uint64_t index) const {
             return destinations[index];

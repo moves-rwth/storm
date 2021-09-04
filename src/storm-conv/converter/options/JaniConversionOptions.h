@@ -47,7 +47,9 @@ namespace storm {
             
             /// If set, attempts to simplify the system composition
             bool simplifyComposition;
-            
+
+            /// If set, attempts to perform local elimination of states to reduce the state space of the final model
+            bool reduceStateSpace;
         };
     }
 }

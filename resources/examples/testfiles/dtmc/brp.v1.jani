@@ -1,0 +1,1550 @@
+{
+    "actions": [
+        {
+            "name": "NewFile"
+        },
+        {
+            "name": "SyncWait"
+        },
+        {
+            "name": "TO_Ack"
+        },
+        {
+            "name": "TO_Msg"
+        },
+        {
+            "name": "aA"
+        },
+        {
+            "name": "aB"
+        },
+        {
+            "name": "aF"
+        },
+        {
+            "name": "aG"
+        }
+    ],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 5",
+                                    "ref": "s",
+                                    "value": 5
+                                },
+                                {
+                                    "comment": "srep <- 1",
+                                    "ref": "srep",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((s = 3) & (nrtr = MAX)) & (i < N))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 3
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "nrtr",
+                                    "op": "=",
+                                    "right": "MAX"
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "i",
+                                "op": "<",
+                                "right": "N"
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 5",
+                                    "ref": "s",
+                                    "value": 5
+                                },
+                                {
+                                    "comment": "srep <- 2",
+                                    "ref": "srep",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((s = 3) & (nrtr = MAX)) & (i = N))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 3
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "nrtr",
+                                    "op": "=",
+                                    "right": "MAX"
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "i",
+                                "op": "=",
+                                "right": "N"
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "i <- (i + 1)",
+                                    "ref": "i",
+                                    "value": {
+                                        "left": "i",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((s = 4) & (i < N))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 4
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "i",
+                                "op": "<",
+                                "right": "N"
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 0",
+                                    "ref": "s",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "srep <- 3",
+                                    "ref": "srep",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((s = 4) & (i = N))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 4
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "i",
+                                "op": "=",
+                                "right": "N"
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "NewFile",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "srep <- 0",
+                                    "ref": "srep",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "i <- 1",
+                                    "ref": "i",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 0)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "SyncWait",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 6",
+                                    "ref": "s",
+                                    "value": 6
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 5)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 5
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "SyncWait",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s_ab <- false",
+                                    "ref": "s_ab",
+                                    "value": false
+                                },
+                                {
+                                    "comment": "s <- 0",
+                                    "ref": "s",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 6)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 6
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "TO_Ack",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 2)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "TO_Msg",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 2)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aB",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s_ab <- !(s_ab)",
+                                    "ref": "s_ab",
+                                    "value": {
+                                        "exp": "s_ab",
+                                        "op": "¬"
+                                    }
+                                },
+                                {
+                                    "comment": "s <- 4",
+                                    "ref": "s",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 2)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aF",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "bs <- s_ab",
+                                    "ref": "bs",
+                                    "value": "s_ab"
+                                },
+                                {
+                                    "comment": "fs <- (i = 1)",
+                                    "ref": "fs",
+                                    "value": {
+                                        "left": "i",
+                                        "op": "=",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "ls <- (i = N)",
+                                    "ref": "ls",
+                                    "value": {
+                                        "left": "i",
+                                        "op": "=",
+                                        "right": "N"
+                                    }
+                                },
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "nrtr <- 0",
+                                    "ref": "nrtr",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 1)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aF",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "bs <- s_ab",
+                                    "ref": "bs",
+                                    "value": "s_ab"
+                                },
+                                {
+                                    "comment": "fs <- (i = 1)",
+                                    "ref": "fs",
+                                    "value": {
+                                        "left": "i",
+                                        "op": "=",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "ls <- (i = N)",
+                                    "ref": "ls",
+                                    "value": {
+                                        "left": "i",
+                                        "op": "=",
+                                        "right": "N"
+                                    }
+                                },
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "nrtr <- (nrtr + 1)",
+                                    "ref": "nrtr",
+                                    "value": {
+                                        "left": "nrtr",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((s = 3) & (nrtr < MAX))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 3
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "nrtr",
+                                "op": "<",
+                                "right": "MAX"
+                            }
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "sender",
+            "variables": []
+        },
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r_ab <- br",
+                                    "ref": "r_ab",
+                                    "value": "br"
+                                },
+                                {
+                                    "comment": "r <- 2",
+                                    "ref": "r",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(r = 1)",
+                        "exp": {
+                            "left": "r",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r <- 3",
+                                    "ref": "r",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "rrep <- 1",
+                                    "ref": "rrep",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((((r = 2) & (r_ab = br)) & (fr = true)) & (lr = false))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "lr",
+                                    "op": "=",
+                                    "right": false
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "r_ab",
+                                    "op": "=",
+                                    "right": "br"
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": {
+                                    "left": "fr",
+                                    "op": "=",
+                                    "right": true
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "r",
+                                    "op": "=",
+                                    "right": 2
+                                }
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r <- 3",
+                                    "ref": "r",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "rrep <- 2",
+                                    "ref": "rrep",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((((r = 2) & (r_ab = br)) & (fr = false)) & (lr = false))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "lr",
+                                    "op": "=",
+                                    "right": false
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "r_ab",
+                                    "op": "=",
+                                    "right": "br"
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": {
+                                    "left": "fr",
+                                    "op": "=",
+                                    "right": false
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "r",
+                                    "op": "=",
+                                    "right": 2
+                                }
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r <- 3",
+                                    "ref": "r",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "rrep <- 3",
+                                    "ref": "rrep",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((((r = 2) & (r_ab = br)) & (fr = false)) & (lr = true))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "lr",
+                                    "op": "=",
+                                    "right": true
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "r_ab",
+                                    "op": "=",
+                                    "right": "br"
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": {
+                                    "left": "fr",
+                                    "op": "=",
+                                    "right": false
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "r",
+                                    "op": "=",
+                                    "right": 2
+                                }
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "SyncWait",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r <- 0",
+                                    "ref": "r",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(r = 0)",
+                        "exp": {
+                            "left": "r",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "SyncWait",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r <- 5",
+                                    "ref": "r",
+                                    "value": 5
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((r = 4) & (ls = true))",
+                        "exp": {
+                            "left": {
+                                "left": "r",
+                                "op": "=",
+                                "right": 4
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "ls",
+                                "op": "=",
+                                "right": true
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "SyncWait",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r <- 5",
+                                    "ref": "r",
+                                    "value": 5
+                                },
+                                {
+                                    "comment": "rrep <- 4",
+                                    "ref": "rrep",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((r = 4) & (ls = false))",
+                        "exp": {
+                            "left": {
+                                "left": "r",
+                                "op": "=",
+                                "right": 4
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "ls",
+                                "op": "=",
+                                "right": false
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "SyncWait",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r <- 0",
+                                    "ref": "r",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "rrep <- 0",
+                                    "ref": "rrep",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(r = 5)",
+                        "exp": {
+                            "left": "r",
+                            "op": "=",
+                            "right": 5
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aA",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r_ab <- !(r_ab)",
+                                    "ref": "r_ab",
+                                    "value": {
+                                        "exp": "r_ab",
+                                        "op": "¬"
+                                    }
+                                },
+                                {
+                                    "comment": "r <- 4",
+                                    "ref": "r",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(r = 3)",
+                        "exp": {
+                            "left": "r",
+                            "op": "=",
+                            "right": 3
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aA",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "r <- 4",
+                                    "ref": "r",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((r = 2) & !((r_ab = br)))",
+                        "exp": {
+                            "left": {
+                                "left": "r",
+                                "op": "=",
+                                "right": 2
+                            },
+                            "op": "∧",
+                            "right": {
+                                "exp": {
+                                    "left": "r_ab",
+                                    "op": "=",
+                                    "right": "br"
+                                },
+                                "op": "¬"
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aG",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "fr <- fs",
+                                    "ref": "fr",
+                                    "value": "fs"
+                                },
+                                {
+                                    "comment": "lr <- ls",
+                                    "ref": "lr",
+                                    "value": "ls"
+                                },
+                                {
+                                    "comment": "br <- bs",
+                                    "ref": "br",
+                                    "value": "bs"
+                                },
+                                {
+                                    "comment": "recv <- T",
+                                    "ref": "recv",
+                                    "value": "T"
+                                },
+                                {
+                                    "comment": "r <- 1",
+                                    "ref": "r",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(r = 0)",
+                        "exp": {
+                            "left": "r",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aG",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "fr <- fs",
+                                    "ref": "fr",
+                                    "value": "fs"
+                                },
+                                {
+                                    "comment": "lr <- ls",
+                                    "ref": "lr",
+                                    "value": "ls"
+                                },
+                                {
+                                    "comment": "br <- bs",
+                                    "ref": "br",
+                                    "value": "bs"
+                                },
+                                {
+                                    "comment": "recv <- T",
+                                    "ref": "recv",
+                                    "value": "T"
+                                },
+                                {
+                                    "comment": "r <- 2",
+                                    "ref": "r",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(r = 4)",
+                        "exp": {
+                            "left": "r",
+                            "op": "=",
+                            "right": 4
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "receiver",
+            "variables": []
+        },
+        {
+            "edges": [
+                {
+                    "action": "NewFile",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "T <- true",
+                                    "ref": "T",
+                                    "value": true
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(T = false)",
+                        "exp": {
+                            "left": "T",
+                            "op": "=",
+                            "right": false
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "checker",
+            "variables": []
+        },
+        {
+            "edges": [
+                {
+                    "action": "TO_Msg",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "k <- 0",
+                                    "ref": "k",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(k = 2)",
+                        "exp": {
+                            "left": "k",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aF",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "k <- 1",
+                                    "ref": "k",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "49/50",
+                                "exp": 0.98
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "k <- 2",
+                                    "ref": "k",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/50",
+                                "exp": 0.02
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(k = 0)",
+                        "exp": {
+                            "left": "k",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aG",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "k <- 0",
+                                    "ref": "k",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(k = 1)",
+                        "exp": {
+                            "left": "k",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "channelK",
+            "variables": []
+        },
+        {
+            "edges": [
+                {
+                    "action": "TO_Ack",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "l <- 0",
+                                    "ref": "l",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(l = 2)",
+                        "exp": {
+                            "left": "l",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aA",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "l <- 1",
+                                    "ref": "l",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "99/100",
+                                "exp": 0.99
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "l <- 2",
+                                    "ref": "l",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/100",
+                                "exp": 0.01
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(l = 0)",
+                        "exp": {
+                            "left": "l",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "action": "aB",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "l <- 0",
+                                    "ref": "l",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(l = 1)",
+                        "exp": {
+                            "left": "l",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "channelL",
+            "variables": []
+        }
+    ],
+    "constants": [
+        {
+            "name": "N",
+            "type": "int"
+        },
+        {
+            "name": "MAX",
+            "type": "int"
+        }
+    ],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "brp",
+    "properties": [
+        {
+            "expression": {
+                "fun": "values",
+                "op": "filter",
+                "states": {
+                    "op": "initial"
+                },
+                "values": {
+                    "exp": {
+                        "left": true,
+                        "op": "U",
+                        "right": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 5
+                        }
+                    },
+                    "op": "Pmin"
+                }
+            },
+            "name": "p1"
+        },
+        {
+            "expression": {
+                "fun": "values",
+                "op": "filter",
+                "states": {
+                    "op": "initial"
+                },
+                "values": {
+                    "exp": {
+                        "left": true,
+                        "op": "U",
+                        "right": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 5
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "srep",
+                                "op": "=",
+                                "right": 2
+                            }
+                        }
+                    },
+                    "op": "Pmin"
+                }
+            },
+            "name": "p2"
+        },
+        {
+            "expression": {
+                "fun": "values",
+                "op": "filter",
+                "states": {
+                    "op": "initial"
+                },
+                "values": {
+                    "exp": {
+                        "left": true,
+                        "op": "U",
+                        "right": {
+                            "left": {
+                                "exp": {
+                                    "left": "srep",
+                                    "op": "=",
+                                    "right": 0
+                                },
+                                "op": "¬"
+                            },
+                            "op": "∧",
+                            "right": {
+                                "exp": "recv",
+                                "op": "¬"
+                            }
+                        }
+                    },
+                    "op": "Pmin"
+                }
+            },
+            "name": "p4"
+        }
+    ],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "sender"
+            },
+            {
+                "automaton": "receiver"
+            },
+            {
+                "automaton": "checker"
+            },
+            {
+                "automaton": "channelK"
+            },
+            {
+                "automaton": "channelL"
+            }
+        ],
+        "syncs": [
+            {
+                "result": "NewFile",
+                "synchronise": [
+                    "NewFile",
+                    null,
+                    "NewFile",
+                    null,
+                    null
+                ]
+            },
+            {
+                "result": "SyncWait",
+                "synchronise": [
+                    "SyncWait",
+                    "SyncWait",
+                    null,
+                    null,
+                    null
+                ]
+            },
+            {
+                "result": "TO_Ack",
+                "synchronise": [
+                    "TO_Ack",
+                    null,
+                    null,
+                    null,
+                    "TO_Ack"
+                ]
+            },
+            {
+                "result": "TO_Msg",
+                "synchronise": [
+                    "TO_Msg",
+                    null,
+                    null,
+                    "TO_Msg",
+                    null
+                ]
+            },
+            {
+                "result": "aA",
+                "synchronise": [
+                    null,
+                    "aA",
+                    null,
+                    null,
+                    "aA"
+                ]
+            },
+            {
+                "result": "aB",
+                "synchronise": [
+                    "aB",
+                    null,
+                    null,
+                    null,
+                    "aB"
+                ]
+            },
+            {
+                "result": "aF",
+                "synchronise": [
+                    "aF",
+                    null,
+                    null,
+                    "aF",
+                    null
+                ]
+            },
+            {
+                "result": "aG",
+                "synchronise": [
+                    null,
+                    "aG",
+                    null,
+                    "aG",
+                    null
+                ]
+            }
+        ]
+    },
+    "type": "dtmc",
+    "variables": [
+        {
+            "initial-value": 0,
+            "name": "s",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 6
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "srep",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 3
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "nrtr",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": "MAX"
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "i",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": "N"
+            }
+        },
+        {
+            "initial-value": false,
+            "name": "bs",
+            "type": "bool"
+        },
+        {
+            "initial-value": false,
+            "name": "s_ab",
+            "type": "bool"
+        },
+        {
+            "initial-value": false,
+            "name": "fs",
+            "type": "bool"
+        },
+        {
+            "initial-value": false,
+            "name": "ls",
+            "type": "bool"
+        },
+        {
+            "initial-value": 0,
+            "name": "r",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 5
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "rrep",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 4
+            }
+        },
+        {
+            "initial-value": false,
+            "name": "fr",
+            "type": "bool"
+        },
+        {
+            "initial-value": false,
+            "name": "lr",
+            "type": "bool"
+        },
+        {
+            "initial-value": false,
+            "name": "br",
+            "type": "bool"
+        },
+        {
+            "initial-value": false,
+            "name": "r_ab",
+            "type": "bool"
+        },
+        {
+            "initial-value": false,
+            "name": "recv",
+            "type": "bool"
+        },
+        {
+            "initial-value": false,
+            "name": "T",
+            "type": "bool"
+        },
+        {
+            "initial-value": 0,
+            "name": "k",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 2
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "l",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 2
+            }
+        }
+    ]
+}

@@ -7,7 +7,7 @@ namespace storm {
             // Intentionally left empty
         }
 
-        JaniConversionOptions::JaniConversionOptions(storm::settings::modules::JaniExportSettings const& settings) : locationVariables(settings.getLocationVariables()), edgeAssignments(settings.isAllowEdgeAssignmentsSet()), flatten(settings.isExportFlattenedSet()), substituteConstants(true), localVars(settings.isLocalVarsSet()), globalVars(settings.isGlobalVarsSet()), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()), addPropertyConstants(true), replaceUnassignedVariablesWithConstants(settings.isReplaceUnassignedVariablesWithConstantsSet()), simplifyComposition(settings.isSimplifyCompositionSet()) {
+        JaniConversionOptions::JaniConversionOptions(storm::settings::modules::JaniExportSettings const& settings) : locationVariables(settings.getLocationVariables()), edgeAssignments(settings.isAllowEdgeAssignmentsSet()), flatten(settings.isExportFlattenedSet()), substituteConstants(true), localVars(settings.isLocalVarsSet()), globalVars(settings.isGlobalVarsSet()), allowedModelFeatures(storm::jani::getAllKnownModelFeatures()), addPropertyConstants(true), replaceUnassignedVariablesWithConstants(settings.isReplaceUnassignedVariablesWithConstantsSet()), simplifyComposition(settings.isSimplifyCompositionSet()), reduceStateSpace(settings.isReduceStateSpaceSet()) {
             if (settings.isEliminateFunctionsSet()) {
                 allowedModelFeatures.remove(storm::jani::ModelFeature::Functions);
             }
