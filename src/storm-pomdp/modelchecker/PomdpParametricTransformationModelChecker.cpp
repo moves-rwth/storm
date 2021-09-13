@@ -141,8 +141,8 @@ namespace storm {
                     }
                 }
 
-                for (uint64_t state = 0; state < memPomdp->getNumberOfStates(); ++state) {
-                    result[transformResult.transformedStateToOriginalStateMap[state] / memoryBound] = formulaInfo.maximize() ? storm::utility::max(result[transformResult.transformedStateToOriginalStateMap[state] / memoryBound], pomdpSchedulerResult[state]) :  storm::utility::min(result[transformResult.transformedStateToOriginalStateMap[state] / memoryBound], pomdpSchedulerResult[state]);
+                for (uint64_t state = 0; state < pomdp.getNumberOfStates() * memoryBound; ++state) {
+                    result[state / memoryBound] = formulaInfo.maximize() ? storm::utility::max(result[state / memoryBound], pomdpSchedulerResult[state]) :  storm::utility::min(result[state / memoryBound], pomdpSchedulerResult[state]);
                 }
 
                 // Cleanup values close to zero
