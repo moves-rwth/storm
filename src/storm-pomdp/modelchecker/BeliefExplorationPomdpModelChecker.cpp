@@ -982,6 +982,18 @@ namespace storm {
                                 } // end isClippable
                             }
                         }
+
+                        // Add parametric cut-off transitions if parametric bounds exist (theoretically also possible to always add the transition)
+                        if(underApproximation->hasParametricBounds()){
+                            if(computeRewards){
+                                underApproximation->addTransitionsToExtraStates(addedActions, storm::utility::one<ValueType>());
+                                underApproximation->addRewardToCurrentState(addedActions, underApproximation->computeParametricBoundAtBelief(currId));
+                            } else {
+                                underApproximation->addTransitionsToExtraStates(addedActions, underApproximation->computeParametricBoundAtBelief(currId), storm::utility::one<ValueType>() - underApproximation->computeParametricBoundAtBelief(currId));
+                            }
+                            ++addedActions;
+                        }
+
                         // Add successor transitions or cut-off transitions when exploration is stopped
                         for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                             // Always restore old behavior if available
@@ -1005,18 +1017,6 @@ namespace storm {
                                     }
                                 }
                                 if (stopExploration) {
-                                    // Check if a parametric preprocessing result exists and is better
-                                    if(underApproximation->hasParametricBounds()){
-                                        if(min && storm::utility::min(truncationValueBound, underApproximation->computeParametricBoundAtBelief(currId)) != truncationValueBound){
-                                            STORM_LOG_DEBUG("BEL " << currId << " -- choose PARAMETRIC BOUND -- " << underApproximation->computeParametricBoundAtBelief(currId) << " vs. " << truncationValueBound);
-                                        } else if (!min && storm::utility::max(truncationValueBound, underApproximation->computeParametricBoundAtBelief(currId)) != truncationValueBound){
-                                            STORM_LOG_DEBUG("BEL " << currId << " -- choose PARAMETRIC BOUND -- " << underApproximation->computeParametricBoundAtBelief(currId) << " vs. " << truncationValueBound);
-                                        }
-                                        truncationValueBound = min ?
-                                                storm::utility::min(truncationValueBound, underApproximation->computeParametricBoundAtBelief(currId)) :
-                                                               storm::utility::max(truncationValueBound, underApproximation->computeParametricBoundAtBelief(currId));
-                                    }
-
                                     if (computeRewards) {
                                         underApproximation->addTransitionsToExtraStates(addedActions + action, truncationProbability);
                                     } else {
