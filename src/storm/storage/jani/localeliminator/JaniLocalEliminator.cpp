@@ -210,10 +210,26 @@ namespace storm {
         bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::map<expressions::Variable, expressions::Expression>& substitutionMap) {
             storm::solver::Z3SmtSolver solver(model.getExpressionManager());
             auto propertyFormula = property.getRawFormula()->substitute(substitutionMap);
-            auto atomicFormulas = propertyFormula->getAtomicExpressionFormulas();
-            // TODO: Since formulas are now checked in the beginning, it shouldn't be necessary to put this check here.
-            STORM_LOG_THROW(atomicFormulas.size() == 1, storm::exceptions::NotImplementedException, "Formulas with more than one (or zero) atomic formulas are not implemented");
-            auto simplified = atomicFormulas[0]->getExpression().simplify();
+            auto expression = model.getExpressionManager().boolean(false);
+            if (propertyFormula->isProbabilityOperatorFormula() || propertyFormula->isRewardOperatorFormula()) {
+                auto subformula = &propertyFormula->asUnaryStateFormula().getSubformula();
+                if (subformula->isEventuallyFormula()) {
+                    expression = subformula->asEventuallyFormula().getSubformula().toExpression(model.getExpressionManager());
+                }
+                else if (subformula->isUntilFormula()){
+                    const auto& untilFormula = subformula->asUntilFormula();
+                    if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()){
+                        expression = untilFormula.getRightSubformula().toExpression(model.getExpressionManager());
+                    }
+                    else{
+                        STORM_LOG_THROW(true, storm::exceptions::NotSupportedException, "Until formulas are only supported if the left subformula is \"true\"");
+                    }
+                }
+                else{
+                    STORM_LOG_THROW(true, storm::exceptions::NotSupportedException, "This type of formula is not supported");
+                }
+            }
+            auto simplified = expression.simplify();
             if (simplified.isLiteral()) {
                 return simplified.evaluateAsBool();
             }
@@ -282,13 +298,11 @@ namespace storm {
             if (raw->isProbabilityOperatorFormula()) {
                 auto subformula = &raw->asProbabilityOperatorFormula().getSubformula();
                 if (subformula->isEventuallyFormula()) {
-                    if (subformula->asEventuallyFormula().getSubformula().isAtomicExpressionFormula()) {
-                        supported = true;
-                    }
+                    supported = true;
                 }
                 else if (subformula->isUntilFormula()){
                     const auto& untilFormula = subformula->asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()){
+                    if (untilFormula.getLeftSubformula().isTrueFormula()){
                         supported = true;
                     }
                 }
@@ -296,13 +310,11 @@ namespace storm {
             if (raw->isRewardOperatorFormula()) {
                 auto subformula = &raw->asRewardOperatorFormula().getSubformula();
                 if (subformula->isEventuallyFormula()) {
-                    if (subformula->asEventuallyFormula().getSubformula().isAtomicExpressionFormula()) {
-                        supported = true;
-                    }
+                    supported = true;
                 }
                 else if (subformula->isUntilFormula()){
                     const auto& untilFormula = subformula->asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()){
+                    if (untilFormula.getLeftSubformula().isTrueFormula()){
                         supported = true;
                     }
                 }
@@ -313,6 +325,7 @@ namespace storm {
 
             this->property = newProperty;
         }
+
 
         JaniLocalEliminator::EliminationScheduler::EliminationScheduler() {
         }
