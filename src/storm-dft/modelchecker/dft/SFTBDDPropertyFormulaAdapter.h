@@ -95,6 +95,8 @@ class SFTBDDPropertyFormulaAdapter {
         }
 
         std::map<uint64_t, std::vector<double>> bddToReversedTimepoints{};
+        // Note that a vector of timepoints is necessary as formula-BDDs can occur multiple times.
+        // The vector is reversed as it later allows to pop the results from the back which is more efficient.
         for (size_t i{0}; i < bdds.size(); ++i) {
             auto const reversedIndex{bdds.size() - i - 1};
             auto const &bdd{bdds[reversedIndex]};

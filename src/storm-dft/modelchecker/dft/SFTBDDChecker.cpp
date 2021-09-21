@@ -344,7 +344,7 @@ void SFTBDDChecker::chunkCalculationTemplate(
     // The current timepoints we calculate with
     Eigen::ArrayXd timepointsArray{chunksize};
 
-    for (size_t currentIndex{}; currentIndex < timepoints.size();
+    for (size_t currentIndex{0}; currentIndex < timepoints.size();
          currentIndex += chunksize) {
         auto const sizeLeft{timepoints.size() - currentIndex};
         if (sizeLeft < chunksize) {

@@ -87,6 +87,8 @@ class DFTModularizer {
 
     uint64_t lastDate{};
 
+    std::shared_ptr<storm::storage::DFT<ValueType>> workDFT{};
+
     /**
      * Populates firstVisit, secondVisit and lastVisit.
      *
@@ -121,8 +123,6 @@ class DFTModularizer {
      * Should not be called manually.
      */
     void populateElementInfos(DFTElementCPointer const element);
-
-    std::shared_ptr<storm::storage::DFT<ValueType>> workDFT{};
 
     /**
      * Calculate dynamic Modules and replace them with BE's in workDFT

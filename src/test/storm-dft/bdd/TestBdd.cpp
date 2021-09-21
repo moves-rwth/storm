@@ -64,7 +64,7 @@ TEST(TestBdd, AndOrFormula) {
     auto const resultProbs{checker.check()};
     auto const result{checker.formulasToBdd()};
 
-    EXPECT_EQ(result.size(), 8);
+    EXPECT_EQ(result.size(), 8ul);
 
     EXPECT_EQ(resultProbs[0], resultProbs[1]);
     EXPECT_EQ(resultProbs[1], resultProbs[2]);
@@ -167,7 +167,7 @@ TEST(TestBdd, AndOrRelevantEvents) {
 
     auto const result = transformer.transformRelevantEvents();
 
-    EXPECT_EQ(result.size(), 4);
+    EXPECT_EQ(result.size(), 4ul);
 
     for (auto const &i : result) {
         manager->exportBddToDot(i.second, "/tmp/test/" + i.first + ".dot");
