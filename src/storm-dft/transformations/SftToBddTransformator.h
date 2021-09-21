@@ -56,7 +56,7 @@ class SftToBddTransformator {
                           storm::storage::DFTElement<ValueType> const>(
                     dft->getTopLevelGate()));
         }
-        // else relevantEventBdds is not empty and we maintain the invaraint
+        // else relevantEventBdds is not empty and we maintain the invariant
         // that the toplevel gate is in there
 
         return relevantEventBdds[tlName];

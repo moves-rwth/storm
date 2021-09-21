@@ -118,10 +118,10 @@ void processOptions() {
     // BDD Analysis
     if(dftIOSettings.isExportToBddDot() ||
             dftIOSettings.isAnalyzeWithBdds() ||
-            dftIOSettings.isMinimumCutSets() ||
+            dftIOSettings.isMinimalCutSets() ||
             dftIOSettings.isImportanceMeasureSet()) {
         bool const isImportanceMeasureSet{dftIOSettings.isImportanceMeasureSet()};
-        bool const isMinimumCutSets{dftIOSettings.isMinimumCutSets()};
+        bool const isMinimalCutSets{dftIOSettings.isMinimalCutSets()};
         bool const isMTTF{dftIOSettings.usePropExpectedTime()};
         bool const isExportToBddDot{dftIOSettings.isExportToBddDot()};
         bool const isTimebound{dftIOSettings.usePropTimebound()};
@@ -161,7 +161,7 @@ void processOptions() {
                 isExportToBddDot,
                 filename,
                 isMTTF,
-                isMinimumCutSets,
+                isMinimalCutSets,
                 probabilityAnalysis,
                 isModularisation,
                 importanceMeasureName,

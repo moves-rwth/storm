@@ -62,10 +62,10 @@ namespace storm {
 
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, analyzeWithBdds, false,
-                                                               "Try to use Bdds for the analysis. Unsupportet properties will be ignored")
+                                                               "Try to use Bdds for the analysis. Unsupportet properties will be ignored.")
                                         .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, minimalCutSets, false,
-                                                               "Calculate minimum cut sets.")
+                                                               "Calculate minimal cut sets.")
                                         .build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportToJsonOptionName, false, "Export the model to the Cytoscape JSON format.")
@@ -147,7 +147,7 @@ namespace storm {
                 return this->getOption(analyzeWithBdds).getHasOptionBeenSet();
             }
 
-            bool DftIOSettings::isMinimumCutSets() const {
+            bool DftIOSettings::isMinimalCutSets() const {
                 return this->getOption(minimalCutSets).getHasOptionBeenSet();
             }
 

@@ -225,7 +225,7 @@ class SFTBDDPropertyFormulaAdapter {
 
     /**
      * \return
-     * true iff the formula if of the form 'P=? [F = x phi]'
+     * true iff the formula is of the form 'P=? [F = x phi]'
      */
     static bool checkBoundsSame(FormulaCPointer const &formula) {
         auto const probabilityOperator{std::static_pointer_cast<

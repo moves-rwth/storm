@@ -15,16 +15,16 @@ namespace storage {
  * \note
  * Not thread safe.
  *
- * Initialises Sylvan
- * which can only be initialize once per programm invocation
+ * Initializes Sylvan
+ * which can only be initialized once per programm invocation
  */
 class SylvanBddManager {
    public:
     /**
-     * Initilizes Sylvan
+     * Initializes Sylvan
      *
      * \note
-     * Internally Sylvan is initialiesed by a InternalSylvanDdManager.
+     * Internally Sylvan is initialized by a InternalSylvanDdManager.
      * This ensures compatibility.
      */
     SylvanBddManager() = default;
@@ -94,13 +94,13 @@ class SylvanBddManager {
 
     /**
      * \return
-     * The bdd represenatation of the constant function 1.
+     * The bdd representation of the constant function 1.
      */
     sylvan::Bdd getOne() { return sylvan::Bdd::bddOne(); }
 
     /**
      * \return
-     * The bdd represenatation of the constant function 1.
+     * The bdd representation of the constant function 0.
      */
     sylvan::Bdd getZero() { return sylvan::Bdd::bddZero(); }
 

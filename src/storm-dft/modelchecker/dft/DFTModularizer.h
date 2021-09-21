@@ -97,7 +97,7 @@ class DFTModularizer {
     void populateDfsCounters();
 
     /**
-     * Internal Rekursive Implementation of populateDfsCounters.
+     * Internal recursive implementation of populateDfsCounters.
      *
      * \note
      * Should not be called manually.
@@ -115,7 +115,7 @@ class DFTModularizer {
     void populateElementInfos();
 
     /**
-     * Internal Rekursive Implementation of populateElementInfos.
+     * Internal recursive implementation of populateElementInfos.
      *
      * \note
      * Should not be called manually.
@@ -151,7 +151,7 @@ class DFTModularizer {
     void analyseDynamic(DFTElementCPointer const element,
                         std::vector<ValueType> const &timepoints);
 
-    // don't reinitialise Sylvan BDD
+    // don't reinitialize Sylvan BDD
     // temporary
     std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
 };

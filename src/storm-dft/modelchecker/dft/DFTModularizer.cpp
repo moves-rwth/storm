@@ -171,7 +171,7 @@ void DFTModularizer::populateElementInfos(DFTElementCPointer const element) {
     if (counter.minFirstVisit == 0) {
         // element was never visited before as min can never be 0
 
-        // minFistVisit <= secondVisit
+        // minFirstVisit <= secondVisit
         counter.minFirstVisit = counter.secondVisit;
         auto const decendants{getDecendants(element)};
         for (auto const &decendant : decendants) {

@@ -40,14 +40,14 @@ namespace storm {
                     for(auto const& timebound : timepoints) {
                         auto const probability{
                             checker.getProbabilityAtTimebound(timebound)};
-                        std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                        std::cout << "System failure probability at timebound " << timebound << " is " << probability << '\n';
                     }
                 } else {
                     auto const probabilities{checker.getProbabilitiesAtTimepoints(timepoints, chunksize)};
                     for(size_t i{0}; i < timepoints.size(); ++i) {
                         auto const timebound{timepoints[i]};
                         auto const probability{probabilities[i]};
-                        std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                        std::cout << "System failure probability at timebound " << timebound << " is " << probability << '\n';
                     }
                 }
 
@@ -55,7 +55,7 @@ namespace storm {
                 for(size_t i{0}; i < probabilities.size(); ++i) {
                     std::cout << "Property \""
                         << properties.at(i)->toString()
-                        << "\" checks to "
+                        << "\" has result "
                         << probabilities.at(i) << '\n';
                 }
 
@@ -97,14 +97,14 @@ namespace storm {
                     for(auto const& timebound : timepoints) {
                         auto const probability{
                             checker->getProbabilityAtTimebound(timebound)};
-                        std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                        std::cout << "System failure probability at timebound " << timebound << " is " << probability << '\n';
                     }
                 } else {
                     auto const probabilities{checker->getProbabilitiesAtTimepoints(timepoints, chunksize)};
                     for(size_t i{0}; i < timepoints.size(); ++i) {
                         auto const timebound{timepoints[i]};
                         auto const probability{probabilities[i]};
-                        std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                        std::cout << "System failure probability at timebound " << timebound << " is " << probability << '\n';
                     }
                 }
 
@@ -113,7 +113,7 @@ namespace storm {
                     for(size_t i{0}; i < probabilities.size(); ++i) {
                         std::cout << "Property \""
                             << properties.at(i)->toString()
-                            << "\" checks to "
+                            << "\" has result "
                             << probabilities.at(i) << '\n';
                     }
                 }
@@ -139,7 +139,7 @@ namespace storm {
                 }
 
                 for (size_t i{0}; i < bes.size(); ++i) {
-                    std::cout << importanceMeasureName << " for the basic event " << bes[i]->name() << " at Timebound " << timepoints[0] << " is " << values[i] << '\n';
+                    std::cout << importanceMeasureName << " for the basic event " << bes[i]->name() << " at timebound " << timepoints[0] << " is " << values[i] << '\n';
                 }
             } else if (importanceMeasureName != "") {
                 auto const bes{dft->getBasicElements()};
@@ -161,7 +161,7 @@ namespace storm {
                 }
                 for (size_t i{0}; i < bes.size(); ++i) {
                     for (size_t j{0}; j < timepoints.size(); ++j) {
-                        std::cout << importanceMeasureName << " for the basic event " << bes[i]->name() << " at Timebound " << timepoints[j] << " is " << values[i][j] << '\n';
+                        std::cout << importanceMeasureName << " for the basic event " << bes[i]->name() << " at timebound " << timepoints[j] << " is " << values[i][j] << '\n';
                     }
                 }
             }

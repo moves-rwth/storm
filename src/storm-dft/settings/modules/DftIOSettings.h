@@ -123,11 +123,11 @@ namespace storm {
                 bool isAnalyzeWithBdds() const;
 
                 /*!
-                 * Retrieves whether the minimum cut sets option was set.
+                 * Retrieves whether the minimal cut sets option was set.
                  *
-                 * @return True if the minimum cut sets option was set.
+                 * @return True if the minimal cut sets option was set.
                  */
-                bool isMinimumCutSets() const;
+                bool isMinimalCutSets() const;
 
                 /*!
                  * Retrieves whether the export to Bdd Dot file option was set.

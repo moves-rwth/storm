@@ -338,7 +338,7 @@ void SFTBDDChecker::chunkCalculationTemplate(
     }
 
     // caches
-    auto const basicElemets{getDFT()->getBasicElements()};
+    auto const basicElements{getDFT()->getBasicElements()};
     std::map<uint32_t, Eigen::ArrayXd> indexToProbabilities{};
 
     // The current timepoints we calculate with
@@ -358,7 +358,7 @@ void SFTBDDChecker::chunkCalculationTemplate(
         }
 
         // Update the probabilities of the basic elements
-        for (auto const &be : basicElemets) {
+        for (auto const &be : basicElements) {
             auto const beIndex{getSylvanBddManager()->getIndex(be->name())};
             // Vectorize known BETypes
             // fallback to getUnreliability() otherwise
@@ -514,7 +514,7 @@ std::vector<std::vector<ValueType>>
 SFTBDDChecker::getAllBirnbaumFactorsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
     auto const bdd{getTopLevelGateBdd()};
-    auto const basicElemets{getDFT()->getBasicElements()};
+    auto const basicElements{getDFT()->getBasicElements()};
 
     std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
         bddToProbabilities{};
@@ -534,9 +534,9 @@ SFTBDDChecker::getAllBirnbaumFactorsAtTimepoints(
                 i.second.first = false;
             }
 
-            for (size_t basicElemetIndex{0};
-                 basicElemetIndex < basicElemets.size(); ++basicElemetIndex) {
-                auto const &be{basicElemets[basicElemetIndex]};
+            for (size_t basicElementIndex{0};
+                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
+                auto const &be{basicElements[basicElementIndex]};
                 // Invalidate bdd cache
                 for (auto &i : bddToBirnbaumFactors) {
                     i.second.first = false;
@@ -551,7 +551,7 @@ SFTBDDChecker::getAllBirnbaumFactorsAtTimepoints(
 
                 // Update result Probabilities
                 for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElemetIndex].push_back(
+                    resultVector[basicElementIndex].push_back(
                         birnbaumFactorsArray(i));
                 }
             }
@@ -659,7 +659,7 @@ std::vector<ValueType> SFTBDDChecker::getCIFsAtTimepoints(
 std::vector<std::vector<ValueType>> SFTBDDChecker::getAllCIFsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
     auto const bdd{getTopLevelGateBdd()};
-    auto const basicElemets{getDFT()->getBasicElements()};
+    auto const basicElements{getDFT()->getBasicElements()};
 
     std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
         bddToProbabilities{};
@@ -683,9 +683,9 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllCIFsAtTimepoints(
                 currentChunksize, bdd, indexToProbabilities,
                 bddToProbabilities)};
 
-            for (size_t basicElemetIndex{0};
-                 basicElemetIndex < basicElemets.size(); ++basicElemetIndex) {
-                auto const &be{basicElemets[basicElemetIndex]};
+            for (size_t basicElementIndex{0};
+                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
+                auto const &be{basicElements[basicElementIndex]};
                 // Invalidate bdd cache
                 for (auto &i : bddToBirnbaumFactors) {
                     i.second.first = false;
@@ -704,7 +704,7 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllCIFsAtTimepoints(
 
                 // Update result Probabilities
                 for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElemetIndex].push_back(CIFArray(i));
+                    resultVector[basicElementIndex].push_back(CIFArray(i));
                 }
             }
         },
@@ -819,7 +819,7 @@ std::vector<ValueType> SFTBDDChecker::getDIFsAtTimepoints(
 std::vector<std::vector<ValueType>> SFTBDDChecker::getAllDIFsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
     auto const bdd{getTopLevelGateBdd()};
-    auto const basicElemets{getDFT()->getBasicElements()};
+    auto const basicElements{getDFT()->getBasicElements()};
 
     std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
         bddToProbabilities{};
@@ -843,9 +843,9 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllDIFsAtTimepoints(
                 currentChunksize, bdd, indexToProbabilities,
                 bddToProbabilities)};
 
-            for (size_t basicElemetIndex{0};
-                 basicElemetIndex < basicElemets.size(); ++basicElemetIndex) {
-                auto const &be{basicElemets[basicElemetIndex]};
+            for (size_t basicElementIndex{0};
+                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
+                auto const &be{basicElements[basicElementIndex]};
                 // Invalidate bdd cache
                 for (auto &i : bddToBirnbaumFactors) {
                     i.second.first = false;
@@ -868,7 +868,7 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllDIFsAtTimepoints(
 
                 // Update result Probabilities
                 for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElemetIndex].push_back(DIFArray(i));
+                    resultVector[basicElementIndex].push_back(DIFArray(i));
                 }
             }
         },
@@ -978,7 +978,7 @@ std::vector<ValueType> SFTBDDChecker::getRAWsAtTimepoints(
 std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRAWsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
     auto const bdd{getTopLevelGateBdd()};
-    auto const basicElemets{getDFT()->getBasicElements()};
+    auto const basicElements{getDFT()->getBasicElements()};
 
     std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
         bddToProbabilities{};
@@ -1002,9 +1002,9 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRAWsAtTimepoints(
                 currentChunksize, bdd, indexToProbabilities,
                 bddToProbabilities)};
 
-            for (size_t basicElemetIndex{0};
-                 basicElemetIndex < basicElemets.size(); ++basicElemetIndex) {
-                auto const &be{basicElemets[basicElemetIndex]};
+            for (size_t basicElementIndex{0};
+                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
+                auto const &be{basicElements[basicElementIndex]};
                 // Invalidate bdd cache
                 for (auto &i : bddToBirnbaumFactors) {
                     i.second.first = false;
@@ -1025,7 +1025,7 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRAWsAtTimepoints(
 
                 // Update result Probabilities
                 for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElemetIndex].push_back(RAWArray(i));
+                    resultVector[basicElementIndex].push_back(RAWArray(i));
                 }
             }
         },
@@ -1136,7 +1136,7 @@ std::vector<ValueType> SFTBDDChecker::getRRWsAtTimepoints(
 std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRRWsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
     auto const bdd{getTopLevelGateBdd()};
-    auto const basicElemets{getDFT()->getBasicElements()};
+    auto const basicElements{getDFT()->getBasicElements()};
 
     std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
         bddToProbabilities{};
@@ -1160,9 +1160,9 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRRWsAtTimepoints(
                 currentChunksize, bdd, indexToProbabilities,
                 bddToProbabilities)};
 
-            for (size_t basicElemetIndex{0};
-                 basicElemetIndex < basicElemets.size(); ++basicElemetIndex) {
-                auto const &be{basicElemets[basicElemetIndex]};
+            for (size_t basicElementIndex{0};
+                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
+                auto const &be{basicElements[basicElementIndex]};
                 // Invalidate bdd cache
                 for (auto &i : bddToBirnbaumFactors) {
                     i.second.first = false;
@@ -1184,7 +1184,7 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRRWsAtTimepoints(
 
                 // Update result Probabilities
                 for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElemetIndex].push_back(RRWArray(i));
+                    resultVector[basicElementIndex].push_back(RRWArray(i));
                 }
             }
         },

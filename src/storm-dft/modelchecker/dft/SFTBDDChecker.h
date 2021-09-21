@@ -184,7 +184,7 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The birnbaum importance factors of the given basic event
+     * The birnbaum importance factors of all basic events
      *
      * \param timepoints
      * Array of timebounds to calculate the factors for.
@@ -206,13 +206,13 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The Critical importance factor of all basic event
+     * The Critical importance factor of all basic events
      * at the given timebound as defined in
      * 10.1016/S0951-8320(01)00004-7
      *
      * \note
      * Sorted after the order of dft->getBasicElements.
-     * Faster than looping over getBirnbaumFactorAtTimebound.
+     * Faster than looping over getCIFAtTimebound.
      */
     std::vector<ValueType> getAllCIFsAtTimebound(ValueType timebound);
 
@@ -232,7 +232,7 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The Critical importance factor of all basic event
+     * The Critical importance factor of all basic events
      * defined in
      * 10.1016/S0951-8320(01)00004-7
      *
@@ -253,13 +253,13 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The Diagnostic importance factor of all basic event
+     * The Diagnostic importance factor of all basic events
      * at the given timebound as defined in
      * 10.1016/S0951-8320(01)00004-7
      *
      * \note
      * Sorted after the order of dft->getBasicElements.
-     * Faster than looping over getBirnbaumFactorAtTimebound.
+     * Faster than looping over getDIFAtTimebound.
      */
     std::vector<ValueType> getAllDIFsAtTimebound(ValueType timebound);
 
@@ -279,7 +279,7 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The Diagnostic importance factor of all basic event
+     * The Diagnostic importance factor of all basic events
      * defined in
      * 10.1016/S0951-8320(01)00004-7
      *
@@ -300,13 +300,13 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The risk achievement worth of all basic event
+     * The risk achievement worth of all basic events
      * at the given timebound as defined in
      * 10.1016/S0951-8320(01)00004-7
      *
      * \note
      * Sorted after the order of dft->getBasicElements.
-     * Faster than looping over getBirnbaumFactorAtTimebound.
+     * Faster than looping over getRAWAtTimebound.
      */
     std::vector<ValueType> getAllRAWsAtTimebound(ValueType timebound);
 
@@ -326,7 +326,7 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The risk achievement worth of all basic event
+     * The risk achievement worth of all basic events
      * defined in
      * 10.1016/S0951-8320(01)00004-7
      *
@@ -347,13 +347,13 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The risk reduction worth of all basic event
+     * The risk reduction worth of all basic events
      * at the given timebound as defined in
      * 10.1016/S0951-8320(01)00004-7
      *
      * \note
      * Sorted after the order of dft->getBasicElements.
-     * Faster than looping over getBirnbaumFactorAtTimebound.
+     * Faster than looping over getRRWAtTimebound.
      */
     std::vector<ValueType> getAllRRWsAtTimebound(ValueType timebound);
 
@@ -373,7 +373,7 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The risk reduction worth of all basic event
+     * The risk reduction worth of all basic events
      * defined in
      * 10.1016/S0951-8320(01)00004-7
      *
@@ -386,7 +386,7 @@ class SFTBDDChecker {
 
    private:
     /**
-     * recursivly traverses the given BDD and returns the minimalCutSets
+     * Recursively traverses the given BDD and returns the minimalCutSets.
      *
      * \param bdd
      * The current bdd

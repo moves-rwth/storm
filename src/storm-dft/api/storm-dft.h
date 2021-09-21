@@ -180,7 +180,7 @@ namespace storm {
          * The name of the file for exporting to dot
          *
          * @param calculateMCS
-         * If true calculates the minimum cut sets
+         * If true calculates the minimal cut sets
          *
          * @param calculateProbability
          * If true calculates the system failure propbability
