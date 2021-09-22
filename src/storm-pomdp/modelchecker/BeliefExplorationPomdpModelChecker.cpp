@@ -983,17 +983,6 @@ namespace storm {
                             }
                         }
 
-                        // Add parametric cut-off transitions if parametric bounds exist (theoretically also possible to always add the transition)
-                        if(underApproximation->hasParametricBounds()){
-                            if(computeRewards){
-                                underApproximation->addTransitionsToExtraStates(addedActions, storm::utility::one<ValueType>());
-                                underApproximation->addRewardToCurrentState(addedActions, underApproximation->computeParametricBoundAtBelief(currId));
-                            } else {
-                                underApproximation->addTransitionsToExtraStates(addedActions, underApproximation->computeParametricBoundAtBelief(currId), storm::utility::one<ValueType>() - underApproximation->computeParametricBoundAtBelief(currId));
-                            }
-                            ++addedActions;
-                        }
-
                         // Add successor transitions or cut-off transitions when exploration is stopped
                         for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                             // Always restore old behavior if available
@@ -1032,6 +1021,16 @@ namespace storm {
                                     }
                                 }
                             }
+                        }
+                        // Add parametric cut-off transitions if parametric bounds exist
+                        if(underApproximation->hasParametricBounds()){
+                            if(computeRewards){
+                                underApproximation->addTransitionsToExtraStates(beliefManager->getBeliefNumberOfChoices(currId) + addedActions, storm::utility::one<ValueType>());
+                                underApproximation->addRewardToCurrentState(beliefManager->getBeliefNumberOfChoices(currId) + addedActions, underApproximation->computeParametricBoundAtBelief(currId));
+                            } else {
+                                underApproximation->addTransitionsToExtraStates(beliefManager->getBeliefNumberOfChoices(currId) + addedActions, underApproximation->computeParametricBoundAtBelief(currId), storm::utility::one<ValueType>() - underApproximation->computeParametricBoundAtBelief(currId));
+                            }
+                            ++addedActions;
                         }
                     }
                     if (storm::utility::resources::isTerminate()) {

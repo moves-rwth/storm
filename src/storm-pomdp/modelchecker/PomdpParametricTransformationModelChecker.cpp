@@ -57,7 +57,7 @@ namespace storm {
 
                 modelSimplified->printModelInformationToStream(std::cout);
 
-                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gradientDescentInstantiationSearcher(*(modelSimplified->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gradientDescentInstantiationSearcher(*(modelSimplified->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()), storm::derivative::GradientDescentMethod::ADAM, 0.1, 0.9, 0.999, 32, 1e-2);
 
                 gradientDescentInstantiationSearcher.specifyFormula(Environment(), storm::api::createTask<storm::RationalFunction>(formula.asSharedPointer(), false));
 
@@ -92,7 +92,6 @@ namespace storm {
                     auto par = parVal.first;
                     auto val = parVal.second;
                     std::string parName = par.name();
-                    STORM_LOG_DEBUG("PAR " << parName << " --  VAL: " << val);
                     parName.erase (std::remove(parName.begin(), parName.end(), 'p'), parName.end());
 
                     std::vector<std::string> splitValues;
@@ -141,17 +140,17 @@ namespace storm {
                     }
                 }
 
-                for (uint64_t state = 0; state < pomdp.getNumberOfStates() * memoryBound; ++state) {
+                for (uint64_t state = 0; state < pomdp.getNumberOfStates() * memoryBound; state += memoryBound) {
                     result[state / memoryBound] = formulaInfo.maximize() ? storm::utility::max(result[state / memoryBound], pomdpSchedulerResult[state]) :  storm::utility::min(result[state / memoryBound], pomdpSchedulerResult[state]);
                 }
 
                 // Cleanup values close to zero
-                for (uint64_t state = 0; state < result.size(); ++state) {
+                /*for (uint64_t state = 0; state < result.size(); ++state) {
                     if(storm::utility::isAlmostZero<ValueType>(result[state])){
                         result[state] = storm::utility::zero<ValueType>();
                     }
                     STORM_LOG_ASSERT(formulaInfo.isNonNestedExpectedRewardFormula() || (result[state] <= storm::utility::one<ValueType>()), "Result " << result[state] << " for state " << state << " is greater than 1.");
-                }
+                }*/
 
                 return result;
             }

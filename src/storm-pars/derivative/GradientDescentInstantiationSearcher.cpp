@@ -493,7 +493,7 @@ namespace storm {
                 Environment const& env
         ) {
             //TODO find a good breaking condition, for now, just iterate a bit
-            uint64_t maxIters = 1;
+            uint64_t maxIters = 3;
             uint64_t currIter = 0;
             STORM_LOG_ASSERT(this->currentCheckTask, "Call specifyFormula before calling gradientDescent");
 
@@ -519,7 +519,7 @@ namespace storm {
             while (true) {
                 std::cout << "Trying out a new starting point" << std::endl;
                 if (initialGuess) {
-                    std::cout << "Trying initial guess (p->0 for every parameter p or set start point)" << std::endl;
+                    std::cout << "Trying initial guess (p->0.5 for every parameter p or set start point)" << std::endl;
                 }
                 // Generate random starting point
                 std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
@@ -528,7 +528,7 @@ namespace storm {
                         if (startPoint) {
                             point[param] = (*startPoint)[param];
                         } else {
-                            point[param] = utility::convertNumber<CoefficientType<FunctionType>>(1e-6);
+                            point[param] = utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
                         }
                     } else {
                         point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
