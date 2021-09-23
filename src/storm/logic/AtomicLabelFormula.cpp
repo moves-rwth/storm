@@ -25,7 +25,8 @@ namespace storm {
             atomicExpressionFormulas.push_back(std::dynamic_pointer_cast<AtomicLabelFormula const>(this->shared_from_this()));
         }
         
-        std::ostream& AtomicLabelFormula::writeToStream(std::ostream& out) const {
+        std::ostream& AtomicLabelFormula::writeToStream(std::ostream& out, bool /*allowParentheses*/) const {
+            // No parentheses necessary
             out << "\"" << label << "\"";
             return out;
         }

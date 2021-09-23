@@ -43,14 +43,14 @@ Storm has been developed at RWTH Aachen University.
 * Matthias Volk
 
 ###### Developers (lexicographical order)
-* Philipp Berger
+* Jana Berger
+* Alexander Bork
 * David Korzeniewski
 * Jip Spel
 
 ###### Contributors (lexicographical order)
 * Daniel Basgöze
 * Dimitri Bohlender
-* Alexander Bork
 * Harold Bruintjes
 * Michael Deutschen
 * Linus Heck
@@ -58,8 +58,11 @@ Storm has been developed at RWTH Aachen University.
 * Thomas Henn
 * Tom Janson
 * Jan Karuc
+* Joachim Klein
 * Gereon Kremer
 * Sascha Vincent Kurowski
+* Hannah Mertens
 * Stefan Pranger
+* Svenja Stein
 * Manuel Sascha Weiand
 * Lukas Westhofen

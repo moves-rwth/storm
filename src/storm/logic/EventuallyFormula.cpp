@@ -55,12 +55,18 @@ namespace storm {
             return visitor.visit(*this, data);
         }
                 
-        std::ostream& EventuallyFormula::writeToStream(std::ostream& out) const {
+        std::ostream& EventuallyFormula::writeToStream(std::ostream& out, bool allowParentheses) const {
+            if (allowParentheses) {
+                out << "(";
+            }
             out << "F ";
             if (hasRewardAccumulation()) {
                 out << "[" << getRewardAccumulation() << "]";
             }
-            this->getSubformula().writeToStream(out);
+            this->getSubformula().writeToStream(out, !this->getSubformula().isUnaryFormula());
+            if (allowParentheses) {
+                out << ")";
+            }
             return out;
         }
     }

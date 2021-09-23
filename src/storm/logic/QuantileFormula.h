@@ -1,10 +1,10 @@
 #pragma once
 
-#include "storm/logic/Formula.h"
+#include "storm/logic/StateFormula.h"
 
 namespace storm {
     namespace logic {
-        class QuantileFormula : public Formula {
+        class QuantileFormula : public StateFormula {
         public:
             QuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables, std::shared_ptr<Formula const> subformula);
             
@@ -29,7 +29,7 @@ namespace storm {
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
             
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
         private:
             std::vector<storm::expressions::Variable> boundVariables;
             std::shared_ptr<Formula const> subformula;

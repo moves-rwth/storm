@@ -695,4 +695,125 @@ namespace {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
     }
+
+    TYPED_TEST(MdpPrctlModelCheckerTest, LtlProbabilitiesCoin) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+        std::string formulasString = "Pmin=? [!(GF \"all_coins_equal_1\")]";
+        formulasString += "; Pmax=? [F \"all_coins_equal_1\" U \"finished\"]";
+        formulasString += "; P>0.4 [!(GF \"all_coins_equal_1\")]";
+        formulasString += "; P<0.6 [F \"all_coins_equal_1\" U \"finished\"]";
+        // The following example results in an automaton with acceptance condition not in DNF (Streett, using Spot)
+        formulasString += "; Pmax=?[ (GF \"all_coins_equal_1\") & ((GF \"all_coins_equal_0\") | (FG \"finished\"))]";
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(272ul, model->getNumberOfStates());
+        EXPECT_EQ(492ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("4/9"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("5/9"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
+
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_TRUE(this->getQualitativeResultAtInitialState(model, result));
+
+            result = checker->check(this->env(), tasks[4]);
+            EXPECT_NEAR(this->parseNumber("5/9"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+        }
+#else
+        GTEST_SKIP();
+#endif
+    }
+
+    TYPED_TEST(MdpPrctlModelCheckerTest, LtlDice) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+        std::string formulasString = "Pmax=? [  X (((s1=1) U (s1=3)) U (s1=7))]";
+        formulasString += "; Pmax=? [ (F (X (s1=6 & (XX s1=5)))) & (F G (d1!=5))]";
+        formulasString += "; Pmax=? [ F s1=3 U (\"three\")]";
+        formulasString += "; Pmin=? [! F (s2=6) & X \"done\"]";
+        // Acceptance condition not in DNF (Streett, using Spot)
+        formulasString += "; Pmax=? [ ( (G F !(\"two\")) | F G (\"three\") ) & ( (G F !(\"five\") ) | F G (\"seven\") )]";
+
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(169ul, model->getNumberOfStates());
+        EXPECT_EQ(436ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("1/24"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_NEAR(this->parseNumber("1/36"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("5/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[4]);
+            EXPECT_NEAR(this->parseNumber("31/36"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+        }
+
+#else
+        GTEST_SKIP();
+#endif
+
+    }
+
+    TYPED_TEST(MdpPrctlModelCheckerTest, HOADice) {
+        // "P=? [ F "three" & (X s=1)]"
+        std::string formulasString = "; P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_Fandp0Xp1.hoa\", \"p0\" -> \"three\", \"p1\" -> s2=1 }]";
+        // "P=? [!(s2=6) U "done"]"
+        formulasString += "; P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_UXp0p1.hoa\", \"p0\" -> !(s2=6), \"p1\" -> \"done\" }]";
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(169ul, model->getNumberOfStates());
+        EXPECT_EQ(436ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+            result = checker->check(tasks[0]);
+            EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(tasks[1]);
+            EXPECT_NEAR(this->parseNumber("3/4"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+        }
+
+    }
+
+
 }

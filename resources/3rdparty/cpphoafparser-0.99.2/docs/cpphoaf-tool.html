@@ -1,0 +1,243 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link href="cpphoafparser.css" rel="stylesheet">
+<title>The cpphoaf command-line tool [cpphoafparser Library for the Hanoi Omega-Automata Format (HOAF), version 0.99.2]</title>
+</head>
+
+<body>
+<div class="nav"><a class="nav" href="index.html">^ Overview</a></div>
+
+<h1>
+The <span class="blue1">cpp</span><span class="blue2">hoaf</span> Command-Line Tool<br/>
+<span style="font-size:70%">The <span class="blue">cpphoafparser</span>
+Library for the Hanoi Omega-Automata Format (HOAF), version 0.99.2</span>
+</h1>
+
+<p>
+The cpphoafparser library provides a command-line interface to some of
+the functionality. This can be roughly divided into two broad areas:
+</p>
+<ul>
+  <li><em>Validating</em> an automaton (no syntax errors, declared properties are correct, ...)</li>
+  <li><em>Transforming</em> an automaton (translating from state- to transition-based acceptance, ...)</li>
+</ul>
+
+
+<p>We assume here that the reader is familiar with the basic concepts of
+the <a href="http://adl.github.io/hoaf/">Hanoi Omega-Automata Format (HOAF)</a>.
+</p>
+
+<h2><a name="general">General</a></h2>
+
+<h3>Obtaining and invoking the command-line tool</h3>
+We assume here that you have downloaded the source code archive
+from the <a href="http://automata.tools/hoa/cpphoafparser/">website</a>.
+Unpack and build (Linux, OS X, ...):
+<pre class="command">
+tar xzvf cpphoafparser-xx.yy.tgz
+cd cpphoafparser-xx.yy
+make
+</pre>
+<p>
+where <i>xx.yy</i> is the version.</p>
+
+<p>Alternatively, for Windows, you can download a precompiled binary.</p>
+
+<p>There is also a <span class="classname">CMakeLists.txt</span>
+   configuration for <a href="http://www.cmake.org/">CMake</a> available. In the top-level directory, execute:
+<pre class="command">
+mkdir build
+cd build
+cmake ../src
+make
+</pre>
+
+<p>CMake can alse be used to generate Visual Studio project files.</p>
+
+<h3>Getting Help</h3>
+<p>With</p>
+<pre class="command">
+./cpphoaf help
+</pre>
+<p>you'll obtain a brief description of the supported commands and
+flags.</p>
+
+<h3>Input / Output</h3>
+<p>
+The command-line tool reads the file specified on the command-line, performs the required
+processing and outputs the result to the standard output.
+The hyphen character '-' can be used instead of the filename for reading from standard input.
+Below, we provide some examples of invoking the command-line tool:
+</p>
+
+<p>
+In the simplest case, the following command parses the automaton 
+from automaton.hoa and prints the result
+(the parsed automaton without comments, extra whitespace, etc) to the
+console:
+</p>
+
+<pre class="command">
+./cpphoaf print automaton.hoa
+</pre>
+
+<p>
+In the next example, we pipe the output of some other tool to the
+input of cpphoaf:
+</p>
+
+<pre class="command">
+./some-hoa-producer | ./cpphoaf print -
+</pre>
+
+<p>
+The output can be captured as usual to a file using redirection:
+</p>
+
+<pre class="command">
+./some-hoa-producer | ./cpphoaf print - > result.hoa
+</pre>
+
+<p>
+Note: Take care that you do not simultaneously read and write from/to the same file!
+</p>
+
+<h3>Commands and Flags</h3>
+<p>
+The general structure of invoking the command line-tool is
+</p>
+<pre class="command">
+./cpphoaf command flag(s) file(s)
+</pre>
+
+<h3>Multiple automata</h3>
+<p>
+The HOA format supports the streaming of automata, i.e., the ability to represent a
+sequence of automata in a single file.
+</p>
+<p>
+Please note that, currently, the <span class="prog">cpphoaf</span> tool only supports parsing
+a single automaton.
+</p> 
+
+<h3>Exit value</h3>
+<p>
+If you want to use the command-line tool in scripts, the value returned by the tool on exit
+is useful for diagnosing errors. The tool will return 0 for success/no errors. If there are
+errors during the processing of the automata, the value 1 will be returned. If there are problems
+with the invocation (invalid command-line arguments, ...), the value 2
+will be returned.
+</p>
+
+<h2><a name="validating">Validating Automata</a></h2>
+
+<p>To check that an automaton in HOA format can be successfully parsed, run
+</p>
+<pre class="commandWithOutput">
+./cpphoaf parse automaton-file.hoa
+</pre>
+<pre class="output">
+Parsing OK
+</pre>
+
+<p>If everything went fine, the tool will output that parsing was OK,
+otherwise there will be an error message indicating what went wrong.</p>
+
+<p>Upon success, the automaton</p>
+<ul>
+  <li>has been successfully parsed (syntax conforms to the HOA
+  format),</li>
+  <li>properties specified in the header have been verified to be
+  correct (violations of <em>state-labels</em>, <em>trans-labels</em>,
+  <em>implicit-labels</em>, <em>explicit-labels</em>, <em>state-acc</em>,
+  <em>trans-acc</em>, <em>no-univ-branch</em>, <em>colored</em> are currently detected;
+  for the <em>deterministic</em> and <em>complete</em> properties, violations are
+  currently only detected when implicit transition labels are used),
+  </li>
+  <li>if an <em>acc-name</em> header has been provided and is one
+  of the standard acceptance conditions specified in the format, the
+  correspondence with the <em>Acceptance</em> header has been verified
+  </li>
+  <li>the number, ordering and names of the states are valid with regard to
+  the restrictions specified in the HOA format,
+  </li>
+  <li>if implicit transition labels are used, the required number is present,
+  </li>
+  <li>alias definitions are non-recursive and all aliases, atomic propositions and
+  acceptance sets that are used are defined.
+  </li>
+</ul>
+
+<p>
+The semantic validations can be disabled by the command-line
+option <span class="cmdline">--no-validate</span>. The following command
+will only check the syntactic correctness according to the HOA format:
+</p>
+<pre class="command">
+./cpphoaf parse --no-validate automaton.hoa
+</pre>
+
+<h2>Transforming the Automaton</h2>
+
+<h3>Pretty-printing the Automaton</h3>
+
+<p>The simplest transformation is barely a transformation at all. Via</p>
+<pre class="command">
+./cpphoaf print automaton-file.hoa
+</pre>
+<p>the automaton is simply parsed and printed back to the standard output.</p>
+<p>
+As comments and superfluous whitespace are ignored by the parser, this transforms the
+automaton into some kind of canonical form, with the different elements of the HOA format
+each placed on a single line.
+</p>
+
+<h3>Resolving Aliases</h3>
+<p>
+The command-line option <span class="cmdline">--resolve-aliases</span> activates a transformation
+that (1) removes the <em>Alias:</em> <a class="explanationref" href="http://adl.github.io/hoaf/#alias" target="_blank">?</a>
+definitions and (2) resolves all <em>@alias</em> references in
+transition labels.</p>
+<p>The following command reads the automaton, resolves the aliases and prints the resulting automaton:</p>
+<pre class="command">
+./cpphoaf print --resolve-aliases automaton-file.hoa
+</pre>
+
+<p>
+The option <span class="cmdline">--resolve-aliases</span>
+can be used with all other commands and options.
+</p>
+
+<h2>Tracing, Implementation Details</h2>
+<p>If you wish to implement your own transformations or want to use the cpphoafparser library,
+it might be interesting to play around with the <span class="cmdline">--trace</span> option:</p>
+
+<pre class="command">
+./cpphoaf parse --trace automaton-file.hoa
+</pre>
+
+<p>
+If activated, tracing will output the sequence of method calls into
+the <em>HOAConsumer</em> by
+the parser. This can be used to study the correspondence of syntactical elements in the
+HOA format and the method calls.
+</p>
+
+<p>
+The command-line utility is implemented in the
+<span class="classname">src/cpphoaf.cc</span>. It relies on the various
+<em>HOAConsumers</em> for the functionality and is a good entry-point for further investigations.
+</p>
+
+<hr>
+<p>If you have further questions, find bugs or want to tell
+us about your use of the cpphoafparser library, please feel free to contact us!</p>
+
+<p>(c) 2015-2016
+Joachim Klein &lt;klein&#064;tcs.inf.tu-dresden.de&gt;,
+David M&uuml;ller &lt;david.mueller&#064;tcs.inf.tu-dresden.de&gt;
+
+</body>
+</html>
