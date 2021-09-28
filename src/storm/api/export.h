@@ -56,9 +56,9 @@ namespace storm {
             storm::utility::openFile(filename, stream);
             std::string jsonFileExtension = ".json";
             if (filename.size() > 4 && std::equal(jsonFileExtension.rbegin(), jsonFileExtension.rend(), filename.rbegin())) {
-                scheduler.printJsonToStream(stream, model);
+                scheduler.printJsonToStream(stream, model, false, true);
             } else {
-                scheduler.printToStream(stream, model);
+                scheduler.printToStream(stream, model, false, true);
             }
             storm::utility::closeFile(stream);
         }

@@ -349,4 +349,70 @@ namespace {
         }
 #endif
     }
+
+    TYPED_TEST(MarkovAutomatonCslModelCheckerTest, LtlSimple) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+        std::string formulasString = "Pmax=? [X X s=3]";
+        formulasString += "; Pmax=? [X X G s>2]";
+        formulasString += "; Pmin=? [X X G s>2]";
+        formulasString += "; Pmax=? [F ((s=0) U X(s=0) & X(s=2))]";
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/simple.ma", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(5ul, model->getNumberOfStates());
+        EXPECT_EQ(8ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == MaEngine::PrismSparse || TypeParam::engine == MaEngine::JaniSparse || TypeParam::engine == MaEngine::JitSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("1/10"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("1/5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_NEAR(this->parseNumber("1/10"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("9/10"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+        }
+#else
+        GTEST_SKIP();
+#endif
+    }
+
+    TYPED_TEST(MarkovAutomatonCslModelCheckerTest, HOASimple) {
+        // "P=? [ F (s=3) & (X s=1)]"
+        std::string formulasString = "; P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_Fandp0Xp1.hoa\", \"p0\" -> (s>1), \"p1\" -> !(s=1) }]";
+        // "P=? [ (s=2) U (s=1)]"
+        formulasString += "; P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_UXp0p1.hoa\", \"p0\" -> (s=2), \"p1\" -> (s=1) }]";
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/simple.ma", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(5ul, model->getNumberOfStates());
+        EXPECT_EQ(8ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::MarkovAutomaton);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == MaEngine::PrismSparse || TypeParam::engine == MaEngine::JaniSparse || TypeParam::engine == MaEngine::JitSparse) {
+            result = checker->check(tasks[0]);
+            EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(tasks[1]);
+            EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+        }
+
+    }
 }

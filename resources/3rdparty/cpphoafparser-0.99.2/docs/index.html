@@ -1,0 +1,145 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link href="cpphoafparser.css" rel="stylesheet">
+<title>The cpphoafparser Library for the Hanoi Omega-Automata Format (HOAF): Documentation (version 0.99.2)</title>
+</head>
+
+<body>
+<div class="nav"></div>
+
+<h1>
+The <span class="blue1">cpp</span><span class="blue2">hoaf</span><span class="blue3">parser</span> Library
+for the <br>Hanoi Omega-Automata Format (HOAF):<br/> Documentation (version 0.99.2)
+</h1>
+
+<h2><a name="overview">Overview</a></h2>
+
+<p>The <a href="http://adl.github.io/hoaf/">Hanoi Omega-Automata
+Format (HOAF)</a>
+provides a flexible and robust mechanism for exchanging
+&omega;-automata between different tools.
+With the <span class="prog">cpphoafparser</span> library, we provide (1)
+a C++-based parser library for parsing HOA files that can be used
+by applications and tools that want to read HOA files and (2) a
+command-line tool for performing basic automata operations.
+</p>
+
+<p>You can find the most current version of the library at
+<a href="http://automata.tools/hoa/cpphoafparser/">http://automata.tools/hoa/cpphoafparser/</a>,
+as well as links to example automata.
+</p>
+
+<p>If you are interested in a Java-based variant of this library,
+check out <a href="http://automata.tools/hoa/jhoafparser/">jhoafparser</a>.
+<span class="prog">cpphoafparser</span> and <span class="prog">jhoafparser</span>
+share the same design, but may differ in some of the features that are implemented.
+</p>
+
+<p><span class="prog">cpphoafparser</span> is free software and
+released under the terms of the GNU Lesser General Public License, version 2.1.</p>
+
+<h2>The Command-Line Tool</h2>
+
+<h3>The Command-Line Tool: First Steps</h3>
+<p>
+We assume here that you have downloaded the source code archive from the website and built the tool
+using</p>
+<pre class="command">
+make
+</pre>
+which allows you to invoke the tool via
+</p>
+<pre class="command">
+./cpphoaf
+</pre>
+
+<p>Alternatively, you have downloaded a precompiled <span class="prog">cpphoaf</span> binary from the website.</p>
+
+<p>
+Here are some examples for the command-line <span class="prog">cpphoaf</span> tool:
+</p>
+
+<p><b>Parsing (validating) an automaton in HOA format</b></p>
+
+<pre class="command">
+./cpphoaf parse automaton-file.hoa
+</pre>
+<p>
+Some of the semantic validations can be disabled by the command-line option
+<span class="cmdline">--no-validate</span>.
+</p>
+
+<p><b>Printing an automaton in HOA format</b> to standard output</p>
+<pre class="command">
+./cpphoaf print automaton-file.hoa
+</pre>
+
+<p><b>Resolving aliases</b></p>
+<pre class="command">
+./cpphoaf print --resolve-aliases automaton-file.hoa
+</pre>
+
+<h3>The Command-Line Tool: Further information</h3>
+<p>
+Further details on the command-line tool can be found <a href="cpphoaf-tool.html">here</a>.</p>
+
+<h2>The HOA Parser Library</h2>
+
+<p>The <span class="prog">cpphoafparser</span> library can also be used to parse HOA automata.
+For example, you might want to read such automata in a tool or
+you might want to implement your own automata transformations.
+</p>
+
+<p>
+As a first step, download the source code of the library from the 
+<a href="http://automata.tools/hoa/cpphoafparser/">website</a>.
+Then, build a local copy of the API documentation with the <a href="http://www.doxygen.org">Doxygen</a> tool:
+</p>
+<pre class="command">
+doxygen Doxyfile
+</pre>
+<p>This produces the API documentation in the <span class="cmdline">docs/api-html</span> subdirectory.
+The alternative <span class="classname">Doxyfile.all</span> configuration file produces documentation for all
+the private/implementation details as well. If you do not have the <a href="http://www.graphviz.org/">dot</a> utility
+installed, set <span class="classname">HAVE_DOT = NO</span> in <span class="classname">Doxyfile</span>.
+</p>
+<p>
+The API documentation of the current version of the library is available as well on the website at
+<a href="http://automata.tools/hoa/cpphoafparser/docs/api-html/">http://automata.tools/hoa/cpphoafparser/docs/api-html/</a>.
+</p>
+
+<p>
+A good starting point is the API documentation of the <span class="classname">HOAConsumer</span>
+interface and the source code of <span class="classname">src/cpphoaf.cc</span>,
+where you can see how the parser is invoked.
+To parse automata using the cpphoafparser library, 
+an application provides the parser with a class which implements the <span class="cmdline">HOAConsumer</span> interface.
+The parser then invokes the functions corresponding to the element in the HOA file format while parsing the automaton.
+</p>
+
+<h3>The Parser Library: Further information</h3>
+
+<p>More details and an overview over the cpphoafparser architecture can be found <a href="cpphoafparser-library.html">here</a>.
+
+<h2><a name="links">Additional links</a></h2>
+
+<ul>
+  <li>The <a href="http://adl.github.io/hoaf/">specification</a> of the Hanoi Omega-Automata Format (HOAF).
+  </li>
+  <li>A <a href="http://adl.github.io/hoaf/support.html">page listing tools</a> that support HOAF.</li>
+  <li>A <a href="https://github.com/adl/hoaf-tests">GitHub repository with HOA automata for testing</a>.</li>
+</ul>
+
+
+<hr>
+<p>If you have further questions, find bugs or want to tell
+us about your use of the cpphoafparser library, please feel free to contact us!</p>
+
+<p>(c) 2015-2016
+Joachim Klein &lt;klein&#064;tcs.inf.tu-dresden.de&gt;,
+David M&uuml;ller &lt;david.mueller&#064;tcs.inf.tu-dresden.de&gt;
+
+</body>
+</html>

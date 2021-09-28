@@ -1,0 +1,27 @@
+HOA: v1
+States: 3
+properties: implicit-labels trans-labels no-univ-branch deterministic complete
+tool: "ltl2dstar" "0.5.4"
+name: "F & p0 X p1"
+comment: "DBA2DRA[NBA=3]"
+acc-name: Rabin 1
+Acceptance: 2 (Fin(0)&Inf(1))
+Start: 2
+AP: 2 "p0" "p1"
+--BODY--
+State: 0 {1}
+0
+0
+0
+0
+State: 1 {}
+2
+1
+0
+0
+State: 2 {}
+2
+1
+2
+1
+--END--

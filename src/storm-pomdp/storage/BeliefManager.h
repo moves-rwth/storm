@@ -76,7 +76,7 @@ namespace storm {
             };
 
             struct FreudenthalDiff {
-                FreudenthalDiff(StateType const &dimension, BeliefValueType &&diff);
+                FreudenthalDiff(StateType const &dimension, BeliefValueType diff);
 
                 StateType dimension; // i
                 BeliefValueType diff; // d[i]

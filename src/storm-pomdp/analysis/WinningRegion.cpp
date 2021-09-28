@@ -210,7 +210,7 @@ namespace pomdp {
             storm::RationalNumber n = 1;
             while (n < max) {
                 oom += 1;
-                n *= 2;
+                n = n * 2;
             }
             STORM_LOG_DEBUG("Order of magnitude = " << oom);
 

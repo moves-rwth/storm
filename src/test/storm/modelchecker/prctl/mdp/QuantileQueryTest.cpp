@@ -98,6 +98,7 @@ namespace {
         std::pair<bool, std::string> compareResult(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::unique_ptr<storm::modelchecker::CheckResult>& result, std::vector<std::string> const& expected) {
             bool equal = true;
             std::string errorMessage = "";
+            ValueType comparePrecision = std::is_same<ValueType, double>::value ? storm::utility::convertNumber<ValueType>(1e-10) : storm::utility::zero<ValueType>();
             auto filter = getInitialStateFilter(model);
             result->filter(*filter);
             std::vector<std::vector<ValueType>> resultPoints;
@@ -120,7 +121,7 @@ namespace {
             for (auto const& resPoint : resultPoints) {
                 bool contained = false;
                 for (auto const& expPoint : expectedPoints) {
-                    if (resPoint == expPoint) {
+                    if (storm::utility::vector::equalModuloPrecision(resPoint, expPoint, comparePrecision, true)) {
                         contained = true;
                         break;
                     }
@@ -133,7 +134,7 @@ namespace {
             for (auto const& expPoint : expectedPoints) {
                 bool contained = false;
                 for (auto const& resPoint : resultPoints) {
-                    if (resPoint == expPoint) {
+                    if (storm::utility::vector::equalModuloPrecision(resPoint, expPoint, comparePrecision, true)) {
                         contained = true;
                         break;
                     }

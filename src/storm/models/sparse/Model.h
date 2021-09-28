@@ -6,6 +6,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/models/Model.h"
+#include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/storage/sparse/ModelComponents.h"
@@ -34,6 +35,7 @@ namespace storm {
             public:
                 typedef CValueType ValueType;
                 typedef CRewardModelType RewardModelType;
+                static const storm::models::ModelRepresentation Representation = ModelRepresentation::Sparse;
                 
                 Model(Model<ValueType, RewardModelType> const& other) = default;
                 Model& operator=(Model<ValueType, RewardModelType> const& other) = default;

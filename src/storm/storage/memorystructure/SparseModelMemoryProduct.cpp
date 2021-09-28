@@ -38,9 +38,17 @@ namespace storm {
                 // Get the initial states and reachable states. A stateIndex s corresponds to the model state (s / memoryStateCount) and memory state (s % memoryStateCount)
                 storm::storage::BitVector initialStates(modelStateCount * memoryStateCount, false);
                 auto memoryInitIt = memory.getInitialMemoryStates().begin();
-                for (auto modelInit : model.getInitialStates()) {
-                    initialStates.set(modelInit * memoryStateCount + *memoryInitIt, true);
-                    ++memoryInitIt;
+                if (memory.isOnlyInitialStatesRelevantSet()) {
+                    for (auto modelInit : model.getInitialStates()) {
+                        initialStates.set(modelInit * memoryStateCount + *memoryInitIt, true);
+                        ++memoryInitIt;
+                    }
+                } else {
+                    // Build Product from all model states
+                    for (uint_fast64_t modelState = 0; modelState < model.getNumberOfStates(); ++modelState) {
+                        initialStates.set(modelState * memoryStateCount + *memoryInitIt, true);
+                        ++memoryInitIt;
+                    }
                 }
                 STORM_LOG_ASSERT(memoryInitIt == memory.getInitialMemoryStates().end(), "Unexpected number of initial states.");
                 
@@ -508,15 +516,7 @@ namespace storm {
                 components.exitRates = std::move(resultExitRates);
             }
             
-            storm::models::ModelType resultType = model.getType();
-            if (scheduler && !scheduler->isPartialScheduler()) {
-                if (model.isOfType(storm::models::ModelType::Mdp)) {
-                    resultType = storm::models::ModelType::Dtmc;
-                }
-                // Note that converting deterministic MAs to CTMCs via state elimination does not preserve all properties (e.g. step bounded)
-            }
-            
-            return storm::utility::builder::buildModelFromComponents(resultType, std::move(components));
+            return storm::utility::builder::buildModelFromComponents(model.getType(), std::move(components));
         }
         
         template <typename ValueType, typename RewardModelType>
