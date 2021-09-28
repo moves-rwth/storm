@@ -458,6 +458,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStream) const {
+                STORM_LOG_WARN_COND(this->getNumberOfStates() < 10000 && this->getNumberOfTransitions() < 100000, "Exporting a large model to json. This might take some time and will result in a very large file.");
                 using JsonValueType = storm::RationalNumber;
                 storm::json<JsonValueType> output;
                 for (uint64_t state = 0; state < getNumberOfStates(); ++state) {
