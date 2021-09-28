@@ -467,9 +467,7 @@ namespace storm {
                         stateChoicesJson["s"] = getStateValuations().template toJson<JsonValueType>(state);
                     }
                     auto labels = getLabelsOfState(state);
-                    if (!labels.empty()) {
-                        stateChoicesJson["lab"] = labels;
-                    }
+                    stateChoicesJson["lab"] = labels;
                     storm::json<JsonValueType> stateRewardsJson;
                     for (auto const& rm : rewardModels) {
                         if (rm.second.hasStateRewards()) {
