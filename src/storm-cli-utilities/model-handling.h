@@ -601,7 +601,7 @@ namespace storm {
             }
 
             if (ioSettings.isExportDdSet()) {
-                storm::api::exportSparseModelAsDrdd(model, ioSettings.getExportDdFilename());
+                storm::api::exportSymbolicModelAsDrdd(model, ioSettings.getExportDdFilename());
             }
 
             if (ioSettings.isExportDotSet()) {
