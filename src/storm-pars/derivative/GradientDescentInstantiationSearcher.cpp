@@ -493,7 +493,7 @@ namespace storm {
                 Environment const& env
         ) {
             //TODO find a good breaking condition, for now, just iterate a bit
-            uint64_t maxIters = 3;
+            uint64_t maxIters = 5;
             uint64_t currIter = 0;
             STORM_LOG_ASSERT(this->currentCheckTask, "Call specifyFormula before calling gradientDescent");
 
@@ -604,6 +604,8 @@ namespace storm {
             utility::Stopwatch printUpdateStopwatch;
             printUpdateStopwatch.start();
 
+            utility::Stopwatch stepStopwatch;
+            stepStopwatch.start();
             // The index to keep track of what parameter(s) to consider next.
             // The "mini-batch", so the parameters to consider, are parameterNum..parameterNum+miniBatchSize-1
             uint_fast64_t parameterNum = 0;
@@ -675,6 +677,10 @@ namespace storm {
                     }
                 } else {
                     tinyChangeIterations = 0;
+                }
+
+                if (stepStopwatch.getTimeInSeconds() >= 300) {
+                    break;
                 }
 
                 // Consider the next parameter
