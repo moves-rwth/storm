@@ -8,10 +8,8 @@ namespace storm {
         public:
             ContinuousType();
             virtual bool isContinuousType() const override;
-            std::string getStringRepresentation() const override;
-
-        private:
-
+            virtual std::string getStringRepresentation() const override;
+            virtual std::unique_ptr<JaniType> clone() const override;
         };
     }
 }

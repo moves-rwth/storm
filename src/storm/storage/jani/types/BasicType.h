@@ -7,15 +7,25 @@ namespace storm {
         class BasicType : public JaniType {
 
         public:
-            BasicType (ElementType const& type);
-            virtual bool isBooleanType() const override;
-            virtual bool isIntegerType() const override;
-            virtual bool isRealType() const override;
-            std::string getStringRepresentation() const override;
+             enum class Type {
+                 Bool,
+                 Int,
+                 Real
+             };
 
+            BasicType (Type const& type);
+            virtual bool isBasicType() const override;
+            
+            Type const& get() const;
+            bool isBooleanType() const;
+            bool isIntegerType() const;
+            bool isRealType() const;
+            
+            virtual std::string getStringRepresentation() const override;
+            virtual std::unique_ptr<JaniType> clone() const override;
 
         private:
-            ElementType type;
+            Type type;
         };
     }
 }

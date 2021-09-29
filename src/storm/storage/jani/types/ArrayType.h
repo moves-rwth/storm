@@ -6,19 +6,17 @@ namespace storm {
     namespace jani {
         class ArrayType : public JaniType {
         public:
-            ArrayType(JaniType* childType);
+            ArrayType(JaniType const& baseType);
+            ArrayType(std::unique_ptr<JaniType>&& baseType);
+            
             bool isArrayType() const override;
-            bool isBoundedType() const override;
-            JaniType* getChildType() const override;
-            std::string getStringRepresentation() const override;
-            void setLowerBound(storm::expressions::Expression const& expression) override;
-            void setUpperBound(storm::expressions::Expression const& expression) override;
-            storm::expressions::Expression const& getLowerBound() const override;
-            storm::expressions::Expression const& getUpperBound() const override;
+            JaniType const& getBaseType() const;
+            virtual std::string getStringRepresentation() const override;
+            virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) override;
+            virtual std::unique_ptr<JaniType> clone() const override;
 
         private:
-            JaniType* childType;
-
+            std::unique_ptr<JaniType> baseType;
         };
     }
 }

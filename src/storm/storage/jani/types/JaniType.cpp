@@ -1,8 +1,5 @@
-#include <cstdint>
-#include <string>
-#include <boost/optional.hpp>
+#include "storm/storage/jani/types/JaniType.h"
 
-#include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/types/AllJaniTypes.h"
 
 namespace storm {
@@ -11,19 +8,11 @@ namespace storm {
            // Intentionally left empty
         }
 
+        bool JaniType::isBasicType() const {
+            return false;
+        }
+        
         bool JaniType::isBoundedType() const {
-            return false;
-        }
-
-        bool JaniType::isBooleanType() const {
-            return false;
-        }
-
-        bool JaniType::isIntegerType() const {
-            return false;
-        }
-
-        bool JaniType::isRealType() const {
             return false;
         }
 
@@ -39,28 +28,48 @@ namespace storm {
             return false;
         }
 
-        void JaniType::setLowerBound(storm::expressions::Expression const& expression) {
-            STORM_LOG_ASSERT(false, "Trying to set lowerbound for not bounded variable");
+        BasicType const& JaniType::asBasicType() const {
+            return dynamic_cast<BasicType const&>(*this);
         }
-
-        void JaniType::setUpperBound(storm::expressions::Expression const& expression) {
-            STORM_LOG_ASSERT(false, "Trying to set lowerbound for not bounded variable");
+        
+        BasicType& JaniType::asBasicType() {
+            return dynamic_cast<BasicType &>(*this);
         }
-
-        storm::expressions::Expression const&  JaniType::getLowerBound() const{
-            STORM_LOG_ASSERT(false, "Trying to get lowerbound for not bounded variable");
+        
+        BoundedType const& JaniType::asBoundedType() const {
+            return dynamic_cast<BoundedType const&>(*this);
         }
-
-        storm::expressions::Expression const& JaniType::getUpperBound() const {
-            STORM_LOG_ASSERT(false, "Trying to get lowerbound for not bounded variable");
+        
+        BoundedType& JaniType::asBoundedType() {
+            return dynamic_cast<BoundedType &>(*this);
         }
-
-        JaniType* JaniType::getChildType() const {
-            STORM_LOG_ASSERT(false, "Type doesn't have a child type");
+        
+        ArrayType const& JaniType::asArrayType() const {
+            return dynamic_cast<ArrayType const&>(*this);
         }
-
-        std::string JaniType::getStringRepresentation() const {
-            return "";
+        
+        ArrayType& JaniType::asArrayType() {
+            return dynamic_cast<ArrayType &>(*this);
+        }
+        
+        ClockType const& JaniType::asClockType() const {
+            return dynamic_cast<ClockType const&>(*this);
+        }
+        
+        ClockType& JaniType::asClockType() {
+            return dynamic_cast<ClockType &>(*this);
+        }
+        
+        ContinuousType const& JaniType::asContinuousType() const {
+            return dynamic_cast<ContinuousType const&>(*this);
+        }
+        
+        ContinuousType& JaniType::asContinuousType() {
+            return dynamic_cast<ContinuousType &>(*this);
+        }
+        
+        void JaniType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& /*substitution*/) {
+            // intentionally left empty
         }
 
         std::ostream& operator<<(std::ostream& stream, JaniType const& type) {
