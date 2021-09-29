@@ -105,7 +105,7 @@ namespace storm {
                             STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()) , storm::exceptions::InvalidSettingsException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
                             storm::jani::Variable const& variable = this->model.getGlobalVariables().getVariable(expressionOrLabelAndBool.first.getLabel());
-                            STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
+                            STORM_LOG_THROW(variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
                             this->terminalStates.emplace_back(variable.getExpressionVariable().getExpression(), expressionOrLabelAndBool.second);
@@ -1113,7 +1113,7 @@ namespace storm {
             // create a list of boolean transient variables and the expressions that define them.
             std::vector<std::pair<std::string, storm::expressions::Expression>> transientVariableExpressions;
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                if (variable.isBooleanVariable()) {
+                if (variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType()) {
                     if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
                         transientVariableExpressions.emplace_back(variable.getName(), variable.getExpressionVariable().getExpression());
                     }

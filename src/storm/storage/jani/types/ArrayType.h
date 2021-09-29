@@ -15,6 +15,7 @@ namespace storm {
             /*!
              * @return the type of which this is an array, e.g., the baseType of int[][] is int[].
              */
+            JaniType& getBaseType();
             JaniType const& getBaseType() const;
             
             /*!

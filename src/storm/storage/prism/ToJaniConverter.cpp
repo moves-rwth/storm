@@ -131,15 +131,15 @@ namespace storm {
             // Add all global variables of the PRISM program to the JANI model.
             for (auto const& variable : program.getGlobalIntegerVariables()) {
                 if (variable.hasLowerBoundExpression() || variable.hasUpperBoundExpression()) {
-                    storm::jani::Variable const& createdVariable = janiModel.addVariable(*storm::jani::Variable::makeBoundedVariable(variable.getName(), storm::jani::JaniType::ElementType::Int, variable.getExpressionVariable(), variable.getInitialValueExpression(), false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression()));
+                    storm::jani::Variable const& createdVariable = janiModel.addVariable(*storm::jani::Variable::makeBoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression(), false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression()));
                     variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
                 } else {
-                    storm::jani::Variable const& createdVariable = janiModel.addVariable(*storm::jani::Variable::makeBasicVariable(variable.getName(), storm::jani::JaniType::ElementType::Int, variable.getExpressionVariable(), variable.getInitialValueExpression(), false));
+                    storm::jani::Variable const& createdVariable = janiModel.addVariable(*storm::jani::Variable::makeIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression(), false));
                     variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
                 }
             }
             for (auto const& variable : program.getGlobalBooleanVariables()) {
-                storm::jani::Variable const& createdVariable = janiModel.addVariable(*storm::jani::Variable::makeBasicVariable(variable.getName(), storm::jani::JaniType::ElementType::Bool, variable.getExpressionVariable(), variable.getInitialValueExpression(), false));
+                storm::jani::Variable const& createdVariable = janiModel.addVariable(*storm::jani::Variable::makeBooleanVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression(), false));
                 variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
             }
             
@@ -216,7 +216,7 @@ namespace storm {
                     labelRenaming[label.getName()] = finalLabelName;
                 }
                 auto newExpressionVariable = manager->declareBooleanVariable(finalLabelName);
-                storm::jani::Variable const& newTransientVariable = janiModel.addVariable(*storm::jani::Variable::makeBasicVariable(newExpressionVariable.getName(), storm::jani::JaniType::ElementType::Bool, newExpressionVariable, manager->boolean(false), true));
+                storm::jani::Variable const& newTransientVariable = janiModel.addVariable(*storm::jani::Variable::makeBooleanVariable(newExpressionVariable.getName(), newExpressionVariable, manager->boolean(false), true));
                 transientLocationAssignments.emplace_back(storm::jani::LValue(newTransientVariable), label.getStatePredicateExpression());
 
                 // Variables that are accessed in the label predicate expression should be made global.
@@ -270,7 +270,7 @@ namespace storm {
                 }
                 
                 auto newExpressionVariable = manager->declareRationalVariable(finalRewardModelName);
-                storm::jani::Variable const& newTransientVariable = janiModel.addVariable(*storm::jani::Variable::makeBasicVariable(newExpressionVariable.getName(), storm::jani::JaniType::ElementType::Real, newExpressionVariable, manager->rational(0.0), true));
+                storm::jani::Variable const& newTransientVariable = janiModel.addVariable(*storm::jani::Variable::makeRealVariable(newExpressionVariable.getName(), newExpressionVariable, manager->rational(0.0), true));
 
 
                 if (rewardModel.hasStateRewards()) {
@@ -345,12 +345,12 @@ namespace storm {
                     if (findRes != variablesToMakeGlobal.end()) {
                         bool makeVarGlobal = findRes->second;
                         if (variable.hasLowerBoundExpression() || variable.hasUpperBoundExpression()) {
-                            storm::jani::Variable newIntegerVariable = *storm::jani::Variable::makeBoundedVariable(variable.getName(), storm::jani::JaniType::ElementType::Int, variable.getExpressionVariable(), variable.getInitialValueExpression(), false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
-                            storm::jani::Variable const& createdVariable = makeVarGlobal ? janiModel.addVariable(newIntegerVariable) : automaton.addVariable(newIntegerVariable);
+                            auto newIntegerVariable = storm::jani::Variable::makeBoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression(), false, variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
+                            storm::jani::Variable const& createdVariable = makeVarGlobal ? janiModel.addVariable(*newIntegerVariable) : automaton.addVariable(*newIntegerVariable);
                             variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
                         } else {
-                            storm::jani::Variable newIntegerVariable = *storm::jani::Variable::makeBasicVariable(variable.getName(), storm::jani::JaniType::ElementType::Int, variable.getExpressionVariable(), variable.getInitialValueExpression(), false);
-                            storm::jani::Variable const& createdVariable = makeVarGlobal ? janiModel.addVariable(newIntegerVariable) : automaton.addVariable(newIntegerVariable);
+                            auto newIntegerVariable = storm::jani::Variable::makeIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression(), false);
+                            storm::jani::Variable const& createdVariable = makeVarGlobal ? janiModel.addVariable(*newIntegerVariable) : automaton.addVariable(*newIntegerVariable);
                             variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
                         }
                     } else {
@@ -358,22 +358,22 @@ namespace storm {
                     }
                 }
                 for (auto const& variable : module.getBooleanVariables()) {
-                    storm::jani::Variable newBooleanVariable = *storm::jani::Variable::makeBasicVariable(variable.getName(), storm::jani::JaniType::ElementType::Bool, variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false);
+                    auto newBooleanVariable = storm::jani::Variable::makeBooleanVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false);
                     auto findRes = variablesToMakeGlobal.find(variable.getExpressionVariable());
                     if (findRes != variablesToMakeGlobal.end()) {
                         bool makeVarGlobal = findRes->second;
-                        storm::jani::Variable const& createdVariable = makeVarGlobal ? janiModel.addVariable(newBooleanVariable) : automaton.addVariable(newBooleanVariable);
+                        storm::jani::Variable const& createdVariable = makeVarGlobal ? janiModel.addVariable(*newBooleanVariable) : automaton.addVariable(*newBooleanVariable);
                         variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
                     } else {
                         STORM_LOG_INFO("Variable " << variable.getName() << " is declared but never used.");
                     }
                 }
                 for (auto const& variable : module.getClockVariables()) {
-                    storm::jani::Variable newClockVariable = *storm::jani::Variable::makeClockVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false);
+                    auto newClockVariable = storm::jani::Variable::makeClockVariable(variable.getName(), variable.getExpressionVariable(), variable.hasInitialValue() ? boost::make_optional(variable.getInitialValueExpression()) : boost::none, false);
                     auto findRes = variablesToMakeGlobal.find(variable.getExpressionVariable());
                     if (findRes != variablesToMakeGlobal.end()) {
                         bool makeVarGlobal = findRes->second;
-                        storm::jani::Variable const& createdVariable = makeVarGlobal ? janiModel.addVariable(newClockVariable) : automaton.addVariable(newClockVariable);
+                        storm::jani::Variable const& createdVariable = makeVarGlobal ? janiModel.addVariable(*newClockVariable) : automaton.addVariable(*newClockVariable);
                         variableToVariableMap.emplace(variable.getExpressionVariable(), createdVariable);
                     } else {
                         STORM_LOG_INFO("Variable " << variable.getName() << " is declared but never used.");

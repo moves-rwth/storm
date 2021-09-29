@@ -14,6 +14,10 @@ namespace storm {
             return true;
         }
 
+        JaniType& ArrayType::getBaseType() {
+            return *baseType;
+        }
+
         JaniType const& ArrayType::getBaseType() const {
             return *baseType;
         }

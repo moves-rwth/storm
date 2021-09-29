@@ -214,15 +214,16 @@ namespace storm {
             for (auto const& variable : variableSet.getBoundedIntegerVariables()) {
                 if (!variable.isTransient()) {
                     int64_t lowerBound, upperBound;
-                    STORM_LOG_ASSERT(variable.hasLowerBound() || variable.hasUpperBound(), "Bounded integer variable has neither a lower nor an upper bound.");
-                    if (variable.hasLowerBound()) {
-                        lowerBound = variable.getLowerBound().evaluateAsInt();
+                    auto const& type = variable.getType().asBoundedType();
+                    STORM_LOG_ASSERT(type.hasLowerBound() || type.hasUpperBound(), "Bounded integer variable has neither a lower nor an upper bound.");
+                    if (type.hasLowerBound()) {
+                        lowerBound = type.getLowerBound().evaluateAsInt();
                     }
-                    if (variable.hasUpperBound()) {
-                        upperBound = variable.getUpperBound().evaluateAsInt();
+                    if (type.hasUpperBound()) {
+                        upperBound = type.getUpperBound().evaluateAsInt();
                     }
-                    uint64_t bitwidth = getBitWidthLowerUpperBound(variable.hasLowerBound(), lowerBound, variable.hasUpperBound(), upperBound, reservedBitsForUnboundedVariables);
-                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, global, true, !variable.hasLowerBound() || !variable.hasUpperBound());
+                    uint64_t bitwidth = getBitWidthLowerUpperBound(type.hasLowerBound(), lowerBound, type.hasUpperBound(), upperBound, reservedBitsForUnboundedVariables);
+                    integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, global, true, !type.hasLowerBound() || !type.hasUpperBound());
                     totalBitOffset += bitwidth;
                 }
             }

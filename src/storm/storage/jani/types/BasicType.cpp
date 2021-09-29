@@ -32,12 +32,12 @@ namespace storm {
 
         std::string BasicType::getStringRepresentation() const {
             switch (type) {
-                case Type::Real:
-                    return "real";
                 case Type::Bool:
                     return "bool";
                 case Type::Int:
                     return "int";
+                case Type::Real:
+                    return "real";
             }
         }
         

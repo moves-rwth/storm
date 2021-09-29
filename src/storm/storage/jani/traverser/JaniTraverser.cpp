@@ -58,22 +58,7 @@ namespace storm {
         }
         
         void JaniTraverser::traverse(VariableSet& variableSet, boost::any const& data) {
-            for (auto& v : variableSet.getBooleanVariables()) {
-                traverse(v, data);
-            }
-            for (auto& v : variableSet.getBoundedIntegerVariables()) {
-                traverse(v, data);
-            }
-            for (auto& v : variableSet.getUnboundedIntegerVariables()) {
-                traverse(v, data);
-            }
-            for (auto& v : variableSet.getRealVariables()) {
-                traverse(v, data);
-            }
-            for (auto& v : variableSet.getArrayVariables()) {
-                traverse(v, data);
-            }
-            for (auto& v : variableSet.getClockVariables()) {
+            for (auto& v : variableSet) {
                 traverse(v, data);
             }
         }
@@ -89,11 +74,20 @@ namespace storm {
             if (variable.hasInitExpression()) {
                 traverse(variable.getInitExpression(), data);
             }
-            if (variable.isBoundedVariable() && variable.hasLowerBound()) {
-                traverse(variable.getLowerBound(), data);
-            }
-            if (variable.isBoundedVariable() && variable.hasUpperBound()) {
-                traverse(variable.getUpperBound(), data);
+            traverse(variable.getType(), data);
+        }
+        
+        void JaniTraverser::traverse(JaniType& type, boost::any const& data) {
+            if (type.isBoundedType()) {
+                auto& boundedType = type.asBoundedType();
+                if (boundedType.hasLowerBound()) {
+                    traverse(boundedType.getLowerBound(), data);
+                }
+                if (boundedType.hasUpperBound()) {
+                    traverse(boundedType.getUpperBound(), data);
+                }
+            } else if (type.isArrayType()) {
+                traverse(type.asArrayType().getBaseType(), data);
             }
         }
         
@@ -209,22 +203,7 @@ namespace storm {
         }
         
         void ConstJaniTraverser::traverse(VariableSet const& variableSet, boost::any const& data) {
-            for (auto const& v : variableSet.getBooleanVariables()) {
-                traverse(v, data);
-            }
-            for (auto const& v : variableSet.getBoundedIntegerVariables()) {
-                traverse(v, data);
-            }
-            for (auto const& v : variableSet.getUnboundedIntegerVariables()) {
-                traverse(v, data);
-            }
-            for (auto const& v : variableSet.getRealVariables()) {
-                traverse(v, data);
-            }
-            for (auto const& v : variableSet.getArrayVariables()) {
-                traverse(v, data);
-            }
-            for (auto const& v : variableSet.getClockVariables()) {
+            for (auto const& v : variableSet) {
                 traverse(v, data);
             }
         }
@@ -240,11 +219,20 @@ namespace storm {
             if (variable.hasInitExpression()) {
                 traverse(variable.getInitExpression(), data);
             }
-            if (variable.isBoundedVariable() && variable.hasLowerBound()) {
-                traverse(variable.getLowerBound(), data);
-            }
-            if (variable.isBoundedVariable() && variable.hasUpperBound()) {
-                traverse(variable.getUpperBound(), data);
+            traverse(variable.getType(), data);
+        }
+        
+        void ConstJaniTraverser::traverse(JaniType const& type, boost::any const& data) {
+            if (type.isBoundedType()) {
+                auto const& boundedType = type.asBoundedType();
+                if (boundedType.hasLowerBound()) {
+                    traverse(boundedType.getLowerBound(), data);
+                }
+                if (boundedType.hasUpperBound()) {
+                    traverse(boundedType.getUpperBound(), data);
+                }
+            } else if (type.isArrayType()) {
+                traverse(type.asArrayType().getBaseType(), data);
             }
         }
 

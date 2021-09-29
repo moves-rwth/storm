@@ -32,6 +32,8 @@ namespace storm {
             bool hasLowerBound() const;
             bool hasUpperBound() const;
             
+            storm::expressions::Expression& getLowerBound();
+            storm::expressions::Expression& getUpperBound();
             storm::expressions::Expression const& getLowerBound() const;
             storm::expressions::Expression const& getUpperBound() const;
 

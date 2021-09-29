@@ -9,23 +9,23 @@ namespace storm {
     namespace jani {
         
         LValue::LValue(storm::jani::Variable const& variable) : variable(&variable) {
-            STORM_LOG_ASSERT(!variable.isArrayVariable(), "LValue for variable " << variable.getName() << " not possible as the variable is a array variable, we need an index and sizes for this");
+            STORM_LOG_ASSERT(!variable.getType().isArrayType(), "LValue for variable " << variable.getName() << " not possible as the variable is a array variable, we need an index and sizes for this");
             // Intentionally left empty
         }
 
         LValue::LValue(storm::jani::Variable const& variable, std::vector<storm::expressions::Expression> const index, std::vector<std::size_t> const& sizes) : variable(&variable), arrayIndexVector(index), sizes(sizes) {
-            STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
+            STORM_LOG_THROW(variable.getType().isArrayType(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             STORM_LOG_ASSERT(arrayIndexVector->size() <= sizes.size(), "Expecting arrayIndexVector size to be smaller or equal than the size of the sizes vector for variable: " << variable.getName());
             // Intentionally left empty
         }
 
         LValue::LValue(storm::jani::Variable const& variable, std::vector<std::size_t> const& sizes) : variable(&variable), sizes(sizes) {
-            STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
+            STORM_LOG_THROW(variable.getType().isArrayType(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             arrayIndexVector = std::vector<storm::expressions::Expression>();
         }
 
         LValue::LValue(storm::jani::Variable const& variable, storm::expressions::Expression const& index, std::size_t size) : variable(&variable) {
-            STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
+            STORM_LOG_THROW(variable.getType().isArrayType(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             std::vector<storm::expressions::Expression> indexVec = {index};
             arrayIndexVector = std::move(indexVec);
             sizes = {size};
@@ -36,7 +36,7 @@ namespace storm {
         }
 
         bool LValue::isArray() const {
-            return variable->isArrayVariable();
+            return variable->getType().isArrayType();
         }
         
         storm::jani::Variable const& LValue::getVariable() const {

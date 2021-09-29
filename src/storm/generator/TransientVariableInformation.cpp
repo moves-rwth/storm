@@ -132,11 +132,12 @@ namespace storm {
                 if (variable.isTransient()) {
                     boost::optional<int64_t> lowerBound;
                     boost::optional<int64_t> upperBound;
-                    if (variable.hasLowerBound()) {
-                        lowerBound = variable.getLowerBound().evaluateAsInt();
+                    auto const& type = variable.getType().asBoundedType();
+                    if (type.hasLowerBound()) {
+                        lowerBound = type.getLowerBound().evaluateAsInt();
                     }
-                    if (variable.hasUpperBound()) {
-                        upperBound = variable.getUpperBound().evaluateAsInt();
+                    if (type.hasUpperBound()) {
+                        upperBound = type.getUpperBound().evaluateAsInt();
                     }
                     integerVariableInformation.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, variable.getInitExpression().evaluateAsInt(), global);
                 }

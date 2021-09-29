@@ -915,28 +915,32 @@ namespace storm {
             return ExportJsonType(constantDeclarations);
         }
 
-        ExportJsonType buildArray(storm::jani::Variable variable, storm::jani::JaniType& type, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
+        ExportJsonType buildType(storm::jani::JaniType const& type, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
             ExportJsonType typeDesc ;
-            if(type.isBooleanType()) {
-                typeDesc = "bool";
-            } else if (type.isRealType()) {
-                typeDesc = "real";
-            } else if (type.isIntegerType() && !type.isBoundedType()) {
-                typeDesc = "int";
-            } else if (type.isIntegerType() && type.isBoundedType()) {
+            if (type.isBasicType() || type.isClockType() || type.isContinuousType()) {
+                typeDesc = type.getStringRepresentation();
+            } else if (type.isBoundedType()) {
                 typeDesc["kind"] = "bounded";
-                typeDesc["base"] = "int";
-                typeDesc["lower-bound"] = buildExpression(variable.getLowerBound(), constants, globalVariables, localVariables);
-                typeDesc["upper-bound"] = buildExpression(variable.getUpperBound(), constants, globalVariables, localVariables);
+                auto const& bndType = type.asBoundedType();
+                switch (bndType.getBaseType()) {
+                    case storm::jani::BoundedType::BaseType::Int:
+                        typeDesc["base"] = "int";
+                        break;
+                    case storm::jani::BoundedType::BaseType::Real:
+                        typeDesc["base"] = "real";
+                        break;
+                }
+                if (bndType.hasLowerBound()) {
+                    typeDesc["lower-bound"] = buildExpression(bndType.getLowerBound(), constants, globalVariables, localVariables);
+                }
+                if (bndType.hasUpperBound()) {
+                    typeDesc["upper-bound"] = buildExpression(bndType.getUpperBound(), constants, globalVariables, localVariables);
+                }
             } else if (type.isArrayType()) {
                 typeDesc["kind"] = "array";
-                typeDesc["base"] = buildArray(variable, *type.getChildType(), constants, globalVariables, localVariables);
-            } else if (type.isClockType()) {
-                typeDesc = "clock";
-            } else if (type.isContinuousType()) {
-                typeDesc = "continuous";
+                typeDesc["base"] = buildType(type.asArrayType().getBaseType(), constants, globalVariables, localVariables);
             } else {
-                STORM_LOG_ASSERT(false, "Unexpected array type");
+                STORM_LOG_THROW (false, storm::exceptions::NotImplementedException, "Variable type not recognized in JSONExporter");
             }
             return typeDesc;
         }
@@ -949,30 +953,7 @@ namespace storm {
                 if (variable.isTransient()) {
                     varEntry["transient"] = variable.isTransient();
                 }
-                ExportJsonType typeDesc ;
-                if(variable.isBooleanVariable()) {
-                    typeDesc = "bool";
-                } else if (variable.isRealVariable()) {
-                    typeDesc = "real";
-                } else if (variable.isIntegerVariable() && !variable.isBoundedVariable()) {
-                    typeDesc = "int";
-                } else if (variable.isIntegerVariable() && variable.isBoundedVariable()) {
-                    typeDesc["kind"] = "bounded";
-                    typeDesc["base"] = "int";
-                    typeDesc["lower-bound"] = buildExpression(variable.getLowerBound(), constants, globalVariables, localVariables);
-                    typeDesc["upper-bound"] = buildExpression(variable.getUpperBound(), constants, globalVariables, localVariables);
-                } else if (variable.isArrayVariable()) {
-                    typeDesc["kind"] = "array";
-                    STORM_LOG_ASSERT(variable.getType()->isArrayType(), "Expecting variable to have type array");
-                    typeDesc["base"] = buildArray(variable, *(variable.getType()->getChildType()), constants, globalVariables, localVariables);
-                } else if (variable.isClockVariable()) {
-                    typeDesc = "clock";
-                } else if (variable.isContinuousVariable()) {
-                    typeDesc = "continuous";
-                } else {
-                    STORM_LOG_ASSERT (false, "Variable type not recognized in JSONExporter");
-                }
-                varEntry["type"] = typeDesc;
+                varEntry["type"] = buildType(variable.getType(), constants, globalVariables, localVariables);
                 if (variable.hasInitExpression()) {
                     varEntry["initial-value"] = buildExpression(variable.getInitExpression(), constants, globalVariables, localVariables);
                 }

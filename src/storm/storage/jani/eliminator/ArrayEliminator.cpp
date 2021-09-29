@@ -545,7 +545,7 @@ namespace storm {
                 }
                 
                 virtual void traverse(Variable const& variable, boost::any const& data) override {
-                    if (variable.isArrayVariable() && variable.hasInitExpression()) {
+                    if (variable.getType().isArrayType() && variable.hasInitExpression()) {
                         auto& map = *boost::any_cast<MapPtr>(data);
                         std::size_t newSize = MaxArraySizeExpressionVisitor().getMaxSize(variable.getInitExpression(), map);
                         auto insertionRes = map.emplace(variable.getExpressionVariable(), newSize);
@@ -684,7 +684,8 @@ namespace storm {
                                 collectedArrayAccessAssignments.clear();
                                 level = assignment.getLevel();
                             }
-                            if (assignment.getVariable().isArrayVariable() && assignment.getLValue().isFullArrayAccess()) {
+                            
+                            if (assignment.getLValue().isArray() && assignment.getLValue().isFullArrayAccess()) {
                                 // This is the easy case, we can eliminate the variable by replacing it by its _at_... equivalent
                                 if (!keepNonTrivialArrayAccess || !assignment.getLValue().arrayIndexContainsVariable()) {
                                     auto insertionRes = collectedArrayAccessAssignments.emplace(assignment.getVariable().getExpressionVariable(), std::vector<Assignment const*>({&assignment}));
@@ -697,7 +698,7 @@ namespace storm {
                                     LValue newLValue(LValue(assignment.getVariable(), newIndex, assignment.getLValue().getTotalSize()));
                                     newAssignments.emplace_back(newLValue, arrayExprEliminator->eliminate(assignment.getAssignedExpression()), assignment.getLevel());
                                 }
-                            } else if (assignment.getVariable().isArrayVariable()) {
+                            } else if (assignment.getLValue().isArray()) {
                                 // In this case we assign to an array to an array, there are one or more indices missing
                                 STORM_LOG_ASSERT(assignment.getAssignedExpression().getType().isArrayType(), "Assigning a non-array expression to an array variable... " << assignment);
                                 // We can only deal with the case where the last index missing
@@ -737,6 +738,7 @@ namespace storm {
             private:
                 
                 std::shared_ptr<Variable> getBasicVariable(Variable const& arrayVariable, uint64_t index) const {
+                    STORM_LOG_ASSERT(arrayVariable.getType().isArrayType(), "Unexpected variable type.");
                     std::string name = arrayVariable.getExpressionVariable().getName() + "_at_" + std::to_string(index);
                     storm::expressions::Expression initValue;
                     if (arrayVariable.hasInitExpression()) {
@@ -747,40 +749,34 @@ namespace storm {
                         STORM_LOG_ASSERT(!containsArrayExpression(initValue), "HELP:  " << arrayVariable.getName());
                     }
 
-                    if (arrayVariable.getType()->getChildType()->isIntegerType()) {
-                        storm::expressions::Variable exprVariable = expressionManager.declareIntegerVariable(name);
-                        if (arrayVariable.isBoundedVariable()) {
-                            return storm::jani::Variable::makeBoundedVariable(name, storm::jani::JaniType::ElementType::Int, exprVariable, initValue, arrayVariable.isTransient(), arrayVariable.getLowerBound(), arrayVariable.getUpperBound());
-                        } else {
-                            return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Int, exprVariable, initValue, arrayVariable.isTransient());
+                    auto const& baseType = arrayVariable.getType().asArrayType().getBaseTypeRecursive();
+                    
+                    storm::expressions::Variable exprVariable;
+                    if (baseType.isBasicType()) {
+                        switch (baseType.asBasicType().get()) {
+                            case BasicType::Type::Bool:
+                                exprVariable = expressionManager.declareBooleanVariable(name);
+                                break;
+                            case BasicType::Type::Int:
+                                exprVariable = expressionManager.declareIntegerVariable(name);
+                                break;
+                            case BasicType::Type::Real:
+                                exprVariable = expressionManager.declareRationalVariable(name);
+                                break;
                         }
-                    } else if (arrayVariable.getType()->getChildType()->isRealType()) {
-                        storm::expressions::Variable exprVariable = expressionManager.declareRationalVariable(name);
-                        return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Real, exprVariable, initValue, arrayVariable.isTransient());
-                    } else if (arrayVariable.getType()->getChildType()->isBooleanType()) {
-                        storm::expressions::Variable exprVariable = expressionManager.declareBooleanVariable(name);
-                        return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Bool, exprVariable, initValue, arrayVariable.isTransient());
-                    } else if (arrayVariable.getType()->getChildType()->isArrayType()) {
-                        auto const childType = arrayVariable.getType()->getChildType();
-                        if (childType->getChildType()->isIntegerType()) {
-                            storm::expressions::Variable exprVariable = expressionManager.declareIntegerVariable(name);
-                            if (arrayVariable.isBoundedVariable()) {
-                                return storm::jani::Variable::makeBoundedVariable(name, storm::jani::JaniType::ElementType::Int, exprVariable, initValue, arrayVariable.isTransient(), arrayVariable.getLowerBound(), arrayVariable.getUpperBound());
-                            } else {
-                                return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Int, exprVariable, initValue, arrayVariable.isTransient());
-                            }
-                        } else if (childType->getChildType()->isRealType()) {
-                            storm::expressions::Variable exprVariable = expressionManager.declareRationalVariable(name);
-                            return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Real, exprVariable, initValue, arrayVariable.isTransient());
-                        } else if (childType->getChildType()->isBooleanType()) {
-                            storm::expressions::Variable exprVariable = expressionManager.declareBooleanVariable(name);
-                            return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Bool, exprVariable, initValue, arrayVariable.isTransient());
-                        } else if (childType->getChildType()->isArrayType()) {
-                            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "More than two nested arrays not implemented");
+                    } else if (baseType.isBoundedType()) {
+                        switch (baseType.asBoundedType().getBaseType()) {
+                            case BoundedType::BaseType::Int:
+                                exprVariable = expressionManager.declareIntegerVariable(name);
+                                break;
+                            case BoundedType::BaseType::Real:
+                                exprVariable = expressionManager.declareRationalVariable(name);
+                                break;
                         }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled base type for array of type " << arrayVariable.getType());
                     }
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled array base type.");
-                    return nullptr;
+                    return storm::jani::Variable::makeVariable(name, baseType, exprVariable, initValue, arrayVariable.isTransient());
                 }
                 
                 void insertLValueArrayAccessReplacements(std::vector<Assignment const*> const& arrayAccesses, std::vector<storm::jani::Variable const*> const& arrayVariableReplacements, int64_t level, std::vector<Assignment>& newAssignments) const {
@@ -813,17 +809,30 @@ namespace storm {
                         STORM_LOG_ASSERT(!containsArrayExpression(var.getInitExpression()), "HELP out of bounds " << var.getName());
                         return var.getInitExpression();
                     }
-                    if (var.isBooleanVariable()) {
-                        return expressionManager.boolean(false);
-                    }
-                    if (var.isBoundedVariable() && var.isIntegerVariable()) {
-                        return var.getLowerBound();
-                    }
-                    if (!var.isBoundedVariable() && var.isIntegerVariable()) {
-                        return expressionManager.integer(0);
-                    }
-                    if (var.isRealVariable()) {
-                        return expressionManager.rational(0.0);
+                    
+                    if (var.getType().isBasicType()) {
+                        switch (var.getType().asBasicType().get()) {
+                            case BasicType::Type::Bool:
+                                return expressionManager.boolean(false);
+                            case BasicType::Type::Int:
+                                return expressionManager.integer(0);
+                            case BasicType::Type::Real:
+                                return expressionManager.rational(0.0);
+                        }
+                    } else if (var.getType().isBoundedType()) {
+                        auto const& bndType = var.getType().asBoundedType();
+                        if (bndType.hasLowerBound()) {
+                            return bndType.getLowerBound();
+                        } else if (bndType.hasUpperBound()) {
+                            return bndType.getUpperBound();
+                        } else {
+                            switch (bndType.getBaseType()) {
+                                case BoundedType::BaseType::Int:
+                                    return expressionManager.integer(0);
+                                case BoundedType::BaseType::Real:
+                                    return expressionManager.rational(0.0);
+                            }
+                        }
                     }
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "unhandled variabe type");
                     return storm::expressions::Expression();

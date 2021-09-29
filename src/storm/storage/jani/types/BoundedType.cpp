@@ -43,6 +43,14 @@ namespace storm {
             return this->upperBound.isInitialized();
         }
 
+        storm::expressions::Expression& BoundedType::getLowerBound() {
+            return this->lowerBound;
+        }
+
+        storm::expressions::Expression& BoundedType::getUpperBound() {
+            return this->upperBound;
+        }
+
         storm::expressions::Expression const& BoundedType::getLowerBound() const {
             return this->lowerBound;
         }

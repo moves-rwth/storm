@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace jani {
-        ClockType::ClockType() : {
+        ClockType::ClockType() {
             // Intentionally left empty
         }
 

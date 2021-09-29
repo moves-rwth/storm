@@ -8,7 +8,7 @@ namespace storm {
             // Intentionally left empty
         }
 
-        Variable::Variable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable) : name(name), type(type), variable(variable), init(), transient(false) {
+        Variable::Variable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable) : name(name), type(type.clone()), variable(variable), init(), transient(false) {
             // Intentionally left empty
         }
 
@@ -60,8 +60,32 @@ namespace storm {
             type->substitute(substitution);
         }
 
+        JaniType& Variable::getType() {
+            return *type;
+        }
+
         JaniType const& Variable::getType() const {
             return *type;
+        }
+        
+        storm::expressions::Expression Variable::getRangeExpression() const {
+            storm::expressions::Expression range;
+            
+            if (getType().isBoundedType()) {
+                auto const& boundedType = getType().asBoundedType();
+                
+                if (boundedType.hasLowerBound()) {
+                    range = boundedType.getLowerBound() <= this->getExpressionVariable();
+                }
+                if (boundedType.hasUpperBound()) {
+                    if (range.isInitialized()) {
+                        range = range && this->getExpressionVariable() <= boundedType.getUpperBound();
+                    } else {
+                        range = this->getExpressionVariable() <= boundedType.getUpperBound();
+                    }
+                }
+            }
+            return range;
         }
 
         std::shared_ptr<Variable> Variable::makeVariable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
@@ -73,7 +97,7 @@ namespace storm {
             }
         }
 
-        std::shared_ptr<Variable> Variable::makeBasicTypeVariable(const std::string const& name, BasicType::Type const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
+        std::shared_ptr<Variable> Variable::makeBasicTypeVariable(std::string const& name, BasicType::Type const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
             return makeVariable(name, BasicType(type), variable, initValue, transient);
         }
         

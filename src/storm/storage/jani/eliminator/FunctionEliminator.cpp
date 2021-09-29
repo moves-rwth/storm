@@ -392,11 +392,21 @@ namespace storm {
                     if (variable.hasInitExpression()) {
                         variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
                     }
-                    if (variable.isBoundedVariable() && variable.hasLowerBound()) {
-                        variable.setLowerBound(functionEliminationVisitor->eliminate(variable.getLowerBound()));
-                    }
-                    if (variable.isBoundedVariable() && variable.hasUpperBound()) {
-                        variable.setUpperBound(functionEliminationVisitor->eliminate(variable.getUpperBound()));
+                    traverse(variable.getType(), data);
+                }
+                
+                void traverse(JaniType& type, boost::any const& data) override {
+                    if (type.isBoundedType()) {
+                        FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
+                        auto& bndType = type.asBoundedType();
+                        if (bndType.hasLowerBound()) {
+                            bndType.setLowerBound(functionEliminationVisitor->eliminate(bndType.getLowerBound()));
+                        }
+                        if (bndType.hasUpperBound()) {
+                            bndType.setUpperBound(functionEliminationVisitor->eliminate(bndType.getUpperBound()));
+                        }
+                    } else if (type.isArrayType()) {
+                        traverse(type.asArrayType().getBaseType(), data);
                     }
                 }
 

@@ -509,8 +509,7 @@ namespace storm {
             }
             // Assert the bounds of the global variables.
             for (auto const& variable : newAutomaton.getVariables().getBoundedIntegerVariables()) {
-                solver->add(variable.getExpressionVariable() >= variable.getLowerBound());
-                solver->add(variable.getExpressionVariable() <= variable.getUpperBound());
+                solver->add(variable.getRangeExpression());
             }
 
             // Perform all necessary synchronizations and keep track which action indices participate in synchronization.
@@ -799,7 +798,8 @@ namespace storm {
                         return nonTrivialRewardModels.begin()->second;
                     } else {
                         for (auto const& variable : globalVariables.getTransientVariables()) {
-                            if (variable.isRealVariable() || variable.isIntegerVariable()) {
+                            auto const& type = variable.getType();
+                            if ((type.isBasicType() && type.asBasicType().isNumericalType()) || (type.isBoundedType() && type.asBoundedType().isNumericalType())) {
                                 return variable.getExpressionVariable().getExpression();
                             }
                         }
@@ -816,7 +816,8 @@ namespace storm {
                 result.emplace_back(nonTrivExpr.first, nonTrivExpr.second);
             }
             for (auto const& variable : globalVariables.getTransientVariables()) {
-                if (variable.isRealVariable() || variable.isIntegerVariable()) {
+                auto const& type = variable.getType();
+                if ((type.isBasicType() && type.asBasicType().isNumericalType()) || (type.isBoundedType() && type.asBoundedType().isNumericalType())) {
                     result.emplace_back(variable.getName(), variable.getExpressionVariable().getExpression());
                 }
             }
@@ -1303,7 +1304,13 @@ namespace storm {
                 }
                 
                 if (variable.hasInitExpression()) {
-                    result = result && (variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression());
+                    storm::expressions::Expression newInitExpression;
+                    if (variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType()) {
+                        newInitExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression());
+                    } else {
+                        newInitExpression = variable.getExpressionVariable() == variable.getInitExpression();
+                    }
+                    result = result && newInitExpression;
                 }
             }
             
@@ -1372,7 +1379,8 @@ namespace storm {
         
         storm::expressions::Expression Model::getLabelExpression(Variable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const {
             STORM_LOG_THROW(transientVariable.isTransient(), storm::exceptions::InvalidArgumentException, "Expected transient variable.");
-            STORM_LOG_THROW(transientVariable.isBooleanVariable(), storm::exceptions::InvalidArgumentException, "Expected boolean variable.");
+            auto const& type = transientVariable.getType();
+            STORM_LOG_THROW(type.isBasicType() && type.asBasicType().isBooleanType(), storm::exceptions::InvalidArgumentException, "Expected boolean variable.");
 
             storm::expressions::Expression result;
             bool negate = transientVariable.getInitExpression().isTrue();

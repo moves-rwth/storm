@@ -66,8 +66,16 @@ namespace storm {
             
             bool isTransient() const;
 
+            JaniType& getType();
             JaniType const& getType() const;
 
+            /*!
+             * Retrieves an expression characterizing the legal range of the variable.
+             * If the type is a bounded type, the expression will be of the form "l <= x && x <= u".
+             * Otherwise, an uninitialized expression is returned.
+             */
+            storm::expressions::Expression getRangeExpression() const;
+            
             ~Variable();
 
             /*!

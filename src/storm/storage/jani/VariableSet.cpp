@@ -69,33 +69,47 @@ namespace storm {
             return detail::ConstVariables<Variable>(continuousVariables.begin(), continuousVariables.end());
         }
         
+        
+        std::vector<std::shared_ptr<Variable>>& VariableSet::getVariableVectorForType(JaniType const& type) {
+            if (type.isBasicType()) {
+                switch(type.asBasicType().get()) {
+                    case BasicType::Type::Bool:
+                        return booleanVariables;
+                    case BasicType::Type::Int:
+                        return unboundedIntegerVariables;
+                    case BasicType::Type::Real:
+                        return realVariables;
+                }
+            } else if (type.isBoundedType()) {
+                switch(type.asBoundedType().getBaseType()) {
+                    case BoundedType::BaseType::Int:
+                        return boundedIntegerVariables;
+                    case BoundedType::BaseType::Real:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Cannot add variable of bounded real type.");
+                }
+            } else if (type.isArrayType()) {
+                return arrayVariables;
+            } else if (type.isClockType()) {
+                return clockVariables;
+            } else if (type.isContinuousType()) {
+                return continuousVariables;
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unhandled variable type" << type);
+        }
+
+        
         Variable const& VariableSet::addVariable(Variable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
-            std::shared_ptr<Variable> newVariable = std::make_shared<Variable>(variable);
+            std::shared_ptr<Variable> newVariable = variable.clone();
             variables.push_back(newVariable);
             if (variable.isTransient()) {
                 transientVariables.push_back(newVariable);
             }
             nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
             variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
-
-            if (variable.isBooleanVariable()) {
-                booleanVariables.push_back(newVariable);
-            } else if (variable.isBoundedVariable() && variable.isIntegerVariable()) {
-                boundedIntegerVariables.push_back(newVariable);
-            } else if (!variable.isBoundedVariable() && variable.isIntegerVariable()) {
-                unboundedIntegerVariables.push_back(newVariable);
-            } else if (variable.isRealVariable()) {
-                realVariables.push_back(newVariable);
-            } else if (variable.isArrayVariable()) {
-                arrayVariables.push_back(newVariable);
-            } else if (variable.isClockVariable()) {
-                clockVariables.push_back(newVariable);
-            } else if (variable.isContinuousVariable()) {
-                continuousVariables.push_back(newVariable);
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Cannot add variable of unknown type.");
-            }
+            
+            auto& variableVectorForType = getVariableVectorForType(variable.getType());
+            variableVectorForType.push_back(newVariable);
             return *newVariable;
         }
 
@@ -109,14 +123,14 @@ namespace storm {
                 }
                 std::vector<std::shared_ptr<Variable>> newVariables;
                 for (auto const& v : variables) {
-                    if (!v->isArrayVariable()) {
+                    if (!v->getType().isArrayType()) {
                         newVariables.push_back(v);
                     }
                 }
                 variables = std::move(newVariables);
                 newVariables.clear();
                 for (auto const& v : transientVariables) {
-                    if (!v->isArrayVariable()) {
+                    if (!v->getType().isArrayType()) {
                         newVariables.push_back(v);
                     }
                 }
@@ -160,30 +174,7 @@ namespace storm {
             
             nameToVariable.erase(janiVar->getName());
             eraseFromVariableVector(variables, variable);
-            if (janiVar->isBooleanVariable()) {
-                eraseFromVariableVector(booleanVariables, variable);
-            }
-            if (janiVar->isBooleanVariable()) {
-                eraseFromVariableVector(booleanVariables, variable);
-            }
-            if (janiVar->isIntegerVariable() && janiVar->isBoundedVariable()) {
-                eraseFromVariableVector(boundedIntegerVariables, variable);
-            }
-            if (janiVar->isIntegerVariable() && !janiVar->isBoundedVariable()) {
-                eraseFromVariableVector(unboundedIntegerVariables, variable);
-            }
-            if (janiVar->isRealVariable()) {
-                eraseFromVariableVector(realVariables, variable);
-            }
-            if (janiVar->isArrayVariable()) {
-                eraseFromVariableVector(arrayVariables, variable);
-            }
-            if (janiVar->isClockVariable()) {
-                eraseFromVariableVector(clockVariables, variable);
-            }
-            if (janiVar->isContinuousVariable()) {
-                eraseFromVariableVector(clockVariables, variable);
-            }
+            eraseFromVariableVector(getVariableVectorForType(janiVar->getType()), variable);
             if (janiVar->isTransient()) {
                 eraseFromVariableVector(transientVariables, variable);
             }
@@ -295,8 +286,8 @@ namespace storm {
         
         uint_fast64_t VariableSet::getNumberOfRealTransientVariables() const {
             uint_fast64_t result = 0;
-            for (auto const& variable : variables) {
-                if (variable->isTransient() && variable->isRealVariable()) {
+            for (auto const& variable : realVariables) {
+                if (variable->isTransient()) {
                     ++result;
                 }
             }
@@ -305,8 +296,8 @@ namespace storm {
         
         uint_fast64_t VariableSet::getNumberOfUnboundedIntegerTransientVariables() const {
             uint_fast64_t result = 0;
-            for (auto const& variable : variables) {
-                if (variable->isTransient() && variable->isIntegerVariable() && !variable->isBoundedVariable()) {
+            for (auto const& variable : unboundedIntegerVariables) {
+                if (variable->isTransient()) {
                     ++result;
                 }
             }
@@ -316,7 +307,10 @@ namespace storm {
         uint_fast64_t VariableSet::getNumberOfNumericalTransientVariables() const {
             uint_fast64_t result = 0;
             for (auto const& variable : transientVariables) {
-                if (variable->isRealVariable() || variable->isIntegerVariable()) {
+                auto const& type = variable->getType();
+                if (type.isBasicType() && (type.asBasicType().isIntegerType() || type.asBasicType().isRealType())) {
+                    ++result;
+                } else if (type.isBoundedType() && (type.asBoundedType().isIntegerType() || type.asBoundedType().isRealType())) {
                     ++result;
                 }
             }
@@ -328,46 +322,19 @@ namespace storm {
         }
         
         bool VariableSet::containsVariablesInBoundExpressionsOrInitialValues(std::set<storm::expressions::Variable> const& variables) const {
-            for (auto const& booleanVariable : this->getBooleanVariables()) {
-                if (booleanVariable.hasInitExpression()) {
-                    if (booleanVariable.getInitExpression().containsVariable(variables)) {
-                        return true;
-                    }
-                }
-            }
-            for (auto const& integerVariable : this->getBoundedIntegerVariables()) {
-                if (integerVariable.hasInitExpression()) {
-                    if (integerVariable.getInitExpression().containsVariable(variables)) {
-                        return true;
-                    }
-                }
-                if (integerVariable.getLowerBound().containsVariable(variables)) {
+            
+            for (auto const& variable : this->variables) {
+                if (variable->hasInitExpression() && variable->getInitExpression().containsVariable(variables)) {
                     return true;
                 }
-                if (integerVariable.getUpperBound().containsVariable(variables)) {
-                    return true;
-                }
-            }
-            for (auto const& arrayVariable : this->getArrayVariables()) {
-                if (arrayVariable.hasInitExpression()) {
-                    if (arrayVariable.getInitExpression().containsVariable(variables)) {
+                auto const& varType = variable->getType();
+                auto const& type = varType.isArrayType() ? varType.asArrayType().getBaseTypeRecursive() : varType;
+                if (type.isBoundedType()) {
+                    auto const& boundedType = type.asBoundedType();
+                    if (boundedType.hasLowerBound() && boundedType.getLowerBound().containsVariable(variables)) {
                         return true;
                     }
-                }
-                if (arrayVariable.hasLowerBound()) {
-                    if (arrayVariable.getLowerBound().containsVariable(variables)) {
-                        return true;
-                    }
-                }
-                if (arrayVariable.hasUpperBound()) {
-                    if (arrayVariable.getUpperBound().containsVariable(variables)) {
-                        return true;
-                    }
-                }
-            }
-            for (auto const& clockVariable : this->getClockVariables()) {
-                if (clockVariable.hasInitExpression()) {
-                    if (clockVariable.getInitExpression().containsVariable(variables)) {
+                    if (boundedType.hasUpperBound() && boundedType.getUpperBound().containsVariable(variables)) {
                         return true;
                     }
                 }

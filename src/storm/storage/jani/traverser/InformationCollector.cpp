@@ -48,21 +48,22 @@ namespace storm {
 
                 virtual void traverse(Variable const& variable, boost::any const& data) override {
                     if (!variable.isTransient()) {
-                        if (variable.isBooleanVariable()) {
+                        // Only consider domain size for non-transient variables
+                        auto const& type = variable.getType();
+                        if (type.isBasicType() && type.asBasicType().isBooleanType()) {
                             domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>(2u);
                             domainSizesSum += 2;
-                        } else if (variable.isIntegerVariable() && variable.isBoundedVariable() && variable.hasLowerBound() && variable.hasUpperBound() && !variable.getLowerBound().containsVariables() && !variable.getUpperBound().containsVariables()) {
-                            domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>((variable.getUpperBound().evaluateAsInt() - variable.getLowerBound().evaluateAsInt()));
-                            domainSizesSum += (variable.getUpperBound().evaluateAsInt() - variable.getLowerBound().evaluateAsInt());
-                        }else {
+                        } else if (type.isBoundedType() && type.asBoundedType().isIntegerType() && type.asBoundedType().hasLowerBound() && type.asBoundedType().hasUpperBound() && !type.asBoundedType().getLowerBound().containsVariables() && !type.asBoundedType().getUpperBound().containsVariables()) {
+                            auto size = type.asBoundedType().getUpperBound().evaluateAsInt() - type.asBoundedType().getLowerBound().evaluateAsInt();
+                            domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>(size);
+                            domainSizesSum += size;
+                        } else {
                             domainSizesProduct = storm::utility::zero<storm::RationalNumber>(); // i.e. unknown
-
                         }
                     }
                     ConstJaniTraverser::traverse(variable, data);
                 }
 
-                
             private:
                 InformationObject info;
                 uint64_t domainSizesSum;

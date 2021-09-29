@@ -12,6 +12,8 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/Location.h"
+#include "storm/storage/jani/Variable.h"
+#include "storm/storage/jani/types/AllJaniTypes.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
@@ -625,7 +627,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBooleanVariable(storm::jani::Variable const& variable) {
-                STORM_LOG_ASSERT(variable.isBooleanVariable(), "Cannot generate BooleanVariable for non BooleanVariable");
+                STORM_LOG_ASSERT(variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType(), "Cannot generate BooleanVariable for non BooleanVariable");
                 cpptempl::data_map result;
                 result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
                 if (variable.hasInitExpression()) {
@@ -636,11 +638,13 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBoundedIntegerVariable(storm::jani::Variable const& variable) {
-                STORM_LOG_ASSERT(variable.isBoundedVariable() && variable.isIntegerVariable(), "Cannot generate BoundedIntegerVariable for non BoundedIntegerVariable");
+                STORM_LOG_ASSERT(variable.getType().isBoundedType() && variable.getType().asBoundedType().isIntegerType(), "Cannot generate BoundedIntegerVariable for non BoundedIntegerVariable");
                 cpptempl::data_map result;
-                
-                int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
-                int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
+                auto const& type = variable.getType().asBoundedType();
+                STORM_LOG_THROW(type.hasLowerBound() && type.hasUpperBound(), storm::exceptions::NotSupportedException, "Bounded integer variable is only bounded from one side. This is not supported by the jit builder.");
+
+                int_fast64_t lowerBound = type.getLowerBound().evaluateAsInt();
+                int_fast64_t upperBound = type.getUpperBound().evaluateAsInt();
                 
                 lowerBounds[variable.getExpressionVariable()] = lowerBound;
                 if (lowerBound != 0) {
@@ -664,7 +668,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateUnboundedIntegerVariable(storm::jani::Variable const& variable) {
-                STORM_LOG_ASSERT(!variable.isBoundedVariable() && variable.isIntegerVariable(), "Cannot generate UnboundedIntegerVariable for non UnboundedIntegerVariable");
+                STORM_LOG_ASSERT(variable.getType().isBasicType() && variable.getType().asBasicType().isIntegerType(), "Cannot generate IntegerVariable for non IntegerVariable");
 
                 cpptempl::data_map result;
                 
@@ -678,7 +682,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRealVariable(storm::jani::Variable const& variable) {
-                STORM_LOG_ASSERT(variable.isRealVariable(), "Cannot generate RealVariable for non RealVariable");
+                STORM_LOG_ASSERT(variable.getType().isBasicType() && variable.getType().asBasicType().isRealType(), "Cannot generate RealVariable for non RealVariable");
 
                 cpptempl::data_map result;
                 
@@ -1603,7 +1607,7 @@ namespace storm {
                 // As in JANI we can use transient boolean variable assignments in locations to identify states, we need to
                 // create a list of boolean transient variables and the expressions that define them.
                 for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                    if (variable.isBooleanVariable()) {
+                    if (variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType()) {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable.getName();
@@ -1639,7 +1643,7 @@ namespace storm {
                         auto const& variables = model.getGlobalVariables();
                         STORM_LOG_THROW(variables.hasVariable(labelOrExpression.getLabel()), storm::exceptions::WrongFormatException, "Terminal label refers to unknown identifier '" << labelOrExpression.getLabel() << "'.");
                         auto const& variable = variables.getVariable(labelOrExpression.getLabel());
-                        STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::WrongFormatException, "Terminal label refers to non-boolean variable '" << variable.getName() << ".");
+                        STORM_LOG_THROW(variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType(), storm::exceptions::WrongFormatException, "Terminal label refers to non-boolean variable '" << variable.getName() << ".");
                         STORM_LOG_THROW(variable.isTransient(), storm::exceptions::WrongFormatException, "Terminal label refers to non-transient variable '" << variable.getName() << ".");
                         auto labelExpression = model.getLabelExpression(variable, parallelAutomata);
                         if (!terminalEntry.second) {
