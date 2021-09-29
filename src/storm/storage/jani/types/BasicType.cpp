@@ -26,6 +26,10 @@ namespace storm {
             return type == Type::Real;
         }
 
+        bool BasicType::isNumericalType() const {
+            return isIntegerType() || isRealType();
+        }
+
         std::string BasicType::getStringRepresentation() const {
             switch (type) {
                 case Type::Real:

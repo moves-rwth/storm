@@ -14,11 +14,14 @@ namespace storm {
             };
             
             BoundedType (BaseType const& type, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
+            virtual ~BoundedType() = default;
+            
             virtual bool isBoundedType() const override;
             
             BaseType const& getBaseType() const;
             bool isIntegerType() const;
             bool isRealType() const;
+            bool isNumericalType() const; /// true iff type is either real or int (i.e. it's  always true but let's make it explicit)
             
             virtual std::string getStringRepresentation() const override;
             virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) override;

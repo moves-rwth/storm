@@ -7,6 +7,7 @@ namespace storm {
         class ClockType : public JaniType {
         public:
             ClockType();
+            virtual ~ClockType() = default;
             virtual bool isClockType() const override;
             virtual std::string getStringRepresentation() const override;
             virtual std::unique_ptr<JaniType> clone() const override;

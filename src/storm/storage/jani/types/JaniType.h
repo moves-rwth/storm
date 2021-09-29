@@ -5,16 +5,16 @@
 
 namespace storm {
     namespace jani {
+        class BasicType;
+        class BoundedType;
+        class ArrayType;
+        class ClockType;
+        class ContinuousType;
+    
         class JaniType {
-            class BasicType;
-            class BoundedType;
-            class ArrayType;
-            class ClockType;
-            class ContinuousType;
-
-
             public:
                 JaniType();
+                virtual ~JaniType() = default;
                 virtual bool isBasicType() const;
                 virtual bool isBoundedType() const;
                 virtual bool isArrayType() const;

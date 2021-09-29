@@ -23,6 +23,10 @@ namespace storm {
             return type == BaseType::Real;
         }
 
+        bool BoundedType::isNumericalType() const {
+            return true;
+        }
+
         void BoundedType::setLowerBound(storm::expressions::Expression const& expression) {
             this->lowerBound = expression;
         }

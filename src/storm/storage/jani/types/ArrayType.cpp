@@ -18,6 +18,14 @@ namespace storm {
             return *baseType;
         }
 
+        JaniType const& ArrayType::getBaseTypeRecursive() const {
+            if (getBaseType().isArrayType()) {
+                return getBaseType().asArrayType().getBaseTypeRecursive();
+            } else {
+                return getBaseType();
+            }
+        }
+
         std::string ArrayType::getStringRepresentation() const {
             return "array[" + getBaseType().getStringRepresentation() + "]";
         }
