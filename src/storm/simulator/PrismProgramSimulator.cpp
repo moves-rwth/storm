@@ -132,6 +132,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DiscreteTimePrismProgramSimulator<ValueType>::resetToState(expressions::SimpleValuation const& valuation) {
+            lastActionRewards = zeroRewards;
             currentState = generator::packStateFromValuation(valuation, stateGenerator->getVariableInformation(), true);
             return explore();
         }
