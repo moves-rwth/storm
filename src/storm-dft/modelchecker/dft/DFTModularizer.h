@@ -70,6 +70,7 @@ class DFTModularizer {
 
     /**
      * \return whether the given element is static i.e. not dynamic
+     * \note This is the case for all static gates and all basic elements.
      */
     static bool isElementStatic(DFTElementCPointer const element);
 
