@@ -675,6 +675,11 @@ namespace storm {
             // TODO check existance of name.
             // TODO store prefix in variable.
             std::string exprManagerName = name;
+            
+            STORM_LOG_THROW(constantStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Constant '" + name + "' (scope: " + scope.description + ") must have a (single) type-declaration.");
+            auto type = parseType(constantStructure.at("type"), name, scope);
+            STORM_LOG_THROW((type.first->isBasicType() || type.first->isBoundedType()), storm::exceptions::InvalidJaniException, "Constant '" + name + "' (scope: " + scope.description + ") has unexpected type");
+            
             uint_fast64_t valueCount = constantStructure.count("value");
             storm::expressions::Expression definingExpression;
             STORM_LOG_THROW(valueCount < 2, storm::exceptions::InvalidJaniException, "Value for constant '" + name +  "' (scope: " + scope.description + ") must be given at most once.");
@@ -682,12 +687,8 @@ namespace storm {
                 // Read initial value before; that makes creation later on a bit easier, and has as an additional benefit that we do not need to check whether the variable occurs also on the assignment.
                 definingExpression = parseExpression(constantStructure.at("value"), scope.refine("Value of constant " + name));
                 assert(definingExpression.isInitialized());
+                STORM_LOG_THROW((type.second == definingExpression.getType() || type.second.isRationalType() && definingExpression.getType().isIntegerType()), storm::exceptions::InvalidJaniException,"Type of value for constant '" + name +  "' (scope: " + scope.description + ") does not match the given type '" + type.first->getStringRepresentation() + ".");
             }
-            
-            STORM_LOG_THROW(constantStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Constant '" + name + "' (scope: " + scope.description + ") must have a (single) type-declaration.");
-            auto type = parseType(constantStructure.at("type"), name, scope);
-            STORM_LOG_THROW((type.first->isBasicType() || type.first->isBoundedType()), storm::exceptions::InvalidJaniException, "Constant '" + name + "' (scope: " + scope.description + ") has unexpected type");
-            STORM_LOG_THROW((type.second == definingExpression.getType() || type.second.isRationalType() && definingExpression.getType().isIntegerType()), storm::exceptions::InvalidJaniException,"Type of value for constant '" + name +  "' (scope: " + scope.description + ") does not match the given type '" + type.first->getStringRepresentation() + ".");
             
             storm::expressions::Variable var = expressionManager->declareVariable(exprManagerName, type.second);
             
