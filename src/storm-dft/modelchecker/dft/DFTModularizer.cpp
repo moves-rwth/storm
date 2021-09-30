@@ -206,12 +206,11 @@ void DFTModularizer::replaceDynamicModules(
     std::vector<ValueType> const &timepoints) {
     if (element->isGate()) {
         auto &elementInfo{elementInfos.at(element->id())};
-        auto const parent{std::static_pointer_cast<
-            storm::storage::DFTChildren<ValueType> const>(element)};
-
         if (elementInfo.isModule && !elementInfo.isStatic) {
             analyseDynamic(element, timepoints);
         } else {
+            auto const parent{std::static_pointer_cast<
+                storm::storage::DFTChildren<ValueType> const>(element)};
             for (auto const child : parent->children()) {
                 replaceDynamicModules(child, timepoints);
             }
