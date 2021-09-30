@@ -19,7 +19,7 @@ namespace storm {
             const std::string IOSettings::moduleName = "io";
             const std::string IOSettings::exportDotOptionName = "exportdot";
             const std::string IOSettings::exportDotMaxWidthOptionName = "dot-maxwidth";
-            const std::string IOSettings::exportJsonOptionName = "exportjson";
+            const std::string IOSettings::exportBuildOptionName = "exportbuild";
             const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
             const std::string IOSettings::exportDdOptionName = "exportdd";
             const std::string IOSettings::exportJaniDotOptionName = "exportjanidot";
@@ -61,17 +61,19 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotMaxWidthOptionName, false, "The maximal width for labels in the dot format. For longer lines a linebreak is inserted. Value 0 represents no linebreaks.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("width", "The maximal line width for the dot format. Default is 0 meaning no linebreaks.").setDefaultValueUnsignedInteger(0).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportJsonOptionName, false, "If given, the loaded model will be written to the specified file in json format.").setIsAdvanced()
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
+                std::vector<std::string> exportFormats({"auto", "dot", "drdd", "drn", "json"});
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportBuildOptionName, false, "Exports the built model to a file.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("file", "The output file.").build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The output format. 'auto' detects from the file extension.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(exportFormats)).setDefaultValueString("auto").makeOptional().build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, false, "If given, the loaded jani model will be written to the specified file in the dot format.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setIsAdvanced().setShortName(exportCdfOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory where the cdf files will be stored.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSchedulerOptionName, false, "Exports the choices of an optimal scheduler to the given file (if supported by engine).").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file. Use file extension '.json' to export in json.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportCheckResultOptionName, false, "Exports the result to a given file (if supported by engine). The export will be in json.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName,  preventDRNPlaceholderOptionName, true, "If given, the exported DRN contains no placeholders").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportDdOptionName, "", "If given, the loaded model will be written to the specified file in the drdd format.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportDdOptionName, "", "If given, the loaded model will be written to the specified file in the drdd format.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename", "The name of the file from which to read the transitions.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
@@ -133,12 +135,21 @@ namespace storm {
                 return this->getOption(exportDotMaxWidthOptionName).getArgumentByName("width").getValueAsUnsignedInteger();
             }
             
-            bool IOSettings::isExportJsonSet() const {
-                return this->getOption(exportJsonOptionName).getHasOptionBeenSet();
+            bool IOSettings::isExportBuildSet() const {
+                return this->getOption(exportBuildOptionName).getHasOptionBeenSet();
             }
 
-            std::string IOSettings::getExportJsonFilename() const {
-                return this->getOption(exportJsonOptionName).getArgumentByName("filename").getValueAsString();
+            std::string IOSettings::getExportBuildFilename() const {
+                return this->getOption(exportBuildOptionName).getArgumentByName("file").getValueAsString();
+            }
+            
+            storm::exporter::ModelExportFormat IOSettings::getExportBuildFormat() const {
+                auto format = this->getOption(exportBuildOptionName).getArgumentByName("format").getValueAsString();
+                if (format == "auto") {
+                    return storm::exporter::getModelExportFormatFromFileExtension(getExportBuildFilename());
+                } else {
+                    return storm::exporter::getModelExportFormatFromString(format);
+                }
             }
 
             bool IOSettings::isExportJaniDotSet() const {
@@ -347,7 +358,9 @@ namespace storm {
             }
             
 			void IOSettings::finalize() {
-                // Intentionally left empty.
+                STORM_LOG_WARN_COND(!isExportDdSet(), "Option '--" << moduleName << ":" << exportDdOptionName << "' is depreciated. Use '--" << moduleName << ":" << exportBuildOptionName << "' instead.");
+                STORM_LOG_WARN_COND(!isExportDotSet(), "Option '--" << moduleName << ":" << exportDotOptionName << "' is depreciated. Use '--" << moduleName << ":" << exportBuildOptionName << "' instead.");
+                STORM_LOG_WARN_COND(!isExportExplicitSet(), "Option '--" << moduleName << ":" << exportExplicitOptionName << "' is depreciated. Use '--" << moduleName << ":" << exportBuildOptionName << "' instead.");
             }
 
             bool IOSettings::check() const {

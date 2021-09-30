@@ -5,7 +5,7 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
-
+#include "storm/io/ModelExportFormat.h"
 #include "storm/builder/ExplorationOrder.h"
 
 namespace storm {
@@ -45,14 +45,19 @@ namespace storm {
                 size_t getExportDotMaxWidth() const;
 
                 /*!
-                 * Retrieves whether the export-to-json option was set.
+                 * Retrieves whether the exportbuild option was set.
                  */
-                bool isExportJsonSet() const;
+                bool isExportBuildSet() const;
 
                 /*!
                  * Retrieves the name in which to write the model in json format, if export-to-json option was set.
                  */
-                std::string getExportJsonFilename() const;
+                std::string getExportBuildFilename() const;
+                
+                /*!
+                 * Retrieves the specified export format for the exportbuild option
+                 */
+                 storm::exporter::ModelExportFormat getExportBuildFormat() const;
                 
                 /*!
                  * Retrieves whether the export-to-dot option for jani was set.
@@ -369,7 +374,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string exportDotOptionName;
                 static const std::string exportDotMaxWidthOptionName;
-                static const std::string exportJsonOptionName;
+                static const std::string exportBuildOptionName;
                 static const std::string exportJaniDotOptionName;
                 static const std::string exportExplicitOptionName;
                 static const std::string exportDdOptionName;

@@ -575,6 +575,24 @@ namespace storm {
         void exportSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             
+            if (ioSettings.isExportBuildSet()) {
+                switch(ioSettings.getExportBuildFormat()) {
+                    case storm::exporter::ModelExportFormat::Dot:
+                        storm::api::exportSparseModelAsDot(model, ioSettings.getExportBuildFilename(), ioSettings.getExportDotMaxWidth());
+                        break;
+                    case storm::exporter::ModelExportFormat::Drn:
+                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportBuildFilename(),  input.model ? input.model.get().getParameterNames() : std::vector<std::string>(), !ioSettings.isExplicitExportPlaceholdersDisabled());
+                        break;
+                    case storm::exporter::ModelExportFormat::Json:
+                        storm::api::exportSparseModelAsJson(model, ioSettings.getExportBuildFilename());
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting sparse models in " << storm::exporter::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
+                }
+            }
+            
+            // TODO: The following options are depreciated and shall be removed at some point:
+            
             if (ioSettings.isExportExplicitSet()) {
                 storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), input.model ? input.model.get().getParameterNames() : std::vector<std::string>(), !ioSettings.isExplicitExportPlaceholdersDisabled());
             }
@@ -586,15 +604,26 @@ namespace storm {
             if (ioSettings.isExportDotSet()) {
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
             }
-            
-            if (ioSettings.isExportJsonSet()) {
-                storm::api::exportSparseModelAsJson(model, ioSettings.getExportJsonFilename());
-            }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
         void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            
+            if (ioSettings.isExportBuildSet()) {
+                switch(ioSettings.getExportBuildFormat()) {
+                    case storm::exporter::ModelExportFormat::Dot:
+                        storm::api::exportSymbolicModelAsDot(model, ioSettings.getExportBuildFilename());
+                        break;
+                    case storm::exporter::ModelExportFormat::Drdd:
+                        storm::api::exportSymbolicModelAsDrdd(model, ioSettings.getExportBuildFilename());
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting symbolic models in " << storm::exporter::toString(ioSettings.getExportBuildFormat()) << " format is not supported.");
+                }
+            }
+
+            // TODO: The following options are depreciated and shall be removed at some point:
 
             if (ioSettings.isExportExplicitSet()) {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting in drn format is only supported for sparse models.");
