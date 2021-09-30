@@ -472,7 +472,7 @@ namespace storm {
                     storm::json<JsonValueType> stateRewardsJson;
                     for (auto const& rm : rewardModels) {
                         if (rm.second.hasStateRewards()) {
-                            auto r = rm.second.getStateReward(state);
+                            auto const& r = rm.second.getStateReward(state);
                             if (!storm::utility::isZero(r)) {
                                 stateRewardsJson[rm.first] = storm::utility::to_string(r);
                             }
