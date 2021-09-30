@@ -1,9 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <vector>
-
-#include "storm-dft/modelchecker/dft/DFTModularizer.h"
+#include "storm-dft/storage/dft/DFT.h"
 
 namespace storm {
 namespace dft {
