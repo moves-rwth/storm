@@ -34,6 +34,7 @@ namespace storm {
             if(calculateMttf) {
                 std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(dft) << '\n';
             }
+
             if(useModularisation && calculateProbability) {
                 storm::modelchecker::DFTModularizer checker{dft};
                 if(chunksize == 1) {
@@ -50,15 +51,15 @@ namespace storm {
                         std::cout << "System failure probability at timebound " << timebound << " is " << probability << '\n';
                     }
                 }
-
-                auto const probabilities{checker.check(properties, chunksize)};
-                for(size_t i{0}; i < probabilities.size(); ++i) {
-                    std::cout << "Property \""
-                        << properties.at(i)->toString()
-                        << "\" has result "
-                        << probabilities.at(i) << '\n';
+                if (!properties.empty()) {
+                    auto const probabilities{checker.check(properties, chunksize)};
+                    for(size_t i{0}; i < probabilities.size(); ++i) {
+                        std::cout << "Property \""
+                            << properties.at(i)->toString()
+                            << "\" has result "
+                            << probabilities.at(i) << '\n';
+                    }
                 }
-
                 return;
             } else {
                 STORM_LOG_THROW(dft->nrDynamicElements() == 0,
