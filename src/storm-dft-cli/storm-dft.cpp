@@ -21,8 +21,6 @@
  */
 template<typename ValueType>
 void processOptions() {
-
-    auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
     auto const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
     auto const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
