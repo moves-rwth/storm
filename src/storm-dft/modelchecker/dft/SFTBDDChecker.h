@@ -80,10 +80,6 @@ class SFTBDDChecker {
     /**
      * \return
      * The Probability that the top level gate fails.
-     *
-     * \note
-     * Works only with exponential distributions and no spares.
-     * Otherwise the function returns an arbitrary value
      */
     ValueType getProbabilityAtTimebound(ValueType timebound) {
         return getProbabilityAtTimebound(getTopLevelGateBdd(), timebound);
@@ -96,10 +92,6 @@ class SFTBDDChecker {
      * \param bdd
      * The bdd that represents an event in the dft.
      * Must be from a call to some function of *this.
-     *
-     * \note
-     * Works only with exponential distributions and no spares.
-     * Otherwise the function returns an arbitrary value
      */
     ValueType getProbabilityAtTimebound(Bdd bdd, ValueType timebound) const;
 
@@ -113,10 +105,6 @@ class SFTBDDChecker {
      * \param chunksize
      * Splits the timepoints array into chunksize chunks.
      * A value of 0 represents to calculate the whole array at once.
-     *
-     * \note
-     * Works only with exponential distributions and no spares.
-     * Otherwise the function returns an arbitrary value
      */
     std::vector<ValueType> getProbabilitiesAtTimepoints(
         std::vector<ValueType> const &timepoints, size_t const chunksize = 0) {
@@ -138,10 +126,6 @@ class SFTBDDChecker {
      * \param chunksize
      * Splits the timepoints array into chunksize chunks.
      * A value of 0 represents to calculate the whole array at once.
-     *
-     * \note
-     * Works only with exponential distributions and no spares.
-     * Otherwise the function returns an arbitrary value
      */
     std::vector<ValueType> getProbabilitiesAtTimepoints(
         Bdd bdd, std::vector<ValueType> const &timepoints,
