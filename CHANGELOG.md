@@ -15,6 +15,8 @@ Version 1.6.x
 - Added export of schedulers that use memory (in particular optimizing schedulers for LTL properties)
 - Added support for PRISM models that use unbounded integer variables.
 - Added an export of check results to json. Use `--exportresult` in the command line interface.
+- Added `--exportbuilt` option that exports the built model in various formats. Deprecates `--io:exportexplicit`, `--io:exportdd` and `--io:exportdot`
+- Added export of built model in .json. which can be used to debug and explore the model.
 - Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
 - Implemented parsing and model building of Stochastic multiplayer games (SMGs) in the PRISM language. No model checking implemented (yet).
 - API: Simulation of prism-models 

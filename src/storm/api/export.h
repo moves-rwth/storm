@@ -33,7 +33,7 @@ namespace storm {
         }
 
         template<storm::dd::DdType Type, typename ValueType>
-        void exportSparseModelAsDrdd(std::shared_ptr<storm::models::symbolic::Model<Type,ValueType>> const& model, std::string const& filename) {
+        void exportSymbolicModelAsDrdd(std::shared_ptr<storm::models::symbolic::Model<Type,ValueType>> const& model, std::string const& filename) {
             storm::exporter::explicitExportSymbolicModel(filename, model);
         }
         
@@ -44,7 +44,15 @@ namespace storm {
             model->writeDotToStream(stream, maxWidth);
             storm::utility::closeFile(stream);
         }
-
+        
+        template <typename ValueType>
+        void exportSparseModelAsJson(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename) {
+            std::ofstream stream;
+            storm::utility::openFile(filename, stream);
+            model->writeJsonToStream(stream);
+            storm::utility::closeFile(stream);
+        }
+        
         template<storm::dd::DdType Type, typename ValueType>
         void exportSymbolicModelAsDot(std::shared_ptr<storm::models::symbolic::Model<Type,ValueType>> const& model, std::string const& filename) {
             model->writeDotToFile(filename);
