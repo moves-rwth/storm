@@ -27,6 +27,7 @@ DFTModularizer::DFTModularizer(
 
 std::vector<ValueType> DFTModularizer::check(FormulaVector const &formulas,
                                              size_t const chunksize) {
+    workDFT = dft;
     storm::adapters::SFTBDDPropertyFormulaAdapter::checkForm(formulas);
     std::set<ValueType> timepointSet;
     for (auto const &formula : formulas) {

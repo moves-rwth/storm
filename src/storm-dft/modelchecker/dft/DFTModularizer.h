@@ -13,6 +13,10 @@ namespace modelchecker {
 /**
  * Main class for BDD accelerated DFT checking
  *
+ * \note
+ * All public functions must make sure that workDFT
+ * is set correctly and should assume
+ * workDFT to be in an erroneous state.
  */
 class DFTModularizer {
    public:
@@ -50,6 +54,7 @@ class DFTModularizer {
      * The Probability that the top level gate fails at the given timebound.
      */
     ValueType getProbabilityAtTimebound(ValueType const timebound) {
+        // workDFT will be set in getProbabilitiesAtTimepoints()
         auto const result{getProbabilitiesAtTimepoints({timebound})};
         return result.at(0);
     }
