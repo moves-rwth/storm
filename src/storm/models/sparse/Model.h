@@ -354,6 +354,11 @@ namespace storm {
                 virtual void writeDotToStream(std::ostream& outStream, size_t maxWidthLabel = 30, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const;
 
                 /*!
+                 * Writes a JSON representation of the model to the given stream
+                 */
+                virtual void writeJsonToStream(std::ostream& outStream) const;
+                
+                /*!
                  * Retrieves the set of labels attached to the given state.
                  *
                  * @param state The state whose labels to retrieve.

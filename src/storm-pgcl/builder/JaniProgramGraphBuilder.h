@@ -134,8 +134,8 @@ namespace storm {
                 std::map<std::string, storm::jani::Variable const*> labelVars;
                 std::set<std::string> labels = programGraph.getLabels();
                 for(auto const& label : labels) {
-                    storm::jani::Variable janiVar = *storm::jani::Variable::makeBasicVariable(label, storm::jani::JaniType::ElementType::Bool, expManager->declareBooleanVariable(label), expManager->boolean(false), true);
-                    labelVars.emplace(label, &model.addVariable(janiVar));
+                    auto janiVar = storm::jani::Variable::makeBooleanVariable(label, expManager->declareBooleanVariable(label), expManager->boolean(false), true);
+                    labelVars.emplace(label, &model.addVariable(*janiVar));
                 }
                 
                 for (auto it = programGraph.locationBegin(); it != programGraph.locationEnd(); ++it) {

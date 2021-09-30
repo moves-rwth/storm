@@ -11,7 +11,9 @@
 #include "storm/utility/vector.h"
 #include "storm/io/export.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/adapters/JsonAdapter.h"
 
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace models {
@@ -453,7 +455,97 @@ namespace storm {
                     outStream << "}" << std::endl;
                 }
             }
+            
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStream) const {
+                STORM_LOG_WARN_COND(this->getNumberOfStates() < 10000 && this->getNumberOfTransitions() < 100000, "Exporting a large model to json. This might take some time and will result in a very large file.");
+                using JsonValueType = storm::RationalNumber;
+                storm::json<JsonValueType> output;
+                for (uint64_t state = 0; state < getNumberOfStates(); ++state) {
+                    storm::json<JsonValueType> stateChoicesJson;
+                    stateChoicesJson["id"] = state;
+                    if (hasStateValuations()) {
+                        stateChoicesJson["s"] = getStateValuations().template toJson<JsonValueType>(state);
+                    }
+                    auto labels = getLabelsOfState(state);
+                    stateChoicesJson["lab"] = labels;
+                    storm::json<JsonValueType> stateRewardsJson;
+                    for (auto const& rm : rewardModels) {
+                        if (rm.second.hasStateRewards()) {
+                            auto const& r = rm.second.getStateReward(state);
+                            if (!storm::utility::isZero(r)) {
+                                stateRewardsJson[rm.first] = storm::utility::to_string(r);
+                            }
+                        }
+                    }
+                    if (!stateRewardsJson.empty()) {
+                        stateChoicesJson["rew"] = std::move(stateRewardsJson);
+                    }
+                    
+                    auto rate = storm::utility::one<ValueType>();
+                    if (this->isOfType(storm::models::ModelType::Ctmc)) {
+                        auto const& ctmc = this->template as<storm::models::sparse::Ctmc<ValueType, RewardModelType>>();
+                        rate = ctmc->getExitRateVector()[state];
+                        stateChoicesJson["rate"] = storm::utility::to_string(rate);
+                    } else if (this->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                        auto const& ma = this->template as<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>();
+                        if (ma->isMarkovianState(state)) {
+                            rate = ma->getExitRate(state);
+                            stateChoicesJson["rate"] = storm::utility::to_string(rate); // Only export rate for Markovian states
+                        }
+                    }
+                    
+                    storm::json<JsonValueType> choicesJson;
+                    for (uint64_t choiceIndex = getTransitionMatrix().getRowGroupIndices()[state]; choiceIndex < getTransitionMatrix().getRowGroupIndices()[state + 1]; ++choiceIndex) {
+                        storm::json<JsonValueType> choiceJson;
+                        if (hasChoiceOrigins() && getChoiceOrigins()->getIdentifier(choiceIndex) != getChoiceOrigins()->getIdentifierForChoicesWithNoOrigin()) {
+                            choiceJson["origin"] = getChoiceOrigins()->getChoiceAsJson(choiceIndex);
+                        }
+                        if (hasChoiceLabeling()) {
+                            auto choiceLabels = getChoiceLabeling().getLabelsOfChoice(choiceIndex);
+                            if (!choiceLabels.empty()) {
+                                choiceJson["lab"] = choiceLabels;
+                            }
+                        }
+                        choiceJson["id"] = choiceIndex;
+                        storm::json<JsonValueType> choiceRewardsJson;
+                        for (auto const& rm : rewardModels) {
+                            if (rm.second.hasStateActionRewards()) {
+                                auto r = rm.second.getStateActionReward(choiceIndex);
+                                if (!storm::utility::isZero(r)) {
+                                    choiceRewardsJson[rm.first] = storm::utility::to_string(r);
+                                }
+                            }
+                        }
+                        if (!choiceRewardsJson.empty()) {
+                            choiceRewardsJson["rew"] = std::move(choiceRewardsJson);
+                        }
+                        storm::json<JsonValueType> successors;
+                        for (auto const& entry : transitionMatrix.getRow(choiceIndex)) {
+                            storm::json<JsonValueType> successor;
+                            successor["id"] = entry.getColumn();
+                            successor["prob"] = storm::utility::to_string<ValueType>(entry.getValue() / rate);
+                            successors.push_back(successor);
+                        }
+                        choiceJson["succ"] = std::move(successors);
+                        choicesJson.push_back(choiceJson);
+                    }
+                stateChoicesJson["c"] = std::move(choicesJson);
+                output.push_back(std::move(stateChoicesJson));
+                }
+                outStream << output.dump(4);
+            }
 
+            template<>
+            void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::writeJsonToStream(std::ostream& outStream) const {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Json export not implemented for this model type.");
+            }
+            
+            template<>
+            void Model<float>::writeJsonToStream(std::ostream& outStream) const {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Json export not implemented for this model type.");
+            }
+            
             template<typename ValueType, typename RewardModelType>
             std::string Model<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
                 return "";

@@ -77,17 +77,9 @@ namespace storm {
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseModel(bool parseProperties = true);
             storm::jani::Property parseProperty(storm::jani::Model& model, storm::json<ValueType> const& propertyStructure, Scope const& scope);
             storm::jani::Automaton parseAutomaton(storm::json<ValueType> const& automatonStructure, storm::jani::Model const& parentModel, Scope const& scope);
-            struct ParsedType {
-                enum class BasicType {Bool, Int, Real};
-                boost::optional<BasicType> basicType;
-                boost::optional<std::pair<storm::expressions::Expression, storm::expressions::Expression>> bounds;
-                std::shared_ptr<ParsedType> arrayBase;
-                storm::expressions::Type expressionType;
-            };
-            void parseType(ParsedType& result, storm::json<ValueType> const& typeStructure, std::string variableName, Scope const& scope);
+            std::pair<std::unique_ptr<storm::jani::JaniType>,storm::expressions::Type> parseType(storm::json<ValueType> const& typeStructure, std::string variableName, Scope const& scope);
             storm::jani::LValue parseLValue(storm::json<ValueType> const& lValueStructure, Scope const& scope);
             std::shared_ptr<storm::jani::Variable>  parseVariable(storm::json<ValueType> const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix = "");
-            storm::jani::JaniType*  parseArrayVariable(std::shared_ptr<ParsedType> type);
             storm::expressions::Expression parseExpression(storm::json<ValueType> const& expressionStructure, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
 
         private:

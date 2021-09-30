@@ -23,6 +23,11 @@ namespace storm {
              */
             JaniType const& getBaseTypeRecursive() const;
             
+            /*!
+             * @return the nesting degree, e.g., int[] has degree 1, int[][] has degree 2, ...
+             */
+            uint64_t getNestingDegree() const;
+            
             virtual std::string getStringRepresentation() const override;
             virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) override;
             virtual std::unique_ptr<JaniType> clone() const override;

@@ -29,6 +29,14 @@ namespace storm {
                 return getBaseType();
             }
         }
+        
+        uint64_t ArrayType::getNestingDegree() const {
+            if (getBaseType().isArrayType()) {
+                return getBaseType().asArrayType().getNestingDegree() + 1;
+            } else {
+                return 1;
+            }
+        }
 
         std::string ArrayType::getStringRepresentation() const {
             return "array[" + getBaseType().getStringRepresentation() + "]";

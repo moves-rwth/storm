@@ -32,10 +32,10 @@ namespace storm {
                 std::shared_ptr<storm::jani::Variable> janiVar = nullptr;
                 if (!place.hasRestrictedCapacity()) {
                     // Effectively no capacity limit known
-                    janiVar = storm::jani::Variable::makeBasicVariable(place.getName(), storm::jani::JaniType::ElementType::Int, expressionManager->getVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()), false);
+                    janiVar = storm::jani::Variable::makeIntegerVariable(place.getName(), expressionManager->getVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()), false);
                 } else {
                     assert(place.hasRestrictedCapacity());
-                    janiVar = storm::jani::Variable::makeBoundedVariable(place.getName(), storm::jani::JaniType::ElementType::Int, expressionManager->getVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()), false, expressionManager->integer(0), expressionManager->integer(place.getCapacity()));
+                    janiVar = storm::jani::Variable::makeBoundedIntegerVariable(place.getName(), expressionManager->getVariable(place.getName()), expressionManager->integer(place.getNumberOfInitialTokens()), false, expressionManager->integer(0), expressionManager->integer(place.getCapacity()));
                 }
                 assert(janiVar != nullptr);
                 assert(vars.count(place.getID()) == 0);
@@ -256,7 +256,7 @@ namespace storm {
 
         storm::jani::Variable const& JaniGSPNBuilder::addTransientVariable(storm::jani::Model* model, std::string name, storm::expressions::Expression expression) {
             auto exprVar = expressionManager->declareBooleanVariable(name);
-            auto const& janiVar = *storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Bool, exprVar, expressionManager->boolean(false), true);
+            auto const& janiVar = *storm::jani::Variable::makeBooleanVariable(name, exprVar, expressionManager->boolean(false), true);
             storm::jani::Assignment assignment(storm::jani::LValue(janiVar), expression);
             model->getAutomata().front().getLocations().front().addTransientAssignment(assignment);
             return janiVar;
