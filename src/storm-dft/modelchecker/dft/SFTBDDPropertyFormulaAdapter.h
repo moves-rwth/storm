@@ -43,7 +43,8 @@ class SFTBDDPropertyFormulaAdapter {
         : formulas{formulas} {
         checkForm(formulas);
 
-        relevantEvents.insertNamesFromProperties(formulas.begin(), formulas.end());
+        relevantEvents.insertNamesFromProperties(formulas.begin(),
+                                                 formulas.end());
         auto const transformator{std::make_shared<
             storm::transformations::dft::SftToBddTransformator<ValueType>>(
             dft, sylvanBddManager, relevantEvents)};
@@ -95,8 +96,9 @@ class SFTBDDPropertyFormulaAdapter {
         }
 
         std::map<uint64_t, std::vector<double>> bddToReversedTimepoints{};
-        // Note that a vector of timepoints is necessary as formula-BDDs can occur multiple times.
-        // The vector is reversed as it later allows to pop the results from the back which is more efficient.
+        // Note that a vector of timepoints is necessary as formula-BDDs can
+        // occur multiple times. The vector is reversed as it later allows to
+        // pop the results from the back which is more efficient.
         for (size_t i{0}; i < bdds.size(); ++i) {
             auto const reversedIndex{bdds.size() - i - 1};
             auto const &bdd{bdds[reversedIndex]};
@@ -137,8 +139,8 @@ class SFTBDDPropertyFormulaAdapter {
         std::vector<Bdd> rval{};
         rval.reserve(formulas.size());
         for (auto const &formula : formulas) {
-            enableNot = checkBoundsSame(formula);
-            rval.push_back(StateFormulaToBdd(toStateFormula(formula)));
+            rval.push_back(StateFormulaToBdd(toStateFormula(formula),
+                                             checkBoundsSame(formula)));
         }
         return rval;
     }
@@ -310,7 +312,8 @@ class SFTBDDPropertyFormulaAdapter {
      * \return
      * The bdds representing the given Stateformula
      */
-    Bdd StateFormulaToBdd(StateFormulaCPointer const &formula) const {
+    Bdd StateFormulaToBdd(StateFormulaCPointer const &formula,
+                          bool const enableNot = false) const {
         if (formula->isBinaryBooleanStateFormula()) {
             return binaryStateFormulaToBdd(
                 std::static_pointer_cast<
@@ -322,7 +325,8 @@ class SFTBDDPropertyFormulaAdapter {
         } else if (formula->isUnaryBooleanStateFormula()) {
             return unaryStateFormulaToBdd(
                 std::static_pointer_cast<
-                    storm::logic::UnaryBooleanStateFormula const>(formula));
+                    storm::logic::UnaryBooleanStateFormula const>(formula),
+                enableNot);
         }
 
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
@@ -352,8 +356,6 @@ class SFTBDDPropertyFormulaAdapter {
         return getSylvanBddManager()->getZero();
     }
 
-    bool enableNot{false};
-
     /**
      * \return
      * The bdds representing the given Stateformula
@@ -361,7 +363,8 @@ class SFTBDDPropertyFormulaAdapter {
      * \note Only works if enableNot is true
      * as negation only works with timepoints not timebounds.
      */
-    Bdd unaryStateFormulaToBdd(UnaryStateFormulaCPointer const &formula) const {
+    Bdd unaryStateFormulaToBdd(UnaryStateFormulaCPointer const &formula,
+                               bool const enableNot = false) const {
         if (!enableNot) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Illegal UnaryStateFormula: \""
