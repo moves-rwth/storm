@@ -79,7 +79,7 @@ namespace storm {
             storm::jani::Automaton parseAutomaton(storm::json<ValueType> const& automatonStructure, storm::jani::Model const& parentModel, Scope const& scope);
             std::pair<std::unique_ptr<storm::jani::JaniType>,storm::expressions::Type> parseType(storm::json<ValueType> const& typeStructure, std::string variableName, Scope const& scope);
             storm::jani::LValue parseLValue(storm::json<ValueType> const& lValueStructure, Scope const& scope);
-            std::shared_ptr<storm::jani::Variable>  parseVariable(storm::json<ValueType> const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix = "");
+            std::shared_ptr<storm::jani::Variable>  parseVariable(storm::json<ValueType> const& variableStructure, Scope const& scope, std::string const& namePrefix = "");
             storm::expressions::Expression parseExpression(storm::json<ValueType> const& expressionStructure, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
 
         private:
@@ -126,10 +126,6 @@ namespace storm {
             //////////
             static const bool defaultVariableTransient;
             
-            static const bool defaultBooleanInitialValue;
-            static const ValueType defaultRationalInitialValue;
-            static const int64_t defaultIntegerInitialValue;
-
             static const std::set<std::string> unsupportedOpstrings;
 
         };

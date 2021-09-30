@@ -46,12 +46,6 @@ namespace storm {
         ////////////
         template <typename ValueType>
         const bool JaniParser<ValueType>::defaultVariableTransient = false;
-        template <typename ValueType>
-        const bool JaniParser<ValueType>::defaultBooleanInitialValue = false;
-        template <typename ValueType>
-        const ValueType JaniParser<ValueType>::defaultRationalInitialValue = storm::utility::zero<ValueType>();
-        template <typename ValueType>
-        const int64_t JaniParser<ValueType>::defaultIntegerInitialValue = 0;
         const std::string VARIABLE_AUTOMATON_DELIMITER = "_";
         template <typename ValueType>
         const std::set<std::string> JaniParser<ValueType>::unsupportedOpstrings({"sin", "cos", "tan", "cot", "sec", "csc", "asin", "acos", "atan", "acot", "asec", "acsc",
@@ -172,9 +166,8 @@ namespace storm {
             VariablesMap globalVars;
             scope.globalVars = &globalVars;
             if (variablesCount == 1) {
-                bool requireInitialValues = parsedStructure.count("restrict-initial") == 0;
                 for (auto const& varStructure : parsedStructure.at("variables")) {
-                    std::shared_ptr<storm::jani::Variable> variable = parseVariable(varStructure, requireInitialValues, scope.refine("variables[" + std::to_string(globalVars.size())));
+                    std::shared_ptr<storm::jani::Variable> variable = parseVariable(varStructure, scope.refine("variables[" + std::to_string(globalVars.size())));
                     globalVars.emplace(variable->getName(), &model.addVariable(*variable));
                 }
             }
@@ -818,7 +811,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::shared_ptr<storm::jani::Variable> JaniParser<ValueType>::parseVariable(Json const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix) {
+        std::shared_ptr<storm::jani::Variable> JaniParser<ValueType>::parseVariable(Json const& variableStructure, Scope const& scope, std::string const& namePrefix) {
             STORM_LOG_THROW(variableStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Variable (scope: " + scope.description + ") must have a name");
             std::string name = getString<ValueType>(variableStructure.at("name"), "variable-name in " + scope.description + "-scope");
             // TODO check existance of name.
@@ -861,8 +854,6 @@ namespace storm {
                 assert(!transientVar);
             }
             
-            bool setInitValFromDefault = !initVal.is_initialized() && requireInitialValues;
-            STORM_LOG_THROW(!setInitValFromDefault, storm::exceptions::InvalidJaniException, "Jani standard does not actually consider default initial values...");
             if (type.first->isBasicType() && type.first->asBasicType().isBooleanType()) {
                 if (transientVar) {
                     labels.insert(name);
@@ -1447,9 +1438,8 @@ namespace storm {
             VariablesMap localVars;
             scope.localVars = &localVars;
             if (varDeclCount > 0) {
-                bool requireInitialValues = automatonStructure.count("restrict-initial") == 0;
                 for(auto const& varStructure : automatonStructure.at("variables")) {
-                    std::shared_ptr<storm::jani::Variable> var = parseVariable(varStructure, requireInitialValues, scope.refine("variables[" + std::to_string(localVars.size()) + "] of automaton " + name), name + VARIABLE_AUTOMATON_DELIMITER);
+                    std::shared_ptr<storm::jani::Variable> var = parseVariable(varStructure, scope.refine("variables[" + std::to_string(localVars.size()) + "] of automaton " + name), name + VARIABLE_AUTOMATON_DELIMITER);
                     assert(localVars.count(var->getName()) == 0);
                     localVars.emplace(var->getName(), &automaton.addVariable(*var));
                 }
