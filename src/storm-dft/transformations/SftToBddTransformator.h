@@ -58,6 +58,8 @@ class SftToBddTransformator {
         }
         // else relevantEventBdds is not empty and we maintain the invariant
         // that the toplevel gate is in there
+        STORM_LOG_ASSERT(relevantEventBdds.count(tlName) == 1,
+                         "Not all relevantEvents where transformed into BDDs.");
 
         return relevantEventBdds[tlName];
     }
@@ -82,6 +84,9 @@ class SftToBddTransformator {
 
         // we maintain the invariant that if relevantEventBdds is not empty
         // then we have calculated all relevant bdds
+        STORM_LOG_ASSERT(
+            relevantEventBdds.size() == relevantEvents.count(getDFT()),
+            "Not all relevantEvents where transformed into BDDs.");
 
         return relevantEventBdds;
     }
