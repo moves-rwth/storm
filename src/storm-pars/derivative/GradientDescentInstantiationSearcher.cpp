@@ -490,10 +490,9 @@ namespace storm {
 
         template<typename FunctionType, typename ConstantType>
         std::pair<std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>, ConstantType> GradientDescentInstantiationSearcher<FunctionType, ConstantType>::gradientDescentOpt(
-                Environment const& env
+                Environment const& env, uint64_t maxInstantiations
         ) {
             //TODO find a good breaking condition, for now, just iterate a bit
-            uint64_t maxIters = 5;
             uint64_t currIter = 0;
             STORM_LOG_ASSERT(this->currentCheckTask, "Call specifyFormula before calling gradientDescent");
 
@@ -556,8 +555,8 @@ namespace storm {
                     bestValue = prob;
                 }
                 ++currIter;
-                if (currIter >= maxIters) {
-                    std::cout << "Aborting with value " << bestValue << " as max. number of iterations (" << maxIters << ") reached." << std::endl;
+                if (currIter >= maxInstantiations) {
+                    std::cout << "Aborting with value " << bestValue << " as max. number of instantiations (" << maxInstantiations << ") reached." << std::endl;
                     break;
                 } else if (storm::utility::resources::isTerminate()) {
                     break;
@@ -679,9 +678,9 @@ namespace storm {
                     tinyChangeIterations = 0;
                 }
 
-                if (stepStopwatch.getTimeInSeconds() >= 300) {
+/*                if (stepStopwatch.getTimeInSeconds() >= 300) {
                     break;
-                }
+                }*/
 
                 // Consider the next parameter
                 parameterNum = parameterNum + miniBatchSize;

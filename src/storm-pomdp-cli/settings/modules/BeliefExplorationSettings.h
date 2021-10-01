@@ -84,7 +84,11 @@ namespace storm {
                 bool isClassicClippingModeSet() const;
                 bool isGridClippingModeSet() const;
 
-                bool isUseParametricPreprocessingSet() const;
+                bool isParametricPreprocessingSet() const;
+                double getParametricGDEpsilon() const;
+                uint64_t getParametricGDMaxInstantiations() const;
+                uint64_t getParametricPreprocessingMemoryBound() const;
+
 
                 storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
     

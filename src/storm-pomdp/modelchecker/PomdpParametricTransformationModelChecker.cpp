@@ -19,7 +19,8 @@ namespace storm {
             }
 
             template <typename ValueType>
-            std::vector<ValueType> PomdpParametricTransformationModelChecker<ValueType>::computeValuesForFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& formulaInfo, uint64_t memoryBound, storm::storage::PomdpMemoryPattern memoryPattern, double precision){
+            std::vector<ValueType> PomdpParametricTransformationModelChecker<ValueType>::computeValuesForFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& formulaInfo, uint64_t memoryBound, storm::storage::PomdpMemoryPattern memoryPattern, double gdEpsilon, uint64_t maxInstantiations){
+                STORM_PRINT_AND_LOG("Parametric Preprocessing with memory bound " << memoryBound << " -- Gradient Descent (Eps: " << gdEpsilon << " / Instantiations: " << maxInstantiations << ")" << std::endl);
                 // Apply memory structure to POMDP
                 STORM_LOG_ERROR_COND(memoryBound > 0, "Invalid memory bound" << memoryBound << "for transformation from POMDP to pMC. Memory bound needs to be positive!");
                 STORM_PRINT_AND_LOG("Compute values in POMDP by transformation to pMC.");
@@ -57,32 +58,12 @@ namespace storm {
 
                 modelSimplified->printModelInformationToStream(std::cout);
 
-                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gradientDescentInstantiationSearcher(*(modelSimplified->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()), storm::derivative::GradientDescentMethod::ADAM, 0.1, 0.9, 0.999, 32, 1e-2);
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gradientDescentInstantiationSearcher(*(modelSimplified->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()), storm::derivative::GradientDescentMethod::ADAM, 0.1, 0.9, 0.999, 32, gdEpsilon);
 
                 gradientDescentInstantiationSearcher.specifyFormula(Environment(), storm::api::createTask<storm::RationalFunction>(formula.asSharedPointer(), false));
 
-                auto gradDescResult = gradientDescentInstantiationSearcher.gradientDescentOpt(Environment());
+                auto gradDescResult = gradientDescentInstantiationSearcher.gradientDescentOpt(Environment(), maxInstantiations);
 
-                /*
-                std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> lowerBoundaries;
-                std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> upperBoundaries;
-
-                storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
-                auto const& parameterSet = constraints.getVariables();
-                std::vector<storm::RationalFunctionVariable> parameters(parameterSet.begin(), parameterSet.end());
-                //TODO bound
-                storm::RationalFunctionCoefficient bound = storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.01);
-                for (auto const& parameter : parameters) {
-                    lowerBoundaries.emplace(std::make_pair(parameter, 0+bound));
-                    upperBoundaries.emplace(std::make_pair(parameter, 1-bound));
-                }
-                auto parRegion = storm::storage::ParameterRegion<storm::RationalFunction>(std::move(lowerBoundaries), std::move(upperBoundaries));
-
-                boost::optional<storm::RationalFunction> prec;
-                prec = storm::utility::convertNumber<storm::RationalFunction>(precision);
-
-                auto extremalValues = storm::api::computeExtremalValue(pmc, storm::api::createTask<storm::RationalFunction>(formula.asSharedPointer(), false), parRegion, storm::modelchecker::RegionCheckEngine::ParameterLifting, formulaInfo.getOptimizationDirection(), prec , storm::api::MonotonicitySetting(false, false, false), true);
-*/
                 // the POMDPs we consider are binary, thus one value suffices for each observation
                 std::vector<double> obsChoiceWeight(memPomdp->getNrObservations(), 1);
 

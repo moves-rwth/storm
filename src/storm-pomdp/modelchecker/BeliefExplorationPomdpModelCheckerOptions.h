@@ -20,6 +20,9 @@ namespace storm {
                 bool refine = false;
                 bool cutZeroGap = false;
                 bool useParametricPreprocessing = false;
+                uint64_t paramMemBound = 0;
+                double paramGDEps = 1e-6;
+                uint64_t paramGDMaxInstantiations = 1;
                 boost::optional<uint64_t> refineStepLimit;
                 ValueType refinePrecision = storm::utility::zero<ValueType>();
                 boost::optional<uint64_t> explorationTimeLimit;
@@ -51,6 +54,7 @@ namespace storm {
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)
 
                 storm::builder::ExplorationHeuristic explorationHeuristic = storm::builder::ExplorationHeuristic::BreadthFirst;
+
             };
         }
     }

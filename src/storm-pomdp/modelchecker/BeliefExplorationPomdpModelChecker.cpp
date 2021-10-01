@@ -103,8 +103,8 @@ namespace storm {
                 STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " << result.upperBound << "]");
 
                 std::vector<ValueType> pMCValueBound;
-                if(options.useParametricPreprocessing){
-                    initialPomdpValueBounds.parametric = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, 2, storm::storage::PomdpMemoryPattern::Full, 0.1);
+                if(options.useParametricPreprocessing && options.unfold){
+                    initialPomdpValueBounds.parametric = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, options.paramMemBound, storm::storage::PomdpMemoryPattern::Full, options.paramGDEps, options.paramGDMaxInstantiations);
                 }
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> initialValueBounds;
                 initialValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;

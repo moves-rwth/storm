@@ -35,7 +35,7 @@ namespace storm {
             const std::string clippingModeOption = "clipping-mode";
             const std::string disableClippingReductionOption = "disable-clipping-reduction";
             const std::string cutZeroGapOption = "cut-zero-gap";
-            const std::string useParametricPreprocessingOption = "par-preprocessing";
+            const std::string parametricPreprocessingOption = "par-preprocessing";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -70,7 +70,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, beliefTypeOption, false,"Sets number type used to handle probabilities in beliefs").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the number type. 'default' is the POMDP datatype").setDefaultValueString("default").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"default", "float", "rational"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, cutZeroGapOption, false,"Cut beliefs where the gap between over- and underapproximation is 0.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, useParametricPreprocessingOption, false, "If this is set, the POMDP will be transformed to a pMC for preprocessing steps.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, parametricPreprocessingOption, false, "If this is set, the POMDP will be transformed to a pMC for preprocessing steps.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memoryBound", "number of memory states").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("gd-eps", "epsilon for gradient descent").setDefaultValueDouble(1e-6).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxInstantiations", "max. number of initial instantiations to use for gradient descent").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -197,8 +197,20 @@ namespace storm {
                 return this->getOption(cutZeroGapOption).getHasOptionBeenSet();
             }
 
-            bool BeliefExplorationSettings::isUseParametricPreprocessingSet() const {
-                return this->getOption(useParametricPreprocessingOption).getHasOptionBeenSet();
+            bool BeliefExplorationSettings::isParametricPreprocessingSet() const {
+                return this->getOption(parametricPreprocessingOption).getArgumentByName("memoryBound").getValueAsUnsignedInteger() > 0;
+            }
+
+            uint64_t BeliefExplorationSettings::getParametricPreprocessingMemoryBound() const {
+                return this->getOption(parametricPreprocessingOption).getArgumentByName("memoryBound").getValueAsUnsignedInteger();
+            }
+
+            uint64_t BeliefExplorationSettings::getParametricGDMaxInstantiations() const {
+                return this->getOption(parametricPreprocessingOption).getArgumentByName("maxInstantiations").getValueAsUnsignedInteger();
+            }
+
+            double BeliefExplorationSettings::getParametricGDEpsilon() const {
+                return this->getOption(parametricPreprocessingOption).getArgumentByName("gd-eps").getValueAsDouble();
             }
             
             template<typename ValueType>
@@ -228,7 +240,10 @@ namespace storm {
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
                 options.useGridClipping = isGridClippingModeSet();
 
-                options.useParametricPreprocessing = isUseParametricPreprocessingSet();
+                options.useParametricPreprocessing = isParametricPreprocessingSet();
+                options.paramMemBound = getParametricPreprocessingMemoryBound();
+                options.paramGDEps = getParametricGDEpsilon();
+                options.paramGDMaxInstantiations = getParametricGDMaxInstantiations();
 
                 options.disableClippingReduction = isDisableClippingReductionSet();
 

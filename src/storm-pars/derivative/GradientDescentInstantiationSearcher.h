@@ -205,7 +205,7 @@ namespace storm {
             * @param env The environment. Pass the same environment as to specifyFormula.
             */
             std::pair<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>, ConstantType> gradientDescentOpt(
-                    Environment const& env
+                    Environment const& env, uint64_t maxInstantiations
             );
 
             /**
