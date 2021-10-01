@@ -25,6 +25,7 @@ namespace storm {
             bool isArrayAccess() const;
             // To check if the array is fully accessed, so result will be of the last child Type of the array. (bool[][] will be bool)
             bool isFullArrayAccess() const;
+            std::vector<storm::expressions::Expression>& getArrayIndexVector();
             std::vector<storm::expressions::Expression> const& getArrayIndexVector() const;
             storm::expressions::Expression getArrayIndex() const;
             std::vector<std::size_t> const& getSizes() const;
@@ -34,6 +35,12 @@ namespace storm {
 
             bool arrayIndexContainsVariable() const;
             void setArrayIndex(std::vector<storm::expressions::Expression> const& newIndex);
+            
+            /*!
+             * Adds an array access index. Assumes that the underlying variable is an array variable that isn't fully accessed yet.
+             * For example (using array variable a) a will become a[index] and a[1] will become a[1][index].
+             */
+            void addArrayAccessIndex(storm::expressions::Expression const& index);
             
             bool isTransient() const;
             bool operator< (LValue const& other) const;

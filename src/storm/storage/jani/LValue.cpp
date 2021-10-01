@@ -79,6 +79,11 @@ namespace storm {
             return result;
         }
 
+        std::vector<storm::expressions::Expression>& LValue::getArrayIndexVector() {
+            STORM_LOG_ASSERT(isArrayAccess(), "Tried to get the array index of an LValue that is not an array access.");
+            return arrayIndexVector.get();
+        }
+
         std::vector<storm::expressions::Expression> const& LValue::getArrayIndexVector() const {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to get the array index of an LValue that is not an array access.");
             return arrayIndexVector.get();
@@ -98,6 +103,12 @@ namespace storm {
             STORM_LOG_ASSERT(isArray(), "Tried to set the array index of an LValue that is not an array access.");
             STORM_LOG_ASSERT(newIndex.size() <= sizes.size(), "Expecting arrayIndexVector size to be smaller or equal than the size of the sizes vector for variable: " << variable->getName());
             arrayIndexVector = newIndex;
+        }
+        
+        void LValue::addArrayAccessIndex(storm::expressions::Expression const& index) {
+            STORM_LOG_ASSERT(isArray(), "Tried to add an array access index to an LValue that doesn't consider an array.");
+            STORM_LOG_ASSERT(!isFullArrayAccess(), "Tried to add an array access index to an LValue that already is a full array access");
+            arrayIndexVector->push_back(index);
         }
         
         bool LValue::isTransient() const {

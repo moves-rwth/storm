@@ -836,8 +836,7 @@ namespace storm {
             boost::optional<storm::expressions::Expression> initVal;
             if (initvalcount == 1 && !variableStructure.at("initial-value").is_null()) {
                 initVal = parseExpression(variableStructure.at("initial-value"), scope.refine("Initial value for variable " + name));
-                STORM_LOG_THROW((type.second == initVal->getType() || type.second.isRationalType() && initVal->getType().isIntegerType()), storm::exceptions::InvalidJaniException,
-                                "Type of initial value for variable " + name + "' (scope: " + scope.description + ") does not match the variable type '" + type.first->getStringRepresentation() + "'.");
+                //STORM_LOG_THROW((type.second == initVal->getType() || type.second.isRationalType() && initVal->getType().isIntegerType()), storm::exceptions::InvalidJaniException,"Type of initial value for variable " + name + "' (scope: " + scope.description + ") does not match the variable type '" + type.first->getStringRepresentation() + "'.");
                 auto ptrCon = dynamic_cast<storm::expressions::ConstructorArrayExpression const *>(&(initVal->getBaseExpression()));
                 if (ptrCon == nullptr) {
                     auto ptrVal = dynamic_cast<storm::expressions::ValueArrayExpression const *>(&(initVal->getBaseExpression()));
@@ -921,62 +920,39 @@ namespace storm {
         storm::jani::LValue JaniParser<ValueType>::parseLValue(Json const& lValueStructure, Scope const& scope) {
             if (lValueStructure.is_string()) {
                 std::string ident = getString<ValueType>(lValueStructure, scope.description);
+                storm::jani::Variable const* var = nullptr;
                 if (scope.localVars != nullptr) {
                     auto localVar = scope.localVars->find(ident);
                     if (localVar != scope.localVars->end()) {
-                        if (localVar->second->getType().isArrayType()) {
-                            STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
-                            return storm::jani::LValue(*localVar->second, sizeMap.at(ident));
-                        } else {
-                            return storm::jani::LValue(*localVar->second);
-                        }
+                        var = localVar->second;
                     }
                 }
-                STORM_LOG_THROW(scope.globalVars != nullptr, storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
-                auto globalVar = scope.globalVars->find(ident);
-                STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
-                if (globalVar->second->getType().isArrayType()) {
+                if (var == nullptr) {
+                    STORM_LOG_THROW(scope.globalVars != nullptr, storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
+                    auto globalVar = scope.globalVars->find(ident);
+                    STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
+                    var = globalVar->second;
+                }
+                
+                if (var->getType().isArrayType()) {
                     STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
-                    return storm::jani::LValue(*globalVar->second, sizeMap.at(ident));
+                    return storm::jani::LValue(*var, sizeMap.at(ident));
                 } else {
-                    return storm::jani::LValue(*globalVar->second);
+                    return storm::jani::LValue(*var);
                 }
             } else if (lValueStructure.count("op") == 1) {
-                std::vector<storm::expressions::Expression> index;
-                STORM_LOG_THROW(lValueStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
                 // structure will be something like "op": "aa", "exp": {}, "index": {}
-                // in exp we have something that is either a variable, or some other array acces.
+                // in exp we have something that is either a variable, or some other array access.
                 // e.g. a[1][4] will look like: "op": "aa", "exp": {"op": "aa", "exp": "a", "index": {1}}, "index": {4}
-                Json subStructure = lValueStructure;
-                while (subStructure.count("exp")) {
-                    std::string opstring = getString<ValueType>(lValueStructure.at("op"), scope.description);
-                    STORM_LOG_THROW(opstring == "aa", storm::exceptions::InvalidJaniException, "Unknown operation '" << opstring << "' occurs in " << scope.description);
-                    STORM_LOG_THROW(lValueStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
-                    STORM_LOG_THROW(lValueStructure.count("index"), storm::exceptions::InvalidJaniException, "Missing 'index' in array access at " << scope.description);
-                    index.push_back(parseExpression(subStructure.at("index"), scope.refine("Index expression of array access")));
-                    subStructure = subStructure.at("exp");
-                }
-                // We need to reverse the order as they were added in wrong order (e.g. first 4 then 1)
-                auto first = index.begin();
-                auto last = index.end();
-                while ((first!=last)&&(first!=--last)) {
-                    std::iter_swap(first, last);
-                    ++first;
-                }
-
-                STORM_LOG_THROW(subStructure.is_string(), storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
-                std::string ident = getString<ValueType>(subStructure, scope.description);
-                STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
-                if (scope.localVars != nullptr) {
-                    auto localVar = scope.localVars->find(ident);
-                    if (localVar != scope.localVars->end()) {
-                        return storm::jani::LValue(*localVar->second, std::move(index), sizeMap.at(ident));
-                    }
-                }
-                STORM_LOG_THROW(scope.globalVars != nullptr, storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
-                auto globalVar = scope.globalVars->find(ident);
-                STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
-                return storm::jani::LValue(*globalVar->second, std::move(index), sizeMap.at(ident));
+                std::string opstring = getString<ValueType>(lValueStructure.at("op"), scope.description);
+                STORM_LOG_THROW(opstring == "aa", storm::exceptions::InvalidJaniException, "Unknown operation '" << opstring << "' occurs in " << scope.description);
+                STORM_LOG_THROW(lValueStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
+                auto expLValue = parseLValue(lValueStructure.at("exp"), scope.refine("Expression of array access"));
+                STORM_LOG_THROW(expLValue.isArray(), storm::exceptions::InvalidJaniException, "Array access considers non-array expression at " << scope.description);
+                STORM_LOG_THROW(lValueStructure.count("index"), storm::exceptions::InvalidJaniException, "Missing 'index' in array access at " << scope.description);
+                auto indexExpression = parseExpression(lValueStructure.at("index"), scope.refine("Index of array access"));
+                expLValue.addArrayAccessIndex(indexExpression);
+                return expLValue;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
                 // Silly warning suppression.
@@ -995,7 +971,6 @@ namespace storm {
             if (scope.localVars != nullptr) {
                 auto it = scope.localVars->find(ident);
                 if (it != scope.localVars->end()) {
-                    auto test = it->second->getExpressionVariable();
                     return it->second->getExpressionVariable();
                 }
             }
@@ -1550,6 +1525,7 @@ namespace storm {
                         // value
                         STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' in automaton '" << name << "' must have one value field");
                         storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), scope.refine("assignment in edge from '" + sourceLoc + "' in automaton '" + name + "'"));
+                        // TODO check types
                         // index
                         int64_t assignmentIndex = 0; // default.
                         if(assignmentEntry.count("index") > 0) {
