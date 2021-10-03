@@ -387,9 +387,27 @@ class SFTBDDChecker {
                       std::vector<std::vector<uint32_t>> &minimalCutSets) const;
 
     template <typename FuncType>
-    void chunkCalculationTemplate(FuncType func,
-                                  std::vector<ValueType> const &timepoints,
-                                  size_t chunksize) const;
+    void chunkCalculationTemplate(std::vector<ValueType> const &timepoints,
+                                  size_t chunksize, FuncType func) const;
+
+    template <typename FuncType>
+    ValueType getImportanceMeasureAtTimebound(std::string const &beName,
+                                              ValueType timebound,
+                                              FuncType func);
+
+    template <typename FuncType>
+    std::vector<ValueType> getAllImportanceMeasuresAtTimebound(
+        ValueType timebound, FuncType func);
+
+    template <typename FuncType>
+    std::vector<ValueType> getImportanceMeasuresAtTimepoints(
+        std::string const &beName, std::vector<ValueType> const &timepoints,
+        size_t chunksize, FuncType func);
+
+    template <typename FuncType>
+    std::vector<std::vector<ValueType>> getAllImportanceMeasuresAtTimepoints(
+        std::vector<ValueType> const &timepoints, size_t chunksize,
+        FuncType func);
 
     /**
      * \return

@@ -1,6 +1,7 @@
 #include <gmm/gmm_std.h>
 
 #include <memory>
+#include <vector>
 
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
@@ -330,9 +331,10 @@ std::vector<std::vector<uint32_t>> SFTBDDChecker::getMinimalCutSetsAsIndices() {
     return mcs;
 }
 
-template <typename T>
+template <typename FuncType>
 void SFTBDDChecker::chunkCalculationTemplate(
-    T func, std::vector<ValueType> const &timepoints, size_t chunksize) const {
+    std::vector<ValueType> const &timepoints, size_t chunksize,
+    FuncType func) const {
     if (chunksize == 0) {
         chunksize = timepoints.size();
     }
@@ -407,6 +409,7 @@ std::vector<ValueType> SFTBDDChecker::getProbabilitiesAtTimepoints(
     resultProbabilities.reserve(timepoints.size());
 
     chunkCalculationTemplate(
+        timepoints, chunksize,
         [&](auto const currentChunksize, auto const &timepointsArray,
             auto const &indexToProbabilities) {
             // Invalidate bdd cache
@@ -424,14 +427,14 @@ std::vector<ValueType> SFTBDDChecker::getProbabilitiesAtTimepoints(
             for (size_t i{0}; i < currentChunksize; ++i) {
                 resultProbabilities.push_back(probabilitiesArray(i));
             }
-        },
-        timepoints, chunksize);
+        });
 
     return resultProbabilities;
 }
 
-ValueType SFTBDDChecker::getBirnbaumFactorAtTimebound(std::string const &beName,
-                                                      ValueType timebound) {
+template <typename FuncType>
+ValueType SFTBDDChecker::getImportanceMeasureAtTimebound(
+    std::string const &beName, ValueType timebound, FuncType func) {
     std::map<uint32_t, ValueType> indexToProbability{};
     for (auto const &be : getDFT()->getBasicElements()) {
         auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
@@ -442,17 +445,22 @@ ValueType SFTBDDChecker::getBirnbaumFactorAtTimebound(std::string const &beName,
     auto const index{getSylvanBddManager()->getIndex(beName)};
     std::map<uint64_t, ValueType> bddToProbability{};
     std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
+    auto const probability{
+        recursiveProbability(bdd, indexToProbability, bddToProbability)};
     auto const birnbaumFactor{recursiveBirnbaumFactor(
         index, bdd, indexToProbability, bddToProbability, bddToBirnbaumFactor)};
-    return birnbaumFactor;
+    auto const &beProbability{indexToProbability[index]};
+
+    return func(beProbability, probability, birnbaumFactor);
 }
 
-std::vector<ValueType> SFTBDDChecker::getAllBirnbaumFactorsAtTimebound(
-    ValueType timebound) {
+template <typename FuncType>
+std::vector<ValueType> SFTBDDChecker::getAllImportanceMeasuresAtTimebound(
+    ValueType timebound, FuncType func) {
     auto const bdd{getTopLevelGateBdd()};
 
-    std::vector<ValueType> birnbaumFactors{};
-    birnbaumFactors.reserve(getDFT()->getBasicElements().size());
+    std::vector<ValueType> resultVector{};
+    resultVector.reserve(getDFT()->getBasicElements().size());
 
     std::map<uint32_t, ValueType> indexToProbability{};
     for (auto const &be : getDFT()->getBasicElements()) {
@@ -461,736 +469,294 @@ std::vector<ValueType> SFTBDDChecker::getAllBirnbaumFactorsAtTimebound(
     }
     std::map<uint64_t, ValueType> bddToProbability{};
 
+    auto const probability{
+        recursiveProbability(bdd, indexToProbability, bddToProbability)};
+
     for (auto const &be : getDFT()->getBasicElements()) {
         auto const index{getSylvanBddManager()->getIndex(be->name())};
         std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
         auto const birnbaumFactor{
             recursiveBirnbaumFactor(index, bdd, indexToProbability,
                                     bddToProbability, bddToBirnbaumFactor)};
-        birnbaumFactors.push_back(birnbaumFactor);
+        auto const &beProbability{indexToProbability[index]};
+        resultVector.push_back(
+            func(beProbability, probability, birnbaumFactor));
     }
-    return birnbaumFactors;
+    return resultVector;
+}
+
+template <typename FuncType>
+std::vector<ValueType> SFTBDDChecker::getImportanceMeasuresAtTimepoints(
+    std::string const &beName, std::vector<ValueType> const &timepoints,
+    size_t chunksize, FuncType func) {
+    auto const bdd{getTopLevelGateBdd()};
+    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
+        bddToProbabilities{};
+    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
+        bddToBirnbaumFactors{};
+    std::vector<ValueType> resultVector{};
+    resultVector.reserve(timepoints.size());
+
+    chunkCalculationTemplate(
+        timepoints, chunksize,
+        [&](auto const currentChunksize, auto const &timepointsArray,
+            auto const &indexToProbabilities) {
+            // Invalidate bdd caches
+            for (auto &i : bddToProbabilities) {
+                i.second.first = false;
+            }
+            for (auto &i : bddToBirnbaumFactors) {
+                i.second.first = false;
+            }
+
+            // Great care was made so that the pointer returned is always valid
+            auto const index{getSylvanBddManager()->getIndex(beName)};
+            auto const &probabilitiesArray{*recursiveProbabilities(
+                currentChunksize, bdd, indexToProbabilities,
+                bddToProbabilities)};
+            auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
+                currentChunksize, index, bdd, indexToProbabilities,
+                bddToProbabilities, bddToBirnbaumFactors)};
+
+            auto const &beProbabilitiesArray{indexToProbabilities.at(index)};
+            auto const ImportanceMeasureArray{func(beProbabilitiesArray,
+                                                   probabilitiesArray,
+                                                   birnbaumFactorsArray)};
+
+            // Update result Probabilities
+            for (size_t i{0}; i < currentChunksize; ++i) {
+                resultVector.push_back(ImportanceMeasureArray(i));
+            }
+        });
+
+    return resultVector;
+}
+
+template <typename FuncType>
+std::vector<std::vector<ValueType>>
+SFTBDDChecker::getAllImportanceMeasuresAtTimepoints(
+    std::vector<ValueType> const &timepoints, size_t chunksize, FuncType func) {
+    auto const bdd{getTopLevelGateBdd()};
+    auto const basicElements{getDFT()->getBasicElements()};
+
+    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
+        bddToProbabilities{};
+    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
+        bddToBirnbaumFactors{};
+    std::vector<std::vector<ValueType>> resultVector{};
+    resultVector.resize(getDFT()->getBasicElements().size());
+    for (auto &i : resultVector) {
+        i.reserve(timepoints.size());
+    }
+
+    chunkCalculationTemplate(
+        timepoints, chunksize,
+        [&](auto const currentChunksize, auto const &timepointsArray,
+            auto const &indexToProbabilities) {
+            // Invalidate bdd cache
+            for (auto &i : bddToProbabilities) {
+                i.second.first = false;
+            }
+
+            auto const &probabilitiesArray{*recursiveProbabilities(
+                currentChunksize, bdd, indexToProbabilities,
+                bddToProbabilities)};
+
+            for (size_t basicElementIndex{0};
+                 basicElementIndex < basicElements.size();
+                 ++basicElementIndex) {
+                auto const &be{basicElements[basicElementIndex]};
+                // Invalidate bdd cache
+                for (auto &i : bddToBirnbaumFactors) {
+                    i.second.first = false;
+                }
+
+                // Great care was made so that the pointer returned is always
+                // valid and points to an element in bddToProbabilities
+                auto const index{getSylvanBddManager()->getIndex(be->name())};
+                auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
+                    currentChunksize, index, bdd, indexToProbabilities,
+                    bddToProbabilities, bddToBirnbaumFactors)};
+
+                auto const &beProbabilitiesArray{
+                    indexToProbabilities.at(index)};
+
+                auto const ImportanceMeasureArray{func(beProbabilitiesArray,
+                                                       probabilitiesArray,
+                                                       birnbaumFactorsArray)};
+
+                // Update result Probabilities
+                for (size_t i{0}; i < currentChunksize; ++i) {
+                    resultVector[basicElementIndex].push_back(
+                        ImportanceMeasureArray(i));
+                }
+            }
+        });
+
+    return resultVector;
+}
+
+namespace {
+
+struct BirnbaumFunctor {
+    template <typename T>
+    constexpr auto operator()(T const &beProbability, T const &probability,
+                              T const &birnbaumFactor) const {
+        return birnbaumFactor;
+    }
+};
+
+struct CIFFunctor {
+    template <typename T>
+    constexpr T operator()(T const &beProbability, T const &probability,
+                           T const &birnbaumFactor) const {
+        return (beProbability / probability) * birnbaumFactor;
+    }
+};
+
+struct DIFFunctor {
+    template <typename T>
+    constexpr T operator()(T const &beProbability, T const &probability,
+                           T const &birnbaumFactor) const {
+        return beProbability +
+               (beProbability * (1 - beProbability) * birnbaumFactor) /
+                   probability;
+    }
+};
+
+struct RAWFunctor {
+    template <typename T>
+    constexpr T operator()(T const &beProbability, T const &probability,
+                           T const &birnbaumFactor) const {
+        return 1 + ((1 - beProbability) * birnbaumFactor) / probability;
+    }
+};
+
+struct RRWFunctor {
+    template <typename T>
+    constexpr T operator()(T const &beProbability, T const &probability,
+                           T const &birnbaumFactor) const {
+        return probability / (probability - beProbability * birnbaumFactor);
+    }
+};
+
+}  // namespace
+
+ValueType SFTBDDChecker::getBirnbaumFactorAtTimebound(std::string const &beName,
+                                                      ValueType timebound) {
+    return getImportanceMeasureAtTimebound(beName, timebound,
+                                           BirnbaumFunctor{});
+}
+
+std::vector<ValueType> SFTBDDChecker::getAllBirnbaumFactorsAtTimebound(
+    ValueType timebound) {
+    return getAllImportanceMeasuresAtTimebound(timebound, BirnbaumFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getBirnbaumFactorsAtTimepoints(
     std::string const &beName, std::vector<ValueType> const &timepoints,
     size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(timepoints.size());
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd caches
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-            for (auto &i : bddToBirnbaumFactors) {
-                i.second.first = false;
-            }
-
-            // Great care was made so that the pointer returned is always valid
-            auto const index{getSylvanBddManager()->getIndex(beName)};
-            auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                currentChunksize, index, bdd, indexToProbabilities,
-                bddToProbabilities, bddToBirnbaumFactors)};
-
-            // Update result Probabilities
-            for (size_t i{0}; i < currentChunksize; ++i) {
-                resultVector.push_back(birnbaumFactorsArray(i));
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getImportanceMeasuresAtTimepoints(beName, timepoints, chunksize,
+                                             BirnbaumFunctor{});
 }
 
 std::vector<std::vector<ValueType>>
 SFTBDDChecker::getAllBirnbaumFactorsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    auto const basicElements{getDFT()->getBasicElements()};
-
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<std::vector<ValueType>> resultVector{};
-    resultVector.resize(getDFT()->getBasicElements().size());
-    for (auto &i : resultVector) {
-        i.reserve(timepoints.size());
-    }
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd cache
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-
-            for (size_t basicElementIndex{0};
-                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
-                auto const &be{basicElements[basicElementIndex]};
-                // Invalidate bdd cache
-                for (auto &i : bddToBirnbaumFactors) {
-                    i.second.first = false;
-                }
-
-                // Great care was made so that the pointer returned is always
-                // valid and points to an element in bddToProbabilities
-                auto const index{getSylvanBddManager()->getIndex(be->name())};
-                auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                    currentChunksize, index, bdd, indexToProbabilities,
-                    bddToProbabilities, bddToBirnbaumFactors)};
-
-                // Update result Probabilities
-                for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElementIndex].push_back(
-                        birnbaumFactorsArray(i));
-                }
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getAllImportanceMeasuresAtTimepoints(timepoints, chunksize,
+                                                BirnbaumFunctor{});
 }
 
 ValueType SFTBDDChecker::getCIFAtTimebound(std::string const &beName,
                                            ValueType timebound) {
-    std::map<uint32_t, ValueType> indexToProbability{};
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
-        indexToProbability[currentIndex] = be->getUnreliability(timebound);
-    }
-
-    auto const bdd{getTopLevelGateBdd()};
-    auto const index{getSylvanBddManager()->getIndex(beName)};
-    std::map<uint64_t, ValueType> bddToProbability{};
-    std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
-    auto const probability{
-        recursiveProbability(bdd, indexToProbability, bddToProbability)};
-    auto const birnbaumFactor{recursiveBirnbaumFactor(
-        index, bdd, indexToProbability, bddToProbability, bddToBirnbaumFactor)};
-    auto const CIF{(indexToProbability[index] / probability) * birnbaumFactor};
-    return CIF;
+    return getImportanceMeasureAtTimebound(beName, timebound, CIFFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getAllCIFsAtTimebound(
     ValueType timebound) {
-    auto const bdd{getTopLevelGateBdd()};
-
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(getDFT()->getBasicElements().size());
-
-    std::map<uint32_t, ValueType> indexToProbability{};
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
-        indexToProbability[currentIndex] = be->getUnreliability(timebound);
-    }
-    std::map<uint64_t, ValueType> bddToProbability{};
-
-    auto const probability{
-        recursiveProbability(bdd, indexToProbability, bddToProbability)};
-
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const index{getSylvanBddManager()->getIndex(be->name())};
-        std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
-        auto const birnbaumFactor{
-            recursiveBirnbaumFactor(index, bdd, indexToProbability,
-                                    bddToProbability, bddToBirnbaumFactor)};
-        auto const CIF{(indexToProbability[index] / probability) *
-                       birnbaumFactor};
-        resultVector.push_back(CIF);
-    }
-    return resultVector;
+    return getAllImportanceMeasuresAtTimebound(timebound, CIFFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getCIFsAtTimepoints(
     std::string const &beName, std::vector<ValueType> const &timepoints,
     size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(timepoints.size());
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd caches
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-            for (auto &i : bddToBirnbaumFactors) {
-                i.second.first = false;
-            }
-
-            // Great care was made so that the pointer returned is always valid
-            auto const index{getSylvanBddManager()->getIndex(beName)};
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                currentChunksize, bdd, indexToProbabilities,
-                bddToProbabilities)};
-            auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                currentChunksize, index, bdd, indexToProbabilities,
-                bddToProbabilities, bddToBirnbaumFactors)};
-
-            auto const CIFArray{
-                (indexToProbabilities.at(index) / probabilitiesArray) *
-                birnbaumFactorsArray};
-
-            // Update result Probabilities
-            for (size_t i{0}; i < currentChunksize; ++i) {
-                resultVector.push_back(CIFArray(i));
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getImportanceMeasuresAtTimepoints(beName, timepoints, chunksize,
+                                             CIFFunctor{});
 }
 
 std::vector<std::vector<ValueType>> SFTBDDChecker::getAllCIFsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    auto const basicElements{getDFT()->getBasicElements()};
-
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<std::vector<ValueType>> resultVector{};
-    resultVector.resize(getDFT()->getBasicElements().size());
-    for (auto &i : resultVector) {
-        i.reserve(timepoints.size());
-    }
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd cache
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                currentChunksize, bdd, indexToProbabilities,
-                bddToProbabilities)};
-
-            for (size_t basicElementIndex{0};
-                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
-                auto const &be{basicElements[basicElementIndex]};
-                // Invalidate bdd cache
-                for (auto &i : bddToBirnbaumFactors) {
-                    i.second.first = false;
-                }
-
-                // Great care was made so that the pointer returned is always
-                // valid and points to an element in bddToProbabilities
-                auto const index{getSylvanBddManager()->getIndex(be->name())};
-                auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                    currentChunksize, index, bdd, indexToProbabilities,
-                    bddToProbabilities, bddToBirnbaumFactors)};
-
-                auto const CIFArray{
-                    (indexToProbabilities.at(index) / probabilitiesArray) *
-                    birnbaumFactorsArray};
-
-                // Update result Probabilities
-                for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElementIndex].push_back(CIFArray(i));
-                }
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getAllImportanceMeasuresAtTimepoints(timepoints, chunksize,
+                                                CIFFunctor{});
 }
 
 ValueType SFTBDDChecker::getDIFAtTimebound(std::string const &beName,
                                            ValueType timebound) {
-    std::map<uint32_t, ValueType> indexToProbability{};
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
-        indexToProbability[currentIndex] = be->getUnreliability(timebound);
-    }
-
-    auto const bdd{getTopLevelGateBdd()};
-    auto const index{getSylvanBddManager()->getIndex(beName)};
-    std::map<uint64_t, ValueType> bddToProbability{};
-    std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
-    auto const probability{
-        recursiveProbability(bdd, indexToProbability, bddToProbability)};
-    auto const birnbaumFactor{recursiveBirnbaumFactor(
-        index, bdd, indexToProbability, bddToProbability, bddToBirnbaumFactor)};
-    auto const &beProbability{indexToProbability[index]};
-    auto const DIF{beProbability +
-                   (beProbability * (1 - beProbability) * birnbaumFactor) /
-                       probability};
-    return DIF;
+    return getImportanceMeasureAtTimebound(beName, timebound, DIFFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getAllDIFsAtTimebound(
     ValueType timebound) {
-    auto const bdd{getTopLevelGateBdd()};
-
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(getDFT()->getBasicElements().size());
-
-    std::map<uint32_t, ValueType> indexToProbability{};
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
-        indexToProbability[currentIndex] = be->getUnreliability(timebound);
-    }
-    std::map<uint64_t, ValueType> bddToProbability{};
-
-    auto const probability{
-        recursiveProbability(bdd, indexToProbability, bddToProbability)};
-
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const index{getSylvanBddManager()->getIndex(be->name())};
-        std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
-        auto const birnbaumFactor{
-            recursiveBirnbaumFactor(index, bdd, indexToProbability,
-                                    bddToProbability, bddToBirnbaumFactor)};
-        auto const &beProbability{indexToProbability[index]};
-        auto const DIF{beProbability +
-                       (beProbability * (1 - beProbability) * birnbaumFactor) /
-                           probability};
-        resultVector.push_back(DIF);
-    }
-    return resultVector;
+    return getAllImportanceMeasuresAtTimebound(timebound, DIFFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getDIFsAtTimepoints(
     std::string const &beName, std::vector<ValueType> const &timepoints,
     size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(timepoints.size());
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd caches
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-            for (auto &i : bddToBirnbaumFactors) {
-                i.second.first = false;
-            }
-
-            // Great care was made so that the pointer returned is always valid
-            auto const index{getSylvanBddManager()->getIndex(beName)};
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                currentChunksize, bdd, indexToProbabilities,
-                bddToProbabilities)};
-            auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                currentChunksize, index, bdd, indexToProbabilities,
-                bddToProbabilities, bddToBirnbaumFactors)};
-
-            auto const &beProbabilitiesArray{indexToProbabilities.at(index)};
-            auto const DIFArray{
-                beProbabilitiesArray +
-                (beProbabilitiesArray * (1 - beProbabilitiesArray) *
-                 birnbaumFactorsArray) /
-                    probabilitiesArray};
-
-            // Update result Probabilities
-            for (size_t i{0}; i < currentChunksize; ++i) {
-                resultVector.push_back(DIFArray(i));
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getImportanceMeasuresAtTimepoints(beName, timepoints, chunksize,
+                                             DIFFunctor{});
 }
 
 std::vector<std::vector<ValueType>> SFTBDDChecker::getAllDIFsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    auto const basicElements{getDFT()->getBasicElements()};
-
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<std::vector<ValueType>> resultVector{};
-    resultVector.resize(getDFT()->getBasicElements().size());
-    for (auto &i : resultVector) {
-        i.reserve(timepoints.size());
-    }
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd cache
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                currentChunksize, bdd, indexToProbabilities,
-                bddToProbabilities)};
-
-            for (size_t basicElementIndex{0};
-                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
-                auto const &be{basicElements[basicElementIndex]};
-                // Invalidate bdd cache
-                for (auto &i : bddToBirnbaumFactors) {
-                    i.second.first = false;
-                }
-
-                // Great care was made so that the pointer returned is always
-                // valid and points to an element in bddToProbabilities
-                auto const index{getSylvanBddManager()->getIndex(be->name())};
-                auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                    currentChunksize, index, bdd, indexToProbabilities,
-                    bddToProbabilities, bddToBirnbaumFactors)};
-
-                auto const &beProbabilitiesArray{
-                    indexToProbabilities.at(index)};
-                auto const DIFArray{
-                    beProbabilitiesArray +
-                    (beProbabilitiesArray * (1 - beProbabilitiesArray) *
-                     birnbaumFactorsArray) /
-                        probabilitiesArray};
-
-                // Update result Probabilities
-                for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElementIndex].push_back(DIFArray(i));
-                }
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getAllImportanceMeasuresAtTimepoints(timepoints, chunksize,
+                                                DIFFunctor{});
 }
 
 ValueType SFTBDDChecker::getRAWAtTimebound(std::string const &beName,
                                            ValueType timebound) {
-    std::map<uint32_t, ValueType> indexToProbability{};
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
-        indexToProbability[currentIndex] = be->getUnreliability(timebound);
-    }
-
-    auto const bdd{getTopLevelGateBdd()};
-    auto const index{getSylvanBddManager()->getIndex(beName)};
-    std::map<uint64_t, ValueType> bddToProbability{};
-    std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
-    auto const probability{
-        recursiveProbability(bdd, indexToProbability, bddToProbability)};
-    auto const birnbaumFactor{recursiveBirnbaumFactor(
-        index, bdd, indexToProbability, bddToProbability, bddToBirnbaumFactor)};
-    auto const &beProbability{indexToProbability[index]};
-    auto const RAW{1 + ((1 - beProbability) * birnbaumFactor) / probability};
-    return RAW;
+    return getImportanceMeasureAtTimebound(beName, timebound, RAWFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getAllRAWsAtTimebound(
     ValueType timebound) {
-    auto const bdd{getTopLevelGateBdd()};
-
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(getDFT()->getBasicElements().size());
-
-    std::map<uint32_t, ValueType> indexToProbability{};
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
-        indexToProbability[currentIndex] = be->getUnreliability(timebound);
-    }
-    std::map<uint64_t, ValueType> bddToProbability{};
-
-    auto const probability{
-        recursiveProbability(bdd, indexToProbability, bddToProbability)};
-
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const index{getSylvanBddManager()->getIndex(be->name())};
-        std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
-        auto const birnbaumFactor{
-            recursiveBirnbaumFactor(index, bdd, indexToProbability,
-                                    bddToProbability, bddToBirnbaumFactor)};
-        auto const &beProbability{indexToProbability[index]};
-        auto const RAW{1 +
-                       ((1 - beProbability) * birnbaumFactor) / probability};
-        resultVector.push_back(RAW);
-    }
-    return resultVector;
+    return getAllImportanceMeasuresAtTimebound(timebound, RAWFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getRAWsAtTimepoints(
     std::string const &beName, std::vector<ValueType> const &timepoints,
     size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(timepoints.size());
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd caches
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-            for (auto &i : bddToBirnbaumFactors) {
-                i.second.first = false;
-            }
-
-            // Great care was made so that the pointer returned is always valid
-            auto const index{getSylvanBddManager()->getIndex(beName)};
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                currentChunksize, bdd, indexToProbabilities,
-                bddToProbabilities)};
-            auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                currentChunksize, index, bdd, indexToProbabilities,
-                bddToProbabilities, bddToBirnbaumFactors)};
-
-            auto const &beProbabilitiesArray{indexToProbabilities.at(index)};
-            auto const RAWArray{
-                1 + ((1 - beProbabilitiesArray) * birnbaumFactorsArray) /
-                        probabilitiesArray};
-
-            // Update result Probabilities
-            for (size_t i{0}; i < currentChunksize; ++i) {
-                resultVector.push_back(RAWArray(i));
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getImportanceMeasuresAtTimepoints(beName, timepoints, chunksize,
+                                             RAWFunctor{});
 }
 
 std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRAWsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    auto const basicElements{getDFT()->getBasicElements()};
-
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<std::vector<ValueType>> resultVector{};
-    resultVector.resize(getDFT()->getBasicElements().size());
-    for (auto &i : resultVector) {
-        i.reserve(timepoints.size());
-    }
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd cache
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                currentChunksize, bdd, indexToProbabilities,
-                bddToProbabilities)};
-
-            for (size_t basicElementIndex{0};
-                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
-                auto const &be{basicElements[basicElementIndex]};
-                // Invalidate bdd cache
-                for (auto &i : bddToBirnbaumFactors) {
-                    i.second.first = false;
-                }
-
-                // Great care was made so that the pointer returned is always
-                // valid and points to an element in bddToProbabilities
-                auto const index{getSylvanBddManager()->getIndex(be->name())};
-                auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                    currentChunksize, index, bdd, indexToProbabilities,
-                    bddToProbabilities, bddToBirnbaumFactors)};
-
-                auto const &beProbabilitiesArray{
-                    indexToProbabilities.at(index)};
-                auto const RAWArray{
-                    1 + ((1 - beProbabilitiesArray) * birnbaumFactorsArray) /
-                            probabilitiesArray};
-
-                // Update result Probabilities
-                for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElementIndex].push_back(RAWArray(i));
-                }
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getAllImportanceMeasuresAtTimepoints(timepoints, chunksize,
+                                                RAWFunctor{});
 }
 
 ValueType SFTBDDChecker::getRRWAtTimebound(std::string const &beName,
                                            ValueType timebound) {
-    std::map<uint32_t, ValueType> indexToProbability{};
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
-        indexToProbability[currentIndex] = be->getUnreliability(timebound);
-    }
-
-    auto const bdd{getTopLevelGateBdd()};
-    auto const index{getSylvanBddManager()->getIndex(beName)};
-    std::map<uint64_t, ValueType> bddToProbability{};
-    std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
-    auto const probability{
-        recursiveProbability(bdd, indexToProbability, bddToProbability)};
-    auto const birnbaumFactor{recursiveBirnbaumFactor(
-        index, bdd, indexToProbability, bddToProbability, bddToBirnbaumFactor)};
-    auto const &beProbability{indexToProbability[index]};
-    auto const RRW{probability /
-                   (probability - beProbability * birnbaumFactor)};
-    return RRW;
+    return getImportanceMeasureAtTimebound(beName, timebound, RRWFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getAllRRWsAtTimebound(
     ValueType timebound) {
-    auto const bdd{getTopLevelGateBdd()};
-
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(getDFT()->getBasicElements().size());
-
-    std::map<uint32_t, ValueType> indexToProbability{};
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const currentIndex{getSylvanBddManager()->getIndex(be->name())};
-        indexToProbability[currentIndex] = be->getUnreliability(timebound);
-    }
-    std::map<uint64_t, ValueType> bddToProbability{};
-
-    auto const probability{
-        recursiveProbability(bdd, indexToProbability, bddToProbability)};
-
-    for (auto const &be : getDFT()->getBasicElements()) {
-        auto const index{getSylvanBddManager()->getIndex(be->name())};
-        std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
-        auto const birnbaumFactor{
-            recursiveBirnbaumFactor(index, bdd, indexToProbability,
-                                    bddToProbability, bddToBirnbaumFactor)};
-        auto const &beProbability{indexToProbability[index]};
-        auto const RRW{probability /
-                       (probability - beProbability * birnbaumFactor)};
-        resultVector.push_back(RRW);
-    }
-    return resultVector;
+    return getAllImportanceMeasuresAtTimebound(timebound, RRWFunctor{});
 }
 
 std::vector<ValueType> SFTBDDChecker::getRRWsAtTimepoints(
     std::string const &beName, std::vector<ValueType> const &timepoints,
     size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<ValueType> resultVector{};
-    resultVector.reserve(timepoints.size());
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd caches
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-            for (auto &i : bddToBirnbaumFactors) {
-                i.second.first = false;
-            }
-
-            // Great care was made so that the pointer returned is always valid
-            auto const index{getSylvanBddManager()->getIndex(beName)};
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                currentChunksize, bdd, indexToProbabilities,
-                bddToProbabilities)};
-            auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                currentChunksize, index, bdd, indexToProbabilities,
-                bddToProbabilities, bddToBirnbaumFactors)};
-
-            auto const &beProbabilitiesArray{indexToProbabilities.at(index)};
-            auto const RRWArray{probabilitiesArray /
-                                (probabilitiesArray -
-                                 beProbabilitiesArray * birnbaumFactorsArray)};
-
-            // Update result Probabilities
-            for (size_t i{0}; i < currentChunksize; ++i) {
-                resultVector.push_back(RRWArray(i));
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getImportanceMeasuresAtTimepoints(beName, timepoints, chunksize,
+                                             RRWFunctor{});
 }
 
 std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRRWsAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize) {
-    auto const bdd{getTopLevelGateBdd()};
-    auto const basicElements{getDFT()->getBasicElements()};
-
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToProbabilities{};
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        bddToBirnbaumFactors{};
-    std::vector<std::vector<ValueType>> resultVector{};
-    resultVector.resize(getDFT()->getBasicElements().size());
-    for (auto &i : resultVector) {
-        i.reserve(timepoints.size());
-    }
-
-    chunkCalculationTemplate(
-        [&](auto const currentChunksize, auto const &timepointsArray,
-            auto const &indexToProbabilities) {
-            // Invalidate bdd cache
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                currentChunksize, bdd, indexToProbabilities,
-                bddToProbabilities)};
-
-            for (size_t basicElementIndex{0};
-                 basicElementIndex < basicElements.size(); ++basicElementIndex) {
-                auto const &be{basicElements[basicElementIndex]};
-                // Invalidate bdd cache
-                for (auto &i : bddToBirnbaumFactors) {
-                    i.second.first = false;
-                }
-
-                // Great care was made so that the pointer returned is always
-                // valid and points to an element in bddToProbabilities
-                auto const index{getSylvanBddManager()->getIndex(be->name())};
-                auto const &birnbaumFactorsArray{*recursiveBirnbaumFactors(
-                    currentChunksize, index, bdd, indexToProbabilities,
-                    bddToProbabilities, bddToBirnbaumFactors)};
-
-                auto const &beProbabilitiesArray{
-                    indexToProbabilities.at(index)};
-                auto const RRWArray{
-                    probabilitiesArray /
-                    (probabilitiesArray -
-                     beProbabilitiesArray * birnbaumFactorsArray)};
-
-                // Update result Probabilities
-                for (size_t i{0}; i < currentChunksize; ++i) {
-                    resultVector[basicElementIndex].push_back(RRWArray(i));
-                }
-            }
-        },
-        timepoints, chunksize);
-
-    return resultVector;
+    return getAllImportanceMeasuresAtTimepoints(timepoints, chunksize,
+                                                RRWFunctor{});
 }
 
 void SFTBDDChecker::recursiveMCS(
