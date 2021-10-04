@@ -245,10 +245,7 @@ TEST(TestBdd, AndOrFormulaFail) {
         storm::api::parseProperties("P=? [F < 1 !\"F2_failed\"];"))};
     storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
 
-    STORM_LOG_ERROR(
-        "NotSupportedException: "
-        "Can only use negation with... is intended");
-    EXPECT_THROW(checker.check(), storm::exceptions::NotSupportedException);
+    STORM_SILENT_EXPECT_THROW(checker.check(), storm::exceptions::NotSupportedException);
 }
 
 TEST(TestBdd, AndOrFormula) {
