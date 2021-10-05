@@ -20,7 +20,7 @@ namespace storm {
 
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
             
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
             
             /*!
              * Retrieves whether the reward model refers to a specific reward model.

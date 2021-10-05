@@ -501,7 +501,7 @@ namespace storm {
                 verifyPropertiesAtSamplePoints<storm::modelchecker::SparseDtmcInstantiationModelChecker, storm::models::sparse::Dtmc<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Dtmc<ValueType>>(), input, samples);
             } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
                 verifyPropertiesAtSamplePoints<storm::modelchecker::SparseCtmcInstantiationModelChecker, storm::models::sparse::Ctmc<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Ctmc<ValueType>>(), input, samples);
-            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+            } else if (model->isOfType(storm::models::ModelType::Mdp)) {
                 verifyPropertiesAtSamplePoints<storm::modelchecker::SparseMdpInstantiationModelChecker, storm::models::sparse::Mdp<ValueType>, ValueType, SolveValueType>(*model->template as<storm::models::sparse::Mdp<ValueType>>(), input, samples);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sampling is currently only supported for DTMCs, CTMCs and MDPs.");
@@ -567,7 +567,6 @@ namespace storm {
 
                 auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
                 auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
-                auto engine = regionSettings.getRegionCheckEngine();
 
                 std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> verificationCallback;
                 std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> postprocessingCallback;

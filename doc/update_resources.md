@@ -14,3 +14,19 @@ In case a new patch needs to be created follow these steps:
 3. Apply the old patch via `git apply $STORM_DIR/resources/3rdparty/patches/eigen.patch`
 4. Resolve issues, make changes, and commit them
 5. Create a new patch file via `git format-patch <tag> --stdout > eigen.patch`, where `<tag>` is the tag, branch or commit from step 1
+
+## googletest / gtest
+
+To update gtest, simply download the new sources from [here](https://github.com/google/googletest/releases) and put them to `$STORM_DIR/resources/3rdparty/googletest`.
+
+The currently shipped version can be shown using
+
+```console
+grep GOOGLETEST_VERSION $STORM_DIR/resources/3rdparty/googletest/CMakeLists.txt
+```
+
+We add some extra code to gtest located in `$STORM_DIR/src/test/storm_gtest.h`. Note that our code might not be compatible with future versions of gtest.
+
+## Spot
+
+To update (shipped version of Spot), just change the url in `$STORM_DIR/resources/3rdparty/include_spot.cmake`.

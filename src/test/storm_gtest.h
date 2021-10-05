@@ -2,6 +2,8 @@
 
 #include "gtest/gtest.h"
 
+#include <boost/optional/optional_io.hpp>
+
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/initialize.h"

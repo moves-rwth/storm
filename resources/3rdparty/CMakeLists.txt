@@ -5,6 +5,7 @@ set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include/resources/3rdparty)
 
+message(STATUS "Storm - Building external resources with ${STORM_RESOURCES_BUILD_JOBCOUNT} job(s) in parallel.")
 
 #############################################################
 ##
@@ -45,15 +46,15 @@ list(APPEND STORM_DEP_TARGETS gmm)
 ##
 #############################################################
 
-# Checkout Eigen version 3.3.7
-message (STATUS "Storm - Including Eigen 3.3.7.")
+# Checkout Eigen version 3.3.9
+message (STATUS "Storm - Including Eigen 3.3.9.")
 ExternalProject_Add(
         eigen_src
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
 		GIT_SHALLOW 1
-        GIT_TAG 21ae2afd4edaa1b69782c67a54182d34efe43f9c
+        GIT_TAG 0fd6b4f71dd85b2009ee4d1aeb296e2c11fc9d68
         SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
-        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.7
+        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.9
 		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen.patch
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
@@ -138,6 +139,16 @@ foreach(HEADER ${SPARSEPP_HEADERS})
     )
     list(APPEND SPARSEPP_BINDIR_HEADERS ${SPARSEPP_BINDIR_DIR}/sparsepp/${HEADER_FILENAME})
 endforeach()
+
+#############################################################
+##
+##	cpphoafparser
+##
+#############################################################
+
+# Use the shipped version of cpphoafparser
+message (STATUS "storm - Including cpphoafparser 0.99.2")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cpphoafparser-0.99.2/include")
 
 #############################################################
 ##
@@ -328,7 +339,7 @@ if (STORM_SHIPPED_CARL)
             CONFIGURE_COMMAND ""
             BUILD_IN_SOURCE 1
             BUILD_COMMAND make lib_carl
-            INSTALL_COMMAND make install
+            INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
             LOG_BUILD ON
 			LOG_INSTALL ON
             BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT}
@@ -428,7 +439,7 @@ get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
 ##
 #############################################################
 
-if(STORM_USE_CLN_RF OR STORM_USE_CLN_EA)
+if(STORM_HAVE_CLN)
 	get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
 endif()
 
@@ -504,6 +515,15 @@ endif()
 
 include(${STORM_3RDPARTY_SOURCE_DIR}/include_xerces.cmake)
 
+
+#############################################################
+##
+##	Spot
+##
+#############################################################
+
+include(${STORM_3RDPARTY_SOURCE_DIR}/include_spot.cmake)
+
 #############################################################
 ##
 ##	Sylvan
@@ -577,14 +597,14 @@ list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cppt
 ##	Google Test gtest
 ##
 #############################################################
-set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/gtest-1.10.0)
+set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/googletest)
 ExternalProject_Add(
         googletest
         #For downloads (may be useful later!)
         #SVN_REPOSITORY http://googletest.googlecode.com/svn/trunk/
         #TIMEOUT 10
         DOWNLOAD_COMMAND ""
-        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.10.0"
+        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/googletest"
         # Force the same output paths for debug and release builds so that
         # we know in which place the binaries end up when using the Xcode generator
         CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${GOOGLETEST_LIB_DIR} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${GOOGLETEST_LIB_DIR}

@@ -40,6 +40,8 @@ namespace storm {
             
             
             storm::dd::Bdd<Type> const& getTruthValuesVector() const;
+            storm::dd::Bdd<Type> const& getStates() const;
+            storm::dd::Bdd<Type> const& getReachableStates() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             

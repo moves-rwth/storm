@@ -230,6 +230,21 @@ namespace storm {
             }
             return manager.boolean(false);
         }
+
+        storm::expressions::Expression ExpressionCreator::createPredicateExpression(storm::expressions::OperatorType const& opTyp, std::vector<storm::expressions::Expression> const&operands, bool &pass) const {
+            if (this->createExpressions) {
+                try {
+                    switch (opTyp) {
+                        case storm::expressions::OperatorType::AtLeastOneOf: return storm::expressions::atLeastOneOf(operands);
+                        case storm::expressions::OperatorType::AtMostOneOf: return storm::expressions::atMostOneOf(operands);
+                        case storm::expressions::OperatorType::ExactlyOneOf: return storm::expressions::exactlyOneOf(operands);
+                    }
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    pass = false;
+                }
+            }
+            return manager.boolean(false);
+        }
         
         storm::expressions::Expression ExpressionCreator::getIdentifierExpression(std::string const& identifier, bool& pass) const {
             if (this->createExpressions) {
