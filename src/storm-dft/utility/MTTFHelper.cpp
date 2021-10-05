@@ -25,7 +25,7 @@ namespace utility {
 
 double MTTFHelperProceeding(
     std::shared_ptr<storm::storage::DFT<double>> const dft,
-    double const stepsize) {
+    double const stepsize, double const precision) {
     constexpr size_t chunksize{1001};
     storm::modelchecker::DFTModularizer checker{dft};
 
@@ -41,7 +41,7 @@ double MTTFHelperProceeding(
     double y1{0.0}, y2{0.0}, y3{1.0 - probabilities[0]};
     size_t i{1};
     auto currentStepsize{stepsize};
-    while (std::abs(delta) > 1e-12) {
+    while (std::abs(delta) > precision) {
         if (i + 1 >= probabilities.size()) {
             double const start{timepoints.back()};
             // double stepsize

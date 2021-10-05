@@ -12,7 +12,7 @@ namespace utility {
  */
 double MTTFHelperProceeding(
     std::shared_ptr<storm::storage::DFT<double>> const dft,
-    double const stepsize = 1e-10);
+    double const stepsize = 1e-10, double const precision = 1e-12);
 
 /**
  * Tries to numerically approximate the mttf of the given dft

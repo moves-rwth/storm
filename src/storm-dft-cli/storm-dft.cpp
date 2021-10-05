@@ -121,6 +121,9 @@ void processOptions() {
         bool const isImportanceMeasureSet{dftIOSettings.isImportanceMeasureSet()};
         bool const isMinimalCutSets{dftIOSettings.isMinimalCutSets()};
         bool const isMTTF{dftIOSettings.usePropExpectedTime()};
+        double const mttfPrecision{faultTreeSettings.getMttfPrecision()};
+        double const mttfStepsize{faultTreeSettings.getMttfStepsize()};
+        std::string const mttfAlgorithm{faultTreeSettings.getMttfAlgorithm()};
         bool const isExportToBddDot{dftIOSettings.isExportToBddDot()};
         bool const isTimebound{dftIOSettings.usePropTimebound()};
         bool const isTimepoints{dftIOSettings.usePropTimepoints()};
@@ -159,6 +162,9 @@ void processOptions() {
                 isExportToBddDot,
                 filename,
                 isMTTF,
+                mttfPrecision,
+                mttfStepsize,
+                mttfAlgorithm,
                 isMinimalCutSets,
                 probabilityAnalysis,
                 isModularisation,

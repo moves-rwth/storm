@@ -143,6 +143,31 @@ namespace storm {
                  */
                 size_t getChunksize() const;
 
+                /*!
+                 * Retrieves the Precision to
+                 * detect the convergence of the
+                 * mttf algorithm.
+                 *
+                 * @return The Precision.
+                 */
+                double getMttfPrecision() const;
+
+                /*!
+                 * Retrieves the Stepsize for the
+                 * mttf algorithm.
+                 *
+                 * @return The Stepsize.
+                 */
+                double getMttfStepsize() const;
+
+                /*!
+                 * Retrieves the name of the Algorithm
+                 * to use to approximate the MTTF.
+                 *
+                 * @return The Stepsize.
+                 */
+                std::string getMttfAlgorithm() const;
+
                 bool check() const override;
 
                 void finalize() override;
@@ -169,6 +194,9 @@ namespace storm {
                 static const std::string solveWithSmtOptionName;
 #endif
                 static const std::string chunksizeOptionName;
+                static const std::string mttfPrecisionName;
+                static const std::string mttfStepsizeName;
+                static const std::string mttfAlgorithmName;
 
             };
 

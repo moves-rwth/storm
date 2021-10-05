@@ -23,6 +23,9 @@ namespace storm {
                 bool const exportToDot,
                 std::string const &filename,
                 bool const calculateMttf,
+                double const mttfPrecision,
+                double const mttfStepsize,
+                std::string const mttfAlgorithmName,
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,
@@ -32,7 +35,11 @@ namespace storm {
                 std::vector<std::string> const& additionalRelevantEventNames,
                 size_t const chunksize) {
             if(calculateMttf) {
-                std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(dft) << '\n';
+                if (mttfAlgorithmName == "proceeding") {
+                    std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(dft, mttfStepsize, mttfPrecision) << '\n';
+                } else if (mttfAlgorithmName == "variableChange") {
+                    std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperVariableChange(dft, mttfStepsize) << '\n';
+                }
             }
 
             if(useModularisation && calculateProbability) {
@@ -174,6 +181,9 @@ namespace storm {
                 bool const exportToDot,
                 std::string const &filename,
                 bool const calculateMttf,
+                double const mttfPrecision,
+                double const mttfStepsize,
+                std::string const mttfAlgorithmName,
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,

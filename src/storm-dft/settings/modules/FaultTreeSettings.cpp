@@ -32,6 +32,9 @@ namespace storm {
             const std::string FaultTreeSettings::solveWithSmtOptionName = "smt";
 #endif
             const std::string FaultTreeSettings::chunksizeOptionName = "chunksize";
+            const std::string FaultTreeSettings::mttfPrecisionName = "mttf-precision";
+            const std::string FaultTreeSettings::mttfStepsizeName = "mttf-stepsize";
+            const std::string FaultTreeSettings::mttfAlgorithmName = "mttf-algorithm";
 
             FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, noSymmetryReductionOptionName, false, "Do not exploit symmetric structure of model.").setShortName(
@@ -65,6 +68,36 @@ namespace storm {
 #endif
                 this->addOption(storm::settings::OptionBuilder(moduleName, chunksizeOptionName, false, "Calculate probabilies in chunks.").addArgument(
                         storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("chunksize", "The size of the chunks used to calculate probabilities. Set to 0 for maximal size.").setDefaultValueUnsignedInteger(1).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, mttfPrecisionName, false,
+                            "The precision used for detecting convergence of the iterative MTTF approximation method.")
+                        .setIsAdvanced()
+                        .addArgument(
+                            storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.")
+                                .setDefaultValueDouble(1e-12)
+                                .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0,1.0))
+                                .build()
+                            ).build()
+                        );
+                this->addOption(storm::settings::OptionBuilder(moduleName, mttfStepsizeName, false,
+                            "The stepsize used to iterativly approximate the integral in the MTTF approximation method.")
+                        .setIsAdvanced()
+                        .addArgument(
+                            storm::settings::ArgumentBuilder::createDoubleArgument("value", "The stepsize to use.")
+                                .setDefaultValueDouble(1e-10)
+                                .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0,1.0))
+                                .build()
+                            ).build()
+                        );
+                this->addOption(storm::settings::OptionBuilder(moduleName, mttfAlgorithmName, false,
+                            "The algorithm used to approximate the MTTF.")
+                        .setIsAdvanced()
+                        .addArgument(
+                            storm::settings::ArgumentBuilder::createStringArgument("algorithm", "The algorithm to use.")
+                                .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"proceeding", "variableChange"}))
+                                .setDefaultValueString("proceeding")
+                                .build()
+                            ).build()
+                        );
             }
 
             bool FaultTreeSettings::useSymmetryReduction() const {
@@ -146,6 +179,18 @@ namespace storm {
 
             size_t FaultTreeSettings::getChunksize() const {
                 return this->getOption(chunksizeOptionName).getArgumentByName("chunksize").getValueAsUnsignedInteger();
+            }
+
+            double FaultTreeSettings::getMttfPrecision() const {
+                return this->getOption(mttfPrecisionName).getArgumentByName("value").getValueAsDouble();
+            }
+
+            double FaultTreeSettings::getMttfStepsize() const {
+                return this->getOption(mttfStepsizeName).getArgumentByName("value").getValueAsDouble();
+            }
+
+            std::string FaultTreeSettings::getMttfAlgorithm() const {
+                return this->getOption(mttfAlgorithmName).getArgumentByName("algorithm").getValueAsString();
             }
 
             void FaultTreeSettings::finalize() {
