@@ -284,7 +284,7 @@ namespace storm {
                     HeuristicParameters heuristicParameters = {
                             .gapThreshold = options.gapThresholdInit,
                             .observationThreshold = options.obsThresholdInit, // Actually not relevant without refinement
-                            .sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit,
+                            .sizeThreshold = options.sizeThresholdInit,
                             .clippingThreshold = options.clippingThresholdInit,
                             .optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit,};
                     if (heuristicParameters.sizeThreshold == 0) {
