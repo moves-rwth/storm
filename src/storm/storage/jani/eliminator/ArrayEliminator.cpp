@@ -15,159 +15,314 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 
 namespace storm {
     namespace jani {
+
+    
         namespace detail {
             
-            class MaxArraySizeExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
+            class ArrayReplacementsCollectorExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             public:
                 using storm::expressions::ExpressionVisitor::visit;
 
-                MaxArraySizeExpressionVisitor() = default;
-                virtual ~MaxArraySizeExpressionVisitor() = default;
+                typedef typename ArrayEliminatorData::Replacement Replacement;
+                typedef std::unordered_map<storm::expressions::Variable, Replacement> ReplMap;
+                
+                ArrayReplacementsCollectorExpressionVisitor( Model& model) : model(model), converged(false) {};
+                virtual ~ArrayReplacementsCollectorExpressionVisitor() = default;
 
-                std::size_t getMaxSize(storm::expressions::Expression const& expression, std::unordered_map<storm::expressions::Variable, std::size_t> const& arrayVariableSizeMap) {
-                    return boost::any_cast<std::size_t>(expression.accept(*this, &arrayVariableSizeMap));
+                /*!
+                 * Adds necessary replacements for the given array variable, assuming that the given expression is assigned to the array variable.
+                 * @returns true iff no replacement had to be added
+                 */
+                bool get(storm::expressions::Expression const& expression, storm::jani::Variable const& arrayVariable, Replacement& currentReplacement, ReplMap const& allCollectedReplacements, Automaton const* declaringAutomaton = nullptr) {
+                    currentVar = &arrayVariable;
+                    STORM_LOG_ASSERT(currentVar->getType().isArrayType(), "expected array variable");
+                    STORM_LOG_ASSERT((declaringAutomaton == nullptr && model.hasGlobalVariable(currentVar->getName()) || declaringAutomaton != nullptr && declaringAutomaton->hasVariable(currentVar->getName())), "Cannot find variable declaration.");
+                    collectedRepl = &allCollectedReplacements;
+                    
+                    std::vector<std::size_t> currentIndices;
+                    converged = true;
+                    expression.accept(*this, std::make_pair(&currentReplacement, &currentIndices));
+                    return converged;
                 }
 
-                std::size_t getMaxSizeAt(storm::expressions::Expression const& expression, std::unordered_map<storm::expressions::Variable, std::size_t> const& arrayVariableSizeMap, int const index) {
-                    std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, int> dataPair = {arrayVariableSizeMap, index};
-                    return boost::any_cast<std::size_t>(expression.accept(*this, dataPair));
-                }
-     
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
                     if (expression.getCondition()->containsVariables()) {
-                        return std::max<std::size_t>(boost::any_cast<std::size_t>(expression.getThenExpression()->accept(*this, data)), boost::any_cast<std::size_t>(expression.getElseExpression()->accept(*this, data)));
+                        expression.getThenExpression()->accept(*this, data);
+                        expression.getElseExpression()->accept(*this, data);
                     } else {
                         if (expression.getCondition()->evaluateAsBool()) {
-                            return boost::any_cast<std::size_t>(expression.getThenExpression()->accept(*this, data));
+                            expression.getThenExpression()->accept(*this, data);
+                        } else {
+                            expression.getElseExpression()->accept(*this, data);
                         }
-                        return boost::any_cast<std::size_t>(expression.getElseExpression()->accept(*this, data));
                     }
+                    return boost::any();
                 }
                 
                 virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override {
-                    return std::max<std::size_t>(boost::any_cast<std::size_t>(expression.getFirstOperand()->accept(*this, data)), boost::any_cast<std::size_t>(expression.getSecondOperand()->accept(*this, data)));
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+                    return boost::any();
                 }
                 
                 virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) override {
-                    return std::max<std::size_t>(boost::any_cast<std::size_t>(expression.getFirstOperand()->accept(*this, data)), boost::any_cast<std::size_t>(expression.getSecondOperand()->accept(*this, data)));
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+                    return boost::any();
                 }
                 
                 virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) override {
-                    return std::max<std::size_t>(boost::any_cast<std::size_t>(expression.getFirstOperand()->accept(*this, data)), boost::any_cast<std::size_t>(expression.getSecondOperand()->accept(*this, data)));
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+                    return boost::any();
+                }
+                
+                void varToVarAssignmentHelper(Replacement& cur, Replacement const& other, std::vector<std::size_t>& indices) {
+                    if (other.isVariable()) {
+                        if (!cur.isVariable()) {
+                            STORM_LOG_ASSERT(cur.size() == 0, "Unexpected replacement type. Assignments incompatible?");
+                            cur = Replacement(addReplacementVariable(indices));
+                        }
+                    } else {
+                        STORM_LOG_ASSERT(!cur.isVariable(), "Unexpected replacement type. Assignments incompatible?");
+                        cur.grow(other.size());
+                        indices.push_back(0);
+                        for (std::size_t i = 0; i < other.size(); ++i) {
+                            indices.back() = i;
+                            varToVarAssignmentHelper(cur.at(i), other.at(i), indices);
+                        }
+                        indices.pop_back();
+                    }
                 }
                 
                 virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
-                    if (data.type() == typeid(std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, int>)) {
-                        auto arrayVariableSizeMap = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, int>>(data);
-                        if (expression.getType().isArrayType()) {
-                            // varIt is entry from map std::unordered_map<storm::expressions::Variable
-                            auto varIt = arrayVariableSizeMap.first.find(expression.getVariable());
-                            if (varIt != arrayVariableSizeMap.first.end()) {
-                                // arrayVariableSize.Map.second is the index
-                                return varIt->first.getArraySize(arrayVariableSizeMap.second);
-                            }
-                        }
-                    } else if (data.type() == typeid(std::unordered_map<storm::expressions::Variable, std::size_t>)) {
-                        auto arrayVariableSizeMap = boost::any_cast<std::unordered_map<storm::expressions::Variable, std::size_t>>(data);
-                        if (expression.getType().isArrayType()) {
-                            auto varIt = arrayVariableSizeMap.find(expression.getVariable());
-                            if (varIt != arrayVariableSizeMap.end()) {
-                                return varIt->second;
-                            }
+                    if (expression.getType().isArrayType()) {
+                        auto varIt = collectedRepl->find(expression.getVariable());
+                        if (varIt != collectedRepl->end()) {
+                            auto const& otherRepl = varIt->second;
+                            // We have to make sure that the sizes for the current replacements fit at least the number of other replacements
+                            auto current = boost::any_cast<std::pair<Replacement*, std::vector<std::size_t>*>>(data);
+                            varToVarAssignmentHelper(*current.first, varIt->second, *current.second);
                         }
                     }
-                    return static_cast<std::size_t>(0);
+                    return boost::any();
                 }
                 
                 virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) override {
-                    return boost::any_cast<std::size_t>(expression.getOperand()->accept(*this, data));
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+                    return boost::any();
                 }
                 
                 virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) override {
-                    return boost::any_cast<std::size_t>(expression.getOperand()->accept(*this, data));
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+                    return boost::any();
                 }
                 
                 virtual boost::any visit(storm::expressions::BooleanLiteralExpression const&, boost::any const&) override {
-                    return 0;
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+                    return boost::any();
                 }
                 
                 virtual boost::any visit(storm::expressions::IntegerLiteralExpression const&, boost::any const&) override {
-                    return 0;
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+                    return boost::any();
                 }
                 
                 virtual boost::any visit(storm::expressions::RationalLiteralExpression const&, boost::any const&) override {
-                    return 0;
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected type of expression.");
+                    return boost::any();
+                }
+                
+                void arrayExpressionHelper(storm::expressions::ArrayExpression const& expression, Replacement& curRepl, std::vector<size_t>& curIndices) {
+                    STORM_LOG_ASSERT(!expression.size()->containsVariables(), "Did not expect variables in size expression.");
+                    auto expSize = expression.size()->evaluateAsInt();
+                    STORM_LOG_ASSERT(!curRepl.isVariable(), "Unexpected replacement type. Illegal array assignment?");
+                    curRepl.grow(expSize);
+                    curIndices.push_back(0);
+                    for (std::size_t i = 0; i < expSize; ++i) {
+                        curIndices.back() = i;
+                        auto subexpr = expression.at(i);
+                        if (subexpr->getType().isArrayType()) {
+                            // This is a nested array.
+                            subexpr->accept(*this, std::make_pair(&curRepl.at(i), &curIndices));
+                        } else {
+                            if (!curRepl.at(i).isVariable()) {
+                                STORM_LOG_ASSERT(curRepl.size() == 0, "Unexpected replacement type. Illegal array assignment?");
+                                curRepl.at(i) = Replacement(addReplacementVariable(curIndices));
+                            }
+                        }
+                    }
+                    curIndices.pop_back();
                 }
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
-                    if (data.type() == typeid(std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, int>)) {
-                        // This is to get the size of the array at nested array number i
-                        auto dataPair = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, int>>(data);
-                        return visit(expression.getElements(), dataPair.second);
-                    } else {
-                        STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
-                    }
-                    return static_cast<std::size_t>(expression.size()->evaluateAsInt());
+                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
+                    auto current = boost::any_cast<std::pair<Replacement*, std::vector<std::size_t>*>>(data);
+                    arrayExpressionHelper(expression, *current.first, *current.second);
+                    return boost::any();
                 }
 
-                virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const& data) override {
-                    if (data.type() == typeid(int)) {
-                        // This is to get the size of the array at nested array number i
-                        auto i = boost::any_cast<int>(data);
-                        return expression.getSizes().at(i);
+                virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
+                    if (!expression.size()->containsVariables()) {
+                        auto current = boost::any_cast<std::pair<Replacement*, std::vector<std::size_t>*>>(data);
+                        arrayExpressionHelper(expression, *current.first, *current.second);
                     } else {
-                        STORM_LOG_ASSERT(false, "Visiting the value array elements where the data (index) is of type " << data.type().name());
+                        auto vars = expression.size()->toExpression().getVariables();
+                        std::string variables = "";
+                        for (auto const &v : vars) {
+                            if (variables != "") {
+                                variables += ", ";
+                            }
+                            variables += v.getName();
+                        }
+                        if (vars.size() == 1) {
+                            variables = "variable " + variables;
+                        } else {
+                            variables = "variables " + variables;
+                        }
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to determine array size: Size of ConstructorArrayExpression '" << expression << "' still contains the " << variables << ".");
                     }
-                    return static_cast<std::size_t>(0);
                 }
                 
-                virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
-                    if (data.type() == typeid(std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, int>)) {
-                        auto dataPair = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, int>>(data);
-                        return static_cast<std::size_t>(expression.size(dataPair.second)->evaluateAsInt());
+                void arrayVariableAccessHelper(std::vector<std::shared_ptr<storm::expressions::BaseExpression const>>& indexStack, Replacement& cur, Replacement const& other, std::vector<std::size_t>& curIndices) {
+                    if (indexStack.empty()) {
+                        varToVarAssignmentHelper(cur, other, curIndices);
                     } else {
-                        if (!expression.size()->containsVariables()) {
-                            return static_cast<std::size_t>(expression.size()->evaluateAsInt());
+                        uint64_t i,size;
+                        if (indexStack.back()->containsVariables()) {
+                            // We have to run over all possible indices
+                            i = 0;
+                            size = other.size();
                         } else {
-                            auto vars = expression.size()->toExpression().getVariables();
-                            std::string variables = "";
-                            for (auto const &v : vars) {
-                                if (variables != "") {
-                                    variables += ", ";
-                                }
-                                variables += v.getName();
-                            }
-                            if (vars.size() == 1) {
-                                variables = "variable " + variables;
-                            } else {
-                                variables = "variables " + variables;
-                            }
-                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to determine array size: Size of ConstructorArrayExpression '" << expression << "' still contains the " << variables << ".");
-                            return static_cast<std::size_t>(0);
+                            // only consider the accessed index
+                            i = indexStack.back()->evaluateAsInt();
+                            size = std::min<uint64_t>(i + 1,other.size()); // Avoid invalid access, e.g. if the sizes of the other variable aren't ready yet
+                        }
+                        indexStack.pop_back();
+                        for (; i < size; ++i) {
+                            arrayVariableAccessHelper(indexStack, cur, other.at(i), curIndices);
                         }
                     }
                 }
                 
-                virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found ArrayAccessExpression. This is not expected since arrays are expected to be eliminated at this point.");
-                    return 0;
-                }
-
-                virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data) override {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found ArrayAccessIndexExpression. This is not expected since indices are expected to be eliminated at this point.");
-                    return 0;
-                }
-
-                virtual boost::any visit(storm::expressions::FunctionCallExpression const&, boost::any const&) override {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found Function call expression within an array expression. This is not expected since functions are expected to be eliminated at this point.");
-                    return 0;
+                void arrayAccessHelper(std::shared_ptr<storm::expressions::BaseExpression const> const& base, std::vector<std::shared_ptr<storm::expressions::BaseExpression const>>& indexStack, boost::any const& data) {
+                    // We interpret the input as expression base[i_n][i_{n-1}]...[i_1] for (potentially empty) indexStack = [i_1, ..., i_n].
+                    // This deals with *nested* array accesses
+                    auto baseAsArrayAccessExp = std::dynamic_pointer_cast<storm::expressions::ArrayAccessExpression>(base);
+                    auto baseAsArrayExp = std::dynamic_pointer_cast<storm::expressions::ArrayExpression>(base);
+                    if (indexStack.empty()) {
+                        base->accept(*this, data);
+                    } else if (baseAsArrayAccessExp) {
+                        indexStack.push_back(baseAsArrayAccessExp->getSecondOperand());
+                        arrayAccessHelper(baseAsArrayAccessExp->getFirstOperand(), indexStack, data);
+                    } else if (baseAsArrayExp) {
+                        // the base is an array expression.
+                        uint64_t i,size;
+                        if (indexStack.back()->containsVariables()) {
+                            // We have to run over all possible indices
+                            STORM_LOG_THROW(!baseAsArrayExp->size()->containsVariables(), storm::exceptions::NotSupportedException, "Array elimination failed because array access expression considers  array  expression '" << *baseAsArrayExp << "' of unknown size.");
+                            i = 0;
+                            size = baseAsArrayExp->size()->evaluateAsInt();
+                        } else {
+                            // only consider the accessed index
+                            i = indexStack.back()->evaluateAsInt();
+                            size = i + 1;
+                            STORM_LOG_THROW(baseAsArrayExp->size()->containsVariables() || i < baseAsArrayExp->size()->evaluateAsInt(), storm::exceptions::InvalidOperationException, "Array access " << base << "[" << i << "] out of bounds.");
+                        }
+                        indexStack.pop_back();
+                        for (; i < size; ++i) {
+                            auto indexStackCpy = indexStack;
+                            arrayAccessHelper(baseAsArrayExp->at(i), indexStackCpy, data);
+                        }
+                    } else if (base->isVariableExpression()) {
+                        // the lhs is an array variable.
+                        STORM_LOG_ASSERT(base->asVariableExpression().getVariable().getType().isArrayType(), "Unexpected variable type in array access.");
+                        auto varIt = collectedRepl->find(base->asVariableExpression().getVariable());
+                        if (varIt != collectedRepl->end()) {
+                            auto const& otherRepl = varIt->second;
+                            STORM_LOG_ASSERT(!varIt->second.isVariable(), "Unexpected replacement type. Invalid array assignment?");
+                            auto current = boost::any_cast<std::pair<Replacement*, std::vector<std::size_t>*>>(data);
+                            arrayVariableAccessHelper(indexStack, *current.first, varIt->second, *current.second);
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected kind of array access expression");
+                    }
                 }
                 
+                
+                virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
+                    std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> indexStack = {expression.getSecondOperand()};
+                    arrayAccessHelper(expression.getFirstOperand(), indexStack, data);
+                    return boost::any();
+                }
+                
+                virtual boost::any visit(storm::expressions::FunctionCallExpression const&, boost::any const&) override {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Found Function call expression within an array expression. This is not expected since functions are expected to be eliminated at this point.");
+                }
+
+               private:
+                
+                storm::jani::Variable const& addReplacementVariable(std::vector<std::size_t> const& indices) {
+                    auto& manager = model.getExpressionManager();
+                    std::string name = currentVar->getName();
+                    for (auto const& i : indices) {
+                        name += "_at_" + std::to_string(i);
+                    }
+                    
+                    storm::expressions::Expression initValue;
+                    if (currentVar->hasInitExpression()) {
+                        initValue = currentVar->getInitExpression();
+                        for (auto const& i : indices) {
+                            auto aa = std::make_shared<storm::expressions::ArrayAccessExpression>(manager, initValue.getType().getElementType(), initValue.getBaseExpressionPointer(), manager.integer(i).getBaseExpressionPointer());
+                            initValue = storm::expressions::Expression(aa);
+                        }
+                    }
+                    
+                    auto const& baseType = currentVar->getType().asArrayType().getBaseTypeRecursive();
+                    storm::expressions::Variable exprVariable;
+                    if (baseType.isBasicType()) {
+                        switch (baseType.asBasicType().get()) {
+                            case BasicType::Type::Bool:
+                                exprVariable = manager.declareBooleanVariable(name);
+                                break;
+                            case BasicType::Type::Int:
+                                exprVariable = manager.declareIntegerVariable(name);
+                                break;
+                            case BasicType::Type::Real:
+                                exprVariable = manager.declareRationalVariable(name);
+                                break;
+                        }
+                    } else if (baseType.isBoundedType()) {
+                        switch (baseType.asBoundedType().getBaseType()) {
+                            case BoundedType::BaseType::Int:
+                                exprVariable = manager.declareIntegerVariable(name);
+                                break;
+                            case BoundedType::BaseType::Real:
+                                exprVariable = manager.declareRationalVariable(name);
+                                break;
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled base type for array of type " << currentVar->getType());
+                    }
+                    
+                    auto janiVar = storm::jani::Variable::makeVariable(name, baseType, exprVariable, initValue, currentVar->isTransient());
+                    
+                    converged = false;
+                    if (declaringAutomaton) {
+                        return declaringAutomaton->addVariable(*janiVar);
+                    } else {
+                        return model.addVariable(*janiVar);
+                    }
+                }
+                
+                Model& model;
+                bool converged;
+                jani::Variable const* currentVar;
+                Automaton* declaringAutomaton; // nullptr if currentVar is global
+                ReplMap const* collectedRepl;
             };
             
             class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
@@ -516,44 +671,94 @@ namespace storm {
                 std::unordered_map<storm::expressions::Variable, std::size_t> const& arraySizes;
             };
             
-            class MaxArraySizeDeterminer : public ConstJaniTraverser {
+            class ArrayEliminatorDataCollector : public ConstJaniTraverser {
             public:
                 
-                typedef std::unordered_map<storm::expressions::Variable, std::size_t>* MapPtr;
+                ArrayEliminatorDataCollector(Model& model) : model(model), exprVisitor(model), converged(false), currentAutomaton(nullptr) {}
+                virtual ~ArrayEliminatorDataCollector() = default;
                 
-                MaxArraySizeDeterminer() = default;
-                virtual ~MaxArraySizeDeterminer() = default;
-                std::unordered_map<storm::expressions::Variable, std::size_t> getMaxSizes(Model const& model) {
-                    // We repeatedly determine the max array sizes until convergence. This is to cover assignments of one array variable to another (A := B)
-                    std::unordered_map<storm::expressions::Variable, std::size_t> result, previousResult;
+                // TODO: we are adding variables to the model while iterating over the variable set. This is dangerous. Probably should only traverse over set of array variables (which remains untouched)
+                ArrayEliminatorData get() {
+                    // To correctly determine the array sizes, we repeat the steps until convergence. This is to cover assignments of one array variable to another (A := B)
+                    ArrayEliminatorData result;
+                    converged = true;
                     do {
-                        previousResult = result;
                         ConstJaniTraverser::traverse(model, &result);
-                    } while (previousResult != result);
+                    } while (!converged);
+                    
                     return result;
                 }
                 
-                virtual void traverse(Assignment const& assignment, boost::any const& data) override {
-                    if (assignment.lValueIsVariable() && assignment.getExpressionVariable().getType().isArrayType()) {
-                        auto& map = *boost::any_cast<MapPtr>(data);
-                        std::size_t newSize = MaxArraySizeExpressionVisitor().getMaxSize(assignment.getAssignedExpression(), map);
-                        auto insertionRes = map.emplace(assignment.getExpressionVariable(), newSize);
-                        if (!insertionRes.second) {
-                            insertionRes.first->second = std::max(newSize, insertionRes.first->second);
+                virtual void traverse(Automaton const& automaton, boost::any const& data) override {
+                    currentAutomaton = &automaton;
+                    ConstJaniTraverser::traverse(automaton, data);
+                    currentAutomaton = nullptr;
+                }
+                
+                Automaton const* declaringAutomaton(Variable const& var) const {
+                    if (currentAutomaton && currentAutomaton->getVariables().hasVariable(var)) {
+                        return currentAutomaton;
+                    }
+                    STORM_LOG_ASSERT(model.getGlobalVariables().hasVariable(var), "Variable " << var.getName() << " not found.");
+                    return nullptr;
+                }
+                
+                void gatherArrayAccessIndices(std::vector<std::vector<std::size_t>>& gatheredIndices, std::vector<std::size_t>& current, typename ArrayEliminatorData::Replacement const& repl, std::vector<storm::expressions::Expression> const& indices) {
+                    STORM_LOG_ASSERT(!repl.isVariable(), "Unexpected replacement type. Assignments incompatible?");
+                    if (current.size() < indices.size()) {
+                        auto const& indexExp = indices[current.size()];
+                        if (indexExp.containsVariables()) {
+                            current.push_back(std::numeric_limits<std::size_t>::max());
+                            // We have to consider all possible indices
+                            for (std::size_t i = 0; i < repl.size(); ++i) {
+                                current.back() = i;
+                                gatherArrayAccessIndices(gatheredIndices, current, repl.at(i), indices);
+                            }
+                            current.pop_back();
+                        } else {
+                            auto i = indexExp.evaluateAsInt();
+                            if (i < repl.size()) {
+                                current.push_back(i);
+                                gatherArrayAccessIndices(gatheredIndices, current, repl.at(i), indices);
+                                current.pop_back();
+                            } // The else case might either be an invalid array access or we haven't processed the corresponding assignment yet (and thus will be covered in a subsequent run)
                         }
+                    } else {
+                        gatheredIndices.push_back(current);
+                    }
+                }
+                
+                virtual void traverse(Assignment const& assignment, boost::any const& data) override {
+                    auto const& var = assignment.getLValue().getVariable();
+                    if (assignment.getLValue().isArrayAccess() && !assignment.getLValue().isFullArrayAccess()) {
+                        auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
+                        auto& arrayVarReplacements = result.replacements[var.getExpressionVariable()]; // creates if it does not yet exist
+
+                        // If the indices are not constant expressions, we run through every possible combination of indices
+                        std::vector<std::vector<std::size_t>> gatheredIndices;
+                        std::vector<std::size_t> tmp;
+                        gatherArrayAccessIndices(gatheredIndices, tmp, result.replacements[var.getExpressionVariable()], assignment.getLValue().getArrayIndexVector());
+                        for (auto const& indices : gatheredIndices) {
+                            converged &= exprVisitor.get(assignment.getAssignedExpression(), , arrayVarReplacements.at(indices), result.replacements, declaringAutomaton(var));
+                        }
+                    } else if (assignment.getLValue().isArray()) {
+                        auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
+                        converged &= exprVisitor.get(assignment.getAssignedExpression(), var, result.replacements, declaringAutomaton(var));
                     }
                 }
                 
                 virtual void traverse(Variable const& variable, boost::any const& data) override {
                     if (variable.getType().isArrayType() && variable.hasInitExpression()) {
-                        auto& map = *boost::any_cast<MapPtr>(data);
-                        std::size_t newSize = MaxArraySizeExpressionVisitor().getMaxSize(variable.getInitExpression(), map);
-                        auto insertionRes = map.emplace(variable.getExpressionVariable(), newSize);
-                        if (!insertionRes.second) {
-                            insertionRes.first->second = std::max(newSize, insertionRes.first->second);
-                        }
+                        auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
+                        converged &= exprVisitor.get(variable.getInitExpression(), variable, result.replacements, declaringAutomaton(variable));
                     }
                 }
+               
+               private:
+                Model& model;
+                Automaton const* currentAutomaton;
+                ArrayReplacementsCollectorExpressionVisitor exprVisitor;
+                bool converged;
             };
             
         
@@ -744,6 +949,7 @@ namespace storm {
                     if (arrayVariable.hasInitExpression()) {
                         // We want to eliminate the initial value for the arrayVariable at entry index, in case of a nested_array, this index is already re-calculated.
                         // In the end we have an ArrayAccessExpression
+                        //TODO: (TQ) Check how this works for nested arrays
                         auto indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(expressionManager, expressionManager.getIntegerType(), expressionManager.integer(index).getBaseExpressionPointer());
                         initValue = arrayExprEliminator->eliminate(std::make_shared<storm::expressions::ArrayAccessExpression>(expressionManager, arrayVariable.getExpressionVariable().getType().getElementType(), arrayVariable.getInitExpression().getBaseExpressionPointer(), indexExpression)->toExpression());
                         STORM_LOG_ASSERT(!containsArrayExpression(initValue), "HELP:  " << arrayVariable.getName());
@@ -844,6 +1050,67 @@ namespace storm {
                 std::unordered_map<storm::expressions::Variable, std::size_t> const& arraySizes;
             };
         } // namespace detail
+        
+        
+        ArrayEliminatorData::Replacement::Replacement(storm::jani::Variable const& variable) : data(&variable) {
+            // Intentionally left empty
+        }
+        
+        ArrayEliminatorData::Replacement::Replacement(std::vector<Replacement>&& replacements) : data(std::move(replacements)) {
+            // Intentionally left empty
+        }
+        
+        bool ArrayEliminatorData::Replacement::isVariable() const {
+            return data.which() == 0;
+        }
+        
+        storm::jani::Variable const& ArrayEliminatorData::Replacement::getVariable() const {
+            STORM_LOG_ASSERT(isVariable(), "unexpected replacement type");
+            return *boost::get<storm::jani::Variable const*>(data);
+        }
+        
+        
+        std::vector<typename ArrayEliminatorData::Replacement> const& ArrayEliminatorData::Replacement::getReplacements() const {
+            STORM_LOG_ASSERT(!isVariable(), "unexpected replacement type");
+            return boost::get<std::vector<Replacement>>(data);
+        }
+        
+        typename ArrayEliminatorData::Replacement const& ArrayEliminatorData::Replacement::at(std::size_t const& index) const {
+            STORM_LOG_ASSERT(!isVariable(), "unexpected replacement type");
+            return getReplacements().at(index);
+        }
+        
+        typename ArrayEliminatorData::Replacement& ArrayEliminatorData::Replacement::at(std::size_t const& index) {
+            STORM_LOG_ASSERT(!isVariable(), "unexpected replacement type");
+            return boost::get<std::vector<Replacement>>(data).at(index);
+        }
+        
+        typename ArrayEliminatorData::Replacement const& ArrayEliminatorData::Replacement::at(std::vector<std::size_t> const& indices) const {
+            auto const* cur = this;
+            for (auto const& i : indices) {
+                cur = &cur->at(i);
+            }
+            return *cur;
+        }
+        
+        typename ArrayEliminatorData::Replacement & ArrayEliminatorData::Replacement::at(std::vector<std::size_t> const& indices) {
+            auto* cur = this;
+            for (auto const& i : indices) {
+                cur = &cur->at(i);
+            }
+            return *cur;
+        }
+        
+        std::size_t ArrayEliminatorData::Replacement::size() const {
+            return getReplacements().size();
+        }
+        
+        void ArrayEliminatorData::Replacement::grow(std::size_t const& minimumSize) {
+            if (getReplacements().size() < minimumSize) {
+                boost::get<std::vector<Replacement>>(data).resize(minimumSize);
+            }
+        }
+
         
         storm::expressions::Expression ArrayEliminatorData::transformExpression(storm::expressions::Expression const& arrayExpression) const {
             std::unordered_map<storm::expressions::Variable, std::size_t> arraySizes;
