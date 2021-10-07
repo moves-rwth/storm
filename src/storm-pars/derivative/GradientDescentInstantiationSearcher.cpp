@@ -39,13 +39,13 @@ namespace storm {
                 uint64_t stepNum
             ) {
             const ConstantType precisionAsConstant = utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-            const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-            auto const oldPos = position[steppingParameter];
+            const CoefficientType<FunctionType> precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+            CoefficientType<FunctionType> const oldPos = position[steppingParameter];
+            ConstantType const constantOldPos = utility::convertNumber<ConstantType>(oldPos);
 
             ConstantType projectedGradient;
             if (constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
                 // Project gradient
-                const ConstantType constantOldPos = utility::convertNumber<ConstantType>(oldPos);
                 ConstantType newPlainPosition = constantOldPos + precisionAsConstant * gradient.at(steppingParameter);
                 if (newPlainPosition < utility::zero<ConstantType>() + precisionAsConstant || newPlainPosition > utility::one<ConstantType>() - precisionAsConstant) {
                     projectedGradient = 0;
@@ -54,39 +54,35 @@ namespace storm {
                 }
             } else if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                 // We want the derivative of f(logit(x)), this happens to be exp(x) * f'(logit(x)) / (exp(x) + 1)^2
-                const double x = utility::convertNumber<double>(oldPos);
-                // This is f'(logit(x))
-                const double gradientAtLogitX = utility::convertNumber<double>((ConstantType) gradient.at(steppingParameter));
-                projectedGradient = std::exp(x) * gradientAtLogitX / std::pow(std::exp(x) + 1, 2);
+                double expOldPos = std::exp(utility::convertNumber<double>(oldPos));
+                projectedGradient = utility::convertNumber<ConstantType>(expOldPos / std::pow(expOldPos + 1, 2)) * gradient.at(steppingParameter) ;
             } else if (constraintMethod == GradientDescentConstraintMethod::BARRIER_INFINITY) {
-                const double x = utility::convertNumber<double>(oldPos);
-                if (x < utility::zero<ConstantType>() + precisionAsConstant) {
+                if (constantOldPos < utility::zero<ConstantType>() + precisionAsConstant) {
                     projectedGradient = 1000;
-                } else if (x > utility::one<ConstantType>() - precisionAsConstant) {
+                } else if (constantOldPos > utility::one<ConstantType>() - precisionAsConstant) {
                     projectedGradient = -1000;
                 } else {
                     projectedGradient = gradient.at(steppingParameter);
                 }
             } else if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
-                const double x = utility::convertNumber<double>(oldPos);
                 // Our barrier is:
                 // log(x) if 0 < x < 0.5
                 // log(1 - x) if 0.5 <= x < 1
                 // -infinity otherwise
                 // The gradient of this is
                 // 1/x, 1/(1-x), +/-infinity respectively
-                if (x >= utility::zero<ConstantType>() + precisionAsConstant && x <= utility::one<ConstantType>() - precisionAsConstant) {
+                if (constantOldPos >= utility::zero<ConstantType>() + precisionAsConstant && constantOldPos <= utility::one<ConstantType>() - precisionAsConstant) {
                     /* const double mu = (double) parameters.size() / (double) stepNum; */
-                    if (x < 0.5) {
-                        projectedGradient = gradient.at(steppingParameter) + logarithmicBarrierTerm / (x - precisionAsConstant);
+                    if (constantOldPos < ConstantType(0.5)) {
+                        projectedGradient = gradient.at(steppingParameter) + logarithmicBarrierTerm / (constantOldPos - precisionAsConstant);
                     } else {
-                        projectedGradient = gradient.at(steppingParameter) - logarithmicBarrierTerm / (1 - precisionAsConstant - x);
+                        projectedGradient = gradient.at(steppingParameter) - logarithmicBarrierTerm / (utility::one<ConstantType>() - precisionAsConstant - constantOldPos);
                     }
                 } else {
-                    if (x < utility::zero<ConstantType>() + precisionAsConstant) {
-                        projectedGradient = 1.0 / logarithmicBarrierTerm;
-                    } else if (x > utility::one<ConstantType>() - precisionAsConstant) {
-                        projectedGradient = -1.0 / logarithmicBarrierTerm;
+                    if (constantOldPos < utility::zero<ConstantType>() + precisionAsConstant) {
+                        projectedGradient = utility::one<ConstantType>() / logarithmicBarrierTerm;
+                    } else if (constantOldPos > utility::one<ConstantType>() - precisionAsConstant) {
+                        projectedGradient = -utility::one<ConstantType>() / logarithmicBarrierTerm;
                     }
                 }
             } else {
@@ -99,12 +95,12 @@ namespace storm {
                 // For this algorihm, see the various sources available on the ADAM algorithm. This implementation should
                 // be correct, as it is compared with a run of keras's ADAM optimizer in the test.
                 adam->decayingStepAverage[steppingParameter] = adam->averageDecay * adam->decayingStepAverage[steppingParameter] +
-                    (1 - adam->averageDecay) * projectedGradient;
+                    (utility::one<ConstantType>() - adam->averageDecay) * projectedGradient;
                 adam->decayingStepAverageSquared[steppingParameter] = adam->squaredAverageDecay * adam->decayingStepAverageSquared[steppingParameter] +
-                    (1 - adam->squaredAverageDecay) * utility::pow(projectedGradient, 2);
+                    (utility::one<ConstantType>() - adam->squaredAverageDecay) * utility::pow(projectedGradient, 2);
 
-                const ConstantType correctedGradient = adam->decayingStepAverage[steppingParameter] / (1 - utility::pow(adam->averageDecay, stepNum + 1));
-                const ConstantType correctedSquaredGradient = adam->decayingStepAverageSquared[steppingParameter] / (1 - utility::pow(adam->squaredAverageDecay, stepNum + 1));
+                const ConstantType correctedGradient = adam->decayingStepAverage[steppingParameter] / (utility::one<ConstantType>() - utility::pow(adam->averageDecay, stepNum + 1));
+                const ConstantType correctedSquaredGradient = adam->decayingStepAverageSquared[steppingParameter] / (utility::one<ConstantType>() - utility::pow(adam->squaredAverageDecay, stepNum + 1));
 
                 const ConstantType toSqrt = correctedSquaredGradient;
                 ConstantType sqrtResult = constantTypeSqrt(toSqrt);
@@ -115,11 +111,11 @@ namespace storm {
                 // The line numbers and comments are matched.
                 // Initializing / Compute Gradient: Already happened.
                 // 2: Compute maximum length of approximated simple moving average
-                const ConstantType maxLengthApproxSMA = 2.0 / (1.0 - radam->squaredAverageDecay) - 1.0;
+                const ConstantType maxLengthApproxSMA = 2 / (1 - radam->squaredAverageDecay) - 1;
 
                 // 5: Update exponential moving 2nd moment
                 radam->decayingStepAverageSquared[steppingParameter] = radam->squaredAverageDecay * radam->decayingStepAverageSquared[steppingParameter] +
-                    (1.0 - radam->squaredAverageDecay) * utility::pow(projectedGradient, 2);
+                    (1 - radam->squaredAverageDecay) * utility::pow(projectedGradient, 2);
                 // 6: Update exponential moving 1st moment
                 radam->decayingStepAverage[steppingParameter] = radam->averageDecay * radam->decayingStepAverage[steppingParameter] +
                     (1 - radam->averageDecay) * projectedGradient;
@@ -134,20 +130,15 @@ namespace storm {
                     const ConstantType adaptiveLearningRate = constantTypeSqrt((1 - squaredAverageDecayPow) / radam->decayingStepAverageSquared[steppingParameter]);
                     // 11: Compute the variance rectification term
                     const ConstantType varianceRectification = constantTypeSqrt(
-                            ((lengthApproxSMA - 4.0) / (maxLengthApproxSMA - 4.0)) *
-                            ((lengthApproxSMA - 2.0) / (maxLengthApproxSMA - 2.0)) *
+                            ((lengthApproxSMA - 4) / (maxLengthApproxSMA - 4)) *
+                            ((lengthApproxSMA - 2) / (maxLengthApproxSMA - 2)) *
                             ((maxLengthApproxSMA) / (lengthApproxSMA))
                     );
                     // 12: Update parameters with adaptive momentum
                     step = radam->learningRate * varianceRectification * biasCorrectedMovingAverage * adaptiveLearningRate;
-                    /* std::cout << "Adaptive step" << std::endl; */
-                    /* std::cout << step << std::endl; */
-                    /* std::cout << radam->learningRate << ", " << varianceRectification << ", " << biasCorrectedMovingAverage << ", " << adaptiveLearningRate << std::endl; */
-                    /* std::cout << lengthApproxSMA << "," << maxLengthApproxSMA << std::endl; */
                 } else {
                     // 14: Update parameters with un-adapted momentum
                     step = radam->learningRate * biasCorrectedMovingAverage;
-                    /* std::cout << "Non-adaptive step" << std::endl; */
                 }
             } else if (RmsProp* rmsProp = boost::get<RmsProp>(&gradientDescentType)) {
                 rmsProp->rootMeanSquare[steppingParameter] = rmsProp->averageDecay * rmsProp->rootMeanSquare[steppingParameter] +
