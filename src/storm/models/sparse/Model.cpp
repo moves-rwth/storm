@@ -482,16 +482,17 @@ namespace storm {
                         stateChoicesJson["rew"] = std::move(stateRewardsJson);
                     }
                     
-                    auto rate = storm::utility::one<ValueType>();
+					// For CTMCs we need to scale the transition probabilities as the transition matrix contains rates.
+					// This is not the case for MA.
+                    auto rateForProbabilityScaling = storm::utility::one<ValueType>();
                     if (this->isOfType(storm::models::ModelType::Ctmc)) {
                         auto const& ctmc = this->template as<storm::models::sparse::Ctmc<ValueType, RewardModelType>>();
-                        rate = ctmc->getExitRateVector()[state];
-                        stateChoicesJson["rate"] = storm::utility::to_string(rate);
+                        rateForProbabilityScaling = ctmc->getExitRateVector()[state];
+                        stateChoicesJson["rate"] = storm::utility::to_string(rateForProbabilityScaling);
                     } else if (this->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                         auto const& ma = this->template as<storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>>();
                         if (ma->isMarkovianState(state)) {
-                            rate = ma->getExitRate(state);
-                            stateChoicesJson["rate"] = storm::utility::to_string(rate); // Only export rate for Markovian states
+                            stateChoicesJson["rate"] = storm::utility::to_string(ma->getExitRate(state)); // Only export rate for Markovian states
                         }
                     }
                     
@@ -524,7 +525,7 @@ namespace storm {
                         for (auto const& entry : transitionMatrix.getRow(choiceIndex)) {
                             storm::json<JsonValueType> successor;
                             successor["id"] = entry.getColumn();
-                            successor["prob"] = storm::utility::to_string<ValueType>(entry.getValue() / rate);
+                            successor["prob"] = storm::utility::to_string<ValueType>(entry.getValue() / rateForProbabilityScaling);
                             successors.push_back(successor);
                         }
                         choiceJson["succ"] = std::move(successors);
