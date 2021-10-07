@@ -256,7 +256,7 @@ namespace storm {
                 }
                 
                 ConstantType oldValue = currentValue;
-                const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                CoefficientType<FunctionType> const precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
                 // If nesterov is enabled, we need to compute the gradient on the predicted position
                 std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> nesterovPredictedPosition(position);
