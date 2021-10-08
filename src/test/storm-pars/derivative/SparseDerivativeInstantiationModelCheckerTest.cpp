@@ -1,32 +1,29 @@
 #include "test/storm_gtest.h"
-#include "environment/solver/GmmxxSolverEnvironment.h"
-#include "environment/solver/SolverEnvironment.h"
-#include "environment/solver/TopologicalSolverEnvironment.h"
-#include "solver/EliminationLinearEquationSolver.h"
-#include "test/storm_gtest.h"
+#include "carl/core/RationalFunction.h"
 #include "storm-config.h"
-#include "storm/api/builder.h"
-#include "storm/api/storm.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/api/builder.h"
+#include "storm/api/storm.h"
+#include "storm/environment/solver/GmmxxSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/storage/SparseMatrix.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/EliminationLinearEquationSolver.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
-
-#include "carl/core/RationalFunction.h"
+#include "storm/storage/SparseMatrix.h"
 
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/ValueParser.h"
 
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/api/storm-pars.h"
 #include "storm-pars/derivative/SparseDerivativeInstantiationModelChecker.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 namespace {
     class RationalGmmxxEnvironment {
@@ -128,7 +125,7 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
     for (auto const& param : parameters) {
         std::vector<Instantiation<storm::RationalFunction>> newInstantiations;
         for (auto point : testInstantiations) {
-            for (typename TestType::ConstantType x = 1e-6; x <= 1; x += .1 - (1e-6 / 10)) {
+            for (typename TestType::ConstantType x = 1/1000000; x <= 1; x += (1 - 1/1000000) / 10) {
                 std::map<VariableType<storm::RationalFunction>, CoefficientType<storm::RationalFunction>> newMap(point);
                 newMap[param] = storm::utility::convertNumber<CoefficientType<storm::RationalFunction>>(x);
                 newInstantiations.push_back(newMap);
@@ -154,6 +151,7 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
     auto checkTask = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBound);
     derivativeModelChecker.specifyFormula(env(), checkTask);
 
+
     for (auto const& testCase : testCases) {
         Instantiation<ValueType> instantiation = testCase.first;
         for (auto const& position : instantiation) {
@@ -162,7 +160,7 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
             auto expectedResult = testCase.second.at(parameter);
 
             auto derivative = derivativeModelChecker.check(env(), instantiation, parameter);
-            ASSERT_NEAR(derivative->getValueVector()[0], expectedResult, 1e-6) << instantiation;
+            ASSERT_NEAR(derivative->getValueVector()[0], expectedResult, 1/1000000) << instantiation;
         }
     }
 }
@@ -186,11 +184,6 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple) {
 
     // The associated polynomial. In this case, it's p * (1 - p).
     carl::Variable varP = carl::VariablePool::getInstance().findVariableWithName("p");
-    /* for (auto parameter : storm::models::sparse::getProbabilityParameters(*dtmc)) { */
-    /*     if (parameter.name() == "p") { */
-    /*         varP = parameter; */
-    /*     } */
-    /* } */
     std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
     auto p = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(varP), cache));
     storm::RationalFunction reachabilityFunction = p * (storm::RationalFunction(1)-p);
@@ -218,13 +211,6 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Simple2) {
     // The associated polynomial. In this case, it's p * (1 - q).
     carl::Variable varP = carl::VariablePool::getInstance().findVariableWithName("p");
     carl::Variable varQ = carl::VariablePool::getInstance().findVariableWithName("q");
-    /* for (auto parameter : storm::models::sparse::getProbabilityParameters(*dtmc)) { */
-    /*     if (parameter.name() == "p") { */
-    /*         varP = parameter; */
-    /*     } else  if (parameter.name() == "q") { */
-    /*         varQ = parameter; */
-    /*     } */
-    /* } */
     std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
     auto p = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(varP), cache));
     auto q = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(varQ), cache));
@@ -250,24 +236,14 @@ TYPED_TEST(SparseDerivativeInstantiationModelCheckerTest, Brp162) {
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    /* carl::Variable pLVar; */
     carl::Variable pLVar = carl::VariablePool::getInstance().findVariableWithName("pL");
     carl::Variable pKVar = carl::VariablePool::getInstance().findVariableWithName("pK");
-    /* carl::Variable pKVar; */
-    /* for (auto parameter : storm::models::sparse::getProbabilityParameters(*dtmc)) { */
-    /*     if (parameter.name() == "pL") { */
-    /*         pLVar = parameter; */
-    /*     } else  if (parameter.name() == "pK") { */
-    /*         pKVar = parameter; */
-    /*     } */
-    /* } */
     std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
     auto pL = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(pLVar), cache));
     auto pK = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(pKVar), cache));
 
     // The term is ((pK)^16 * (pL)^16 * (pK^2*pL^2+(-3)*pK*pL+3)^16)/(1), so we're just going to create this here.
-    // I'm sorry. There is no ^ operator.
-    auto firstTerm = pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK; 
+    auto firstTerm = pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK * pK;
     auto secondTerm = pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL * pL; 
     auto thirdTermUnpowed = pK*pK*pL*pL+(-3)*pK*pL+3;
     auto thirdTerm = thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed * thirdTermUnpowed;

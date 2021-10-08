@@ -1,33 +1,30 @@
 #include "test/storm_gtest.h"
-#include "environment/solver/GmmxxSolverEnvironment.h"
-#include "environment/solver/SolverEnvironment.h"
-#include "environment/solver/TopologicalSolverEnvironment.h"
-#include "solver/EliminationLinearEquationSolver.h"
-#include "test/storm_gtest.h"
 #include "storm-config.h"
-#include "storm/api/builder.h"
-#include "storm/api/storm.h"
-
-#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/api/builder.h"
+#include "storm/api/storm.h"
+#include "storm/environment/solver/GmmxxSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/EliminationLinearEquationSolver.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm-parsers/parser/PrismParser.h"
 
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/api/storm-pars.h"
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
-#include "gtest/gtest.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 namespace {
     class RationalGmmxxEnvironment {
@@ -125,8 +122,8 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> checker(*dtmc);
     storm::modelchecker::CheckTask<storm::logic::Formula, typename TestFixture::FunctionType> checkTask(*formulas[0]);
     checker.specifyFormula(this->env(), checkTask);
-    auto doubleInstantiation = checker.gradientDescent(this->env());
-    ASSERT_NEAR(doubleInstantiation.second, 0.25, 1e-6);
+    typename TestFixture::ConstantType doubleInstantiation = checker.gradientDescent(this->env()).second;
+    ASSERT_NEAR(doubleInstantiation, 1/4, 1e-6);
 }
 
 TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
@@ -147,9 +144,6 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     storm::modelchecker::CheckTask<storm::logic::Formula, typename TestFixture::FunctionType> checkTask(*formulas[0]);
 
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
-
-    /* ASSERT_EQ(dtmc->getNumberOfStates(), 193ull); */
-    /* ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull); */
 
     // First, test an ADAM instance. We will check that we have implemented ADAM correctly by comparing our results to results gathered by an ADAM implementation in tensorflow :)
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> adamChecker(
@@ -189,7 +183,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
         ASSERT_NEAR(storm::utility::convertNumber<double>(walk[i].position[pfVar]), pfValues[i], 1e-4);
     }
     
-    ASSERT_NEAR(doubleInstantiation.second, 0, 1e-6);
+    ASSERT_NEAR(storm::utility::convertNumber<double>(doubleInstantiation.second), 0, 1e-6);
 
     // Same thing with RAdam
     storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::FunctionType, typename TestFixture::ConstantType> radamChecker(

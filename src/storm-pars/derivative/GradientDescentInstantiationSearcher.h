@@ -160,35 +160,6 @@ namespace storm {
                 }
                 instantiationModelChecker->specifyFormula(*this->currentCheckTaskNoBound);
                 derivativeEvaluationHelper->specifyFormula(env, *this->currentCheckTaskNoBound);
-
-                // TODO: Monotonicity Checker stub :)
-                /* const auto precision = storm::utility::convertNumber<typename utility::parametric::CoefficientType<FunctionType>::type>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()); */
-                /* storm::utility::parametric::Valuation<FunctionType> lowerBoundaries; */
-                /* storm::utility::parametric::Valuation<FunctionType> upperBoundaries; */
-
-                /* // TODO Make regions configurable */
-                /* for (auto parameter : this->parameters) { */
-                /*     lowerBoundaries[parameter] = precision; */
-                /*     upperBoundaries[parameter] = 1 - precision; */
-                /* } */
-
-                /* std::shared_ptr<const storm::logic::Formula> formula = this->currentFormulaNoBound; */
-                /* storage::ParameterRegion<FunctionType> region = storm::storage::ParameterRegion<FunctionType>(lowerBoundaries, upperBoundaries); */
-                /* std::vector<storage::ParameterRegion<FunctionType>> regions = { region }; */
-                /* std::vector<std::shared_ptr<logic::Formula const>> formulas { formula }; */
-                /* std::shared_ptr<models::sparse::Dtmc<FunctionType>> modelSharedPtr = std::make_shared<models::sparse::Dtmc<FunctionType>>(model); */
-                
-                /* this->monotonicityHelper = std::make_unique<storm::analysis::MonotonicityHelper<FunctionType, ConstantType>>(modelSharedPtr, formulas, regions); */
-
-                /* std::cout << "Checking monotonicity..." << std::endl; */
-                /* std::map<std::shared_ptr<storm::analysis::Order>, std::pair<std::shared_ptr<storm::analysis::MonotonicityResult<typename utility::parametric::VariableType<FunctionType>::type>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> resultMap = monotonicityHelper->checkMonotonicityInBuild(std::cout); */
-                /* for (auto const& orderResult : resultMap) { */
-                /*     for (auto const& parameter : this->parameters) { */
-                /*         if (orderResult.second.first->isMonotone(parameter)) { */
-                /*             std::cout << "Is montone in " << parameter << std::endl; */
-                /*         } */
-                /*     } */
-                /* } */
             }
 
 
