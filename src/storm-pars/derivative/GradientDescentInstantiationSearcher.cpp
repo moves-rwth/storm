@@ -413,16 +413,16 @@ namespace storm {
                 // Generate random starting point
                 for (auto const& param : this->parameters) {
                     if (initialGuess) {
-                        logarithmicBarrierTerm = utility::convertNumber<ConstantType>(0.1);
+                        logarithmicBarrierTerm = 0.1;
                         if (startPoint) {
                             point[param] = (*startPoint)[param];
                         } else {
                             point[param] = utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
                         }
-                    } else if (!initialGuess && constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC && logarithmicBarrierTerm > utility::convertNumber<ConstantType>(0.00001)) {
+                    } else if (!initialGuess && constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC && logarithmicBarrierTerm > 0.00001) {
                         // Do nothing
                     } else {
-                        logarithmicBarrierTerm = utility::convertNumber<ConstantType>(0.1);
+                        logarithmicBarrierTerm = 0.1;
                         point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
                     }
                 }
@@ -458,7 +458,7 @@ namespace storm {
                     break;
                 } else {
                     if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
-                        logarithmicBarrierTerm = logarithmicBarrierTerm/10;
+                        logarithmicBarrierTerm /= 10;
                         std::cout << "Smaller term" << std::endl;
                         std::cout << bestValue << std::endl;
                         std::cout << logarithmicBarrierTerm << std::endl;
