@@ -73,7 +73,7 @@ namespace storm {
                 // 1/x, 1/(1-x), +/-infinity respectively
                 if (constantOldPos >= utility::zero<ConstantType>() + precisionAsConstant && constantOldPos <= utility::one<ConstantType>() - precisionAsConstant) {
                     /* const double mu = (double) parameters.size() / (double) stepNum; */
-                    if (constantOldPos < utility::convertNumber<ConstantType>(0.5)) {
+                    if (constantOldPos < ConstantType(0.5)) {
                         projectedGradient = gradient.at(steppingParameter) + logarithmicBarrierTerm / (constantOldPos - precisionAsConstant);
                     } else {
                         projectedGradient = gradient.at(steppingParameter) - logarithmicBarrierTerm / (utility::one<ConstantType>() - precisionAsConstant - constantOldPos);
