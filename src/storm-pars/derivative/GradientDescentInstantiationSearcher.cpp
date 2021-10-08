@@ -39,15 +39,14 @@ namespace storm {
                 uint64_t stepNum
             ) {
             const ConstantType precisionAsConstant = utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-            const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-            auto const oldPos = position[steppingParameter];
+            const CoefficientType<FunctionType> precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+            CoefficientType<FunctionType> const oldPos = position[steppingParameter];
             ConstantType const oldPosAsConstant = utility::convertNumber<ConstantType>(position[steppingParameter]);
 
             ConstantType projectedGradient;
             if (constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
                 // Project gradient
-                const ConstantType constantOldPos = utility::convertNumber<ConstantType>(oldPos);
-                ConstantType newPlainPosition = constantOldPos + precisionAsConstant * gradient.at(steppingParameter);
+                ConstantType newPlainPosition = oldPosAsConstant + precisionAsConstant * gradient.at(steppingParameter);
                 if (newPlainPosition < utility::zero<ConstantType>() + precisionAsConstant || newPlainPosition > utility::one<ConstantType>() - precisionAsConstant) {
                     projectedGradient = 0;
                 } else {
@@ -66,7 +65,6 @@ namespace storm {
                     projectedGradient = gradient.at(steppingParameter);
                 }
             } else if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
-                const double x = utility::convertNumber<double>(oldPos);
                 // Our barrier is:
                 // log(x) if 0 < x < 0.5
                 // log(1 - x) if 0.5 <= x < 1
@@ -75,7 +73,7 @@ namespace storm {
                 // 1/x, 1/(1-x), +/-infinity respectively
                 if (oldPosAsConstant >= precisionAsConstant && oldPosAsConstant <= utility::one<ConstantType>() - precisionAsConstant) {
                     /* const double mu = (double) parameters.size() / (double) stepNum; */
-                    if (x < 0.5) {
+                    if (oldPosAsConstant < 1/2) {
                         projectedGradient = gradient.at(steppingParameter) + logarithmicBarrierTerm / (oldPosAsConstant - precisionAsConstant);
                     } else {
                         projectedGradient = gradient.at(steppingParameter) - logarithmicBarrierTerm / (1 - precisionAsConstant - oldPosAsConstant);
@@ -208,7 +206,7 @@ namespace storm {
                 CoefficientType<FunctionType> const upperBound = utility::one<CoefficientType<FunctionType>>() - precision;
                 position[steppingParameter] = utility::min(upperBound, position[steppingParameter]);
             }
-            return utility::abs(oldPosAsConstant - utility::convertNumber<ConstantType>(position[steppingParameter]));
+            return utility::abs<ConstantType>(oldPosAsConstant - utility::convertNumber<ConstantType>(position[steppingParameter]));
         }
 
         template<typename FunctionType, typename ConstantType>
@@ -271,7 +269,8 @@ namespace storm {
                 if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
                     CoefficientType<FunctionType> const upperBound = (utility::one<CoefficientType<FunctionType>>() - precision);
                     for (auto const& parameter : miniBatch) {
-                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->momentumTerm * nesterov->pastStep[parameter]);
+                        ConstantType const addedTerm = nesterov->momentumTerm * nesterov->pastStep[parameter];
+                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<FunctionType>>(addedTerm);
                         nesterovPredictedPosition[parameter] = utility::max(precision, nesterovPredictedPosition[parameter]);
                         nesterovPredictedPosition[parameter] = utility::min(upperBound, nesterovPredictedPosition[parameter]);
                     }
@@ -427,7 +426,7 @@ namespace storm {
                             point[param] = utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
                         }
                     } else if (!initialGuess && constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC && logarithmicBarrierTerm > utility::convertNumber<ConstantType>(0.00001)) {
-                        // Do nothing
+                         // Do nothing
                     } else {
                         logarithmicBarrierTerm = 1/10;
                         point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
