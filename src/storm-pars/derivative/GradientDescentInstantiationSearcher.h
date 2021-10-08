@@ -44,11 +44,11 @@ namespace storm {
             GradientDescentInstantiationSearcher<FunctionType, ConstantType>(
                     storm::models::sparse::Dtmc<FunctionType> const model,
                     GradientDescentMethod method = GradientDescentMethod::ADAM,
-                    ConstantType learningRate = 0.1,
-                    ConstantType averageDecay = 0.9,
-                    ConstantType squaredAverageDecay = 0.999,
+                    double learningRate = 0.1,
+                    double averageDecay = 0.9,
+                    double squaredAverageDecay = 0.999,
                     uint_fast64_t miniBatchSize = 32,
-                    ConstantType terminationEpsilon = 1e-6,
+                    double terminationEpsilon = 1e-6,
                     boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>> startPoint = boost::none,
                     GradientDescentConstraintMethod constraintMethod = GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT,
                     bool recordRun = false
@@ -233,7 +233,7 @@ namespace storm {
             const std::unique_ptr<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<FunctionType>, ConstantType>> instantiationModelChecker;
             boost::optional<std::map<typename utility::parametric::VariableType<FunctionType>::type, typename utility::parametric::CoefficientType<FunctionType>::type>> startPoint;
             const uint_fast64_t miniBatchSize;
-            const ConstantType terminationEpsilon;
+            const double terminationEpsilon;
             const GradientDescentConstraintMethod constraintMethod;
 
             // This is for visualizing data
@@ -243,35 +243,35 @@ namespace storm {
 
             // Gradient Descent types and data that belongs to them, with hyperparameters and running data.
             struct Adam {
-                ConstantType averageDecay;
-                ConstantType squaredAverageDecay;
-                ConstantType learningRate;
+                double averageDecay;
+                double squaredAverageDecay;
+                double learningRate;
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> decayingStepAverageSquared;
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> decayingStepAverage;
             };
             struct RAdam {
-                ConstantType averageDecay;
-                ConstantType squaredAverageDecay;
-                ConstantType learningRate;
+                double averageDecay;
+                double squaredAverageDecay;
+                double learningRate;
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> decayingStepAverageSquared;
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> decayingStepAverage;
             };
             struct RmsProp {
-                ConstantType averageDecay;
-                ConstantType learningRate;
+                double averageDecay;
+                double learningRate;
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> rootMeanSquare;
             };
             struct Plain {
-                ConstantType learningRate;
+                double learningRate;
             };
             struct Momentum {
-                ConstantType learningRate;
-                ConstantType momentumTerm;
+                double learningRate;
+                double momentumTerm;
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> pastStep;
             };
             struct Nesterov {
-                ConstantType learningRate;
-                ConstantType momentumTerm;
+                double learningRate;
+                double momentumTerm;
                 std::map<typename utility::parametric::VariableType<FunctionType>::type, ConstantType> pastStep;
             };
             typedef boost::variant<Adam, RAdam, RmsProp, Plain, Momentum, Nesterov> GradientDescentType;
@@ -279,7 +279,7 @@ namespace storm {
             // Only respected by some Gradient Descent methods, the ones that have a "sign" version in the GradientDescentMethod enum
             bool useSignsOnly;
 
-            ConstantType logarithmicBarrierTerm;
+            double logarithmicBarrierTerm;
 
             ConstantType stochasticGradientDescent(
                 Environment const& env,
