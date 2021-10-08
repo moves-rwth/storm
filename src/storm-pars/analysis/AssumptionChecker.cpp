@@ -34,7 +34,7 @@ namespace storm {
                     auto lb = region.getLowerBoundary(var.name());
                     auto ub = region.getUpperBoundary(var.name());
                     // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
-                    auto val = std::pair<VariableType, CoefficientType>(var, (lb + i * (ub - lb) / (numberOfSamples - 1)));
+                    auto val = std::pair<VariableType, CoefficientType>(var, (lb + utility::convertNumber<CoefficientType>(i / (numberOfSamples - 1)) * (ub - lb)));
                     valuation.insert(val);
                 }
                 models::sparse::Dtmc<ConstantType> sampleModel = instantiator.instantiate(valuation);
