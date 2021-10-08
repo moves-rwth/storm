@@ -335,7 +335,7 @@ namespace storm {
                         auto checkResult = derivativeEvaluationHelper->check(env, nesterovPredictedPosition, parameter, valueVector);
                         ConstantType delta = checkResult->getValueVector()[0];
                         if (currentCheckTask->getBound().comparisonType == logic::ComparisonType::Less || currentCheckTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
-                            delta = -delta;
+                            delta *= -1;
                         }
                         deltaVector[parameter] = delta;
                     }
