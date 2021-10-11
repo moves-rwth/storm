@@ -614,22 +614,8 @@ namespace storm {
             std::vector<BeliefValueType> helper(belief.size(), storm::utility::zero<BeliefValueType>());
             helper[0] = storm::utility::convertNumber<BeliefValueType>(resolution);
             bool done = false;
-            // VARIABLE SETUP
             std::vector<storm::expressions::Expression> decisionVariables;
-            // Add variables for the DELTA values, their overall sum is to be minimized
-            auto bigDelta = lpSolver->addBoundedContinuousVariable("D", storm::utility::zero<BeliefValueType>(), storm::utility::one<BeliefValueType>(),
-                                                                   storm::utility::one<BeliefValueType>());
-            std::vector<storm::expressions::Expression> deltas(belief.size());
-            uint64_t i = 0;
-            for (auto const &state : belief) {
-                auto localDelta = lpSolver->addBoundedContinuousVariable(
-                        "d_" + std::to_string(i) ,
-                        storm::utility::zero<BeliefValueType>(),
-                        storm::utility::one<BeliefValueType>());
-                deltas[i] = storm::expressions::Expression(localDelta);
-                lpSolver->update();
-                ++i;
-            }
+
             std::vector<BeliefType> gridCandidates;
             while (!done) {
                 BeliefType candidate;
@@ -651,27 +637,48 @@ namespace storm {
                     //STORM_PRINT("Add candidate " << toString(candidate) << std::endl)
                     gridCandidates.push_back(candidate);
 
-                    // Add variables a_j
+                    // Add variables a_j, D_j
                     auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(gridCandidates.size() - 1));
                     decisionVariables.push_back(storm::expressions::Expression(decisionVar));
-                    i = 0;
+                    // Add variables for the DELTA values, their overall sum is to be minimized
+                    auto bigDelta = lpSolver->addBoundedContinuousVariable("D_" + std::to_string(gridCandidates.size() - 1), storm::utility::zero<BeliefValueType>(), storm::utility::one<BeliefValueType>(),
+                                                                           storm::utility::one<BeliefValueType>());
+                    std::vector<storm::expressions::Expression> deltas;
+                    uint64_t i = 0;
                     for (auto const &state : belief) {
+                        auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1),
+                                                                                 storm::utility::zero<BeliefValueType>(),
+                                                                                 storm::utility::one<BeliefValueType>());
+                        deltas.push_back(storm::expressions::Expression(localDelta));
+                        lpSolver->update();
                         // Add the constraint to describe the transformation between the state values in the beliefs
-                        // d_i
-                        storm::expressions::Expression leftSide = deltas[i];
+                        // b(s_i) - d_i_j
+                        storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
                         storm::expressions::Expression targetValue = lpSolver->getConstant(candidate[i]);
                         if (candidate.find(state.first) != candidate.end()) {
                             targetValue = lpSolver->getConstant(candidate.at(state.first));
                         } else {
                             targetValue = lpSolver->getConstant(storm::utility::zero<BeliefValueType>());
                         }
-                        // a_j * (b(s_i) - b_j(s_i)) + D * b_j(s_i) - 1 + a_j
-                        storm::expressions::Expression rightSide = storm::expressions::Expression(decisionVar) * (lpSolver->getConstant(state.second) - targetValue) + bigDelta * targetValue - lpSolver->getConstant(storm::utility::one<BeliefValueType>()) + storm::expressions::Expression(decisionVar);
-                        // Add greater equal; minimisation forces equality if (a_j = 1)
-                        lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1), leftSide >= rightSide);
+
+                        // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
+                        storm::expressions::Expression rightSide =
+                                targetValue * (lpSolver->getConstant(storm::utility::one<BeliefValueType>()) - storm::expressions::Expression(bigDelta))
+                                + (lpSolver->getConstant(storm::utility::one<BeliefValueType>()) - storm::expressions::Expression(decisionVar)) *
+                                  (lpSolver->getConstant(state.second) - targetValue);
+                        // Add equality
+                        lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1), leftSide == rightSide);
                         ++i;
-                        lpSolver->update();
                     }
+                    // Link decision and D_j
+                    lpSolver->addConstraint("dec_" + std::to_string(gridCandidates.size() - 1),
+                                            storm::expressions::Expression(bigDelta) <= storm::expressions::Expression(decisionVar));
+                    // Link D_j and d_i_j
+                    lpSolver->addConstraint("delta_" + std::to_string(gridCandidates.size() - 1), storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
+                    // Exclude D_j = 0 (self-loop)
+                    lpSolver->addConstraint("not_zero_" + std::to_string(gridCandidates.size() - 1), storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<BeliefValueType>()));
+                    // Exclude D_j = 1. We do not include this constraint as we minimize and can later check if the optimal value is one
+                    // lpSolver->addConstraint("not_one_" + std::to_string(gridCandidates.size()-1), storm::expressions::Expression(bigDelta) < lpSolver->getConstant(storm::utility::one<ValueType>()));
                 }
                 if (helper.back() == storm::utility::convertNumber<BeliefValueType>(resolution)) {
                     // If the last entry of helper is the gridResolution, we have enumerated all necessary distributions
@@ -694,14 +701,10 @@ namespace storm {
 
                 }
             }
-            // Link D and d_i
-            lpSolver->addConstraint("delta_sum", storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
-
-            // Exclude D = 0. This can only occur due to duplicate beliefs or numerical inaccuracy
-            lpSolver->addConstraint("not_zero", storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<BeliefValueType>()));
 
             // Only one target belief should be chosen
             lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<BeliefValueType>()));
+            lpSolver->update();
 
             lpSolver->optimize();
             // Get the optimal belief for clipping
@@ -709,28 +712,24 @@ namespace storm {
             // Not a belief but has the same type
             BeliefType deltaValues;
             auto optDelta = storm::utility::zero<BeliefValueType>();
+            auto deltaSum = storm::utility::zero<BeliefValueType>();
             if(lpSolver->isOptimal()){
                 optDelta = lpSolver->getObjectiveValue();
-                if(optDelta == storm::utility::one<BeliefValueType>()){
-                    STORM_LOG_WARN("optDelta of 1!" << std::endl);
-                    // If we get an optimal value of 1, we cannot clip the belief as by definition this would correspond to a division by 0.
-                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
-                }
                 for(uint64_t dist = 0; dist < gridCandidates.size(); ++dist){
                     if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(dist)))){
                         targetBelief = getOrAddBeliefId(gridCandidates[dist]);
+                        //Collect delta values
+                        uint64_t i = 0;
+                        for (auto const &state : belief) {
+                            auto val = lpSolver->getContinuousValue(lpSolver->getManager().getVariable("d_" + std::to_string(i) + "_" + std::to_string(dist)));
+                            if(cc.isLess(storm::utility::zero<BeliefValueType>(),val)){
+                                deltaValues.emplace(state.first, val);
+                                deltaSum += val;
+                            }
+                            ++i;
+                        }
                         break;
                     }
-                }
-
-                //Collect delta values
-                uint64_t j = 0;
-                for (auto const &state : belief) {
-                    auto val = lpSolver->getContinuousValue(lpSolver->getManager().getVariable("d_" + std::to_string(j)));
-                    if(cc.isLess(storm::utility::zero<BeliefValueType>(),val)){
-                        deltaValues.emplace(state.first, val);
-                    }
-                    ++j;
                 }
 
                 if(cc.isEqual(optDelta, storm::utility::zero<BeliefValueType>())){
@@ -741,7 +740,27 @@ namespace storm {
                     STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
                     return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
                 }
+
+                if(optDelta == storm::utility::one<BeliefValueType>()) {
+                    STORM_LOG_WARN(
+                            "LP solver returned an optimal value of 1. Sum of state clipping values is " << deltaSum);
+                    // If we get an optimal value of 1, we cannot clip the belief as by definition this would correspond to a division by 0.
+                    STORM_LOG_DEBUG("Origin" << toString(belief));
+                    STORM_LOG_DEBUG("Target [Bel " << targetBelief << "] " << toString(targetBelief));
+
+                    if (deltaSum == storm::utility::one<BeliefValueType>()) {
+                        return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
+                    }
+                    optDelta = deltaSum;
+                }
                 //STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective value " << optDelta << " is not equal to the Delta " << lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief))) << " for the target state");
+            }
+            if(cc.isEqual(optDelta, storm::utility::zero<BeliefValueType>())){
+                // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
+                // For a sound result, we consider the state to be not be clippable
+                STORM_LOG_WARN("LP solver returned a value of 0!");
+                STORM_LOG_WARN("Origin" << toString(belief));
+                return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
             }
             return BeliefClipping{lpSolver->isOptimal(), noId(), targetBelief, optDelta, deltaValues};
         }
@@ -768,19 +787,6 @@ namespace storm {
             std::vector<storm::expressions::Expression> decisionVariables;
             std::vector<BeliefId> consideredCandidates;
             STORM_LOG_DEBUG("Clip Belief with ID " << beliefId << " (" << toString(beliefId) << ")");
-            // VARIABLE SETUP
-            // Add variable for the DELTA value to be minimized
-            auto bigDelta = lpSolver->addBoundedContinuousVariable("D", storm::utility::zero<BeliefValueType>(), threshold,
-                                                                   storm::utility::one<BeliefValueType>());
-            std::vector<storm::expressions::Expression> deltas;
-            for (auto const &state : getBelief(beliefId)) {
-                auto delta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i),
-                                                                         storm::utility::zero<BeliefValueType>(),
-                                                                         threshold);
-                deltas.push_back(storm::expressions::Expression(delta));
-                ++i;
-            }
-            lpSolver->update();
             for(auto const &candidate : beliefToIdMap[obs]) {
                 if (candidate.second != beliefId) {
                     if(targets){
@@ -812,27 +818,44 @@ namespace storm {
                         } else {
                             STORM_LOG_DEBUG("Add constraints for Belief with ID " << candidate.second << " " << toString(candidate.second));
                             consideredCandidates.push_back(candidate.second);
-                            // Add variables a_j
+                            // Add variables a_j, D_j
                             auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(candidate.second));
                             decisionVariables.push_back(storm::expressions::Expression(decisionVar));
+                            // Add variables for the DELTA values, their overall sum is to be minimized
+                            auto bigDelta = lpSolver->addBoundedContinuousVariable("D_" + std::to_string(candidate.second), storm::utility::zero<BeliefValueType>(), threshold,
+                                                                                   storm::utility::one<BeliefValueType>());
+                            std::vector<storm::expressions::Expression> deltas;
                             i = 0;
                             for (auto const &state : getBelief(beliefId)) {
+                                auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i) + "_" + std::to_string(candidate.second),
+                                                                                         storm::utility::zero<BeliefValueType>(),
+                                                                                         threshold);
+                                deltas.push_back(storm::expressions::Expression(localDelta));
+                                lpSolver->update();
                                 // Add the constraint to describe the transformation between the state values in the beliefs
-                                // d_i
-                                storm::expressions::Expression leftSide =  deltas[i];
+                                // b(s_i) - d_i_j
+                                storm::expressions::Expression leftSide = /*lpSolver->getConstant(state.second)*/ - lpSolver->getConstant(10000) * localDelta;
                                 storm::expressions::Expression targetValue;
                                 try {
                                     targetValue = lpSolver->getConstant(candidate.first.at(state.first));
                                 } catch (const std::out_of_range &) {
                                     targetValue = lpSolver->getConstant(storm::utility::zero<BeliefValueType>());
                                 }
-                                // a_j * (b(s_i) - b_j(s_i)) + D * b_j(s_i) - 1 + a_j
-                                storm::expressions::Expression rightSide = storm::expressions::Expression(decisionVar) * (lpSolver->getConstant(state.second) - targetValue) + bigDelta * targetValue - lpSolver->getConstant(storm::utility::one<BeliefValueType>()) + storm::expressions::Expression(decisionVar);
-                                // Add greater equal; minimisation forces equality if (a_j = 1)
-                                lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(candidate.second), leftSide >= rightSide);
+                                // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
+                                storm::expressions::Expression rightSide = - lpSolver->getConstant(10000) * targetValue * storm::expressions::Expression(bigDelta) - storm::expressions::Expression(decisionVar) * lpSolver->getConstant(10000) * (lpSolver->getConstant(state.second) - targetValue);
+                                // Add equality
+                                lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(candidate.second), leftSide == rightSide);
                                 ++i;
-                                lpSolver->update();
                             }
+                            // Link decision and D_j
+                            lpSolver->addConstraint("dec_" + std::to_string(candidate.second),
+                                                    storm::expressions::Expression(bigDelta) <= storm::expressions::Expression(decisionVar));
+                            // Link D_j and d_i_j
+                            lpSolver->addConstraint("delta_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
+                            // Exclude D_j = 0. This can only occur due to duplicate beliefs or numerical inaccuracy
+                            lpSolver->addConstraint("not_zero_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<BeliefValueType>()));
+                            // Exclude D_j = 1. We do not include this constraint as we minimize and can later check if the optimal value is one
+                            // lpSolver->addConstraint("not_one_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) < lpSolver->getConstant(storm::utility::one<ValueType>()));
                         }
                     }
                 }
@@ -842,12 +865,6 @@ namespace storm {
                 STORM_LOG_DEBUG("Belief " << beliefId << " cannot be clipped - no candidate with valid support");
                 return BeliefClipping{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(), {}};
             }
-            // Link D and d_i
-            lpSolver->addConstraint("delta_sum", storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
-
-            // Exclude D = 0. This can only occur due to duplicate beliefs or numerical inaccuracy
-            lpSolver->addConstraint("not_zero", storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<BeliefValueType>()));
-
             // Only one target belief should be chosen
             lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<BeliefValueType>()));
 
@@ -858,7 +875,6 @@ namespace storm {
             // Not a belief but has the same type
             BeliefType deltaValues;
             if(lpSolver->isOptimal()){
-                STORM_PRINT("Optimal Value: " << lpSolver->getObjectiveValue() << std::endl)
                 optDelta = lpSolver->getObjectiveValue();
                 if(optDelta == storm::utility::one<BeliefValueType>()){
                     // If we get an optimal value of 1, we cannot clip the belief as by definition this would correspond to a division by 0.
@@ -867,19 +883,18 @@ namespace storm {
                 for(auto const &candidate : consideredCandidates) {
                     if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(candidate)))){
                         targetBelief = candidate;
+                        uint64_t stateIndex = 0;
+                        for (auto const &state : getBelief(beliefId)) {
+                            auto val = lpSolver->getContinuousValue(lpSolver->getManager().getVariable("d_" + std::to_string(stateIndex) + "_" + std::to_string(candidate)));
+                            if(cc.isLess(storm::utility::zero<BeliefValueType>(),val)){
+                                deltaValues.emplace(state.first, val);
+                            }
+                            ++stateIndex;
+                        }
                         break;
                     }
                 }
-                uint64_t stateIndex = 0;
-                for (auto const &state : getBelief(beliefId)) {
-                    auto val = lpSolver->getContinuousValue(lpSolver->getManager().getVariable("d_" + std::to_string(stateIndex)));
-                    if(cc.isLess(storm::utility::zero<BeliefValueType>(),val)){
-                        deltaValues.emplace(state.first, val);
-                    }
-                    ++stateIndex;
-                }
                 if(optDelta == storm::utility::zero<BeliefValueType>()){
-                    STORM_PRINT("OPTVAL 0" << std::endl)
                     // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
                     // For a sound result, we consider the state to not be clippable
                     STORM_LOG_WARN("LP solver returned an optimal value of 0. Consider increasing the solver's precision");
