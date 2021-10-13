@@ -908,8 +908,13 @@ namespace storm {
                                                     rewardBound += localRew * storm::utility::convertNumber<BeliefValueType>(successor.second);
                                                 }
                                             } else {
-                                                // If we get false, the belief is on the grid and may need to be explored, too
-                                                bool inserted = underApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
+                                                /*if(NOT ON GRID){
+                                                    // If reward is infinite, clipping the successor does not make sense. Cut it off instead
+                                                    absDelta += storm::utility::convertNumber<BeliefValueType>(successor.second);
+                                                } else {*/
+                                                    // If we get false, the belief is on the grid and may need to be explored, too
+                                                    bool inserted = underApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
+                                               // }
                                             }
                                         }
                                     }
@@ -917,6 +922,7 @@ namespace storm {
                                     if (absDelta != storm::utility::zero<ValueType>()) {
                                         if (computeRewards) {
                                                 if(rewardBound == storm::utility::infinity<ValueType>()){
+                                                    STORM_PRINT_AND_LOG("Infinite reward at state " << currId << std::endl)
                                                     underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(absDelta));
                                                 } else {
                                                     underApproximation->addTransitionsToExtraStates(action, storm::utility::convertNumber<ValueType>(absDelta));

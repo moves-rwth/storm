@@ -626,7 +626,7 @@ namespace storm {
             for (auto const &state : belief) {
                 auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i),
                                                                          storm::utility::zero<BeliefValueType>(),
-                                                                         storm::utility::one<BeliefValueType>());
+                                                                         state.second);
                 deltas.push_back(storm::expressions::Expression(localDelta));
                 ++i;
             }
@@ -797,7 +797,7 @@ namespace storm {
             for (auto const &state : getBelief(beliefId)) {
                 auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i),
                                                                          storm::utility::zero<BeliefValueType>(),
-                                                                         storm::utility::one<BeliefValueType>());
+                                                                         state.second);
                 deltas.push_back(storm::expressions::Expression(localDelta));
                 ++i;
             }
