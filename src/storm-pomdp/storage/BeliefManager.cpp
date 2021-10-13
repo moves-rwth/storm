@@ -669,8 +669,8 @@ namespace storm {
                             targetValue = lpSolver->getConstant(storm::utility::zero<BeliefValueType>());
                         }
 
-                        // b(s_i) - b_j(s_i) + D * b_j(s_i) - 2 + 2 * a_j
-                        storm::expressions::Expression rightSide = lpSolver->getConstant(state.second) - targetValue + storm::expressions::Expression(bigDelta) * targetValue - lpSolver->getConstant(twoBeliefValueType) + lpSolver->getConstant(twoBeliefValueType) * storm::expressions::Expression(decisionVar);
+                        // b(s_i) - b_j(s_i) + D * b_j(s_i) - 1 + a_j
+                        storm::expressions::Expression rightSide = lpSolver->getConstant(state.second) - targetValue + storm::expressions::Expression(bigDelta) * targetValue - lpSolver->getConstant(storm::utility::one<BeliefValueType>()) +  storm::expressions::Expression(decisionVar);
 
                         // Add left >= right
                         lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1), leftSide >= rightSide);
@@ -784,7 +784,6 @@ namespace storm {
                 lpSolver->pop();
             }
             lpSolver->push();
-            auto twoBeliefValueType = storm::utility::one<BeliefValueType>() + storm::utility::one<BeliefValueType>();
             // Iterate over all possible candidates TODO optimize this
             //Set-up Variables
             std::vector<storm::expressions::Expression> decisionVariables;
@@ -851,8 +850,8 @@ namespace storm {
                                 } catch (const std::out_of_range &) {
                                     targetValue = lpSolver->getConstant(storm::utility::zero<BeliefValueType>());
                                 }
-                                // b(s_i) - b_j(s_i) + D * b_j(s_i) - 2 + 2 * a_j
-                                storm::expressions::Expression rightSide = lpSolver->getConstant(state.second) - targetValue + storm::expressions::Expression(bigDelta) * targetValue - lpSolver->getConstant(twoBeliefValueType) + lpSolver->getConstant(twoBeliefValueType) * storm::expressions::Expression(decisionVar);
+                                // b(s_i) - b_j(s_i) + D * b_j(s_i) - 1 + a_j
+                                storm::expressions::Expression rightSide = lpSolver->getConstant(state.second) - targetValue + storm::expressions::Expression(bigDelta) * targetValue - lpSolver->getConstant(storm::utility::one<BeliefValueType>()) + storm::expressions::Expression(decisionVar);
                                 // Add left >= right
                                 lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(candidate.second), leftSide >= rightSide);
                                 ++i;
