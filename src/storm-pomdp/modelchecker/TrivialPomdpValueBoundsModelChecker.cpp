@@ -322,6 +322,7 @@ namespace storm {
                 } else {
                     res.min = true;
                 }
+                res.isInfinite = storm::utility::vector::filterInfinity(resultVec);
                 res.values = std::move(resultVec);
                 return res;
             }

@@ -1099,6 +1099,12 @@ namespace storm {
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplorer<PomdpType, BeliefValueType>::getExtremeValueBoundAtPOMDPState(const uint64_t &pomdpState){
             return extremeValueBound.getValueForState(pomdpState);
         }
+
+        template<typename PomdpType, typename BeliefValueType>
+        storm::storage::BitVector BeliefMdpExplorer<PomdpType, BeliefValueType>::getClippingRewardIsInfinite(){
+            return extremeValueBound.isInfinite;
+        }
+
         template
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>>;
 

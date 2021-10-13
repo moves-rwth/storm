@@ -41,6 +41,7 @@ namespace storm {
             struct ExtremePOMDPValueBound{
                 bool min;
                 std::vector<ValueType> values;
+                storm::storage::BitVector isInfinite;
                 /**
                  * Get the extreme bound value for a given state
                  * @param state the state ID

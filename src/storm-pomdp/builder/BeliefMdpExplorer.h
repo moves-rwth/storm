@@ -215,6 +215,8 @@ namespace storm {
 
             bool beliefHasMdpState(BeliefId const &beliefId) const;
 
+            storm::storage::BitVector getClippingRewardIsInfinite();
+
         private:
             MdpStateType noState() const;
 

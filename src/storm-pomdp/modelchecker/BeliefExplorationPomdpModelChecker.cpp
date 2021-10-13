@@ -894,7 +894,7 @@ namespace storm {
                                         bool added = underApproximation->addTransitionToBelief(action, successor.first, successor.second, true);
                                         if(!added){
                                             statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
-                                            auto clipping = beliefManager->clipBeliefToGrid(successor.first, options.clippingGridRes);
+                                            auto clipping = beliefManager->clipBeliefToGrid(successor.first, options.clippingGridRes, underApproximation->getClippingRewardIsInfinite());
                                             if (clipping.isClippable) {
                                                 statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
                                                 BeliefValueType transitionProb = (storm::utility::one<BeliefValueType>() - clipping.delta) * storm::utility::convertNumber<BeliefValueType>(successor.second);
@@ -905,16 +905,19 @@ namespace storm {
                                                     for (auto const &deltaValue : clipping.deltaValues) {
                                                         localRew += deltaValue.second * storm::utility::convertNumber<BeliefValueType>((underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first)));
                                                     }
+                                                    if(localRew == storm::utility::infinity<ValueType>()){
+                                                        STORM_LOG_WARN("Infinite reward in clipping!");
+                                                    }
                                                     rewardBound += localRew * storm::utility::convertNumber<BeliefValueType>(successor.second);
                                                 }
+                                            } else if(clipping.onGrid){
+                                                // If we get false, the belief is on the grid and may need to be explored, too
+                                                bool inserted = underApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
                                             } else {
-                                                /*if(NOT ON GRID){
-                                                    // If reward is infinite, clipping the successor does not make sense. Cut it off instead
-                                                    absDelta += storm::utility::convertNumber<BeliefValueType>(successor.second);
-                                                } else {*/
-                                                    // If we get false, the belief is on the grid and may need to be explored, too
-                                                    bool inserted = underApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
-                                               // }
+                                                // If reward is infinite, clipping the successor does not make sense. Cut it off instead
+                                                absDelta += storm::utility::convertNumber<BeliefValueType>(successor.second);
+                                                rewardBound += storm::utility::convertNumber<BeliefValueType>(successor.second) * storm::utility::convertNumber<BeliefValueType>(min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
+                                                                                                                                   : underApproximation->computeLowerValueBoundAtBelief(successor.first));
                                             }
                                         }
                                     }
@@ -922,7 +925,6 @@ namespace storm {
                                     if (absDelta != storm::utility::zero<ValueType>()) {
                                         if (computeRewards) {
                                                 if(rewardBound == storm::utility::infinity<ValueType>()){
-                                                    STORM_PRINT_AND_LOG("Infinite reward at state " << currId << std::endl)
                                                     underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(absDelta));
                                                 } else {
                                                     underApproximation->addTransitionsToExtraStates(action, storm::utility::convertNumber<ValueType>(absDelta));

@@ -533,7 +533,7 @@ namespace storm {
                         destinations.emplace_back(triangulation.gridPoints[j], storm::utility::convertNumber<ValueType>(a));
                     }
                 } else if(observationGridClippingResolutions){
-                    BeliefClipping clipping = clipBeliefToGrid(successorBelief, observationGridClippingResolutions.get()[successor.first]);
+                    BeliefClipping clipping = clipBeliefToGrid(successorBelief, observationGridClippingResolutions.get()[successor.first], storm::storage::BitVector(pomdp.getNumberOfStates()));
                     if(clipping.isClippable) {
                         BeliefValueType a = (storm::utility::one<BeliefValueType>() - clipping.delta) * successor.second;
                         destinations.emplace_back(clipping.targetBelief, storm::utility::convertNumber<ValueType>(a));
@@ -592,15 +592,15 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping
-        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution){
-            auto res = clipBeliefToGrid(getBelief(beliefId), resolution);
+        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite){
+            auto res = clipBeliefToGrid(getBelief(beliefId), resolution, isInfinite);
             res.startingBelief = beliefId;
             return res;
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping
-        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(BeliefType const &belief, uint64_t resolution){
+        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, storm::storage::BitVector isInfinite){
             uint32_t obs = getBeliefObservation(belief);
             STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
             if(!lpSolver){
@@ -614,7 +614,6 @@ namespace storm {
             std::vector<BeliefValueType> helper(belief.size(), storm::utility::zero<BeliefValueType>());
             helper[0] = storm::utility::convertNumber<BeliefValueType>(resolution);
             bool done = false;
-            auto twoBeliefValueType = storm::utility::one<BeliefValueType>() + storm::utility::one<BeliefValueType>();
             // Set-up Variables
             std::vector<storm::expressions::Expression> decisionVariables;
             // Add variable for the clipping value, it is to be minimized
@@ -626,7 +625,7 @@ namespace storm {
             for (auto const &state : belief) {
                 auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i),
                                                                          storm::utility::zero<BeliefValueType>(),
-                                                                         state.second);
+                                                                         isInfinite[state.first] ? storm::utility::zero<BeliefValueType>() : state.second);
                 deltas.push_back(storm::expressions::Expression(localDelta));
                 ++i;
             }
@@ -647,7 +646,7 @@ namespace storm {
                 if(isEqual(candidate, belief)){
                     // TODO Do something for successors which are already on the grid
                     //STORM_PRINT("Belief on grid" << std::endl)
-                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
+                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, true};
                 } else {
                     //STORM_PRINT("Add candidate " << toString(candidate) << std::endl)
                     gridCandidates.push_back(candidate);
@@ -740,7 +739,7 @@ namespace storm {
                     STORM_LOG_WARN("LP solver returned an optimal value of 0. This should definitely not happen when using a grid");
                     STORM_LOG_WARN("Origin" << toString(belief));
                     STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
-                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
+                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, false};
                 }
 
                 if(optDelta == storm::utility::one<BeliefValueType>()) {
@@ -751,20 +750,20 @@ namespace storm {
                     STORM_LOG_DEBUG("Target [Bel " << targetBelief << "] " << toString(targetBelief));
 
                     if (deltaSum == storm::utility::one<BeliefValueType>()) {
-                        return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
+                        return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, false};
                     }
                     optDelta = deltaSum;
                 }
                 //STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective value " << optDelta << " is not equal to the Delta " << lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief))) << " for the target state");
             }
-            if(cc.isEqual(optDelta, storm::utility::zero<BeliefValueType>())){
+            /*if(cc.isEqual(optDelta, storm::utility::zero<BeliefValueType>())){
                 // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
                 // For a sound result, we consider the state to be not be clippable
                 STORM_LOG_WARN("LP solver returned a value of 0!");
                 STORM_LOG_WARN("Origin" << toString(belief));
-                return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
-            }
-            return BeliefClipping{lpSolver->isOptimal(), noId(), targetBelief, optDelta, deltaValues};
+                //return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}, false};
+            }*/
+            return BeliefClipping{lpSolver->isOptimal(), noId(), targetBelief, optDelta, deltaValues, false};
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
