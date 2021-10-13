@@ -123,7 +123,7 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
     storm::modelchecker::CheckTask<storm::logic::Formula, typename TestFixture::FunctionType> checkTask(*formulas[0]);
     checker.specifyFormula(this->env(), checkTask);
     typename TestFixture::ConstantType doubleInstantiation = checker.gradientDescent(this->env()).second;
-    ASSERT_NEAR(doubleInstantiation, 1/4, 1e-6);
+    ASSERT_NEAR(doubleInstantiation*4, 1, 1e-6);
 }
 
 TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
