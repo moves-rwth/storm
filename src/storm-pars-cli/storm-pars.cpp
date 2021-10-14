@@ -281,6 +281,7 @@ namespace storm {
 
             PreprocessResult result(model, false);
             if (monSettings.isMonotonicityAnalysisSet() || parametricSettings.isUseMonotonicitySet() || derSettings.isFeasibleInstantiationSearchSet() || derSettings.getDerivativeAtInstantiation()) {
+                STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidSettingsException, "When computing monotonicity, a property has to be specified");
                 result.model = storm::pars::simplifyModel<ValueType>(result.model, input);
                 result.changed = true;
             }
