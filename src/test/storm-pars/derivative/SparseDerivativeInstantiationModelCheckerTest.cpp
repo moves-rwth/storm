@@ -160,7 +160,7 @@ void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::sha
             auto expectedResult = testCase.second.at(parameter);
 
             auto derivative = derivativeModelChecker.check(env(), instantiation, parameter);
-            ASSERT_NEAR(derivative->getValueVector()[0], expectedResult, 1e-6) << instantiation;
+            ASSERT_NEAR(storm::utility::convertNumber<double>(derivative->getValueVector()[0]), storm::utility::convertNumber<double>(expectedResult), 1e-6) << instantiation;
         }
     }
 }
