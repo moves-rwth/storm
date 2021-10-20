@@ -2,6 +2,9 @@
 
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
+
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -11,6 +14,7 @@
 
 #include "storm/environment/Environment.h"
 
+#include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
@@ -24,6 +28,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/logic/FormulaInformation.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 
@@ -50,10 +55,6 @@ namespace storm {
             STORM_LOG_THROW(this->canHandle(checkTask), storm::exceptions::InvalidArgumentException, "The model checker (" << getClassName() << ") is not able to check the formula '" << formula << "'.");
             if (formula.isStateFormula()) {
                 return this->checkStateFormula(env, checkTask.substituteFormula(formula.asStateFormula()));
-            } else if (formula.isMultiObjectiveFormula()){
-                return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(formula.asMultiObjectiveFormula()));
-            } else if (formula.isQuantileFormula()){
-                return this->checkQuantileFormula(env, checkTask.substituteFormula(formula.asQuantileFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
@@ -61,7 +62,19 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isBoundedUntilFormula()) {
+
+            if (formula.isStateFormula() || formula.hasQualitativeResult()) {
+                return this->computeStateFormulaProbabilities(env, checkTask.substituteFormula(formula));
+            }
+
+            if (formula.isHOAPathFormula()) {
+               return this->computeHOAPathProbabilities(env, checkTask.substituteFormula(formula.asHOAPathFormula()));
+            } else if (formula.isConditionalProbabilityFormula()) {
+                return this->computeConditionalProbabilities(env, checkTask.substituteFormula(formula.asConditionalFormula()));
+            } else if (formula.info(false).containsComplexPathFormula()) {
+                // we need to do LTL model checking
+                return this->computeLTLProbabilities(env, checkTask.substituteFormula(formula.asPathFormula()));
+            } else if (formula.isBoundedUntilFormula()) {
                 return this->computeBoundedUntilProbabilities(env, checkTask.substituteFormula(formula.asBoundedUntilFormula()));
             } else if (formula.isReachabilityProbabilityFormula()) {
                 return this->computeReachabilityProbabilities(env, checkTask.substituteFormula(formula.asReachabilityProbabilityFormula()));
@@ -71,8 +84,6 @@ namespace storm {
                 return this->computeUntilProbabilities(env, checkTask.substituteFormula(formula.asUntilFormula()));
             } else if (formula.isNextFormula()) {
                 return this->computeNextProbabilities(env, checkTask.substituteFormula(formula.asNextFormula()));
-            } else if (formula.isConditionalProbabilityFormula()) {
-                return this->computeConditionalProbabilities(env, checkTask.substituteFormula(formula.asConditionalFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
@@ -107,6 +118,31 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            // recurse
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, checkTask.getFormula());
+            if (resultPointer->isExplicitQualitativeCheckResult()) {
+                STORM_LOG_ASSERT(ModelType::Representation == storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
+                return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(resultPointer->asExplicitQualitativeCheckResult());
+            } else {
+                STORM_LOG_ASSERT(resultPointer->isSymbolicQualitativeCheckResult(), "Unexpected result type.");
+                STORM_LOG_ASSERT(ModelType::Representation != storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
+                auto const& qualRes = resultPointer->asSymbolicQualitativeCheckResult<storm::models::GetDdType<ModelType::Representation>::ddType>();
+                return std::make_unique<SymbolicQuantitativeCheckResult<storm::models::GetDdType<ModelType::Representation>::ddType, ValueType>>(qualRes);
+            }
         }
 
         template<typename ModelType>
@@ -202,6 +238,10 @@ namespace storm {
                 return this->checkBooleanLiteralFormula(env, checkTask.substituteFormula(stateFormula.asBooleanLiteralFormula()));
             } else if (stateFormula.isGameFormula()) {
                 return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
+            } else if (stateFormula.isMultiObjectiveFormula()){
+                return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+            } else if (stateFormula.isQuantileFormula()){
+                return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
         }

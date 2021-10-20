@@ -24,9 +24,12 @@ namespace storm {
         class DFTBuilder {
 
             using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
+            using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
             using DFTElementVector = std::vector<DFTElementPointer>;
             using DFTBEPointer = std::shared_ptr<storm::storage::DFTBE<ValueType>>;
+            using DFTBECPointer = std::shared_ptr<storm::storage::DFTBE<ValueType> const>;
             using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
+            using DFTGateCPointer = std::shared_ptr<storm::storage::DFTGate<ValueType> const>;
             using DFTGateVector = std::vector<DFTGatePointer>;
             using DFTDependencyPointer = std::shared_ptr<storm::storage::DFTDependency<ValueType>>;
             using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
@@ -183,6 +186,33 @@ namespace storm {
                 return true;
             }
 
+            bool addBasicElementSamples(
+                std::string const& name,
+                std::map<ValueType, ValueType> const& activeSamples) {
+                if (nameInUse(name)) {
+                    STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
+                    return false;
+                }
+
+                // check if it can fail
+                bool canFail{false};
+                for (auto const& sample : activeSamples) {
+                    if (!storm::utility::isZero(sample.second)) {
+                        canFail = true;
+                        break;
+                    }
+                }
+
+                if (!canFail) {
+                    return addBasicElementConst(name, false);
+                }
+
+                mElements[name] =
+                    std::make_shared<storm::storage::BESamples<ValueType>>(
+                        mNextId++, name, activeSamples);
+                return true;
+            }
+
             void addLayoutInfo(std::string const& name, double x, double y) {
                 if (!nameInUse(name)) {
                     STORM_LOG_ERROR("Element with name '" << name << "' not found.");
@@ -213,14 +243,14 @@ namespace storm {
              *
              * @param element Element to copy.
              */
-            void copyElement(DFTElementPointer element);
+            void copyElement(DFTElementCPointer element);
 
             /**
              * Copy BE and insert it again in the builder.i
              *
              * @param be BE to copy.
              */
-            void copyBE(DFTBEPointer be);
+            void copyBE(DFTBECPointer be);
 
             /**
              * Copy gate with given children and insert it again in the builder. The current children of the element
@@ -229,7 +259,7 @@ namespace storm {
              * @param gate Gate to copy.
              * @param children New children of copied element.
              */
-            void copyGate(DFTGatePointer gate, std::vector<std::string> const& children);
+            void copyGate(DFTGateCPointer gate, std::vector<std::string> const& children);
 
         private:
             

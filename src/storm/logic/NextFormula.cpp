@@ -20,9 +20,15 @@ namespace storm {
             return visitor.visit(*this, data);
         }
                 
-        std::ostream& NextFormula::writeToStream(std::ostream& out) const {
+        std::ostream& NextFormula::writeToStream(std::ostream& out, bool allowParentheses) const {
+            if (allowParentheses) {
+                out << "(";
+            }
             out << "X ";
-            this->getSubformula().writeToStream(out);
+            this->getSubformula().writeToStream(out, !this->getSubformula().isUnaryFormula());
+            if (allowParentheses) {
+                out << ")";
+            }
             return out;
         }
     }

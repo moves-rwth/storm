@@ -23,7 +23,7 @@ namespace storm {
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
 
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;

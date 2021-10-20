@@ -23,6 +23,7 @@ include(RegisterSourceGroup)
 include(imported)
 include(CheckCXXSourceCompiles)
 include(CheckCSourceCompiles)
+include(ProcessorCount)
 
 #############################################################
 ##
@@ -50,6 +51,8 @@ option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
 mark_as_advanced(USE_SMTRAT)
 option(USE_HYPRO "Sets whether HyPro should be included." OFF)
 mark_as_advanced(USE_HYPRO)
+option(STORM_USE_SPOT_SYSTEM "Sets whether the system version of Spot should be included (if found)." ON)
+option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available or not used)." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 mark_as_advanced(FORCE_COLOR)
@@ -71,6 +74,8 @@ set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optiona
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The hint to the root directory of CUDA (optional).")
 set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
+set(SPOT_ROOT "" CACHE STRING "The hint to the root directory of Spot (optional).")
+MARK_AS_ADVANCED(SPOT_ROOT)
 option(STORM_LOAD_QVBS "Sets whether the Quantitative Verification Benchmark Set (QVBS) should be downloaded." OFF)
 set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Verification Benchmark Set (QVBS) in case it should not be downloaded (optional).")
 MARK_AS_ADVANCED(STORM_QVBS_ROOT)
@@ -78,6 +83,17 @@ set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(USE_XERCESC ${XML_SUPPORT})
 mark_as_advanced(USE_XERCESC)
+
+# Get an approximation of the number of available processors (used for parallel build of shipped resources)
+ProcessorCount(STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT)
+# To be safe, we only take a little more than half of the resources.
+# This also correctly deals with the case where ProcessorCount is unable to find the correct number (and thus returns 0)
+MATH(EXPR STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT "${STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT}/2 + 1")
+set(STORM_RESOURCES_BUILD_JOBCOUNT "${STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT}" CACHE STRING "The number of jobs used when building external resources")
+mark_as_advanced(STORM_RESOURCES_BUILD_JOBCOUNT)
+if(NOT STORM_RESOURCES_BUILD_JOBCOUNT GREATER 0)
+	message(FATAL_ERROR "STORM_RESOURCES_BUILD_JOBCOUNT must be a positive number. Got '${STORM_RESOURCES_BUILD_JOBCOUNT}' instead." )
+endif()
 
 # Set some CMAKE Variables as advanced
 mark_as_advanced(CMAKE_OSX_ARCHITECTURES)

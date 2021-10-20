@@ -19,21 +19,50 @@ env:
   NR_JOBS: "2"
 
   # cmake arguments
-  CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON"
-  CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON"
+  CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
+  CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
 
   CARL_CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON -DBUILD_ADDONS=ON -DBUILD_ADDON_PARSER=ON"
   CARL_CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON -DBUILD_ADDONS=ON -DBUILD_ADDON_PARSER=ON"
 
 
 jobs:
+  indepthTests:
+    name: Indepth Tests (${{ matrix.cmakeArgs.name }})
+    runs-on: ubuntu-latest
+    env:
+      DISTRO: "ubuntu-20.10"
+    strategy:
+      matrix:
+        cmakeArgs:
+          - {name: "GMP exact; GMP rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON"}
+          # This is the standard config
+          # - {name: "GMP exact; CLN rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=OFF -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=ON"}
+          - {name: "CLN exact; GMP rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=OFF -DSTORM_USE_SPOT_SHIPPED=ON"}
+          - {name: "CLN exact; CLN rational functions; Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=ON"}
+          - {name: "GMP exact; CLN rational functions; No Spot", args: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_CLN_EA=ON -DSTORM_USE_CLN_RF=ON -DSTORM_USE_SPOT_SHIPPED=OFF"}
+    steps:
+      - name: Init Docker
+        run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${DISTRO}
+      - name: Git clone
+        # git clone cannot clone individual commits based on a sha and some other refs
+        # this workaround fixes this and fetches only one commit
+        run: |
+          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
+      - name: Run cmake
+        run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${{ matrix.cmakeArgs.args }}"
+      - name: Build storm
+        run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
+      - name: Run unit tests
+        run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
+
   noDeploy:
     name: Build and Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
         distro: ["ubuntu-18.04", "debian-10", "debian-9", "ubuntu-20.04"]
-        debugOrRelease: ["debug", "release"]
+        debugOrRelease: ["release"]
     steps:
       - name: Setup cmake arguments
         # this is strangely the best way to implement environment variables based on the value of another
@@ -160,7 +189,7 @@ jobs:
   notify:
     name: Email notification
     runs-on: ubuntu-latest
-    needs: [noDeploy, deploy]
+    needs: [indepthTests, noDeploy, deploy]
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'moves-rwth' && always()
     steps:

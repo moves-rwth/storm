@@ -9,10 +9,16 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.6.x
 -------------
 ## Version 1.6.4 (20xx/xx)
+- Added support for model checking LTL properties in the sparse (and dd-to-sparse) engine. Requires building with Spot or an external LTL to deterministic automaton converter (using option `--ltl2datool`).
+- Added cmake options `STORM_USE_SPOT_SYSTEM` and `STORM_USE_SPOT_SHIPPED` to facilitate building Storm with [Spot](https://spot.lrde.epita.fr/).
+- Improved parsing of formulas in PRISM-style syntax.
+- Added export of schedulers that use memory (in particular optimizing schedulers for LTL properties)
 - Added support for PRISM models that use unbounded integer variables.
 - Added an export of check results to json. Use `--exportresult` in the command line interface.
+- Added `--exportbuilt` option that exports the built model in various formats. Deprecates `--io:exportexplicit`, `--io:exportdd` and `--io:exportdot`
+- Added export of built model in .json. which can be used to debug and explore the model.
 - Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
-- Implemented parsing and model building of Stochastic multiplayer games (SMGs) in the PRISM language. No model checking implemented, for now.
+- Implemented parsing and model building of Stochastic multiplayer games (SMGs) in the PRISM language. No model checking implemented (yet).
 - API: Simulation of prism-models 
 - API: Model-builder takes a callback function to prevent extension of particular actions, prism-to-explicit mapping can be exported
 - API: Export of dice-formatted expressions

@@ -59,6 +59,7 @@ namespace storm {
             std::vector<ValueType> const& getLastRewards() const;
             generator::CompressedState const& getCurrentState() const;
             expressions::SimpleValuation getCurrentStateAsValuation() const;
+            std::vector<std::string> getCurrentStateLabelling() const;
 
             storm::json<ValueType> getStateAsJson() const;
 

@@ -39,14 +39,14 @@ namespace storm {
                 uint64_t stepNum
             ) {
             const ConstantType precisionAsConstant = utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-            const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-            auto const oldPos = position[steppingParameter];
+            const CoefficientType<FunctionType> precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+            CoefficientType<FunctionType> const oldPos = position[steppingParameter];
+            ConstantType const oldPosAsConstant = utility::convertNumber<ConstantType>(position[steppingParameter]);
 
             ConstantType projectedGradient;
             if (constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
                 // Project gradient
-                const ConstantType constantOldPos = utility::convertNumber<ConstantType>(oldPos);
-                ConstantType newPlainPosition = constantOldPos + precisionAsConstant * gradient.at(steppingParameter);
+                ConstantType newPlainPosition = oldPosAsConstant + precisionAsConstant * gradient.at(steppingParameter);
                 if (newPlainPosition < utility::zero<ConstantType>() + precisionAsConstant || newPlainPosition > utility::one<ConstantType>() - precisionAsConstant) {
                     projectedGradient = 0;
                 } else {
@@ -54,39 +54,35 @@ namespace storm {
                 }
             } else if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                 // We want the derivative of f(logit(x)), this happens to be exp(x) * f'(logit(x)) / (exp(x) + 1)^2
-                const double x = utility::convertNumber<double>(oldPos);
-                // This is f'(logit(x))
-                const double gradientAtLogitX = utility::convertNumber<double>((ConstantType) gradient.at(steppingParameter));
-                projectedGradient = std::exp(x) * gradientAtLogitX / std::pow(std::exp(x) + 1, 2);
+                const double expX = std::exp(utility::convertNumber<double>(oldPos));
+                projectedGradient = gradient.at(steppingParameter) * utility::convertNumber<ConstantType>(expX / std::pow(expX + 1, 2));
             } else if (constraintMethod == GradientDescentConstraintMethod::BARRIER_INFINITY) {
-                const double x = utility::convertNumber<double>(oldPos);
-                if (x < utility::zero<ConstantType>() + precisionAsConstant) {
+                if (oldPosAsConstant < precisionAsConstant) {
                     projectedGradient = 1000;
-                } else if (x > utility::one<ConstantType>() - precisionAsConstant) {
+                } else if (oldPosAsConstant > utility::one<ConstantType>() - precisionAsConstant) {
                     projectedGradient = -1000;
                 } else {
                     projectedGradient = gradient.at(steppingParameter);
                 }
             } else if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
-                const double x = utility::convertNumber<double>(oldPos);
                 // Our barrier is:
                 // log(x) if 0 < x < 0.5
                 // log(1 - x) if 0.5 <= x < 1
                 // -infinity otherwise
                 // The gradient of this is
                 // 1/x, 1/(1-x), +/-infinity respectively
-                if (x >= utility::zero<ConstantType>() + precisionAsConstant && x <= utility::one<ConstantType>() - precisionAsConstant) {
+                if (oldPosAsConstant >= precisionAsConstant && oldPosAsConstant <= utility::one<ConstantType>() - precisionAsConstant) {
                     /* const double mu = (double) parameters.size() / (double) stepNum; */
-                    if (x < 0.5) {
-                        projectedGradient = gradient.at(steppingParameter) + logarithmicBarrierTerm / (x - precisionAsConstant);
+                    if (oldPosAsConstant*2 < utility::one<ConstantType>()) {
+                        projectedGradient = gradient.at(steppingParameter) + logarithmicBarrierTerm / (oldPosAsConstant - precisionAsConstant);
                     } else {
-                        projectedGradient = gradient.at(steppingParameter) - logarithmicBarrierTerm / (1 - precisionAsConstant - x);
+                        projectedGradient = gradient.at(steppingParameter) - logarithmicBarrierTerm / (utility::one<ConstantType>() - precisionAsConstant - oldPosAsConstant);
                     }
                 } else {
-                    if (x < utility::zero<ConstantType>() + precisionAsConstant) {
-                        projectedGradient = 1.0 / logarithmicBarrierTerm;
-                    } else if (x > utility::one<ConstantType>() - precisionAsConstant) {
-                        projectedGradient = -1.0 / logarithmicBarrierTerm;
+                    if (oldPosAsConstant < precisionAsConstant) {
+                        projectedGradient = utility::one<ConstantType>() / logarithmicBarrierTerm;
+                    } else if (oldPosAsConstant > utility::one<ConstantType>() - precisionAsConstant) {
+                        projectedGradient = -utility::one<ConstantType>() / logarithmicBarrierTerm;
                     }
                 }
             } else {
@@ -94,64 +90,59 @@ namespace storm {
             }
 
             // Compute step based on used gradient descent method
-            ConstantType step; 
+            ConstantType step;
             if (Adam* adam = boost::get<Adam>(&gradientDescentType)) {
                 // For this algorihm, see the various sources available on the ADAM algorithm. This implementation should
                 // be correct, as it is compared with a run of keras's ADAM optimizer in the test.
                 adam->decayingStepAverage[steppingParameter] = adam->averageDecay * adam->decayingStepAverage[steppingParameter] +
-                    (1 - adam->averageDecay) * projectedGradient;
+                    (utility::one<ConstantType>() - adam->averageDecay) * projectedGradient;
                 adam->decayingStepAverageSquared[steppingParameter] = adam->squaredAverageDecay * adam->decayingStepAverageSquared[steppingParameter] +
-                    (1 - adam->squaredAverageDecay) * utility::pow(projectedGradient, 2);
+                    (utility::one<ConstantType>() - adam->squaredAverageDecay) * utility::pow(projectedGradient, 2);
 
-                const ConstantType correctedGradient = adam->decayingStepAverage[steppingParameter] / (1 - utility::pow(adam->averageDecay, stepNum + 1));
-                const ConstantType correctedSquaredGradient = adam->decayingStepAverageSquared[steppingParameter] / (1 - utility::pow(adam->squaredAverageDecay, stepNum + 1));
+                const ConstantType correctedGradient = adam->decayingStepAverage[steppingParameter] / (utility::one<ConstantType>() - utility::pow(adam->averageDecay, stepNum + 1));
+                const ConstantType correctedSquaredGradient = adam->decayingStepAverageSquared[steppingParameter] / (utility::one<ConstantType>() - utility::pow(adam->squaredAverageDecay, stepNum + 1));
 
                 const ConstantType toSqrt = correctedSquaredGradient;
                 ConstantType sqrtResult = constantTypeSqrt(toSqrt);
-                
+
                 step = (adam->learningRate / (sqrtResult + precisionAsConstant)) * correctedGradient;
             } else if (RAdam* radam = boost::get<RAdam>(&gradientDescentType)) {
                 // You can compare this with the RAdam paper's "Algorithm 2: Rectified Adam".
                 // The line numbers and comments are matched.
                 // Initializing / Compute Gradient: Already happened.
                 // 2: Compute maximum length of approximated simple moving average
-                const ConstantType maxLengthApproxSMA = 2.0 / (1.0 - radam->squaredAverageDecay) - 1.0;
+                const ConstantType maxLengthApproxSMA = 2 / (utility::one<ConstantType>() - radam->squaredAverageDecay) - utility::one<ConstantType>();
 
                 // 5: Update exponential moving 2nd moment
                 radam->decayingStepAverageSquared[steppingParameter] = radam->squaredAverageDecay * radam->decayingStepAverageSquared[steppingParameter] +
-                    (1.0 - radam->squaredAverageDecay) * utility::pow(projectedGradient, 2);
+                    (utility::one<ConstantType>() - radam->squaredAverageDecay) * utility::pow(projectedGradient, 2);
                 // 6: Update exponential moving 1st moment
                 radam->decayingStepAverage[steppingParameter] = radam->averageDecay * radam->decayingStepAverage[steppingParameter] +
-                    (1 - radam->averageDecay) * projectedGradient;
+                    (utility::one<ConstantType>() - radam->averageDecay) * projectedGradient;
                 // 7: Compute bias corrected moving average
-                const ConstantType biasCorrectedMovingAverage = radam->decayingStepAverage[steppingParameter] / (1 - utility::pow(radam->averageDecay, stepNum + 1));
+                const ConstantType biasCorrectedMovingAverage = radam->decayingStepAverage[steppingParameter] / (utility::one<ConstantType>() - utility::pow(radam->averageDecay, stepNum + 1));
                 const ConstantType squaredAverageDecayPow = utility::pow(radam->squaredAverageDecay, stepNum + 1);
                 // 8: Compute the length of the approximated single moving average
-                const ConstantType lengthApproxSMA = maxLengthApproxSMA - ((2 * (utility::convertNumber<ConstantType>(stepNum) + 1) * squaredAverageDecayPow) / (1 - squaredAverageDecayPow));
+                const ConstantType lengthApproxSMA = maxLengthApproxSMA - ((2 * (utility::convertNumber<ConstantType>(stepNum) + utility::one<ConstantType>()) * squaredAverageDecayPow) / (1 - squaredAverageDecayPow));
                 // 9: If the variance is tractable, i.e. lengthApproxSMA > 4, then
                 if (lengthApproxSMA > 4) {
                     // 10: Compute adaptive learning rate
-                    const ConstantType adaptiveLearningRate = constantTypeSqrt((1 - squaredAverageDecayPow) / radam->decayingStepAverageSquared[steppingParameter]);
+                    const ConstantType adaptiveLearningRate = constantTypeSqrt((utility::one<ConstantType>() - squaredAverageDecayPow) / radam->decayingStepAverageSquared[steppingParameter]);
                     // 11: Compute the variance rectification term
                     const ConstantType varianceRectification = constantTypeSqrt(
-                            ((lengthApproxSMA - 4.0) / (maxLengthApproxSMA - 4.0)) *
-                            ((lengthApproxSMA - 2.0) / (maxLengthApproxSMA - 2.0)) *
+                            ((lengthApproxSMA - 4) / (maxLengthApproxSMA - 4)) *
+                            ((lengthApproxSMA - 2) / (maxLengthApproxSMA - 2)) *
                             ((maxLengthApproxSMA) / (lengthApproxSMA))
                     );
                     // 12: Update parameters with adaptive momentum
                     step = radam->learningRate * varianceRectification * biasCorrectedMovingAverage * adaptiveLearningRate;
-                    /* std::cout << "Adaptive step" << std::endl; */
-                    /* std::cout << step << std::endl; */
-                    /* std::cout << radam->learningRate << ", " << varianceRectification << ", " << biasCorrectedMovingAverage << ", " << adaptiveLearningRate << std::endl; */
-                    /* std::cout << lengthApproxSMA << "," << maxLengthApproxSMA << std::endl; */
                 } else {
                     // 14: Update parameters with un-adapted momentum
                     step = radam->learningRate * biasCorrectedMovingAverage;
-                    /* std::cout << "Non-adaptive step" << std::endl; */
                 }
             } else if (RmsProp* rmsProp = boost::get<RmsProp>(&gradientDescentType)) {
                 rmsProp->rootMeanSquare[steppingParameter] = rmsProp->averageDecay * rmsProp->rootMeanSquare[steppingParameter] +
-                    (1 - rmsProp->averageDecay) * projectedGradient * projectedGradient;
+                    (utility::one<ConstantType>() - rmsProp->averageDecay) * projectedGradient * projectedGradient;
 
                 const ConstantType toSqrt = rmsProp->rootMeanSquare[steppingParameter] + precisionAsConstant;
                 ConstantType sqrtResult = constantTypeSqrt(toSqrt);
@@ -159,24 +150,24 @@ namespace storm {
                 step = (rmsProp->learningRate / sqrtResult) * projectedGradient;
             } else if (Plain* plain = boost::get<Plain>(&gradientDescentType)) {
                 if (useSignsOnly) {
-                    if (projectedGradient < 0) {
+                    if (projectedGradient < utility::zero<ConstantType>()) {
                         step = -plain->learningRate;
-                    } else if (projectedGradient > 0) {
+                    } else if (projectedGradient > utility::zero<ConstantType>()) {
                         step = plain->learningRate;
                     } else {
-                        step = 0;
+                        step = utility::zero<ConstantType>();
                     }
                 } else {
                     step = plain->learningRate * projectedGradient;
                 }
             } else if (Momentum* momentum = boost::get<Momentum>(&gradientDescentType)) {
                 if (useSignsOnly) {
-                    if (projectedGradient < 0) {
+                    if (projectedGradient < utility::zero<ConstantType>()) {
                         step = -momentum->learningRate;
-                    } else if (projectedGradient > 0) {
+                    } else if (projectedGradient > utility::zero<ConstantType>()) {
                         step = momentum->learningRate;
                     } else {
-                        step = 0;
+                        step = utility::zero<ConstantType>();
                     }
                 } else {
                     step = momentum->learningRate * projectedGradient;
@@ -185,12 +176,12 @@ namespace storm {
                 momentum->pastStep[steppingParameter] = step;
             } else if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
                 if (useSignsOnly) {
-                    if (projectedGradient < 0) {
+                    if (projectedGradient < utility::zero<ConstantType>()) {
                         step = -nesterov->learningRate;
-                    } else if (projectedGradient > 0) {
+                    } else if (projectedGradient > utility::zero<ConstantType>()) {
                         step = nesterov->learningRate;
                     } else {
-                        step = 0;
+                        step = utility::zero<ConstantType>();
                     }
                 } else {
                     step = nesterov->learningRate * projectedGradient;
@@ -206,10 +197,11 @@ namespace storm {
             position[steppingParameter] = newPos;
             // Map parameter back to (0, 1).
             if (constraintMethod == GradientDescentConstraintMethod::PROJECT || constraintMethod == GradientDescentConstraintMethod::PROJECT_WITH_GRADIENT) {
-                position[steppingParameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, position[steppingParameter]);
-                position[steppingParameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, position[steppingParameter]);
+                position[steppingParameter] = utility::max(precision, position[steppingParameter]);
+                CoefficientType<FunctionType> const upperBound = utility::one<CoefficientType<FunctionType>>() - precision;
+                position[steppingParameter] = utility::min(upperBound, position[steppingParameter]);
             }
-            return utility::abs(utility::convertNumber<ConstantType>(oldPos - position[steppingParameter]));
+            return utility::abs<ConstantType>(oldPosAsConstant - utility::convertNumber<ConstantType>(position[steppingParameter]));
         }
 
         template<typename FunctionType, typename ConstantType>
@@ -217,7 +209,7 @@ namespace storm {
             Environment const& env,
             std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> &position
         ) {
-            uint_fast64_t initialState;           
+            uint_fast64_t initialState;
             const storm::storage::BitVector initialVector = model.getInitialStates();
             for (uint_fast64_t x : initialVector) {
                 initialState = x;
@@ -248,7 +240,7 @@ namespace storm {
 
             utility::Stopwatch printUpdateStopwatch;
             printUpdateStopwatch.start();
-            
+
             // The index to keep track of what parameter(s) to consider next.
             // The "mini-batch", so the parameters to consider, are parameterNum..parameterNum+miniBatchSize-1
             uint_fast64_t parameterNum = 0;
@@ -263,24 +255,27 @@ namespace storm {
                 for (uint_fast64_t i = parameterNum; i < std::min((uint_fast64_t) parameterEnumeration.size(), parameterNum + miniBatchSize); i++) {
                     miniBatch.push_back(parameterEnumeration[i]);
                 }
-                
+
                 ConstantType oldValue = currentValue;
-                const auto precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                CoefficientType<FunctionType> const precision = storm::utility::convertNumber<CoefficientType<FunctionType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
                 // If nesterov is enabled, we need to compute the gradient on the predicted position
                 std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> nesterovPredictedPosition(position);
                 if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+                    CoefficientType<FunctionType> const upperBound = (utility::one<CoefficientType<FunctionType>>() - precision);
                     for (auto const& parameter : miniBatch) {
-                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->momentumTerm)
-                            * storm::utility::convertNumber<CoefficientType<FunctionType>>(nesterov->pastStep[parameter]);
-                        nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<FunctionType>>() + precision, nesterovPredictedPosition[parameter]);
-                        nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<FunctionType>>() - precision, nesterovPredictedPosition[parameter]);
+                        ConstantType const addedTerm = nesterov->momentumTerm * nesterov->pastStep[parameter];
+                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<FunctionType>>(addedTerm);
+                        nesterovPredictedPosition[parameter] = utility::max(precision, nesterovPredictedPosition[parameter]);
+                        nesterovPredictedPosition[parameter] = utility::min(upperBound, nesterovPredictedPosition[parameter]);
                     }
                 }
                 if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                     // Apply sigmoid function
                     for (auto const& parameter : parameters) {
-                        nesterovPredictedPosition[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-nesterovPredictedPosition[parameter]))));
+                        nesterovPredictedPosition[parameter] = utility::one<CoefficientType<FunctionType>>() /
+                                                               (utility::one<CoefficientType<FunctionType>>()
+                                                                + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(-utility::convertNumber<double>(nesterovPredictedPosition[parameter]))));
                     }
                 }
 
@@ -292,12 +287,11 @@ namespace storm {
                 // If nesterov is activated, we need to do this twice. First, to check the value of the current position.
                 // Second, to compute the valueVector at the nesterovPredictedPosition.
                 // If nesterov is deactivated, then nesterovPredictedPosition == position.
-                
+
                 // Are we at a stochastic (in bounds) position?
                 bool stochasticPosition = true;
                 for (auto const& parameter : parameters) {
                     if (nesterovPredictedPosition[parameter] < 0 + precision || nesterovPredictedPosition[parameter] > 1 - precision) {
-                        /* std::cout << "Moved to non-stochastic position" << std::endl; */
                         stochasticPosition = false;
                         break;
                     }
@@ -317,7 +311,7 @@ namespace storm {
                         std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> modelCheckPosition(position);
                         if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                             for (auto const& parameter : parameters) {
-                                modelCheckPosition[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-modelCheckPosition[parameter]))));
+                                modelCheckPosition[parameter] = utility::one<CoefficientType<FunctionType>>() / (utility::one<CoefficientType<FunctionType>>() + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(-utility::convertNumber<double>(modelCheckPosition[parameter]))));
                             }
                         }
                         std::unique_ptr<storm::modelchecker::CheckResult> terminationResult = instantiationModelChecker->check(env, modelCheckPosition);
@@ -335,7 +329,7 @@ namespace storm {
                         auto checkResult = derivativeEvaluationHelper->check(env, nesterovPredictedPosition, parameter, valueVector);
                         ConstantType delta = checkResult->getValueVector()[0];
                         if (currentCheckTask->getBound().comparisonType == logic::ComparisonType::Less || currentCheckTask->getBound().comparisonType == logic::ComparisonType::LessEqual) {
-                            delta *= -1;
+                            delta = -delta;
                         }
                         deltaVector[parameter] = delta;
                     }
@@ -422,22 +416,22 @@ namespace storm {
                 // Generate random starting point
                 for (auto const& param : this->parameters) {
                     if (initialGuess) {
-                        logarithmicBarrierTerm = 0.1;
+                        logarithmicBarrierTerm = utility::convertNumber<ConstantType>(0.1);
                         if (startPoint) {
                             point[param] = (*startPoint)[param];
                         } else {
                             point[param] = utility::convertNumber<CoefficientType<FunctionType>>(0.5 + 1e-6);
                         }
-                    } else if (!initialGuess && constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC && logarithmicBarrierTerm > 0.00001) {
-                        // Do nothing
+                    } else if (!initialGuess && constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC && logarithmicBarrierTerm > utility::convertNumber<ConstantType>(0.00001)) {
+                         // Do nothing
                     } else {
-                        logarithmicBarrierTerm = 0.1;
+                        logarithmicBarrierTerm = utility::convertNumber<ConstantType>(0.1);
                         point[param] = utility::convertNumber<CoefficientType<FunctionType>>(dist(engine));
                     }
                 }
                 initialGuess = false;
 
-                /* walk.clear(); */                   
+                /* walk.clear(); */
 
                 stochasticWatch.start();
                 std::cout << "Starting at " << point << std::endl;
@@ -467,7 +461,7 @@ namespace storm {
                     break;
                 } else {
                     if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
-                        logarithmicBarrierTerm /= 10;
+                        logarithmicBarrierTerm = logarithmicBarrierTerm / 10;
                         std::cout << "Smaller term" << std::endl;
                         std::cout << bestValue << std::endl;
                         std::cout << logarithmicBarrierTerm << std::endl;
@@ -481,7 +475,7 @@ namespace storm {
             if (constraintMethod == GradientDescentConstraintMethod::LOGISTIC_SIGMOID) {
                 // Apply sigmoid function
                 for (auto const& parameter : parameters) {
-                    bestInstantiation[parameter] = 1 / (1 + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(utility::convertNumber<double>(-bestInstantiation[parameter]))));
+                    bestInstantiation[parameter] = utility::one<CoefficientType<FunctionType>>() / (utility::one<CoefficientType<FunctionType>>() + utility::convertNumber<CoefficientType<FunctionType>>(std::exp(-utility::convertNumber<double>(bestInstantiation[parameter]))));
                 }
             }
 
@@ -700,25 +694,25 @@ namespace storm {
         void GradientDescentInstantiationSearcher<FunctionType, ConstantType>::resetDynamicValues() {
             if (Adam* adam = boost::get<Adam>(&gradientDescentType)) {
                 for (auto const& parameter : this->parameters) {
-                    adam->decayingStepAverage[parameter] = 0;
-                    adam->decayingStepAverageSquared[parameter] = 0;
+                    adam->decayingStepAverage[parameter] = utility::zero<ConstantType>();
+                    adam->decayingStepAverageSquared[parameter] = utility::zero<ConstantType>();
                 }
             } else if (RAdam* radam = boost::get<RAdam>(&gradientDescentType)) {
                 for (auto const& parameter : this->parameters) {
-                    radam->decayingStepAverage[parameter] = 0;
-                    radam->decayingStepAverageSquared[parameter] = 0;
+                    radam->decayingStepAverage[parameter] = utility::zero<ConstantType>();
+                    radam->decayingStepAverageSquared[parameter] = utility::zero<ConstantType>();
                 }
             } else if (RmsProp* rmsProp = boost::get<RmsProp>(&gradientDescentType)) {
                 for (auto const& parameter : this->parameters) {
-                    rmsProp->rootMeanSquare[parameter] = 0;
+                    rmsProp->rootMeanSquare[parameter] = utility::zero<ConstantType>();
                 }
             } else if (Momentum* momentum = boost::get<Momentum>(&gradientDescentType)) {
                 for (auto const& parameter : this->parameters) {
-                    momentum->pastStep[parameter] = 0;
+                    momentum->pastStep[parameter] = utility::zero<ConstantType>();
                 }
             } else if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
                 for (auto const& parameter : this->parameters) {
-                    nesterov->pastStep[parameter] = 0;
+                    nesterov->pastStep[parameter] = utility::zero<ConstantType>();
                 }
             }
         }
