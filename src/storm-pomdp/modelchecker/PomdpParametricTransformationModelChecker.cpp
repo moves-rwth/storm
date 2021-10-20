@@ -31,7 +31,6 @@ namespace storm {
                     storm::transformer::PomdpMemoryUnfolder<ValueType> memoryUnfolder(pomdp, memory);
                     memPomdp = memoryUnfolder.transform(false);
                     STORM_PRINT_AND_LOG(" done." << std::endl);
-                    memPomdp->printModelInformationToStream(std::cout);
                 }
 
                 STORM_PRINT_AND_LOG("Simplification POMDP...");
@@ -45,31 +44,25 @@ namespace storm {
                 //TODO make mode a setting?
                 auto pmc = toPMCTransformer.transform(storm::transformer::PomdpFscApplicationMode::STANDARD);
                 STORM_PRINT_AND_LOG(" done." << std::endl);
-                pmc->printModelInformationToStream(std::cout);
-
-                // END TRANSFORMATION
 
                 storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>> simplifier(*(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
-
                 if (!simplifier.simplify(formula)){
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
                 }
                 auto modelSimplified = simplifier.getSimplifiedModel();
-
                 modelSimplified->printModelInformationToStream(std::cout);
+                // END TRANSFORMATION
 
+                // Solve the pMC using gradient descent
                 storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> gradientDescentInstantiationSearcher(*(modelSimplified->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()), storm::derivative::GradientDescentMethod::ADAM, 0.1, 0.9, 0.999, 32, gdEpsilon);
-
                 gradientDescentInstantiationSearcher.specifyFormula(Environment(), storm::api::createTask<storm::RationalFunction>(formula.asSharedPointer(), false));
-
                 auto gradDescResult = gradientDescentInstantiationSearcher.gradientDescentOpt(Environment(), maxInstantiations);
 
                 // the POMDPs we consider are binary, thus one value suffices for each observation
                 std::vector<double> obsChoiceWeight(memPomdp->getNrObservations(), 1);
 
-                //for(auto const &parVal : extremalValues.second){
+                // Parse the result to a randomised policy for the POMDP
                 for(auto const &parVal : gradDescResult.first){
-
                     auto par = parVal.first;
                     auto val = parVal.second;
                     std::string parName = par.name();
@@ -80,7 +73,6 @@ namespace storm {
 
                     obsChoiceWeight[std::stoi(splitValues[0])] = storm::utility::convertNumber<double>(val);
                 }
-
                 std::vector<storm::storage::Distribution<ValueType, uint_fast64_t>> choiceDistributions(memPomdp->getNrObservations());
                 for (uint64_t obs = 0; obs < memPomdp->getNrObservations(); ++obs) {
                     auto& choiceDistribution = choiceDistributions[obs];
@@ -89,13 +81,12 @@ namespace storm {
                         choiceDistribution.addProbability(1, 1 - obsChoiceWeight[obs]);
                     }
                 }
-
                 storm::storage::Scheduler<ValueType> pomdpScheduler(memPomdp->getNumberOfStates());
-
                 // Set the scheduler for all states
                 for (uint64_t state = 0; state < memPomdp->getNumberOfStates(); ++state) {
                     pomdpScheduler.setChoice(choiceDistributions[memPomdp->getObservation(state)], state);
                 }
+                // Apply the policy to the POMDP (or rather its underlying MDP)
                 auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(memPomdp->getTransitionMatrix(), memPomdp->getStateLabeling(), memPomdp->getRewardModels());
                 auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
 
@@ -124,14 +115,6 @@ namespace storm {
                 for (uint64_t state = 0; state < pomdp.getNumberOfStates() * memoryBound; state += memoryBound) {
                     result[state / memoryBound] = formulaInfo.maximize() ? storm::utility::max(result[state / memoryBound], pomdpSchedulerResult[state]) :  storm::utility::min(result[state / memoryBound], pomdpSchedulerResult[state]);
                 }
-
-                // Cleanup values close to zero
-                /*for (uint64_t state = 0; state < result.size(); ++state) {
-                    if(storm::utility::isAlmostZero<ValueType>(result[state])){
-                        result[state] = storm::utility::zero<ValueType>();
-                    }
-                    STORM_LOG_ASSERT(formulaInfo.isNonNestedExpectedRewardFormula() || (result[state] <= storm::utility::one<ValueType>()), "Result " << result[state] << " for state " << state << " is greater than 1.");
-                }*/
 
                 return result;
             }
