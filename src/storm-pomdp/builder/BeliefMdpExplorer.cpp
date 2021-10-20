@@ -176,8 +176,6 @@ namespace storm {
             }
 
             // Pop from the queue.
-            /*currentMdpState = mdpStatesToExplore.top().second;
-            auto currprio = mdpStatesToExplore.top().first;*/
             currentMdpState = mdpStatesToExplorePrioState.rbegin()->second;
             auto currprio = mdpStatesToExplorePrioState.rbegin()->first;
             auto range = mdpStatesToExplorePrioState.equal_range(currprio);
@@ -188,7 +186,6 @@ namespace storm {
                 }
             }
             mdpStatesToExploreStatePrio.erase(currentMdpState);
-            //mdpStatesToExplore.pop();
             if (currentMdpState != nextId && !currentStateHasOldBehavior()) {
                 stateRemapping[currentMdpState] = nextId;
                 STORM_LOG_DEBUG(
@@ -1008,7 +1005,6 @@ namespace storm {
                             default :
                                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
                         }
-                        //mdpStatesToExplore.push(std::make_pair(currentPrio, findRes->second));
                         mdpStatesToExploreStatePrio[findRes->second] = currentPrio;
                         mdpStatesToExplorePrioState.emplace(currentPrio, findRes->second);
                         return findRes->second;
@@ -1045,7 +1041,6 @@ namespace storm {
                     default :
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
                 }
-                //mdpStatesToExplore.push(std::make_pair(currentPrio, result));
                 mdpStatesToExploreStatePrio[result] = currentPrio;
                 mdpStatesToExplorePrioState.emplace(currentPrio, result);
                 return result;
@@ -1101,7 +1096,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        storm::storage::BitVector BeliefMdpExplorer<PomdpType, BeliefValueType>::getClippingRewardIsInfinite(){
+        storm::storage::BitVector BeliefMdpExplorer<PomdpType, BeliefValueType>::getStateExtremeBoundIsInfinite(){
             return extremeValueBound.isInfinite;
         }
 

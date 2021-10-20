@@ -215,7 +215,7 @@ namespace storm {
 
             bool beliefHasMdpState(BeliefId const &beliefId) const;
 
-            storm::storage::BitVector getClippingRewardIsInfinite();
+            storm::storage::BitVector getStateExtremeBoundIsInfinite();
 
         private:
             MdpStateType noState() const;
@@ -243,7 +243,6 @@ namespace storm {
             storm::storage::BitVector exploredBeliefIds;
             
             // Exploration information
-            //std::priority_queue<std::pair<ValueType, uint64_t>, std::deque<std::pair<ValueType, uint64_t>>, std::less<>> mdpStatesToExplore;
             std::multimap<ValueType, uint64_t> mdpStatesToExplorePrioState;
             std::map<uint64_t, ValueType> mdpStatesToExploreStatePrio;
             std::vector<ValueType> probabilityEstimation;

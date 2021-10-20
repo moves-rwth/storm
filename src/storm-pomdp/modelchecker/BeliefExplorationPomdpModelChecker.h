@@ -98,6 +98,30 @@ namespace storm {
                  */
                 bool buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
 
+                /**
+                 * Clips the belief with the given state ID to a belief grid by clipping its direct successor ("grid clipping")
+                 * Transitions to explored successors and successors on the grid are added, otherwise successors are not generated
+                 * @param clippingStateId the state ID of the clipping belief
+                 * @param computeRewards true, if rewards are computed
+                 * @param min true, if objective is to minimise
+                 * @param beliefManager the belief manager used
+                 * @param beliefExplorer the belief MDP explorer used
+                 */
+                void clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer);
+
+                /**
+                 * Clips the belief with the given state ID using already explored beliefs as candidates ("classic clipping")
+                 * A clipping threshold can be given and a reduction of the candidate set to a given size using the belief difference 1-norm is applied if it is not disabled
+                 * @param clippingStateId the state ID of the clipping belief
+                 * @param threshold clipping threshold
+                 * @param computeRewards true, if rewards are computed
+                 * @param reducedCandidateSetSize target candidate set size of the differnce 1-norm reduction
+                 * @param beliefManager the belief manager used
+                 * @param beliefExplorer the belief MDP explorer used
+                 * @return true, if clipping using an adequate candidate is succcessful. Otherwise, false.
+                 */
+                bool clipToExploredBeliefs(uint64_t clippingStateId, BeliefValueType threshold, bool computeRewards, uint64_t reducedCandidateSetSize, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer);
+
                 BeliefValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution);
                 
                 std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector);

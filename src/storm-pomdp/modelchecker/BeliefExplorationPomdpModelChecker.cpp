@@ -858,7 +858,7 @@ namespace storm {
                     if (!stateAlreadyExplored || timeLimitExceeded) {
                         fixPoint = false;
                     }
-                    if (targetObservations.count(currObservation) != 0) {
+                    if (targetObservations.count(beliefManager->getBeliefObservation(currId)) != 0) {
                         underApproximation->setCurrentStateIsTarget();
                         underApproximation->addSelfloopTransition();
                     } else {
@@ -882,130 +882,16 @@ namespace storm {
                         }
                         if(clipBelief){
                             if(options.useGridClipping){
-                                // Add all transitions to states which are already in the MDP, clip all others to a grid
-                                for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
-                                    auto rewardBound = storm::utility::zero<BeliefValueType>();
-                                    auto successors = beliefManager->expand(currId, action);
-                                    auto absDelta = storm::utility::zero<BeliefValueType>();
-                                    for (auto const &successor : successors) {
-                                        // Add transition if successor is in explored space.
-                                        // We can directly add the transitions as there is at most one successor for each observation
-                                        // Therefore no belief can be clipped to an already added successor
-                                        bool added = underApproximation->addTransitionToBelief(action, successor.first, successor.second, true);
-                                        if(!added){
-                                            statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
-                                            auto clipping = beliefManager->clipBeliefToGrid(successor.first, options.clippingGridRes, underApproximation->getClippingRewardIsInfinite());
-                                            if (clipping.isClippable) {
-                                                statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
-                                                BeliefValueType transitionProb = (storm::utility::one<BeliefValueType>() - clipping.delta) * storm::utility::convertNumber<BeliefValueType>(successor.second);
-                                                underApproximation->addTransitionToBelief(action, clipping.targetBelief, storm::utility::convertNumber<ValueType>(transitionProb), false);
-                                                absDelta += clipping.delta * storm::utility::convertNumber<BeliefValueType>(successor.second);
-                                                if (computeRewards) {
-                                                    auto localRew = storm::utility::zero<BeliefValueType>();
-                                                    for (auto const &deltaValue : clipping.deltaValues) {
-                                                        localRew += deltaValue.second * storm::utility::convertNumber<BeliefValueType>((underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first)));
-                                                    }
-                                                    if(localRew == storm::utility::infinity<ValueType>()){
-                                                        STORM_LOG_WARN("Infinite reward in clipping!");
-                                                    }
-                                                    rewardBound += localRew * storm::utility::convertNumber<BeliefValueType>(successor.second);
-                                                }
-                                            } else if(clipping.onGrid){
-                                                // If we get false, the belief is on the grid and may need to be explored, too
-                                                bool inserted = underApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
-                                            } else {
-                                                // If reward is infinite, clipping the successor does not make sense. Cut it off instead
-                                                absDelta += storm::utility::convertNumber<BeliefValueType>(successor.second);
-                                                rewardBound += storm::utility::convertNumber<BeliefValueType>(successor.second) * storm::utility::convertNumber<BeliefValueType>(min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
-                                                                                                                                   : underApproximation->computeLowerValueBoundAtBelief(successor.first));
-                                            }
-                                        }
-                                    }
-                                    // Add a clipping transition if necessary
-                                    if (absDelta != storm::utility::zero<ValueType>()) {
-                                        if (computeRewards) {
-                                                if(rewardBound == storm::utility::infinity<ValueType>()){
-                                                    underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(absDelta));
-                                                } else {
-                                                    underApproximation->addTransitionsToExtraStates(action, storm::utility::convertNumber<ValueType>(absDelta));
-                                                    BeliefValueType totalRewardVal = rewardBound / absDelta;
-                                                    underApproximation->addClippingRewardToCurrentState(action, storm::utility::convertNumber<ValueType>(totalRewardVal));
-                                                }
-                                        } else {
-                                            underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(absDelta));
-                                        }
-                                    }
-                                    if(computeRewards){
-                                        underApproximation->computeRewardAtCurrentState(action);
-                                    }
-                                    ++addedActions;
-                                }
+                                // Use a belief grid as clipping candidates
+                                clipToGrid(currId, computeRewards, min, beliefManager, underApproximation);
+                                addedActions += beliefManager->getBeliefNumberOfChoices(currId);
                             } else {
-                                // Use classic clipping
-                                // Preprocess suitable candidate beliefs
-                                std::priority_queue<std::pair<BeliefValueType, uint64_t>, std::vector<std::pair<BeliefValueType, uint64_t>>, std::less<>> restrictedCandidates;
-                                uint64_t nrCandidates = 10;
-                                std::vector<uint64_t> candidates(nrCandidates);
-                                statistics.clippingPreTime.start();
-                                if(!options.disableClippingReduction) {
-                                    for (auto const &candidateBelief : underApproximation->getBeliefsWithObservationInMdp(currObservation)) {
-                                        if (!beliefManager->isEqual(candidateBelief, currId)) {
-                                            if (restrictedCandidates.size() < nrCandidates) {
-                                                restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, currId), candidateBelief));
-                                            } else {
-                                                auto currentWorst = restrictedCandidates.top().first;
-                                                if (currentWorst > beliefManager->computeDifference1norm(candidateBelief, currId)) {
-                                                    restrictedCandidates.pop();
-                                                    restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, currId), candidateBelief));
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    while (!restrictedCandidates.empty()) {
-                                        candidates.push_back(restrictedCandidates.top().second);
-                                        restrictedCandidates.pop();
-                                    }
-                                }
-                                statistics.clippingPreTime.stop();
-                                // Belief is to be clipped, find the best candidate from the restricted list
-                                statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
-                                statistics.clipWatch.start();
-                                auto clippingResult = beliefManager->clipBelief(currId, storm::utility::convertNumber<BeliefValueType>(heuristicParameters.clippingThreshold), options.disableClippingReduction ? underApproximation->getBeliefsInMdp() : candidates);
-                                statistics.clipWatch.stop();
-                                if (clippingResult.isClippable) {
-                                    underApproximation->setCurrentStateIsClipped();
-                                    statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
-                                    BeliefValueType transitionProb = storm::utility::one<BeliefValueType>() - clippingResult.delta;
-                                    bool addedSucc = underApproximation->addTransitionToBelief(0, clippingResult.targetBelief, storm::utility::convertNumber<ValueType>(transitionProb) , true);
-                                    if (computeRewards) {
-                                        //Determine a sound reward bound for the transition to the target state
-                                        //Compute an over-/underapproximation for the original belief
-                                        auto rewardBound = storm::utility::zero<BeliefValueType>();
-                                        for (auto const &deltaValue : clippingResult.deltaValues) {
-                                            if(valueTypeCC.isEqual(underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first), storm::utility::infinity<ValueType>())){
-                                                rewardBound = storm::utility::infinity<BeliefValueType>();
-                                                break;
-                                            } else {
-                                                rewardBound += deltaValue.second * storm::utility::convertNumber<BeliefValueType>(underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first));
-                                            }
-                                        }
-                                        if(beliefTypeCC.isEqual(rewardBound, storm::utility::infinity<BeliefValueType>())){
-                                            underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(clippingResult.delta));
-                                        } else {
-                                            rewardBound /= clippingResult.delta;
-
-                                            underApproximation->addTransitionsToExtraStates(0, storm::utility::convertNumber<ValueType>(clippingResult.delta));
-                                            underApproximation->addClippingRewardToCurrentState(0, storm::utility::convertNumber<ValueType>(rewardBound));
-                                        }
-                                        underApproximation->addRewardToCurrentState(0, storm::utility::zero<ValueType>());
-                                    } else {
-                                        underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), storm::utility::convertNumber<ValueType>(clippingResult.delta));
-                                    }
+                                // Use clipping with explored beliefs as candidates ("classic" clipping)
+                                if(clipToExploredBeliefs(currId, storm::utility::convertNumber<BeliefValueType>(heuristicParameters.clippingThreshold), computeRewards, 10, beliefManager, underApproximation)){
                                     ++addedActions;
-                                } // end isClippable
+                                }
                             }
-                        }
+                        } // end Clipping Procedure
 
                         // Add successor transitions or cut-off transitions when exploration is stopped
                         for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
@@ -1088,6 +974,142 @@ namespace storm {
                 }
                 return fixPoint;
 
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            bool
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToExploredBeliefs(uint64_t clippingStateId, BeliefValueType threshold, bool computeRewards, uint64_t reducedCandidateSetSize, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer) {// Preprocess suitable candidate beliefs
+                std::priority_queue<std::pair<BeliefValueType, uint64_t>, std::vector<std::pair<BeliefValueType, uint64_t>>, std::less<>> restrictedCandidates;
+                std::vector<uint64_t> candidates(reducedCandidateSetSize);
+                statistics.clippingPreTime.start();
+                // If the reduction is not disabled, we only pick the nrCandidate candidates with the smallest 1-norm of the difference between the candidate and the clipping belief
+                if(!options.disableClippingReduction) {
+                    for (auto const &candidateBelief : beliefExplorer->getBeliefsWithObservationInMdp(beliefManager->getBeliefObservation(clippingStateId))) {
+                        if (!beliefManager->isEqual(candidateBelief, clippingStateId)) {
+                            if (restrictedCandidates.size() < reducedCandidateSetSize) {
+                                restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, clippingStateId), candidateBelief));
+                            } else {
+                                auto currentWorst = restrictedCandidates.top().first;
+                                if (currentWorst > beliefManager->computeDifference1norm(candidateBelief, clippingStateId)) {
+                                    restrictedCandidates.pop();
+                                    restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, clippingStateId), candidateBelief));
+                                }
+                            }
+                        }
+                    }
+
+                    while (!restrictedCandidates.empty()) {
+                        candidates.push_back(restrictedCandidates.top().second);
+                        restrictedCandidates.pop();
+                    }
+                }
+                statistics.clippingPreTime.stop();
+                // Belief is to be clipped, find the best candidate from the restricted list
+                statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
+                statistics.clipWatch.start();
+                auto clippingResult = beliefManager->clipBelief(clippingStateId, threshold, options.disableClippingReduction ? beliefExplorer->getBeliefsInMdp() : candidates);
+                statistics.clipWatch.stop();
+                if (clippingResult.isClippable) {
+                    // An adequate clipping candidate has been found, add the transitions
+                    beliefExplorer->setCurrentStateIsClipped();
+                    statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
+                    BeliefValueType transitionProb = utility::one<BeliefValueType>() - clippingResult.delta;
+                    bool addedSucc = beliefExplorer->addTransitionToBelief(0, clippingResult.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb) , true);
+                    if (computeRewards) {
+                        //Determine a sound reward bound for the transition to the target state
+                        //Compute an over-/underapproximation for the original belief
+                        auto rewardBound = utility::zero<BeliefValueType>();
+                        for (auto const &deltaValue : clippingResult.deltaValues) {
+                            if(valueTypeCC.isEqual(beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first), utility::infinity<BeliefMDPType>())){
+                                rewardBound = utility::infinity<BeliefValueType>();
+                                break;
+                            } else {
+                                rewardBound += deltaValue.second * utility::convertNumber<BeliefValueType>(beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first));
+                            }
+                        }
+                        if(beliefTypeCC.isEqual(rewardBound, utility::infinity<BeliefValueType>())){
+                            beliefExplorer->addTransitionsToExtraStates(0, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clippingResult.delta));
+                        } else {
+                            rewardBound /= clippingResult.delta;
+
+                            beliefExplorer->addTransitionsToExtraStates(0, utility::convertNumber<BeliefMDPType>(clippingResult.delta));
+                            beliefExplorer->addClippingRewardToCurrentState(0, utility::convertNumber<BeliefMDPType>(rewardBound));
+                        }
+                        beliefExplorer->addRewardToCurrentState(0, utility::zero<BeliefMDPType>());
+                    } else {
+                        beliefExplorer->addTransitionsToExtraStates(0, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clippingResult.delta));
+                    }
+                } // end isClippable
+                return clippingResult.isClippable;
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer) {
+                // Add all transitions to states which are already in the MDP, clip all others to a grid
+                // To make the resulting MDP smaller, we eliminate intermediate successor states when clipping is applied
+                for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(clippingStateId); action < numActions; ++action) {
+                    auto rewardBound = utility::zero<BeliefValueType>();
+                    auto successors = beliefManager->expand(clippingStateId, action);
+                    auto absDelta = utility::zero<BeliefValueType>();
+                    for (auto const &successor : successors) {
+                        // Add transition if successor is in explored space.
+                        // We can directly add the transitions as there is at most one successor for each observation
+                        // Therefore no belief can be clipped to an already added successor
+                        bool added = beliefExplorer->addTransitionToBelief(action, successor.first, successor.second, true);
+                        if(!added){
+                            // The successor is not in the explored space. Clip it
+                            statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
+                            auto clipping = beliefManager->clipBeliefToGrid(successor.first, options.clippingGridRes,
+                                                                            beliefExplorer->getStateExtremeBoundIsInfinite());
+                            if (clipping.isClippable) {
+                                // The belief is not on the grid and there is a candidate with finite reward
+                                statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
+                                // Transition probability to candidate is (probability to successor) * (clipping transition probability)
+                                BeliefValueType transitionProb = (utility::one<BeliefValueType>() - clipping.delta) * utility::convertNumber<BeliefValueType>(successor.second);
+                                beliefExplorer->addTransitionToBelief(action, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);
+                                // Collect weighted clipping values
+                                absDelta += clipping.delta * utility::convertNumber<BeliefValueType>(successor.second);
+                                if (computeRewards) {
+                                    // collect cumulative reward bounds
+                                    auto localRew = utility::zero<BeliefValueType>();
+                                    for (auto const &deltaValue : clipping.deltaValues) {
+                                        localRew += deltaValue.second * utility::convertNumber<BeliefValueType>((beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first)));
+                                    }
+                                    if(localRew == utility::infinity<ValueType>()){
+                                        STORM_LOG_WARN("Infinite reward in clipping!");
+                                    }
+                                    rewardBound += localRew * utility::convertNumber<BeliefValueType>(successor.second);
+                                }
+                            } else if(clipping.onGrid){
+                                // If the belief is not clippable, but on the grid, it may need to be explored, too
+                                bool inserted = beliefExplorer->addTransitionToBelief(action, successor.first, successor.second, false);
+                            } else {
+                                // Otherwise, the reward for all candidates is infinite, clipping does not make sense. Cut it off instead
+                                absDelta += utility::convertNumber<BeliefValueType>(successor.second);
+                                rewardBound += utility::convertNumber<BeliefValueType>(successor.second) * utility::convertNumber<BeliefValueType>(min ? beliefExplorer->computeUpperValueBoundAtBelief(successor.first)
+                                                                                                                   : beliefExplorer->computeLowerValueBoundAtBelief(successor.first));
+                            }
+                        }
+                    }
+                    // Add the collected clipping transition if necessary
+                    if (absDelta != utility::zero<BeliefValueType>()) {
+                        if (computeRewards) {
+                                if(rewardBound == utility::infinity<BeliefValueType>()){
+                                    // If the reward is infinite, add a transition to the sink state to collect infinite reward
+                                    beliefExplorer->addTransitionsToExtraStates(action, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(absDelta));
+                                } else {
+                                    beliefExplorer->addTransitionsToExtraStates(action, utility::convertNumber<BeliefMDPType>(absDelta));
+                                    BeliefValueType totalRewardVal = rewardBound / absDelta;
+                                    beliefExplorer->addClippingRewardToCurrentState(action, utility::convertNumber<BeliefMDPType>(totalRewardVal));
+                                }
+                        } else {
+                            beliefExplorer->addTransitionsToExtraStates(action, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(absDelta));
+                        }
+                    }
+                    if(computeRewards){
+                        beliefExplorer->computeRewardAtCurrentState(action);
+                    }
+                }
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
