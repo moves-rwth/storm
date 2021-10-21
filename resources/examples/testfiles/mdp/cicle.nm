@@ -14,3 +14,4 @@ endmodule
 module two = one[x=y, y=z, z=x] endmodule
 module three = one[x=z, y=x, z=y] endmodule
 
+label "done" = ((x>=2) | (y>=2) | (z>=2));
