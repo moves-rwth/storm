@@ -66,10 +66,6 @@ namespace storm {
                     return true;
                 }
 
-                virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const&, boost::any const&) override {
-                    return true;
-                }
-                
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const&, boost::any const&) override {
                     return true;
                 }
@@ -78,11 +74,6 @@ namespace storm {
                     return true;
                 }
 
-
-                virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const&, boost::any const&) override {
-                    return true;
-                }
-                
                 virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
                     for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
                         if (boost::any_cast<bool>(expression.getArgument(i)->accept(*this, data))) {

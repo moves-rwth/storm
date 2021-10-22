@@ -31,10 +31,8 @@ namespace storm {
             virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data);
-            virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data);
-            virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data);
 
         private:

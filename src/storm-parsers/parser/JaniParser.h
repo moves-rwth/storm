@@ -86,8 +86,6 @@ namespace storm {
             std::shared_ptr<storm::jani::Constant> parseConstant(storm::json<ValueType> const& constantStructure, Scope const& scope);
             storm::jani::FunctionDefinition parseFunctionDefinition(storm::json<ValueType> const& functionDefinitionStructure, Scope const& scope, bool firstPass, std::string const& parameterNamePrefix = "");
 
-            storm::expressions::ValueArrayExpression::ValueArrayElements parseAV(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables);
-
             /**
              * Helper for parsing the actions of a model.
              */
