@@ -128,6 +128,46 @@ namespace storm {
 
 #endif
 
+                /*!
+                 * Retrieves whether to calculate probabilities in chunks.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isChunksizeSet() const;
+
+                /*!
+                 * Retrieves the size of the chunks
+                 * to calculate proabilities with.
+                 *
+                 * @return The size of the chunks.
+                 */
+                size_t getChunksize() const;
+
+                /*!
+                 * Retrieves the Precision to
+                 * detect the convergence of the
+                 * mttf algorithm.
+                 *
+                 * @return The Precision.
+                 */
+                double getMttfPrecision() const;
+
+                /*!
+                 * Retrieves the Stepsize for the
+                 * mttf algorithm.
+                 *
+                 * @return The Stepsize.
+                 */
+                double getMttfStepsize() const;
+
+                /*!
+                 * Retrieves the name of the Algorithm
+                 * to use to approximate the MTTF.
+                 *
+                 * @return The Stepsize.
+                 */
+                std::string getMttfAlgorithm() const;
+
                 bool check() const override;
 
                 void finalize() override;
@@ -153,6 +193,10 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
                 static const std::string solveWithSmtOptionName;
 #endif
+                static const std::string chunksizeOptionName;
+                static const std::string mttfPrecisionName;
+                static const std::string mttfStepsizeName;
+                static const std::string mttfAlgorithmName;
 
             };
 

@@ -8,6 +8,7 @@
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include <initializer_list>
+#include <memory>
 
 namespace storm {
     namespace utility {
@@ -53,6 +54,26 @@ namespace storm {
 
             bool operator!=(RelevantEvents const& rhs) const {
                 return !(*this == rhs);
+            }
+
+            /*!
+             * Count the events that are relevant in the given DFT.
+             * @note Can be very slow. Uses a naiive O(n^2) implementation.
+             *
+             * @param dft The DFT to count on.
+             */
+            template <typename ValueType>
+            size_t count(std::shared_ptr<storm::storage::DFT<ValueType>> const dft) const {
+                if (this->allRelevant) {
+                    return dft->nrElements();
+                }
+                size_t rval{0};
+                for (auto const &name : names) {
+                    if (dft->existsName(name)) {
+                        rval++;
+                    }
+                }
+                return rval;
             }
 
             /*!
