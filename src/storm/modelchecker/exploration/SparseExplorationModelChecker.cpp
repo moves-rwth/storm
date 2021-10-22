@@ -550,7 +550,8 @@ namespace storm {
                 // Remap all contained states to the new row group.
                 StateType nextRowGroup = explorationInformation.getNextRowGroup();
                 for (auto const& stateAndChoices : mec) {
-                    explorationInformation.assignStateToRowGroup(stateAndChoices.first, nextRowGroup);
+                    StateType originalState = relevantStates[stateAndChoices.first];
+                    explorationInformation.assignStateToRowGroup(originalState, nextRowGroup);
                 }
                 
                 bounds.initializeBoundsForNextState();
