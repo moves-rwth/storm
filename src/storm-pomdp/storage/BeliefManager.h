@@ -93,7 +93,7 @@ namespace storm {
 
         private:
 
-            BeliefClipping clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, storm::storage::BitVector isInfinite);
+            BeliefClipping clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector& isInfinite);
 
             template<typename DistributionType>
             void adjustDistribution(DistributionType &distr);
