@@ -107,7 +107,6 @@ namespace storm {
                     if (expression.getType().isArrayType()) {
                         auto varIt = collectedRepl->find(expression.getVariable());
                         if (varIt != collectedRepl->end()) {
-                            auto const& otherRepl = varIt->second;
                             // We have to make sure that the sizes for the current replacements fit at least the number of other replacements
                             auto current = boost::any_cast<std::pair<Replacement*, std::vector<std::size_t>*>>(data);
                             varToVarAssignmentHelper(*current.first, varIt->second, *current.second);
@@ -143,7 +142,7 @@ namespace storm {
                 
                 void arrayExpressionHelper(storm::expressions::ArrayExpression const& expression, Replacement& curRepl, std::vector<size_t>& curIndices) {
                     STORM_LOG_ASSERT(!expression.size()->containsVariables(), "Did not expect variables in size expression.");
-                    auto expSize = expression.size()->evaluateAsInt();
+                    auto expSize = static_cast<uint64_t>(expression.size()->evaluateAsInt());
                     STORM_LOG_ASSERT(!curRepl.isVariable(), "Unexpected replacement type. Illegal array assignment?");
                     curRepl.grow(expSize);
                     curIndices.push_back(0);
@@ -190,6 +189,7 @@ namespace storm {
                         }
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to determine array size: Size of ConstructorArrayExpression '" << expression << "' still contains the " << variables << ".");
                     }
+                    return boost::any();
                 }
                 
                 void arrayVariableAccessHelper(std::vector<std::shared_ptr<storm::expressions::BaseExpression const>>& indexStack, Replacement& cur, Replacement const& other, std::vector<std::size_t>& curIndices) {
@@ -216,8 +216,8 @@ namespace storm {
                 void arrayAccessHelper(std::shared_ptr<storm::expressions::BaseExpression const> const& base, std::vector<std::shared_ptr<storm::expressions::BaseExpression const>>& indexStack, boost::any const& data) {
                     // We interpret the input as expression base[i_n][i_{n-1}]...[i_1] for (potentially empty) indexStack = [i_1, ..., i_n].
                     // This deals with *nested* array accesses
-                    auto baseAsArrayAccessExp = std::dynamic_pointer_cast<storm::expressions::ArrayAccessExpression>(base);
-                    auto baseAsArrayExp = std::dynamic_pointer_cast<storm::expressions::ArrayExpression>(base);
+                    auto baseAsArrayAccessExp = std::dynamic_pointer_cast<storm::expressions::ArrayAccessExpression const>(base);
+                    auto baseAsArrayExp = std::dynamic_pointer_cast<storm::expressions::ArrayExpression const>(base);
                     if (indexStack.empty()) {
                         base->accept(*this, data);
                     } else if (baseAsArrayAccessExp) {
@@ -235,7 +235,7 @@ namespace storm {
                             // only consider the accessed index
                             i = indexStack.back()->evaluateAsInt();
                             size = i + 1;
-                            STORM_LOG_THROW(baseAsArrayExp->size()->containsVariables() || i < baseAsArrayExp->size()->evaluateAsInt(), storm::exceptions::InvalidOperationException, "Array access " << base << "[" << i << "] out of bounds.");
+                            STORM_LOG_THROW(baseAsArrayExp->size()->containsVariables() || i < static_cast<uint64_t>(baseAsArrayExp->size()->evaluateAsInt()), storm::exceptions::InvalidOperationException, "Array access " << base << "[" << i << "] out of bounds.");
                         }
                         indexStack.pop_back();
                         for (; i < size; ++i) {
@@ -247,7 +247,6 @@ namespace storm {
                         STORM_LOG_ASSERT(base->asVariableExpression().getVariable().getType().isArrayType(), "Unexpected variable type in array access.");
                         auto varIt = collectedRepl->find(base->asVariableExpression().getVariable());
                         if (varIt != collectedRepl->end()) {
-                            auto const& otherRepl = varIt->second;
                             STORM_LOG_ASSERT(!varIt->second.isVariable(), "Unexpected replacement type. Invalid array assignment?");
                             auto current = boost::any_cast<std::pair<Replacement*, std::vector<std::size_t>*>>(data);
                             arrayVariableAccessHelper(indexStack, *current.first, varIt->second, *current.second);
@@ -337,7 +336,7 @@ namespace storm {
             class ArrayEliminatorDataCollector : public JaniTraverser {
             public:
                 
-                ArrayEliminatorDataCollector(Model& model) : model(model), exprVisitor(model), converged(false), currentAutomaton(nullptr) {}
+                ArrayEliminatorDataCollector(Model& model) : model(model), currentAutomaton(nullptr), exprVisitor(model), converged(false) {}
                 virtual ~ArrayEliminatorDataCollector() = default;
                 
                 ArrayEliminatorData get() {
@@ -382,7 +381,7 @@ namespace storm {
                     // *Only* traverse array variables.
                     // We do this to make the adding of new replacements (which adds new non-array variables to the model) a bit more safe.
                     // (Adding new elements to a container while iterating over it might be a bit dangerous, depending on the container)
-                    for (auto const& v : variableSet.getArrayVariables()) {
+                    for (auto& v : variableSet.getArrayVariables()) {
                         traverse(v, data);
                     }
                 }
@@ -400,7 +399,7 @@ namespace storm {
                             }
                             current.pop_back();
                         } else {
-                            auto i = indexExp.evaluateAsInt();
+                            auto i = static_cast<uint64_t>(indexExp.evaluateAsInt());
                             if (i < repl.size()) {
                                 current.push_back(i);
                                 gatherArrayAccessIndices(gatheredIndices, current, repl.at(i), indices);
@@ -422,12 +421,12 @@ namespace storm {
                         std::vector<std::vector<std::size_t>> gatheredIndices;
                         std::vector<std::size_t> tmp;
                         gatherArrayAccessIndices(gatheredIndices, tmp, result.replacements[var.getExpressionVariable()], assignment.getLValue().getArrayIndexVector());
-                        for (auto const& indices : gatheredIndices) {
+                        for (auto& indices : gatheredIndices) {
                             converged &= exprVisitor.get(assignment.getAssignedExpression(), var, arrayVarReplacements.at(indices), result.replacements, declaringAutomaton(var), &indices);
                         }
                     } else if (assignment.getLValue().isArray()) {
                         auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
-                        converged &= exprVisitor.get(assignment.getAssignedExpression(), var, result.replacements, declaringAutomaton(var));
+                        converged &= exprVisitor.get(assignment.getAssignedExpression(), var, result.replacements[var.getExpressionVariable()], result.replacements, declaringAutomaton(var));
                     }
                 }
                 
@@ -435,7 +434,7 @@ namespace storm {
                     STORM_LOG_ASSERT(variable.getType().isArrayType(), "Expected to only traverse over array variables.");
                     auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
                     if (variable.hasInitExpression()) {
-                        converged &= exprVisitor.get(variable.getInitExpression(), variable, result.replacements, declaringAutomaton(variable));
+                        converged &= exprVisitor.get(variable.getInitExpression(), variable,  result.replacements[variable.getExpressionVariable()], result.replacements, declaringAutomaton(variable));
                     }
                 }
                
@@ -462,15 +461,17 @@ namespace storm {
                         STORM_LOG_ASSERT(!isArrayOutOfBounds(), "Tried to get the result expression, but the expression is out-of-bounds");
                         return expression;
                     };
-                    bool isArrayOutOfBounds() { return expression == nullptr; };
+                    bool isArrayOutOfBounds() { return expression.get() == nullptr; };
                 private:
                     BaseExprPtr expression;
                 };
                 
                 typedef std::vector<storm::expressions::Expression> ArrayAccessIndices;
                 
-                std::vector<storm::expressions::Expression> const& getArrayAccessIndices(boost::any const& data) {
-                    auto indices = boost::any_cast<ArrayAccessIndices*>(data);
+                ArrayExpressionEliminationVisitor(ArrayEliminatorData const& data) : replacements(data.replacements) {}
+                
+                ArrayAccessIndices const& getArrayAccessIndices(boost::any const& data) {
+                    return *boost::any_cast<ArrayAccessIndices*>(data);
                 }
                 
                 storm::expressions::Expression eliminate(storm::expressions::Expression const& expression) {
@@ -604,7 +605,7 @@ namespace storm {
                             // The underlying assumption here is that indexExpr will never evaluate to an index where the access is out-of-bounds.
                             return result;
                         } else {
-                            auto index = indexExpr.evaluateAsInt();
+                            auto index = static_cast<uint64_t>(indexExpr.evaluateAsInt());
                             if (index < replacement.size()) {
                                 return varElimHelper(replacement.at(index), indices, pos-1);
                             } else {
@@ -792,7 +793,7 @@ namespace storm {
                     }
                 }
                 
-                void traverse(Constant& constant, boost::any const& data) {
+                void traverse(Constant& constant, boost::any const& data) override {
                     // There are no array constants in the JANI standard.
                     // Still, we might have some constant array expressions with (constant) array access here.
                     if (constant.isDefined()) {
@@ -826,7 +827,7 @@ namespace storm {
                     }
                 }
                 
-                void traverse(JaniType& type, boost::any const& data) {
+                void traverse(JaniType& type, boost::any const& data) override {
                     STORM_LOG_ASSERT(!type.isArrayType(), "did not expect any array variable declarations at this point.");
                     if (type.isBoundedType()) {
                         auto& boundedType = type.asBoundedType();
@@ -904,21 +905,6 @@ namespace storm {
                 
             private:
              
-                /*!
-                 * Converts the given array assignment to a set of array assignments with *full* array accesses
-                 * All array expressions in the rhs will be eliminated. For example:
-                 * * a:=[[1,2],[3]] will be a[0][0]:=1; a[0][1]:=2; a[1][0]:=3; a[1][1]:= getOutOfBoundsValue(a)
-                 * * a[i] := [4,5] will be a[i][0]:=4; a[i][1]:=5
-                 * * a[0][0]:=3 will be inserted as is
-                 *
-                 * @param assignment the considered assignment
-                 * @param replacements the replacements for the considered array variable (needed to determine array dimensions)
-                 * @param indicesRhsPairs The resulting pairs of indices and right-hand-sides will be inserted in this vector
-                 */
-                void convertToFullArrayAccesses(Assignment const& assignment, typename ArrayEliminatorData::Replacement const& replacements, std::vector<IndicesRhsPair>& indicesRhsPairs) {
-                
-                }
-             
                 template<class InsertionCallback>
                 void insertArrayAssignmentReplacements(std::vector<storm::expressions::Expression> const& aaIndices, uint64_t const& currDepth, typename ArrayEliminatorData::Replacement const& currReplacement, storm::expressions::Expression const& currRhs, storm::expressions::Expression const& currCondition, InsertionCallback const& insert) {
                     if (currDepth < aaIndices.size()) {
@@ -948,7 +934,7 @@ namespace storm {
                         if (eliminationRes.isArrayOutOfBounds()) {
                             // We have an out-of-bounds situation. This is expected if we have an incomplete array access
                             // For example, when we set a:=b where b is smaller than a
-                            STORM_LOG_THROW(currDepth > aaIndices.size(), storm::exceptions::InvalidOperationException, "Detected out of bounds array access in assignment to " << currReplacement.getVariable().getName() << ": " << eliminationRes.outOfBoundsMessage());
+                            STORM_LOG_THROW(currDepth > aaIndices.size(), storm::exceptions::InvalidOperationException, "Detected out of bounds array access in assignment to " << currReplacement.getVariable().getName() << ".");
                             insert(currReplacement.getVariable(), {}, currCondition);
                         } else {
                             insert(currReplacement.getVariable(), eliminationRes.expr(), currCondition);
@@ -1143,17 +1129,6 @@ namespace storm {
                 detail::ArrayVariableReplacer(elimData, keepNonTrivialArrayAccess).replace(model);
                 if (!keepNonTrivialArrayAccess) {
                     model.getModelFeatures().remove(ModelFeature::Arrays);
-                }
-                // TODO: hack
-                auto size = model.getConstants().size();
-                for (uint_fast64_t i = 0; i < size; ++i) {
-                    auto constant = model.getConstants().at(i);
-                    if (constant.isDefined() && containsArrayExpression(constant.getExpression())) {
-                        // We hope we don't need this one any longer however this could break everything :D Breaking things is fun :D
-                        model.removeConstant(constant.getName());
-                        i--;
-                        size--;
-                    }
                 }
                 model.finalize();
             }

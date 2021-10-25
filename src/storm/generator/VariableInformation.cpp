@@ -12,6 +12,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 #include <cmath>
 
@@ -151,49 +152,29 @@ namespace storm {
             // Find for each replaced array variable the corresponding references in this variable information
             for (auto const& arrayVariable : arrayEliminatorData.eliminatedArrayVariables) {
                 if (!arrayVariable->isTransient()) {
-                    STORM_LOG_ASSERT(arrayEliminatorData.replacements.count(arrayVariable->getExpressionVariable()) > 0, "No replacement for array variable.");
-                    auto const& replacements = arrayEliminatorData.replacements.find(arrayVariable->getExpressionVariable())->second;
-                    std::vector<uint64_t> varInfoIndices;
-                    for (auto const& replacedVar : replacements) {
-                        if (replacedVar->getExpressionVariable().hasIntegerType()) {
-                            uint64_t index = 0;
-                            for (auto const& intInfo : integerVariables) {
-                                if (intInfo.variable == replacedVar->getExpressionVariable()) {
-                                    varInfoIndices.push_back(index);
-                                    break;
-                                }
-                                ++index;
-                            }
-                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
-                        } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
-                            uint64_t index = 0;
-                            for (auto const& boolInfo : booleanVariables) {
-                                if (boolInfo.variable == replacedVar->getExpressionVariable()) {
-                                    varInfoIndices.push_back(index);
-                                    break;
-                                }
-                                ++index;
-                            }
-                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
-                        } else {
-                            STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
-                        }
+                    auto findRes = arrayEliminatorData.replacements.find(arrayVariable->getExpressionVariable());
+                    STORM_LOG_ASSERT(findRes != arrayEliminatorData.replacements.end(), "No replacement for array variable.");
+                    auto const& replacements = findRes->second;
+                    auto const& innerType = arrayVariable->getType().asArrayType().getBaseTypeRecursive();
+                    if (innerType.isBasicType() && innerType.asBasicType().isBooleanType()) {
+                        auto replInfo = convertArrayReplacement(replacements, booleanVariables);
+                        this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(replInfo));
+                    } else if ((innerType.isBasicType() && innerType.asBasicType().isIntegerType()) || (innerType.isBoundedType() && innerType.asBoundedType().isIntegerType())) {
+                        auto replInfo = convertArrayReplacement(replacements, integerVariables);
+                        this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(replInfo));
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
                     }
-                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(varInfoIndices));
                 }
             }
         }
 
-        BooleanVariableInformation const& VariableInformation::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
-            std::vector<uint64_t> const& boolInfoIndices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < boolInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << boolInfoIndices.size());
-            return booleanVariables[boolInfoIndices[arrayIndex]];
+        BooleanVariableInformation const& VariableInformation::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const {
+            return booleanVariables[arrayVariableToElementInformations.at(arrayVariable).getVariableInformationIndex(arrayIndexVector)];
         }
 
-        IntegerVariableInformation const& VariableInformation::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
-            std::vector<uint64_t> const& intInfoIndices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < intInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << intInfoIndices.size());
-            return integerVariables[intInfoIndices[arrayIndex]];
+        IntegerVariableInformation const& VariableInformation::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const {
+            return integerVariables[arrayVariableToElementInformations.at(arrayVariable).getVariableInformationIndex(arrayIndexVector)];
         }
 
         void VariableInformation::createVariablesForAutomaton(storm::jani::Automaton const& automaton, uint64_t reservedBitsForUnboundedVariables) {

@@ -381,7 +381,9 @@ namespace storm {
                     if (lValue.isArrayAccess()) {
                         FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
                         std::vector<storm::expressions::Expression> arrayIndex;
-                        arrayIndex.push_back(functionEliminationVisitor->eliminate(lValue.getArrayIndex()));
+                        for (auto const& indexExpr : lValue.getArrayIndexVector()) {
+                            arrayIndex.push_back(functionEliminationVisitor->eliminate(indexExpr));
+                        }
                         lValue.setArrayIndex(arrayIndex);
                     }
                 }

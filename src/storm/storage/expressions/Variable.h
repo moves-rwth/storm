@@ -7,7 +7,6 @@
 
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/macros.h"
-#include "storm/storage/expressions/BaseExpression.h"
 
 namespace storm {
     namespace expressions {
@@ -94,10 +93,7 @@ namespace storm {
              * @return The index of the variable.
              */
             uint_fast64_t getIndex() const;
-
-            void setArraySizes(std::vector<std::size_t>& sizes);
-            std::size_t getArraySize(uint_fast64_t number) const;
-
+            
             /*!
              * Retrieves the offset of the variable in the group of all equally typed variables.
              *
@@ -145,9 +141,7 @@ namespace storm {
             ExpressionManager const* manager;
             
             // The index of the variable.
-            std::size_t index;
-
-            std::vector<std::size_t> arraySizes;
+            uint_fast64_t index;
         };
     }
 }
@@ -156,7 +150,7 @@ namespace std {
     // Provide a hashing operator, so we can put variables in unordered collections.
     template <>
     struct hash<storm::expressions::Variable> {
-        std::uint_fast64_t operator()(storm::expressions::Variable const& variable) const {
+        std::size_t operator()(storm::expressions::Variable const& variable) const {
             return std::hash<uint_fast64_t>()(variable.getIndex());
         }
     };

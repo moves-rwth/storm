@@ -836,35 +836,15 @@ namespace storm {
             if (initvalcount == 1 && !variableStructure.at("initial-value").is_null()) {
                 initVal = parseExpression(variableStructure.at("initial-value"), scope.refine("Initial value for variable " + name));
                 //STORM_LOG_THROW((type.second == initVal->getType() || type.second.isRationalType() && initVal->getType().isIntegerType()), storm::exceptions::InvalidJaniException,"Type of initial value for variable " + name + "' (scope: " + scope.description + ") does not match the variable type '" + type.first->getStringRepresentation() + "'.");
-                auto ptrCon = dynamic_cast<storm::expressions::ConstructorArrayExpression const *>(&(initVal->getBaseExpression()));
-                if (ptrCon == nullptr) {
-                    auto ptrVal = dynamic_cast<storm::expressions::ValueArrayExpression const *>(&(initVal->getBaseExpression()));
-                    if (ptrVal != nullptr) {
-                        assert (sizeMap.find(name) == sizeMap.end());
-                        sizeMap[name] = ptrVal->getSizes();
-                    }
-                } else {
-                    if (sizeMap.find(name) == sizeMap.end()) {
-                        assert (sizeMap.find(ptrCon->getIndexVar(0)->getName()) != sizeMap.end());
-                        sizeMap[name] = sizeMap[ptrCon->getIndexVar(0)->getName()];
-                    }
-                }
             } else {
                 assert(!transientVar);
             }
             
-            if (type.first->isBasicType() && type.first->asBasicType().isBooleanType()) {
-                if (transientVar) {
-                    labels.insert(name);
-                }
+            if (transientVar && type.first->isBasicType() && type.first->asBasicType().isBooleanType()) {
+                labels.insert(name);
             }
             
             auto expressionVariable = expressionManager->declareVariable(exprManagerName, type.second);
-            if (type.first->isArrayType()) {
-                STORM_LOG_THROW(sizeMap.at(name).size() != 0, storm::exceptions::InvalidJaniException, "For nested arrays, we require initialisation");
-                expressionVariable.setArraySizes(sizeMap.at(name));
-                assert (sizeMap.at(name).size() == type.first->asArrayType().getNestingDegree());
-            }
             return storm::jani::Variable::makeVariable(name, *type.first, expressionVariable, initVal, transientVar);
         }
 
@@ -933,12 +913,7 @@ namespace storm {
                     var = globalVar->second;
                 }
                 
-                if (var->getType().isArrayType()) {
-                    STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
-                    return storm::jani::LValue(*var, sizeMap.at(ident));
-                } else {
-                    return storm::jani::LValue(*var);
-                }
+                return storm::jani::LValue(*var);
             } else if (lValueStructure.count("op") == 1) {
                 // structure will be something like "op": "aa", "exp": {}, "index": {}
                 // in exp we have something that is either a variable, or some other array access.

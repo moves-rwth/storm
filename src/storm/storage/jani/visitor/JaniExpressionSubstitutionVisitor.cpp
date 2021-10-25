@@ -66,6 +66,7 @@ namespace storm {
             }
         }
 
+        template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(FunctionCallExpression const& expression, boost::any const& data) {
             std::vector<std::shared_ptr<BaseExpression const>> newArguments;
             newArguments.reserve(expression.getNumberOfArguments());

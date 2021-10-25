@@ -52,68 +52,39 @@ namespace storm {
             // Find for each replaced array variable the corresponding references in this variable information
             for (auto const& arrayVariable : arrayEliminatorData.eliminatedArrayVariables) {
                 if (arrayVariable->isTransient()) {
-                    STORM_LOG_ASSERT(arrayEliminatorData.replacements.count(arrayVariable->getExpressionVariable()) > 0, "No replacement for array variable.");
-                    auto const& replacements = arrayEliminatorData.replacements.find(arrayVariable->getExpressionVariable())->second;
-                    std::vector<uint64_t> varInfoIndices;
-                    for (auto const& replacedVar : replacements) {
-                        if (replacedVar->getExpressionVariable().hasIntegerType()) {
-                            uint64_t index = 0;
-                            for (auto const& intInfo : integerVariableInformation) {
-                                if (intInfo.variable == replacedVar->getExpressionVariable()) {
-                                    varInfoIndices.push_back(index);
-                                    break;
-                                }
-                                ++index;
-                            }
-                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
-                        } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
-                            uint64_t index = 0;
-                            for (auto const& boolInfo : booleanVariableInformation) {
-                                if (boolInfo.variable == replacedVar->getExpressionVariable()) {
-                                    varInfoIndices.push_back(index);
-                                    break;
-                                }
-                                ++index;
-                            }
-                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
-                        } else if (replacedVar->getExpressionVariable().hasRationalType()) {
-                            uint64_t index = 0;
-                            for (auto const& rationalInfo : rationalVariableInformation) {
-                                if (rationalInfo.variable == replacedVar->getExpressionVariable()) {
-                                    varInfoIndices.push_back(index);
-                                    break;
-                                }
-                                ++index;
-                            }
-                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
-                        } else {
-                            STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
-                        }
+                    auto findRes = arrayEliminatorData.replacements.find(arrayVariable->getExpressionVariable());
+                    STORM_LOG_ASSERT(findRes != arrayEliminatorData.replacements.end(), "No replacement for array variable.");
+                    auto const& replacements = findRes->second;
+                    auto const& innerType = arrayVariable->getType().asArrayType().getBaseTypeRecursive();
+                    if (innerType.isBasicType() && innerType.asBasicType().isBooleanType()) {
+                        auto replInfo = convertArrayReplacement(replacements, booleanVariableInformation);
+                        this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(replInfo));
+                    } else if ((innerType.isBasicType() && innerType.asBasicType().isIntegerType()) || (innerType.isBoundedType() && innerType.asBoundedType().isIntegerType())) {
+                        auto replInfo = convertArrayReplacement(replacements, integerVariableInformation);
+                        this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(replInfo));
+                    } else if ((innerType.isBasicType() && innerType.asBasicType().isRealType()) || (innerType.isBoundedType() && innerType.asBoundedType().isRealType())) {
+                        auto replInfo = convertArrayReplacement(replacements, rationalVariableInformation);
+                        this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(replInfo));
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
                     }
-                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(varInfoIndices));
                 }
             }
         }
 
         template <typename ValueType>
-        TransientVariableData<bool> const& TransientVariableInformation<ValueType>::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
-            std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
-            return booleanVariableInformation[indices[arrayIndex]];
+        TransientVariableData<bool> const& TransientVariableInformation<ValueType>::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const {
+            return booleanVariableInformation[arrayVariableToElementInformations.at(arrayVariable).getVariableInformationIndex(arrayIndexVector)];
         }
 
         template <typename ValueType>
-        TransientVariableData<int64_t> const& TransientVariableInformation<ValueType>::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
-            std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
-            return integerVariableInformation[indices[arrayIndex]];
+        TransientVariableData<int64_t> const& TransientVariableInformation<ValueType>::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const {
+            return integerVariableInformation[arrayVariableToElementInformations.at(arrayVariable).getVariableInformationIndex(arrayIndexVector)];
         }
-
+        
         template <typename ValueType>
-        TransientVariableData<ValueType> const& TransientVariableInformation<ValueType>::getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
-            std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
-            return rationalVariableInformation[indices[arrayIndex]];
+        TransientVariableData<ValueType> const& TransientVariableInformation<ValueType>::getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const {
+            return rationalVariableInformation[arrayVariableToElementInformations.at(arrayVariable).getVariableInformationIndex(arrayIndexVector)];
         }
 
         template <typename ValueType>

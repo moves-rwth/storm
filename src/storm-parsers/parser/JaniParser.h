@@ -112,11 +112,8 @@ namespace storm {
              */
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
             
-
             std::set<std::string> labels = {};
-
-            std::map<std::string, std::vector<std::size_t>> sizeMap;
-
+            
             bool allowRecursion = true;
 
             //////////
