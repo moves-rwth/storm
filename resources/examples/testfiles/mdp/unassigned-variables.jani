@@ -163,7 +163,6 @@
             "name": "second",
             "variables": [
                 {
-                    "initial-value": 0,
                     "name": "y",
                     "type": {
                         "base": "int",
@@ -173,6 +172,7 @@
                     }
                 },
                 {
+                    "initial-value": 0,
                     "name": "c",
                     "type": "int"
                 }
