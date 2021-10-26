@@ -30,15 +30,16 @@ namespace storm {
                 typedef typename ArrayEliminatorData::Replacement Replacement;
                 typedef std::unordered_map<storm::expressions::Variable, Replacement> ReplMap;
                 
-                ArrayReplacementsCollectorExpressionVisitor( Model& model) : model(model), converged(false) {};
+                ArrayReplacementsCollectorExpressionVisitor( Model& model) : model(model), converged(false), declaringAutomaton(nullptr) {};
                 virtual ~ArrayReplacementsCollectorExpressionVisitor() = default;
 
                 /*!
                  * Adds necessary replacements for the given array variable, assuming that the given expression is assigned to the array variable.
                  * @returns true iff no replacement had to be added
                  */
-                bool get(storm::expressions::Expression const& expression, storm::jani::Variable const& arrayVariable, Replacement& currentReplacement, ReplMap const& allCollectedReplacements, Automaton const* declaringAutomaton = nullptr, std::vector<std::size_t>* arrayAccessIndices = nullptr) {
+                bool get(storm::expressions::Expression const& expression, storm::jani::Variable const& arrayVariable, Replacement& currentReplacement, ReplMap const& allCollectedReplacements, Automaton* declaringAutomaton = nullptr, std::vector<std::size_t>* arrayAccessIndices = nullptr) {
                     currentVar = &arrayVariable;
+                    this->declaringAutomaton = declaringAutomaton;
                     STORM_LOG_ASSERT(currentVar->getType().isArrayType(), "expected array variable");
                     STORM_LOG_ASSERT((declaringAutomaton == nullptr && model.hasGlobalVariable(currentVar->getName()) || declaringAutomaton != nullptr && declaringAutomaton->hasVariable(currentVar->getName())), "Cannot find variable declaration.");
                     collectedRepl = &allCollectedReplacements;
@@ -154,7 +155,7 @@ namespace storm {
                             subexpr->accept(*this, std::make_pair(&curRepl.at(i), &curIndices));
                         } else {
                             if (!curRepl.at(i).isVariable()) {
-                                STORM_LOG_ASSERT(curRepl.size() == 0, "Unexpected replacement type. Illegal array assignment?");
+                                STORM_LOG_ASSERT(curRepl.at(i).size() == 0, "Unexpected replacement type. Illegal array assignment?");
                                 curRepl.at(i) = Replacement(addReplacementVariable(curIndices));
                             }
                         }
@@ -342,8 +343,8 @@ namespace storm {
                 ArrayEliminatorData get() {
                     // To correctly determine the array sizes, we repeat the steps until convergence. This is to cover assignments of one array variable to another (A := B)
                     ArrayEliminatorData result;
-                    converged = true;
                     do {
+                        converged = true;
                         traverse(model, &result);
                     } while (!converged);
                     
@@ -369,7 +370,7 @@ namespace storm {
                     result.eliminatedArrayVariables.insert(result.eliminatedArrayVariables.end(), elVars.begin(), elVars.end());
                 }
                 
-                Automaton const* declaringAutomaton(Variable const& var) const {
+                Automaton* declaringAutomaton(Variable const& var) const {
                     if (currentAutomaton && currentAutomaton->getVariables().hasVariable(var)) {
                         return currentAutomaton;
                     }
@@ -412,21 +413,25 @@ namespace storm {
                 }
                 
                 virtual void traverse(Assignment& assignment, boost::any const& data) override {
-                    auto const& var = assignment.getLValue().getVariable();
-                    if (assignment.getLValue().isArrayAccess() && !assignment.getLValue().isFullArrayAccess()) {
-                        auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
-                        auto& arrayVarReplacements = result.replacements[var.getExpressionVariable()]; // creates if it does not yet exist
-
-                        // If the indices are not constant expressions, we run through every possible combination of indices
-                        std::vector<std::vector<std::size_t>> gatheredIndices;
-                        std::vector<std::size_t> tmp;
-                        gatherArrayAccessIndices(gatheredIndices, tmp, result.replacements[var.getExpressionVariable()], assignment.getLValue().getArrayIndexVector());
-                        for (auto& indices : gatheredIndices) {
-                            converged &= exprVisitor.get(assignment.getAssignedExpression(), var, arrayVarReplacements.at(indices), result.replacements, declaringAutomaton(var), &indices);
+                    if (assignment.getLValue().isArray()) {
+                        auto const& var = assignment.getLValue().getVariable();
+                        if (!assignment.getLValue().isArrayAccess()) {
+                            // Variable assignment
+                            auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
+                            converged &= exprVisitor.get(assignment.getAssignedExpression(), var, result.replacements[var.getExpressionVariable()], result.replacements, declaringAutomaton(var));
+                        } else if (!assignment.getLValue().isFullArrayAccess()) {
+                            // Incomplete array assignment
+                            auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
+                            auto& arrayVarReplacements = result.replacements[var.getExpressionVariable()]; // creates if it does not yet exist
+    
+                            // If the indices are not constant expressions, we run through every possible combination of indices
+                            std::vector<std::vector<std::size_t>> gatheredIndices;
+                            std::vector<std::size_t> tmp;
+                            gatherArrayAccessIndices(gatheredIndices, tmp, result.replacements[var.getExpressionVariable()], assignment.getLValue().getArrayIndexVector());
+                            for (auto& indices : gatheredIndices) {
+                                converged &= exprVisitor.get(assignment.getAssignedExpression(), var, arrayVarReplacements.at(indices), result.replacements, declaringAutomaton(var), &indices);
+                            }
                         }
-                    } else if (assignment.getLValue().isArray()) {
-                        auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
-                        converged &= exprVisitor.get(assignment.getAssignedExpression(), var, result.replacements[var.getExpressionVariable()], result.replacements, declaringAutomaton(var));
                     }
                 }
                 
@@ -440,7 +445,7 @@ namespace storm {
                
                private:
                 Model& model;
-                Automaton const* currentAutomaton;
+                Automaton* currentAutomaton;
                 ArrayReplacementsCollectorExpressionVisitor exprVisitor;
                 bool converged;
             };
