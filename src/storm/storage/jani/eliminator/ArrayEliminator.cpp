@@ -272,7 +272,7 @@ namespace storm {
                 
                 storm::jani::Variable const& addReplacementVariable(std::vector<std::size_t> const& indices) {
                     auto& manager = model.getExpressionManager();
-                    std::string name = currentVar->getName();
+                    std::string name = currentVar->getExpressionVariable().getName();
                     for (auto const& i : indices) {
                         name += "_at_" + std::to_string(i);
                     }
@@ -345,18 +345,18 @@ namespace storm {
                     ArrayEliminatorData result;
                     do {
                         converged = true;
-                        traverse(model, &result);
+                        JaniTraverser::traverse(model, &result);
                     } while (!converged);
                     
-                    return result;
-                }
-                
-                virtual void traverse(Model& model, boost::any const& data) override {
-                    JaniTraverser::traverse(model, data);
-                    // drop all occuring array variables
+                    // drop all occurring array variables
                     auto elVars = model.getGlobalVariables().dropAllArrayVariables();
-                    auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
                     result.eliminatedArrayVariables.insert(result.eliminatedArrayVariables.end(), elVars.begin(), elVars.end());
+                    for (auto& automaton : model.getAutomata()) {
+                        elVars = automaton.getVariables().dropAllArrayVariables();
+                        result.eliminatedArrayVariables.insert(result.eliminatedArrayVariables.end(), elVars.begin(), elVars.end());
+                    }
+                    
+                    return result;
                 }
                 
                 virtual void traverse(Automaton& automaton, boost::any const& data) override {
@@ -364,10 +364,7 @@ namespace storm {
                     JaniTraverser::traverse(automaton, data);
                     currentAutomaton = nullptr;
                     
-                    // drop all occuring array variables
-                    auto elVars = automaton.getVariables().dropAllArrayVariables();
-                    auto& result = *boost::any_cast<ArrayEliminatorData*>(data);
-                    result.eliminatedArrayVariables.insert(result.eliminatedArrayVariables.end(), elVars.begin(), elVars.end());
+
                 }
                 
                 Automaton* declaringAutomaton(Variable const& var) const {
@@ -476,6 +473,7 @@ namespace storm {
                 ArrayExpressionEliminationVisitor(ArrayEliminatorData const& data) : replacements(data.replacements) {}
                 
                 ArrayAccessIndices const& getArrayAccessIndices(boost::any const& data) {
+                    STORM_LOG_ASSERT(!data.empty(), "tried to convert data but it is empty.");
                     return *boost::any_cast<ArrayAccessIndices*>(data);
                 }
                 
@@ -494,6 +492,7 @@ namespace storm {
                         STORM_LOG_ASSERT(!containsArrayExpression(res.expr()->toExpression()), "Expression still contains array expressions. Before: " << std::endl << expression << std::endl << "After:" << std::endl << res.expr()->toExpression());
                         res.expr() = res.expr()->simplify();
                     }
+
                     return res;
                 }
 
@@ -735,7 +734,7 @@ namespace storm {
                 
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
                     // Eliminate arrays in the index expression e.g. for a[b[i]]
-                    std::vector<uint64_t> aaIndicesInIndexExpr;
+                    ArrayAccessIndices aaIndicesInIndexExpr;
                     auto indexExprResult = boost::any_cast<ResultType>(expression.getSecondOperand()->accept(*this, &aaIndicesInIndexExpr));
                     if (indexExprResult.isArrayOutOfBounds()) {
                         return indexExprResult;
@@ -877,7 +876,7 @@ namespace storm {
                         
                         auto processCollectedAssignments = [&]() {
                             for (auto& arrayAssignments : collectedArrayAssignments) {
-                                    convertToNonArrayAssignments(arrayAssignments.second, level, elimData.replacements.at(arrayAssignments.first), newAssignments);
+                                    handleArrayAssignments(arrayAssignments.second, level, elimData.replacements.at(arrayAssignments.first), newAssignments);
                             }
                             collectedArrayAssignments.clear();
                         };
@@ -914,7 +913,7 @@ namespace storm {
                 void insertArrayAssignmentReplacements(std::vector<storm::expressions::Expression> const& aaIndices, uint64_t const& currDepth, typename ArrayEliminatorData::Replacement const& currReplacement, storm::expressions::Expression const& currRhs, storm::expressions::Expression const& currCondition, InsertionCallback const& insert) {
                     if (currDepth < aaIndices.size()) {
                         STORM_LOG_ASSERT(!currReplacement.isVariable(), "Did not expect a variable replacement at this depth.");
-                        auto const& currIndexExpr = aaIndices[currDepth];
+                        auto currIndexExpr = arrayExprEliminator.eliminate(aaIndices[currDepth]);
                         if (currIndexExpr.containsVariables()) {
                             for (uint64_t index = 0; index < currReplacement.size(); ++index) {
                                 auto indexExpr = currIndexExpr.getManager().integer(index);
@@ -960,18 +959,25 @@ namespace storm {
                  * @param newAssignments container in which the newly created assignments are inserted.
                  */
                 void handleArrayAssignments(std::vector<Assignment const*> const& arrayAssignments, int64_t level, typename ArrayEliminatorData::Replacement const& replacements, std::vector<Assignment>& newAssignments) {
-                    // We keep the assignments as they are if we are requested to do so, if all array accesses are full, and if at least one index is not constant
+                    // We keep array access assignments if we are requested to do so, if all array accesses are full, and if at least one index is not constant
                     if (keepNonTrivialArrayAccess &&
                         std::all_of(arrayAssignments.begin(), arrayAssignments.end(), [](Assignment const* a) { return a->getLValue().isFullArrayAccess(); }) &&
                         std::any_of(arrayAssignments.begin(), arrayAssignments.end(), [](Assignment const* a) { return a->getLValue().arrayIndexContainsVariable();})) {
                         for (auto aa : arrayAssignments) {
-                            newAssignments.emplace_back(aa->getLValue(), arrayExprEliminator.eliminate(aa->getAssignedExpression()), level);
+                            // Eliminate array expressions in array access indices and the assigned expression
+                            auto const& lValue = aa->getLValue();
+                            STORM_LOG_ASSERT(lValue.isFullArrayAccess(), "unexpected type of lValue");
+                            std::vector<storm::expressions::Expression> newAaIndices;
+                            newAaIndices.reserve(lValue.getArrayIndexVector().size());
+                            for (auto const& i : lValue.getArrayIndexVector()) {
+                                newAaIndices.push_back(arrayExprEliminator.eliminate(i));
+                            }
+                            newAssignments.emplace_back(storm::jani::LValue(lValue.getVariable(), newAaIndices), arrayExprEliminator.eliminate(aa->getAssignedExpression()), level);
                         }
                     } else {
                         convertToNonArrayAssignments(arrayAssignments, level, replacements, newAssignments);
                     }
                 }
-                
                 
                 /*!
                  * Converts the given array variable or array access assignments to non-array assignments.
@@ -981,9 +987,9 @@ namespace storm {
                  * @param newAssignments container in which the newly created assignments are inserted.
                  */
                 void convertToNonArrayAssignments(std::vector<Assignment const*> const& arrayAssignments, int64_t level, typename ArrayEliminatorData::Replacement const& replacements, std::vector<Assignment>& newAssignments) {
-                    
                     std::map<storm::expressions::Variable, Assignment> collectedAssignments;
                     auto insert = [&] (storm::jani::Variable const& var, storm::expressions::Expression const& newRhs, storm::expressions::Expression const& condition) {
+                        STORM_LOG_ASSERT(!condition.isInitialized() || !storm::jani::containsArrayExpression(condition), "condition " << condition << " still contains array expressions.");
                         auto rhs = newRhs.isInitialized() ? newRhs : getOutOfBoundsValue(var);
                         auto findIt = collectedAssignments.find(var.getExpressionVariable());
                         if (findIt == collectedAssignments.end()) {
@@ -1116,7 +1122,6 @@ namespace storm {
             }
         }
 
-        
         storm::expressions::Expression ArrayEliminatorData::transformExpression(storm::expressions::Expression const& arrayExpression) const {
             detail::ArrayExpressionEliminationVisitor eliminator(*this);
             return eliminator.eliminate(arrayExpression);
@@ -1127,7 +1132,6 @@ namespace storm {
         }
         
         ArrayEliminatorData ArrayEliminator::eliminate(Model& model, bool keepNonTrivialArrayAccess) {
-            ArrayEliminatorData result;
             // Only perform actions if there actually are arrays.
             if (model.getModelFeatures().hasArrays()) {
                 auto elimData = detail::ArrayEliminatorDataCollector(model).get();
@@ -1136,9 +1140,11 @@ namespace storm {
                     model.getModelFeatures().remove(ModelFeature::Arrays);
                 }
                 model.finalize();
+                STORM_LOG_ASSERT(keepNonTrivialArrayAccess || !containsArrayExpression(model), "the model still contains array expressions.");
+                return elimData;
             }
-            STORM_LOG_ASSERT(!containsArrayExpression(model), "the model still contains array expressions.");
-            return result;
+            STORM_LOG_ASSERT(!containsArrayExpression(model), "the model contains array expressions although the array feature is not enabled.");
+            return {};
         }
     }
 }
