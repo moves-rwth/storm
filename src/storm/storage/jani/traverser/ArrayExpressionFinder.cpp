@@ -92,9 +92,6 @@ namespace storm {
                 
                 virtual void traverse(storm::expressions::Expression const& expression, boost::any const& data) override {
                     auto& res = *boost::any_cast<bool*>(data);
-                    if (containsArrayExpression(expression)) {
-                        std::cout << "Expression: " << expression << " contains arrays" << std::endl;
-                    }
                     res = res || containsArrayExpression(expression);
                 }
             };
