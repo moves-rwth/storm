@@ -651,7 +651,7 @@ namespace storm {
                     }
                 }
             } else {
-                std::cout << "Could not remove constant: " << name << std::endl;
+                STORM_LOG_ERROR("Could not remove constant: " << name << ".");
             }
 
         }
