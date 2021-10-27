@@ -18,7 +18,7 @@ namespace storm {
         }
 
         bool LValue::isVariable() const {
-            return !isArray();
+            return arrayIndexVector.empty();
         }
 
         bool LValue::isArray() const {
@@ -30,7 +30,7 @@ namespace storm {
         }
         
         bool LValue::isArrayAccess() const {
-            return !arrayIndexVector.empty();
+            return !isVariable();
         }
 
         bool LValue::isFullArrayAccess() const {
@@ -49,7 +49,7 @@ namespace storm {
 
         bool LValue::arrayIndexContainsVariable() const {
             STORM_LOG_ASSERT(isArray(), "Tried to check for variables in the array index of an LValue that does not refer to an array.");
-            for (auto & expr : arrayIndexVector) {
+            for (auto const& expr : arrayIndexVector) {
                 if (expr.containsVariables()) {
                     return true;
                 }
@@ -58,7 +58,7 @@ namespace storm {
         }
         
         void LValue::setArrayIndex(std::vector<storm::expressions::Expression> const& newIndex) {
-            STORM_LOG_ASSERT(isArray(), "Tried to set the array index of an LValue thatdoes not refer to an array.");
+            STORM_LOG_ASSERT(isArray(), "Tried to set the array index of an LValue that does not refer to an array.");
             arrayIndexVector = newIndex;
         }
         
@@ -76,7 +76,7 @@ namespace storm {
             if (it == remapping.end()) {
                 return *this;
             } else {
-                if (isArray()) {
+                if (isArrayAccess()) {
                     return LValue(it->second, arrayIndexVector);
                 } else {
                     return LValue(it->second);
@@ -87,8 +87,8 @@ namespace storm {
         std::string LValue::getName() const {
             std::string result = getVariable().getName();;
             if (isArrayAccess()) {
-                for (uint_fast64_t i = 0; i < getArrayIndexVector().size(); ++i) {
-                    result += "[" + getArrayIndexVector().at(i).toString() + "]";
+                for (auto const& i : arrayIndexVector) {
+                    result += "[" + i.toString() + "]";
                 }
             }
             return result;
@@ -98,69 +98,46 @@ namespace storm {
             if (isVariable()) {
                 return !other.isVariable() || variable->getExpressionVariable() < other.getVariable().getExpressionVariable();
             } else {
-            STORM_LOG_ASSERT(isArray(), "Unhandled LValue.");
+                STORM_LOG_ASSERT(isArrayAccess(), "Unhandled LValue.");
                 if (other.isVariable()) {
                     return false;
                 }
-                STORM_LOG_ASSERT(other.isArray(), "Unhandled LValue.");
+                STORM_LOG_ASSERT(other.isArrayAccess(), "Unhandled LValue.");
                 if (getVariable().getExpressionVariable() < other.getVariable().getExpressionVariable()) {
                     return true;
                 } else if (other.getVariable().getExpressionVariable() < getVariable().getExpressionVariable()) {
                     return false;
                 } else {
-                    if (arrayIndexVector.size() < other.getArrayIndexVector().size()) {
-                        return true;
-                    } else if (arrayIndexVector.size() > other.getArrayIndexVector().size()) {
-                        return false;
-                    } else {
-                        bool less = false;
-                        uint_fast64_t i = 0;
-                        while (!less && i < arrayIndexVector.size()) {
-                            less = std::less<storm::expressions::Expression>()(arrayIndexVector.at(i), other.getArrayIndexVector().at(i));
-                            if (!less && std::less<storm::expressions::Expression>()(other.getArrayIndexVector().at(i), arrayIndexVector.at(i))) {
-                                break;
-                            }
-                            ++i;
-                        }
-                        return less;
-                    }
+                    std::lexicographical_compare(arrayIndexVector.begin(), arrayIndexVector.end(), other.getArrayIndexVector().begin(), other.getArrayIndexVector().end(), std::less<storm::expressions::Expression>());
                 }
             }
         }
         
         bool LValue::operator==(LValue const& other) const {
-            if (isVariable()) {
-                return other.isVariable() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable();
-            } else {
-                STORM_LOG_ASSERT(isArray(), "Unhandled LValue.");
-                bool equal = other.isArray() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable();
-                if (isArrayAccess() && other.isArrayAccess()) {
-                    // Either for both there are array access indices available
-                    equal &= getArrayIndexVector().size() == other.getArrayIndexVector().size();
-                    uint_fast64_t i = 0;
-                    storm::expressions::JaniSyntacticalEqualityCheckVisitor checker;
-                    while (equal && i < arrayIndexVector.size()) {
-                        equal &= (checker.isSyntacticallyEqual(getArrayIndexVector().at(i), other.getArrayIndexVector().at(i)));
-                        ++i;
+            if (getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable()) {
+                if (isArrayAccess()) {
+                    if (other.isArrayAccess() && arrayIndexVector.size() == other.getArrayIndexVector().size()) {
+                        storm::expressions::JaniSyntacticalEqualityCheckVisitor checker;
+                        for (uint64_t i = 0; i < arrayIndexVector.size(); ++i) {
+                            if (!checker.isSyntacticallyEqual(arrayIndexVector[i], other.getArrayIndexVector()[i])) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    } else {
+                        return false;
                     }
                 } else {
-                    // Or they both don't have any index
-                    equal &= !isArrayAccess() && !other.isArrayAccess();
+                    STORM_LOG_ASSERT(isVariable(), "Unhandled kind of LValue");
+                    return other.isVariable();
                 }
-                return equal;
+            } else {
+                return false;
             }
         }
         
         std::ostream& operator<<(std::ostream& stream, LValue const& lValue) {
-            stream << lValue.getVariable().getName();
-
-            if (lValue.isArray()) {
-                if (lValue.isArrayAccess()) {
-                    for (uint_fast64_t i = 0; i < lValue.getArrayIndexVector().size(); ++i) {
-                        stream << "[" << lValue.getArrayIndexVector().at(i) << "]";
-                    }
-                }
-            }
+            stream << lValue.getName();
             return stream;
         }
 

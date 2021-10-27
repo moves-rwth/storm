@@ -39,10 +39,6 @@ namespace storm  {
             return lValue;
         }
 
-        std::string Assignment::getName() const {
-            return lValue.getName();
-        }
-
         storm::jani::Variable const& Assignment::getVariable() const {
             return lValue.getVariable();
         }
