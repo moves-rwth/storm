@@ -40,7 +40,6 @@ namespace storm {
                 assert(janiVar != nullptr);
                 assert(vars.count(place.getID()) == 0);
                 vars[place.getID()] = &model->addVariable(*janiVar);
-                janiVar.reset();
             }
         }
 
