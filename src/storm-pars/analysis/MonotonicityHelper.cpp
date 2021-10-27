@@ -309,7 +309,7 @@ namespace storm {
                     // Calculate difference with result for previous valuation
                     assert (initial >= 0 - precision && initial <= 1 + precision);
                     ConstantType diff = previous - initial;
-                    assert (previous == -1 || diff >= -1 - precision && diff <= 1 + precision);
+                    assert (previous == -1 || (diff >= -1 - precision && diff <= 1 + precision));
 
                     if (previous != -1 && (diff > precision || diff < -precision)) {
                         monDecr &= diff > precision; // then previous value is larger than the current value from the initial states

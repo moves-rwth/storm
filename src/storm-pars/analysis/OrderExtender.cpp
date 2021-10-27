@@ -239,9 +239,9 @@ namespace storm {
                         auto state = *itr;
                         auto &successors = stateMap[state];
                         bool all = true;
-                        for (auto i = 0; i < successors.size(); ++i) {
+                        for (uint_fast64_t i = 0; i < successors.size(); ++i) {
                             auto state1 = successors[i];
-                            for (auto j = i + 1; j < successors.size(); ++j) {
+                            for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
                                 auto state2 = successors[j];
                                 if (min[state1] > max[state2]) {
                                     if (!order->contains(state1)) {
@@ -344,7 +344,7 @@ namespace storm {
                      assert (order->compare(result.first, result.second) == Order::UNKNOWN);
                      assert (order->compare(result.second, result.first) == Order::UNKNOWN);
                     // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
-                    if (currentStateMode.second && extendByAssumption(order, currentState, result.first, result.second)) {
+                    if (currentStateMode.second && extendByAssumption(order, result.first, result.second)) {
                         continue;
                     }
                     // We couldn't extend the order
@@ -554,7 +554,6 @@ namespace storm {
 
                 if (statesSorted[0] == currentState) {
                     order->addRelation(s1, statesSorted[0], allowMerge);
-                    auto res = order->compare(s1, statesSorted[0]);
                     assert ((order->compare(s1, statesSorted[0]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
                     order->addRelation(s1, statesSorted[statesSorted.size() - 1], allowMerge);
                     assert ((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
@@ -590,10 +589,10 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        bool OrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
+        bool OrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
             bool usePLANow = usePLA.find(order) != usePLA.end() && usePLA[order];
-            assert (order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
-            auto assumptions = usePLANow ? assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, minValues[order], maxValues[order]) : assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
+            assert (order->compare(state1, state2) == Order::UNKNOWN);
+            auto assumptions = usePLANow ? assumptionMaker->createAndCheckAssumptions(state1, state2, order, region, minValues[order], maxValues[order]) : assumptionMaker->createAndCheckAssumptions(state1, state2, order, region);
             if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
                 handleAssumption(order, assumptions.begin()->first);
                 // Assumptions worked, we continue
