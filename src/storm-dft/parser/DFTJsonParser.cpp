@@ -73,7 +73,7 @@ namespace storm {
                 std::string name = generateUniqueName(data.at("name"));
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
-                    for (std::string const& child : data.at("children")) {
+                    for (auto const &child : data.at("children")) {
                         STORM_LOG_THROW(nameMapping.find(child) != nameMapping.end(), storm::exceptions::WrongFormatException, "Child '" << child << "' was not defined.");
                         childNames.push_back(nameMapping.at(child));
                     }

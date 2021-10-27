@@ -211,7 +211,7 @@ void DFTModularizer::replaceDynamicModules(
         } else {
             auto const parent{std::static_pointer_cast<
                 storm::storage::DFTChildren<ValueType> const>(element)};
-            for (auto const child : parent->children()) {
+            for (auto const &child : parent->children()) {
                 replaceDynamicModules(child, timepoints);
             }
         }
