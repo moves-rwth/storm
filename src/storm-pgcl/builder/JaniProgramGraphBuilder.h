@@ -42,9 +42,7 @@ namespace storm {
             }
             
             virtual ~JaniProgramGraphBuilder() {
-                for (auto& var : variables ) {
-                    var.second.reset();
-                }
+                // intentionally left empty
             }
             
         
