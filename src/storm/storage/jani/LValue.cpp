@@ -108,7 +108,7 @@ namespace storm {
                 } else if (other.getVariable().getExpressionVariable() < getVariable().getExpressionVariable()) {
                     return false;
                 } else {
-                    std::lexicographical_compare(arrayIndexVector.begin(), arrayIndexVector.end(), other.getArrayIndexVector().begin(), other.getArrayIndexVector().end(), std::less<storm::expressions::Expression>());
+                    return std::lexicographical_compare(arrayIndexVector.begin(), arrayIndexVector.end(), other.getArrayIndexVector().begin(), other.getArrayIndexVector().end(), std::less<storm::expressions::Expression>());
                 }
             }
         }
