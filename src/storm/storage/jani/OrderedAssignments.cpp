@@ -131,14 +131,14 @@ namespace storm {
                 std::vector<Assignment> newAssignments;
                 for (uint64_t i = 0; i < allAssignments.size(); ++i) {
                     auto const& iLValue = allAssignments.at(i)->getLValue();
-                    if (synchronous && !localVars.hasVariable(iLValue.isVariable() ? iLValue.getVariable() : iLValue.getVariable())) {
+                    if (synchronous && !localVars.hasVariable(iLValue.getVariable())) {
                         newAssignments.push_back(*(allAssignments.at(i)));
                         continue;
                     }
                     bool readBeforeWrite = true;
                     for (uint64_t j = i + 1; j < allAssignments.size(); ++j) {
                         if (allAssignments.at(j)->getAssignedExpression().containsVariable(
-                                {iLValue.isVariable() ? iLValue.getVariable().getExpressionVariable() : iLValue.getVariable().getExpressionVariable()})) {
+                                {iLValue.getVariable().getExpressionVariable()})) {
                             // is read.
                             break;
                         }
@@ -164,10 +164,7 @@ namespace storm {
             std::vector<Assignment> newAssignments;
             for (auto const& assignment : allAssignments) {
                 newAssignments.push_back(*assignment);
-                if (assignment->isTransient() && !assignment->getAssignedExpression().containsVariables()) {
-                    // Since we do not support
-                }
-                if (synchronous && !localVars.hasVariable(assignment->getLValue().isVariable() ? assignment->getLValue().getVariable() : assignment->getLValue().getVariable())) {
+                if (synchronous && !localVars.hasVariable(assignment->getLValue().getVariable())) {
                     continue;
                 }
                 if (assignment->getLevel() == 0) {
