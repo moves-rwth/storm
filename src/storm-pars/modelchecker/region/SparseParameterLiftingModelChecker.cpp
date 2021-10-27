@@ -328,7 +328,7 @@ namespace storm {
                             if (useMonotonicity) {
                                 // Continue extending order/monotonicity result
                                 bool changedOrder = false;
-                                if (!order->getDoneBuilding() && orderExtender->isHope(order, currRegion)) {
+                                if (!order->getDoneBuilding() && orderExtender->isHope(order)) {
                                     if (numberOfCopiesOrder[order] != 1) {
                                         numberOfCopiesOrder[order]--;
                                         order = copyOrder(order);

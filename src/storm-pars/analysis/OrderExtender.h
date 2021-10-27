@@ -78,7 +78,7 @@ namespace storm {
             void initializeMinMaxValues(storage::ParameterRegion<ValueType> region);
             void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
-            bool isHope(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>);
+            bool isHope(std::shared_ptr<Order> order);
 
             MonotonicityChecker<ValueType>& getMonotoncityChecker();
             std::vector<std::set<VariableType>> const& getVariablesOccuringAtState();

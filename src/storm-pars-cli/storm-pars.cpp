@@ -365,7 +365,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr, storm::utility::parametric::Valuation<ValueType> const* valuation = nullptr) {
+        void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const &result, utility::Stopwatch *watch = nullptr, const utility::parametric::Valuation <ValueType> *valuation = nullptr) {
             if (result) {
                 STORM_PRINT_AND_LOG("Result (initial states)");
                 if (valuation) {
@@ -420,7 +420,7 @@ namespace storm {
                 storm::utility::Stopwatch watch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result = verificationCallback(property.getRawFormula());
                 watch.stop();
-                printInitialStatesResult<ValueType>(result, property, &watch);
+                printInitialStatesResult<ValueType>(result, &watch);
                 postprocessingCallback(result);
             }
         }
@@ -469,7 +469,7 @@ namespace storm {
                         if (result) {
                             result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model.getInitialStates()));
                         }
-                        printInitialStatesResult<ValueType>(result, property, &valuationWatch, &valuation);
+                        printInitialStatesResult<ValueType>(result, &valuationWatch, &valuation);
 
                         for (uint64_t i = 0; i < parameters.size(); ++i) {
                             ++iterators[i];
