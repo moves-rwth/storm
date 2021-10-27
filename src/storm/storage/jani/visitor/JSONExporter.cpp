@@ -936,37 +936,35 @@ namespace storm {
             return functionDeclarations;
         }
         
+        ExportJsonType buildLValue(storm::jani::LValue const& lValue, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+            if (lValue.isVariable()) {
+                return lValue.getVariable().getName();
+            } else {
+                STORM_LOG_ASSERT(lValue.isArrayAccess(), "Unhandled LValue " << lValue << ".");
+                ExportJsonType result = lValue.getVariable().getName();
+                for (auto const& indexExpr : lValue.getArrayIndexVector()) {
+                    ExportJsonType subLValue = std::move(result);
+                    result.clear();
+                    result["op"] = "aa";
+                    result["exp"] = std::move(subLValue);
+                    result["index"] = buildExpression(indexExpr, constants, globalVariables, localVariables);
+                }
+                return result;
+            }
+        }
+        
         ExportJsonType buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             ExportJsonType assignmentDeclarations = std::vector<ExportJsonType>();
             bool addIndex = orderedAssignments.hasMultipleLevels();
-            for(auto const& assignment : orderedAssignments) {
+            for (auto const& assignment : orderedAssignments) {
                 ExportJsonType assignmentEntry;
-                if (assignment.lValueIsVariable()) {
-                    assignmentEntry["ref"] = assignment.getVariable().getName();
-                } else {
-                    STORM_LOG_ASSERT(assignment.lValueIsArrayAccess(), "Unhandled LValue " << assignment.getLValue());
-                    ExportJsonType arrayAccess;
-                    arrayAccess["op"] = "aa";
-                    if (assignment.getLValue().getArrayIndexVector().size() > 2) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exporting JSON for nested variables is not yet implemented");
-                    } else if (assignment.getLValue().getArrayIndexVector().size() == 2) {
-                        ExportJsonType secondArrayAcces;
-                        secondArrayAcces["op"] = "aa";
-                        secondArrayAcces["exp"] = assignment.getVariable().getName();
-                        secondArrayAcces["index"] = buildExpression(assignment.getLValue().getArrayIndexVector().at(1), constants, globalVariables, localVariables);
-                        arrayAccess["exp"] = std::move(secondArrayAcces);
-                    } else {
-                        arrayAccess["exp"] = assignment.getVariable().getName();
-                    }
-                    arrayAccess["index"] = buildExpression(assignment.getLValue().getArrayIndexVector().at(0), constants, globalVariables, localVariables);
-                    assignmentEntry["ref"] = std::move(arrayAccess);
-                }
+                assignmentEntry["ref"] = buildLValue(assignment.getLValue(), constants, globalVariables, localVariables);
                 assignmentEntry["value"] = buildExpression(assignment.getAssignedExpression(), constants, globalVariables, localVariables);
-                if(addIndex) {
+                if (addIndex) {
                     assignmentEntry["index"] = assignment.getLevel();
                 }
                 if (commentExpressions) {
-                    assignmentEntry["comment"] = assignment.getName() + " <- " + assignment.getAssignedExpression().toString();
+                    assignmentEntry["comment"] = assignment.getLValue().getName() + " <- " + assignment.getAssignedExpression().toString();
                 }
                 assignmentDeclarations.push_back(std::move(assignmentEntry));
             }
