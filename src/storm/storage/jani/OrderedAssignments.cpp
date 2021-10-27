@@ -307,17 +307,12 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments) {
-            stream << "[";
+            stream << "[" << std::endl;
             for(auto const& e : assignments.allAssignments) {
-                stream << *e;
-                if (e->getLevel() != 0) {
-                    stream << " @" << e->getLevel();
-                }
-                stream << std::endl;
+                stream << "\t" << *e << std::endl;
             }
             stream << "]";
             return stream;
         }
-        
     }
 }

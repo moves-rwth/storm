@@ -85,6 +85,9 @@ namespace storm  {
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {
+            if (assignment.getLevel() != 0) {
+                stream << "@" << assignment.getLevel() << ": ";
+            }
             stream << assignment.getLValue() << " := " << assignment.getAssignedExpression();
             return stream;
         }

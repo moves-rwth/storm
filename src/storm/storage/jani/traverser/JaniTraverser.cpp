@@ -129,7 +129,7 @@ namespace storm {
             for (auto& assignment : orderedAssignments) {
                 traverse(assignment, data);
             }
-            STORM_LOG_ASSERT(orderedAssignments.checkOrder(), "Order of ordered assignment has been violated.");
+            STORM_LOG_ASSERT(orderedAssignments.checkOrder(), "Order of ordered assignment\n" << orderedAssignments << "\nhas been violated.");
         }
         
         void JaniTraverser::traverse(Assignment& assignment, boost::any const& data) {
