@@ -1,5 +1,8 @@
 #include "storm/storage/jani/types/BasicType.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/UnexpectedException.h"
+
 namespace storm {
     namespace jani {
         BasicType::BasicType(const Type &type) : JaniType(), type(type) {
@@ -39,6 +42,7 @@ namespace storm {
                 case Type::Real:
                     return "real";
             }
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled basic type.");
         }
         
         std::unique_ptr<JaniType> BasicType::clone() const {
