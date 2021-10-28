@@ -6,6 +6,23 @@ layout: default
 
 On this page, you can find (extended) benchmark results accompanying paper submissions.
 
+## QComp 2020 {% cite BHKKPQTZ20 %}
+
+Storm participated in the *2020 Comparison of Tools for the Analysis of Quantitative Formal Models (QComp 2020)*.
+Storm participated in two modes: with the new *automatic* engine selection and with *static* engine selection.
+
+Result summary for the *ε-correct* track:
+
+![Article]({{ '/pics/qcomp2020eps.jpg' | relative_url }} "Article"){: .center-image width="768"}
+
+
+Result summary for the *often ε-correct* track:
+
+![Article]({{ '/pics/qcomp2020ofteneps.jpg' | relative_url }} "Article"){: .center-image width="768"}
+
+Further results for all tracks can be found in the [competition report](https://doi.org/10.1007/978-3-030-83723-5_15){:target="_blank"} and the detailed result tables on the [QComp 2020 website](http://qcomp.org/competition/2020/){:target="_blank"}.
+
+
 ## The Probabilistic Model Checker Storm {% cite HJKQV21 %}
 #### Setup
 The benchmarks were run on 4 cores of an Intel Xeon Platinum 8160 Processor with 12GB of memory available. The timeout was 1800 seconds.
