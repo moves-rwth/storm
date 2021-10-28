@@ -255,7 +255,7 @@ namespace storm {
 
         storm::jani::Variable const& JaniGSPNBuilder::addTransientVariable(storm::jani::Model* model, std::string name, storm::expressions::Expression expression) {
             auto exprVar = expressionManager->declareBooleanVariable(name);
-            auto const& janiVar = *storm::jani::Variable::makeBooleanVariable(name, exprVar, expressionManager->boolean(false), true);
+            auto const& janiVar = model->addVariable(*storm::jani::Variable::makeBooleanVariable(name, exprVar, expressionManager->boolean(false), true));
             storm::jani::Assignment assignment(storm::jani::LValue(janiVar), expression);
             model->getAutomata().front().getLocations().front().addTransientAssignment(assignment);
             return janiVar;
