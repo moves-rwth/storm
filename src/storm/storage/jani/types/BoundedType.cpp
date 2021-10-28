@@ -1,6 +1,9 @@
 #include "storm/storage/jani/types/BoundedType.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/UnexpectedException.h"
+
 namespace storm {
     namespace jani {
         BoundedType::BoundedType(const BaseType &type, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : type(type), lowerBound(lowerBound), upperBound(upperBound) {
@@ -76,6 +79,7 @@ namespace storm {
                 case BaseType::Int:
                     return "bounded int";
             }
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled bounded type.");
         }
         
         std::unique_ptr<JaniType> BoundedType::clone() const {
