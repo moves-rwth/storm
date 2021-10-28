@@ -26,6 +26,7 @@ namespace exporter {
             case ModelExportFormat::Drn: return "drn";
             case ModelExportFormat::Json: return "json";
         }
+        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled model export format.");
     }
     
     ModelExportFormat getModelExportFormatFromFileExtension(std::string const& filename) {
