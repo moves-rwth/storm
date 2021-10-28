@@ -297,6 +297,7 @@ namespace storm {
                         // Mirror symmetry for each element
                         for (size_t i = 1; i < symmetricElements.size(); ++i) {
                             size_t symmetricElement = symmetricElements[i];
+                            STORM_LOG_ASSERT(!visited[symmetricElement], "Symmetric element " << symmetricElement << " already considered before.");
                             visited.set(symmetricElement);
 
                             generationInfo.addStateIndex(symmetricElement, index + offset * i);
@@ -336,6 +337,7 @@ namespace storm {
                 visitQueue.push(dependency->dependentEvents()[0]->id());
             }
             stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
+            STORM_LOG_ASSERT(visitQueue.empty(), "VisitQueue not empty");
 
             // Visit all remaining states
             for (size_t i = 0; i < visited.size(); ++i) {
