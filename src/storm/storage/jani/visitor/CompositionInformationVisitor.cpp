@@ -1,4 +1,4 @@
-#include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "CompositionInformationVisitor.h"
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Compositions.h"

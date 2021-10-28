@@ -28,6 +28,10 @@ namespace storm {
                 if (variable.isTransient()) {
                     return false;
                 }
+                // The jani specification only allows these two types of constants.
+                if (!(variable.getType().isBasicType() || variable.getType().isBoundedType())) {
+                    return false;
+                }
                 // The variable should have a known initial value.
                 if (!variable.hasInitExpression()) {
                     return false;

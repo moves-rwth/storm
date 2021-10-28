@@ -14,6 +14,7 @@ Version 1.6.x
 - Improved parsing of formulas in PRISM-style syntax.
 - Added export of schedulers that use memory (in particular optimizing schedulers for LTL properties)
 - Added support for PRISM models that use unbounded integer variables.
+- Added support for nested arrays in JANI.
 - Added an export of check results to json. Use `--exportresult` in the command line interface.
 - Added `--exportbuilt` option that exports the built model in various formats. Deprecates `--io:exportexplicit`, `--io:exportdd` and `--io:exportdot`
 - Added export of built model in .json. which can be used to debug and explore the model.

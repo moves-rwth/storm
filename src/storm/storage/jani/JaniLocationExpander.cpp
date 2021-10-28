@@ -1,6 +1,7 @@
 #include "storm/storage/jani/JaniLocationExpander.h"
 
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/Variable.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -38,11 +39,13 @@ namespace storm {
                 if (var.getName() == variableName) {
                     // This variable will be eliminated in the new automaton.
                     STORM_LOG_THROW(var.hasInitExpression(), storm::exceptions::IllegalArgumentException, "Variable to be eliminated has to have an initexpression.");
-                    STORM_LOG_THROW(var.isBoundedIntegerVariable(), storm::exceptions::IllegalArgumentException, "Variable to be eliminated has to be an bounded integer variable.");
                     STORM_LOG_THROW(!var.isTransient(), storm::exceptions::IllegalArgumentException, "Cannot eliminate transient variable");
+                    STORM_LOG_THROW(var.getType().isBoundedType(), storm::exceptions::IllegalArgumentException, "Variable to be eliminated has to be a bounded variable.");
+                    auto const& type = var.getType().asBoundedType();
+                    STORM_LOG_THROW(type.isIntegerType(), storm::exceptions::IllegalArgumentException, "Variable to be eliminated has to be an integer variable.");
 
-                    variableUpperBound = var.asBoundedIntegerVariable().getUpperBound().evaluateAsInt();
-                    variableLowerBound  = var.asBoundedIntegerVariable().getLowerBound().evaluateAsInt();
+                    variableUpperBound = type.getUpperBound().evaluateAsInt();
+                    variableLowerBound  = type.getLowerBound().evaluateAsInt();
                     initialVariableValue = var.getInitExpression().evaluateAsInt();
                     variable = &var;
                     eliminatedExpressionVariable = var.getExpressionVariable();

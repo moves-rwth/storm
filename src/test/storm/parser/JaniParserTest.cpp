@@ -375,6 +375,22 @@ TEST(JaniParser, DieExampleTest) {
     EXPECT_EQ(1ul, result.first.getNumberOfAutomata());
 }
 
+TEST(JaniParser, DieArrayExampleTest) {
+    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
+    EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/die_array.jani"));
+    EXPECT_EQ(storm::jani::ModelType::DTMC, result.first.getModelType());
+    EXPECT_TRUE(result.first.hasGlobalVariable("sd"));
+    EXPECT_EQ(1ul, result.first.getNumberOfAutomata());
+}
+
+TEST(JaniParser, DieArrayNestedExampleTest) {
+    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
+    EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/die_array_nested.jani"));
+    EXPECT_EQ(storm::jani::ModelType::DTMC, result.first.getModelType());
+    EXPECT_TRUE(result.first.hasGlobalVariable("sd"));
+    EXPECT_EQ(1ul, result.first.getNumberOfAutomata());
+}
+
 TEST(JaniParser, UnassignedVariablesTest) {
     std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
     EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/unassigned-variables.jani"));

@@ -2,7 +2,7 @@
 
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/logic/FormulaVisitor.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"

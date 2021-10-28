@@ -2,7 +2,7 @@
 
 #include "storm/storage/expressions/ReduceNestingVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "JaniExpressionVisitor.h"
 
 namespace storm {
     namespace jani {

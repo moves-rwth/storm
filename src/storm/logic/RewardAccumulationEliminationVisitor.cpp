@@ -3,7 +3,7 @@
 
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/UnexpectedException.h"

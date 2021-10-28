@@ -32,9 +32,10 @@
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
-#include "storm/storage/jani/expressions/JaniReduceNestingExpressionVisitor.h"
-#include "storm/storage/jani/FunctionEliminator.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniReduceNestingExpressionVisitor.h"
+#include "storm/storage/jani/eliminator/FunctionEliminator.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/types/ArrayType.h"
 
 namespace storm {
     namespace jani {
@@ -722,7 +723,7 @@ namespace storm {
             opDecl["elements"] = std::move(elements);
             return opDecl;
         }
-        
+
         boost::any ExpressionToJson::visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) {
             ExportJsonType opDecl;
             opDecl["op"] = "ac";
@@ -864,7 +865,36 @@ namespace storm {
             }
             return ExportJsonType(constantDeclarations);
         }
-        
+
+        ExportJsonType buildType(storm::jani::JaniType const& type, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
+            ExportJsonType typeDesc ;
+            if (type.isBasicType() || type.isClockType() || type.isContinuousType()) {
+                typeDesc = type.getStringRepresentation();
+            } else if (type.isBoundedType()) {
+                typeDesc["kind"] = "bounded";
+                auto const& bndType = type.asBoundedType();
+                switch (bndType.getBaseType()) {
+                    case storm::jani::BoundedType::BaseType::Int:
+                        typeDesc["base"] = "int";
+                        break;
+                    case storm::jani::BoundedType::BaseType::Real:
+                        typeDesc["base"] = "real";
+                        break;
+                }
+                if (bndType.hasLowerBound()) {
+                    typeDesc["lower-bound"] = buildExpression(bndType.getLowerBound(), constants, globalVariables, localVariables);
+                }
+                if (bndType.hasUpperBound()) {
+                    typeDesc["upper-bound"] = buildExpression(bndType.getUpperBound(), constants, globalVariables, localVariables);
+                }
+            } else if (type.isArrayType()) {
+                typeDesc["kind"] = "array";
+                typeDesc["base"] = buildType(type.asArrayType().getBaseType(), constants, globalVariables, localVariables);
+            } else {
+                STORM_LOG_THROW (false, storm::exceptions::NotImplementedException, "Variable type not recognized in JSONExporter");
+            }
+            return typeDesc;
+        }
         
         ExportJsonType buildVariablesArray(storm::jani::VariableSet const& varSet, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
             ExportJsonType variableDeclarations = std::vector<ExportJsonType>();
@@ -874,49 +904,7 @@ namespace storm {
                 if (variable.isTransient()) {
                     varEntry["transient"] = variable.isTransient();
                 }
-                ExportJsonType typeDesc;
-                if(variable.isBooleanVariable()) {
-                    typeDesc = "bool";
-                } else if (variable.isRealVariable()) {
-                    typeDesc = "real";
-                } else if (variable.isUnboundedIntegerVariable()) {
-                    typeDesc = "int";
-                } else if (variable.isBoundedIntegerVariable()) {
-                    typeDesc["kind"] = "bounded";
-                    typeDesc["base"] = "int";
-                    typeDesc["lower-bound"] = buildExpression(variable.asBoundedIntegerVariable().getLowerBound(), constants, globalVariables, localVariables);
-                    typeDesc["upper-bound"] = buildExpression(variable.asBoundedIntegerVariable().getUpperBound(), constants, globalVariables, localVariables);
-                } else if (variable.isArrayVariable()) {
-                    typeDesc["kind"] = "array";
-                    switch (variable.asArrayVariable().getElementType()) {
-                        case storm::jani::ArrayVariable::ElementType::Bool:
-                            typeDesc["base"] = "bool";
-                            break;
-                        case storm::jani::ArrayVariable::ElementType::Real:
-                            typeDesc["base"] = "real";
-                            break;
-                        case storm::jani::ArrayVariable::ElementType::Int:
-                            if (variable.asArrayVariable().hasElementTypeBound()) {
-                                ExportJsonType baseTypeDescr;
-                                baseTypeDescr["kind"] = "bounded";
-                                baseTypeDescr["base "] = "int";
-                                if (variable.asArrayVariable().hasLowerElementTypeBound()) {
-                                    baseTypeDescr["lower-bound"] = buildExpression(variable.asArrayVariable().getLowerElementTypeBound(), constants, globalVariables, localVariables);
-                                }
-                                if (variable.asArrayVariable().hasUpperElementTypeBound()) {
-                                    baseTypeDescr["upper-bound"] = buildExpression(variable.asArrayVariable().getUpperElementTypeBound(), constants, globalVariables, localVariables);
-                                }
-                                typeDesc["base"] = baseTypeDescr;
-                            } else {
-                                typeDesc["base"] = "int";
-                            }
-                            break;
-                    }
-                } else {
-                    assert(variable.isClockVariable());
-                    typeDesc = "clock";
-                }
-                varEntry["type"] = typeDesc;
+                varEntry["type"] = buildType(variable.getType(), constants, globalVariables, localVariables);
                 if (variable.hasInitExpression()) {
                     varEntry["initial-value"] = buildExpression(variable.getInitExpression(), constants, globalVariables, localVariables);
                 }
@@ -948,27 +936,35 @@ namespace storm {
             return functionDeclarations;
         }
         
+        ExportJsonType buildLValue(storm::jani::LValue const& lValue, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+            if (lValue.isVariable()) {
+                return lValue.getVariable().getName();
+            } else {
+                STORM_LOG_ASSERT(lValue.isArrayAccess(), "Unhandled LValue " << lValue << ".");
+                ExportJsonType result = lValue.getVariable().getName();
+                for (auto const& indexExpr : lValue.getArrayIndexVector()) {
+                    ExportJsonType subLValue = std::move(result);
+                    result.clear();
+                    result["op"] = "aa";
+                    result["exp"] = std::move(subLValue);
+                    result["index"] = buildExpression(indexExpr, constants, globalVariables, localVariables);
+                }
+                return result;
+            }
+        }
+        
         ExportJsonType buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             ExportJsonType assignmentDeclarations = std::vector<ExportJsonType>();
             bool addIndex = orderedAssignments.hasMultipleLevels();
-            for(auto const& assignment : orderedAssignments) {
+            for (auto const& assignment : orderedAssignments) {
                 ExportJsonType assignmentEntry;
-                if (assignment.getLValue().isVariable()) {
-                    assignmentEntry["ref"] = assignment.getVariable().getName();
-                } else {
-                    STORM_LOG_ASSERT(assignment.getLValue().isArrayAccess(), "Unhandled LValue " << assignment.getLValue());
-                    ExportJsonType arrayAccess;
-                    arrayAccess["op"] = "aa";
-                    arrayAccess["exp"] = assignment.getLValue().getArray().getName();
-                    arrayAccess["index"] = buildExpression(assignment.getLValue().getArrayIndex(), constants, globalVariables, localVariables);
-                    assignmentEntry["ref"] = std::move(arrayAccess);
-                }
+                assignmentEntry["ref"] = buildLValue(assignment.getLValue(), constants, globalVariables, localVariables);
                 assignmentEntry["value"] = buildExpression(assignment.getAssignedExpression(), constants, globalVariables, localVariables);
-                if(addIndex) {
+                if (addIndex) {
                     assignmentEntry["index"] = assignment.getLevel();
                 }
                 if (commentExpressions) {
-                    assignmentEntry["comment"] = assignment.getVariable().getName() + " <- " + assignment.getAssignedExpression().toString();
+                    assignmentEntry["comment"] = assignment.getLValue().getName() + " <- " + assignment.getAssignedExpression().toString();
                 }
                 assignmentDeclarations.push_back(std::move(assignmentEntry));
             }
