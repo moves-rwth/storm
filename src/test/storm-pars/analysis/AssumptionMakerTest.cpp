@@ -34,18 +34,18 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
 
-    ASSERT_EQ(model->getNumberOfStates(), 193);
-    ASSERT_EQ(model->getNumberOfTransitions(), 383);
+    ASSERT_EQ(193ul, model->getNumberOfStates());
+    ASSERT_EQ(383ul, model->getNumberOfTransitions());
 
     auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto criticalTuple = extender->toOrder(region, nullptr);
-    ASSERT_EQ(183, std::get<1>(criticalTuple));
-    ASSERT_EQ(186, std::get<2>(criticalTuple));
+    ASSERT_EQ(183ul, std::get<1>(criticalTuple));
+    ASSERT_EQ(186ul, std::get<2>(criticalTuple));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
 
-    EXPECT_EQ(3, result.size());
+    EXPECT_EQ(3ul, result.size());
 
     for (auto res : result) {
         EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, res.second);
@@ -55,7 +55,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
 
     assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
-    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, itr->second);
     EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
@@ -83,8 +83,8 @@ TEST(AssumptionMakerTest, Simple1) {
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.999999", vars);
 
-    ASSERT_EQ(model->getNumberOfStates(), 5);
-    ASSERT_EQ(model->getNumberOfTransitions(), 8);
+    ASSERT_EQ(5ul, model->getNumberOfStates());
+    ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
     storm::storage::BitVector above(5);
     above.set(3);
@@ -98,16 +98,16 @@ TEST(AssumptionMakerTest, Simple1) {
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
-    EXPECT_EQ(0, result.size());
+    EXPECT_EQ(0ul, result.size());
     assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
-    EXPECT_EQ(0, result.size());
+    EXPECT_EQ(0ul, result.size());
 
     region = storm::api::parseRegion<storm::RationalFunction>("0.500001 <= p <= 0.999999", vars);
     std::vector<std::vector<double>> samples;
     assumptionMaker.setSampleValues(samples);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
-    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
     EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
@@ -134,8 +134,8 @@ TEST(AssumptionMakerTest, Casestudy1) {
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.999999", vars);
 
-    ASSERT_EQ(model->getNumberOfStates(), 5);
-    ASSERT_EQ(model->getNumberOfTransitions(), 8);
+    ASSERT_EQ(5ul, model->getNumberOfStates());
+    ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
     storm::storage::BitVector above(5);
     above.set(3);
@@ -151,7 +151,7 @@ TEST(AssumptionMakerTest, Casestudy1) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
 
-    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
     EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());

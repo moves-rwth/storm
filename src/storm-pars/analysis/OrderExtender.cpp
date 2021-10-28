@@ -239,7 +239,7 @@ namespace storm {
                         auto state = *itr;
                         auto &successors = stateMap[state];
                         bool all = true;
-                        for (auto i = 0; i < successors.size(); ++i) {
+                        for (uint_fast64_t i = 0; i < successors.size(); ++i) {
                             auto state1 = successors[i];
                             for (auto j = i + 1; j < successors.size(); ++j) {
                                 auto state2 = successors[j];
@@ -554,7 +554,6 @@ namespace storm {
 
                 if (statesSorted[0] == currentState) {
                     order->addRelation(s1, statesSorted[0], allowMerge);
-                    auto res = order->compare(s1, statesSorted[0]);
                     assert ((order->compare(s1, statesSorted[0]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
                     order->addRelation(s1, statesSorted[statesSorted.size() - 1], allowMerge);
                     assert ((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));

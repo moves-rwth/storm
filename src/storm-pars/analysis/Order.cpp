@@ -215,8 +215,8 @@ namespace storm {
                     }
                 }
             }
-            for (auto i = 0; i < numberOfStates; ++i) {
-                for (auto j= i + 1; j < numberOfStates; ++j) {
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+                for (auto j = i + 1; j < numberOfStates; ++j) {
                     auto comp1 = compare(i,j);
                     auto comp2 = compare(j,i);
                     if (!((comp1 == BELOW && comp2 == ABOVE ) ||
@@ -526,7 +526,7 @@ namespace storm {
 
             auto seenStates = storm::storage::BitVector(numberOfStates, false);
             //copy nodes
-            for (auto state = 0; state < numberOfStates; ++state) {
+            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
                 Node *oldNode = nodes.at(state);
                 if (oldNode != nullptr) {
                     if (!seenStates[*(oldNode->states.begin())]) {
@@ -537,7 +537,7 @@ namespace storm {
                             copiedOrder->bottom = newNode;
                         }
                         newNode->statesAbove = storm::storage::BitVector(oldNode->statesAbove);
-                        for (auto i = 0; i < oldNode->statesAbove.size(); ++i) {
+                        for (uint_fast64_t i = 0; i < oldNode->statesAbove.size(); ++i) {
                             assert (newNode->statesAbove[i] == oldNode->statesAbove[i]);
                         }
                         for (auto const &i : oldNode->states) {
@@ -568,7 +568,7 @@ namespace storm {
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(doneStates);
-            for (auto i = 0; i < numberOfStates; ++i) {
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                 if (nodes[i] != nullptr) {
                     stateCoverage.set(i);
                 }

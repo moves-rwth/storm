@@ -238,6 +238,7 @@ namespace storm {
                         case storm::expressions::OperatorType::AtLeastOneOf: return storm::expressions::atLeastOneOf(operands);
                         case storm::expressions::OperatorType::AtMostOneOf: return storm::expressions::atMostOneOf(operands);
                         case storm::expressions::OperatorType::ExactlyOneOf: return storm::expressions::exactlyOneOf(operands);
+                        default: STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Operator type " << opTyp << " invalid for predicate expression.");
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     pass = false;
