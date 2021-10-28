@@ -109,8 +109,8 @@ namespace storm {
                     }
                 }
 
-                newModel.finalize();
             }
+            newModel.finalize();
             log = session.getLog();
         }
 
