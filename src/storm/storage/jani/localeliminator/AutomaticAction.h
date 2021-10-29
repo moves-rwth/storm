@@ -2,7 +2,6 @@
 
 #include "JaniLocalEliminator.h"
 #include "storm/storage/jani/localeliminator/FinishAction.h"
-#include <boost/graph/adjacency_list.hpp>
 #include <vector>
 #include "UnfoldDependencyGraph.h"
 #include <boost/optional.hpp>

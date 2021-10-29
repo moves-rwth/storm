@@ -1,6 +1,7 @@
 #include "EliminateAction.h"
 #include <boost/format.hpp>
 #include "storm/storage/expressions/ExpressionManager.h"
+#include <boost/graph/adjacency_list.hpp>
 
 namespace storm {
     namespace jani {

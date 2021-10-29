@@ -441,7 +441,7 @@ namespace storm {
         }
 
         void JaniLocalEliminator::Session::addToLog(const std::string& item) {
-//            std::cout << item << std::endl;
+            std::cout << item << std::endl;
             log.push_back(item);
         }
 

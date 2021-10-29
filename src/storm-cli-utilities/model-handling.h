@@ -48,6 +48,8 @@
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/storage/Qvbs.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
+#include "storm/storage/jani/localeliminator/AutomaticAction.h"
 
 #include "storm/utility/Stopwatch.h"
 
@@ -391,6 +393,16 @@ namespace storm {
             if (output.model && output.model.get().isJaniModel()) {
                 storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(storm::utility::getBuilderType(mpi.engine));
                 storm::api::simplifyJaniModel(output.model.get().asJaniModel(), output.properties, supportedFeatures);
+
+                auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+                if (buildSettings.isLocationEliminationSet()){
+                    auto locationHeuristic = buildSettings.getLocationEliminationLocationHeuristic();
+                    auto edgesHeuristic = buildSettings.getLocationEliminationEdgesHeuristic();
+                    auto eliminator = storm::jani::JaniLocalEliminator(output.model.get().asJaniModel(), output.properties);
+                    eliminator.scheduler.addAction(std::make_unique<storm::jani::elimination_actions::AutomaticAction>());
+                    eliminator.eliminate();
+                    output.model->setModel(eliminator.getResult());
+                }
             }
 
             return {output, mpi};

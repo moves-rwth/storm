@@ -121,6 +121,13 @@ namespace storm {
                  */
                  bool isNoSimplifySet() const;
 
+                bool isLocationEliminationSet() const;
+
+                uint64_t getLocationEliminationLocationHeuristic() const;
+
+                uint64_t getLocationEliminationEdgesHeuristic() const;
+
+
                 // The name of the module.
                 static const std::string moduleName;
             };
