@@ -45,6 +45,7 @@ namespace storm {
                 case NondeterministicMemoryStructurePattern::Full:
                     return buildFullyConnectedMemory(numStates);
             }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled pattern.");
         }
         
         NondeterministicMemoryStructure NondeterministicMemoryStructureBuilder::buildTrivialMemory() const {

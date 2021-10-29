@@ -15,7 +15,7 @@ namespace storm {
                 case PredicateExpression::PredicateType::AtLeastOneOf: return OperatorType::AtLeastOneOf;
                 case PredicateExpression::PredicateType::ExactlyOneOf: return OperatorType::ExactlyOneOf;
             }
-            STORM_LOG_ASSERT(false, "Predicate type not supported");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported");
         }
 
         PredicateExpression::PredicateExpression(ExpressionManager const &manager, Type const& type,  std::vector <std::shared_ptr<BaseExpression const>> const &operands, PredicateType predicateType) : BaseExpression(manager, type), predicate(predicateType), operands(operands) {}
