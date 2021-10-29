@@ -47,11 +47,11 @@ namespace storm {
             stream << "array[ ";
             bool first = true;
             for (auto const& e : elements) {
-                stream << *e;
                 if (!first) {
                     stream << " , ";
                 }
                 first = false;
+                stream << *e;
             }
             stream << " ]";
         }
