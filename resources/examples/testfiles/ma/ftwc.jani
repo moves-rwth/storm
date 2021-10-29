@@ -1,0 +1,1534 @@
+﻿{
+	"jani-version": 1,
+	"name": "ftwc",
+	"type": "ma",
+	"features": [
+		"derived-operators",
+		"arrays"
+	],
+	"actions": [
+		{
+			"name": "startRepairBackbone?"
+		},
+		{
+			"name": "finishRepairBackbone?"
+		},
+		{
+			"name": "startRepairSwitch?"
+		},
+		{
+			"name": "finishRepairSwitch?"
+		},
+		{
+			"name": "startRepairWorkstation?"
+		},
+		{
+			"name": "finishRepairWorkstation?"
+		},
+		{
+			"name": "startRepairBackbone!"
+		},
+		{
+			"name": "startRepairLeftWorkstation!"
+		},
+		{
+			"name": "startRepairRightWorkstation!"
+		},
+		{
+			"name": "startRepairRightSwitch!"
+		},
+		{
+			"name": "startRepairLeftSwitch!"
+		},
+		{
+			"name": "finishRepairLeftSwitch!"
+		},
+		{
+			"name": "finishRepairRightSwitch!"
+		},
+		{
+			"name": "finishRepairRightWorkstation!"
+		},
+		{
+			"name": "finishRepairLeftWorkstation!"
+		},
+		{
+			"name": "finishRepairBackbone!"
+		},
+		{
+			"name": "startRepairBackbone"
+		},
+		{
+			"name": "finishRepairBackbone"
+		},
+		{
+			"name": "startRepairLeftSwitch"
+		},
+		{
+			"name": "finishRepairLeftSwitch"
+		},
+		{
+			"name": "startRepairRightSwitch"
+		},
+		{
+			"name": "finishRepairRightSwitch"
+		},
+		{
+			"name": "startRepairLeftWorkstation"
+		},
+		{
+			"name": "finishRepairLeftWorkstation"
+		},
+		{
+			"name": "startRepairRightWorkstation"
+		},
+		{
+			"name": "finishRepairRightWorkstation"
+		}
+	],
+	"constants": [
+		{
+			"name": "N",
+			"type": "int"
+		},
+		{
+			"name": "TIME_BOUND",
+			"type": "int"
+		}
+	],
+	"variables": [
+		{
+			"name": "backboneDown",
+			"type": "bool",
+			"initial-value": false
+		},
+		{
+			"name": "workstations_up",
+			"type": {
+				"kind": "array",
+				"base": {
+					"kind": "bounded",
+					"base": "int",
+					"lower-bound": 0,
+					"upper-bound": "N"
+				}
+			},
+			"initial-value": {
+				"op": "av",
+				"elements": [
+					"N",
+					"N"
+				]
+			}
+		},
+		{
+			"name": "switches_down",
+			"type": {
+				"kind": "array",
+				"base": "bool"
+			},
+			"initial-value": {
+				"op": "av",
+				"elements": [
+					false,
+					false
+				]
+			}
+		}
+	],
+	"properties": [
+		{
+			"name": "ReachMinIsOne",
+			"expression": {
+				"op": "filter",
+				"fun": "∀",
+				"values": {
+					"op": "=",
+					"left": {
+						"op": "Pmin",
+						"exp": {
+							"op": "F",
+							"exp": {
+								"op": "∧",
+								"left": {
+									"op": "∨",
+									"left": {
+										"op": "=",
+										"left": {
+											"op": "aa",
+											"exp": "workstations_up",
+											"index": 0
+										},
+										"right": 0
+									},
+									"right": {
+										"op": "aa",
+										"exp": "switches_down",
+										"index": 0
+									}
+								},
+								"right": {
+									"op": "∨",
+									"left": {
+										"op": "=",
+										"left": {
+											"op": "aa",
+											"exp": "workstations_up",
+											"index": 1
+										},
+										"right": 0
+									},
+									"right": {
+										"op": "aa",
+										"exp": "switches_down",
+										"index": 1
+									}
+								}
+							}
+						}
+					},
+					"right": 1
+				},
+				"states": {
+					"op": "initial"
+				}
+			}
+		},
+		{
+			"name": "ReachMinIsOne_1",
+			"expression": {
+				"op": "filter",
+				"fun": "∃",
+				"values": {
+					"op": "=",
+					"left": {
+						"op": "Pmin",
+						"exp": {
+							"op": "F",
+							"exp": {
+								"op": "∧",
+								"left": {
+									"op": "∨",
+									"left": {
+										"op": "=",
+										"left": {
+											"op": "aa",
+											"exp": "workstations_up",
+											"index": 0
+										},
+										"right": 0
+									},
+									"right": {
+										"op": "aa",
+										"exp": "switches_down",
+										"index": 0
+									}
+								},
+								"right": {
+									"op": "∨",
+									"left": {
+										"op": "=",
+										"left": {
+											"op": "aa",
+											"exp": "workstations_up",
+											"index": 1
+										},
+										"right": 0
+									},
+									"right": {
+										"op": "aa",
+										"exp": "switches_down",
+										"index": 1
+									}
+								}
+							}
+						}
+					},
+					"right": 1
+				},
+				"states": {
+					"op": "initial"
+				}
+			}
+		},
+		{
+			"name": "TimeMax",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"values": {
+					"op": "Emax",
+					"exp": 1,
+					"accumulate": [
+						"time"
+					],
+					"reach": {
+						"op": "∧",
+						"left": {
+							"op": "∨",
+							"left": {
+								"op": "=",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": 0
+								},
+								"right": 0
+							},
+							"right": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": 0
+							}
+						},
+						"right": {
+							"op": "∨",
+							"left": {
+								"op": "=",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": 1
+								},
+								"right": 0
+							},
+							"right": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": 1
+							}
+						}
+					}
+				},
+				"states": {
+					"op": "initial"
+				}
+			}
+		},
+		{
+			"name": "TimeMin",
+			"expression": {
+				"op": "filter",
+				"fun": "min",
+				"values": {
+					"op": "Emin",
+					"exp": 1,
+					"accumulate": [
+						"time"
+					],
+					"reach": {
+						"op": "∧",
+						"left": {
+							"op": "∨",
+							"left": {
+								"op": "=",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": 0
+								},
+								"right": 0
+							},
+							"right": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": 0
+							}
+						},
+						"right": {
+							"op": "∨",
+							"left": {
+								"op": "=",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": 1
+								},
+								"right": 0
+							},
+							"right": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": 1
+							}
+						}
+					}
+				},
+				"states": {
+					"op": "initial"
+				}
+			}
+		},
+		{
+			"name": "PmaxReachBound",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"values": {
+					"op": "Pmax",
+					"exp": {
+						"op": "F",
+						"exp": {
+							"op": "∧",
+							"left": {
+								"op": "∨",
+								"left": {
+									"op": "=",
+									"left": {
+										"op": "aa",
+										"exp": "workstations_up",
+										"index": 0
+									},
+									"right": 0
+								},
+								"right": {
+									"op": "aa",
+									"exp": "switches_down",
+									"index": 0
+								}
+							},
+							"right": {
+								"op": "∨",
+								"left": {
+									"op": "=",
+									"left": {
+										"op": "aa",
+										"exp": "workstations_up",
+										"index": 1
+									},
+									"right": 0
+								},
+								"right": {
+									"op": "aa",
+									"exp": "switches_down",
+									"index": 1
+								}
+							}
+						},
+						"time-bounds": {
+							"upper": "TIME_BOUND"
+						}
+					}
+				},
+				"states": {
+					"op": "initial"
+				}
+			}
+		},
+		{
+			"name": "SmaxReach",
+			"expression": {
+				"op": "filter",
+				"fun": "max",
+				"values": {
+					"op": "Smax",
+					"exp": {
+						"op": "∧",
+						"left": {
+							"op": "∨",
+							"left": {
+								"op": "=",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": 0
+								},
+								"right": 0
+							},
+							"right": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": 0
+							}
+						},
+						"right": {
+							"op": "∨",
+							"left": {
+								"op": "=",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": 1
+								},
+								"right": 0
+							},
+							"right": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": 1
+							}
+						}
+					}
+				},
+				"states": {
+					"op": "initial"
+				}
+			}
+		}
+	],
+	"automata": [
+		{
+			"name": "Backbone",
+			"locations": [
+				{
+					"name": "loc_1"
+				},
+				{
+					"name": "loc_12"
+				}
+			],
+			"initial-locations": [ "loc_1" ],
+			"edges": [
+				{
+					"location": "loc_1",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": 1,
+							"right": 5000
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": "¬",
+							"exp": "backboneDown"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_1",
+						"assignments": [ {
+							"ref": "backboneDown",
+							"value": true
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairBackbone?",
+					"guard": {
+						"exp": "backboneDown"
+					},
+					"destinations": [ {
+						"location": "loc_12"
+					} ]
+				},
+				{
+					"location": "loc_12",
+					"action": "finishRepairBackbone?",
+					"destinations": [ {
+						"location": "loc_1",
+						"assignments": [ {
+							"ref": "backboneDown",
+							"value": false,
+							"index": 1
+						} ]
+					} ]
+				}
+			]
+		},
+		{
+			"name": "Switch",
+			"locations": [
+				{
+					"name": "loc_1"
+				},
+				{
+					"name": "loc_13"
+				},
+				{
+					"name": "loc_12"
+				}
+			],
+			"initial-locations": [ "loc_1" ],
+			"variables": [ {
+				"name": "id",
+				"type": {
+					"kind": "bounded",
+					"base": "int",
+					"lower-bound": 0,
+					"upper-bound": 1
+				},
+				"initial-value": 0
+			} ],
+			"edges": [
+				{
+					"location": "loc_1",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": 1,
+							"right": 4000
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": "¬",
+							"exp": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							}
+						}
+					},
+					"destinations": [ {
+						"location": "loc_12",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							},
+							"value": true
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairSwitch?",
+					"guard": {
+						"exp": {
+							"op": "aa",
+							"exp": "switches_down",
+							"index": "id"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_13"
+					} ]
+				},
+				{
+					"location": "loc_13",
+					"action": "finishRepairSwitch?",
+					"destinations": [ {
+						"location": "loc_12",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							},
+							"value": false,
+							"index": 1
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_12",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": 1,
+							"right": 4000
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": "¬",
+							"exp": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							}
+						}
+					},
+					"destinations": [ {
+						"location": "loc_12",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							},
+							"value": true
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_12",
+					"action": "startRepairSwitch?",
+					"guard": {
+						"exp": {
+							"op": "aa",
+							"exp": "switches_down",
+							"index": "id"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_13"
+					} ]
+				}
+			]
+		},
+		{
+			"name": "Switch_1",
+			"locations": [
+				{
+					"name": "loc_1"
+				},
+				{
+					"name": "loc_13"
+				},
+				{
+					"name": "loc_12"
+				}
+			],
+			"initial-locations": [ "loc_1" ],
+			"variables": [ {
+				"name": "id",
+				"type": {
+					"kind": "bounded",
+					"base": "int",
+					"lower-bound": 0,
+					"upper-bound": 1
+				},
+				"initial-value": 1
+			} ],
+			"edges": [
+				{
+					"location": "loc_1",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": 1,
+							"right": 4000
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": "¬",
+							"exp": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							}
+						}
+					},
+					"destinations": [ {
+						"location": "loc_12",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							},
+							"value": true
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairSwitch?",
+					"guard": {
+						"exp": {
+							"op": "aa",
+							"exp": "switches_down",
+							"index": "id"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_13"
+					} ]
+				},
+				{
+					"location": "loc_13",
+					"action": "finishRepairSwitch?",
+					"destinations": [ {
+						"location": "loc_12",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							},
+							"value": false,
+							"index": 1
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_12",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": 1,
+							"right": 4000
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": "¬",
+							"exp": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							}
+						}
+					},
+					"destinations": [ {
+						"location": "loc_12",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "switches_down",
+								"index": "id"
+							},
+							"value": true
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_12",
+					"action": "startRepairSwitch?",
+					"guard": {
+						"exp": {
+							"op": "aa",
+							"exp": "switches_down",
+							"index": "id"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_13"
+					} ]
+				}
+			]
+		},
+		{
+			"name": "Workstation",
+			"locations": [
+				{
+					"name": "loc_1"
+				},
+				{
+					"name": "loc_8"
+				}
+			],
+			"initial-locations": [ "loc_1" ],
+			"variables": [ {
+				"name": "id",
+				"type": {
+					"kind": "bounded",
+					"base": "int",
+					"lower-bound": 0,
+					"upper-bound": 1
+				},
+				"initial-value": 0
+			} ],
+			"edges": [
+				{
+					"location": "loc_1",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": 500
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": ">",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": 0
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"value": {
+								"op": "-",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": "id"
+								},
+								"right": 1
+							}
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairWorkstation?",
+					"guard": {
+						"exp": {
+							"op": "<",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": "N"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8"
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "finishRepairWorkstation?",
+					"guard": {
+						"exp": {
+							"op": "<",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": "N"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"value": {
+								"op": "+",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": "id"
+								},
+								"right": 1
+							},
+							"index": 1
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_8",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": 500
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": ">",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": 0
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"value": {
+								"op": "-",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": "id"
+								},
+								"right": 1
+							}
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_8",
+					"action": "startRepairWorkstation?",
+					"guard": {
+						"exp": {
+							"op": "<",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": "N"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8"
+					} ]
+				},
+				{
+					"location": "loc_8",
+					"action": "finishRepairWorkstation?",
+					"guard": {
+						"exp": {
+							"op": "<",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": "N"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"value": {
+								"op": "+",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": "id"
+								},
+								"right": 1
+							},
+							"index": 1
+						} ]
+					} ]
+				}
+			]
+		},
+		{
+			"name": "Workstation_1",
+			"locations": [
+				{
+					"name": "loc_1"
+				},
+				{
+					"name": "loc_8"
+				}
+			],
+			"initial-locations": [ "loc_1" ],
+			"variables": [ {
+				"name": "id",
+				"type": {
+					"kind": "bounded",
+					"base": "int",
+					"lower-bound": 0,
+					"upper-bound": 1
+				},
+				"initial-value": 1
+			} ],
+			"edges": [
+				{
+					"location": "loc_1",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": 500
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": ">",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": 0
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"value": {
+								"op": "-",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": "id"
+								},
+								"right": 1
+							}
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairWorkstation?",
+					"guard": {
+						"exp": {
+							"op": "<",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": "N"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8"
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "finishRepairWorkstation?",
+					"guard": {
+						"exp": {
+							"op": "<",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": "N"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"value": {
+								"op": "+",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": "id"
+								},
+								"right": 1
+							},
+							"index": 1
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_8",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": 500
+						}
+					},
+					"guard": {
+						"exp": {
+							"op": ">",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": 0
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"value": {
+								"op": "-",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": "id"
+								},
+								"right": 1
+							}
+						} ]
+					} ]
+				},
+				{
+					"location": "loc_8",
+					"action": "startRepairWorkstation?",
+					"guard": {
+						"exp": {
+							"op": "<",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": "N"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8"
+					} ]
+				},
+				{
+					"location": "loc_8",
+					"action": "finishRepairWorkstation?",
+					"guard": {
+						"exp": {
+							"op": "<",
+							"left": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"right": "N"
+						}
+					},
+					"destinations": [ {
+						"location": "loc_8",
+						"assignments": [ {
+							"ref": {
+								"op": "aa",
+								"exp": "workstations_up",
+								"index": "id"
+							},
+							"value": {
+								"op": "+",
+								"left": {
+									"op": "aa",
+									"exp": "workstations_up",
+									"index": "id"
+								},
+								"right": 1
+							},
+							"index": 1
+						} ]
+					} ]
+				}
+			]
+		},
+		{
+			"name": "RepairUnit",
+			"locations": [
+				{
+					"name": "loc_1"
+				},
+				{
+					"name": "loc_23"
+				},
+				{
+					"name": "loc_37"
+				},
+				{
+					"name": "loc_22"
+				},
+				{
+					"name": "loc_36"
+				},
+				{
+					"name": "loc_21"
+				},
+				{
+					"name": "loc_35"
+				},
+				{
+					"name": "loc_20"
+				},
+				{
+					"name": "loc_34"
+				},
+				{
+					"name": "loc_19"
+				},
+				{
+					"name": "loc_33"
+				}
+			],
+			"initial-locations": [ "loc_1" ],
+			"edges": [
+				{
+					"location": "loc_1",
+					"action": "startRepairBackbone!",
+					"destinations": [ {
+						"location": "loc_19"
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairLeftWorkstation!",
+					"destinations": [ {
+						"location": "loc_20"
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairRightWorkstation!",
+					"destinations": [ {
+						"location": "loc_21"
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairRightSwitch!",
+					"destinations": [ {
+						"location": "loc_22"
+					} ]
+				},
+				{
+					"location": "loc_1",
+					"action": "startRepairLeftSwitch!",
+					"destinations": [ {
+						"location": "loc_23"
+					} ]
+				},
+				{
+					"location": "loc_23",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": 1,
+							"right": 4
+						}
+					},
+					"destinations": [ {
+						"location": "loc_37"
+					} ]
+				},
+				{
+					"location": "loc_37",
+					"action": "finishRepairLeftSwitch!",
+					"destinations": [ {
+						"location": "loc_1"
+					} ]
+				},
+				{
+					"location": "loc_22",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": 1,
+							"right": 4
+						}
+					},
+					"destinations": [ {
+						"location": "loc_36"
+					} ]
+				},
+				{
+					"location": "loc_36",
+					"action": "finishRepairRightSwitch!",
+					"destinations": [ {
+						"location": "loc_1"
+					} ]
+				},
+				{
+					"location": "loc_21",
+					"rate": {
+						"exp": 2
+					},
+					"destinations": [ {
+						"location": "loc_35"
+					} ]
+				},
+				{
+					"location": "loc_35",
+					"action": "finishRepairRightWorkstation!",
+					"destinations": [ {
+						"location": "loc_1"
+					} ]
+				},
+				{
+					"location": "loc_20",
+					"rate": {
+						"exp": 2
+					},
+					"destinations": [ {
+						"location": "loc_34"
+					} ]
+				},
+				{
+					"location": "loc_34",
+					"action": "finishRepairLeftWorkstation!",
+					"destinations": [ {
+						"location": "loc_1"
+					} ]
+				},
+				{
+					"location": "loc_19",
+					"rate": {
+						"exp": {
+							"op": "/",
+							"left": 1,
+							"right": 8
+						}
+					},
+					"destinations": [ {
+						"location": "loc_33"
+					} ]
+				},
+				{
+					"location": "loc_33",
+					"action": "finishRepairBackbone!",
+					"destinations": [ {
+						"location": "loc_1"
+					} ]
+				}
+			]
+		}
+	],
+	"system": {
+		"elements": [
+			{
+				"automaton": "Backbone"
+			},
+			{
+				"automaton": "Switch"
+			},
+			{
+				"automaton": "Switch_1"
+			},
+			{
+				"automaton": "Workstation"
+			},
+			{
+				"automaton": "Workstation_1"
+			},
+			{
+				"automaton": "RepairUnit"
+			}
+		],
+		"syncs": [
+			{
+				"synchronise": [
+					"startRepairBackbone?",
+					null,
+					null,
+					null,
+					null,
+					"startRepairBackbone!"
+				],
+				"result": "startRepairBackbone"
+			},
+			{
+				"synchronise": [
+					"finishRepairBackbone?",
+					null,
+					null,
+					null,
+					null,
+					"finishRepairBackbone!"
+				],
+				"result": "finishRepairBackbone"
+			},
+			{
+				"synchronise": [
+					null,
+					"startRepairSwitch?",
+					null,
+					null,
+					null,
+					"startRepairLeftSwitch!"
+				],
+				"result": "startRepairLeftSwitch"
+			},
+			{
+				"synchronise": [
+					null,
+					"finishRepairSwitch?",
+					null,
+					null,
+					null,
+					"finishRepairLeftSwitch!"
+				],
+				"result": "finishRepairLeftSwitch"
+			},
+			{
+				"synchronise": [
+					null,
+					null,
+					"startRepairSwitch?",
+					null,
+					null,
+					"startRepairRightSwitch!"
+				],
+				"result": "startRepairRightSwitch"
+			},
+			{
+				"synchronise": [
+					null,
+					null,
+					"finishRepairSwitch?",
+					null,
+					null,
+					"finishRepairRightSwitch!"
+				],
+				"result": "finishRepairRightSwitch"
+			},
+			{
+				"synchronise": [
+					null,
+					null,
+					null,
+					"startRepairWorkstation?",
+					null,
+					"startRepairLeftWorkstation!"
+				],
+				"result": "startRepairLeftWorkstation"
+			},
+			{
+				"synchronise": [
+					null,
+					null,
+					null,
+					"finishRepairWorkstation?",
+					null,
+					"finishRepairLeftWorkstation!"
+				],
+				"result": "finishRepairLeftWorkstation"
+			},
+			{
+				"synchronise": [
+					null,
+					null,
+					null,
+					null,
+					"startRepairWorkstation?",
+					"startRepairRightWorkstation!"
+				],
+				"result": "startRepairRightWorkstation"
+			},
+			{
+				"synchronise": [
+					null,
+					null,
+					null,
+					null,
+					"finishRepairWorkstation?",
+					"finishRepairRightWorkstation!"
+				],
+				"result": "finishRepairRightWorkstation"
+			}
+		]
+	}
+}
