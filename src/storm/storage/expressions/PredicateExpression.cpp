@@ -38,7 +38,7 @@ namespace storm {
                 case PredicateType::AtMostOneOf: return nrTrue <= 1;
                 case PredicateType::AtLeastOneOf: return nrTrue >= 1;
             }
-            STORM_LOG_ASSERT(false, "Unknown predicate type");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported");
         }
 
         std::shared_ptr<BaseExpression const> PredicateExpression::simplify() const {
