@@ -1,25 +1,24 @@
-From 875acd95a7914748e701ecdab30fffc3e01d001a Mon Sep 17 00:00:00 2001
+From 4d2074e54b27877bcd694add91447b569d88e918 Mon Sep 17 00:00:00 2001
 From: Tim Quatmann <tim.quatmann@cs.rwth-aachen.de>
-Date: Wed, 27 Oct 2021 21:25:44 +0200
-Subject: [PATCH] Patched SparseLU for compatibility with rational numbers and
- functions.
+Date: Wed, 20 May 2020 15:48:43 +0200
+Subject: [PATCH] Eigen Patch
 
 ---
- Eigen/src/SparseLU/SparseLU.h              |  8 +--
+ Eigen/src/SparseLU/SparseLU.h              | 10 +--
  Eigen/src/SparseLU/SparseLU_column_bmod.h  |  2 +-
  Eigen/src/SparseLU/SparseLU_copy_to_ucol.h |  2 +-
  Eigen/src/SparseLU/SparseLU_panel_bmod.h   |  6 +-
  Eigen/src/SparseLU/SparseLU_pivotL.h       | 79 +++++++++++++++-------
- 5 files changed, 62 insertions(+), 35 deletions(-)
+ 5 files changed, 63 insertions(+), 36 deletions(-)
 
 diff --git a/Eigen/src/SparseLU/SparseLU.h b/Eigen/src/SparseLU/SparseLU.h
-index 0c8d8939b..284e6cdd0 100644
+index 7104831..9aeceb0 100644
 --- a/Eigen/src/SparseLU/SparseLU.h
 +++ b/Eigen/src/SparseLU/SparseLU.h
-@@ -155,12 +155,12 @@ class SparseLU : public SparseSolverBase<SparseLU<_MatrixType,_OrderingType> >,
+@@ -97,12 +97,12 @@ class SparseLU : public SparseSolverBase<SparseLU<_MatrixType,_OrderingType> >,
+     };
      
    public:
- 
 -    SparseLU():m_lastError(""),m_Ustore(0,0,0,0,0,0),m_symmetricmode(false),m_diagpivotthresh(1.0),m_detPermR(1)
 +    SparseLU():m_lastError(""),m_Ustore(0,0,0,0,0,0),m_symmetricmode(false),m_diagpivotthresh(1),m_detPermR(1)
      {
@@ -31,7 +30,7 @@ index 0c8d8939b..284e6cdd0 100644
      {
        initperfvalues(); 
        compute(matrix);
-@@ -352,7 +352,7 @@ class SparseLU : public SparseSolverBase<SparseLU<_MatrixType,_OrderingType> >,
+@@ -255,7 +255,7 @@ class SparseLU : public SparseSolverBase<SparseLU<_MatrixType,_OrderingType> >,
        using std::abs;
        eigen_assert(m_factorizationIsOk && "The matrix should be factorized first.");
        // Initialize with the determinant of the row matrix
@@ -40,7 +39,16 @@ index 0c8d8939b..284e6cdd0 100644
        // Note that the diagonal blocks of U are stored in supernodes,
        // which are available in the  L part :)
        for (Index j = 0; j < this->cols(); ++j)
-@@ -435,7 +435,7 @@ class SparseLU : public SparseSolverBase<SparseLU<_MatrixType,_OrderingType> >,
+@@ -286,7 +286,7 @@ class SparseLU : public SparseSolverBase<SparseLU<_MatrixType,_OrderingType> >,
+       using std::abs;
+ 
+       eigen_assert(m_factorizationIsOk && "The matrix should be factorized first.");
+-      Scalar det = Scalar(0.);
++      Scalar det = Scalar(0);
+       for (Index j = 0; j < this->cols(); ++j)
+       {
+         for (typename SCMatrix::InnerIterator it(m_Lstore, j); it; ++it)
+@@ -338,7 +338,7 @@ class SparseLU : public SparseSolverBase<SparseLU<_MatrixType,_OrderingType> >,
      {
        eigen_assert(m_factorizationIsOk && "The matrix should be factorized first.");
        // Initialize with the determinant of the row matrix
@@ -50,7 +58,7 @@ index 0c8d8939b..284e6cdd0 100644
        // which are available in the  L part :)
        for (Index j = 0; j < this->cols(); ++j)
 diff --git a/Eigen/src/SparseLU/SparseLU_column_bmod.h b/Eigen/src/SparseLU/SparseLU_column_bmod.h
-index b57f06802..be15e5ee6 100644
+index b57f068..be15e5e 100644
 --- a/Eigen/src/SparseLU/SparseLU_column_bmod.h
 +++ b/Eigen/src/SparseLU/SparseLU_column_bmod.h
 @@ -129,7 +129,7 @@ Index SparseLUImpl<Scalar,StorageIndex>::column_bmod(const Index jcol, const Ind
@@ -63,7 +71,7 @@ index b57f06802..be15e5ee6 100644
    }
    
 diff --git a/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h b/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h
-index c32d8d8b1..03c8aaf85 100644
+index c32d8d8..03c8aaf 100644
 --- a/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h
 +++ b/Eigen/src/SparseLU/SparseLU_copy_to_ucol.h
 @@ -87,7 +87,7 @@ Index SparseLUImpl<Scalar,StorageIndex>::copy_to_ucol(const Index jcol, const In
@@ -76,7 +84,7 @@ index c32d8d8b1..03c8aaf85 100644
            isub++;
          }
 diff --git a/Eigen/src/SparseLU/SparseLU_panel_bmod.h b/Eigen/src/SparseLU/SparseLU_panel_bmod.h
-index f052001c8..c52414679 100644
+index 822cf32..5dc819c 100644
 --- a/Eigen/src/SparseLU/SparseLU_panel_bmod.h
 +++ b/Eigen/src/SparseLU/SparseLU_panel_bmod.h
 @@ -122,7 +122,7 @@ void SparseLUImpl<Scalar,StorageIndex>::panel_bmod(const Index m, const Index w,
@@ -107,7 +115,7 @@ index f052001c8..c52414679 100644
          u_col++;
        }
 diff --git a/Eigen/src/SparseLU/SparseLU_pivotL.h b/Eigen/src/SparseLU/SparseLU_pivotL.h
-index a86dac93f..f1ebd3cf6 100644
+index a86dac9..f1ebd3c 100644
 --- a/Eigen/src/SparseLU/SparseLU_pivotL.h
 +++ b/Eigen/src/SparseLU/SparseLU_pivotL.h
 @@ -32,7 +32,46 @@
@@ -223,5 +231,5 @@ index a86dac93f..f1ebd3cf6 100644
      lu_col_ptr[k] *= temp; 
    return 0;
 -- 
-2.30.1 (Apple Git-130)
+2.21.0 (Apple Git-122)
 
