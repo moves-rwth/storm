@@ -267,61 +267,57 @@ namespace storm {
                 
                 STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using SMT solving.");
             } else {
+                
+                // Create vectors holding all possible values
+                std::vector<std::vector<uint64_t>> allValues;
+                for (auto const& aRef : this->parallelAutomata) {
+                    auto const& aInitLocs = aRef.get().getInitialLocationIndices();
+                    allValues.template emplace_back(aInitLocs.begin(), aInitLocs.end());
+                }
+                uint64_t locEndIndex = allValues.size();
+                for (auto const& intVar : this->variableInformation.integerVariables) {
+                    STORM_LOG_ASSERT(intVar.lowerBound <= intVar.upperBound, "Expecting variable with non-empty set of possible values.");
+                    // The value of integer variables is shifted so that 0 is always the smallest possible value
+                    allValues.push_back(storm::utility::vector::buildVectorForRange<uint64_t>(static_cast<uint64_t>(0), intVar.upperBound + 1 - intVar.lowerBound));
+                }
+                uint64_t intEndIndex = allValues.size();
+                // For boolean variables we consider the values 0 and 1.
+                allValues.resize(allValues.size() + this->variableInformation.booleanVariables.size(), std::vector<uint64_t>({static_cast<uint64_t>(0), static_cast<uint64_t>(1)}));
+                
+                std::vector<std::vector<uint64_t>::const_iterator> its;
+                std::vector<std::vector<uint64_t>::const_iterator> ites;
+                for (auto const& valVec : allValues) {
+                    its.push_back(valVec.cbegin());
+                    ites.push_back(valVec.cend());
+                }
+                
+                // Now create an initial state for each combination of values
                 CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
-                
-                std::vector<int_fast64_t> currentIntegerValues;
-                currentIntegerValues.reserve(this->variableInformation.integerVariables.size());
-                for (auto const& variable : this->variableInformation.integerVariables) {
-                    STORM_LOG_THROW(variable.lowerBound <= variable.upperBound, storm::exceptions::InvalidArgumentException, "Expecting variable with non-empty set of possible values.");
-                    currentIntegerValues.emplace_back(0);
-                    initialState.setFromInt(variable.bitOffset, variable.bitWidth, 0);
-                }
-                
-                initialStateIndices.emplace_back(stateToIdCallback(initialState));
-                
-                bool done = false;
-                while (!done) {
-                    bool changedBooleanVariable = false;
-                    for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
-                        if (initialState.get(booleanVariable.bitOffset)) {
-                            initialState.set(booleanVariable.bitOffset);
-                            changedBooleanVariable = true;
-                            break;
+                storm::utility::combinatorics::forEach(its, ites,
+                    [this, &initialState, &locEndIndex, &intEndIndex] (uint64_t index, uint64_t value) {
+                        // Set the value for the variable corresponding to the given index
+                        if (index < locEndIndex) {
+                            // Location variable
+                            setLocation(initialState, this->variableInformation.locationVariables[index], value);
+                        } else if (index < intEndIndex) {
+                            // Integer variable
+                            auto const& intVar = this->variableInformation.integerVariables[index - locEndIndex];
+                            initialState.setFromInt(intVar.bitOffset, intVar.bitWidth, value);
                         } else {
-                            initialState.set(booleanVariable.bitOffset, false);
+                            // Boolean variable
+                            STORM_LOG_ASSERT(index - intEndIndex < this->variableInformation.booleanVariables.size(), "Unexpected index");
+                            auto const& boolVar = this->variableInformation.booleanVariables[index - intEndIndex];
+                            STORM_LOG_ASSERT(value <= 1u, "Unexpected value for boolean variable.");
+                            initialState.set(boolVar.bitOffset, static_cast<bool>(value));
                         }
-                    }
-                    
-                    bool changedIntegerVariable = false;
-                    if (changedBooleanVariable) {
-                        initialStateIndices.emplace_back(stateToIdCallback(initialState));
-                    } else {
-                        for (uint64_t integerVariableIndex = 0; integerVariableIndex < this->variableInformation.integerVariables.size(); ++integerVariableIndex) {
-                            auto const& integerVariable = this->variableInformation.integerVariables[integerVariableIndex];
-                            if (currentIntegerValues[integerVariableIndex] < integerVariable.upperBound - integerVariable.lowerBound) {
-                                ++currentIntegerValues[integerVariableIndex];
-                                changedIntegerVariable = true;
-                            } else {
-                                currentIntegerValues[integerVariableIndex] = integerVariable.lowerBound;
-                            }
-                            initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, currentIntegerValues[integerVariableIndex]);
-                            
-                            if (changedIntegerVariable) {
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (changedIntegerVariable) {
-                        initialStateIndices.emplace_back(stateToIdCallback(initialState));
-                    }
-                    
-                    done = !changedBooleanVariable && !changedIntegerVariable;
-                }
-                
+                    }, [&stateToIdCallback,&initialStateIndices,&initialState] () {
+                        // Register initial state.
+                        StateType id = stateToIdCallback(initialState);
+                        initialStateIndices.push_back(id);
+                        return true; // Keep on exploring
+                    });
                 STORM_LOG_DEBUG("Enumerated " << initialStateIndices.size() << " initial states using brute force enumeration.");
             }
-            
             return initialStateIndices;
         }
         
