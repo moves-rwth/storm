@@ -111,7 +111,7 @@ namespace storm {
             std::vector<std::shared_ptr<BaseExpression const>> newExpressions;
             for (uint64_t i = 0; i < expression.getArity(); ++i) {
                 newExpressions.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getOperand(i)->accept(*this, data)));
-                if (!changed && newExpressions.back() == expression.getOperand(i)) {
+                if (!changed && newExpressions.back() != expression.getOperand(i)) {
                     changed = true;
                 }
             }
