@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace jani {
-        ClockType::ClockType() : JaniType() {
+        ClockType::ClockType() {
             // Intentionally left empty
         }
 
@@ -13,5 +13,10 @@ namespace storm {
         std::string ClockType::getStringRepresentation() const {
             return "clock";
         }
+        
+        std::unique_ptr<JaniType> ClockType::clone() const {
+            return std::make_unique<ClockType>(*this);
+        }
+
     }
 }

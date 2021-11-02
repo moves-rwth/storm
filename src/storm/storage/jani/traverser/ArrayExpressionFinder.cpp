@@ -11,6 +11,8 @@ namespace storm {
         namespace detail {
             class ArrayExpressionFinderExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             public:
+                using storm::expressions::ExpressionVisitor::visit;
+
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
                     return
                         boost::any_cast<bool>(expression.getCondition()->accept(*this, data)) ||
@@ -64,10 +66,6 @@ namespace storm {
                     return true;
                 }
 
-                virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const&, boost::any const&) override {
-                    return true;
-                }
-                
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const&, boost::any const&) override {
                     return true;
                 }
@@ -76,11 +74,6 @@ namespace storm {
                     return true;
                 }
 
-
-                virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const&, boost::any const&) override {
-                    return true;
-                }
-                
                 virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
                     for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
                         if (boost::any_cast<bool>(expression.getArgument(i)->accept(*this, data))) {
@@ -99,9 +92,6 @@ namespace storm {
                 
                 virtual void traverse(storm::expressions::Expression const& expression, boost::any const& data) override {
                     auto& res = *boost::any_cast<bool*>(data);
-                    if (containsArrayExpression(expression)) {
-                        std::cout << "Expression: " << expression << " contains arrays" << std::endl;
-                    }
                     res = res || containsArrayExpression(expression);
                 }
             };

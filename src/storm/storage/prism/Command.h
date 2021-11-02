@@ -114,7 +114,8 @@ namespace storm {
              * @return The resulting command.
              */
             Command substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
-            
+
+            Command substituteNonStandardPredicates() const;
             /*!
              * Retrieves whether the command possesses a synchronization label.
              *

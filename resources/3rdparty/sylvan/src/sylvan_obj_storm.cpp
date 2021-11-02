@@ -67,6 +67,18 @@ Bdd::ExistAbstractRepresentative(const BddSet& cube) const {
     return sylvan_existsRepresentative(bdd, cube.set.bdd);
 }
 
+Bdd
+Bdd::Without(Bdd const& other) const {
+    LACE_ME;
+    return sylvan_without(bdd, other.bdd);
+}
+
+Bdd
+Bdd::Minsol() const {
+    LACE_ME;
+    return sylvan_minsol(bdd);
+}
+
 /*********************************************
  Functions added to sylvan's Mtbdd class.
  *********************************************/

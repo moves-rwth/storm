@@ -273,6 +273,9 @@ namespace storm {
             
             
         private:
+         
+            std::vector<std::shared_ptr<Variable>>& getVariableVectorForType(JaniType const& type);
+         
             /// The vector of all variables.
             std::vector<std::shared_ptr<Variable>> variables;
             

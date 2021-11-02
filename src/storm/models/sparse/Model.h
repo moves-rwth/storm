@@ -6,6 +6,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/models/Model.h"
+#include "storm/models/ModelRepresentation.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 #include "storm/storage/sparse/ModelComponents.h"
@@ -34,6 +35,7 @@ namespace storm {
             public:
                 typedef CValueType ValueType;
                 typedef CRewardModelType RewardModelType;
+                static const storm::models::ModelRepresentation Representation = ModelRepresentation::Sparse;
                 
                 Model(Model<ValueType, RewardModelType> const& other) = default;
                 Model& operator=(Model<ValueType, RewardModelType> const& other) = default;
@@ -90,6 +92,13 @@ namespace storm {
                  * @return The initial states of the model represented by a bit vector.
                  */
                 storm::storage::BitVector const& getInitialStates() const;
+
+                /*!
+                 * Overwrites the initial states of the model.
+                 *
+                 * @param states the new initial states
+                 */
+                void setInitialStates(storm::storage::BitVector const& states);
                 
                 /*!
                  * Returns the sets of states labeled with the given label.
@@ -149,6 +158,13 @@ namespace storm {
                  * @return The reward model with the given name, if it exists.
                  */
                 RewardModelType const& getRewardModel(std::string const& rewardModelName) const;
+
+                /*!
+                 * Retrieves the reward model with the given name, if one exists. Otherwise, an exception is thrown.
+                 *
+                 * @return The reward model with the given name, if it exists.
+                 */
+                RewardModelType& getRewardModel(std::string const& rewardModelName);
 
                 /*!
                  * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
@@ -337,6 +353,11 @@ namespace storm {
                  */
                 virtual void writeDotToStream(std::ostream& outStream, size_t maxWidthLabel = 30, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const;
 
+                /*!
+                 * Writes a JSON representation of the model to the given stream
+                 */
+                virtual void writeJsonToStream(std::ostream& outStream) const;
+                
                 /*!
                  * Retrieves the set of labels attached to the given state.
                  *

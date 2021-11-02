@@ -307,7 +307,7 @@ namespace storm {
                 multiplier->multiply(env, result, nullptr, result);
                 return result;
             }
-            
+
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound) {
                 // Initialize result to the null vector.

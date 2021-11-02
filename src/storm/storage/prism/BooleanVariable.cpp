@@ -11,6 +11,10 @@ namespace storm {
         BooleanVariable BooleanVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return BooleanVariable(this->getExpressionVariable(), this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substitute(substitution) : this->getInitialValueExpression(), this->isObservable(), this->getFilename(), this->getLineNumber());
         }
+
+        BooleanVariable BooleanVariable::substituteNonStandardPredicates() const {
+            return BooleanVariable(this->getExpressionVariable(), this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substituteNonStandardPredicates() : this->getInitialValueExpression(), this->isObservable(), this->getFilename(), this->getLineNumber());
+        }
         
         void BooleanVariable::createMissingInitialValue() {
             if (!this->hasInitialValue()) {

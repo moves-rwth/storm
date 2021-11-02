@@ -86,3 +86,19 @@ TEST(SparseExplorationModelCheckerTest, AsynchronousLeader) {
     
     EXPECT_NEAR(1, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision());
 }
+
+TEST(SparseExplorationModelCheckerTest, Cicle) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/cicle.nm");
+    
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser;
+
+    storm::modelchecker::SparseExplorationModelChecker<storm::models::sparse::Mdp<double>, uint32_t> checker(program);
+    
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmax=? [ F \"done\"]");
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<>(*formula, true));
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double> const& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+    
+    EXPECT_NEAR(0.875, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision());
+}

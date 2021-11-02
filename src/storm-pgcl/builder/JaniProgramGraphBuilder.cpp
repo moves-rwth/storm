@@ -13,14 +13,14 @@ namespace storm {
                     storm::jani::Constant constant(v.second.getName(), v.second, programGraph.getInitialValue(v.first));
                     model.addConstant(constant);
                 } else if (v.second.hasBooleanType()) {
-                    auto janiVar = storm::jani::Variable::makeBasicVariable(v.second.getName(), storm::jani::JaniType::ElementType::Bool, v.second, programGraph.getInitialValue(v.first), false);
+                    auto janiVar = storm::jani::Variable::makeBooleanVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), false);
                     automaton.addVariable(*janiVar);
                     variables.emplace(v.first, janiVar);
                 } else if (isRestrictedVariable(v.first) && !isRewardVariable(v.first)) {
                     storm::storage::IntegerInterval const& bounds = variableBounds(v.first);
                     if (bounds.hasLeftBound()) {
                         if (bounds.hasRightBound()) {
-                            auto janiVar = storm::jani::Variable::makeBoundedVariable(v.second.getName(), storm::jani::JaniType::ElementType::Int, v.second, programGraph.getInitialValue(v.first), false, expManager->integer(bounds.getLeftBound().get()), expManager->integer(bounds.getRightBound().get()));
+                            auto janiVar = storm::jani::Variable::makeBoundedIntegerVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), false, expManager->integer(bounds.getLeftBound().get()), expManager->integer(bounds.getRightBound().get()));
                             variables.emplace(v.first, janiVar);
                             automaton.addVariable(*janiVar);
                         } else {
@@ -30,7 +30,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unbounded left bound is not supported yet");
                     }
                 } else {
-                    auto janiVar = storm::jani::Variable::makeBasicVariable(v.second.getName(), storm::jani::JaniType::ElementType::Int, v.second, programGraph.getInitialValue(v.first), isRewardVariable(v.first));
+                    auto janiVar = storm::jani::Variable::makeIntegerVariable(v.second.getName(), v.second, programGraph.getInitialValue(v.first), isRewardVariable(v.first));
                     if(isRewardVariable(v.first)) {
                         model.addVariable(*janiVar);
                     } else {
