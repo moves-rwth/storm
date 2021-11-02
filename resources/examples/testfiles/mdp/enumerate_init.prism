@@ -1,0 +1,15 @@
+mdp
+
+module main
+	x : [-7..10];
+	b : bool;
+	
+	[] x < 0 -> 1: (x' = -x);
+	[] x > 0 -> 0.5 : (b' = true) + 0.5 : (b'=false);
+	[] b=true & x > 0 -> 1: (x'= x-1);
+	[] x=0 -> 1 : (x'=1);
+endmodule
+
+init
+true
+endinit
