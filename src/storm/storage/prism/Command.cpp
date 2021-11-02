@@ -56,7 +56,17 @@ namespace storm {
             
             return Command(this->getGlobalIndex(), this->isMarkovian(), this->getActionIndex(), this->getActionName(), this->getGuardExpression().substitute(substitution).simplify(), newUpdates, this->getFilename(), this->getLineNumber());
         }
-        
+
+        Command Command::substituteNonStandardPredicates() const {
+            std::vector<Update> newUpdates;
+            newUpdates.reserve(this->getNumberOfUpdates());
+            for (auto const& update : this->getUpdates()) {
+                newUpdates.emplace_back(update.substituteNonStandardPredicates());
+            }
+
+            return Command(this->getGlobalIndex(), this->isMarkovian(), this->getActionIndex(), this->getActionName(), this->getGuardExpression().substituteNonStandardPredicates().simplify(), newUpdates, this->getFilename(), this->getLineNumber());
+        }
+
         bool Command::isLabeled() const {
             return labeled;
         }

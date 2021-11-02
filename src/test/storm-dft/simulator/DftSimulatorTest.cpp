@@ -169,11 +169,11 @@ namespace {
         size_t count;
         size_t invalid;
         // Invalid states are currently not supported
-        EXPECT_THROW(simulateDft(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft", 1, 10000), storm::exceptions::NotSupportedException);
+        STORM_SILENT_EXPECT_THROW(simulateDft(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft", 1, 10000), storm::exceptions::NotSupportedException);
         //EXPECT_GE(invalid, 0);
         //double result = (double) count / (10000 - invalid);
         //EXPECT_NEAR(result, 0.8646647168, 0.01);
-        EXPECT_THROW(simulateDft(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft", 1, 10000), storm::exceptions::NotSupportedException);
+        STORM_SILENT_EXPECT_THROW(simulateDft(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft", 1, 10000), storm::exceptions::NotSupportedException);
         //EXPECT_EQ(invalid, 10000);
         //EXPECT_EQ(count, 0);
         std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft", 1, 10000);

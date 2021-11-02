@@ -39,10 +39,6 @@ namespace storm  {
             return lValue;
         }
 
-        std::string Assignment::getName() const {
-            return lValue.getName();
-        }
-
         storm::jani::Variable const& Assignment::getVariable() const {
             return lValue.getVariable();
         }
@@ -71,7 +67,7 @@ namespace storm  {
                     substitutedExpressions.push_back(substituteJaniExpression(index, substitution).simplify());
                 }
 
-                lValue = LValue(lValue.getVariable(), substitutedExpressions, lValue.getSizes());
+                lValue = LValue(lValue.getVariable(), substitutedExpressions);
             }
         }
         
@@ -89,6 +85,9 @@ namespace storm  {
         }
         
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {
+            if (assignment.getLevel() != 0) {
+                stream << "@" << assignment.getLevel() << ": ";
+            }
             stream << assignment.getLValue() << " := " << assignment.getAssignedExpression();
             return stream;
         }

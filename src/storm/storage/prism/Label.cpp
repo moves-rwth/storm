@@ -18,6 +18,10 @@ namespace storm {
         Label Label::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return Label(this->getName(), this->getStatePredicateExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
+
+        Label Label::substituteNonStandardPredicates() const {
+            return Label(this->getName(), this->getStatePredicateExpression().substituteNonStandardPredicates(), this->getFilename(), this->getLineNumber());
+        }
         
         std::ostream& operator<<(std::ostream& stream, Label const& label) {
             stream << "label \"" << label.getName() << "\" = " << label.getStatePredicateExpression() << ";";
@@ -31,5 +35,10 @@ namespace storm {
         ObservationLabel ObservationLabel::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return ObservationLabel(this->getName(), this->getStatePredicateExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }
+
+        ObservationLabel ObservationLabel::substituteNonStandardPredicates() const {
+            return ObservationLabel(this->getName(), this->getStatePredicateExpression().substituteNonStandardPredicates(), this->getFilename(), this->getLineNumber());
+        }
+
     } // namespace prism
 } // namespace storm

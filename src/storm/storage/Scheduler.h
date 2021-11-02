@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/SchedulerChoice.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
 
@@ -58,12 +59,36 @@ namespace storm {
             SchedulerChoice<ValueType> const& getChoice(uint_fast64_t modelState, uint_fast64_t memoryState = 0) const;
 
             /*!
+             * Set the combination of model state and memoryStructure state to dontCare.
+             * These states are considered unreachable and are ignored when printing the scheduler.
+             * If not specified otherwise, an arbitrary choice is set if no choice exists.
+             *
+             * @param modelState The state of the model.
+             * @param memoryState The state of the memoryStructure.
+             * @param memoryState A flag indicating whether to set an arbitrary choice.
+             */
+            void setDontCare(uint_fast64_t modelState, uint_fast64_t memoryState = 0, bool setArbitraryChoice = true);
+
+            /*!
+             * Unset the combination of model state and memoryStructure state to dontCare.
+             *
+             * @param modelState The state of the model.
+             * @param memoryState The state of the memoryStructure.
+             */
+            void unSetDontCare(uint_fast64_t modelState, uint_fast64_t memoryState = 0);
+
+            /*!
+            * Is the combination of model state and memoryStructure state to reachable?
+            */
+            bool isDontCare(uint_fast64_t modelState, uint64_t memoryState = 0) const;
+
+            /*!
              * Compute the Action Support: A bit vector that indicates all actions that are selected with positive probability in some memory state
              */
             storm::storage::BitVector computeActionSupport(std::vector<uint64_t> const& nondeterministicChoiceIndicies) const;
 
             /*!
-             * Retrieves whether there is a pair of model and memory state for which the choice is undefined.
+             * Retrieves whether there is a *reachable* pair of model and memory state for which the choice is undefined.
              */
             bool isPartialScheduler() const;
             
@@ -102,27 +127,30 @@ namespace storm {
 				return newScheduler;
 			}
         
-            /*!
+			/*!
              * Prints the scheduler to the given output stream.
              * @param out The output stream
              * @param model If given, provides additional information for printing (e.g., displaying the state valuations instead of state indices)
              * @param skipUniqueChoices If true, the (unique) choice for deterministic states (i.e., states with only one enabled choice) is not printed explicitly.
              *                          Requires a model to be given.
+             * @param skipDontCareStates If true, the choice for dontCareStates states is not printed explicitly.
              */
-            void printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false) const;
+            void printToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false, bool skipDontCareStates = false) const;
 
             
             /*!
              * Prints the scheduler in json format to the given output stream.
              */
-             void printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false) const;
+            void printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false,  bool skipDontCareStates = false) const;
             
         private:
             
             boost::optional<storm::storage::MemoryStructure> memoryStructure;
             std::vector<std::vector<SchedulerChoice<ValueType>>> schedulerChoices;
+            std::vector<storm::storage::BitVector> dontCareStates;
             uint_fast64_t numOfUndefinedChoices;
             uint_fast64_t numOfDeterministicChoices;
+            uint_fast64_t numOfDontCareStates;
         };
     }
 }

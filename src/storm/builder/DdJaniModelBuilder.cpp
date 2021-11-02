@@ -10,6 +10,8 @@
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/Variable.h"
+#include "storm/storage/jani/types/AllJaniTypes.h"
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
@@ -424,9 +426,10 @@ namespace storm {
             }
             
             void createVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
-                if (variable.isBooleanVariable()) {
+                auto const& type = variable.getType();
+                if (type.isBasicType() && type.asBasicType().isBooleanType()) {
                     createBooleanVariable(variable, result);
-                } else if (variable.isBoundedVariable() && variable.isIntegerVariable()) {
+                } else if (type.isBoundedType() && type.asBoundedType().isIntegerType()) {
                     createBoundedIntegerVariable(variable, result);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid type of variable in JANI model.");
@@ -434,12 +437,15 @@ namespace storm {
             }
             
             void createBoundedIntegerVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
-                int_fast64_t low = variable.getLowerBound().evaluateAsInt();
-                int_fast64_t high = variable.getUpperBound().evaluateAsInt();
+                auto const& type = variable.getType().asBoundedType();
+                STORM_LOG_THROW(type.hasLowerBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() << " has no lower bound.");
+                STORM_LOG_THROW(type.hasUpperBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() <<" has no upper bound.");
+                int_fast64_t low = type.getLowerBound().evaluateAsInt();
+                int_fast64_t high = type.getUpperBound().evaluateAsInt();
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName(), low, high);
                 
                 STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
-                
+
                 result.rowMetaVariables.insert(variablePair.first);
                 result.variableToRowMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.first);
                 
@@ -454,7 +460,7 @@ namespace storm {
                 
                 result.allGlobalVariables.insert(variable.getExpressionVariable());
             }
-            
+
             void createBooleanVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName());
                 
@@ -2112,7 +2118,7 @@ namespace storm {
             }
             
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                if (variable.isBooleanVariable()) {
+                if (variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType()) {
                     if (options.buildAllLabels || options.labelNames.find(variable.getName()) != options.labelNames.end()) {
                         result[variable.getName()] = model.getLabelExpression(variable, composedAutomata);
                     }

@@ -139,7 +139,7 @@ namespace storm {
             if (lhs.belief.size() != rhs.belief.size()) {
                 return false;
             }
-            storm::utility::ConstantsComparator<ValueType> cmp(0.00001, true);
+            storm::utility::ConstantsComparator<ValueType> cmp(storm::utility::convertNumber<ValueType>(0.00001), true);
             auto lhsIt = lhs.belief.begin();
             auto rhsIt = rhs.belief.begin();
             while(lhsIt != lhs.belief.end()) {
@@ -410,7 +410,7 @@ namespace storm {
             storm::utility::Stopwatch trackTimer(true);
             for (auto const& belief : beliefs) {
                 belief.update(newObservation, newBeliefs);
-                if (options.trackTimeOut > 0 && trackTimer.getTimeInMilliseconds() > options.trackTimeOut) {
+                if (options.trackTimeOut > 0 && static_cast<uint64_t>(trackTimer.getTimeInMilliseconds()) > options.trackTimeOut) {
                     return false;
                 }
             }

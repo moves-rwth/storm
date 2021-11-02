@@ -134,12 +134,12 @@ namespace storm {
                             // Case 2: Triggering outside events
                             // If the SPARE was already detected to have dynamic behavior, do not proceed
                             if (!dynamicBehaviorVector[spare->id()]) {
-                                for (auto const &memberID : module(child->id())) {
+                                for (auto const& memberID : module(child->id())) {
                                     // Iterate over all members of the module child represents
                                     auto member = getElement(memberID);
-                                    for (auto const dep : member->outgoingDependencies()) {
+                                    for (auto const& dep : member->outgoingDependencies()) {
                                         // If the member has outgoing dependencies, check if those trigger something outside the module
-                                        for (auto const depEvent : dep->dependentEvents()) {
+                                        for (auto const& depEvent : dep->dependentEvents()) {
                                             // If a dependent event is not found in the module, SPARE is dynamic
                                             if (std::find(module(child->id()).begin(), module(child->id()).end(),
                                                           depEvent->id()) == module(child->id()).end()) {
@@ -297,6 +297,7 @@ namespace storm {
                         // Mirror symmetry for each element
                         for (size_t i = 1; i < symmetricElements.size(); ++i) {
                             size_t symmetricElement = symmetricElements[i];
+                            STORM_LOG_ASSERT(!visited[symmetricElement], "Symmetric element " << symmetricElement << " already considered before.");
                             visited.set(symmetricElement);
 
                             generationInfo.addStateIndex(symmetricElement, index + offset * i);
@@ -336,6 +337,7 @@ namespace storm {
                 visitQueue.push(dependency->dependentEvents()[0]->id());
             }
             stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
+            STORM_LOG_ASSERT(visitQueue.empty(), "VisitQueue not empty");
 
             // Visit all remaining states
             for (size_t i = 0; i < visited.size(); ++i) {

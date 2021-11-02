@@ -46,7 +46,6 @@ namespace storm {
                 virtual std::vector<ValueType> getOverApproximationOfInitialStateResults() const override;
                 
             private:
-                
                 struct EpochCheckingData {
                 
                     std::vector<ValueType> bMinMax;
@@ -73,8 +72,6 @@ namespace storm {
                 
                 boost::optional<std::vector<ValueType>> underApproxResult;
                 boost::optional<std::vector<ValueType>> overApproxResult;
-
-                
             };
             
         }

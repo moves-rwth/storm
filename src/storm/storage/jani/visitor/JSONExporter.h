@@ -17,6 +17,7 @@ namespace storm {
         class ExpressionToJson : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             
         public:
+            using storm::expressions::ExpressionVisitor::visit;
             static ExportJsonType translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, std::unordered_set<std::string> const& auxiliaryVariables);
             
             virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data);
@@ -30,10 +31,8 @@ namespace storm {
             virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data);
-            virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data);
-            virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data);
 
         private:
@@ -53,6 +52,7 @@ namespace storm {
             virtual boost::any visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::BinaryBooleanPathFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BooleanLiteralFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::ConditionalFormula const& f, boost::any const& data) const;
@@ -71,7 +71,9 @@ namespace storm {
             virtual boost::any visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::TotalRewardFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::UnaryBooleanPathFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::HOAPathFormula const& f, boost::any const& data) const;
       
         private:
             FormulaToJaniJson(storm::jani::Model const& model) : model(model), stateExitRewards(false) { }

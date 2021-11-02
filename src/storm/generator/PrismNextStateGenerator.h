@@ -23,7 +23,7 @@ namespace storm {
             typedef storm::storage::FlatSet<uint_fast64_t> CommandSet;
             enum class CommandFilter {All, Markovian, Probabilistic};
 
-            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
+            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions(), std::shared_ptr<ActionMask<ValueType,StateType>> const& = nullptr);
             
             /*!
              * A quick check to detect whether the given model is not supported.
@@ -39,6 +39,7 @@ namespace storm {
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
 
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
+            bool evaluateBooleanExpressionInCurrentState(storm::expressions::Expression const&) const;
 
             virtual std::size_t getNumberOfRewardModels() const override;
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
@@ -56,7 +57,7 @@ namespace storm {
              * being called. The last argument is only present to distinguish the signature of this constructor from the
              * public one.
              */
-            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag);
+            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, std::shared_ptr<ActionMask<ValueType,StateType>> const&, bool flag);
             
             /*!
              * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
@@ -86,22 +87,27 @@ namespace storm {
             boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
-             * Retrieves all unlabeled choices possible from the given state.
+             * Retrieves all choices that are definitively asynchronous, possible from the given state.
              *
              * @param state The state for which to retrieve the unlabeled choices.
-             * @return The unlabeled choices of the state.
+             * @return The asynchronous choices of the state.
              */
-            std::vector<Choice<ValueType>> getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
+            std::vector<Choice<ValueType>> getAsynchronousChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
             
             /*!
-             * Retrieves all labeled choices possible from the given state.
+             * Retrieves all (potentially) synchronous choices possible from the given state. 
+             * Note that these may include choices that run asynchronously for this state.
              *
              * @param choices The new choices are inserted in this vector
              * @param state The state for which to retrieve the unlabeled choices.
-             * @return The labeled choices of the state.
+             * @return The synchronous choices of the state.
              */
-            void addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
+            void addSynchronousChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
 
+            /*!
+             * Extend the Json struct with additional information about the state.
+             */
+            virtual void extendStateInformation(storm::json<ValueType>& stateInfo) const override;
 
             /*!
              * Evaluate observation labels
@@ -112,6 +118,8 @@ namespace storm {
              * A recursive helper function to generate a synchronziing distribution.
              */
             void generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback);
+
+            bool isCommandPotentiallySynchronizing(prism::Command const& command) const;
 
             // The program used for the generation of next states.
             storm::prism::Program program;

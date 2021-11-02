@@ -21,7 +21,6 @@
  */
 template<typename ValueType>
 void processOptions() {
-
     auto const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
     auto const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
@@ -114,6 +113,72 @@ void processOptions() {
     }
 #endif
 
+    // BDD Analysis
+    if(dftIOSettings.isExportToBddDot() ||
+            dftIOSettings.isAnalyzeWithBdds() ||
+            dftIOSettings.isMinimalCutSets() ||
+            dftIOSettings.isImportanceMeasureSet()) {
+        bool const isImportanceMeasureSet{dftIOSettings.isImportanceMeasureSet()};
+        bool const isMinimalCutSets{dftIOSettings.isMinimalCutSets()};
+        bool const isMTTF{dftIOSettings.usePropExpectedTime()};
+        double const mttfPrecision{faultTreeSettings.getMttfPrecision()};
+        double const mttfStepsize{faultTreeSettings.getMttfStepsize()};
+        std::string const mttfAlgorithm{faultTreeSettings.getMttfAlgorithm()};
+        bool const isExportToBddDot{dftIOSettings.isExportToBddDot()};
+        bool const isTimebound{dftIOSettings.usePropTimebound()};
+        bool const isTimepoints{dftIOSettings.usePropTimepoints()};
+
+        bool const probabilityAnalysis {ioSettings.isPropertySet() || !isImportanceMeasureSet};
+        size_t const chunksize{faultTreeSettings.getChunksize()};
+        bool const isModularisation{faultTreeSettings.useModularisation()};
+
+        std::vector<double> timepoints{};
+        if(isTimepoints) {
+            timepoints = dftIOSettings.getPropTimepoints();
+        }
+        if (isTimebound) {
+            timepoints.push_back(dftIOSettings.getPropTimebound());
+        }
+
+        std::string filename{""};
+        if(isExportToBddDot) {
+            filename = dftIOSettings.getExportBddDotFilename();
+        }
+
+        // gather manually inputted properties
+        std::vector<std::shared_ptr<storm::logic::Formula const>>
+            manuallyInputtedProperties;
+        if(ioSettings.isPropertySet()) {
+            manuallyInputtedProperties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(ioSettings.getProperty()));
+        }
+
+        std::string importanceMeasureName{""};
+        if(isImportanceMeasureSet) {
+            importanceMeasureName = dftIOSettings.getImportanceMeasure();
+        }
+
+        auto const additionalRelevantEventNames {faultTreeSettings.getRelevantEvents()};
+        storm::api::analyzeDFTBdd<ValueType>(dft,
+                isExportToBddDot,
+                filename,
+                isMTTF,
+                mttfPrecision,
+                mttfStepsize,
+                mttfAlgorithm,
+                isMinimalCutSets,
+                probabilityAnalysis,
+                isModularisation,
+                importanceMeasureName,
+                timepoints,
+                manuallyInputtedProperties,
+                additionalRelevantEventNames,
+                chunksize);
+
+        // don't perform other analysis if analyzeWithBdds is set
+        if(dftIOSettings.isAnalyzeWithBdds()) {
+            return;
+        }
+    }
 
     // From now on we analyse the DFT via model checking
 

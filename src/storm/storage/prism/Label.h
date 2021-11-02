@@ -58,6 +58,7 @@ namespace storm {
              * @return The resulting label.
              */
             Label substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            Label substituteNonStandardPredicates() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Label const& label);
             
@@ -96,7 +97,7 @@ namespace storm {
             * @return The resulting label.
             */
             ObservationLabel substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
-
+            ObservationLabel substituteNonStandardPredicates() const;
         };
 
 

@@ -8,6 +8,8 @@
 
 namespace storm {
     namespace storage {
+        // fwd
+        class BitVector;
         
         /*!
          * This class represents a maximal end-component of a nondeterministic model.
@@ -106,6 +108,14 @@ namespace storm {
              */
             bool containsState(uint_fast64_t state) const;
             
+            /*!
+             * Retrieves whether at least one of the given states is contained in this MEC.
+             *
+             * @param stateSet The states for which to query membership in the MEC.
+             * @return True if any of the given states is contained in the MEC.
+             */
+            bool containsAnyState(storm::storage::BitVector stateSet) const;
+
             /*!
              * Retrieves whether the given choice for the given state is contained in the MEC.
              *

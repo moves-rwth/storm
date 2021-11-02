@@ -7,6 +7,7 @@
 #include <boost/optional/optional.hpp>
 
 #include "storm/storage/expressions/Variable.h"
+#include "storm/generator/ArrayVariableReplacementInformation.h"
 
 namespace storm {
     namespace prism {
@@ -105,8 +106,8 @@ namespace storm {
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
 
             void registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData);
-            BooleanVariableInformation const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
-            IntegerVariableInformation const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
+            BooleanVariableInformation const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const;
+            IntegerVariableInformation const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const;
 
             /// The total bit offset over all variables.
             uint_fast64_t totalBitOffset;
@@ -122,10 +123,11 @@ namespace storm {
 
             /// The observation labels
             std::vector<ObservationLabelInformation> observationLabels;
+            
 
             /// Replacements for each array variable
-            std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
-
+            std::unordered_map<storm::expressions::Variable, ArrayVariableReplacementInformation> arrayVariableToElementInformations;
+            
             bool hasOutOfBoundsBit() const;
 
             uint64_t getOutOfBoundsBit() const;

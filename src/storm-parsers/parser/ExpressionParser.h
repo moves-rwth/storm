@@ -211,7 +211,19 @@ namespace storm {
 
             // A parser used for recognizing the operators at the "power" precedence level.
             prefixPowerModuloOperatorStruct prefixPowerModuloOperator_;
-            
+
+            struct predicateOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                predicateOperatorStruct() {
+                    add
+                            ("atLeastOneOf", storm::expressions::OperatorType::AtLeastOneOf)
+                            ("atMostOneOf", storm::expressions::OperatorType::AtMostOneOf)
+                            ("exactlyOneOf", storm::expressions::OperatorType::ExactlyOneOf);
+                }
+            };
+
+            // A parser used for recognizing the operators at the "min/max" precedence level.
+            predicateOperatorStruct predicateOperator_;
+
             
             std::unique_ptr<ExpressionCreator> expressionCreator;
             
@@ -237,6 +249,7 @@ namespace storm {
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> minMaxExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> floorCeilExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> roundExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> predicateExpression;
             qi::rule<Iterator, std::string(), Skipper> identifier;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).

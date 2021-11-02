@@ -32,7 +32,8 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        std::ostream& LongRunAverageRewardFormula::writeToStream(std::ostream& out) const {
+        std::ostream& LongRunAverageRewardFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             out << "LRA";
             if (hasRewardAccumulation()) {
                 out << "[" << getRewardAccumulation() << "]";

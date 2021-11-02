@@ -1,32 +1,53 @@
 #include "storm/storage/jani/types/BasicType.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/UnexpectedException.h"
+
 namespace storm {
     namespace jani {
-        BasicType::BasicType(const ElementType &type) : JaniType(), type(type) {
+        BasicType::BasicType(const Type &type) : JaniType(), type(type) {
             // Intentionally left empty
         }
 
+        bool BasicType::isBasicType() const {
+            return true;
+        }
+
+        BasicType::Type const& BasicType::get() const {
+            return type;
+        }
+        
         bool BasicType::isBooleanType() const {
-            return type == ElementType::Bool;
+            return type == Type::Bool;
         }
 
         bool BasicType::isIntegerType() const {
-            return type == ElementType::Int;
+            return type == Type::Int;
         }
 
         bool BasicType::isRealType() const {
-            return type == ElementType::Real;
+            return type == Type::Real;
+        }
+
+        bool BasicType::isNumericalType() const {
+            return isIntegerType() || isRealType();
         }
 
         std::string BasicType::getStringRepresentation() const {
             switch (type) {
-                case ElementType::Real:
-                    return "real";
-                case ElementType::Bool:
+                case Type::Bool:
                     return "bool";
-                case ElementType::Int:
+                case Type::Int:
                     return "int";
+                case Type::Real:
+                    return "real";
             }
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled basic type.");
         }
+        
+        std::unique_ptr<JaniType> BasicType::clone() const {
+            return std::make_unique<BasicType>(*this);
+        }
+        
     }
 }

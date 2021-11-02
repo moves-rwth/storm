@@ -44,7 +44,8 @@ namespace storm {
             return rewardMeasureType;
         }
         
-        std::ostream& RewardOperatorFormula::writeToStream(std::ostream& out) const {
+        std::ostream& RewardOperatorFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             out << "R";
             out << "[" << rewardMeasureType << "]";
             if (this->hasRewardModelName()) {
