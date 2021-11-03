@@ -72,7 +72,8 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
+        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(
+                const CheckTask <logic::BoundedUntilFormula, ConstantType> &checkTask) {
             
             // get the step bound
             STORM_LOG_THROW(!checkTask.getFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
@@ -201,7 +202,8 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
+        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(
+                const CheckTask <logic::CumulativeRewardFormula, ConstantType> &checkTask) {
             
             // Obtain the stepBound
             stepBound = checkTask.getFormula().getBound().evaluateAsInt();

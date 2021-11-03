@@ -82,7 +82,7 @@ namespace storm {
              */
             virtual std::map<VariableType, double> getRegionSplitEstimate() const;
 
-            virtual std::shared_ptr<storm::analysis::Order> extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
+            virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
 
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
@@ -109,7 +109,7 @@ namespace storm {
 
             virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
-            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> & region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const;
+            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> &region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum) const;
 
         };
 
