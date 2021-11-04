@@ -1,7 +1,7 @@
 #include "storm/storage/jani/expressions/ConstructorArrayExpression.h"
 
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"

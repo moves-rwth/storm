@@ -112,7 +112,7 @@ namespace storm {
                     } else {
                         // Recursively call model checking
                         std::vector<ValueType> res;
-                        for (auto const ft : dfts) {
+                        for (auto const& ft : dfts) {
                             // TODO: allow approximation in modularisation
                             dft_results ftResults = checkHelper(ft, {property}, symred, true, relevantEvents, allowDCForRelevant, 0.0);
                             STORM_LOG_ASSERT(ftResults.size() == 1, "Wrong number of results");
@@ -193,7 +193,7 @@ namespace storm {
                 STORM_LOG_TRACE("Recursive CHECK Call");
                 bool firstTime = true;
                 std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> composedModel;
-                for (auto const ft : dfts) {
+                for (auto const& ft : dfts) {
                     STORM_LOG_DEBUG("Building Model via parallel composition...");
                     explorationTimer.start();
 

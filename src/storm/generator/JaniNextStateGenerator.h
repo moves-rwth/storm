@@ -4,7 +4,7 @@
 #include "storm/generator/TransientVariableInformation.h"
 
 #include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/jani/OrderedAssignments.h"
 #include "storm/storage/BoostTypes.h"
 

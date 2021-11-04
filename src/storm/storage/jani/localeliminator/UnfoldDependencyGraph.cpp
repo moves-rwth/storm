@@ -125,8 +125,8 @@ namespace storm {
                 for (auto variableSet : variableSets) {
                     for (auto &var : *variableSet.second) {
                         bool isConstBounded = false;
-                        if (var.isBoundedIntegerVariable()) {
-                            auto biVar = var.asBoundedIntegerVariable();
+                        if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType()) {
+                            auto biVar = var.getType().asBoundedType();
                             if (biVar.hasLowerBound()
                                 && biVar.hasUpperBound()
                                 && !biVar.getLowerBound().containsVariables()
@@ -141,7 +141,7 @@ namespace storm {
                                 isConstBounded = true;
                             }
                         }
-                        else if (var.isBooleanVariable()) {
+                        else if (var.getType().isBasicType() && var.getType().asBasicType().isBooleanType()) {
                             variables.push_back(VariableInfo(var.getExpressionVariable().getName(), var.getName(),
                                                              variableSet.first == "", variableSet.first, true, 2));
 

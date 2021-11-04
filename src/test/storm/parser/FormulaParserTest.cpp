@@ -276,6 +276,10 @@ TEST(FormulaParserTest, LogicalPrecedenceTest) {
     EXPECT_TRUE(nested6.asEventuallyFormula().getSubformula().asBinaryPathFormula().getLeftSubformula().isAtomicLabelFormula());
     EXPECT_TRUE(nested6.asEventuallyFormula().getSubformula().asBinaryPathFormula().getRightSubformula().isGloballyFormula());
     auto const &nested6Subformula = nested6.asEventuallyFormula().getSubformula().asBinaryPathFormula().getRightSubformula().asGloballyFormula();
+    EXPECT_TRUE(nested6Subformula.getSubformula().isBinaryBooleanPathFormula());
+    EXPECT_TRUE(nested6Subformula.getSubformula().asBinaryPathFormula().getLeftSubformula().isAtomicLabelFormula());
+    EXPECT_TRUE(nested6Subformula.getSubformula().asBinaryPathFormula().getRightSubformula().isNextFormula());
+    EXPECT_TRUE(nested6Subformula.getSubformula().asBinaryPathFormula().getRightSubformula().asNextFormula().getSubformula().isAtomicLabelFormula());
 }
 
 TEST(FormulaParserTest, TemporalPrecedenceTest) {
@@ -378,8 +382,8 @@ TEST(FormulaParserTest, HOAPathFormulaTest) {
     ASSERT_NO_THROW(std::string af = nested1.asHOAPathFormula().getAutomatonFile());
     storm::automata::DeterministicAutomaton::ptr da1;
     ASSERT_NO_THROW(da1 = nested1.asHOAPathFormula().readAutomaton());
-    EXPECT_EQ(3, da1->getNumberOfStates());
-    EXPECT_EQ(4, da1->getNumberOfEdgesPerState());
+    EXPECT_EQ(3ul, da1->getNumberOfStates());
+    EXPECT_EQ(4ul, da1->getNumberOfEdgesPerState());
 
     std::map<std::string, std::shared_ptr<storm::logic::Formula const>> apFormulaMap1 = nested1.asHOAPathFormula().getAPMapping();
     EXPECT_TRUE(apFormulaMap1["p0"]->isUnaryBooleanStateFormula());
@@ -394,8 +398,8 @@ TEST(FormulaParserTest, HOAPathFormulaTest) {
     ASSERT_NO_THROW(std::string af = nested2.asHOAPathFormula().getAutomatonFile());
     storm::automata::DeterministicAutomaton::ptr da2;
     ASSERT_NO_THROW(da2 = nested2.asHOAPathFormula().readAutomaton());
-    EXPECT_EQ(4, da2->getNumberOfStates());
-    EXPECT_EQ(4, da2->getNumberOfEdgesPerState());
+    EXPECT_EQ(4ul, da2->getNumberOfStates());
+    EXPECT_EQ(4ul, da2->getNumberOfEdgesPerState());
 
     std::map<std::string, std::shared_ptr<storm::logic::Formula const>> apFormulaMap2 = nested2.asHOAPathFormula().getAPMapping();
     EXPECT_TRUE(apFormulaMap2["p0"]->isBinaryBooleanStateFormula());

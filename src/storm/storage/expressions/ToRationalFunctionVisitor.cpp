@@ -55,7 +55,7 @@ namespace storm {
                         return storm::utility::pow(firstOperandAsRationalFunction, exponentAsInteger);
                     }
                 default:
-                    STORM_LOG_ASSERT(false, "Illegal operator type.");
+                    STORM_LOG_ASSERT(false, "Illegal operator type " << expression.getOperator() << " in expression" << expression << ".");
             }
             
             // Return a dummy. This point must, however, never be reached.

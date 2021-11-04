@@ -18,7 +18,7 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InternalException.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/prism/CompositionVisitor.h"
 #include "storm/storage/prism/Compositions.h"

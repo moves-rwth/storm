@@ -116,6 +116,27 @@ namespace storm {
                 bool isExportToSmt() const;
 
                 /*!
+                 * Retrieves whether the analyze with Bdds option was set.
+                 *
+                 * @return True if the analyze with Bdds option was set.
+                 */
+                bool isAnalyzeWithBdds() const;
+
+                /*!
+                 * Retrieves whether the minimal cut sets option was set.
+                 *
+                 * @return True if the minimal cut sets option was set.
+                 */
+                bool isMinimalCutSets() const;
+
+                /*!
+                 * Retrieves whether the export to Bdd Dot file option was set.
+                 *
+                 * @return True if the export to Bdd Dot file option was set.
+                 */
+                bool isExportToBddDot() const;
+
+                /*!
                  * Retrieves the name of the json file to export to.
                  *
                  * @return The name of the json file to export to.
@@ -130,12 +151,33 @@ namespace storm {
                 std::string getExportSmtFilename() const;
 
                 /*!
+                 * Retrieves the name of the dot file to export to.
+                 *
+                 * @return The name of the dot file to export to.
+                 */
+                std::string getExportBddDotFilename() const;
+
+                /*!
                  * Retrieves whether statistics about the DFT analysis should be displayed.
                  *
                  * @return True if the statistics option was set.
                  */
                 bool isShowDftStatisticsSet() const;
-                
+
+                /*!
+                 * Retrieves whether to calculate an importance measure.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isImportanceMeasureSet() const;
+
+                /*!
+                 * Retrieves the name of the importance measure to calculate.
+                 *
+                 * @return The name of the importance measure.
+                 */
+                std::string getImportanceMeasure() const;
+
                 bool check() const override;
                 void finalize() override;
 
@@ -155,11 +197,14 @@ namespace storm {
                 static const std::string propTimepointsOptionName;
                 static const std::string minValueOptionName;
                 static const std::string maxValueOptionName;
+                static const std::string analyzeWithBdds;
+                static const std::string minimalCutSets;
                 static const std::string exportToJsonOptionName;
                 static const std::string exportToSmtOptionName;
+                static const std::string exportToBddDotOptionName;
                 static const std::string dftStatisticsOptionName;
                 static const std::string dftStatisticsOptionShortName;
-
+                static const std::string importanceMeasureOptionName;
             };
 
         } // namespace modules

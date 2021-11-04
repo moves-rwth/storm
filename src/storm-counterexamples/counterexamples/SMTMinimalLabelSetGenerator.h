@@ -438,18 +438,14 @@ namespace storm {
                             if (integerVariable.isTransient()) {
                                 continue;
                             }
-                            
-                            localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBound());
-                            localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBound());
+                            localSolver->add(integerVariable.getRangeExpression());
                         }
                         for (auto const& automaton : janiModel.getAutomata()) {
                             for (auto const& integerVariable : automaton.getVariables().getBoundedIntegerVariables()) {
                                 if (integerVariable.isTransient()) {
                                     continue;
                                 }
-                                
-                                localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBound());
-                                localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBound());
+                                localSolver->add(integerVariable.getRangeExpression());
                             }
                         }
                     }

@@ -131,14 +131,14 @@ namespace storm {
                 std::vector<Assignment> newAssignments;
                 for (uint64_t i = 0; i < allAssignments.size(); ++i) {
                     auto const& iLValue = allAssignments.at(i)->getLValue();
-                    if (synchronous && !localVars.hasVariable(iLValue.isVariable() ? iLValue.getVariable() : iLValue.getArray())) {
+                    if (synchronous && !localVars.hasVariable(iLValue.getVariable())) {
                         newAssignments.push_back(*(allAssignments.at(i)));
                         continue;
                     }
                     bool readBeforeWrite = true;
                     for (uint64_t j = i + 1; j < allAssignments.size(); ++j) {
                         if (allAssignments.at(j)->getAssignedExpression().containsVariable(
-                                {iLValue.isVariable() ? iLValue.getVariable().getExpressionVariable() : iLValue.getArray().getExpressionVariable()})) {
+                                {iLValue.getVariable().getExpressionVariable()})) {
                             // is read.
                             break;
                         }
@@ -164,10 +164,7 @@ namespace storm {
             std::vector<Assignment> newAssignments;
             for (auto const& assignment : allAssignments) {
                 newAssignments.push_back(*assignment);
-                if (assignment->isTransient() && !assignment->getAssignedExpression().containsVariables()) {
-                    // Since we do not support
-                }
-                if (synchronous && !localVars.hasVariable(assignment->getLValue().isVariable() ? assignment->getLValue().getVariable() : assignment->getLValue().getArray())) {
+                if (synchronous && !localVars.hasVariable(assignment->getLValue().getVariable())) {
                     continue;
                 }
                 if (assignment->getLevel() == 0) {
@@ -261,7 +258,7 @@ namespace storm {
         }
         
         uint64_t OrderedAssignments::isReadBeforeAssignment(LValue const& lValue, uint64_t assignmentNumber, uint64_t start) const {
-            Variable const& var = lValue.isVariable() ? lValue.getVariable() : lValue.getArray();
+            Variable const& var = lValue.getVariable();
             // TODO: do this more carefully
             STORM_LOG_WARN_COND(lValue.isVariable(), "Called a method that is not optimized for arrays.");
             for (uint64_t i = start; i < assignmentNumber; i++) {
@@ -310,17 +307,12 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments) {
-            stream << "[";
+            stream << "[" << std::endl;
             for(auto const& e : assignments.allAssignments) {
-                stream << *e;
-                if (e->getLevel() != 0) {
-                    stream << " @" << e->getLevel();
-                }
-                stream << std::endl;
+                stream << "\t" << *e << std::endl;
             }
             stream << "]";
             return stream;
         }
-        
     }
 }

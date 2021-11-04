@@ -2,7 +2,7 @@
 
 #include <set>
 
-#include "storm/storage/jani/Composition.h"
+#include "Composition.h"
 
 namespace storm {
     namespace jani {

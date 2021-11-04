@@ -12,7 +12,7 @@
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/storage/jani/traverser/AssignmentLevelFinder.h"
 #include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
 #include "storm/storage/jani/traverser/RewardModelInformation.h"
@@ -105,7 +105,7 @@ namespace storm {
                             STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()) , storm::exceptions::InvalidSettingsException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
                             storm::jani::Variable const& variable = this->model.getGlobalVariables().getVariable(expressionOrLabelAndBool.first.getLabel());
-                            STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
+                            STORM_LOG_THROW(variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
                             this->terminalStates.emplace_back(variable.getExpressionVariable().getExpression(), expressionOrLabelAndBool.second);
@@ -365,9 +365,14 @@ namespace storm {
             }
             // Iterate over all array access assignments and carry them out.
             for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
-                int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
+                auto const& arrayIndicesAsExpr = assignmentIt->getLValue().getArrayIndexVector();
+                std::vector<uint64_t> arrayIndices;
+                arrayIndices.reserve(arrayIndicesAsExpr.size());
+                for (auto const& i : arrayIndicesAsExpr) {
+                    arrayIndices.push_back(static_cast<uint64_t>(expressionEvaluator.asInt(i)));
+                }
                 if (assignmentIt->getAssignedExpression().hasIntegerType()) {
-                    IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndices);
                     int_fast64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
 
                     if (this->options.isAddOutOfBoundsStateSet()) {
@@ -381,7 +386,7 @@ namespace storm {
                     state.setFromInt(intInfo.bitOffset, intInfo.bitWidth, assignedValue - intInfo.lowerBound);
                     STORM_LOG_ASSERT(static_cast<int_fast64_t>(state.getAsInt(intInfo.bitOffset, intInfo.bitWidth)) + intInfo.lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << state.getAsInt(intInfo.bitOffset, intInfo.bitWidth) << " but wrote " << assignedValue << ").");
                 } else if (assignmentIt->getAssignedExpression().hasBooleanType()) {
-                    BooleanVariableInformation const& boolInfo = this->variableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    BooleanVariableInformation const& boolInfo = this->variableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndices);
                     state.set(boolInfo.bitOffset, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
@@ -430,10 +435,15 @@ namespace storm {
             
             // Iterate over all array access assignments and carry them out.
             for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
-                int_fast64_t arrayIndex = expressionEvaluator.asInt(assignmentIt->getLValue().getArrayIndex());
-                storm::expressions::Type const& baseType = assignmentIt->getLValue().getArray().getExpressionVariable().getType();
+                auto const& arrayIndicesAsExpr = assignmentIt->getLValue().getArrayIndexVector();
+                std::vector<uint64_t> arrayIndices;
+                arrayIndices.reserve(arrayIndicesAsExpr.size());
+                for (auto const& i : arrayIndicesAsExpr) {
+                    arrayIndices.push_back(static_cast<uint64_t>(expressionEvaluator.asInt(i)));
+                }
+                storm::expressions::Type const& baseType = assignmentIt->getLValue().getVariable().getExpressionVariable().getType();
                 if (baseType.isIntegerType()) {
-                    auto const& intInfo = this->transientVariableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    auto const& intInfo = this->transientVariableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndices);
                     int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
                     if (this->options.isExplorationChecksSet()) {
                         STORM_LOG_THROW(assignedValue >= intInfo.lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
@@ -441,10 +451,10 @@ namespace storm {
                     }
                     transientValuation.integerValues.emplace_back(&intInfo, assignedValue);
                 } else if (baseType.isBooleanType()) {
-                    auto const& boolInfo = this->transientVariableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    auto const& boolInfo = this->transientVariableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndices);
                     transientValuation.booleanValues.emplace_back(&boolInfo, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
                 } else if (baseType.isRationalType()) {
-                    auto const& rationalInfo = this->transientVariableInformation.getRationalArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndex);
+                    auto const& rationalInfo = this->transientVariableInformation.getRationalArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndices);
                     transientValuation.rationalValues.emplace_back(&rationalInfo, expressionEvaluator.asRational(assignmentIt->getAssignedExpression()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
@@ -1113,7 +1123,7 @@ namespace storm {
             // create a list of boolean transient variables and the expressions that define them.
             std::vector<std::pair<std::string, storm::expressions::Expression>> transientVariableExpressions;
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                if (variable.isBooleanVariable()) {
+                if (variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType()) {
                     if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
                         transientVariableExpressions.emplace_back(variable.getName(), variable.getExpressionVariable().getExpression());
                     }

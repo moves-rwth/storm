@@ -6,7 +6,7 @@
 #include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/storage/jani/JaniScopeChanger.h"
-#include "storm/storage/jani/JSONExporter.h"
+#include "storm/storage/jani/visitor/JSONExporter.h"
 
 #include "storm/io/file.h"
 #include "storm/api/properties.h"
@@ -78,7 +78,7 @@ namespace storm {
                 janiModel.pushEdgeAssignmentsToDestinations();
             }
             
-            auto uneliminatedFeatures = janiModel.restrictToFeatures(options.allowedModelFeatures);
+            auto uneliminatedFeatures = janiModel.restrictToFeatures(options.allowedModelFeatures, properties);
             STORM_LOG_WARN_COND(uneliminatedFeatures.empty(), "The following model features could not be eliminated: " << uneliminatedFeatures.toString());
             
             if (options.modelName) {

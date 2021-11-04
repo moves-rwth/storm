@@ -10,11 +10,13 @@
 #include "storm/storage/jani/EdgeDestination.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Automaton.h"
+#include "storm/storage/jani/Variable.h"
+#include "storm/storage/jani/types/AllJaniTypes.h"
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
-#include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
 
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
@@ -424,24 +426,26 @@ namespace storm {
             }
             
             void createVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
-                if (variable.isBooleanVariable()) {
-                    createVariable(variable.asBooleanVariable(), result);
-                } else if (variable.isBoundedIntegerVariable()) {
-                    createVariable(variable.asBoundedIntegerVariable(), result);
+                auto const& type = variable.getType();
+                if (type.isBasicType() && type.asBasicType().isBooleanType()) {
+                    createBooleanVariable(variable, result);
+                } else if (type.isBoundedType() && type.asBoundedType().isIntegerType()) {
+                    createBoundedIntegerVariable(variable, result);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid type of variable in JANI model.");
                 }
             }
             
-            void createVariable(storm::jani::BoundedIntegerVariable const& variable, CompositionVariables<Type, ValueType>& result) {
-                STORM_LOG_THROW(variable.hasLowerBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() << " has no lower bound.");
-                STORM_LOG_THROW(variable.hasUpperBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() <<" has no upper bound.");
-                int_fast64_t low = variable.getLowerBound().evaluateAsInt();
-                int_fast64_t high = variable.getUpperBound().evaluateAsInt();
+            void createBoundedIntegerVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
+                auto const& type = variable.getType().asBoundedType();
+                STORM_LOG_THROW(type.hasLowerBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() << " has no lower bound.");
+                STORM_LOG_THROW(type.hasUpperBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() <<" has no upper bound.");
+                int_fast64_t low = type.getLowerBound().evaluateAsInt();
+                int_fast64_t high = type.getUpperBound().evaluateAsInt();
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName(), low, high);
                 
                 STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
-                
+
                 result.rowMetaVariables.insert(variablePair.first);
                 result.variableToRowMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.first);
                 
@@ -456,8 +460,8 @@ namespace storm {
                 
                 result.allGlobalVariables.insert(variable.getExpressionVariable());
             }
-            
-            void createVariable(storm::jani::BooleanVariable const& variable, CompositionVariables<Type, ValueType>& result) {
+
+            void createBooleanVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName());
                 
                 STORM_LOG_TRACE("Created meta variables for global boolean variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
@@ -567,7 +571,7 @@ namespace storm {
             std::set_intersection(assignedVariables.begin(), assignedVariables.end(), variables.allGlobalVariables.begin(), variables.allGlobalVariables.end(), std::inserter(assignedGlobalVariables, assignedGlobalVariables.begin()));
             
             // All unassigned boolean variables need to keep their value.
-            for (storm::jani::BooleanVariable const& variable : automaton.getVariables().getBooleanVariables()) {
+            for (storm::jani::Variable const& variable : automaton.getVariables().getBooleanVariables()) {
                 if (assignedVariables.find(variable.getExpressionVariable()) == assignedVariables.end()) {
                     STORM_LOG_TRACE("Multiplying identity of variable " << variable.getName());
                     transitions *= variables.variableToIdentityMap.at(variable.getExpressionVariable());
@@ -575,7 +579,7 @@ namespace storm {
             }
             
             // All unassigned integer variables need to keep their value.
-            for (storm::jani::BoundedIntegerVariable const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
+            for (storm::jani::Variable const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
                 if (assignedVariables.find(variable.getExpressionVariable()) == assignedVariables.end()) {
                     STORM_LOG_TRACE("Multiplying identity of variable " << variable.getName());
                     transitions *= variables.variableToIdentityMap.at(variable.getExpressionVariable());
@@ -2114,9 +2118,9 @@ namespace storm {
             }
             
             for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-                if (variable.isBooleanVariable()) {
+                if (variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType()) {
                     if (options.buildAllLabels || options.labelNames.find(variable.getName()) != options.labelNames.end()) {
-                        result[variable.getName()] = model.getLabelExpression(variable.asBooleanVariable(), composedAutomata);
+                        result[variable.getName()] = model.getLabelExpression(variable, composedAutomata);
                     }
                 }
             }

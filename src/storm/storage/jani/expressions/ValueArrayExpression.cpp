@@ -1,6 +1,6 @@
 #include "storm/storage/jani/expressions/ValueArrayExpression.h"
 
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -47,11 +47,11 @@ namespace storm {
             stream << "array[ ";
             bool first = true;
             for (auto const& e : elements) {
-                stream << *e;
                 if (!first) {
                     stream << " , ";
                 }
                 first = false;
+                stream << *e;
             }
             stream << " ]";
         }

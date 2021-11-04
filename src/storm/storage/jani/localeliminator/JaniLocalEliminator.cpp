@@ -95,7 +95,7 @@ namespace storm {
                     automaton.pushEdgeAssignmentsToDestinations();
 
                     for (auto &var : automaton.getVariables()){
-                        if (var.isBoundedIntegerVariable()){
+                        if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType()){
                             var.setTransient(false);
                         }
                     }
@@ -104,7 +104,7 @@ namespace storm {
                 for (auto &var : newModel.getGlobalVariables()){
                     // Only make integer variables non-transient, as those are the only variables added during the
                     // process and all others were present since the beginning.
-                    if (var.isBoundedIntegerVariable()){
+                    if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType()){
                         var.setTransient(false);
                     }
                 }
@@ -151,7 +151,7 @@ namespace storm {
                     continue;
                 if (asg.getAssignedExpression().containsVariables() || (asg.getVariable().hasInitExpression() && asg.getVariable().getInitExpression().containsVariables()))
                     continue;
-                if (asg.getVariable().isBoundedIntegerVariable()){
+                if (asg.getVariable().getType().isBoundedType() && asg.getVariable().getType().asBoundedType().isIntegerType()){
                     if (asg.getVariable().hasInitExpression()){
                         int initValue = asg.getVariable().getInitExpression().evaluateAsInt();
                         int currentValue = asg.getAssignedExpression().evaluateAsInt();
@@ -161,7 +161,7 @@ namespace storm {
                         STORM_LOG_WARN("Variable " + asg.getVariable().getName() + " has no init expression. The result may not be correct.");
                     }
                 }
-                else if (asg.getVariable().isBooleanVariable()){
+                else if (asg.getVariable().getType().isBasicType() && asg.getVariable().getType().asBasicType().isBooleanType()){
                     if (asg.getVariable().hasInitExpression()){
                         bool initValue = asg.getVariable().getInitExpression().evaluateAsBool();
                         bool currentValue = asg.getAssignedExpression().evaluateAsBool();
@@ -298,11 +298,14 @@ namespace storm {
             if (raw->isProbabilityOperatorFormula()) {
                 auto subformula = &raw->asProbabilityOperatorFormula().getSubformula();
                 if (subformula->isEventuallyFormula()) {
-                    supported = true;
+                    if (subformula->asEventuallyFormula().getSubformula().isAtomicExpressionFormula()) {
+                        supported = true;
+                    }
                 }
                 else if (subformula->isUntilFormula()){
                     const auto& untilFormula = subformula->asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isTrueFormula()){
+                    if (untilFormula.getLeftSubformula().isTrueFormula()  &&
+                        untilFormula.getRightSubformula().isAtomicExpressionFormula()) {
                         supported = true;
                     }
                 }
@@ -310,11 +313,13 @@ namespace storm {
             if (raw->isRewardOperatorFormula()) {
                 auto subformula = &raw->asRewardOperatorFormula().getSubformula();
                 if (subformula->isEventuallyFormula()) {
-                    supported = true;
+                    if (subformula->asEventuallyFormula().getSubformula().isAtomicExpressionFormula()) {
+                        supported = true;
+                    }
                 }
                 else if (subformula->isUntilFormula()){
                     const auto& untilFormula = subformula->asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isTrueFormula()){
+                    if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()){
                         supported = true;
                     }
                 }
@@ -498,15 +503,15 @@ namespace storm {
                 storm::solver::Z3SmtSolver solver(model.getExpressionManager());
                 solver.add(newGuard);
                 for (const auto &var : model.getGlobalVariables()){
-                    if (var.isBoundedIntegerVariable() && variables.count(var.getExpressionVariable()) > 0){
-                        auto &biVariable = var.asBoundedIntegerVariable();
+                    if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType() && variables.count(var.getExpressionVariable()) > 0){
+                        auto &biVariable = var.getType().asBoundedType();
                         solver.add(var.getExpressionVariable().getExpression() >= biVariable.getLowerBound());
                         solver.add(var.getExpressionVariable().getExpression() <= biVariable.getUpperBound());
                     }
                 }
                 for (const auto &var : automaton.getVariables()){
-                    if (var.isBoundedIntegerVariable() && variables.count(var.getExpressionVariable()) > 0){
-                        auto &biVariable = var.asBoundedIntegerVariable();
+                    if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType() && variables.count(var.getExpressionVariable()) > 0){
+                        auto &biVariable = var.getType().asBoundedType();
                         solver.add(var.getExpressionVariable().getExpression() >= biVariable.getLowerBound());
                         solver.add(var.getExpressionVariable().getExpression() <= biVariable.getUpperBound());
                     }

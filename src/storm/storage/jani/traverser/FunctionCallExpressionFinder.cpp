@@ -1,7 +1,7 @@
 #include "storm/storage/jani/traverser/FunctionCallExpressionFinder.h"
 
 #include "storm/storage/jani/traverser/JaniTraverser.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
 #include "storm/storage/jani/Model.h"
 
@@ -71,7 +71,7 @@ namespace storm {
                     }
                     return boost::any();
                 }
-                
+
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
                     expression.getElementExpression()->accept(*this, data);
                     expression.size()->accept(*this, data);
@@ -83,7 +83,7 @@ namespace storm {
                     expression.getSecondOperand()->accept(*this, data);
                     return boost::any();
                 }
-                
+
                 virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
                     auto& set = *boost::any_cast<std::unordered_set<std::string>*>(data);
                     set.insert(expression.getFunctionIdentifier());

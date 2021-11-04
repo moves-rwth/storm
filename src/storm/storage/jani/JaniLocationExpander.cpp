@@ -44,8 +44,8 @@ namespace storm {
             VariableSet &containingSet = isGlobalVariable ? newModel.getGlobalVariables() : newAutomaton.getVariables();
 
             auto &var = containingSet.getVariable(variableName);
-            bool isBoundedInteger = var.isBoundedIntegerVariable();
-            bool isBool = var.isBooleanVariable();
+            bool isBoundedInteger = var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType();
+            bool isBool = var.getType().isBasicType() && var.getType().asBasicType().isBooleanType();
 
             STORM_LOG_THROW(isBoundedInteger || isBool, storm::exceptions::InvalidOperationException,
                             "Variable to be eliminated has to be an bounded integer or boolean variable.");
@@ -62,34 +62,35 @@ namespace storm {
             uint32_t initialValueIndex; // The index in variableDomain of the initial value
 
             if (isBoundedInteger) {
-                auto biVariable = containingSet.getVariable(variableName).asBoundedIntegerVariable();
+                auto biVariable = containingSet.getVariable(variableName).getType().asBoundedType();
 
                 int64_t variableUpperBound = biVariable.getUpperBound().evaluateAsInt();
                 int64_t variableLowerBound = biVariable.getLowerBound().evaluateAsInt();
-                int64_t initialVariableValue = biVariable.getInitExpression().evaluateAsInt();
+                int64_t initialVariableValue = containingSet.getVariable(variableName).getInitExpression().evaluateAsInt();
                 for (int64_t i = variableLowerBound; i <= variableUpperBound; i++) {
                     variableDomain.push_back(original.getExpressionManager().integer(i));
                 }
                 initialValueIndex = initialVariableValue - variableLowerBound;
 
-                containingSet.eraseVariable(biVariable.getExpressionVariable());
-                biVariable.setTransient(useTransientVariables);
-                containingSet.addVariable(biVariable);
+                containingSet.eraseVariable(var.getExpressionVariable());
+                auto newVar = Variable::makeBoundedIntegerVariable(variableName, var.getExpressionVariable(), var.getInitExpression(), true, biVariable.getLowerBound(), biVariable.getUpperBound());
+                containingSet.addVariable(*newVar);
 
             } else if (isBool) {
-                auto boolVariable = containingSet.getVariable(variableName).asBooleanVariable();
+                std::cout << "Bool!!" << std::endl;
+                auto boolVariable = containingSet.getVariable(variableName).getType().asBasicType();
                 variableDomain.push_back(original.getExpressionManager().boolean(false));
                 variableDomain.push_back(original.getExpressionManager().boolean(true));
-                bool initialValue = boolVariable.getInitExpression().evaluateAsBool();
+                bool initialValue = containingSet.getVariable(variableName).getInitExpression().evaluateAsBool();
                 if (initialValue) {
                     initialValueIndex = 1;
                 } else {
                     initialValueIndex = 0;
                 }
 
-                containingSet.eraseVariable(boolVariable.getExpressionVariable());
-                boolVariable.setTransient(useTransientVariables);
-                containingSet.addVariable(boolVariable);
+                containingSet.eraseVariable(containingSet.getVariable(variableName).getExpressionVariable());
+                auto newVar = Variable::makeBooleanVariable(variableName, var.getExpressionVariable(), var.getInitExpression(), true);
+                containingSet.addVariable(*newVar);
             }
 
             const Variable &newVariablePointer = containingSet.getVariable(variableName);
