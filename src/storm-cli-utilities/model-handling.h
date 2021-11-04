@@ -399,7 +399,7 @@ namespace storm {
                     auto locationHeuristic = buildSettings.getLocationEliminationLocationHeuristic();
                     auto edgesHeuristic = buildSettings.getLocationEliminationEdgesHeuristic();
                     auto eliminator = storm::jani::JaniLocalEliminator(output.model.get().asJaniModel(), output.properties);
-                    eliminator.scheduler.addAction(std::make_unique<storm::jani::elimination_actions::AutomaticAction>());
+                    eliminator.scheduler.addAction(std::make_unique<storm::jani::elimination_actions::AutomaticAction>(locationHeuristic, edgesHeuristic));
                     eliminator.eliminate();
                     output.model->setModel(eliminator.getResult());
                 }
