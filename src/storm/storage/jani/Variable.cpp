@@ -4,22 +4,12 @@
 namespace storm {
     namespace jani {
 
-        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), variable(variable),  transient(transient), type(type), init(init){
-            if (type->isArrayType()) {
-                arrayType = type;
-                while (type->isArrayType()) {
-                    type = type->getChildType();
-                }
-            }
+        Variable::Variable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), type(type.clone()), variable(variable), init(init), transient(transient) {
+            // Intentionally left empty
         }
 
-        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable) : name(name), variable(variable), transient(false), type(type) , init(){
-            if (type->isArrayType()) {
-                arrayType = type;
-                while (type->isArrayType()) {
-                    type = type->getChildType();
-                }
-            }
+        Variable::Variable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable) : name(name), type(type.clone()), variable(variable), init(), transient(false) {
+            // Intentionally left empty
         }
 
         Variable::~Variable() {
@@ -27,7 +17,7 @@ namespace storm {
         }
 
         std::unique_ptr<Variable> Variable::clone() const {
-            return std::make_unique<Variable>(*this);
+            return std::make_unique<Variable>(name, *type, variable, init, transient);
         }
         
         storm::expressions::Variable const& Variable::getExpressionVariable() const {
@@ -46,66 +36,17 @@ namespace storm {
             name = newName;
         }
         
-        bool Variable::isBooleanVariable() const {
-            auto ptr = dynamic_cast<BasicType const*>(type);
-            return ptr != nullptr && ptr->isBooleanType();
-        }
-        
-        bool Variable::isBoundedVariable() const {
-            if (isArrayVariable()) {
-                auto ptr = dynamic_cast<ArrayType const*>(type);
-                return ptr != nullptr && ptr->isBoundedType();
-            } else {
-                auto ptr = dynamic_cast<BoundedType const*>(type);
-                return ptr != nullptr;
-            }
-        }
-
-        bool Variable::isRealVariable() const {
-            if (isBoundedVariable()) {
-                auto ptr = dynamic_cast<BoundedType const*>(type);
-                return ptr != nullptr && ptr->isRealType();
-            } else {
-                auto ptr = dynamic_cast<BasicType const*>(type);
-                return ptr != nullptr && ptr->isRealType();
-            }
-        }
-
-        bool Variable::isIntegerVariable() const {
-            if (isBoundedVariable()) {
-                auto ptr = dynamic_cast<BoundedType const*>(type);
-                return ptr != nullptr && ptr->isIntegerType();
-            } else {
-                auto ptr = dynamic_cast<BasicType const*>(type);
-                return ptr != nullptr && ptr->isIntegerType();
-            }
-        }
-        
-        bool Variable::isArrayVariable() const {
-            auto ptr = dynamic_cast<ArrayType const*>(type);
-            return ptr != nullptr && ptr->isArrayType();
-        }
-        
-        bool Variable::isClockVariable() const {
-            auto ptr = dynamic_cast<ClockType const*>(type);
-            return ptr != nullptr && ptr->isClockType();
-        }
-
-        bool Variable::isContinuousVariable() const {
-            auto ptr = dynamic_cast<ContinuousType const*>(type);
-            return ptr != nullptr && ptr->isContinuousType();
-        }
-        
         bool Variable::isTransient() const {
             return transient;
         }
 
         bool Variable::hasInitExpression() const {
-            return init.is_initialized();
+            return init.isInitialized();
         }
 
         storm::expressions::Expression const& Variable::getInitExpression() const {
-            return this->init.get();
+            STORM_LOG_ASSERT(hasInitExpression(), "Tried to get the init expression of a variable that doesn't have any.");
+            return this->init;
         }
         
         void Variable::setInitExpression(storm::expressions::Expression const& initialExpression) {
@@ -116,104 +57,84 @@ namespace storm {
             if (this->hasInitExpression()) {
                 this->setInitExpression(substituteJaniExpression(this->getInitExpression(), substitution));
             }
-            if (this->isBoundedVariable() && this->hasLowerBound()) {
-                this->setLowerBound(substituteJaniExpression(this->getLowerBound(), substitution));
-            }
-            if (this->isBoundedVariable() && this->hasUpperBound()) {
-                this->setUpperBound(substituteJaniExpression(this->getUpperBound(), substitution));
-            }
+            type->substitute(substitution);
         }
 
-        storm::expressions::Expression const& Variable::getLowerBound() const {
-            STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to get lowerBound for variable without lowerBound");
-            return type->getLowerBound();
+        JaniType& Variable::getType() {
+            return *type;
         }
 
-        void Variable::setLowerBound(storm::expressions::Expression const& expression) {
-            STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to set lowerBound for unbounded variable");
-            type->setLowerBound(expression);
+        JaniType const& Variable::getType() const {
+            return *type;
         }
-
-        bool Variable::hasLowerBound() const {
-            return this->isBoundedVariable() && this->getLowerBound().isInitialized();
-        }
-
-        storm::expressions::Expression const& Variable::getUpperBound() const {
-            STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to get upperBound for variable without upperBound");
-            return type->getUpperBound();
-        }
-
-        void Variable::setUpperBound(storm::expressions::Expression const& expression) {
-            STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to set upperBound for unbounded variable");
-            type->setUpperBound(expression);
-        }
-
-        bool Variable::hasUpperBound() const {
-            return this->isBoundedVariable() && this->getUpperBound().isInitialized();
-        }
-
+        
         storm::expressions::Expression Variable::getRangeExpression() const {
-            STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to get rangeExpression for unbounded variable");
-
             storm::expressions::Expression range;
-            if (this->hasLowerBound()) {
-                range = this->getLowerBound() <= this->getExpressionVariable();
-            }
-            if (this->hasUpperBound()) {
-                if (range.isInitialized()) {
-                    range = range && this->getExpressionVariable() <= this->getUpperBound();
-                } else {
-                    range = this->getExpressionVariable() <= this->getUpperBound();
+            
+            if (getType().isBoundedType()) {
+                auto const& boundedType = getType().asBoundedType();
+                
+                if (boundedType.hasLowerBound()) {
+                    range = boundedType.getLowerBound() <= this->getExpressionVariable();
+                }
+                if (boundedType.hasUpperBound()) {
+                    if (range.isInitialized()) {
+                        range = range && this->getExpressionVariable() <= boundedType.getUpperBound();
+                    } else {
+                        range = this->getExpressionVariable() <= boundedType.getUpperBound();
+                    }
                 }
             }
             return range;
         }
 
-        JaniType* Variable::getType() const {
-            return type;
-        }
-
-        JaniType* Variable::getArrayType() const {
-            return arrayType;
-        }
-
-        std::shared_ptr<Variable> Variable::makeBoundedVariable(const std::string &name, JaniType::ElementType type, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound) {
-            if (initValue) {
-                auto res = std::make_shared<Variable>(name, new storm::jani::BoundedType(type, lowerBound ? lowerBound.get() : storm::expressions::Expression(), upperBound ? upperBound.get() : storm::expressions::Expression()), variable, initValue.get(), transient);
-                return res;
-            } else {
-                assert(!transient);
-                auto res = std::make_shared<Variable>(name, new storm::jani::BoundedType(type, lowerBound ? lowerBound.get() : storm::expressions::Expression(), upperBound ? upperBound.get() : storm::expressions::Expression()), variable);
-                return res;
-            }
-        }
-
-        std::shared_ptr<Variable> Variable::makeBasicVariable(const std::string &name, JaniType::ElementType type, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
-            if (initValue) {
-                return std::make_shared<Variable>(name, new storm::jani::BasicType(type), variable, initValue.get(), transient);
-            } else {
-                assert(!transient);
-                return std::make_shared<Variable>(name, new storm::jani::BasicType(type), variable);
-            }
-        }
-
-        std::shared_ptr<Variable> Variable::makeClockVariable(const std::string &name, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
-            if (initValue) {
-                return std::make_shared<Variable>(name, new storm::jani::ClockType(), variable, initValue.get(), transient);
-            } else {
-                assert(!transient);
-                return std::make_shared<Variable>(name, new storm::jani::ClockType(), variable);
-            }
-        }
-
-        std::shared_ptr<Variable> Variable::makeArrayVariable(const std::string &name, JaniType* type, expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
-            assert (type->isArrayType());
+        std::shared_ptr<Variable> Variable::makeVariable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
             if (initValue) {
                 return std::make_shared<Variable>(name, type, variable, initValue.get(), transient);
             } else {
-                assert(!transient);
+                STORM_LOG_ASSERT(!transient, "Expecting variable without init value to be not a transient variable");
                 return std::make_shared<Variable>(name, type, variable);
             }
+        }
+
+        std::shared_ptr<Variable> Variable::makeBasicTypeVariable(std::string const& name, BasicType::Type const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
+            return makeVariable(name, BasicType(type), variable, initValue, transient);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeBooleanVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
+            return makeVariable(name, BasicType(BasicType::Type::Bool), variable, initValue, transient);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
+            return makeVariable(name, BasicType(BasicType::Type::Int), variable, initValue, transient);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeRealVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
+            return makeVariable(name, BasicType(BasicType::Type::Real), variable, initValue, transient);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeBoundedVariable(std::string const& name, BoundedType::BaseType const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient, boost::optional<storm::expressions::Expression> const& lowerBound, boost::optional<storm::expressions::Expression> const& upperBound) {
+            return makeVariable(name, storm::jani::BoundedType(type, lowerBound ? lowerBound.get() : storm::expressions::Expression(), upperBound ? upperBound.get() : storm::expressions::Expression()), variable, initValue, transient);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeBoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient, boost::optional<storm::expressions::Expression> const& lowerBound, boost::optional<storm::expressions::Expression> const& upperBound) {
+            return makeBoundedVariable(name, BoundedType::BaseType::Int, variable, initValue, transient, lowerBound, upperBound);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeBoundedRealVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient, boost::optional<storm::expressions::Expression> const& lowerBound, boost::optional<storm::expressions::Expression> const& upperBound) {
+            return makeBoundedVariable(name, BoundedType::BaseType::Real, variable, initValue, transient, lowerBound, upperBound);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeArrayVariable(std::string const& name, JaniType const& baseType, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
+            return makeVariable(name, ArrayType(baseType), variable, initValue, transient);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeClockVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
+            return makeVariable(name, ClockType(), variable, initValue, transient);
+        }
+        
+        std::shared_ptr<Variable> Variable::makeContinuousVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient) {
+            return makeVariable(name, ContinuousType(), variable, initValue, transient);
         }
 
         bool operator==(Variable const& lhs, Variable const& rhs) {

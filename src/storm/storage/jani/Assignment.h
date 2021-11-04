@@ -23,7 +23,6 @@ namespace storm {
             Assignment(Assignment const&) = default;
             bool operator==(Assignment const& other) const;
             
-            
             /*!
              * Returns true if the lValue is a variable
              */
@@ -44,8 +43,6 @@ namespace storm {
              */
             storm::jani::LValue& getLValue();
 
-            std::string getName() const;
-            
             /*!
              * Retrieves the Variable that is written in this assignment.
              * This assumes that the lValue is a variable.

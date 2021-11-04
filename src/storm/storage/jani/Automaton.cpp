@@ -3,6 +3,7 @@
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/Location.h"
+#include "storm/storage/jani/types/AllJaniTypes.h"
 #include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -373,7 +374,12 @@ namespace storm {
                 }
                 
                 if (variable.hasInitExpression()) {
-                    storm::expressions::Expression newInitExpression = variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression();
+                    storm::expressions::Expression newInitExpression;
+                    if (variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType()) {
+                        newInitExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression());
+                    } else {
+                        newInitExpression = variable.getExpressionVariable() == variable.getInitExpression();
+                    }
                     if (result.isInitialized()) {
                         result = result && newInitExpression;
                     } else {
@@ -494,7 +500,8 @@ namespace storm {
                     encounteredTemplateEdges.insert(templateEdge);
                     
                     for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
-                        if (assignment.getVariable().isTransient() && assignment.getVariable().isRealVariable()) {
+                        auto const& var = assignment.getVariable();
+                        if (var.isTransient() && var.getType().isBasicType() && var.getType().asBasicType().isRealType()) {
                             templateEdge->addTransientAssignment(assignment, true);
                         } else if (createNewLocation) {
                             newLocation.addTransientAssignment(assignment);

@@ -1,5 +1,6 @@
 #include "storm-pars/settings/ParsSettings.h"
 
+#include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm-pars/settings/modules/MonotonicitySettings.h"
@@ -43,6 +44,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
             storm::settings::addModule<storm::settings::modules::MonotonicitySettings>();
+            storm::settings::addModule<storm::settings::modules::DerivativeSettings>();
             storm::settings::addModule<storm::settings::modules::RegionSettings>();
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();

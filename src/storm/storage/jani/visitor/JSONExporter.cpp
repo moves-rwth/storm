@@ -209,6 +209,14 @@ namespace storm {
             opDecl["right"] = anyToJson(f.getRightSubformula().accept(*this, data));
             return opDecl;
         }
+        boost::any FormulaToJaniJson::visit(storm::logic::BinaryBooleanPathFormula const& f, boost::any const& data) const{
+            ExportJsonType opDecl;
+            storm::logic::BinaryBooleanPathFormula::OperatorType op = f.getOperator();
+            opDecl["op"] = op == storm::logic::BinaryBooleanPathFormula::OperatorType::And ? "∧" : "∨";
+            opDecl["left"] = boost::any_cast<ExportJsonType>(f.getLeftSubformula().accept(*this, data));
+            opDecl["right"] = boost::any_cast<ExportJsonType>(f.getRightSubformula().accept(*this, data));
+            return opDecl;
+        }
         boost::any FormulaToJaniJson::visit(storm::logic::BooleanLiteralFormula const& f, boost::any const&) const {
             ExportJsonType opDecl(f.isTrueFormula() ? true : false);
             return opDecl;
@@ -540,7 +548,16 @@ namespace storm {
             opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
             return opDecl;
         }
-        
+
+        boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanPathFormula const& f, boost::any const& data) const {
+            ExportJsonType opDecl;
+            storm::logic::UnaryBooleanPathFormula::OperatorType op = f.getOperator();
+            assert(op == storm::logic::UnaryBooleanPathFormula::OperatorType::Not);
+            opDecl["op"] = "¬";
+            opDecl["exp"] = boost::any_cast<ExportJsonType>(f.getSubformula().accept(*this, data));
+            return opDecl;
+        }
+
         boost::any FormulaToJaniJson::visit(storm::logic::UntilFormula const& f, boost::any const& data) const {
             ExportJsonType opDecl;
             opDecl["op"] = "U";
@@ -549,6 +566,10 @@ namespace storm {
             return opDecl;
         }
         
+        boost::any FormulaToJaniJson::visit(storm::logic::HOAPathFormula const&, boost::any const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support HOA path formulae");
+        }
+
         std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
             
             using OpType = storm::expressions::OperatorType;
@@ -703,71 +724,24 @@ namespace storm {
             return opDecl;
         }
 
-        boost::any ExpressionToJson::visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) {
-            assert (false);
-//            ExportJsonType opDecl;
-//            opDecl["op"] = "av";
-//            std::vector<ExportJsonType> elements;
-//            uint64_t size = expression.size()->evaluateAsInt();
-//            for (uint64_t i = 0; i < size; ++i) {
-//                elements.push_back(anyToJson(expression.at(i)->accept(*this, data)));
-//            }
-//            opDecl["elements"] = std::move(elements);
-//            return opDecl;
-        }
-        
         boost::any ExpressionToJson::visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) {
             ExportJsonType opDecl;
             opDecl["op"] = "ac";
-            STORM_LOG_THROW(expression.getNumberOfArrays() <= 2, storm::exceptions::NotImplementedException, "Exporting JSON for more than two nested arrays is not yet implemented");
-
-            // TODO: make this generic
-            if (expression.getNumberOfArrays() == 2) {
-                ExportJsonType opDeclSecond;
-                opDeclSecond["op"] = "ac";
-                opDeclSecond["var"] = expression.getIndexVar(1)->getName();
-                opDeclSecond["length"] = std::to_string(expression.getSizeIndexVar(1));
-                bool insertedSecond = auxiliaryVariables.insert(expression.getIndexVar(1)->getName()).second;
-                opDeclSecond["exp"] = anyToJson(expression.getElementExpression()->accept(*this, data));
-                if (insertedSecond) {
-                    auxiliaryVariables.erase(expression.getIndexVar(1)->getName());
-                }
-                opDecl["var"] = expression.getIndexVar(0)->getName();
-                opDecl["length"] = std::to_string(expression.getSizeIndexVar(0));
-                bool inserted = auxiliaryVariables.insert(expression.getIndexVar(0)->getName()).second;
-                opDecl["exp"] = std::move(opDeclSecond);
-                if (inserted) {
-                    auxiliaryVariables.erase(expression.getIndexVar(0)->getName());
-                }
-            } else {
-                opDecl["var"] = expression.getIndexVar(0)->getName();
-                opDecl["length"] = std::to_string(expression.getSizeIndexVar(0));
-                bool inserted = auxiliaryVariables.insert(expression.getIndexVar(0)->getName()).second;
-                opDecl["exp"] = anyToJson(expression.getElementExpression()->accept(*this, data));
-                if (inserted) {
-                    auxiliaryVariables.erase(expression.getIndexVar(0)->getName());
-                }
+            opDecl["var"] = expression.getIndexVar().getName();
+            opDecl["length"] = anyToJson(expression.size()->accept(*this, data));
+            bool inserted = auxiliaryVariables.insert(expression.getIndexVar().getName()).second;
+            opDecl["exp"] = anyToJson(expression.getElementExpression()->accept(*this, data));
+            if (inserted) {
+                auxiliaryVariables.erase(expression.getIndexVar().getName());
             }
             return opDecl;
         }
         
         boost::any ExpressionToJson::visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) {
-            std::pair<boost::any const&, std::shared_ptr<storm::expressions::BaseExpression const>> newData = {data, expression.getFirstOperand()};
-            return anyToJson(expression.getSecondOperand()->accept(*this, newData));;
-        }
-
-        boost::any ExpressionToJson::visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data) {
             ExportJsonType opDecl;
-            auto castData = boost::any_cast<std::pair<boost::any const&, std::shared_ptr<storm::expressions::BaseExpression const>>>(data);
-            if (expression.getFirstOperand() == expression.getSecondOperand()) {
-                opDecl["op"] = "aa";
-                opDecl["exp"] = anyToJson(castData.second->accept(*this, castData.first));
-                opDecl["index"] = anyToJson(expression.getFirstOperand()->accept(*this, castData.first));
-            } else {
-                opDecl["op"] = "aa";
-                opDecl["exp"] = anyToJson(expression.getSecondOperand()->accept(*this, data));
-                opDecl["index"] = anyToJson(expression.getFirstOperand()->accept(*this, castData.first));
-            }
+            opDecl["op"] = "aa";
+            opDecl["exp"] = anyToJson(expression.getOperand(0)->accept(*this, data));
+            opDecl["index"] = anyToJson(expression.getOperand(1)->accept(*this, data));
             return opDecl;
         }
         
@@ -892,28 +866,32 @@ namespace storm {
             return ExportJsonType(constantDeclarations);
         }
 
-        ExportJsonType buildArray(storm::jani::Variable variable, storm::jani::JaniType& type, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
+        ExportJsonType buildType(storm::jani::JaniType const& type, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
             ExportJsonType typeDesc ;
-            if(type.isBooleanType()) {
-                typeDesc = "bool";
-            } else if (type.isRealType()) {
-                typeDesc = "real";
-            } else if (type.isIntegerType() && !type.isBoundedType()) {
-                typeDesc = "int";
-            } else if (type.isIntegerType() && type.isBoundedType()) {
+            if (type.isBasicType() || type.isClockType() || type.isContinuousType()) {
+                typeDesc = type.getStringRepresentation();
+            } else if (type.isBoundedType()) {
                 typeDesc["kind"] = "bounded";
-                typeDesc["base"] = "int";
-                typeDesc["lower-bound"] = buildExpression(variable.getLowerBound(), constants, globalVariables, localVariables);
-                typeDesc["upper-bound"] = buildExpression(variable.getUpperBound(), constants, globalVariables, localVariables);
+                auto const& bndType = type.asBoundedType();
+                switch (bndType.getBaseType()) {
+                    case storm::jani::BoundedType::BaseType::Int:
+                        typeDesc["base"] = "int";
+                        break;
+                    case storm::jani::BoundedType::BaseType::Real:
+                        typeDesc["base"] = "real";
+                        break;
+                }
+                if (bndType.hasLowerBound()) {
+                    typeDesc["lower-bound"] = buildExpression(bndType.getLowerBound(), constants, globalVariables, localVariables);
+                }
+                if (bndType.hasUpperBound()) {
+                    typeDesc["upper-bound"] = buildExpression(bndType.getUpperBound(), constants, globalVariables, localVariables);
+                }
             } else if (type.isArrayType()) {
                 typeDesc["kind"] = "array";
-                typeDesc["base"] = buildArray(variable, *type.getChildType(), constants, globalVariables, localVariables);
-            } else if (type.isClockType()) {
-                typeDesc = "clock";
-            } else if (type.isContinuousType()) {
-                typeDesc = "continuous";
+                typeDesc["base"] = buildType(type.asArrayType().getBaseType(), constants, globalVariables, localVariables);
             } else {
-                assert (false);
+                STORM_LOG_THROW (false, storm::exceptions::NotImplementedException, "Variable type not recognized in JSONExporter");
             }
             return typeDesc;
         }
@@ -926,30 +904,7 @@ namespace storm {
                 if (variable.isTransient()) {
                     varEntry["transient"] = variable.isTransient();
                 }
-                ExportJsonType typeDesc ;
-                if(variable.isBooleanVariable()) {
-                    typeDesc = "bool";
-                } else if (variable.isRealVariable()) {
-                    typeDesc = "real";
-                } else if (variable.isIntegerVariable() && !variable.isBoundedVariable()) {
-                    typeDesc = "int";
-                } else if (variable.isIntegerVariable() && variable.isBoundedVariable()) {
-                    typeDesc["kind"] = "bounded";
-                    typeDesc["base"] = "int";
-                    typeDesc["lower-bound"] = buildExpression(variable.getLowerBound(), constants, globalVariables, localVariables);
-                    typeDesc["upper-bound"] = buildExpression(variable.getUpperBound(), constants, globalVariables, localVariables);
-                } else if (variable.isArrayVariable()) {
-                    typeDesc["kind"] = "array";
-                    assert (variable.getType()->isArrayType());
-                    typeDesc["base"] = buildArray(variable, *(variable.getType()->getChildType()), constants, globalVariables, localVariables);
-                } else if (variable.isClockVariable()) {
-                    typeDesc = "clock";
-                } else if (variable.isContinuousVariable()) {
-                    typeDesc = "continuous";
-                } else {
-                    STORM_LOG_ASSERT (false, "Variable type not recognized in JSONExporter");
-                }
-                varEntry["type"] = typeDesc;
+                varEntry["type"] = buildType(variable.getType(), constants, globalVariables, localVariables);
                 if (variable.hasInitExpression()) {
                     varEntry["initial-value"] = buildExpression(variable.getInitExpression(), constants, globalVariables, localVariables);
                 }
@@ -981,37 +936,35 @@ namespace storm {
             return functionDeclarations;
         }
         
+        ExportJsonType buildLValue(storm::jani::LValue const& lValue, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables) {
+            if (lValue.isVariable()) {
+                return lValue.getVariable().getName();
+            } else {
+                STORM_LOG_ASSERT(lValue.isArrayAccess(), "Unhandled LValue " << lValue << ".");
+                ExportJsonType result = lValue.getVariable().getName();
+                for (auto const& indexExpr : lValue.getArrayIndexVector()) {
+                    ExportJsonType subLValue = std::move(result);
+                    result.clear();
+                    result["op"] = "aa";
+                    result["exp"] = std::move(subLValue);
+                    result["index"] = buildExpression(indexExpr, constants, globalVariables, localVariables);
+                }
+                return result;
+            }
+        }
+        
         ExportJsonType buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             ExportJsonType assignmentDeclarations = std::vector<ExportJsonType>();
             bool addIndex = orderedAssignments.hasMultipleLevels();
-            for(auto const& assignment : orderedAssignments) {
+            for (auto const& assignment : orderedAssignments) {
                 ExportJsonType assignmentEntry;
-                if (assignment.lValueIsVariable()) {
-                    assignmentEntry["ref"] = assignment.getVariable().getName();
-                } else {
-                    STORM_LOG_ASSERT(assignment.lValueIsArrayAccess(), "Unhandled LValue " << assignment.getLValue());
-                    ExportJsonType arrayAccess;
-                    arrayAccess["op"] = "aa";
-                    if (assignment.getLValue().getArrayIndexVector().size() > 2) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exporting JSON for nested variables is not yet implemented");
-                    } else if (assignment.getLValue().getArrayIndexVector().size() == 2) {
-                        ExportJsonType secondArrayAcces;
-                        secondArrayAcces["op"] = "aa";
-                        secondArrayAcces["exp"] = assignment.getVariable().getName();
-                        secondArrayAcces["index"] = buildExpression(assignment.getLValue().getArrayIndexVector().at(1), constants, globalVariables, localVariables);
-                        arrayAccess["exp"] = std::move(secondArrayAcces);
-                    } else {
-                        arrayAccess["exp"] = assignment.getVariable().getName();
-                    }
-                    arrayAccess["index"] = buildExpression(assignment.getLValue().getArrayIndexVector().at(0), constants, globalVariables, localVariables);
-                    assignmentEntry["ref"] = std::move(arrayAccess);
-                }
+                assignmentEntry["ref"] = buildLValue(assignment.getLValue(), constants, globalVariables, localVariables);
                 assignmentEntry["value"] = buildExpression(assignment.getAssignedExpression(), constants, globalVariables, localVariables);
-                if(addIndex) {
+                if (addIndex) {
                     assignmentEntry["index"] = assignment.getLevel();
                 }
                 if (commentExpressions) {
-                    assignmentEntry["comment"] = assignment.getName() + " <- " + assignment.getAssignedExpression().toString();
+                    assignmentEntry["comment"] = assignment.getLValue().getName() + " <- " + assignment.getAssignedExpression().toString();
                 }
                 assignmentDeclarations.push_back(std::move(assignmentEntry));
             }

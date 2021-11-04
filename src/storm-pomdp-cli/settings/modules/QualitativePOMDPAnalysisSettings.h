@@ -29,6 +29,7 @@ namespace storm {
                 bool validateIntermediateSteps() const;
                 bool validateFinalResult() const;
                 bool computeExpensiveStats() const;
+                bool isComputeOnBeliefSupportSet() const;
                 bool isPrintWinningRegionSet() const;
                 bool isExportWinningRegionSet() const;
                 std::string exportWinningRegionPath() const;

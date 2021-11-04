@@ -71,7 +71,7 @@ namespace storm {
                 janiModel.pushEdgeAssignmentsToDestinations();
             }
             
-            auto uneliminatedFeatures = janiModel.restrictToFeatures(options.allowedModelFeatures);
+            auto uneliminatedFeatures = janiModel.restrictToFeatures(options.allowedModelFeatures, properties);
             STORM_LOG_WARN_COND(uneliminatedFeatures.empty(), "The following model features could not be eliminated: " << uneliminatedFeatures.toString());
             
             if (options.modelName) {

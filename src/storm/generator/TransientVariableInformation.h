@@ -7,6 +7,7 @@
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/generator/ArrayVariableReplacementInformation.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/OutOfRangeException.h"
@@ -93,9 +94,9 @@ namespace storm {
             TransientVariableInformation() = default;
 
             void registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData);
-            TransientVariableData<bool> const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
-            TransientVariableData<int64_t> const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
-            TransientVariableData<ValueType> const& getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
+            TransientVariableData<bool> const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const;
+            TransientVariableData<int64_t> const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const;
+            TransientVariableData<ValueType> const& getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t> const& arrayIndexVector) const;
 
             void setDefaultValuesInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator) const;
 
@@ -104,7 +105,7 @@ namespace storm {
             std::vector<TransientVariableData<ValueType>> rationalVariableInformation;
 
             /// Replacements for each array variable
-            std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
+            std::unordered_map<storm::expressions::Variable, ArrayVariableReplacementInformation> arrayVariableToElementInformations;
 
 
         private:

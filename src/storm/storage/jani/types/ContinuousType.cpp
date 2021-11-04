@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace jani {
-        ContinuousType::ContinuousType() : JaniType() {
+        ContinuousType::ContinuousType() {
             // Intentionally left empty
         }
 
@@ -13,5 +13,10 @@ namespace storm {
         std::string ContinuousType::getStringRepresentation() const {
             return "continuous";
         }
+
+        std::unique_ptr<JaniType> ContinuousType::clone() const {
+            return std::make_unique<ContinuousType>(*this);
+        }
+
     }
 }

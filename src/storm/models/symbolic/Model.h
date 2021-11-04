@@ -12,6 +12,7 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/models/Model.h"
+#include "storm/models/ModelRepresentation.h"
 #include "storm/utility/OsDetection.h"
 
 #include "storm-config.h"
@@ -49,6 +50,8 @@ namespace storm {
                 
                 static const storm::dd::DdType DdType = Type;
                 typedef StandardRewardModel<Type, ValueType> RewardModelType;
+                
+                static const storm::models::ModelRepresentation Representation = GetModelRepresentation<DdType>::representation;
                 
                 Model(Model<Type, ValueType> const& other) = default;
                 Model& operator=(Model<Type, ValueType> const& other) = default;

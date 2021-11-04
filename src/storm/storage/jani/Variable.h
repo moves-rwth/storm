@@ -1,11 +1,9 @@
 #pragma once
 
-#include <cstdint>
 #include <string>
 #include <boost/optional.hpp>
 
 #include "storm/storage/expressions/Variable.h"
-#include "storm/storage/expressions/Type.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/jani/types/AllJaniTypes.h"
 
@@ -16,12 +14,12 @@ namespace storm {
             /*!
              * Creates a new variable with initial value construct
              */
-            Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient = false);
+            Variable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient = false);
 
             /*!
              * Creates a new variable without initial value construct.
              */
-            Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable);
+            Variable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable);
             
             /*!
              * Clones the variable.
@@ -65,56 +63,19 @@ namespace storm {
              * Sets the initial expression for this variable.
              */
             void setInitExpression(storm::expressions::Expression const& initialExpression);
+            
+            bool isTransient() const;
+
+            JaniType& getType();
+            JaniType const& getType() const;
 
             /*!
-             * Retrieves the expression defining the lower bound of the variable.
-             */
-            storm::expressions::Expression const& getLowerBound() const;
-
-            /*!
-             * Sets a new lower bound of the variable.
-             */
-            void setLowerBound(storm::expressions::Expression const& expression);
-
-            /*!
-             * Retrieves whether the variable has a lower bound.
-             */
-            bool hasLowerBound() const;
-
-            /*!
-             * Retrieves the expression defining the upper bound of the variable.
-             */
-            storm::expressions::Expression const& getUpperBound() const;
-
-            /*!
-             * Sets a new upper bound of the variable.
-             */
-            void setUpperBound(storm::expressions::Expression const& expression);
-
-            /*!
-             * Retrieves whether the variable has an upper bound.
-             */
-            bool hasUpperBound() const;
-
-            /*!
-             * Retrieves an expression characterizing the legal range of the bounded integer variable.
+             * Retrieves an expression characterizing the legal range of the variable.
+             * If the type is a bounded type, the expression will be of the form "l <= x && x <= u".
+             * Otherwise, an uninitialized expression is returned.
              */
             storm::expressions::Expression getRangeExpression() const;
             
-            // Methods to determine the type of the variable.
-            bool isBooleanVariable() const;
-            bool isIntegerVariable() const;
-            bool isBoundedVariable() const;
-            bool isRealVariable() const;
-            bool isArrayVariable() const;
-            bool isClockVariable() const;
-            bool isContinuousVariable() const;
-
-            bool isTransient() const;
-
-            JaniType* getType() const;
-            JaniType* getArrayType() const;
-
             ~Variable();
 
             /*!
@@ -123,30 +84,31 @@ namespace storm {
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
 
             /**
-         * Convenience function to call the appropriate constructor and return a shared pointer to the variable.
+         * Convenience functions to call the appropriate constructor and return a shared pointer to the variable.
          */
-            static std::shared_ptr<Variable> makeBoundedVariable(std::string const& name, JaniType::ElementType type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound);
-            static std::shared_ptr<Variable> makeArrayVariable(std::string const& name, JaniType* type, storm::expressions::Variable & variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
-            static std::shared_ptr<Variable> makeBasicVariable(std::string const& name, JaniType::ElementType type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
-            static std::shared_ptr<Variable> makeClockVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
+            static std::shared_ptr<Variable> makeVariable(std::string const& name, JaniType const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient);
+            static std::shared_ptr<Variable> makeBasicTypeVariable(std::string const& name, BasicType::Type const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient);
+            static std::shared_ptr<Variable> makeBooleanVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient);
+            static std::shared_ptr<Variable> makeIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient);
+            static std::shared_ptr<Variable> makeRealVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient);
+            static std::shared_ptr<Variable> makeBoundedVariable(std::string const& name, BoundedType::BaseType const& type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient, boost::optional<storm::expressions::Expression> const& lowerBound, boost::optional<storm::expressions::Expression> const& upperBound);
+            static std::shared_ptr<Variable> makeBoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient, boost::optional<storm::expressions::Expression> const& lowerBound, boost::optional<storm::expressions::Expression> const& upperBound);
+            static std::shared_ptr<Variable> makeBoundedRealVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient, boost::optional<storm::expressions::Expression> const& lowerBound, boost::optional<storm::expressions::Expression> const& upperBound);
+            static std::shared_ptr<Variable> makeArrayVariable(std::string const& name, JaniType const& baseType, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient);
+            static std::shared_ptr<Variable> makeClockVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient);
+            static std::shared_ptr<Variable> makeContinuousVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& initValue, bool transient);
 
         private:
-            // The name of the variable.
+            /// The name of the variable.
             std::string name;
-            
-            // The expression variable associated with this variable.
+            /// The type of the variable (for arrays this is the underlying type, e.g. int for int[][])
+            std::unique_ptr<JaniType> type;
+            /// The expression variable associated with this jani variable.
             storm::expressions::Variable variable;
-
-            JaniType* type;
-
-            JaniType* arrayType;
-
+            /// Expression for initial values
+            storm::expressions::Expression init;
             /// Whether this is a transient variable.
             bool transient;
-
-            /// Expression for initial values
-            boost::optional<storm::expressions::Expression> init;
-
         };
 
         bool operator==(Variable const& lhs, Variable const& rhs);

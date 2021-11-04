@@ -62,10 +62,16 @@ namespace storm {
             return true;
         }
         
-        std::ostream& ConditionalFormula::writeToStream(std::ostream& out) const {
-            this->getSubformula().writeToStream(out);
+        std::ostream& ConditionalFormula::writeToStream(std::ostream& out, bool allowParentheses) const {
+            if (allowParentheses) {
+                out << "(";
+            }
+            this->getSubformula().writeToStream(out, true);
             out << " || ";
-            this->getConditionFormula().writeToStream(out);
+            this->getConditionFormula().writeToStream(out, true);
+            if (allowParentheses) {
+                out << ")";
+            }
             return out;
         }
     }
