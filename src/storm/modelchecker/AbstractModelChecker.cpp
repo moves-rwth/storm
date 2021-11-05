@@ -52,7 +52,8 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::check(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            STORM_LOG_THROW(this->canHandle(checkTask), storm::exceptions::InvalidArgumentException, "The model checker (" << getClassName() << ") is not able to check the formula '" << formula << "'.");
+            bool lex = true;
+            if (!lex) STORM_LOG_THROW(this->canHandle(checkTask), storm::exceptions::InvalidArgumentException, "The model checker (" << getClassName() << ") is not able to check the formula '" << formula << "'.");
             if (formula.isStateFormula()) {
                 return this->checkStateFormula(env, checkTask.substituteFormula(formula.asStateFormula()));
             }
@@ -356,7 +357,8 @@ namespace storm {
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+            //STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+            STORM_PRINT("Here I would probably start my code?"<<std::endl);
         }
 
         template<typename ModelType>

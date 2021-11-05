@@ -19,6 +19,7 @@
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
 #include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
+#include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
 
 #include "storm/modelchecker/prctl/helper/rewardbounded/QuantileHelper.h"
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
@@ -297,6 +298,11 @@ namespace storm {
         
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            bool lex = true;
+            auto bla =  this->getModel();
+            ValueType blubb = 0.1;
+            if (lex) lexicographic::isDone(env, this->getModel(), checkTask);
+                //lexicographic::performLexicographicModelChecking(env, this->getModel(), checkTask.getFormula());
             return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula());
         }
         
