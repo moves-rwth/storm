@@ -23,13 +23,16 @@ namespace storm {
             int isDone(Environment const& env, SparseModelType const& model, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Lexicographic Model checking on model with multiple initial states is not supported.");
 
-                lexicographicModelChecker<SparseModelType> lMC = lexicographicModelChecker<SparseModelType>();
                 storm::logic::MultiObjectiveFormula const& formula = checkTask.getFormula();
-                for (auto const& subForumla : formula.getSubformulas()) {
-                    std::cout << subForumla->toString() << std::endl;
-                }
+                lexicographicModelChecker<SparseModelType, ValueType> lMC = lexicographicModelChecker<SparseModelType, ValueType>(formula);
 
-                auto completeProductModel = lMC.getCompleteProductModel(model, formula);
+                auto res = lMC.getCompleteProductModel(model);
+                auto completeProductModel = res.first;
+                auto accCond = res.second;
+                auto result = lMC.solve(completeProductModel, accCond);
+                auto bcc = result.first;
+                auto bccLexArrays = result.second;
+                auto return_result = lMC.reachability(bcc, bccLexArrays, completeProductModel);
                 /*storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
                 STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
@@ -38,7 +41,7 @@ namespace storm {
                 storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
 
                 auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };*/
-                return 0;
+                return return_result;
             }
 
             template int isDone<storm::models::sparse::Mdp<double>, double>(Environment const& env, storm::models::sparse::Mdp<double> const& model, CheckTask<storm::logic::MultiObjectiveFormula, double> const& checkTask);

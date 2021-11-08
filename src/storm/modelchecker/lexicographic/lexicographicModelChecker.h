@@ -8,6 +8,7 @@
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/logic/Formulas.h"
 #include "storm/environment/Environment.h"
+#include <utility>
 
 namespace storm {
 
@@ -16,17 +17,20 @@ namespace storm {
     namespace modelchecker {
         namespace lexicographic {
 
-        template<typename SparseModelType>
+        template<typename SparseModelType, typename ValueType>
         class lexicographicModelChecker {
            public:
 
-            lexicographicModelChecker() = default;
+            lexicographicModelChecker(storm::logic::MultiObjectiveFormula const& formula) : formula(formula) {};
 
-            int getCompleteProductModel(SparseModelType const& model, storm::logic::MultiObjectiveFormula const& formula);
+            std::pair<int, int> getCompleteProductModel(SparseModelType const& model);
+
+            std::pair<int, int> solve(int productModel, int acceptanceCondition);
+
+            int reachability(int bcc, int bccLexArray, int productModel);
 
            private:
-            void foo();
-            void foo2();
+            storm::logic::MultiObjectiveFormula const& formula;
         };
 
         }
