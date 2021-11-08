@@ -15,6 +15,7 @@
 #include "spot/twaalgos/translate.hh"
 #include "spot/twaalgos/hoa.hh"
 #include "spot/twaalgos/totgba.hh"
+#include "spot/twaalgos/dot.hh"
 #endif
 
 namespace storm {
@@ -40,21 +41,26 @@ namespace storm {
             trans.set_pref(spot::postprocessor::Deterministic | spot::postprocessor::SBAcc | spot::postprocessor::Complete);
             STORM_LOG_INFO("Construct deterministic automaton for "<< spotFormula);
             auto aut = trans.run(spotFormula);
+            STORM_PRINT(aut->get_acceptance() << " " << aut->get_acceptance().is_dnf() << std::endl);
 
             if(!(aut->get_acceptance().is_dnf()) && dnf){
                 STORM_LOG_INFO("Convert acceptance condition "<< aut->get_acceptance() << " into DNF...");
                 // Transform the acceptance condition in disjunctive normal form and merge all the Fin-sets of each clause
                 aut = to_generalized_rabin(aut,true);
             }
-
+            auto now_street = spot::dnf_to_streett(aut);
+            STORM_PRINT(now_street->get_acceptance() << std::endl);
+            
             STORM_LOG_INFO("The deterministic automaton has acceptance condition:  "<< aut->get_acceptance());
-
+            STORM_PRINT("The deterministic automaton has acceptance condition:  "<< aut->get_acceptance() << std::endl);
             STORM_LOG_INFO(aut->get_acceptance());
 
             std::stringstream autStream;
             // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
             spot::print_hoa(autStream, aut, "is");
-
+            std::ostream objOstream (std::cout.rdbuf());
+            spot::print_dot(objOstream, aut, "cak");
+            spot::print_dot(objOstream, now_street, "cak");
             storm::automata::DeterministicAutomaton::ptr da = DeterministicAutomaton::parse(autStream);
 
             return da;
