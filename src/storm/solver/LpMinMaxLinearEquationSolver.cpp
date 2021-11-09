@@ -65,9 +65,11 @@ namespace storm {
             // Add a constraint for each row
             for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
                 // The rowgroup refers to the state number
-                if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[rowGroup]) {
-                    // The choice is fixed
-                    auto rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->getInitialScheduler()[rowGroup];
+                for (uint64_t rowIndex = this->A->getRowGroupIndices()[rowGroup]; rowIndex < this->A->getRowGroupIndices()[rowGroup + 1]; ++rowIndex) {
+                    if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[rowGroup]) {
+                        // The choice is fixed so we set the rowIndex to the fixed one
+                        auto rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->getInitialScheduler()[rowGroup];
+                    }
                     auto row = this->A->getRow(rowIndex);
                     std::vector<storm::expressions::Expression> summands;
                     summands.reserve(1 + row.getNumberOfEntries());
@@ -82,23 +84,9 @@ namespace storm {
                         rowConstraint = variableExpressions[rowGroup] >= rowConstraint;
                     }
                     solver->addConstraint("", rowConstraint);
-                } else {
-                    // The choice is not fixed, so we should add constraints for every entry
-                    for (uint64_t rowIndex = this->A->getRowGroupIndices()[rowGroup]; rowIndex < this->A->getRowGroupIndices()[rowGroup + 1]; ++rowIndex) {
-                        auto row = this->A->getRow(rowIndex);
-                        std::vector<storm::expressions::Expression> summands;
-                        summands.reserve(1 + row.getNumberOfEntries());
-                        summands.push_back(solver->getConstant(b[rowIndex]));
-                        for (auto const& entry : row) {
-                            summands.push_back(solver->getConstant(entry.getValue()) * variableExpressions[entry.getColumn()]);
-                        }
-                        storm::expressions::Expression rowConstraint = storm::expressions::sum(summands);
-                        if (minimize(dir)) {
-                            rowConstraint = variableExpressions[rowGroup] <= rowConstraint;
-                        } else {
-                            rowConstraint = variableExpressions[rowGroup] >= rowConstraint;
-                        }
-                        solver->addConstraint("", rowConstraint);
+                    if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[rowGroup]) {
+                        // The choice is fixed so we continue with the next rowgroup.
+                        break;
                     }
                 }
             }

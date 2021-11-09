@@ -64,7 +64,6 @@ namespace storm {
             bool result = false;
             switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
                 case MinMaxMethod::ValueIteration:
-                    // Throws error when choices for scheduler are fixed
                     result = solveEquationsValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::OptimisticValueIteration:
@@ -77,7 +76,6 @@ namespace storm {
                     result = solveEquationsRationalSearch(env, dir, x, b);
                     break;
                 case MinMaxMethod::IntervalIteration:
-                    // Throws error when choices for scheduler are fixed
                     result = solveEquationsIntervalIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::SoundValueIteration:
@@ -317,7 +315,6 @@ namespace storm {
             SolverStatus status = SolverStatus::InProgress;
             while (status == SolverStatus::InProgress) {
 
-                // TODO: integrate fixed choices for the scheduler for a rowgroup in multiplier
                 if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get().full()) {
                     std::size_t rowGroup = currentX->size();
                     while (rowGroup != 0) {
@@ -327,6 +324,7 @@ namespace storm {
                         multiplier.multiplyRow(rowIndex, *currentX, (*newX)[rowGroup]);
                     }
                 } else {
+                    STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing the scheduler choices in which not all choices are fixed is not implemented for value iteration, please pick a different solver");
                     // Compute x' = min/max(A*x + b).
                     if (useGaussSeidelMultiplication) {
                         // Copy over the current vector so we can modify it in-place.
@@ -892,9 +890,8 @@ namespace storm {
         template<typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->choiceFixedForRowGroup) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-            }
+            STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for solving equations with rational search helper, please pick a different solver");
+
             // Version for when the overall value type is exact and the imprecise one is not. We first try to solve the
             // problem using the imprecise data type and fall back to the exact type as needed.
             

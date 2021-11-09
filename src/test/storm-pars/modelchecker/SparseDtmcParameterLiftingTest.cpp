@@ -63,9 +63,9 @@ namespace {
     };
 
     typedef ::testing::Types<
-//            DoubleViEnvironment,
+            DoubleViEnvironment,
             DoubleSVIEnvironment//,
-//            RationalPiEnvironment
+            RationalPiEnvironment
     > TestingTypes;
 
    TYPED_TEST_SUITE(SparseDtmcParameterLiftingTest, TestingTypes,);
