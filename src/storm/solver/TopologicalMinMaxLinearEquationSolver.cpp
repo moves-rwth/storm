@@ -282,13 +282,7 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> sccA;
             if (this->choiceFixedForRowGroup) {
                 // Obtain choiceFixedForState bitvector containing only the states of the scc.
-                storm::storage::BitVector choiceFixedForStateSCC(sccRowGroups.getNumberOfSetBits());
-                auto j = 0;
-                for (auto i : sccRowGroups) {
-                    choiceFixedForStateSCC.set(j, this->choiceFixedForRowGroup.get()[i]);
-                    j++;
-                }
-                assert (j = sccRowGroups.getNumberOfSetBits());
+                storm::storage::BitVector choiceFixedForStateSCC = this->choicesFixedForRowGroup % sccRowGroups;
                 sccA = this->A->getSubmatrix(false, sccRows, sccRowGroups);
 
                 // initial scheduler
@@ -296,13 +290,8 @@ namespace storm {
                     auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
                     // As we removed the entries where the choice was fixed, we need to change the scheduler.
                     // We set the scheduler to 0 for those states.
-                    if (this->choiceFixedForRowGroup) {
-                        for (auto const choice : this->choiceFixedForRowGroup.get()) {
-                            sccInitChoices[choice] = 0;
-                        }
-                    }
+                    storm::utility::vector::setVectorValues(sccInitChoices, this->choiceFixedForStateScc.get(), 0);
                     this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
-
                 }
 
             } else {
