@@ -65,11 +65,15 @@ namespace storm {
             // Add a constraint for each row
             for (uint64_t rowGroup = 0; rowGroup < this->A->getRowGroupCount(); ++rowGroup) {
                 // The rowgroup refers to the state number
-                for (uint64_t rowIndex = this->A->getRowGroupIndices()[rowGroup]; rowIndex < this->A->getRowGroupIndices()[rowGroup + 1]; ++rowIndex) {
-                    if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[rowGroup]) {
-                        // The choice is fixed so we set the rowIndex to the fixed one
-                        auto rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->getInitialScheduler()[rowGroup];
-                    }
+                uint64_t rowIndex, rowGroupEnd;
+                if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[rowGroup]) {
+                    rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->getInitialScheduler()[rowGroup];
+                    rowGroupEnd = rowIndex + 1;
+                } else {
+                    rowIndex = this->A->getRowGroupIndices()[rowGroup];
+                    rowGroupEnd = this->A->getRowGroupIndices()[rowGroup + 1];
+                }
+                for (; rowIndex < rowGroupEnd; ++rowIndex) {
                     auto row = this->A->getRow(rowIndex);
                     std::vector<storm::expressions::Expression> summands;
                     summands.reserve(1 + row.getNumberOfEntries());
@@ -84,10 +88,6 @@ namespace storm {
                         rowConstraint = variableExpressions[rowGroup] >= rowConstraint;
                     }
                     solver->addConstraint("", rowConstraint);
-                    if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[rowGroup]) {
-                        // The choice is fixed so we continue with the next rowgroup.
-                        break;
-                    }
                 }
             }
             

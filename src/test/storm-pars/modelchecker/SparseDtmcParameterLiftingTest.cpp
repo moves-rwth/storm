@@ -64,7 +64,7 @@ namespace {
 
     typedef ::testing::Types<
             DoubleViEnvironment,
-            DoubleSVIEnvironment//,
+            DoubleSVIEnvironment,
             RationalPiEnvironment
     > TestingTypes;
 
