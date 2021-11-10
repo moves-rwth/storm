@@ -155,7 +155,8 @@ namespace storm {
                         while (i > 0) {
                             --i;
                             if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                                x[i] = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                                auto row = i + scheduler.get().at(i);
+                                x[i] = multiplyRow(row, b[row], x);
                             } else {
                                 x[i] = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
                             }
