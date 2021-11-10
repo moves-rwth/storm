@@ -396,10 +396,8 @@ namespace storm {
                 return {status, overallIterations};
             }
 
-            
             template class OptimisticValueIterationHelper<double>;
             template class OptimisticValueIterationHelper<storm::RationalNumber>;
         }
     }
 }
-

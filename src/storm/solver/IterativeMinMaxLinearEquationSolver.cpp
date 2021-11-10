@@ -301,6 +301,7 @@ namespace storm {
 
         template<typename ValueType>
         typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maximalNumberOfIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
+            STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing the scheduler choices in which choices are fixed is not implemented for value iteration, please pick a different solver");
             STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
 
             // Get handle to multiplier.
@@ -314,25 +315,13 @@ namespace storm {
 
             SolverStatus status = SolverStatus::InProgress;
             while (status == SolverStatus::InProgress) {
-
-                if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get().full()) {
-                    std::size_t rowGroup = currentX->size();
-                    while (rowGroup != 0) {
-                        --rowGroup;
-                        *newX = *currentX;
-                        uint_fast64_t rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->initialScheduler.get()[rowGroup];
-                        multiplier.multiplyRow(rowIndex, *currentX, (*newX)[rowGroup]);
-                    }
+                // Compute x' = min/max(A*x + b).
+                if (useGaussSeidelMultiplication) {
+                    // Copy over the current vector so we can modify it in-place.
+                    *newX = *currentX;
+                    multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
                 } else {
-                    STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing the scheduler choices in which not all choices are fixed is not implemented for value iteration, please pick a different solver");
-                    // Compute x' = min/max(A*x + b).
-                    if (useGaussSeidelMultiplication) {
-                        // Copy over the current vector so we can modify it in-place.
-                        *newX = *currentX;
-                        multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
-                    } else {
-                        multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
-                    }
+                    multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
                 }
 
                 // Determine whether the method converged.
