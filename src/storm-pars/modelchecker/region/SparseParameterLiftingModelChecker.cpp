@@ -467,8 +467,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(
-                const CheckTask <logic::BoundedUntilFormula, ConstantType> &checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(const CheckTask <logic::BoundedUntilFormula, ConstantType> &checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
@@ -490,8 +489,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(
-                const CheckTask <logic::CumulativeRewardFormula, ConstantType> &checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(const CheckTask <logic::CumulativeRewardFormula, ConstantType> &checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 

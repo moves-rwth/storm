@@ -26,7 +26,10 @@ namespace storm {
             
             virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
             virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask,  bool generateRegionSplitEstimates = false, bool allowModelSimplification = true) override;
-            void specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification);
+            void specify_internal(Environment const &env,
+                                  std::shared_ptr<SparseModelType> parametricModel,
+                                  CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const &checkTask,
+                                  bool skipModelSimplification);
 
             boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
             boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();

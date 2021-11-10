@@ -97,7 +97,6 @@ namespace storm {
                 std::set<VariableType> const& getLowerParameters() const;
                 std::set<VariableType> const& getUpperParameters() const;
                 std::set<VariableType> const& getUnspecifiedParameters() const;
-                uint_fast64_t getOriginalState(uint_fast64_t newStateNumber) const;
 
                 /*!
                  * Returns the concrete valuation(s) (w.r.t. the provided region) represented by this abstract valuation.
