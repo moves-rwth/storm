@@ -125,9 +125,10 @@ namespace storm {
                     auto groupStartIt = rowGroupIndices->rbegin();
                     uint64_t groupEnd = *groupStartIt;
                     ++groupStartIt;
-
+                    auto rowGroupIndex = rowGroupIndices->size();
+                    
                     for (auto groupStartIte = rowGroupIndices->rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
-                        auto rowGroupIndex = groupStartIt - rowGroupIndices->rbegin() - 1;
+                        rowGroupIndex--;
 
                         if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[rowGroupIndex]) {
                             // The scheduler is fixed for this rowgroup so we perform iteration only on this row.
