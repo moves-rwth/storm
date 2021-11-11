@@ -40,10 +40,10 @@ namespace {
         }
     };
     template<typename TestType>
-    class SparseDtmcParameterLiftingTest : public ::testing::Test {
+    class SparseDtmcParameterLiftingMonotonicityTest : public ::testing::Test {
     public:
         typedef typename TestType::ValueType ValueType;
-        SparseDtmcParameterLiftingTest() : _environment(TestType::createEnvironment()) {}
+        SparseDtmcParameterLiftingMonotonicityTest() : _environment(TestType::createEnvironment()) {}
         storm::Environment const& env() const { return _environment; }
         virtual void SetUp() { carl::VariablePool::getInstance().clear(); }
         virtual void TearDown() { carl::VariablePool::getInstance().clear(); }
@@ -56,9 +56,9 @@ namespace {
             RationalPiEnvironment
     > TestingTypes;
 
-   TYPED_TEST_SUITE(SparseDtmcParameterLiftingTest, TestingTypes,);
+   TYPED_TEST_SUITE(SparseDtmcParameterLiftingMonotonicityTest, TestingTypes,);
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Prob_Mon_LEQ) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_LEQ) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
@@ -115,7 +115,7 @@ namespace {
         EXPECT_EQ(expectedResult, regionCheckerMon->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, localMonRes));
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Prob_Mon_GEQ) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_GEQ) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
@@ -173,7 +173,7 @@ namespace {
         EXPECT_EQ(expectedResult, regionCheckerMon->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, localMonRes));
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Prob_Mon_LEQ_Incr) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_LEQ_Incr) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2_mon_incr.pm";
@@ -231,7 +231,7 @@ namespace {
         EXPECT_EQ(expectedResult, regionCheckerMon->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, localMonRes));
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Prob_Mon_GEQ_Incr) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_GEQ_Incr) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2_mon_incr.pm";
@@ -289,7 +289,7 @@ namespace {
         EXPECT_EQ(expectedResult,regionCheckerMon->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, localMonRes));
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Parametric_Die_Mon) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Parametric_Die_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die_2.pm";
@@ -338,7 +338,7 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, monRes));
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Simple1_Mon) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Simple1_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
@@ -374,7 +374,7 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, monRes));
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Casestudy1_Mon) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy1_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
@@ -410,7 +410,7 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, monRes));
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Casestudy2_Mon) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy2_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
@@ -446,7 +446,7 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, monRes));
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Casestudy3_Mon) {
+    TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy3_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
