@@ -98,11 +98,6 @@ namespace storm {
             // Resolve the nondeterminism according to the given scheduler.
             bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem;
             storm::storage::SparseMatrix<ValueType> submatrix;
-//            if (this->choiceFixedForState) {
-//                for (auto state : this->choiceFixedForState.get()) {
-//                    assert (this->A->getRowGroupSize(state) == 1);
-//                }
-//            }
 
             submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
             if (convertToEquationSystem) {
@@ -126,7 +121,6 @@ namespace storm {
         
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            // Create the initial scheduler.
             std::vector<storm::storage::sparse::state_type> scheduler = this->hasInitialScheduler() ? this->getInitialScheduler() : std::vector<storm::storage::sparse::state_type>(this->A->getRowGroupCount());
             return performPolicyIteration(env, dir, x, b, std::move(scheduler));
         }
@@ -172,12 +166,12 @@ namespace storm {
                 
                 // Go through the multiplication result and see whether we can improve any of the choices.
                 bool schedulerImproved = false;
-                // Group staat voor de states?
+                // Group refers to the state number
                 for (uint_fast64_t group = 0; group < this->A->getRowGroupCount(); ++group) {
-                    uint_fast64_t currentChoice = scheduler[group];
-                    assert (!this->choiceFixedForState || (this->choiceFixedForState && (!(this->choiceFixedForState.get()[group]) || this->A->getRowGroupSize(group) == 1)));
-                        for (uint_fast64_t choice = this->A->getRowGroupIndices()[group];
-                             choice < this->A->getRowGroupIndices()[group + 1]; ++choice) {
+                    if (!this->choiceFixedForRowGroup || !this->choiceFixedForRowGroup.get()[group]) {
+                        //  Only update when the choice is not fixed
+                        uint_fast64_t currentChoice = scheduler[group];
+                        for (uint_fast64_t choice = this->A->getRowGroupIndices()[group]; choice < this->A->getRowGroupIndices()[group + 1]; ++choice) {
                             // If the choice is the currently selected one, we can skip it.
                             if (choice - this->A->getRowGroupIndices()[group] == currentChoice) {
                                 continue;
@@ -185,20 +179,20 @@ namespace storm {
 
                             // Create the value of the choice.
                             ValueType choiceValue = storm::utility::zero<ValueType>();
-                            for (auto const &entry : this->A->getRow(choice)) {
+                            for (auto const& entry : this->A->getRow(choice)) {
                                 choiceValue += entry.getValue() * x[entry.getColumn()];
                             }
                             choiceValue += b[choice];
 
                             // If the value is strictly better than the solution of the inner system, we need to improve the scheduler.
-                            // TODO: If the underlying solver is not precise, this might run forever (i.e. when a state has two choices where the (exact) values are equal).
-                            // only changing the scheduler if the values are not equal (modulo precision) would make this unsound.
+                            // TODO: If the underlying solver is not precise, this might run forever (i.e. when a state has two choices where the (exact) values are equal). only changing the scheduler if the values are not equal (modulo precision) would make this unsound.
                             if (valueImproved(dir, x[group], choiceValue)) {
                                 schedulerImproved = true;
                                 scheduler[group] = choice - this->A->getRowGroupIndices()[group];
                                 x[group] = std::move(choiceValue);
                             }
                         }
+                    }
                 }
                 
                 // If the scheduler did not improve, we are done.
@@ -307,9 +301,9 @@ namespace storm {
 
         template<typename ValueType>
         typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maximalNumberOfIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
-            
+            STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing the scheduler choices in which choices are fixed is not implemented for value iteration, please pick a different solver");
             STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
-            
+
             // Get handle to multiplier.
             storm::solver::Multiplier<ValueType> const& multiplier = *this->multiplierA;
             
@@ -318,7 +312,7 @@ namespace storm {
             
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = currentIterations;
-            
+
             SolverStatus status = SolverStatus::InProgress;
             while (status == SolverStatus::InProgress) {
                 // Compute x' = min/max(A*x + b).
@@ -329,12 +323,12 @@ namespace storm {
                 } else {
                     multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
                 }
-                
+
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
                     status = SolverStatus::Converged;
                 }
-                
+
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
@@ -369,7 +363,6 @@ namespace storm {
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-
             if (!storm::utility::vector::hasNonZeroEntry(b)) {
                 // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
                 x.assign(x.size(), storm::utility::zero<ValueType>());
@@ -400,7 +393,9 @@ namespace storm {
                                                      storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
                                                      env.solver().minMax().getMaximalNumberOfIterations(),
                                                      dir,
-                                                     this->getOptionalRelevantValues());
+                                                     this->getOptionalRelevantValues(),
+                                                     this->choiceFixedForRowGroup,
+                                                     this->initialScheduler);
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
 
@@ -421,10 +416,11 @@ namespace storm {
 
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+
             if (!this->multiplierA) {
                 this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
             }
-            
+
             if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
@@ -517,6 +513,7 @@ namespace storm {
          */
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for interval iteration, please pick a different solver");
             STORM_LOG_THROW(this->hasUpperBound(), storm::exceptions::UnmetRequirementException, "Solver requires upper bound, but none was given.");
 
             if (!this->multiplierA) {
@@ -690,7 +687,6 @@ namespace storm {
         
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-
             // Prepare the solution vectors and the helper.
             assert(x.size() == this->A->getRowGroupCount());
             if (!this->auxiliaryRowGroupVector) {
@@ -718,10 +714,14 @@ namespace storm {
             SolverStatus status = SolverStatus::InProgress;
             this->startMeasureProgress();
             uint64_t iterations = 0;
-            
+
             while (status == SolverStatus::InProgress && iterations < env.solver().minMax().getMaximalNumberOfIterations()) {
                 ++iterations;
-                this->soundValueIterationHelper->performIterationStep(dir, b);
+                if (this->choiceFixedForRowGroup) {
+                    this->soundValueIterationHelper->performIterationStep(dir, b, this->choiceFixedForRowGroup, this->getInitialScheduler());
+                } else {
+                    this->soundValueIterationHelper->performIterationStep(dir, b);
+                }
                 if (this->soundValueIterationHelper->checkConvergenceUpdateBounds(dir, relevantValuesPtr)) {
                     status = SolverStatus::Converged;
                 } else {
@@ -879,6 +879,8 @@ namespace storm {
         template<typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for solving equations with rational search helper, please pick a different solver");
+
             // Version for when the overall value type is exact and the imprecise one is not. We first try to solve the
             // problem using the imprecise data type and fall back to the exact type as needed.
             
@@ -986,7 +988,6 @@ namespace storm {
         template<typename ValueType>
         template<typename RationalType, typename ImpreciseType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, IterativeMinMaxLinearEquationSolver<ImpreciseType> const& impreciseSolver, storm::storage::SparseMatrix<RationalType> const& rationalA, std::vector<RationalType>& rationalX, std::vector<RationalType> const& rationalB, storm::storage::SparseMatrix<ImpreciseType> const& A, std::vector<ImpreciseType>& x, std::vector<ImpreciseType> const& b, std::vector<ImpreciseType>& tmpX) const {
-
             std::vector<ImpreciseType> const* originalX = &x;
 
             std::vector<ImpreciseType>* currentX = &x;

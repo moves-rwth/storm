@@ -8,8 +8,8 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/solver/Multiplier.h"
 #include "storm/utility/SignalHandler.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"

@@ -44,7 +44,6 @@ namespace storm {
           std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.size()->accept(*this, data));
           std::shared_ptr<BaseExpression const> elementExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getElementExpression()->accept(*this, data));
           STORM_LOG_THROW(this->variableToExpressionMapping.find(expression.getIndexVar()) == this->variableToExpressionMapping.end(), storm::exceptions::InvalidArgumentException, "substitution of the index variable of a constructorArrayExpression is not possible.");
-            
             // If the arguments did not change, we simply push the expression itself.
             if (newSize.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
                 return expression.getSharedPointer();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/solver/Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/solver/OptimizationDirection.h"
 

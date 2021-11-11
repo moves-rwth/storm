@@ -3,7 +3,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm/storage/SparseMatrix.h"
-#include "storm/solver/Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 
 #include "storm/utility/vector.h"

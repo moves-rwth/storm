@@ -10,7 +10,7 @@
 #include "environment/solver/TopologicalSolverEnvironment.h"
 #include "settings/modules/CoreSettings.h"
 #include "solver/GmmxxLinearEquationSolver.h"
-#include "solver/GmmxxMultiplier.h"
+#include "solver/multiplier/GmmxxMultiplier.h"
 #include "solver/SolverSelectionOptions.h"
 #include "solver/helper/SoundValueIterationHelper.h"
 #include "modelchecker/results/CheckResult.h"

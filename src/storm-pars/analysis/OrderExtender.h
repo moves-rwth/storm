@@ -78,7 +78,10 @@ namespace storm {
             void initializeMinMaxValues(storage::ParameterRegion<ValueType> region);
             void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
-            bool isHope(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>);
+            bool isHope(std::shared_ptr<Order> order);
+
+            MonotonicityChecker<ValueType>& getMonotoncityChecker();
+            std::vector<std::set<VariableType>> const& getVariablesOccuringAtState();
         private:
 
             Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
@@ -86,7 +89,7 @@ namespace storm {
             std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge);
             std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge);
             std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge);
-            bool extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t succState2, uint_fast64_t succState1);
+            bool extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
             void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor);
             void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;

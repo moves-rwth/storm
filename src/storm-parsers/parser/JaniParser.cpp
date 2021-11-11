@@ -839,11 +839,11 @@ namespace storm {
             } else {
                 assert(!transientVar);
             }
-            
+
             if (transientVar && type.first->isBasicType() && type.first->asBasicType().isBooleanType()) {
                 labels.insert(name);
             }
-            
+
             auto expressionVariable = expressionManager->declareVariable(exprManagerName, type.second);
             return storm::jani::Variable::makeVariable(name, *type.first, expressionVariable, initVal, transientVar);
         }
@@ -887,7 +887,7 @@ namespace storm {
         void ensureIntegerType(storm::expressions::Expression const& expr, std::string const& opstring, unsigned argNr, std::string const& errorInfo) {
             STORM_LOG_THROW(expr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument " + std::to_string(argNr) + " to be numerical in " << errorInfo << ".");
         }
-        
+
         /**
          * Helper for parse expression.
          */
@@ -912,7 +912,7 @@ namespace storm {
                     STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
                     var = globalVar->second;
                 }
-                
+
                 return storm::jani::LValue(*var);
             } else if (lValueStructure.count("op") == 1) {
                 // structure will be something like "op": "aa", "exp": {}, "index": {}
@@ -1531,3 +1531,4 @@ namespace storm {
         template class JaniParser<storm::RationalNumber>;
     }
 }
+

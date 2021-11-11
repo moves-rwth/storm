@@ -3,18 +3,18 @@
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
+#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
-#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
-#include "storm/utility/vector.h"
-#include "storm/utility/graph.h"
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/graph.h"
+#include "storm/utility/vector.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -315,7 +315,6 @@ namespace storm {
                         maxSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
                     }
 
-                    // TODO: this only works since we decided to keep all columns
                     auto const & occuringVariables = parameterLifter->getOccurringVariablesAtState();
                     for (uint_fast64_t state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
                         auto oldStateNumber = parameterLifter->getOriginalStateNumber(state);
@@ -349,13 +348,20 @@ namespace storm {
                             choiceFixedForStates.set(state);
                         }
                     }
-                    solver->setChoiceFixedForStates(std::move(choiceFixedForStates));
+                    // We need to set the scheduler before we set the states for which the choices are fixed
+                    if (storm::solver::minimize(dirForParameters) && minSchedChoices)
+                        solver->setInitialScheduler(std::move(minSchedChoices.get()));
+                    if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
+                        solver->setInitialScheduler(std::move(maxSchedChoices.get()));
+                    solver->setSchedulerFixedForRowGroup(std::move(choiceFixedForStates));
+                } else {
+                    if (storm::solver::minimize(dirForParameters) && minSchedChoices)
+                        solver->setInitialScheduler(std::move(minSchedChoices.get()));
+                    if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
+                        solver->setInitialScheduler(std::move(maxSchedChoices.get()));
                 }
 
-                if (storm::solver::minimize(dirForParameters) && minSchedChoices)
-                    solver->setInitialScheduler(std::move(minSchedChoices.get()));
-                if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
-                    solver->setInitialScheduler(std::move(maxSchedChoices.get()));
+
                 if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
                     // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
                     std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;

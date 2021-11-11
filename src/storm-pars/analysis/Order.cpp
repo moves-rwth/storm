@@ -216,7 +216,7 @@ namespace storm {
                 }
             }
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                for (auto j = i + 1; j < numberOfStates; ++j) {
+                for (uint_fast64_t j= i + 1; j < numberOfStates; ++j) {
                     auto comp1 = compare(i,j);
                     auto comp2 = compare(j,i);
                     if (!((comp1 == BELOW && comp2 == ABOVE ) ||
@@ -537,7 +537,7 @@ namespace storm {
                             copiedOrder->bottom = newNode;
                         }
                         newNode->statesAbove = storm::storage::BitVector(oldNode->statesAbove);
-                        for (uint_fast64_t i = 0; i < oldNode->statesAbove.size(); ++i) {
+                        for (size_t i = 0; i < oldNode->statesAbove.size(); ++i) {
                             assert (newNode->statesAbove[i] == oldNode->statesAbove[i]);
                         }
                         for (auto const &i : oldNode->states) {

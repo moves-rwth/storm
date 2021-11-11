@@ -1,3 +1,4 @@
+
 #include "storm/storage/jani/expressions/ConstructorArrayExpression.h"
 
 #include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
@@ -56,7 +57,6 @@ namespace storm {
         std::shared_ptr<BaseExpression const> ConstructorArrayExpression::at(uint64_t i) const {
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
             substitution.emplace(indexVar, this->getManager().integer(i));
-            
             return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution).getBaseExpressionPointer();
         }
         

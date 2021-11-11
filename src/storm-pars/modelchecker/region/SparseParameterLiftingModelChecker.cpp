@@ -52,7 +52,7 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
+        RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
             typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
             typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
             typedef typename storm::utility::parametric::Valuation<typename SparseModelType::ValueType> Valuation;
@@ -127,7 +127,7 @@ namespace storm {
             if (existsSat) {
                 // show AllSat:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
-                auto checkResult = this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult);
+                auto checkResult = this->check(env, region, parameterOptimizationDirection, localMonotonicityResult);
                 if (checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                     result = RegionResult::AllSat;
                 } else if (sampleVerticesOfRegion) {
@@ -136,7 +136,7 @@ namespace storm {
             } else if (existsViolated) {
                 // show AllViolated:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
-                auto checkResult = this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult);
+                auto checkResult = this->check(env, region, parameterOptimizationDirection, localMonotonicityResult);
                 if (!checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                     result = RegionResult::AllViolated;
                 } else if (sampleVerticesOfRegion) {
@@ -185,7 +185,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
+        std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
             auto quantitativeResult = computeQuantitativeValues(env, region, dirForParameters, localMonotonicityResult);
             lastValue = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
             if(currentCheckTask->getFormula().hasQuantitativeResult()) {
@@ -328,7 +328,7 @@ namespace storm {
                             if (useMonotonicity) {
                                 // Continue extending order/monotonicity result
                                 bool changedOrder = false;
-                                if (!order->getDoneBuilding() && orderExtender->isHope(order, currRegion)) {
+                                if (!order->getDoneBuilding() && orderExtender->isHope(order)) {
                                     if (numberOfCopiesOrder[order] != 1) {
                                         numberOfCopiesOrder[order]--;
                                         order = copyOrder(order);

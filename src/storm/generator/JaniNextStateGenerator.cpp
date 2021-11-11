@@ -107,7 +107,7 @@ namespace storm {
                             storm::jani::Variable const& variable = this->model.getGlobalVariables().getVariable(expressionOrLabelAndBool.first.getLabel());
                             STORM_LOG_THROW(variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
-                            
+
                             this->terminalStates.emplace_back(variable.getExpressionVariable().getExpression(), expressionOrLabelAndBool.second);
                         }
                     }
