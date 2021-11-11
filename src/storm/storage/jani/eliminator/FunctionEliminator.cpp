@@ -18,189 +18,186 @@
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
-    
-    
-    
-namespace jani {
-namespace detail {
+    namespace jani {
+        namespace detail {
             
-        class FunctionEliminationExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
-           public:
-            using storm::expressions::ExpressionVisitor::visit;
+            class FunctionEliminationExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
+               public:
+                using storm::expressions::ExpressionVisitor::visit;
 
 
-            typedef std::shared_ptr<storm::expressions::BaseExpression const> BaseExprPtr;
+                typedef std::shared_ptr<storm::expressions::BaseExpression const> BaseExprPtr;
 
-            FunctionEliminationExpressionVisitor(std::unordered_map<std::string, FunctionDefinition> const* globalFunctions, std::unordered_map<std::string, FunctionDefinition> const* localFunctions = nullptr) : globalFunctions(globalFunctions), localFunctions(localFunctions) {}
+                FunctionEliminationExpressionVisitor(std::unordered_map<std::string, FunctionDefinition> const* globalFunctions, std::unordered_map<std::string, FunctionDefinition> const* localFunctions = nullptr) : globalFunctions(globalFunctions), localFunctions(localFunctions) {}
 
-            virtual ~FunctionEliminationExpressionVisitor() = default;
+                virtual ~FunctionEliminationExpressionVisitor() = default;
 
-            FunctionEliminationExpressionVisitor setLocalFunctions(std::unordered_map<std::string, FunctionDefinition> const* localFunctions) {
-                return FunctionEliminationExpressionVisitor(this->globalFunctions, localFunctions);
-            }
-
-            storm::expressions::Expression eliminate(storm::expressions::Expression const& expression) {
-                auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(expression.accept(*this, boost::any())));
-                return res.simplify();
-            }
-
-            virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
-                BaseExprPtr conditionExpression = boost::any_cast<BaseExprPtr>(expression.getCondition()->accept(*this, data));
-                BaseExprPtr thenExpression = boost::any_cast<BaseExprPtr>(expression.getThenExpression()->accept(*this, data));
-                BaseExprPtr elseExpression = boost::any_cast<BaseExprPtr>(expression.getElseExpression()->accept(*this, data));
-
-                // If the arguments did not change, we simply push the expression itself.
-                if (conditionExpression.get() == expression.getCondition().get() && thenExpression.get() == expression.getThenExpression().get() && elseExpression.get() == expression.getElseExpression().get()) {
-                    return expression.getSharedPointer();
-                } else {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::IfThenElseExpression(expression.getManager(), thenExpression->getType(), conditionExpression, thenExpression, elseExpression)));
+                FunctionEliminationExpressionVisitor setLocalFunctions(std::unordered_map<std::string, FunctionDefinition> const* localFunctions) {
+                    return FunctionEliminationExpressionVisitor(this->globalFunctions, localFunctions);
                 }
-            }
 
-            virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override {
-                BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-                BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
-
-                // If the arguments did not change, we simply push the expression itself.
-                if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
-                    return expression.getSharedPointer();
-                } else {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::BinaryBooleanFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
+                storm::expressions::Expression eliminate(storm::expressions::Expression const& expression) {
+                    auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(expression.accept(*this, boost::any())));
+                    return res.simplify();
                 }
-            }
 
-            virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) override {
-                BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-                BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+                virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr conditionExpression = boost::any_cast<BaseExprPtr>(expression.getCondition()->accept(*this, data));
+                    BaseExprPtr thenExpression = boost::any_cast<BaseExprPtr>(expression.getThenExpression()->accept(*this, data));
+                    BaseExprPtr elseExpression = boost::any_cast<BaseExprPtr>(expression.getElseExpression()->accept(*this, data));
 
-                // If the arguments did not change, we simply push the expression itself.
-                if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
-                    return expression.getSharedPointer();
-                } else {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::BinaryNumericalFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
-                }
-            }
-
-            virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) override {
-                BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-                BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
-
-                // If the arguments did not change, we simply push the expression itself.
-                if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
-                    return expression.getSharedPointer();
-                } else {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::BinaryRelationExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getRelationType())));
-                }
-            }
-
-            virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const&) override {
-                return expression.getSharedPointer();
-            }
-
-            virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) override {
-                BaseExprPtr operandExpression = boost::any_cast<BaseExprPtr>(expression.getOperand()->accept(*this, data));
-
-                // If the argument did not change, we simply push the expression itself.
-                if (operandExpression.get() == expression.getOperand().get()) {
-                    return expression.getSharedPointer();
-                } else {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::UnaryBooleanFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
-                }
-            }
-
-            virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) override {
-                BaseExprPtr operandExpression = boost::any_cast<BaseExprPtr>(expression.getOperand()->accept(*this, data));
-
-                // If the argument did not change, we simply push the expression itself.
-                if (operandExpression.get() == expression.getOperand().get()) {
-                    return expression.getSharedPointer();
-                } else {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::UnaryNumericalFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
-                }
-            }
-
-            virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&) override {
-                return expression.getSharedPointer();
-            }
-
-            virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) override {
-                return expression.getSharedPointer();
-            }
-
-            virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) override {
-                return expression.getSharedPointer();
-            }
-
-            virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
-                STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
-                uint64_t size = expression.size()->evaluateAsInt();
-                std::vector<BaseExprPtr> elements;
-                bool changed = false;
-                for (uint64_t i = 0; i<size; ++i) {
-                    BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
-                    if (element.get() != expression.at(i).get()) {
-                        changed = true;
-                    }
-                    elements.push_back(element);
-                }
-                if (changed) {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ValueArrayExpression(expression.getManager(), expression.getType(), elements)));
-                } else {
-                    return expression.getSharedPointer();
-                }
-            }
-
-            virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
-                BaseExprPtr sizeExpression = boost::any_cast<BaseExprPtr>(expression.size()->accept(*this, data));
-                BaseExprPtr elementExpression = boost::any_cast<BaseExprPtr>(expression.getElementExpression()->accept(*this, data));
-
-                // If the arguments did not change, we simply push the expression itself.
-                if (sizeExpression.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
-                    return expression.getSharedPointer();
-                } else {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ConstructorArrayExpression(expression.getManager(), expression.getType(), sizeExpression, expression.getIndexVar(), elementExpression)));
-                }
-            }
-
-            virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
-                BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-                BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
-
-                // If the arguments did not change, we simply push the expression itself.
-                if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
-                    return expression.getSharedPointer();
-                } else {
-                    return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ArrayAccessExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression)));
-                }
-            }
-
-            virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
-                // Find the associated function definition
-                FunctionDefinition const* funDef = nullptr;
-                if (localFunctions != nullptr) {
-                    auto funDefIt = localFunctions->find(expression.getFunctionIdentifier());
-                    if (funDefIt != localFunctions->end()) {
-                        funDef = &(funDefIt->second);
-                    }
-                }
-                if (globalFunctions != nullptr) {
-                    auto funDefIt = globalFunctions->find(expression.getFunctionIdentifier());
-                    if (funDefIt != globalFunctions->end()) {
-                        funDef = &(funDefIt->second);
+                    // If the arguments did not change, we simply push the expression itself.
+                    if (conditionExpression.get() == expression.getCondition().get() && thenExpression.get() == expression.getThenExpression().get() && elseExpression.get() == expression.getElseExpression().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::IfThenElseExpression(expression.getManager(), thenExpression->getType(), conditionExpression, thenExpression, elseExpression)));
                     }
                 }
 
-                STORM_LOG_THROW(funDef != nullptr, storm::exceptions::UnexpectedException, "Unable to find function definition for function call " << expression << ".");
+                virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
+                    BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
 
-                return boost::any_cast<BaseExprPtr>(funDef->call(expression.getArguments()).getBaseExpression().accept(*this, data));
-            }
+                    // If the arguments did not change, we simply push the expression itself.
+                    if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::BinaryBooleanFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
+                    }
+                }
 
-           private:
-            std::unordered_map<std::string, FunctionDefinition> const* globalFunctions;
-            std::unordered_map<std::string, FunctionDefinition> const* localFunctions;
-        };
+                virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
+                    BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
 
-        class FunctionEliminatorTraverser : public JaniTraverser {
+                    // If the arguments did not change, we simply push the expression itself.
+                    if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::BinaryNumericalFunctionExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getOperatorType())));
+                    }
+                }
+
+                virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
+                    BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+
+                    // If the arguments did not change, we simply push the expression itself.
+                    if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::BinaryRelationExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression, expression.getRelationType())));
+                    }
+                }
+
+                virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const&) override {
+                    return expression.getSharedPointer();
+                }
+
+                virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr operandExpression = boost::any_cast<BaseExprPtr>(expression.getOperand()->accept(*this, data));
+
+                    // If the argument did not change, we simply push the expression itself.
+                    if (operandExpression.get() == expression.getOperand().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::UnaryBooleanFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
+                    }
+                }
+
+                virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr operandExpression = boost::any_cast<BaseExprPtr>(expression.getOperand()->accept(*this, data));
+
+                    // If the argument did not change, we simply push the expression itself.
+                    if (operandExpression.get() == expression.getOperand().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::UnaryNumericalFunctionExpression(expression.getManager(), expression.getType(), operandExpression, expression.getOperatorType())));
+                    }
+                }
+
+                virtual boost::any visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&) override {
+                    return expression.getSharedPointer();
+                }
+
+                virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) override {
+                    return expression.getSharedPointer();
+                }
+
+                virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) override {
+                    return expression.getSharedPointer();
+                }
+
+                virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
+                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
+                    uint64_t size = expression.size()->evaluateAsInt();
+                    std::vector<BaseExprPtr> elements;
+                    bool changed = false;
+                    for (uint64_t i = 0; i<size; ++i) {
+                        BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
+                        if (element.get() != expression.at(i).get()) {
+                            changed = true;
+                        }
+                        elements.push_back(element);
+                    }
+                    if (changed) {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ValueArrayExpression(expression.getManager(), expression.getType(), elements)));
+                    } else {
+                        return expression.getSharedPointer();
+                    }
+                }
+
+                virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr sizeExpression = boost::any_cast<BaseExprPtr>(expression.size()->accept(*this, data));
+                    BaseExprPtr elementExpression = boost::any_cast<BaseExprPtr>(expression.getElementExpression()->accept(*this, data));
+
+                    // If the arguments did not change, we simply push the expression itself.
+                    if (sizeExpression.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ConstructorArrayExpression(expression.getManager(), expression.getType(), sizeExpression, expression.getIndexVar(), elementExpression)));
+                    }
+                }
+
+                virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
+                    BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
+                    BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+
+                    // If the arguments did not change, we simply push the expression itself.
+                    if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
+                        return expression.getSharedPointer();
+                    } else {
+                        return std::const_pointer_cast<storm::expressions::BaseExpression const>(std::shared_ptr<storm::expressions::BaseExpression>(new storm::expressions::ArrayAccessExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression)));
+                    }
+                }
+
+                virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
+                    // Find the associated function definition
+                    FunctionDefinition const* funDef = nullptr;
+                    if (localFunctions != nullptr) {
+                        auto funDefIt = localFunctions->find(expression.getFunctionIdentifier());
+                        if (funDefIt != localFunctions->end()) {
+                            funDef = &(funDefIt->second);
+                        }
+                    }
+                    if (globalFunctions != nullptr) {
+                        auto funDefIt = globalFunctions->find(expression.getFunctionIdentifier());
+                        if (funDefIt != globalFunctions->end()) {
+                            funDef = &(funDefIt->second);
+                        }
+                    }
+
+                    STORM_LOG_THROW(funDef != nullptr, storm::exceptions::UnexpectedException, "Unable to find function definition for function call " << expression << ".");
+
+                    return boost::any_cast<BaseExprPtr>(funDef->call(expression.getArguments()).getBaseExpression().accept(*this, data));
+                }
+
+               private:
+                std::unordered_map<std::string, FunctionDefinition> const* globalFunctions;
+                std::unordered_map<std::string, FunctionDefinition> const* localFunctions;
+            };
+
+            class FunctionEliminatorTraverser : public JaniTraverser {
            public:
 
             using JaniTraverser::traverse;
