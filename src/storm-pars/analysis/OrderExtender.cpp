@@ -19,7 +19,7 @@ namespace storm {
     namespace analysis {
 
         template <typename ValueType, typename ConstantType>
-        OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) {
+        OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : monotonicityChecker(model->getTransitionMatrix()) {
             this->model = model;
             this->matrix = model->getTransitionMatrix();
             this->numberOfStates = this->model->getNumberOfStates();
@@ -28,10 +28,9 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) {
+        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : monotonicityChecker(matrix) {
             this->matrix = matrix;
             this->model = nullptr;
-
 
             storm::storage::StronglyConnectedComponentDecompositionOptions options;
             options.forceTopologicalSort();
@@ -56,7 +55,13 @@ namespace storm {
 
             auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
             this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
+            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
+            buildStateMap(subStates);
+        }
 
+
+        template<typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::buildStateMap(storm::storage::BitVector& subStates) {
             // Build stateMap
             auto rowCount = 0;
             auto currentOption = 0;
@@ -79,7 +84,6 @@ namespace storm {
                         storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
                     }
-
                     currentOption++;
                     rowCount++;
                 }
@@ -95,8 +99,6 @@ namespace storm {
 
                 currentOption = 0;
             }
-
-            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
         }
 
         template <typename ValueType, typename ConstantType>
@@ -357,6 +359,11 @@ namespace storm {
         const vector<std::set<typename OrderExtender<ValueType, ConstantType>::VariableType>>& OrderExtender<ValueType, ConstantType>::getVariablesOccuringAtState() {
             return occuringVariablesAtState;
         }
+        template<typename ValueType, typename ConstantType>
+        MonotonicityChecker<ValueType>& OrderExtender<ValueType, ConstantType>::getMonotonicityChecker() {
+            return monotonicityChecker;
+        }
+
 
         template class OrderExtender<RationalFunction, double>;
         template class OrderExtender<RationalFunction, RationalNumber>;

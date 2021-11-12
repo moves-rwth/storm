@@ -37,7 +37,6 @@ namespace storm {
             std::shared_ptr<Order> getBottomTopOrder() override;
 
 
-            MonotonicityChecker<ValueType> monotonicityChecker;
         };
     }
 }

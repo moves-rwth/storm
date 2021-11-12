@@ -77,12 +77,14 @@ namespace storm {
             void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
             void initializeMinMaxValues(storage::ParameterRegion<ValueType> region);
 
+            MonotonicityChecker<ValueType>& getMonotonicityChecker();
             bool isHope(std::shared_ptr<Order> order);
 
             std::vector<std::set<VariableType>> const& getVariablesOccuringAtState();
-        private:
 
         protected:
+            void buildStateMap(storm::storage::BitVector& subStates);
+
             Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
             virtual std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) = 0;
             virtual std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) = 0;
@@ -128,6 +130,9 @@ namespace storm {
 
             std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
             std::vector<std::set<VariableType>> occuringVariablesAtState;
+
+            MonotonicityChecker<ValueType> monotonicityChecker;
+
         };
     }
 }

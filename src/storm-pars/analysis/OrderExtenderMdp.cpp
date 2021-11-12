@@ -153,9 +153,9 @@ namespace storm {
                     assert (order->sortStates(&successors).size() == successors.size());
                     assert (order->contains(currentState) && order->getNode(currentState) != nullptr);
 
-                    if (monRes != nullptr && currentStateMode.second != -1) {
+                    if (monRes != nullptr && currentStateMode.second) {
                         for (auto& param : this->occuringVariablesAtState[currentState]) {
-                            this ->checkParOnStateMonRes(currentState, order, param, monRes);
+                            this->checkParOnStateMonRes(currentState, order, param, monRes);
                         }
                     }
                     // Get the next state

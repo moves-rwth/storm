@@ -19,9 +19,8 @@ namespace storm {
     namespace analysis {
         /*** Constructor ***/
         template <typename ValueType, typename ConstantType>
-        MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) : assumptionMaker(model->getTransitionMatrix()), monotonicityChecker(model->getTransitionMatrix()){
-            assert (model != nullptr);
-
+        MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) : assumptionMaker(model->getTransitionMatrix()) {
+            STORM_LOG_ASSERT (model != nullptr, "Expecting model to be provided for monotonicity helper");
             this->model = model;
             this->formulas = formulas;
             this->precision = utility::convertNumber<ConstantType>(precision);
@@ -65,7 +64,7 @@ namespace storm {
                 // TODO where to get prMax? Based on what was given via --prop?
                 this->extender = new analysis::OrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true);
             } else {
-                // TODO @Jip Warning that we can't do anything that isnt a dtmc or an mdp bc else we might have a null pointer exception at some point
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for model type: ");
             }
 
             for (uint_fast64_t i = 0; i < matrix.getRowCount(); ++i) {
@@ -161,7 +160,7 @@ namespace storm {
             LocalMonotonicityResult<VariableType> localMonRes(model->getNumberOfStates());
             for (uint_fast64_t state = 0; state < model->getNumberOfStates(); ++state) {
                 for (auto& var : extender->getVariablesOccuringAtState()[state]) {
-                    localMonRes.setMonotonicity(state, var, this->monotonicityChecker.checkLocalMonotonicity(order, state, var, region));
+                    localMonRes.setMonotonicity(state, var, extender->getMonotonicityChecker().checkLocalMonotonicity(order, state, var, region));
                 }
             }
             localMonRes.setDone(order->getDoneBuilding());

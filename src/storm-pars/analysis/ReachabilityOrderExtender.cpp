@@ -6,19 +6,18 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType, typename ConstantType>
-        ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula), monotonicityChecker(MonotonicityChecker<ValueType>(model->getTransitionMatrix())) {
-            this->monotonicityChecker = MonotonicityChecker<ValueType>(model->getTransitionMatrix());
+        ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
+            // intentionally left empty
         }
 
         template<typename ValueType, typename ConstantType>
-        ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix), monotonicityChecker(MonotonicityChecker<ValueType>(matrix)) {
-            this->monotonicityChecker = MonotonicityChecker<ValueType>(matrix);
+        ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
+            // intentionally left empty
         }
 
         template <typename ValueType, typename ConstantType>
         void ReachabilityOrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
-            auto mon = monotonicityChecker.checkLocalMonotonicity(order, s, param, this->region);
-            monResult->updateMonotonicityResult(param, mon);
+            monResult->updateMonotonicityResult(param, this->monotonicityChecker.checkLocalMonotonicity(order, s, param, this->region));
         }
 
         template <typename ValueType, typename ConstantType>
@@ -313,45 +312,7 @@ namespace storm {
                 this->bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
 
                 // Build stateMap
-                auto rowCount = 0;
-                auto currentOption = 0;
-                auto numberOfOptionsForState = 0;
-                for (uint_fast64_t state = 0; state < this->numberOfStates; ++state) {
-                    this->stateMap[state] = std::vector<std::vector<uint_fast64_t>>();
-                    std::set<VariableType> occurringVariables;
-                    numberOfOptionsForState = matrix.getRowGroupSize(state);
-                    while (currentOption < numberOfOptionsForState) {
-                        auto row = matrix.getRow(rowCount);
-                        this->stateMap[state].push_back(std::vector<uint64_t>());
-                        for (auto& entry : row) {
-                            // ignore self-loops when there are more transitions
-                            if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                                if (!subStates[entry.getColumn()] && !this->bottomTopOrder->contains(state)) {
-                                    this->bottomTopOrder->add(state);
-                                }
-                                this->stateMap[state][currentOption].push_back(entry.getColumn());
-                            }
-                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
-
-                        }
-
-                        currentOption++;
-                        rowCount++;
-                    }
-
-                    if (occurringVariables.empty()) {
-                        this->nonParametricStates.insert(state);
-                    }
-
-                    for (auto& var : occurringVariables) {
-                        this->occuringStatesAtVariable[var].push_back(state);
-                    }
-                    this->occuringVariablesAtState.push_back(std::move(occurringVariables));
-                    this->occuringVariablesAtState.push_back(std::move(occurringVariables));
-
-                    currentOption = 0;
-                }
-
+                this->buildStateMap(subStates);
             }
 
             if (this->minValuesInit && this->maxValuesInit) {
