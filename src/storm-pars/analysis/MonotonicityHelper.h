@@ -154,6 +154,8 @@ namespace storm {
 
             MonotonicityResult<VariableType> resultCheckOnSamples;
 
+            MonotonicityChecker<ValueType> monotonicityChecker;
+
             std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
 
             std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> monResults;

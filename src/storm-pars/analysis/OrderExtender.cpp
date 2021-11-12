@@ -352,10 +352,7 @@ namespace storm {
             bool yesThereIsHope = continueExtending[order];
             return yesThereIsHope;
         }
-        template<typename ValueType, typename ConstantType>
-        MonotonicityChecker<ValueType>& OrderExtender<ValueType, ConstantType>::getMonotoncityChecker() {
-            return monotonicityChecker;
-        }
+
         template<typename ValueType, typename ConstantType>
         const vector<std::set<typename OrderExtender<ValueType, ConstantType>::VariableType>>& OrderExtender<ValueType, ConstantType>::getVariablesOccuringAtState() {
             return occuringVariablesAtState;

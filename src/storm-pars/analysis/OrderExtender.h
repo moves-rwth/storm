@@ -79,7 +79,6 @@ namespace storm {
 
             bool isHope(std::shared_ptr<Order> order);
 
-            MonotonicityChecker<ValueType>& getMonotoncityChecker();
             std::vector<std::set<VariableType>> const& getVariablesOccuringAtState();
         private:
 

@@ -19,7 +19,7 @@ namespace storm {
     namespace analysis {
         /*** Constructor ***/
         template <typename ValueType, typename ConstantType>
-        MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) : assumptionMaker(model->getTransitionMatrix()){
+        MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) : assumptionMaker(model->getTransitionMatrix()), monotonicityChecker(model->getTransitionMatrix()){
             assert (model != nullptr);
 
             this->model = model;
@@ -161,7 +161,7 @@ namespace storm {
             LocalMonotonicityResult<VariableType> localMonRes(model->getNumberOfStates());
             for (uint_fast64_t state = 0; state < model->getNumberOfStates(); ++state) {
                 for (auto& var : extender->getVariablesOccuringAtState()[state]) {
-                    localMonRes.setMonotonicity(state, var, extender->getMonotoncityChecker().checkLocalMonotonicity(order, state, var, region));
+                    localMonRes.setMonotonicity(state, var, this->monotonicityChecker.checkLocalMonotonicity(order, state, var, region));
                 }
             }
             localMonRes.setDone(order->getDoneBuilding());
