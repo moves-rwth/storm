@@ -64,7 +64,6 @@ namespace storm {
             bool result = false;
             switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
                 case MinMaxMethod::ValueIteration:
-                    // Throws error when choices for scheduler are fixed
                     result = solveEquationsValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::OptimisticValueIteration:
@@ -77,7 +76,6 @@ namespace storm {
                     result = solveEquationsRationalSearch(env, dir, x, b);
                     break;
                 case MinMaxMethod::IntervalIteration:
-                    // Throws error when choices for scheduler are fixed
                     result = solveEquationsIntervalIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::SoundValueIteration:
@@ -303,6 +301,7 @@ namespace storm {
 
         template<typename ValueType>
         typename IterativeMinMaxLinearEquationSolver<ValueType>::ValueIterationResult IterativeMinMaxLinearEquationSolver<ValueType>::performValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>*& currentX, std::vector<ValueType>*& newX, std::vector<ValueType> const& b, ValueType const& precision, bool relative, SolverGuarantee const& guarantee, uint64_t currentIterations, uint64_t maximalNumberOfIterations, storm::solver::MultiplicationStyle const& multiplicationStyle) const {
+            STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing the scheduler choices in which choices are fixed is not implemented for value iteration, please pick a different solver");
             STORM_LOG_ASSERT(currentX != newX, "Vectors must not be aliased.");
 
             // Get handle to multiplier.
@@ -316,25 +315,13 @@ namespace storm {
 
             SolverStatus status = SolverStatus::InProgress;
             while (status == SolverStatus::InProgress) {
-
-                // TODO: integrate fixed choices for the scheduler for a rowgroup in multiplier
-                if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get().full()) {
-                    std::size_t rowGroup = currentX->size();
-                    while (rowGroup != 0) {
-                        --rowGroup;
-                        *newX = *currentX;
-                        uint_fast64_t rowIndex = this->A->getRowGroupIndices()[rowGroup] + this->initialScheduler.get()[rowGroup];
-                        multiplier.multiplyRow(rowIndex, *currentX, (*newX)[rowGroup]);
-                    }
+                // Compute x' = min/max(A*x + b).
+                if (useGaussSeidelMultiplication) {
+                    // Copy over the current vector so we can modify it in-place.
+                    *newX = *currentX;
+                    multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
                 } else {
-                    // Compute x' = min/max(A*x + b).
-                    if (useGaussSeidelMultiplication) {
-                        // Copy over the current vector so we can modify it in-place.
-                        *newX = *currentX;
-                        multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
-                    } else {
-                        multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
-                    }
+                    multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
                 }
 
                 // Determine whether the method converged.
@@ -892,9 +879,8 @@ namespace storm {
         template<typename ValueType>
         template<typename ImpreciseType>
         typename std::enable_if<!std::is_same<ValueType, ImpreciseType>::value, bool>::type IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsRationalSearchHelper(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            if (this->choiceFixedForRowGroup) {
-                STORM_LOG_WARN("Choices are fixed help I don't know what to do");
-            }
+            STORM_LOG_THROW(!this->choiceFixedForRowGroup, storm::exceptions::NotImplementedException, "Fixing scheduler choices not implemented for solving equations with rational search helper, please pick a different solver");
+
             // Version for when the overall value type is exact and the imprecise one is not. We first try to solve the
             // problem using the imprecise data type and fall back to the exact type as needed.
             

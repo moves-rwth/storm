@@ -57,7 +57,7 @@ namespace storm {
                         break;
                     } else {
                         for (uint64_t j = 0; j <= index; ++j) {
-                            setValueCallback(j, *currentIterators[index]);
+                            setValueCallback(j, *currentIterators[j]);
                         }
                     }
                 }

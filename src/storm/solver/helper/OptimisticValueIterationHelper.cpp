@@ -74,9 +74,11 @@ namespace storm {
                     IndexType i = x.size();
                     while (i > 0) {
                         --i;
+
                         ValueType newXi;
                         if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                            newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                            auto row = i + scheduler.get().at(i);
+                            newXi = multiplyRow(row, b[row], x);
                         } else {
                             newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
                         }
@@ -124,7 +126,8 @@ namespace storm {
                         --i;
                         ValueType newXi;
                         if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                            newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                            auto row = i + scheduler.get().at(i);
+                            newXi = multiplyRow(row, b[row], x);
                         } else {
                             newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
                         }
@@ -152,7 +155,8 @@ namespace storm {
                         while (i > 0) {
                             --i;
                             if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                                x[i] = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                                auto row = i + scheduler.get().at(i);
+                                x[i] = multiplyRow(row, b[row], x);
                             } else {
                                 x[i] = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
                             }
@@ -187,7 +191,8 @@ namespace storm {
                         --i;
                         ValueType newXi;
                         if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[i]) {
-                            newXi = multiplyRow(i, b[i + scheduler.get().at(i)], x);
+                            auto row = i + scheduler.get().at(i);
+                            newXi = multiplyRow(row, b[row], x);
                         } else {
                             newXi = HasRowGroups ? multiplyRowGroup<Dir>(i, b, x) : multiplyRow(i, b[i], x);
                         }
@@ -391,10 +396,8 @@ namespace storm {
                 return {status, overallIterations};
             }
 
-            
             template class OptimisticValueIterationHelper<double>;
             template class OptimisticValueIterationHelper<storm::RationalNumber>;
         }
     }
 }
-

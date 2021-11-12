@@ -198,3 +198,11 @@ TEST(ExplicitJaniModelBuilderTest, unassignedVariables) {
     EXPECT_EQ(25ul, model->getNumberOfStates());
     EXPECT_EQ(81ul, model->getNumberOfTransitions());
 }
+
+TEST(ExplicitJaniModelBuilderTest, enumerateInitial) {
+    storm::jani::Model janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/enumerate_init.jani").first;
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
+    EXPECT_EQ(94ul, model->getNumberOfStates());
+    EXPECT_EQ(145ul, model->getNumberOfTransitions());
+    EXPECT_EQ(72ul, model->getInitialStates().getNumberOfSetBits());
+}

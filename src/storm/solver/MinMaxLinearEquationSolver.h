@@ -72,7 +72,6 @@ namespace storm {
 
             /*!
              * Sets the states for which the choices are fixed.
-             * Expecting the matrix to only have one choice for the states which are fixed.
              * @param schedulerFixedForRowGroup bitvector with the states where the choices are fixed.
              */
             virtual void setSchedulerFixedForRowGroup(storm::storage::BitVector&& schedulerFixedForRowGroup);

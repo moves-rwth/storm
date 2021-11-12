@@ -45,7 +45,6 @@ namespace storm {
 
         template<typename ValueType>
         bool TopologicalMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            // Only for this one we do something with the fixed choices
             STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Provided x-vector has invalid size.");
             STORM_LOG_ASSERT(b.size() == this->A->getRowCount(), "Provided b-vector has invalid size.");
             
@@ -283,27 +282,16 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> sccA;
             if (this->choiceFixedForRowGroup) {
                 // Obtain choiceFixedForState bitvector containing only the states of the scc.
-                storm::storage::BitVector choiceFixedForStateSCC(sccRowGroups.getNumberOfSetBits());
-                auto j = 0;
-                for (auto i : sccRowGroups) {
-                    choiceFixedForStateSCC.set(j, this->choiceFixedForRowGroup.get()[i]);
-                    j++;
-                }
-                assert (j = sccRowGroups.getNumberOfSetBits());
+                storm::storage::BitVector choiceFixedForStateSCC = this->choiceFixedForRowGroup.get() % sccRowGroups;
                 sccA = this->A->getSubmatrix(false, sccRows, sccRowGroups);
 
                 // initial scheduler
                 if (this->hasInitialScheduler()) {
-                    auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
+                    std::vector<uint_fast64_t> sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
                     // As we removed the entries where the choice was fixed, we need to change the scheduler.
                     // We set the scheduler to 0 for those states.
-                    if (this->choiceFixedForRowGroup) {
-                        for (auto const choice : this->choiceFixedForRowGroup.get()) {
-                            sccInitChoices[choice] = 0;
-                        }
-                    }
+                    storm::utility::vector::setVectorValues<uint_fast64_t>(sccInitChoices, choiceFixedForStateSCC, 0);
                     this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
-
                 }
 
             } else {

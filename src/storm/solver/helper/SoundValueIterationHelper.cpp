@@ -125,17 +125,15 @@ namespace storm {
                     auto groupStartIt = rowGroupIndices->rbegin();
                     uint64_t groupEnd = *groupStartIt;
                     ++groupStartIt;
-
+                    auto rowGroupIndex = rowGroupIndices->size();
+                    
                     for (auto groupStartIte = rowGroupIndices->rend(); groupStartIt != groupStartIte; groupEnd = *(groupStartIt++), ++xIt, ++yIt) {
-                        auto rowGroupIndex = groupStartIt - rowGroupIndices->rbegin() - 1;
+                        rowGroupIndex--;
 
                         if (schedulerFixedForRowgroup && schedulerFixedForRowgroup.get()[rowGroupIndex]) {
                             // The scheduler is fixed for this rowgroup so we perform iteration only on this row.
                             IndexType row = *groupStartIt + scheduler.get()[rowGroupIndex];
-                            ValueType xBest, yBest;
-                            multiplyRow(row, b[row], xBest, yBest);
-                            *xIt = std::move(xBest);
-                            *yIt = std::move(yBest);
+                            multiplyRow(row, b[row], *xIt, *yIt);
                         } else {
                             // Perform the iteration for the first row in the group
                             IndexType row = *groupStartIt;
@@ -187,9 +185,7 @@ namespace storm {
                         // The scheduler is fixed for this rowgroup so we perform iteration only on this entry.
                         IndexType row = *groupStartIt + scheduler.get()[rowGroupIndex];
                         ValueType xBest, yBest;
-                        multiplyRow(row, b[row], xBest, yBest);
-                        *xIt = std::move(xBest);
-                        *yIt = std::move(yBest);
+                        multiplyRow(row, b[row], *xIt, *yIt);
                     } else {
                         // Perform the iteration for the first row in the group
                         uint64_t row = *groupStartIt;

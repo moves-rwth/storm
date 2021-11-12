@@ -26,7 +26,7 @@ namespace storm {
                 evaluator.setBooleanValue(booleanVariable.variable, state.get(booleanVariable.bitOffset));
             }
             for (auto const& integerVariable : variableInformation.integerVariables) {
-                evaluator.setIntegerValue(integerVariable.variable, state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
+                evaluator.setIntegerValue(integerVariable.variable, static_cast<int_fast64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound);
             }
         }
         
@@ -43,7 +43,7 @@ namespace storm {
                 result.setBooleanValue(booleanVariable.variable, state.get(booleanVariable.bitOffset));
             }
             for (auto const& integerVariable : variableInformation.integerVariables) {
-                result.setIntegerValue(integerVariable.variable, state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
+                result.setIntegerValue(integerVariable.variable, static_cast<int_fast64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound);
             }
             return result;
         }
@@ -79,7 +79,7 @@ namespace storm {
                 booleanValues.push_back(state.get(booleanVariable.bitOffset));
             }
             for (auto const& integerVariable : variableInformation.integerVariables) {
-                integerValues.push_back(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
+                integerValues.push_back(static_cast<int_fast64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound);
             }
         }
         
@@ -97,7 +97,7 @@ namespace storm {
                 }
             }
             for (auto const& integerVariable : variableInformation.integerVariables) {
-                assignments.push_back(integerVariable.variable.getName() + "=" + std::to_string(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound));
+                assignments.push_back(integerVariable.variable.getName() + "=" + std::to_string(static_cast<int_fast64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound));
             }
             return boost::join(assignments, " & ");
         }
