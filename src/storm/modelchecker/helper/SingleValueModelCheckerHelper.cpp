@@ -82,6 +82,16 @@ namespace storm {
             bool SingleValueModelCheckerHelper<ValueType, ModelRepresentation>::isProduceSchedulerSet() const {
                 return _produceScheduler;
             }
+
+            template <typename ValueType, storm::models::ModelRepresentation ModelRepresentation>
+            void SingleValueModelCheckerHelper<ValueType, ModelRepresentation>::setQualitative(bool value) {
+                _isQualitativeSet = value;
+            }
+
+            template <typename ValueType, storm::models::ModelRepresentation ModelRepresentation>
+            bool SingleValueModelCheckerHelper<ValueType, ModelRepresentation>::isQualitativeSet() const {
+                return _isQualitativeSet;
+            }
  
             template class SingleValueModelCheckerHelper<double, storm::models::ModelRepresentation::Sparse>;
             template class SingleValueModelCheckerHelper<storm::RationalNumber, storm::models::ModelRepresentation::Sparse>;

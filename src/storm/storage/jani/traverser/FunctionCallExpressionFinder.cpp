@@ -11,6 +11,7 @@ namespace storm {
         namespace detail {
             class FunctionCallExpressionFinderExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             public:
+                using storm::expressions::ExpressionVisitor::visit;
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
                     expression.getCondition()->accept(*this, data);
                     expression.getThenExpression()->accept(*this, data);
@@ -64,21 +65,9 @@ namespace storm {
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
                     STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
-                    expression.size()->accept(*this, data);
-                    visit(expression.getElements(), data);
-                    return boost::any();
-                }
-
-                virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) override {
-                    if (elements.elementsWithValue) {
-                        for (auto const& elem : elements.elementsWithValue.get()) {
-                            elem->accept(*this, data);
-                        }
-                    } else {
-                        assert (elements.elementsOfElements);
-                        for (auto const& elem : elements.elementsOfElements.get()) {
-                            visit(*elem, data);
-                        }
+                    uint64_t size = expression.size()->evaluateAsInt();
+                    for (uint64_t i = 0; i < size; ++i) {
+                        expression.at(i)->accept(*this, data);
                     }
                     return boost::any();
                 }
@@ -95,16 +84,6 @@ namespace storm {
                     return boost::any();
                 }
 
-                virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data) override {
-                    if (expression.getFirstOperand() == expression.getSecondOperand()) {
-                        expression.getFirstOperand()->accept(*this, data);
-                    } else {
-                        expression.getFirstOperand()->accept(*this, data);
-                        expression.getSecondOperand()->accept(*this, data);
-                    }
-                    return boost::any();
-                }
-                
                 virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) override {
                     auto& set = *boost::any_cast<std::unordered_set<std::string>*>(data);
                     set.insert(expression.getFunctionIdentifier());

@@ -2,7 +2,11 @@
 
 namespace storm {
     namespace jani {
-        ArrayType::ArrayType(JaniType* childType) : JaniType(), childType(childType){
+        ArrayType::ArrayType(JaniType const& baseType) : ArrayType(baseType.clone()) {
+            // Intentionally left empty
+        }
+        
+        ArrayType::ArrayType(std::unique_ptr<JaniType>&& baseType) : baseType(std::move(baseType)) {
             // Intentionally left empty
         }
 
@@ -10,32 +14,42 @@ namespace storm {
             return true;
         }
 
-        bool ArrayType::isBoundedType() const {
-            return childType->isBoundedType();
+        JaniType& ArrayType::getBaseType() {
+            return *baseType;
         }
 
-        JaniType* ArrayType::getChildType() const {
-            return childType;
+        JaniType const& ArrayType::getBaseType() const {
+            return *baseType;
+        }
+
+        JaniType const& ArrayType::getBaseTypeRecursive() const {
+            if (getBaseType().isArrayType()) {
+                return getBaseType().asArrayType().getBaseTypeRecursive();
+            } else {
+                return getBaseType();
+            }
+        }
+        
+        uint64_t ArrayType::getNestingDegree() const {
+            if (getBaseType().isArrayType()) {
+                return getBaseType().asArrayType().getNestingDegree() + 1;
+            } else {
+                return 1;
+            }
         }
 
         std::string ArrayType::getStringRepresentation() const {
-            return "array[" + getChildType()->getStringRepresentation() + "]";
+            return "array[" + getBaseType().getStringRepresentation() + "]";
         }
-
-        void ArrayType::setLowerBound(storm::expressions::Expression const& expression) {
-            childType->setLowerBound(expression);
+        
+        void ArrayType::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            JaniType::substitute(substitution);
+            baseType->substitute(substitution);
         }
-
-        void ArrayType::setUpperBound(storm::expressions::Expression const& expression) {
-            childType->setUpperBound(expression);
+        
+        std::unique_ptr<JaniType> ArrayType::clone() const {
+            return std::make_unique<ArrayType>(baseType->clone());
         }
-
-        storm::expressions::Expression const& ArrayType::getLowerBound() const {
-            return childType->getLowerBound();
-        }
-
-        storm::expressions::Expression const& ArrayType::getUpperBound() const {
-            return childType->getUpperBound();
-        }
+        
     }
 }

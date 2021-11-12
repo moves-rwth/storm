@@ -118,8 +118,8 @@ TEST(AssumptionCheckerTest, Simple1) {
     model = simplifier.getSimplifiedModel();
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(5ul,dtmc->getNumberOfStates());
-    ASSERT_EQ(8ul,dtmc->getNumberOfTransitions());
+    ASSERT_EQ(5ul, dtmc->getNumberOfStates());
+    ASSERT_EQ(8ul, dtmc->getNumberOfTransitions());
 
     // Create the region
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
@@ -354,7 +354,7 @@ TEST(AssumptionCheckerTest, Casestudy3) {
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     ASSERT_EQ(5ul, dtmc->getNumberOfStates());
-    ASSERT_EQ(8ul,dtmc->getNumberOfTransitions());
+    ASSERT_EQ(8ul, dtmc->getNumberOfTransitions());
 
     // Create the region
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);

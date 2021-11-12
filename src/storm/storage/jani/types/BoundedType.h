@@ -7,20 +7,40 @@ namespace storm {
         class BoundedType : public JaniType {
 
         public:
-            BoundedType (ElementType const& type, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
+         
+            enum class BaseType {
+                Int,
+                Real
+            };
+            
+            BoundedType (BaseType const& type, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
+            virtual ~BoundedType() = default;
+            
             virtual bool isBoundedType() const override;
-            virtual bool isIntegerType() const override;
-            virtual bool isRealType() const override;
-            std::string getStringRepresentation() const override;
-            void setLowerBound(storm::expressions::Expression const& expression) override;
-            void setUpperBound(storm::expressions::Expression const& expression) override;
-            storm::expressions::Expression const& getLowerBound() const override;
-            storm::expressions::Expression const& getUpperBound() const override;
+            
+            BaseType const& getBaseType() const;
+            bool isIntegerType() const;
+            bool isRealType() const;
+            bool isNumericalType() const; /// true iff type is either real or int (i.e. it's  always true but let's make it explicit)
+            
+            virtual std::string getStringRepresentation() const override;
+            virtual void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) override;
+            virtual std::unique_ptr<JaniType> clone() const override;
+
+            void setLowerBound(storm::expressions::Expression const& expression);
+            void setUpperBound(storm::expressions::Expression const& expression);
+            bool hasLowerBound() const;
+            bool hasUpperBound() const;
+            
+            storm::expressions::Expression& getLowerBound();
+            storm::expressions::Expression& getUpperBound();
+            storm::expressions::Expression const& getLowerBound() const;
+            storm::expressions::Expression const& getUpperBound() const;
 
 
 
         private:
-            ElementType type;
+            BaseType type;
             storm::expressions::Expression lowerBound;
             storm::expressions::Expression upperBound;
         };

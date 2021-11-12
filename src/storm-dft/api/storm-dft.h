@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
@@ -164,6 +165,46 @@ namespace storm {
             }
             return results;
         }
+
+
+        /*!
+         * Analyze the DFT using BDDs
+         *
+         * @param dft DFT
+         *
+         * @param calculateMCS
+         * If true exports the bdd representing the top level gate of the dft
+         * in the dot format
+         *
+         * @param filename
+         * The name of the file for exporting to dot
+         *
+         * @param calculateMCS
+         * If true calculates the minimal cut sets
+         *
+         * @param calculateProbability
+         * If true calculates the system failure propbability
+         *
+         * @param timepoints
+         * The timebounds for probability calculations
+         */
+        template<typename ValueType>
+        void analyzeDFTBdd(
+                std::shared_ptr<storm::storage::DFT<ValueType>> const &dft,
+                bool const exportToDot,
+                std::string const &filename,
+                bool const calculateMttf,
+                double const mttfPrecision,
+                double const mttfStepsize,
+                std::string const mttfAlgorithmName,
+                bool const calculateMCS,
+                bool const calculateProbability,
+                bool const useModularisation,
+                std::string const importanceMeasureName,
+                std::vector<double> const &timepoints,
+                std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                std::vector<std::string> const& additionalRelevantEventNames,
+                size_t const chunksize);
 
         /*!
          * Analyze the DFT using the SMT encoding

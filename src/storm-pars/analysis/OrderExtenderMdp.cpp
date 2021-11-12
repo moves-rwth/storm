@@ -166,7 +166,7 @@ namespace storm {
                     assert (order->compare(result.first, result.second) == Order::UNKNOWN);
                     assert (order->compare(result.second, result.first) == Order::UNKNOWN);
                     // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
-                    if (currentStateMode.second && this->extendByAssumption(order, currentState, result.first, result.second)) {
+                    if (currentStateMode.second && this->extendByAssumption(order, result.first, result.second)) {
                         continue;
                     }
                     // We couldn't extend the order

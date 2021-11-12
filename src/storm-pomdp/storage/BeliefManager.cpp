@@ -14,7 +14,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        BeliefManager<PomdpType, BeliefValueType, StateType>::FreudenthalDiff::FreudenthalDiff(StateType const &dimension, BeliefValueType &&diff) : dimension(dimension),
+        BeliefManager<PomdpType, BeliefValueType, StateType>::FreudenthalDiff::FreudenthalDiff(StateType const &dimension, BeliefValueType diff) : dimension(dimension),
                                                                                                                                                      diff(std::move(diff)) {
             // Intentionally left empty
         }

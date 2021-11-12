@@ -203,7 +203,7 @@ namespace storm {
                         }
                     }
 
-                    res = analyzeRegion(env, currentRegion, hypothesis, res, false, order, localMonotonicityResult);
+                    res = analyzeRegion(env, currentRegion, hypothesis, res, false, localMonotonicityResult);
 
                     switch (res) {
                         case RegionResult::AllSat:

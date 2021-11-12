@@ -21,7 +21,10 @@ namespace storm {
 
         template<typename ValueType>
         class OneShotPolicySearch {
-            // Implements  to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
+            /*!
+             *  Implements  to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
+             *  Tries to find a memoryless policy.
+             */
             class Statistics {
             public:
                 Statistics() = default;
@@ -49,23 +52,22 @@ namespace storm {
                 surelyReachSinkStates = surelyReachSink;
             }
 
-            void analyzeForInitialStates(uint64_t k) {
+            /*!
+             * Check if you can find a memoryless policy from the initial states
+             * @param k The used lookahed
+             * @return Replies true, if a memoryless policy is found. Notice that the algorithm is not complete.
+             */
+            bool analyzeForInitialStates(uint64_t k) {
                 STORM_LOG_TRACE("Bad states: " << surelyReachSinkStates);
                 STORM_LOG_TRACE("Target states: " << targetStates);
                 STORM_LOG_TRACE("Questionmark states: " <<  (~surelyReachSinkStates & ~targetStates));
-                bool result = analyze(k, ~surelyReachSinkStates & ~targetStates, pomdp.getInitialStates());
-                if (result) {
-                    STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target.");
-                } else {
-                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target .");
-                }
+                return analyze(k, ~surelyReachSinkStates & ~targetStates, pomdp.getInitialStates());
             }
 
+        private:
             bool analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates = storm::storage::BitVector());
 
-        private:
             void initialize(uint64_t k);
-
 
             Statistics stats;
             std::unique_ptr<storm::solver::SmtSolver> smtSolver;
@@ -83,9 +85,6 @@ namespace storm {
             std::vector<storm::expressions::Variable> reachVars;
             std::vector<storm::expressions::Expression> reachVarExpressions;
             std::vector<std::vector<storm::expressions::Expression>> pathVars;
-
-
-
         };
     }
 }

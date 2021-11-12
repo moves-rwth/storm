@@ -137,11 +137,14 @@ namespace storm {
                     ("floor", 20)
                     ("ceil", 21)
                     ("init", 22)
-                    ("endinit", 23)
-                    ("invariant", 24)
-                    ("endinvariant", 25)
-                    ("player", 26)
-                    ("endplayer", 27);
+                    ("atLeastOneOf", 23)
+                    ("atMostOneOf", 24)
+                    ("exactlyOneOf", 25)
+                    ("endinit", 26)
+                    ("invariant", 27)
+                    ("endinvariant", 28)
+                    ("player", 29)
+                    ("endplayer", 30);
                 }
             };
 

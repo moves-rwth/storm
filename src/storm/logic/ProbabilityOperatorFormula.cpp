@@ -19,9 +19,10 @@ namespace storm {
             return visitor.visit(*this, data);
         }
                 
-        std::ostream& ProbabilityOperatorFormula::writeToStream(std::ostream& out) const {
+        std::ostream& ProbabilityOperatorFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             out << "P";
-            OperatorFormula::writeToStream(out);
+            OperatorFormula::writeToStream(out, false);
             return out;
         }
     }

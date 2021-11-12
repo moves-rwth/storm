@@ -9,7 +9,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 

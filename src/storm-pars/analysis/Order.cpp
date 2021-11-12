@@ -540,7 +540,7 @@ namespace storm {
                             copiedOrder->bottom = newNode;
                         }
                         newNode->statesAbove = storm::storage::BitVector(oldNode->statesAbove);
-                        for (uint_fast64_t i = 0; i < oldNode->statesAbove.size(); ++i) {
+                        for (size_t i = 0; i < oldNode->statesAbove.size(); ++i) {
                             assert (newNode->statesAbove[i] == oldNode->statesAbove[i]);
                         }
                         for (auto const &i : oldNode->states) {
@@ -571,7 +571,7 @@ namespace storm {
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(doneStates);
-            for (auto i = 0; i < numberOfStates; ++i) {
+            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
                 if (nodes[i] != nullptr) {
                     stateCoverage.set(i);
                 }

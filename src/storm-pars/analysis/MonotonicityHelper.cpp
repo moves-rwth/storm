@@ -21,8 +21,6 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) : assumptionMaker(model->getTransitionMatrix()){
             assert (model != nullptr);
-            STORM_LOG_THROW(regions.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple regions");
-            STORM_LOG_THROW(formulas.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple formulas");
 
             this->model = model;
             this->formulas = formulas;
@@ -70,7 +68,7 @@ namespace storm {
                 // TODO @Jip Warning that we can't do anything that isnt a dtmc or an mdp bc else we might have a null pointer exception at some point
             }
 
-            for (size_t i = 0; i < matrix.getRowCount(); ++i) {
+            for (uint_fast64_t i = 0; i < matrix.getRowCount(); ++i) {
                 std::set<VariableType> occurringVariables;
 
                 for (auto &entry : matrix.getRow(i)) {
@@ -156,6 +154,18 @@ namespace storm {
                 }
             }
             return monResults;
+        }
+
+        template<typename ValueType, typename ConstantType>
+        std::shared_ptr<LocalMonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>> MonotonicityHelper<ValueType, ConstantType>::createLocalMonotonicityResult(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
+            LocalMonotonicityResult<VariableType> localMonRes(model->getNumberOfStates());
+            for (uint_fast64_t state = 0; state < model->getNumberOfStates(); ++state) {
+                for (auto& var : extender->getVariablesOccuringAtState()[state]) {
+                    localMonRes.setMonotonicity(state, var, extender->getMonotoncityChecker().checkLocalMonotonicity(order, state, var, region));
+                }
+            }
+            localMonRes.setDone(order->getDoneBuilding());
+            return std::make_shared<LocalMonotonicityResult<VariableType>>(localMonRes);
         }
 
         /*** Private methods ***/
@@ -276,7 +286,7 @@ namespace storm {
                             auto lb = region.getLowerBoundary(itr->name());
                             auto ub = region.getUpperBoundary(itr->name());
                             // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
-                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1));
+                            valuation[*itr2] = (lb + utility::convertNumber<CoefficientType>(i / (numberOfSamples - 1)) * (ub - lb));
                         } else {
                             auto lb = region.getLowerBoundary(itr2->name());
                             valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
@@ -309,7 +319,7 @@ namespace storm {
                     // Calculate difference with result for previous valuation
                     assert (initial >= 0 - precision && initial <= 1 + precision);
                     ConstantType diff = previous - initial;
-                    assert (previous == -1 || diff >= -1 - precision && diff <= 1 + precision);
+                    assert (previous == -1 || (diff >= -1 - precision && diff <= 1 + precision));
 
                     if (previous != -1 && (diff > precision || diff < -precision)) {
                         monDecr &= diff > precision; // then previous value is larger than the current value from the initial states

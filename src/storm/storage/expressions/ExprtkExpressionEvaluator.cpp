@@ -12,7 +12,11 @@ namespace storm {
     namespace expressions {
         template<typename RationalType>
         ExprtkExpressionEvaluatorBase<RationalType>::ExprtkExpressionEvaluatorBase(storm::expressions::ExpressionManager const& manager) : ExpressionEvaluatorBase<RationalType>(manager), parser(std::make_unique<exprtk::parser<ValueType>>()), symbolTable(std::make_unique<exprtk::symbol_table<ValueType>>()), booleanValues(manager.getNumberOfBooleanVariables()), integerValues(manager.getNumberOfIntegerVariables()), rationalValues(manager.getNumberOfRationalVariables()) {
-
+            // Since some expressions are very long, we need to increase the stack depth of the exprtk parser.
+            // Otherwise, we'll get
+            //   ERR000 - Current stack depth X exceeds maximum allowed stack depth of Y
+            // on some models.
+            parser->settings().set_max_stack_depth(10000);
             for (auto const& variableTypePair : manager) {
                 if (variableTypePair.second.isBooleanType()) {
                     symbolTable->add_variable("v" + std::to_string(variableTypePair.first.getIndex()), this->booleanValues[variableTypePair.first.getOffset()]);

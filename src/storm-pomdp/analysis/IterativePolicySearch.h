@@ -169,22 +169,14 @@ namespace pomdp {
                               std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
                               MemlessSearchOptions const& options);
 
-        void analyzeForInitialStates(uint64_t k) {
+        bool analyzeForInitialStates(uint64_t k) {
             stats.totalTimer.start();
             STORM_LOG_TRACE("Bad states: " << surelyReachSinkStates);
             STORM_LOG_TRACE("Target states: " << targetStates);
             STORM_LOG_TRACE("Questionmark states: " <<  (~surelyReachSinkStates & ~targetStates));
             bool result = analyze(k, ~surelyReachSinkStates & ~targetStates, pomdp.getInitialStates());
             stats.totalTimer.stop();
-            if (result) {
-                STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target.");
-            } else {
-                if (k == pomdp.getNumberOfStates()) {
-                    STORM_PRINT_AND_LOG("From initial state, one cannot almost-surely reach the target.");
-                } else {
-                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target.");
-                }
-            }
+            return result;
         }
 
         void computeWinningRegion(uint64_t k) {

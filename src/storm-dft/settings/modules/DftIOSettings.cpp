@@ -24,10 +24,14 @@ namespace storm {
             const std::string DftIOSettings::propTimepointsOptionName = "timepoints";
             const std::string DftIOSettings::minValueOptionName = "min";
             const std::string DftIOSettings::maxValueOptionName = "max";
+            const std::string DftIOSettings::analyzeWithBdds = "bdd";
+            const std::string DftIOSettings::minimalCutSets = "mcs";
             const std::string DftIOSettings::exportToJsonOptionName = "export-json";
             const std::string DftIOSettings::exportToSmtOptionName = "export-smt";
+            const std::string DftIOSettings::exportToBddDotOptionName = "export-bdd-dot";
             const std::string DftIOSettings::dftStatisticsOptionName = "dft-statistics";
             const std::string DftIOSettings::dftStatisticsOptionShortName = "dftstats";
+            const std::string DftIOSettings::importanceMeasureOptionName = "importance";
 
 
             DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
@@ -55,6 +59,15 @@ namespace storm {
                                         .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, minValueOptionName, false, "Compute minimal value in case of non-determinism.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxValueOptionName, false, "Compute maximal value in case of non-determinism.").build());
+
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, analyzeWithBdds, false,
+                                                               "Try to use Bdds for the analysis. Unsupportet properties will be ignored.")
+                                        .build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, minimalCutSets, false,
+                                                               "Calculate minimal cut sets.")
+                                        .build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportToJsonOptionName, false, "Export the model to the Cytoscape JSON format.")
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the JSON file to export to.").build())
                                         .build());
@@ -63,7 +76,16 @@ namespace storm {
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename",
                                                                                                             "The name of the smtlib2 file to export to.").build())
                                         .build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportToBddDotOptionName, false,
+                                                               "Export the model as the graph of a BDD in the dot format.")
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename",
+                                                                                                            "The name of the dot file to export to.").build())
+                                        .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dftStatisticsOptionName, false, "Sets whether to display DFT statistics if available.").setShortName(dftStatisticsOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, importanceMeasureOptionName, false, "Calculate importance measures for all basic events in the SFT.")
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("measure", "The name of the measure. Valid values: [MIF,DIF,CIF,RAW,RRW]")
+                                                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(
+                                                                     {"MIF", "DIF", "CIF", "RAW", "RRW"})).build()).build());
             }
 
             bool DftIOSettings::isDftFileSet() const {
@@ -121,6 +143,14 @@ namespace storm {
                 return this->getOption(maxValueOptionName).getHasOptionBeenSet();
             }
 
+            bool DftIOSettings::isAnalyzeWithBdds() const {
+                return this->getOption(analyzeWithBdds).getHasOptionBeenSet();
+            }
+
+            bool DftIOSettings::isMinimalCutSets() const {
+                return this->getOption(minimalCutSets).getHasOptionBeenSet();
+            }
+
             bool DftIOSettings::isExportToJson() const {
                 return this->getOption(exportToJsonOptionName).getHasOptionBeenSet();
             }
@@ -137,8 +167,24 @@ namespace storm {
                 return this->getOption(exportToSmtOptionName).getArgumentByName("filename").getValueAsString();
             }
 
+            bool DftIOSettings::isExportToBddDot() const {
+                return this->getOption(exportToBddDotOptionName).getHasOptionBeenSet();
+            }
+
+            std::string DftIOSettings::getExportBddDotFilename() const {
+                return this->getOption(exportToBddDotOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
             bool DftIOSettings::isShowDftStatisticsSet() const {
                 return this->getOption(dftStatisticsOptionName).getHasOptionBeenSet();
+            }
+
+            bool DftIOSettings::isImportanceMeasureSet() const {
+                return this->getOption(importanceMeasureOptionName).getHasOptionBeenSet();
+            }
+
+            std::string DftIOSettings::getImportanceMeasure() const {
+                return this->getOption(importanceMeasureOptionName).getArgumentByName("measure").getValueAsString();
             }
 
             void DftIOSettings::finalize() {

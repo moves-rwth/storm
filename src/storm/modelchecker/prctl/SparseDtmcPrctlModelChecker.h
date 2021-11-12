@@ -3,9 +3,6 @@
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/utility/solver.h"
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/storage/StronglyConnectedComponent.h"
 
 namespace storm {
     namespace modelchecker {
@@ -30,8 +27,10 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeNextProbabilities(Environment const& env, CheckTask<storm::logic::NextFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeGloballyProbabilities(Environment const& env, CheckTask<storm::logic::GloballyFormula, ValueType> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& env, CheckTask<storm::logic::ConditionalFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) override;
 
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula, ValueType> const& checkTask) override;
@@ -47,7 +46,7 @@ namespace storm {
              * Assumes a uniform distribution over initial states.
              */
             std::unique_ptr<CheckResult> computeSteadyStateDistribution(Environment const& env);
-            
+
         };
         
     } // namespace modelchecker

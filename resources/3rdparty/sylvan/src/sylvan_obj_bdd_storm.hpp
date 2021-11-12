@@ -11,3 +11,6 @@ Mtbdd toStormRationalFunctionMtbdd() const;
 // Other functions to add to sylvan's Bdd class.
 Mtbdd Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const;
 Bdd ExistAbstractRepresentative(const BddSet& cube) const;
+
+Bdd Without(Bdd const& other) const;
+Bdd Minsol() const;

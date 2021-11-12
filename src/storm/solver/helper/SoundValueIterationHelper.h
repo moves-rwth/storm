@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/optional.hpp>
 #include <vector>
 
 #include "storm/solver/OptimizationDirection.h"
@@ -45,12 +46,14 @@ namespace storm {
                 /*!
                  * Performs one iteration step with respect to the given optimization direction.
                  */
-                void performIterationStep(OptimizationDirection const& dir, std::vector<ValueType> const& b);
+                void performIterationStep(OptimizationDirection const& dir, std::vector<ValueType> const& b,
+                                          boost::optional<storage::BitVector>  const& schedulerFixedForRowgroup = boost::none, boost::optional<std::vector<uint_fast64_t>>  const& scheduler = boost::none);
                 
                 /*!
                  * Performs one iteration step, assuming that the row grouping of the initial matrix is trivial.
                  */
                 void performIterationStep(std::vector<ValueType> const& b);
+
                 
                 /*!
                  * Checks for convergence and updates the known lower/upper bounds.
@@ -74,10 +77,10 @@ namespace storm {
                 };
                 
                 template<InternalOptimizationDirection dir>
-                void performIterationStep(std::vector<ValueType> const& b);
+                void performIterationStep(std::vector<ValueType> const& b, boost::optional<storm::storage::BitVector>  const& schedulerFixedForRowgroup = boost::none, boost::optional<std::vector<uint_fast64_t>>  const& scheduler = boost::none);
                 
                 template<InternalOptimizationDirection dir>
-                void performIterationStepUpdateDecisionValue(std::vector<ValueType> const& b);
+                void performIterationStepUpdateDecisionValue(std::vector<ValueType> const& b, boost::optional<storm::storage::BitVector>  const& schedulerFixedForRowgroup = boost::none, boost::optional<std::vector<uint_fast64_t>>  const& scheduler = boost::none);
                 
                 void multiplyRow(IndexType const& rowIndex, ValueType const& bi, ValueType& xi, ValueType& yi);
     

@@ -1,11 +1,11 @@
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
 #include "storm/environment/Environment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
@@ -13,20 +13,18 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
-#include "storm/solver/Multiplier.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LpSolver.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/expressions/Expression.h"
-#include "storm/utility/macros.h"
-#include "storm/utility/vector.h"
-#include "storm/utility/graph.h"
+#include "storm/storage/expressions/Variable.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
-
-
+#include "storm/utility/graph.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
     namespace modelchecker {

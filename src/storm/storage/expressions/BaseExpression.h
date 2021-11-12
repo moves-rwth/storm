@@ -32,6 +32,7 @@ namespace storm {
         class UnaryBooleanFunctionExpression;
         class UnaryNumericalFunctionExpression;
         class VariableExpression;
+        class PredicateExpression;
         
         /*!
          * The base class of all expression classes.
@@ -286,6 +287,9 @@ namespace storm {
             
             virtual bool isVariableExpression() const;
             VariableExpression const& asVariableExpression() const;
+
+            virtual bool isPredicateExpression() const;
+            PredicateExpression const& asPredicateExpression() const;
             
         protected:
             /*!

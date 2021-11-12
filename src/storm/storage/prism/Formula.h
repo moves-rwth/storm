@@ -92,6 +92,7 @@ namespace storm {
              * @return The resulting formula.
              */
             Formula substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            Formula substituteNonStandardPredicates() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Formula const& formula);
             

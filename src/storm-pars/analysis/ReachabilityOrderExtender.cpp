@@ -239,7 +239,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        bool ReachabilityOrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
+        bool ReachabilityOrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
             bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
             assert (order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
             auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, this->region, this->minValues[order], this->maxValues[order]) : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, this->region);

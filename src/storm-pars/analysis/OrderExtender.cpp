@@ -345,13 +345,20 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
+        bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order) {
             assert (unknownStatesMap.find(order) != unknownStatesMap.end());
             assert (!order->getDoneBuilding());
             // First check if bounds helped us
             bool yesThereIsHope = continueExtending[order];
-            // TODO: maybe extend this
             return yesThereIsHope;
+        }
+        template<typename ValueType, typename ConstantType>
+        MonotonicityChecker<ValueType>& OrderExtender<ValueType, ConstantType>::getMonotoncityChecker() {
+            return monotonicityChecker;
+        }
+        template<typename ValueType, typename ConstantType>
+        const vector<std::set<typename OrderExtender<ValueType, ConstantType>::VariableType>>& OrderExtender<ValueType, ConstantType>::getVariablesOccuringAtState() {
+            return occuringVariablesAtState;
         }
 
         template class OrderExtender<RationalFunction, double>;

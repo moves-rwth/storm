@@ -225,8 +225,8 @@ TEST(MonotonicityHelperTest, zeroconf) {
     }
 
     model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    ASSERT_EQ(7ul,model->getNumberOfStates());
-    ASSERT_EQ(12ul,model->getNumberOfTransitions());
+    ASSERT_EQ(7ul, model->getNumberOfStates());
+    ASSERT_EQ(12ul, model->getNumberOfTransitions());
 
     // Create region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
@@ -430,8 +430,8 @@ TEST(MonotonicityHelperTest, Casestudy3_monotone) {
     auto region=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.49", modelParameters);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
-    ASSERT_EQ(5ul,model->getNumberOfStates());
-    ASSERT_EQ(8ul,model->getNumberOfTransitions());
+    ASSERT_EQ(5ul, model->getNumberOfStates());
+    ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);

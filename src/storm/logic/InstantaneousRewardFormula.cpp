@@ -68,7 +68,8 @@ namespace storm {
             STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-instant '" << bound << "' as it contains undefined constants.");
         }
         
-        std::ostream& InstantaneousRewardFormula::writeToStream(std::ostream& out) const {
+        std::ostream& InstantaneousRewardFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary.
             out << "I=" << this->getBound();
             return out;
         }

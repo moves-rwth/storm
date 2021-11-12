@@ -11,6 +11,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateValuations.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/PlayerIndex.h"
 
 #include "storm/builder/BuilderOptions.h"
@@ -36,17 +37,57 @@ namespace storm {
         };
 
         template<typename ValueType, typename StateType = uint32_t>
+        class NextStateGenerator;
+
+        /*!
+         * Action masks are arguments you can give to the state generator that limit which states are generated.
+         *
+         */
+        template<typename ValueType, typename StateType = uint32_t>
+        class ActionMask {
+        public:
+            virtual ~ActionMask() = default;
+            /**
+             * This method is called to check whether an action should be expanded.
+             * The current state is obtained from the generator.
+             *
+             * @param generator the generator that is to be masked
+             * @param actionIndex the actionIndex in Prism Programs; i.e. id of actions.
+             * @return true if the mask allows building the action/edge/command
+             */
+            virtual bool query(storm::generator::NextStateGenerator<ValueType, StateType> const &generator, uint64_t actionIndex) = 0;
+        };
+
+        /*!
+         * A particular instance of the action mask that uses a callback function
+         * to evaluate whether an action should be expanded.
+         */
+        template<typename ValueType, typename StateType = uint32_t>
+        class StateValuationFunctionMask : public ActionMask<ValueType,StateType> {
+        public:
+            StateValuationFunctionMask(std::function<bool (storm::expressions::SimpleValuation const&, uint64_t)> const& f);
+            virtual ~StateValuationFunctionMask() = default;
+            bool query(storm::generator::NextStateGenerator<ValueType,StateType> const& generator, uint64_t actionIndex) override;
+        private:
+            std::function<bool(storm::expressions::SimpleValuation, uint64_t)> func;
+        };
+
+
+        
+        template<typename ValueType, typename StateType>
         class NextStateGenerator {
         public:
             typedef std::function<StateType (CompressedState const&)> StateToIdCallback;
 
-            NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options);
+            NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options, std::shared_ptr<ActionMask<ValueType,StateType>> const& = nullptr);
+            
 
             /*!
              * Creates a new next state generator. This version of the constructor default-constructs the variable information.
              * Hence, the subclass is responsible for suitably initializing it in its constructor.
              */
-            NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options);
+            NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options, std::shared_ptr<ActionMask<ValueType,StateType>> const& = nullptr);
+            
 
             virtual ~NextStateGenerator() = default;
 
@@ -73,6 +114,9 @@ namespace storm {
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
 
             std::string stateToString(CompressedState const& state) const;
+
+            storm::json<ValueType> currentStateToJson(bool onlyObservable = false) const;
+            storm::expressions::SimpleValuation currentStateToSimpleValuation() const;
 
             uint32_t observabilityClass(CompressedState const& state) const;
             
@@ -110,6 +154,8 @@ namespace storm {
             
             virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const =0;
 
+            virtual void extendStateInformation(storm::json<ValueType>& stateInfo) const;
+
             virtual storm::storage::sparse::StateValuationsBuilder initializeObservationValuationsBuilder() const;
 
             void postprocess(StateBehavior<ValueType, StateType>& result);
@@ -146,6 +192,8 @@ namespace storm {
 
             /// A map that stores the indices of states with overlapping guards.
             boost::optional<std::vector<uint64_t>> overlappingGuardStates;
+
+            std::shared_ptr<ActionMask<ValueType,StateType>> actionMask;
 
         };
     }

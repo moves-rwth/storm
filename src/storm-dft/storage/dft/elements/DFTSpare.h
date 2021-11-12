@@ -41,6 +41,19 @@ namespace storm {
             }
 
             bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+                // Check children as claiming shared children might make a difference
+                for (std::shared_ptr<DFTElement<ValueType>> const& child : this->children()) {
+                    if (state.isOperational(child->id())) {
+                        // Check if operational child is shared by another SPARE
+                        for (std::shared_ptr<DFTGate<ValueType>> const& parent : child->parents()) {
+                            if (parent->id() != this->id() && parent->isSpareGate()) {
+                                // Child could be claimed by another SPARE -> do not set to DC yet
+                                return false;
+                            }
+                        }
+                    }
+                }
+                // Perform regular check
                 if (DFTGate<ValueType>::checkDontCareAnymore(state, queues)) {
                     state.finalizeUses(this->mId);
                     return true;

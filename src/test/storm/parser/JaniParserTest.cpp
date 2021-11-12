@@ -379,14 +379,31 @@ TEST(JaniParser, DieArrayExampleTest) {
     std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
     EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/die_array.jani"));
     EXPECT_EQ(storm::jani::ModelType::DTMC, result.first.getModelType());
+    EXPECT_TRUE(result.first.containsArrayVariables());
     EXPECT_TRUE(result.first.hasGlobalVariable("sd"));
     EXPECT_EQ(1ul, result.first.getNumberOfAutomata());
+}
+
+TEST(JaniParser, FTWCTest) {
+    std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
+    EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/ma/ftwc.jani"));
+    EXPECT_EQ(storm::jani::ModelType::MA, result.first.getModelType());
+    EXPECT_TRUE(result.first.containsArrayVariables());
+    EXPECT_TRUE(result.first.hasGlobalVariable("workstations_up"));
+    EXPECT_TRUE(result.first.hasGlobalVariable("workstations_up"));
+    EXPECT_EQ(6ul, result.first.getNumberOfAutomata());
+    EXPECT_TRUE(result.first.getAutomaton("Switch").hasVariable("id"));
+    EXPECT_TRUE(result.first.getAutomaton("Switch_1").hasVariable("id"));
+    EXPECT_TRUE(result.first.getAutomaton("Workstation").hasVariable("id"));
+    EXPECT_TRUE(result.first.getAutomaton("Workstation_1").hasVariable("id"));
+    EXPECT_TRUE(result.first.getAutomaton(1).hasVariable("id"));
 }
 
 TEST(JaniParser, DieArrayNestedExampleTest) {
     std::pair<storm::jani::Model, std::vector<storm::jani::Property>> result;
     EXPECT_NO_THROW(result = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/die_array_nested.jani"));
     EXPECT_EQ(storm::jani::ModelType::DTMC, result.first.getModelType());
+    EXPECT_TRUE(result.first.containsArrayVariables());
     EXPECT_TRUE(result.first.hasGlobalVariable("sd"));
     EXPECT_EQ(1ul, result.first.getNumberOfAutomata());
 }

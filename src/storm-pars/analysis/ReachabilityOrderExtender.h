@@ -30,7 +30,7 @@ namespace storm {
 
             std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) override;
 
-            bool extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t succState2, uint_fast64_t succState1) override;
+            bool extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t succState2, uint_fast64_t succState1) override;
 
             void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) override;
 

@@ -100,6 +100,27 @@ namespace storm {
             }
 
             /*!
+             * Negate the optimization direction and the bound threshold, if those exist.
+             * Suitable for switching from Pmin[phi] to 1-Pmax[!psi] computations.
+             */
+            CheckTask negate() const {
+                CheckTask result(*this);
+                if (isOptimizationDirectionSet()) {
+                    // switch from min to max and vice-versa
+                    result.setOptimizationDirection(invert(getOptimizationDirection()));
+                }
+
+                if (isBoundSet()) {
+                    // invert bound comparison type (retain strictness),
+                    // convert threshold to 1- threshold
+                    result.bound = storm::logic::Bound(storm::logic::invertPreserveStrictness(getBound().comparisonType),
+                                                       1 - getBound().threshold);
+                }
+
+                return result;
+            }
+
+            /*!
              * Copies the check task from the source while replacing the considered ValueType the new one. In particular, this
              * changes the formula type of the check task object.
              */
