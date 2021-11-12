@@ -1,6 +1,6 @@
 #include "storm/storage/jani/JaniLocationExpander.h"
 
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/exceptions/NotSupportedException.h"
