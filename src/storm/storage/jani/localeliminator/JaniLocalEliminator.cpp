@@ -298,14 +298,11 @@ namespace storm {
             if (raw->isProbabilityOperatorFormula()) {
                 auto subformula = &raw->asProbabilityOperatorFormula().getSubformula();
                 if (subformula->isEventuallyFormula()) {
-                    if (subformula->asEventuallyFormula().getSubformula().isAtomicExpressionFormula()) {
-                        supported = true;
-                    }
+                    supported = true;
                 }
                 else if (subformula->isUntilFormula()){
                     const auto& untilFormula = subformula->asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isTrueFormula()  &&
-                        untilFormula.getRightSubformula().isAtomicExpressionFormula()) {
+                    if (untilFormula.getLeftSubformula().isTrueFormula()) {
                         supported = true;
                     }
                 }
@@ -313,13 +310,11 @@ namespace storm {
             if (raw->isRewardOperatorFormula()) {
                 auto subformula = &raw->asRewardOperatorFormula().getSubformula();
                 if (subformula->isEventuallyFormula()) {
-                    if (subformula->asEventuallyFormula().getSubformula().isAtomicExpressionFormula()) {
-                        supported = true;
-                    }
+                    supported = true;
                 }
                 else if (subformula->isUntilFormula()){
                     const auto& untilFormula = subformula->asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isTrueFormula() && untilFormula.getRightSubformula().isAtomicExpressionFormula()){
+                    if (untilFormula.getLeftSubformula().isTrueFormula()){
                         supported = true;
                     }
                 }

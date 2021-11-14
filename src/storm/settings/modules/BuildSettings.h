@@ -121,10 +121,19 @@ namespace storm {
                  */
                  bool isNoSimplifySet() const;
 
+                 /*!
+                  * Retrieves whether location elimination is enabled
+                  */
                 bool isLocationEliminationSet() const;
 
+                /*!
+                 * Retrieves the location parameter of the location elimination heuristic.
+                 */
                 uint64_t getLocationEliminationLocationHeuristic() const;
 
+                /*!
+                 * Retrieves the edge parameter of the location elimination heuristic.
+                 */
                 uint64_t getLocationEliminationEdgesHeuristic() const;
 
 

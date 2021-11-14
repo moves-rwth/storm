@@ -1,4 +1,5 @@
 #include "storm-conv/api/storm-conv.h"
+#include <storage/jani/localeliminator/AutomaticAction.h>
 
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/jani/Property.h"
@@ -58,8 +59,11 @@ namespace storm {
                 janiModel.simplifyComposition();
             }
 
-            if (options.reduceStateSpace) {
-                jani::JaniLocalEliminator eliminator = jani::JaniLocalEliminator(janiModel, properties);
+            if (options.locationElimination) {
+                auto locationHeuristic = options.locationEliminationLocationHeuristic;
+                auto edgesHeuristic = options.locationEliminationEdgeHeuristic;
+                auto eliminator = storm::jani::JaniLocalEliminator(janiModel, properties);
+                eliminator.scheduler.addAction(std::make_unique<storm::jani::elimination_actions::AutomaticAction>(locationHeuristic, edgesHeuristic));
                 eliminator.eliminate();
                 janiModel = eliminator.getResult();
             }

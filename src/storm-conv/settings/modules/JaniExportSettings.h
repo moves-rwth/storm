@@ -34,7 +34,9 @@ namespace storm {
                 
                 bool isSimplifyCompositionSet() const;
 
-                bool isReduceStateSpaceSet() const;
+                bool isLocationEliminationSet() const;
+                uint64_t getLocationEliminationLocationHeuristic() const;
+                uint64_t getLocationEliminationEdgesHeuristic() const;
 
                 std::vector<std::pair<std::string, std::string>> getLocationVariables() const;
 
@@ -54,7 +56,7 @@ namespace storm {
                 static const std::string eliminateFunctionsOptionName;
                 static const std::string replaceUnassignedVariablesWithConstantsOptionName;
                 static const std::string simplifyCompositionOptionName;
-                static const std::string reduceStateSpaceOptionName;
+                static const std::string performLocationElimination;
                 
             };
         }
