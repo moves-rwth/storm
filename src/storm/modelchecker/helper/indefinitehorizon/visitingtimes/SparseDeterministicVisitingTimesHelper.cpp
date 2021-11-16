@@ -153,7 +153,7 @@ bool SparseDeterministicVisitingTimesHelper<ValueType>::isContinuousTime() const
 template<typename ValueType>
 void SparseDeterministicVisitingTimesHelper<ValueType>::createBackwardTransitions() {
     if (this->_backwardTransitions == nullptr) {
-        this->_computedBackwardTransitions = std::make_unique<storm::storage::SparseMatrix<ValueType>>(_transitionMatrix.transpose());  // will drop zeroes
+        this->_computedBackwardTransitions = std::make_unique<storm::storage::SparseMatrix<ValueType>>(_transitionMatrix.transpose(true, false));  // will drop zeroes
         this->_backwardTransitions = this->_computedBackwardTransitions.get();
     }
 }
