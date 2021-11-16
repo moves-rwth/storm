@@ -46,6 +46,12 @@ namespace storm {
              * Assumes a uniform distribution over initial states.
              */
             std::unique_ptr<CheckResult> computeSteadyStateDistribution(Environment const& env);
+            
+            /*!
+             * Computes for each state the expected number of times we visit that state.
+             * Assumes a uniform distribution over initial states.
+             */
+            std::unique_ptr<CheckResult> computeExpectedVisitingTimes(Environment const& env);
 
         };
         

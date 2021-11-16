@@ -335,6 +335,11 @@ namespace storm {
                 bool isComputeSteadyStateDistributionSet() const;
                 
                 /*!
+                 * Retrieves whether the expected visiting times are to be computed.
+                 */
+                bool isComputeExpectedVisitingTimesSet() const;
+                
+                /*!
                  * Retrieves whether the input model is to be read from the quantitative verification benchmark set (QVBS)
                  */
                 bool isQvbsInputSet() const;
@@ -401,6 +406,7 @@ namespace storm {
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
                 static const std::string steadyStateDistrOptionName;
+                static const std::string expectedVisitingTimesOptionName;
                 static const std::string qvbsInputOptionName;
                 static const std::string qvbsInputOptionShortName;
                 static const std::string qvbsRootOptionName;

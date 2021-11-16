@@ -327,6 +327,33 @@ namespace storm {
             return result;
         }
         
+        template<typename ValueType>
+        std::unique_ptr<storm::modelchecker::CheckResult> computeExpectedVisitingTimesWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const& dtmc) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
+            return modelchecker.computeExpectedVisitingTimes(env);
+        }
+
+        template<typename ValueType>
+        std::unique_ptr<storm::modelchecker::CheckResult> computeExpectedVisitingTimesWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> const& ctmc) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
+            return modelchecker.computeExpectedVisitingTimes(env);
+        }
+
+        template<typename ValueType>
+        std::unique_ptr<storm::modelchecker::CheckResult> computeExpectedVisitingTimesWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            if (model->getType() == storm::models::ModelType::Dtmc) {
+                result = computeExpectedVisitingTimesWithSparseEngine(env, model->template as<storm::models::sparse::Dtmc<ValueType>>());
+            } else if (model->getType() == storm::models::ModelType::Ctmc) {
+                result = computeExpectedVisitingTimesWithSparseEngine(env, model->template as<storm::models::sparse::Ctmc<ValueType>>());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing expected visiting times for the model type " << model->getType() << " is not supported.");
+            }
+            return result;
+        }
+        
         //
         // Verifying with Hybrid engine
         //

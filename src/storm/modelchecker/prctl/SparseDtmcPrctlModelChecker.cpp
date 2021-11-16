@@ -15,6 +15,7 @@
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/QuantileHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
@@ -271,8 +272,8 @@ namespace storm {
             }
         }
         
-        template <typename SparseCtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseCtmcModelType>::computeSteadyStateDistribution(Environment const& env) {
+        template <typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeSteadyStateDistribution(Environment const& env) {
             // Initialize helper
             storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix());
             
@@ -288,6 +289,23 @@ namespace storm {
                 result = helper.computeLongRunAverageStateDistribution(env, [&initialStates,&initProb](uint64_t const& stateIndex) { return initialStates.get(stateIndex) ? initProb : storm::utility::zero<ValueType>(); });
             }
 
+            // Return CheckResult
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+        }
+        
+        template <typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeExpectedVisitingTimes(Environment const& env) {
+            // Initialize helper
+            storm::modelchecker::helper::SparseDeterministicVisitingTimesHelper<ValueType> helper(this->getModel().getTransitionMatrix());
+            
+            // Compute result
+            std::vector<ValueType> result;
+            auto const& initialStates = this->getModel().getInitialStates();
+            uint64_t numInitStates = initialStates.getNumberOfSetBits();
+            STORM_LOG_THROW(numInitStates > 0, storm::exceptions::InvalidOperationException, "No initial states given. Cannot compute expected visiting times.");
+            STORM_LOG_WARN_COND(numInitStates== 1, "Multiple initial states found. A uniform distribution over initial states is assumed.");
+            result = helper.computeExpectedVisitingTimes(env, initialStates);
+            
             // Return CheckResult
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
