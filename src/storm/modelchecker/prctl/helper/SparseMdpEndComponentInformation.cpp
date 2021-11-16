@@ -380,9 +380,10 @@ namespace storm {
                 }
                 
                 STORM_LOG_ASSERT(notInEcResultIt == fromResult.begin() + this->getNumberOfMaybeStatesNotInEc(), "Mismatching iterators.");
-                // The maybeStates without a choice shall reach maybeStates with a choice with probability 1
-                storm::utility::graph::computeSchedulerProb1E(maybeStates, transitionMatrix, backwardTransitions, maybeStatesWithoutChoice, ~maybeStatesWithoutChoice, scheduler, ecStayChoices);
-
+                // The maybeStates without a choice (i.e. those within an end component for which we do not take an exiting choice) shall reach maybeStates with a choice with probability 1
+                // We have to make sure that choices for non-maybe states are not set
+                auto maybeStatesWithChoice = maybeStates & ~maybeStatesWithoutChoice;
+                storm::utility::graph::computeSchedulerProb1E(maybeStates, transitionMatrix, backwardTransitions, maybeStatesWithoutChoice, maybeStatesWithChoice, scheduler, ecStayChoices);
             }
             
             template class SparseMdpEndComponentInformation<double>;

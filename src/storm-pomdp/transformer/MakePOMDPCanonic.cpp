@@ -194,7 +194,12 @@ namespace storm {
                         }
                         std::string actionval= "";
                         if (pomdp.hasChoiceLabeling()) {
-                            actionval = *pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom).begin();
+                            auto labelsOfChoice = pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom);
+                            if (labelsOfChoice.empty()) {
+                                actionval = "[[no-label]]";
+                            } else {
+                                actionval = *pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom).begin();
+                            }
                         }
                         STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides multiple actions, but in state " <<  state << stateval << " provides only one action " << actionval << ".");
                     }

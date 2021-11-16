@@ -33,7 +33,8 @@ namespace storm {
             if (currentCheckTask->getFormula().isProbabilityOperatorFormula()) {
                 auto const& probOpFormula = currentCheckTask->getFormula().asProbabilityOperatorFormula();
                 if(probOpFormula.getSubformula().isBoundedUntilFormula()) {
-                    specifyBoundedUntilFormula(env, currentCheckTask->substituteFormula(probOpFormula.getSubformula().asBoundedUntilFormula()));
+                    specifyBoundedUntilFormula(
+                            currentCheckTask->substituteFormula(probOpFormula.getSubformula().asBoundedUntilFormula()));
                 } else if(probOpFormula.getSubformula().isUntilFormula()) {
                     specifyUntilFormula(env, currentCheckTask->substituteFormula(probOpFormula.getSubformula().asUntilFormula()));
                 } else if (probOpFormula.getSubformula().isEventuallyFormula()) {
@@ -46,7 +47,8 @@ namespace storm {
                 if(rewOpFormula.getSubformula().isEventuallyFormula()) {
                     specifyReachabilityRewardFormula(env, currentCheckTask->substituteFormula(rewOpFormula.getSubformula().asEventuallyFormula()));
                 } else if (rewOpFormula.getSubformula().isCumulativeRewardFormula()) {
-                    specifyCumulativeRewardFormula(env, currentCheckTask->substituteFormula(rewOpFormula.getSubformula().asCumulativeRewardFormula()));
+                    specifyCumulativeRewardFormula(currentCheckTask->substituteFormula(
+                            rewOpFormula.getSubformula().asCumulativeRewardFormula()));
                 }
             }
         }
@@ -263,7 +265,7 @@ namespace storm {
                     orderExtender->setMinValuesInit(minBound);
                     orderExtender->setMaxValuesInit(maxBound);
                 }
-                auto order = this->extendOrder(env, nullptr, region);
+                auto order = this->extendOrder(nullptr, region);
                 auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
                 storm::utility::Stopwatch monotonicityWatch(true);
                 this->extendLocalMonotonicityResult(region, order, monRes);
@@ -336,7 +338,7 @@ namespace storm {
                                     } else {
                                         assert (numberOfCopiesOrder[order] == 1);
                                     }
-                                    this->extendOrder(env, order, currRegion);
+                                    this->extendOrder(order, currRegion);
                                     changedOrder = true;
                                 }
                                 if (changedOrder) {
@@ -378,10 +380,11 @@ namespace storm {
                                 }
                                 // Now split the region
                                 if (useMonotonicity) {
-                                    this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
+                                    this->splitSmart(currRegion, newRegions,
+                                                     *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
                                 } else if (this->isRegionSplitEstimateSupported()) {
                                     auto empty = storm::analysis::MonotonicityResult<VariableType>();
-                                    this->splitSmart(currRegion, newRegions, order, empty, true);
+                                    this->splitSmart(currRegion, newRegions, empty, true);
                                 } else {
                                     currRegion.split(currRegion.getCenterPoint(), newRegions);
                                 }
@@ -464,7 +467,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(Environment const& env, CheckTask<logic::BoundedUntilFormula, ConstantType> const& checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(const CheckTask <logic::BoundedUntilFormula, ConstantType> &checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
@@ -486,7 +489,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(const CheckTask <logic::CumulativeRewardFormula, ConstantType> &checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
