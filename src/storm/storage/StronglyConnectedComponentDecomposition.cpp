@@ -242,6 +242,11 @@ namespace storm {
         }
         
         template <typename ValueType>
+        bool StronglyConnectedComponentDecomposition<ValueType>::hasSccDepth() const {
+            return sccDepths.is_initialized();
+        }
+        
+        template <typename ValueType>
         uint_fast64_t StronglyConnectedComponentDecomposition<ValueType>::getSccDepth(uint_fast64_t const& sccIndex) const {
             STORM_LOG_THROW(sccDepths.is_initialized(), storm::exceptions::InvalidOperationException, "Tried to get the SCC depth but SCC depths were not computed upon construction.");
             STORM_LOG_ASSERT(sccIndex < sccDepths->size(), "SCC index " << sccIndex << " is out of range (" << sccDepths->size() << ")");
