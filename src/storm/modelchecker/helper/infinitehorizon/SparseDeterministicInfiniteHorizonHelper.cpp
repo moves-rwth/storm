@@ -508,20 +508,29 @@ namespace storm {
                 if (numBSCCs == 1) {
                     bsccReachProbs.front() = storm::utility::one<ValueType>();
                 } else {
-                    // First get the expected number of times we visit each non-BSCC state
-                    auto visittimesHelper = this->isContinuousTime() ? SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix, *this->_exitRates) : SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix);
+                    // Get the expected number of times we visit each non-BSCC state
+                    // We deliberately exclude the exit rates here as we want to make this computation on the induced DTMC to get the expected number of times
+                    // that a successor state is chosen probabilistically.
+                    auto visittimesHelper = SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix);
                     this->createBackwardTransitions();
                     visittimesHelper.provideBackwardTransitions(*this->_backwardTransitions);
                     auto expVisitTimes = visittimesHelper.computeExpectedVisitingTimes(env, initialDistributionGetter);
-                    
                     // Then use the expected visiting times to compute BSCC reachability probabilities
+                    storm::storage::BitVector nonBsccStates(this->_transitionMatrix.getRowCount(), true);
+                    for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
+                        for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
+                            nonBsccStates.set(internal::getComponentElementState(element), false);
+                        }
+                    }
                     for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
                         auto& bsccVal = bsccReachProbs[currentComponentIndex];
                         for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
                             uint64_t state = internal::getComponentElementState(element);
                             bsccVal += initialDistributionGetter(state);
                             for (auto const& pred : this->_backwardTransitions->getRow(state)) {
-                                bsccVal += pred.getValue() * expVisitTimes[pred.getColumn()];
+                                if (nonBsccStates.get(pred.getColumn())) {
+                                    bsccVal += pred.getValue() * expVisitTimes[pred.getColumn()];
+                                }
                             }
                         }
                     }
