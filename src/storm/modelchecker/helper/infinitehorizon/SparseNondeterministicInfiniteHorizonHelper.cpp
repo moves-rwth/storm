@@ -61,10 +61,7 @@ namespace storm {
             void SparseNondeterministicInfiniteHorizonHelper<ValueType>::createDecomposition() {
                 if (this->_longRunComponentDecomposition == nullptr) {
                     // The decomposition has not been provided or computed, yet.
-                    if (this->_backwardTransitions == nullptr) {
-                        this->_computedBackwardTransitions = std::make_unique<storm::storage::SparseMatrix<ValueType>>(this->_transitionMatrix.transpose(true));
-                        this->_backwardTransitions = this->_computedBackwardTransitions.get();
-                    }
+                    this->createBackwardTransitions();
                     this->_computedLongRunComponentDecomposition = std::make_unique<storm::storage::MaximalEndComponentDecomposition<ValueType>>(this->_transitionMatrix, *this->_backwardTransitions);
                     this->_longRunComponentDecomposition = this->_computedLongRunComponentDecomposition.get();
                 }
@@ -358,10 +355,7 @@ namespace storm {
                             }
                         }
                         // Ensure that backwards transitions are available
-                        if (this->_backwardTransitions == nullptr) {
-                            this->_computedBackwardTransitions = std::make_unique<storm::storage::SparseMatrix<ValueType>>(this->_transitionMatrix.transpose(true));
-                            this->_backwardTransitions = this->_computedBackwardTransitions.get();
-                        }
+                        this->createBackwardTransitions();
                         // Now start a backwards DFS
                         std::vector<uint64_t> stack = {originalStateChoice.first};
                         while (!stack.empty()) {

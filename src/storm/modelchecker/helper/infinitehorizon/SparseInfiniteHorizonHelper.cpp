@@ -159,6 +159,14 @@ namespace storm {
                 return _exitRates != nullptr;
             }
             
+            template <typename ValueType, bool Nondeterministic>
+            void SparseInfiniteHorizonHelper<ValueType, Nondeterministic>::createBackwardTransitions() {
+                if (this->_backwardTransitions == nullptr) {
+                    this->_computedBackwardTransitions = std::make_unique<storm::storage::SparseMatrix<ValueType>>(this->_transitionMatrix.transpose(true, false)); // will drop zeroes
+                    this->_backwardTransitions = this->_computedBackwardTransitions.get();
+                }
+            }
+            
             template class SparseInfiniteHorizonHelper<double, true>;
             template class SparseInfiniteHorizonHelper<storm::RationalNumber, true>;
             
