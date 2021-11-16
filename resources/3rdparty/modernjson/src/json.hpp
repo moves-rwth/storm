@@ -1571,7 +1571,7 @@ Format](http://rfc7159.net/rfc7159)
                 m_type = value_t::string;
                 m_value = string_t("inf");
             }
-            else if (storm::utility::isInfinity(-val))
+            else if (storm::utility::isInfinity<number_float_t>(-val))
             {
                 m_type = value_t::string;
                 m_value = string_t("-inf");
