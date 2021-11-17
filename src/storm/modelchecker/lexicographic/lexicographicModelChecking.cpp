@@ -20,13 +20,13 @@ namespace storm {
         namespace lexicographic {
 
             template<typename SparseModelType, typename ValueType>
-            int isDone(Environment const& env, SparseModelType const& model, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            int isDone(Environment const& env, SparseModelType const& model, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask, CheckFormulaCallback const& formulaChecker) {
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Lexicographic Model checking on model with multiple initial states is not supported.");
 
                 storm::logic::MultiObjectiveFormula const& formula = checkTask.getFormula();
                 lexicographicModelChecker<SparseModelType, ValueType> lMC = lexicographicModelChecker<SparseModelType, ValueType>(formula);
 
-                auto res = lMC.getCompleteProductModel(model);
+                auto res = lMC.getCompleteProductModel(model, formulaChecker);
                 auto completeProductModel = res.first;
                 auto accCond = res.second;
                 auto result = lMC.solve(completeProductModel, accCond);
@@ -44,8 +44,8 @@ namespace storm {
                 return return_result;
             }
 
-            template int isDone<storm::models::sparse::Mdp<double>, double>(Environment const& env, storm::models::sparse::Mdp<double> const& model, CheckTask<storm::logic::MultiObjectiveFormula, double> const& checkTask);
-            template int isDone<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>(Environment const& env, storm::models::sparse::Mdp<storm::RationalNumber> const& model, CheckTask<storm::logic::MultiObjectiveFormula, storm::RationalNumber> const& checkTask);
+            template int isDone<storm::models::sparse::Mdp<double>, double>(Environment const& env, storm::models::sparse::Mdp<double> const& model, CheckTask<storm::logic::MultiObjectiveFormula, double> const& checkTask, CheckFormulaCallback const& formulaChecker);
+            template int isDone<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>(Environment const& env, storm::models::sparse::Mdp<storm::RationalNumber> const& model, CheckTask<storm::logic::MultiObjectiveFormula, storm::RationalNumber> const& checkTask, CheckFormulaCallback const& formulaChecker);
         }
     }
 }

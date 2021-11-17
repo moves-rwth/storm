@@ -15,9 +15,10 @@ namespace storm {
 
     namespace modelchecker {
         namespace lexicographic {
+            typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
 
             template<typename SparseModelType, typename ValueType>
-            int isDone(Environment const& env, SparseModelType const& model,  CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask);
+            int isDone(Environment const& env, SparseModelType const& model,  CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask, CheckFormulaCallback const& formulaChecker);
 
         }
     }

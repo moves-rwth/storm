@@ -301,7 +301,10 @@ namespace storm {
             bool lex = true;
             auto bla =  this->getModel();
             ValueType blubb = 0.1;
-            if (lex) lexicographic::isDone(env, this->getModel(), checkTask);
+            if (lex) {
+                auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+                lexicographic::isDone(env, this->getModel(), checkTask, formulaChecker);
+            }
                 //lexicographic::performLexicographicModelChecking(env, this->getModel(), checkTask.getFormula());
             return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula());
         }
