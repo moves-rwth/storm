@@ -27,12 +27,15 @@ namespace storm {
                 lexicographicModelChecker<SparseModelType, ValueType> lMC = lexicographicModelChecker<SparseModelType, ValueType>(formula);
 
                 auto res = lMC.getCompleteProductModel(model, formulaChecker);
+                STORM_PRINT("Got product model"<<std::endl);
                 auto completeProductModel = res.first;
                 auto accCond = res.second;
                 auto result = lMC.solve(completeProductModel, accCond);
+                STORM_PRINT("Solved ltl formula"<<std::endl);
                 auto bcc = result.first;
                 auto bccLexArrays = result.second;
                 auto return_result = lMC.reachability(bcc, bccLexArrays, completeProductModel);
+                STORM_PRINT("Lex result"<<std::endl);
                 /*storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
 
                 STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
