@@ -4,12 +4,12 @@
 #include "storm/modelchecker/lexicographic/lexicographicModelChecker.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/logic/Formula.h"
-#include "storm/modelchecker/CheckTask.h"
+//#include "storm/modelchecker/CheckTask.h"
 #include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
 #include "storm/automata/APSet.h"
 //#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/ExpressionEvaluationException.h"
+//#include "storm/exceptions/NotSupportedException.h"
+//#include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/automata/DeterministicAutomaton.h"
 #include "storm/transformer/DAProductBuilder.h"
 #include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
@@ -18,8 +18,8 @@ namespace storm {
     namespace modelchecker {
         namespace lexicographic {
 
-        template<typename SparseModelType, typename ValueType>
-        std::pair<int, int> lexicographicModelChecker<SparseModelType, ValueType>::getCompleteProductModel(const SparseModelType& model, CheckFormulaCallback const& formulaChecker) {
+        template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+        std::pair<int, int> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::getCompleteProductModel(const SparseModelType& model, CheckFormulaCallback const& formulaChecker) {
             storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
             // Get the big product automton for all subformulae
             std::shared_ptr<storm::automata::DeterministicAutomaton> productAutomaton = spothelper::ltl2daSpotProduct<SparseModelType, ValueType>(this->formula, formulaChecker, model, extracted);
@@ -40,32 +40,33 @@ namespace storm {
 
             storm::storage::BitVector statesOfInterest;
 
-            /*if (this->hasRelevantStates()) {
+            if (this->hasRelevantStates()) {
                 statesOfInterest = this->getRelevantStates();
             } else {
                 // Product from all model states
                 statesOfInterest = storm::storage::BitVector(this->_transitionMatrix.getRowGroupCount(), true);
             }
 
-            transformer::DAProductBuilder productBuilder(*da, statesForAP);*/
+            transformer::DAProductBuilder productBuilder(*productAutomaton, statesForAP);
 
 
-            //auto product = productBuilder.build<productModelType>(model.getTransitionMatrix(), statesOfInterest);
-            //transformer::DAProductBuilder productBuilder(productAutomaton, statesForAP);
+            auto product = productBuilder.build<productModelType>(model.getTransitionMatrix(), statesOfInterest);
+
             return std::make_pair(0,0);
         }
 
-        template<typename SparseModelType, typename ValueType>
-        std::pair<int, int> lexicographicModelChecker<SparseModelType, ValueType>::solve(int productModel, int acceptanceCondition) {
+        template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+        std::pair<int, int> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::solve(int productModel, int acceptanceCondition) {
             return std::pair<int, int>(0,0);
         }
-        template<typename SparseModelType, typename ValueType>
-        int lexicographicModelChecker<SparseModelType, ValueType>::reachability(int bcc, int bccLexArray, int productModel) {
+
+        template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+        int lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::reachability(int bcc, int bccLexArray, int productModel) {
             return 0;
         }
 
-        template<typename SparseModelType, typename ValueType>
-        std::map<std::string, storm::storage::BitVector> lexicographicModelChecker<SparseModelType, ValueType>::computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker) {
+        template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+        std::map<std::string, storm::storage::BitVector> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker) {
             std::map<std::string, storm::storage::BitVector> apSets;
             for (auto& p: extracted) {
                 STORM_LOG_DEBUG(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
@@ -89,9 +90,10 @@ namespace storm {
 
 
 
-        template class lexicographic::lexicographicModelChecker<storm::models::sparse::Mdp<double>, double>;
-        template class lexicographic::lexicographicModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
-
+        template class lexicographic::lexicographicModelChecker<storm::models::sparse::Mdp<double>, double, true>;
+        template class lexicographic::lexicographicModelChecker<storm::models::sparse::Mdp<double>, double, false>;
+        template class lexicographic::lexicographicModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber, true>;
+        template class lexicographic::lexicographicModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber, false>;
         }
     }
 }
