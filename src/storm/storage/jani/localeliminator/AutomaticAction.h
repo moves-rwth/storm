@@ -28,9 +28,7 @@ namespace storm{
 
                 void processAutomaton(JaniLocalEliminator::Session &session, std::string const& autName);
 
-                void unfoldGroupAndDependencies(JaniLocalEliminator::Session &session, std::string autName,
-                                                UnfoldDependencyGraph &dependencyGraph, uint32_t groupIndex);
-                bool unfoldPropertyVariable(JaniLocalEliminator::Session &session, std::string const& autName, UnfoldDependencyGraph& dependencyGraph);
+                void unfoldGroupAndDependencies(JaniLocalEliminator::Session &session, const std::string& autName, UnfoldDependencyGraph &dependencyGraph, uint32_t groupIndex);
 
                 boost::optional<uint32_t> chooseNextUnfold(JaniLocalEliminator::Session &session, std::string const& automatonName, UnfoldDependencyGraph &dependencyGraph, bool onlyPropertyVariables);
                 std::map<std::string, double> getAssignmentCountByVariable(JaniLocalEliminator::Session &session, std::string const& automatonName);

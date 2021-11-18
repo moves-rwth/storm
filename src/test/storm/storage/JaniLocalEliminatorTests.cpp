@@ -169,22 +169,6 @@ TEST(JaniLocalEliminator, PropertyTypeTest) {
         STORM_SILENT_EXPECT_THROW(JaniLocalEliminator(model, property), storm::exceptions::NotSupportedException);
     }
     {
-        // This should fail because we only support reachability formulas with an atomic subexpression.
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "P=? [F (P>=1[G x = 1])]");
-        auto property = storm::jani::Property("complex_reachability", formula,
-                                              std::set<storm::expressions::Variable>());
-        STORM_SILENT_EXPECT_THROW(JaniLocalEliminator(model, property), storm::exceptions::NotSupportedException);
-    }
-    {
-        // Similarly, rewards are also only allowed with atomic reachability expressions.
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "R=? [F (P>=1[G x = 1])]");
-        auto property = storm::jani::Property("complex_reward_reachability", formula,
-                                              std::set<storm::expressions::Variable>());
-        STORM_SILENT_EXPECT_THROW(JaniLocalEliminator(model, property), storm::exceptions::NotSupportedException);
-    }
-    {
         // This should succeed because reachability probabilities are supported
         std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
                 "P=? [ F x=1 ]");

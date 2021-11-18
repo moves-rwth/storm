@@ -19,7 +19,6 @@ namespace storm{
                 std::string automatonName;
                 EliminationOrder eliminationOrder;
                 bool restrictToUnnamedActions;
-                std::string find_next_location(JaniLocalEliminator::Session &session);
                 uint32_t transitionCountThreshold;
             };
         }

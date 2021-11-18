@@ -43,7 +43,9 @@ namespace storm {
                     }
                 }
                 if (hasTransientAssignments){
-                    session.addToLog("Pushing transient location assignments to edge destinations");
+                    if (session.isLogEnabled()) {
+                        session.addToLog("Pushing transient location assignments to edge destinations");
+                    }
                     automaton.pushTransientRealLocationAssignmentsToEdges();
                     automaton.pushEdgeAssignmentsToDestinations();
                 }
@@ -135,7 +137,7 @@ namespace storm {
         bool JaniLocalEliminator::Session::hasNamedActions(const std::string &automatonName, std::string const& locationName) {
             Automaton &automaton = model.getAutomaton(automatonName);
             uint64_t locationIndex = automaton.getLocationIndex(locationName);
-            for (Edge edge : automaton.getEdgesFromLocation(locationIndex)) {
+            for (const Edge& edge : automaton.getEdgesFromLocation(locationIndex)) {
                 if (!edge.hasSilentAction()){
                     return true;
                 }
@@ -222,11 +224,11 @@ namespace storm {
                         expression = untilFormula.getRightSubformula().toExpression(model.getExpressionManager());
                     }
                     else{
-                        STORM_LOG_THROW(true, storm::exceptions::NotSupportedException, "Until formulas are only supported if the left subformula is \"true\"");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Until formulas are only supported if the left subformula is \"true\"");
                     }
                 }
                 else{
-                    STORM_LOG_THROW(true, storm::exceptions::NotSupportedException, "This type of formula is not supported");
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This type of formula is not supported");
                 }
             }
             auto simplified = expression.simplify();
@@ -260,31 +262,6 @@ namespace storm {
         void JaniLocalEliminator::Session::clearIsPartOfProp(const std::string &automatonName) {
             AutomatonInfo &autInfo = automataInfo[automatonName];
             autInfo.potentiallyPartOfProp.clear();
-        }
-
-        void JaniLocalEliminator::cleanUpAutomaton(std::string const &automatonName){
-            Automaton& oldAutomaton = newModel.getAutomaton(automatonName);
-            Automaton newAutomaton(oldAutomaton.getName(), oldAutomaton.getLocationExpressionVariable());
-            for (auto const& localVariable : oldAutomaton.getVariables())
-                newAutomaton.addVariable(localVariable);
-            newAutomaton.setInitialStatesRestriction(oldAutomaton.getInitialStatesRestriction());
-
-            for (const Location &loc : oldAutomaton.getLocations())
-                newAutomaton.addLocation(loc);
-            for (uint64_t initialLocationIndex : oldAutomaton.getInitialLocationIndices())
-                newAutomaton.addInitialLocation(initialLocationIndex);
-
-            int eliminated = 0;
-            for (const Edge &edge : oldAutomaton.getEdges()){
-                if (edge.getGuard().containsVariables() || edge.getGuard().evaluateAsBool()){
-                    newAutomaton.addEdge(edge);
-                }
-                else{
-                    eliminated++;
-                }
-            }
-
-            newModel.replaceAutomaton(0, newAutomaton);
         }
 
         std::vector<std::string> JaniLocalEliminator::getLog() {
@@ -343,7 +320,7 @@ namespace storm {
             actionQueue.push(std::move(action));
         }
 
-        JaniLocalEliminator::Session::Session(Model model, Property property, bool flatten) : model(model), property(property), finished(false){
+        JaniLocalEliminator::Session::Session(Model model, Property property, bool flatten) : model(model), property(property), finished(false), logEnabled(false) {
             if (flatten && model.getNumberOfAutomata() > 1){
                 flatten_automata();
             }
@@ -377,7 +354,7 @@ namespace storm {
             return property;
         }
 
-        bool JaniLocalEliminator::Session::getFinished() {
+        bool JaniLocalEliminator::Session::getFinished() const {
             return finished;
         }
 
@@ -400,20 +377,11 @@ namespace storm {
                             storm::exceptions::NotImplementedException,
                             "Assignment levels are currently not supported");
 
-            /*
-             * x = 2
-             * y = 1
-             *
-             * x = x + y
-             *
-             * =>
-             *
-             * thenVariables = [x]
-             * y = 1
-             * x = 2 + 1
-             */
-
             OrderedAssignments newOa;
+
+            // This method takes two OrderedAssignments and returns an OrderedAssignments that is equivalent to executing the two in sequence.
+            // This is done by removing those assignments from the first set that also occur in the second set (because that first assignment would be
+            // overwritten by the second one). We then modify the second assignment to that variable so that we still get the same end result.
 
             // Collect variables that occur in the second set of assignments. This will be used to decide which first assignments to keep and which to discard.
             std::set<expressions::Variable> thenVariables;
@@ -421,6 +389,7 @@ namespace storm {
                 thenVariables.emplace(assignment.getExpressionVariable());
             }
 
+            // Add the remaining assignments from the first OrderedAssignments to the new assignment.
             for (const auto &assignment : first.getOrderedAssignments()) {
                 if (thenVariables.find(assignment.getExpressionVariable()) != thenVariables.end()) {
                     continue;
@@ -428,6 +397,8 @@ namespace storm {
                 newOa.add(assignment);
             }
 
+            // Finally add all assignments from the second OrderedAssignments to the new OrderedAssignments. While doing this, we need to replace all variables
+            // that were updated in the first assignment with the expression assigned to them.
             std::map<expressions::Variable, expressions::Expression> substitutionMap = first.getAsVariableToExpressionMap();
             for (const auto &assignment : then.getOrderedAssignments()) {
 
@@ -453,8 +424,11 @@ namespace storm {
             return expressionVarsInProperty.count(expressionVariableIndex) != 0;
         }
 
+        bool JaniLocalEliminator::Session::isLogEnabled() {
+            return logEnabled;
+        }
+
         void JaniLocalEliminator::Session::addToLog(const std::string& item) {
-            std::cout << item << std::endl;
             log.push_back(item);
         }
 
@@ -514,23 +488,25 @@ namespace storm {
                 auto result = solver.check();
 
                 if (result != storm::solver::SmtSolver::CheckResult::Unsat) {
-                    addToLog("\tAdding missing guard from location " + automaton.getLocation(i).getName());
-                    if (result == storm::solver::SmtSolver::CheckResult::Sat){
-                        auto satisfyingAssignment = solver.getModel();
-                        addToLog("\t\tThe guard was satisfiable with assignment ");
-                        for (auto &var : variables){
-                            if (var.hasIntegerType()){
-                                addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getIntegerValue(var)));
+                    if (isLogEnabled()) {
+                        addToLog("\tAdding missing guard from location " + automaton.getLocation(i).getName());
+                        if (result == storm::solver::SmtSolver::CheckResult::Sat){
+                            auto satisfyingAssignment = solver.getModel();
+                            addToLog("\t\tThe guard was satisfiable with assignment ");
+                            for (auto &var : variables){
+                                if (var.hasIntegerType()){
+                                    addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getIntegerValue(var)));
+                                }
+                                else if (var.hasBooleanType()){
+                                    addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getBooleanValue(var)));
+                                }
+                                else if (var.hasRationalType()){
+                                    addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getRationalValue(var)));
+                                }
                             }
-                            else if (var.hasBooleanType()){
-                                addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getBooleanValue(var)));
-                            }
-                            else if (var.hasRationalType()){
-                                addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getRationalValue(var)));
-                            }
+                        } else {
+                            addToLog("\t\tThe solver could not determine whether the guard was satisfiable");
                         }
-                    } else {
-                        addToLog("\t\tThe solver could not determine whether the guard was satisfiable");
                     }
                     std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                     std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
@@ -539,8 +515,8 @@ namespace storm {
                     destinationLocationsAndProbabilities.emplace_back(sinkIndex, model.getExpressionManager().rational(1.0));
 
                     automaton.addEdge(storm::jani::Edge(i, 0, boost::none, templateEdge, destinationLocationsAndProbabilities));
-                } else{
-                    addToLog("\tLocation " + automaton.getLocation(i).getName() +  " has no missing guard");
+                } else if (isLogEnabled()) {
+                    addToLog("\tLocation " + automaton.getLocation(i).getName() + " has no missing guard");
                 }
             }
         }

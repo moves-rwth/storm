@@ -23,9 +23,10 @@ namespace storm {
                 Model &getModel();
                 void setModel(const Model &model);
                 Property &getProperty();
-                bool getFinished();
+                bool getFinished() const;
                 void setFinished(bool finished);
 
+                bool isLogEnabled();
                 void addToLog(const std::string& item);
                 std::vector<std::string> getLog();
 
@@ -60,6 +61,8 @@ namespace storm {
                 // We keep a log separate from the main log to prevent the main log from being overwhelmed. This log
                 // is exposed via the python API
                 std::vector<std::string> log;
+                bool logEnabled;
+
                 std::map<std::string, AutomatonInfo> automataInfo;
                 std::set<uint_fast64_t> expressionVarsInProperty;
             };
@@ -92,11 +95,8 @@ namespace storm {
             Model newModel;
             Property property;
             bool addMissingGuards;
-            // TODO: Currently, the log is duplicated, as the log entries are stored in the session, but the session
-            // is only created during elimination, so the log would go out of scope before it is needed.
             std::vector<std::string> log;
 
-            void cleanUpAutomaton(std::string const &automatonName);
             void setProperty(storm::jani::Property &property);
         };
 

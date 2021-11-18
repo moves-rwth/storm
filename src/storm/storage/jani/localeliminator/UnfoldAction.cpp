@@ -43,7 +43,9 @@ namespace storm {
                         partOfPropCount += 1;
                 }
 
-                session.addToLog("\t\t" + std::to_string(partOfPropCount) + " old locations potentially satisfy property");
+                if (session.isLogEnabled()) {
+                    session.addToLog("\t\t" + std::to_string(partOfPropCount) + " old locations potentially satisfy property");
+                }
 
                 auto &automatonInfo = session.getAutomatonInfo(automatonName);
 
@@ -83,15 +85,17 @@ namespace storm {
                             knownUnsatValues.emplace(i);
                         }
                     }
-                    session.addToLog("\t\t" + std::to_string(knownUnsatValues.size()) + " variable values never satisfy property");
+                    if (session.isLogEnabled()) {
+                        session.addToLog("\t\t" + std::to_string(knownUnsatValues.size()) + " variable values never satisfy property");
+                    }
                 }
 
                 // If true, this doesn't perform satisfiability checks and instead simply assumes that any location
                 // potentially satisfies the property unless it can be disproven.
                 bool avoidChecks = false;
-                // if (partOfPropCount > 3 && automaton.getNumberOfLocations() > partOfPropCount * 4){
-                //     avoidChecks = true;
-                // }
+                if (partOfPropCount > 5 && automaton.getNumberOfLocations() > partOfPropCount * 5){
+                    avoidChecks = true;
+                }
 
                 // These are just used for statistics:
                 uint64_t knownUnsatCounter = 0;
@@ -131,12 +135,15 @@ namespace storm {
                 }
 
                 uint64_t totalCount = knownUnsatCounter + satisfactionCheckCounter + knownSatCounter + oldLocationUnsatCounter;
-                session.addToLog("\t\tPerformed " + std::to_string(satisfactionCheckCounter) +
-                                         " property satisfaction checks (location count: " + std::to_string(totalCount) +
-                                         "), avoided\n\t\t\t" + std::to_string(oldLocationUnsatCounter) + " because old location was unsat,\n\t\t\t" +
-                                          std::to_string(knownSatCounter) + " because variable was not part of property and old location was sat and\n\t\t\t" +
-                                           std::to_string(knownUnsatCounter) + " because variable value was known to never satisfy property."
-                );
+                if (session.isLogEnabled()) {
+                    session.addToLog("\t\tPerformed " + std::to_string(satisfactionCheckCounter) +
+                                                             " property satisfaction checks (location count: " + std::to_string(totalCount) +
+                                                             "), avoided\n\t\t\t" + std::to_string(oldLocationUnsatCounter) + " because old location was unsat,\n\t\t\t" +
+                                                             std::to_string(knownSatCounter) + " because variable was not part of property and old location was sat and\n\t\t\t" +
+                                                             std::to_string(knownUnsatCounter) + " because variable value was known to never satisfy property."
+                    );
+                }
+
             }
         }
     }

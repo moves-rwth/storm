@@ -77,7 +77,6 @@ namespace storm {
                 containingSet.addVariable(*newVar);
 
             } else if (isBool) {
-                std::cout << "Bool!!" << std::endl;
                 auto boolVariable = containingSet.getVariable(variableName).getType().asBasicType();
                 variableDomain.push_back(original.getExpressionManager().boolean(false));
                 variableDomain.push_back(original.getExpressionManager().boolean(true));
