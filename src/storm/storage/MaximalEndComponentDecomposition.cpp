@@ -83,13 +83,13 @@ namespace storm {
             storm::storage::BitVector includedChoices;
             if (choices) {
                 includedChoices = *choices;
-            } else if (states) {
-                includedChoices = storm::storage::BitVector(transitionMatrix.getRowCount());
-                for (auto state : *states) {
-                    for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-                        includedChoices.set(choice, true);
-                    }
+                if (states) {
+                    // Exclude choices that originate from or lead to states that are not considered.
+                    includedChoices &= transitionMatrix.getRowFilter(*states, *states);
                 }
+            } else if (states) {
+                // Exclude choices that originate from or lead to states that are not considered.
+                includedChoices = transitionMatrix.getRowFilter(*states, *states);
             } else {
                 includedChoices = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
             }

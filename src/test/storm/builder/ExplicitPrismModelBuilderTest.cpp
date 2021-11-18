@@ -101,6 +101,12 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(9ul, model->getNumberOfStates());
     EXPECT_EQ(9ul, model->getNumberOfTransitions());
+ 
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/enumerate_init.prism");
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(36ul, model->getNumberOfStates());
+    EXPECT_EQ(66ul, model->getNumberOfTransitions());
+    EXPECT_EQ(36ul, model->getInitialStates().getNumberOfSetBits());
 }
 
 TEST(ExplicitPrismModelBuilderTest, Ma) {

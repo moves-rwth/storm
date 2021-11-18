@@ -33,7 +33,8 @@ namespace storm {
             if (currentCheckTask->getFormula().isProbabilityOperatorFormula()) {
                 auto const& probOpFormula = currentCheckTask->getFormula().asProbabilityOperatorFormula();
                 if(probOpFormula.getSubformula().isBoundedUntilFormula()) {
-                    specifyBoundedUntilFormula(env, currentCheckTask->substituteFormula(probOpFormula.getSubformula().asBoundedUntilFormula()));
+                    specifyBoundedUntilFormula(
+                            currentCheckTask->substituteFormula(probOpFormula.getSubformula().asBoundedUntilFormula()));
                 } else if(probOpFormula.getSubformula().isUntilFormula()) {
                     specifyUntilFormula(env, currentCheckTask->substituteFormula(probOpFormula.getSubformula().asUntilFormula()));
                 } else if (probOpFormula.getSubformula().isEventuallyFormula()) {
@@ -46,13 +47,14 @@ namespace storm {
                 if(rewOpFormula.getSubformula().isEventuallyFormula()) {
                     specifyReachabilityRewardFormula(env, currentCheckTask->substituteFormula(rewOpFormula.getSubformula().asEventuallyFormula()));
                 } else if (rewOpFormula.getSubformula().isCumulativeRewardFormula()) {
-                    specifyCumulativeRewardFormula(env, currentCheckTask->substituteFormula(rewOpFormula.getSubformula().asCumulativeRewardFormula()));
+                    specifyCumulativeRewardFormula(currentCheckTask->substituteFormula(
+                            rewOpFormula.getSubformula().asCumulativeRewardFormula()));
                 }
             }
         }
         
         template <typename SparseModelType, typename ConstantType>
-        RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
+        RegionResult SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
             typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
             typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
             typedef typename storm::utility::parametric::Valuation<typename SparseModelType::ValueType> Valuation;
@@ -127,7 +129,7 @@ namespace storm {
             if (existsSat) {
                 // show AllSat:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
-                auto checkResult = this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult);
+                auto checkResult = this->check(env, region, parameterOptimizationDirection, localMonotonicityResult);
                 if (checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                     result = RegionResult::AllSat;
                 } else if (sampleVerticesOfRegion) {
@@ -136,7 +138,7 @@ namespace storm {
             } else if (existsViolated) {
                 // show AllViolated:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
-                auto checkResult = this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult);
+                auto checkResult = this->check(env, region, parameterOptimizationDirection, localMonotonicityResult);
                 if (!checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                     result = RegionResult::AllViolated;
                 } else if (sampleVerticesOfRegion) {
@@ -185,7 +187,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
+        std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
             auto quantitativeResult = computeQuantitativeValues(env, region, dirForParameters, localMonotonicityResult);
             lastValue = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
             if(currentCheckTask->getFormula().hasQuantitativeResult()) {
@@ -263,7 +265,7 @@ namespace storm {
                     orderExtender->setMinValuesInit(minBound);
                     orderExtender->setMaxValuesInit(maxBound);
                 }
-                auto order = this->extendOrder(env, nullptr, region);
+                auto order = this->extendOrder(nullptr, region);
                 auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
                 storm::utility::Stopwatch monotonicityWatch(true);
                 this->extendLocalMonotonicityResult(region, order, monRes);
@@ -328,7 +330,7 @@ namespace storm {
                             if (useMonotonicity) {
                                 // Continue extending order/monotonicity result
                                 bool changedOrder = false;
-                                if (!order->getDoneBuilding() && orderExtender->isHope(order, currRegion)) {
+                                if (!order->getDoneBuilding() && orderExtender->isHope(order)) {
                                     if (numberOfCopiesOrder[order] != 1) {
                                         numberOfCopiesOrder[order]--;
                                         order = copyOrder(order);
@@ -336,7 +338,7 @@ namespace storm {
                                     } else {
                                         assert (numberOfCopiesOrder[order] == 1);
                                     }
-                                    this->extendOrder(env, order, currRegion);
+                                    this->extendOrder(order, currRegion);
                                     changedOrder = true;
                                 }
                                 if (changedOrder) {
@@ -378,10 +380,11 @@ namespace storm {
                                 }
                                 // Now split the region
                                 if (useMonotonicity) {
-                                    this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
+                                    this->splitSmart(currRegion, newRegions,
+                                                     *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
                                 } else if (this->isRegionSplitEstimateSupported()) {
                                     auto empty = storm::analysis::MonotonicityResult<VariableType>();
-                                    this->splitSmart(currRegion, newRegions, order, empty, true);
+                                    this->splitSmart(currRegion, newRegions, empty, true);
                                 } else {
                                     currRegion.split(currRegion.getCenterPoint(), newRegions);
                                 }
@@ -464,7 +467,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(Environment const& env, CheckTask<logic::BoundedUntilFormula, ConstantType> const& checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(const CheckTask <logic::BoundedUntilFormula, ConstantType> &checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
@@ -486,7 +489,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(const CheckTask <logic::CumulativeRewardFormula, ConstantType> &checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 

@@ -1,4 +1,4 @@
-#include "storm/solver/GmmxxMultiplier.h"
+#include "GmmxxMultiplier.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

@@ -3,7 +3,7 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"

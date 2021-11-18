@@ -1,10 +1,10 @@
 #pragma once
 
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
-#include "storm/solver/GameSolver.h"
-#include "storm/solver/SolverStatus.h"
 #include "SolverSelectionOptions.h"
+#include "storm/solver/GameSolver.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/SolverStatus.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 namespace storm {
     namespace solver {

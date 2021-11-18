@@ -83,7 +83,7 @@ namespace storm {
                     choicesPtr = &(this->schedulerChoices.get());
                 }
             }
-            
+
             // Since a topological ordering is guaranteed, we can solve the equations with a single matrix-vector Multiplication step.
             this->multiplier->multiplyAndReduceGaussSeidel(env, dir, *xPtr, bPtr, choicesPtr, true);
 

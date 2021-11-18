@@ -69,8 +69,8 @@ namespace storm {
             }
             
             bool returnValue = true;
-            if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForState || this->choiceFixedForState.get().empty())) {
-                // Handle the case where there is just one large SCC, as there are no fixed states, we solve it like this
+            if (this->sortedSccDecomposition->size() == 1 && (!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty())) {
+                // Handle the case where there is just one large SCC, as there are no fixed choices for states, we solve it like this
                 returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, dir, x, b);
             } else {
                 // Solve each SCC individually
@@ -97,7 +97,7 @@ namespace storm {
                         for (auto const& group : scc) { // Group refers to state
                             sccRowGroupsAsBitVector.set(group, true);
 
-                            if (!this->choiceFixedForState || !this->choiceFixedForState.get()[group]) {
+                            if (!this->choiceFixedForRowGroup || !this->choiceFixedForRowGroup.get()[group]) {
                                 for (uint64_t row = this->A->getRowGroupIndices()[group]; row < this->A->getRowGroupIndices()[group + 1]; ++row) {
                                     sccRowsAsBitVector.set(row, true);
                                 }
@@ -146,10 +146,9 @@ namespace storm {
         template<typename ValueType>
         bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveTrivialScc(uint64_t const& sccState, OptimizationDirection dir, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const {
             ValueType& xi = globalX[sccState];
-            bool firstRow = true;
-            uint64_t bestRow;
-            assert (!this->choiceFixedForState || !this->choiceFixedForState.get()[sccState] || (this->hasInitialScheduler() && this->A->getRowGroupSize(sccState) == 1));
-            for (uint64_t row = this->A->getRowGroupIndices()[sccState]; row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
+            if (this->choiceFixedForRowGroup && this->choiceFixedForRowGroup.get()[sccState]) {
+                // if the choice in the scheduler is fixed we only update for the fixed choice
+                uint_fast64_t row = this->A->getRowGroupIndices()[sccState] + this->getInitialScheduler()[sccState];
                 ValueType rowValue = globalB[row];
                 bool hasDiagonalEntry = false;
                 ValueType denominator;
@@ -170,38 +169,69 @@ namespace storm {
                         // In this case we have a selfloop on this state. This can never an optimal choice:
                         // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
                         // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
-                        continue;
                     } else {
                         rowValue /= denominator;
                     }
                 }
-                if (firstRow) {
-                    xi = std::move(rowValue);
-                    bestRow = row;
-                    firstRow = false;
-                } else {
-                    if (minimize(dir)) {
-                        if (rowValue < xi) {
-                            xi = std::move(rowValue);
-                            bestRow = row;
+                xi = std::move(rowValue);
+            } else {
+                bool firstRow = true;
+                uint64_t bestRow;
+                for (uint64_t row = this->A->getRowGroupIndices()[sccState]; row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
+                    ValueType rowValue = globalB[row];
+                    bool hasDiagonalEntry = false;
+                    ValueType denominator;
+                    for (auto const& entry : this->A->getRow(row)) {
+                        if (entry.getColumn() == sccState) {
+                            hasDiagonalEntry = true;
+                            denominator = storm::utility::one<ValueType>() - entry.getValue();
+                        } else {
+                            rowValue += entry.getValue() * globalX[entry.getColumn()];
                         }
+                    }
+                    if (hasDiagonalEntry) {
+                        STORM_LOG_WARN_COND_DEBUG(
+                            storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator),
+                            "State " << sccState << " has a selfloop with probability '1-(" << denominator
+                                     << ")'. This could be an indication for numerical issues.");
+                        if (storm::utility::isZero(denominator)) {
+                            // In this case we have a selfloop on this state. This can never an optimal choice:
+                            // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
+                            // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
+                            continue;
+                        } else {
+                            rowValue /= denominator;
+                        }
+                    }
+                    if (firstRow) {
+                        xi = std::move(rowValue);
+                        bestRow = row;
+                        firstRow = false;
                     } else {
-                        if (rowValue > xi) {
-                            xi = std::move(rowValue);
-                            bestRow = row;
+                        if (minimize(dir)) {
+                            if (rowValue < xi) {
+                                xi = std::move(rowValue);
+                                bestRow = row;
+                            }
+                        } else {
+                            if (rowValue > xi) {
+                                xi = std::move(rowValue);
+                                bestRow = row;
+                            }
                         }
                     }
                 }
+                if (this->isTrackSchedulerSet()) {
+                    this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
+                }
+                STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             }
-            if (this->isTrackSchedulerSet()) {
-                this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
-            }
-            STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             return true;
         }
         
         template<typename ValueType>
         bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveFullyConnectedEquationSystem(storm::Environment const& sccSolverEnvironment, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            STORM_LOG_ASSERT(!this->choiceFixedForRowGroup || this->choiceFixedForRowGroup.get().empty(), "Expecting no fixed choices for states when solving the fully connected equation system");
             if (!this->sccSolver) {
                 this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
                 this->sccSolver->setCachingEnabled(true);
@@ -240,35 +270,41 @@ namespace storm {
         
         template<typename ValueType>
         bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection dir, storm::storage::BitVector const& sccRowGroups, storm::storage::BitVector const& sccRows, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const {
-
             // Set up the SCC solver
             if (!this->sccSolver) {
                 this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
                 this->sccSolver->setCachingEnabled(true);
             }
-            if (this->choiceFixedForState) {
-                // convert fixed states to only fixed states of sccs
-                storm::storage::BitVector choiceFixedForStateSCC(sccRowGroups.getNumberOfSetBits());
-                auto j = 0;
-                for (auto i : sccRowGroups) {
-                    choiceFixedForStateSCC.set(j, this->choiceFixedForState.get()[i]);
-                    j++;
-                }
-                assert (j = sccRowGroups.getNumberOfSetBits());
-                this->sccSolver->setChoiceFixedForStates(std::move(choiceFixedForStateSCC));
-            }
             this->sccSolver->setHasUniqueSolution(this->hasUniqueSolution());
             this->sccSolver->setHasNoEndComponents(this->hasNoEndComponents());
             this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
-            
-            // SCC Matrix
+
             storm::storage::SparseMatrix<ValueType> sccA;
-            if (this->choiceFixedForState) {
+            if (this->choiceFixedForRowGroup) {
+                // Obtain choiceFixedForState bitvector containing only the states of the scc.
+                storm::storage::BitVector choiceFixedForStateSCC = this->choiceFixedForRowGroup.get() % sccRowGroups;
                 sccA = this->A->getSubmatrix(false, sccRows, sccRowGroups);
+
+                // initial scheduler
+                if (this->hasInitialScheduler()) {
+                    std::vector<uint_fast64_t> sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
+                    // As we removed the entries where the choice was fixed, we need to change the scheduler.
+                    // We set the scheduler to 0 for those states.
+                    storm::utility::vector::setVectorValues<uint_fast64_t>(sccInitChoices, choiceFixedForStateSCC, 0);
+                    this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
+                }
+
             } else {
                 sccA = this->A->getSubmatrix(true, sccRowGroups, sccRowGroups);
 
+                // initial scheduler
+                if (this->hasInitialScheduler()) {
+                    auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
+                    this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
+                }
+
             }
+
 
             this->sccSolver->setMatrix(std::move(sccA));
             
@@ -288,14 +324,7 @@ namespace storm {
                 sccB.push_back(std::move(bi));
             }
             
-            // initial scheduler
-            if (this->hasInitialScheduler()) {
-                auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
-                this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
-                if (this->choiceFixedForState) {
-                    this->sccSolver->setFixedChoicesToFirst();
-                }
-            }
+
             
             // lower/upper bounds
             if (this->hasLowerBound(storm::solver::AbstractEquationSolver<ValueType>::BoundType::Global)) {
@@ -328,9 +357,7 @@ namespace storm {
 
             // Invoke scc solver
             bool res = this->sccSolver->solveEquations(sccSolverEnvironment, dir, sccX, sccB);
-            //std::cout << "rhs is " << storm::utility::vector::toString(sccB) << std::endl;
-            //std::cout << "x is " << storm::utility::vector::toString(sccX) << std::endl;
-            
+
             // Set Scheduler choices
             if (this->isTrackSchedulerSet()) {
                 storm::utility::vector::setVectorValues(this->schedulerChoices.get(), sccRowGroups, this->sccSolver->getSchedulerChoices());

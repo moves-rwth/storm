@@ -5,10 +5,10 @@
 #include "storm/utility/NumberTraits.h"
 
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
-#include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
+#include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/solver/SolverStatus.h"
 
