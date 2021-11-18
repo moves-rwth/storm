@@ -99,7 +99,6 @@ namespace storm {
 
             void setProperty(storm::jani::Property &property);
         };
-
-
     }
 }
+

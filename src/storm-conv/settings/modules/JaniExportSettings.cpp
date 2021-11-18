@@ -94,19 +94,19 @@ namespace storm {
             bool JaniExportSettings::isReplaceUnassignedVariablesWithConstantsSet() const {
                 return this->getOption(replaceUnassignedVariablesWithConstantsOptionName).getHasOptionBeenSet();
             }
-
+            
             bool JaniExportSettings::isSimplifyCompositionSet() const {
                 return this->getOption(simplifyCompositionOptionName).getHasOptionBeenSet();
             }
-
+            
             bool JaniExportSettings::isLocationEliminationSet() const {
                 return this->getOption(performLocationElimination).getHasOptionBeenSet();
             }
-
+            
             uint64_t JaniExportSettings::getLocationEliminationLocationHeuristic() const{
                 return this->getOption(performLocationElimination).getArgumentByName("location-heuristic").getValueAsUnsignedInteger();
             }
-
+            
             uint64_t JaniExportSettings::getLocationEliminationEdgesHeuristic() const {
                 return this->getOption(performLocationElimination).getArgumentByName("edges-heuristic").getValueAsUnsignedInteger();
             }

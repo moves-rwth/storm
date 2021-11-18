@@ -359,7 +359,7 @@ int main(const int argc, const char** argv) {
 
     try {
         storm::utility::setUp();
-
+        
         // Print header info only if output to sdtout is disabled
         bool outputToStdOut = false;
         for (int i = 1; i < argc; ++i) {
