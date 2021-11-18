@@ -30,7 +30,7 @@ namespace storm {
                 STORM_PRINT("Got product model"<<std::endl);
                 auto completeProductModel = res.first;
                 auto accCond = res.second;
-                auto result = lMC.solve(completeProductModel, accCond);
+                auto result = lMC.solve(completeProductModel, accCond, formula);
                 STORM_PRINT("Solved ltl formula"<<std::endl);
                 auto bcc = result.first;
                 auto bccLexArrays = result.second;

@@ -90,6 +90,14 @@ std::vector<std::vector<AcceptanceCondition::acceptance_expr::ptr>> AcceptanceCo
     return dnf;
 }
 
+std::vector<std::vector<AcceptanceCondition::acceptance_expr::ptr>> AcceptanceCondition::extractFromCNF() const {
+    std::vector<std::vector<AcceptanceCondition::acceptance_expr::ptr>> cnf;
+
+    extractFromCNFRecursion(getAcceptanceExpression(), cnf, true);
+
+    return cnf;
+}
+
 
 void AcceptanceCondition::extractFromDNFRecursion(AcceptanceCondition::acceptance_expr::ptr e, std::vector<std::vector<acceptance_expr::ptr>>& dnf, bool topLevel) const {
     if (topLevel) {
@@ -123,6 +131,37 @@ void AcceptanceCondition::extractFromDNFRecursion(AcceptanceCondition::acceptanc
     }
 }
 
+void AcceptanceCondition::extractFromCNFRecursion(AcceptanceCondition::acceptance_expr::ptr e, std::vector<std::vector<acceptance_expr::ptr>>& cnf, bool topLevel) const {
+    if (topLevel) {
+        if (e->isAND()) {
+            if (e->getLeft()->isAND()) {
+                extractFromCNFRecursion(e->getLeft(), cnf, true);
+            } else {
+                cnf.emplace_back();
+                extractFromCNFRecursion(e->getLeft(), cnf, false);
+            }
+
+            if (e->getRight()->isAND()) {
+                extractFromCNFRecursion(e->getRight(), cnf, true);
+            } else {
+                cnf.emplace_back();
+                extractFromCNFRecursion(e->getRight(), cnf, false);
+            }
+        } else {
+            cnf.emplace_back();
+            extractFromCNFRecursion(e, cnf, false);
+        }
+    } else {
+        if (e->isAND() || e->isNOT()) {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Acceptance condition is not in CNF");
+        } else if (e->isOR()) {
+            extractFromCNFRecursion(e->getLeft(), cnf, false);
+            extractFromCNFRecursion(e->getRight(), cnf, false);
+        } else {
+            cnf.back().push_back(e);
+        }
+    }
+}
 
 AcceptanceCondition::ptr AcceptanceCondition::lift(std::size_t productNumberOfStates, std::function<std::size_t (std::size_t)> mapping) const {
     AcceptanceCondition::ptr lifted(new AcceptanceCondition(productNumberOfStates, numberOfAcceptanceSets, acceptance));

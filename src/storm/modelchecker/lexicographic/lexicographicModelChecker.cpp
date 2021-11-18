@@ -11,19 +11,23 @@
 //#include "storm/exceptions/NotSupportedException.h"
 //#include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/automata/DeterministicAutomaton.h"
-#include "storm/transformer/DAProductBuilder.h"
 #include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
+
 
 namespace storm {
     namespace modelchecker {
         namespace lexicographic {
 
         template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-        std::pair<int, int> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::getCompleteProductModel(const SparseModelType& model, CheckFormulaCallback const& formulaChecker) {
+        std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::getCompleteProductModel(const SparseModelType& model, CheckFormulaCallback const& formulaChecker) {
             storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap extracted;
+            std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>> acceptanceConditions;
             // Get the big product automton for all subformulae
-            std::shared_ptr<storm::automata::DeterministicAutomaton> productAutomaton = spothelper::ltl2daSpotProduct<SparseModelType, ValueType>(this->formula, formulaChecker, model, extracted);
+            std::shared_ptr<storm::automata::DeterministicAutomaton> productAutomaton = spothelper::ltl2daSpotProduct<SparseModelType, ValueType>(this->formula, formulaChecker, model, extracted, acceptanceConditions);
 
+            storm::automata::DeterministicAutomaton test = *productAutomaton;
+            storm::automata::AcceptanceCondition condi = *(test.getAcceptance());
+            auto ags = *(condi.getAcceptanceExpression());
             // Compute Satisfaction sets for the APs (which represent the state-subformulae
             auto apSets = computeApSets(extracted, formulaChecker);
 
@@ -50,18 +54,52 @@ namespace storm {
             transformer::DAProductBuilder productBuilder(*productAutomaton, statesForAP);
 
 
-            auto product = productBuilder.build<productModelType>(model.getTransitionMatrix(), statesOfInterest);
+            std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> product = productBuilder.build<SparseModelType>(model.getTransitionMatrix(), statesOfInterest);
 
-            return std::make_pair(0,0);
+            STORM_PRINT("Product "+ (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) +" has " << product->getProductModel().getNumberOfStates() << " states and "
+                                                                                                                      << product->getProductModel().getNumberOfTransitions() << " transitions." << std::endl);
+            return std::make_pair(product,acceptanceConditions);
         }
 
         template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-        std::pair<int, int> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::solve(int productModel, int acceptanceCondition) {
-            return std::pair<int, int>(0,0);
+        std::pair<storm::storage::StronglyConnectedComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::solve(std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>& acceptanceConditions, storm::logic::MultiObjectiveFormula const& formula) {
+            const uint num_formulae = formula.getNumberOfSubformulas();
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType> bottomSccs = computeECs(*(productModel->getAcceptance()), productModel->getProductModel().getTransitionMatrix(), productModel->getProductModel().getBackwardTransitions(), productModel);
+            std::vector<std::vector<bool>> bscc_satisfaction;
+            for (auto& scc : bottomSccs) {
+                std::vector<bool> bsccAccepting;
+                for (auto& acceptance : acceptanceConditions) {
+                    if (acceptance->isAccepting(scc)) {
+                        bsccAccepting.push_back(true);
+                    }
+                    else {
+                        bsccAccepting.push_back(false);
+                    }
+                }
+                bscc_satisfaction.push_back(bsccAccepting);
+            }
+            return std::pair<storm::storage::StronglyConnectedComponentDecomposition<ValueType>, std::vector<std::vector<bool>>>(bottomSccs,bscc_satisfaction);
         }
 
         template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-        int lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::reachability(int bcc, int bccLexArray, int productModel) {
+        storm::storage::StronglyConnectedComponentDecomposition<ValueType> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::computeECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,  typename transformer::DAProduct<productModelType>::ptr product) {
+            /*STORM_LOG_INFO("Computing accepting states for acceptance condition " << *acceptance.getAcceptanceExpression());
+            if (acceptance.getAcceptanceExpression()->isTRUE()) {
+                STORM_LOG_INFO(" TRUE -> all states accepting (assumes no deadlock in the model)");
+                return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true);
+            } else if (acceptance.getAcceptanceExpression()->isFALSE()) {
+                STORM_LOG_INFO(" FALSE -> all states rejecting");
+                return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+            }
+            std::vector<std::vector<automata::AcceptanceCondition::acceptance_expr::ptr>> cnf = acceptance.extractFromCNF();*/
+            //storm::storage::BitVector allowed(transitionMatrix.getRowGroupCount(), true);
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType> bottomSccs(transitionMatrix, storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs().dropNaiveSccs());
+            //storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions, allowed);
+            return bottomSccs;
+        }
+
+        template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+        int lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::reachability(storm::storage::StronglyConnectedComponentDecomposition<ValueType> bcc, std::vector<std::vector<bool>> bccLexArray, std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> productModel) {
             return 0;
         }
 

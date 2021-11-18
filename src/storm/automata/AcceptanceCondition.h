@@ -26,9 +26,11 @@ namespace storm {
             AcceptanceCondition::ptr lift(std::size_t productNumberOfStates, std::function<std::size_t (std::size_t)> mapping) const;
 
             std::vector<std::vector<acceptance_expr::ptr>> extractFromDNF() const;
+            std::vector<std::vector<acceptance_expr::ptr>> extractFromCNF() const;
         private:
             bool isAccepting(const storm::storage::StateBlock& scc, acceptance_expr::ptr expr) const;
             void extractFromDNFRecursion(acceptance_expr::ptr e, std::vector<std::vector<acceptance_expr::ptr>>& dnf, bool topLevel) const;
+            void extractFromCNFRecursion(acceptance_expr::ptr e, std::vector<std::vector<acceptance_expr::ptr>>& cnf, bool topLevel) const;
 
             unsigned int numberOfAcceptanceSets;
             acceptance_expr::ptr acceptance;

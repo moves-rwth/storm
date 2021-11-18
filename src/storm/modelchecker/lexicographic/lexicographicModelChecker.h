@@ -13,6 +13,8 @@
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/transformer/DAProductBuilder.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
 
@@ -29,11 +31,13 @@ namespace storm {
 
             lexicographicModelChecker(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix) : _transitionMatrix(transitionMatrix), formula(formula) {};
 
-            std::pair<int, int> getCompleteProductModel(SparseModelType const& model, CheckFormulaCallback const& formulaChecker);
+            std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>> getCompleteProductModel(SparseModelType const& model, CheckFormulaCallback const& formulaChecker);
 
-            std::pair<int, int> solve(int productModel, int acceptanceCondition);
+            std::pair<storm::storage::StronglyConnectedComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> solve(std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>& acceptanceConditions, storm::logic::MultiObjectiveFormula const& formula);
 
-            int reachability(int bcc, int bccLexArray, int productModel);
+            int reachability(storm::storage::StronglyConnectedComponentDecomposition<ValueType> bcc, std::vector<std::vector<bool>> bccLexArray, std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> productModel);
+
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType> computeECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,  typename transformer::DAProduct<productModelType>::ptr product);
 
            private:
             storm::logic::MultiObjectiveFormula const& formula;

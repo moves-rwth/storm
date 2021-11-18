@@ -20,12 +20,11 @@
 namespace storm{
     namespace spothelper {
     template<typename SparseModelType, typename ValueType>
-    std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, SparseModelType const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted) {
+    std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, SparseModelType const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>& acceptanceConditions) {
 #ifdef STORM_HAVE_SPOT
         bool first = true;
         spot::twa_graph_ptr productAutomaton;
         spot::bdd_dict_ptr dict = spot::make_bdd_dict();
-        std::vector<std::string> acceptanceConditions;
         for (const std::shared_ptr<const storm::logic::Formula> subFormula : formula.getSubformulas()) {
             // get the formula in the right format (necessary?)
             storm::logic::StateFormula const& newFormula = (*subFormula).asStateFormula();
@@ -35,6 +34,12 @@ namespace storm{
 
             // get map of state-expressions to propositions
             std::shared_ptr<storm::logic::Formula> ltlFormula1 = storm::logic::ExtractMaximalStateFormulasVisitor::extract(formula, extracted);
+            STORM_PRINT("Extracted: ");
+            for (auto i : extracted) {
+                std::string ap = i.first;
+                STORM_PRINT(ap << "=" << i.second->toString() <<",");
+            }
+            STORM_PRINT(std::endl);
 
             // get automaton
             //std::shared_ptr<storm::automata::DeterministicAutomaton> dap = storm::automata::LTL2DeterministicAutomaton::ltl2daSpot(*ltlFormula1, true, true);
@@ -62,11 +67,18 @@ namespace storm{
                 aut = to_generalized_streett(aut,true);
             }
             aut = spot::dnf_to_streett(aut);
-            //acceptanceConditions.push_back(aut->get_acceptance());
+            std::ostream objOstream (std::cout.rdbuf());
+            STORM_PRINT("Automaton for " << prefixLtl << " ");
+            spot::print_dot(objOstream, aut, "cak");
 
             auto bla = aut->get_acceptance();
 
             STORM_PRINT("4 - The deterministic automaton has acceptance condition:  "<< aut->get_acceptance() << std::endl);
+            std::stringstream autStreamTemp;
+            // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
+            spot::print_hoa(autStreamTemp, aut, "is");
+            storm::automata::DeterministicAutomaton::ptr temp = storm::automata::DeterministicAutomaton::parse(autStreamTemp);
+            acceptanceConditions.push_back(temp->getAcceptance());
             if (first) {
                 productAutomaton = aut;
                 first = false;
@@ -75,6 +87,7 @@ namespace storm{
                 std::cout << bla << std::endl;
                 continue;
             } else {
+                STORM_PRINT("product Automaton before ");
                 std::ostream objOstream (std::cout.rdbuf());
                 spot::print_dot(objOstream, productAutomaton, "cak");
                 productAutomaton = spot::product(aut,productAutomaton);
@@ -99,7 +112,7 @@ namespace storm{
 #endif
     }
 
-    template std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct<storm::models::sparse::Mdp<double>, double>(storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, storm::models::sparse::Mdp<double> const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted);
-    template std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>(storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted);
+    template std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct<storm::models::sparse::Mdp<double>, double>(storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, storm::models::sparse::Mdp<double> const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>& acceptanceConditions);
+    template std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>(storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>& acceptanceConditions);
     }
 }

@@ -15,6 +15,6 @@ namespace storm {
         typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
 
         template<typename SparseModelType, typename ValueType>
-        std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, SparseModelType const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted);
+        std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker, SparseModelType const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>& acceptanceConditions);
     }
 }
