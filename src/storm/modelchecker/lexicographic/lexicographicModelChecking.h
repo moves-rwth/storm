@@ -8,7 +8,8 @@
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/logic/Formulas.h"
 #include "storm/environment/Environment.h"
-
+// This kills everything:
+#include "storm/storage/dd/Bdd.h"
 namespace storm {
 
     class Environment;

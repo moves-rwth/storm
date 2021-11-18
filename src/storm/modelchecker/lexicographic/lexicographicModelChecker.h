@@ -8,8 +8,8 @@
 #include "storm/logic/Formulas.h"
 #include "storm/environment/Environment.h"
 #include "storm/storage/BitVector.h"
-#include "storm/automata/LTL2DeterministicAutomaton.h"
-#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
+//#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
+
 
 namespace storm {
 
@@ -36,7 +36,7 @@ namespace storm {
 
             static std::map<std::string, storm::storage::BitVector> computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker);
 
-            std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(CheckFormulaCallback const& formulaChecker, SparseModelType const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted);
+
         };
 
         }
