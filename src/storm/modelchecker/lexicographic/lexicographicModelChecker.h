@@ -14,7 +14,8 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/DAProductBuilder.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+//#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
 
 namespace storm {
 
@@ -31,13 +32,13 @@ namespace storm {
 
             lexicographicModelChecker(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix) : _transitionMatrix(transitionMatrix), formula(formula) {};
 
-            std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>> getCompleteProductModel(SparseModelType const& model, CheckFormulaCallback const& formulaChecker);
+            std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<uint>> getCompleteProductModel(SparseModelType const& model, CheckFormulaCallback const& formulaChecker);
 
-            std::pair<storm::storage::StronglyConnectedComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> solve(std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<std::shared_ptr<storm::automata::AcceptanceCondition>>& acceptanceConditions, storm::logic::MultiObjectiveFormula const& formula);
+            std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> solve(std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<uint>& acceptanceConditions, storm::logic::MultiObjectiveFormula const& formula);
 
-            int reachability(storm::storage::StronglyConnectedComponentDecomposition<ValueType> bcc, std::vector<std::vector<bool>> bccLexArray, std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> productModel);
+            int reachability(storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc, std::vector<std::vector<bool>> const& bccLexArray, std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel);
 
-            storm::storage::StronglyConnectedComponentDecomposition<ValueType> computeECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,  typename transformer::DAProduct<productModelType>::ptr product);
+            storm::storage::MaximalEndComponentDecomposition<ValueType> computeECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,  typename transformer::DAProduct<productModelType>::ptr product);
 
            private:
             storm::logic::MultiObjectiveFormula const& formula;
@@ -45,7 +46,10 @@ namespace storm {
 
             static std::map<std::string, storm::storage::BitVector> computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker);
 
+            std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> getStreettPairs(storm::automata::AcceptanceCondition::acceptance_expr::ptr current);
 
+            bool isAcceptingCNF(storm::storage::MaximalEndComponent const& scc, std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs, storm::automata::AcceptanceCondition::ptr const& acceptance);
+            bool isAcceptingPair(storm::storage::MaximalEndComponent const& scc, storm::automata::AcceptanceCondition::acceptance_expr::ptr const& left, storm::automata::AcceptanceCondition::acceptance_expr::ptr const& right, storm::automata::AcceptanceCondition::ptr const& acceptance);
         };
 
         }

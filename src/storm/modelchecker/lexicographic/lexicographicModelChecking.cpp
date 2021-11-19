@@ -30,10 +30,10 @@ namespace storm {
                 STORM_PRINT("Got product model"<<std::endl);
                 auto completeProductModel = res.first;
                 auto accCond = res.second;
-                auto result = lMC.solve(completeProductModel, accCond, formula);
+                std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> result = lMC.solve(completeProductModel, accCond, formula);
                 STORM_PRINT("Solved ltl formula"<<std::endl);
-                auto bcc = result.first;
-                auto bccLexArrays = result.second;
+                storm::storage::MaximalEndComponentDecomposition<ValueType> bcc = result.first;
+                std::vector<std::vector<bool>> bccLexArrays = result.second;
                 auto return_result = lMC.reachability(bcc, bccLexArrays, completeProductModel);
                 STORM_PRINT("Lex result"<<std::endl);
                 /*storm::logic::PathFormula const& pathFormula = checkTask.getFormula();

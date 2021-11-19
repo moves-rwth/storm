@@ -16,6 +16,7 @@ namespace storm {
 
             AcceptanceCondition(std::size_t numberOfStates, unsigned int numberOfAcceptanceSets, acceptance_expr::ptr acceptance);
             bool isAccepting(const storm::storage::StateBlock& scc) const ;
+            bool isAcceptingCNF(const storm::storage::StateBlock& scc, const std::vector<acceptance_expr::ptr>& accConds) const;
 
             unsigned int getNumberOfAcceptanceSets() const;
             storm::storage::BitVector& getAcceptanceSet(unsigned int index);

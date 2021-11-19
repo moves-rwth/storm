@@ -37,6 +37,14 @@ bool AcceptanceCondition::isAccepting(const storm::storage::StateBlock& scc) con
     return isAccepting(scc, acceptance);
 }
 
+bool AcceptanceCondition::isAcceptingCNF(const storm::storage::StateBlock& scc, const std::vector<acceptance_expr::ptr>& accConds) const {
+    bool ret = isAccepting(scc, accConds[0]);
+    for (uint i=1; i<accConds.size(); i++){
+        ret = ret && isAccepting(scc, accConds[i]);
+    }
+    return ret;
+}
+
 bool AcceptanceCondition::isAccepting(const storm::storage::StateBlock& scc, acceptance_expr::ptr expr) const {
     switch (expr->getType()) {
     case acceptance_expr::EXP_AND:
