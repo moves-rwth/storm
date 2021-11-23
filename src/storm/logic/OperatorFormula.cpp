@@ -104,7 +104,8 @@ namespace storm {
             }
         }
         
-        std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {
+        std::ostream& OperatorFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             if (hasOptimalityType()) {
                 out << (getOptimalityType() == OptimizationDirection::Minimize ? "min" : "max");
             }

@@ -69,6 +69,17 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::vector<std::string> DiscreteTimePrismProgramSimulator<ValueType>::getCurrentStateLabelling() const {
+            std::vector<std::string> labels;
+            for (auto const& label : program.getLabels()) {
+                if (stateGenerator->evaluateBooleanExpressionInCurrentState(label.getStatePredicateExpression())) {
+                    labels.push_back(label.getName());
+                }
+            }
+            return labels;
+        }
+
+        template<typename ValueType>
         std::vector<generator::Choice<ValueType, uint32_t>> const& DiscreteTimePrismProgramSimulator<ValueType>::getChoices() const {
             return behavior.getChoices();
         }
@@ -121,6 +132,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DiscreteTimePrismProgramSimulator<ValueType>::resetToState(expressions::SimpleValuation const& valuation) {
+            lastActionRewards = zeroRewards;
             currentState = generator::packStateFromValuation(valuation, stateGenerator->getVariableInformation(), true);
             return explore();
         }

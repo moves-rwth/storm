@@ -46,7 +46,10 @@ namespace storm {
 
             virtual bool isBinaryBooleanStateFormula() const;
             virtual bool isUnaryBooleanStateFormula() const;
-            
+
+            virtual bool isBinaryBooleanPathFormula() const;
+            virtual bool isUnaryBooleanPathFormula() const;
+
             virtual bool isMultiObjectiveFormula() const;
             virtual bool isQuantileFormula() const;
 
@@ -71,6 +74,7 @@ namespace storm {
             virtual bool isGloballyFormula() const;
             virtual bool isEventuallyFormula() const;
             virtual bool isReachabilityProbabilityFormula() const;
+            virtual bool isHOAPathFormula() const;
 
             // Reward formulas.
             virtual bool isCumulativeRewardFormula() const;
@@ -90,13 +94,14 @@ namespace storm {
             virtual bool isBinaryStateFormula() const;
             virtual bool isUnaryPathFormula() const;
             virtual bool isUnaryStateFormula() const;
+            bool isUnaryFormula() const;
 
             // Accessors for the return type of a formula.
             virtual bool hasQualitativeResult() const;
             virtual bool hasQuantitativeResult() const;
             
             bool isInFragment(FragmentSpecification const& fragment) const;
-            FormulaInformation info() const;
+            FormulaInformation info(bool recurseIntoOperators = true) const;
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data = boost::any()) const = 0;
             
@@ -140,6 +145,9 @@ namespace storm {
             UntilFormula& asUntilFormula();
             UntilFormula const& asUntilFormula() const;
             
+            HOAPathFormula& asHOAPathFormula();
+            HOAPathFormula const& asHOAPathFormula() const;
+
             BoundedUntilFormula& asBoundedUntilFormula();
             BoundedUntilFormula const& asBoundedUntilFormula() const;
             
@@ -226,7 +234,15 @@ namespace storm {
             storm::expressions::Expression toExpression(storm::expressions::ExpressionManager const& manager, std::map<std::string, storm::expressions::Expression> const& labelToExpressionMapping = {}) const;
             
             std::string toString() const;
-            virtual std::ostream& writeToStream(std::ostream& out) const = 0;
+
+            /*!
+             * Writes the forumla to the given output stream
+             * @param allowParenthesis if true, the output is *potentially* surrounded by parentheses depending on whether parentheses are needed to avoid ambiguity when this formula appears as a subformula of some larger formula.
+             * @return
+             */
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const = 0;
+            
+            std::string toPrefixString() const;
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const;

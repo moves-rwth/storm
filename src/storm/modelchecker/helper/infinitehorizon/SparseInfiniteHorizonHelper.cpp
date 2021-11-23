@@ -9,10 +9,10 @@
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
-#include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/solver.h"

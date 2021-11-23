@@ -53,36 +53,6 @@ namespace storm {
             Variable const& addVariable(Variable const& variable);
 
             /*!
-             * Adds the given Boolean variable to this automaton.
-             */
-            BooleanVariable const& addVariable(BooleanVariable const& variable);
-            
-            /*!
-             * Adds the given bounded integer variable to this automaton.
-             */
-            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
-            
-            /*!
-             * Adds the given unbounded integer variable to this automaton.
-             */
-            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
-
-            /*!
-             * Adds the given real variable to this automaton.
-             */
-            RealVariable const& addVariable(RealVariable const& variable);
-
-            /*!
-             * Adds the given array variable to this automaton.
-             */
-            ArrayVariable const& addVariable(ArrayVariable const& variable);
-
-            /*!
-             * Adds the given array variable to this automaton.
-             */
-            ClockVariable const& addVariable(ClockVariable const& variable);
-
-            /*!
              * Retrieves the variables of this automaton.
              */
             VariableSet& getVariables();

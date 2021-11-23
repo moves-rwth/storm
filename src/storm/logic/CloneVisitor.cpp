@@ -24,6 +24,12 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<BinaryBooleanStateFormula>(f.getOperator(), left, right));
         }
         
+        boost::any CloneVisitor::visit(BinaryBooleanPathFormula const& f, boost::any const& data) const {
+            std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
+            std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
+            return std::static_pointer_cast<Formula>(std::make_shared<BinaryBooleanPathFormula>(f.getOperator(), left, right));
+        }
+
         boost::any CloneVisitor::visit(BooleanLiteralFormula const& f, boost::any const&) const {
             return std::static_pointer_cast<Formula>(std::make_shared<BooleanLiteralFormula>(f));
         }
@@ -142,11 +148,24 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<UnaryBooleanStateFormula>(f.getOperator(), subformula));
         }
         
+        boost::any CloneVisitor::visit(UnaryBooleanPathFormula const& f, boost::any const& data) const {
+            std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
+            return std::static_pointer_cast<Formula>(std::make_shared<UnaryBooleanPathFormula>(f.getOperator(), subformula));
+        }
+
         boost::any CloneVisitor::visit(UntilFormula const& f, boost::any const& data) const {
             std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
             std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
             return std::static_pointer_cast<Formula>(std::make_shared<UntilFormula>(left, right));
         }
-        
+
+        boost::any CloneVisitor::visit(HOAPathFormula const& f, boost::any const& data) const {
+            std::shared_ptr<HOAPathFormula> result =  std::make_shared<HOAPathFormula>(f.getAutomatonFile());
+            for (auto& mapped : f.getAPMapping()) {
+                std::shared_ptr<Formula> clonedExpression = boost::any_cast<std::shared_ptr<Formula>>(mapped.second->accept(*this, data));
+                result->addAPMapping(mapped.first, clonedExpression);
+            }
+            return std::static_pointer_cast<Formula>(result);
+        }
     }
 }

@@ -135,7 +135,7 @@ namespace storm {
              * @param upperBound The upper bound of the range of the variable.
              * @param objectiveFunctionCoefficient The coefficient of the variable in the objective function.
              */
-            void addVariable(storm::expressions::Variable const& variable, char variableType, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient);
+            void addVariable(storm::expressions::Variable const& variable, char variableType, double lowerBound, double upperBound, ValueType objectiveFunctionCoefficient);
 #ifdef STORM_HAVE_GUROBI 
             // The Gurobi environment.
             GRBenv* env;

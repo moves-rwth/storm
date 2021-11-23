@@ -38,8 +38,8 @@ TEST(OrderExtenderTest, Brp_with_bisimulation_on_model) {
 
     model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(model->getNumberOfStates(), 99);
-    ASSERT_EQ(model->getNumberOfTransitions(), 195);
+    ASSERT_EQ(99ul, model->getNumberOfStates());
+    ASSERT_EQ(195ul, model->getNumberOfTransitions());
 
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
@@ -77,8 +77,8 @@ TEST(OrderExtenderTest, Brp_without_bisimulation_on_model) {
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
-    ASSERT_EQ(model->getNumberOfStates(), 193);
-    ASSERT_EQ(model->getNumberOfTransitions(), 383);
+    ASSERT_EQ(193ul, model->getNumberOfStates());
+    ASSERT_EQ(383ul, model->getNumberOfTransitions());
 
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
@@ -112,8 +112,8 @@ TEST(OrderExtenderTest, Brp_with_bisimulation_on_matrix) {
 
     model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(model->getNumberOfStates(), 99);
-    ASSERT_EQ(model->getNumberOfTransitions(), 195);
+    ASSERT_EQ(99ul, model->getNumberOfStates());
+    ASSERT_EQ(195ul, model->getNumberOfTransitions());
 
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
@@ -156,8 +156,8 @@ TEST(OrderExtenderTest, Brp_without_bisimulation_on_matrix) {
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
-    ASSERT_EQ(model->getNumberOfStates(), 193);
-    ASSERT_EQ(model->getNumberOfTransitions(), 383);
+    ASSERT_EQ(193ul, model->getNumberOfStates());
+    ASSERT_EQ(383ul, model->getNumberOfTransitions());
 
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
@@ -198,7 +198,7 @@ TEST(OrderExtenderTest, simple1_on_model) {
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto order = std::get<0>(extender.toOrder(region));
-    EXPECT_EQ(order->getNumberOfAddedStates(), 5);
+    EXPECT_EQ(5ul, order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
 
     // Check on all states
@@ -285,7 +285,7 @@ TEST(OrderExtenderTest, casestudy1_on_model) {
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto order = std::get<0>(extender.toOrder(region));
 
-    EXPECT_EQ(order->getNumberOfAddedStates(), 5);
+    EXPECT_EQ(5ul, order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
     // Check on all states
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,0));

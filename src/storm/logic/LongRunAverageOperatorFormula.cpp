@@ -18,10 +18,11 @@ namespace storm {
         boost::any LongRunAverageOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-                
-        std::ostream& LongRunAverageOperatorFormula::writeToStream(std::ostream& out) const {
+        
+        std::ostream& LongRunAverageOperatorFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             out << "LRA";
-            OperatorFormula::writeToStream(out);
+            OperatorFormula::writeToStream(out, false);
             return out;
         }
     }

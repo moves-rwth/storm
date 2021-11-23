@@ -21,7 +21,7 @@
 #include "storm/modelchecker/results/HybridQuantitativeCheckResult.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/utility/Stopwatch.h"
 

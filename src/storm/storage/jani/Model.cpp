@@ -13,13 +13,13 @@
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
-#include "storm/storage/jani/Compositions.h"
-#include "storm/storage/jani/JSONExporter.h"
-#include "storm/storage/jani/ArrayEliminator.h"
-#include "storm/storage/jani/FunctionEliminator.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
+#include "Compositions.h"
+#include "storm/storage/jani/visitor/JSONExporter.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
+#include "storm/storage/jani/eliminator/FunctionEliminator.h"
 #include "storm/storage/jani/VariablesToConstantsTransformer.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/jani/traverser/InformationCollector.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
@@ -658,6 +658,8 @@ namespace storm {
                         entry.second--;
                     }
                 }
+            } else {
+                STORM_LOG_ERROR("Could not remove constant: " << name << ".");
             }
 
         }
@@ -697,44 +699,6 @@ namespace storm {
         }
         
         Variable const& Model::addVariable(Variable const& variable) {
-            if (variable.isBooleanVariable()) {
-                return addVariable(variable.asBooleanVariable());
-            } else if (variable.isBoundedIntegerVariable()) {
-                return addVariable(variable.asBoundedIntegerVariable());
-            } else if (variable.isUnboundedIntegerVariable()) {
-                return addVariable(variable.asUnboundedIntegerVariable());
-            } else if (variable.isRealVariable()) {
-                return addVariable(variable.asRealVariable());
-            } else if (variable.isArrayVariable()) {
-                return addVariable(variable.asArrayVariable());
-            } else if (variable.isClockVariable()) {
-                return addVariable(variable.asClockVariable());
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Variable has invalid type.");
-            }
-        }
-
-        BooleanVariable const& Model::addVariable(BooleanVariable const& variable) {
-            return globalVariables.addVariable(variable);
-        }
-        
-        BoundedIntegerVariable const& Model::addVariable(BoundedIntegerVariable const& variable) {
-            return globalVariables.addVariable(variable);
-        }
-        
-        UnboundedIntegerVariable const& Model::addVariable(UnboundedIntegerVariable const& variable) {
-            return globalVariables.addVariable(variable);
-        }
-
-        RealVariable const& Model::addVariable(RealVariable const& variable) {
-            return globalVariables.addVariable(variable);
-        }
-        
-        ArrayVariable const& Model::addVariable(ArrayVariable const& variable) {
-            return globalVariables.addVariable(variable);
-        }
-        
-        ClockVariable const& Model::addVariable(ClockVariable const& variable) {
             return globalVariables.addVariable(variable);
         }
 
@@ -842,7 +806,8 @@ namespace storm {
                         return nonTrivialRewardModels.begin()->second;
                     } else {
                         for (auto const& variable : globalVariables.getTransientVariables()) {
-                            if (variable.isRealVariable() || variable.isUnboundedIntegerVariable() || variable.isBoundedIntegerVariable()) {
+                            auto const& type = variable.getType();
+                            if ((type.isBasicType() && type.asBasicType().isNumericalType()) || (type.isBoundedType() && type.asBoundedType().isNumericalType())) {
                                 return variable.getExpressionVariable().getExpression();
                             }
                         }
@@ -859,7 +824,8 @@ namespace storm {
                 result.emplace_back(nonTrivExpr.first, nonTrivExpr.second);
             }
             for (auto const& variable : globalVariables.getTransientVariables()) {
-                if (variable.isRealVariable() || variable.isUnboundedIntegerVariable() || variable.isBoundedIntegerVariable()) {
+                auto const& type = variable.getType();
+                if ((type.isBasicType() && type.asBasicType().isNumericalType()) || (type.isBoundedType() && type.asBoundedType().isNumericalType())) {
                     result.emplace_back(variable.getName(), variable.getExpressionVariable().getExpression());
                 }
             }
@@ -1346,7 +1312,13 @@ namespace storm {
                 }
                 
                 if (variable.hasInitExpression()) {
-                    result = result && (variable.isBooleanVariable() ? storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression()) : variable.getExpressionVariable() == variable.getInitExpression());
+                    storm::expressions::Expression newInitExpression;
+                    if (variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType()) {
+                        newInitExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitExpression());
+                    } else {
+                        newInitExpression = variable.getExpressionVariable() == variable.getInitExpression();
+                    }
+                    result = result && newInitExpression;
                 }
             }
             
@@ -1405,7 +1377,7 @@ namespace storm {
             STORM_LOG_ASSERT(composition != nullptr, "Composition is not set");
         }
 
-        storm::expressions::Expression Model::getLabelExpression(BooleanVariable const& transientVariable) const {
+        storm::expressions::Expression Model::getLabelExpression(Variable const& transientVariable) const {
             std::vector<std::reference_wrapper<Automaton const>> allAutomata;
             for (auto const& automaton : automata) {
                 allAutomata.emplace_back(automaton);
@@ -1413,9 +1385,11 @@ namespace storm {
             return getLabelExpression(transientVariable, allAutomata);
         }
         
-        storm::expressions::Expression Model::getLabelExpression(BooleanVariable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const {
+        storm::expressions::Expression Model::getLabelExpression(Variable const& transientVariable, std::vector<std::reference_wrapper<Automaton const>> const& automata) const {
             STORM_LOG_THROW(transientVariable.isTransient(), storm::exceptions::InvalidArgumentException, "Expected transient variable.");
-            
+            auto const& type = transientVariable.getType();
+            STORM_LOG_THROW(type.isBasicType() && type.asBasicType().isBooleanType(), storm::exceptions::InvalidArgumentException, "Expected boolean variable.");
+
             storm::expressions::Expression result;
             bool negate = transientVariable.getInitExpression().isTrue();
             

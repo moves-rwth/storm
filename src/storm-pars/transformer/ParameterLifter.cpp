@@ -317,12 +317,6 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        uint_fast64_t ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getOriginalState(
-                uint_fast64_t newStateNumber) const {
-            return 0;
-        }
-
-        template<typename ParametricType, typename ConstantType>
         ConstantType& ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(ParametricType const& function, AbstractValuation const& valuation) {
             ParametricType simplifiedFunction = function;
             storm::utility::simplify(simplifiedFunction);

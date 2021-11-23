@@ -93,7 +93,7 @@ namespace storm {
              * @return The index of the variable.
              */
             uint_fast64_t getIndex() const;
-            
+
             /*!
              * Retrieves the offset of the variable in the group of all equally typed variables.
              *

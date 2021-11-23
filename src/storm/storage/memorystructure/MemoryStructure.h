@@ -33,11 +33,13 @@ namespace storm {
              *
              * @param transitionMatrix The transition matrix
              * @param memoryStateLabeling A labeling of the memory states to specify, e.g., accepting states
-             * @param initialMemoryStates assigns an initial memory state to each initial state of the model.
+             * @param initialMemoryStates assigns an initial memory state to each (initial?) state of the model.
+             * @param onlyInitialStatesRelevant if true, initial memory states are only provided for each initial model state. Otherwise, an initial memory state is provided for *every* model state.
              */
-            MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates);
-            MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling, std::vector<uint_fast64_t>&& initialMemoryStates);
-            
+            MemoryStructure(TransitionMatrix const& transitionMatrix, storm::models::sparse::StateLabeling const& memoryStateLabeling, std::vector<uint_fast64_t> const& initialMemoryStates, bool onlyInitialStatesRelevant = true);
+            MemoryStructure(TransitionMatrix&& transitionMatrix, storm::models::sparse::StateLabeling&& memoryStateLabeling, std::vector<uint_fast64_t>&& initialMemoryStates, bool onlyInitialStatesRelevant = true);
+
+            bool isOnlyInitialStatesRelevantSet () const;
             TransitionMatrix const& getTransitionMatrix() const;
             storm::models::sparse::StateLabeling const& getStateLabeling() const;
             std::vector<uint_fast64_t> const& getInitialMemoryStates() const;
@@ -65,6 +67,7 @@ namespace storm {
             TransitionMatrix transitions;
             storm::models::sparse::StateLabeling stateLabeling;
             std::vector<uint_fast64_t> initialMemoryStates;
+            bool onlyInitialStatesRelevant; // Whether initial memory states are only defined for initial model states or for all model states
         };
         
     }

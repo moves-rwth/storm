@@ -46,7 +46,12 @@ namespace storm {
             this->localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(matrix));
             this->A = this->localA.get();
         }
-        
+
+        template<class ValueType>
+        void TopologicalCudaMinMaxLinearEquationSolver<ValueType>::setSchedulerFixedForRowGroup(storm::storage::BitVector&& states) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Setting fixed choices for scheduler not implemented for TopologicalCudaMinMaxLinearEquationSolver");
+        }
+
         template<typename ValueType>
 		bool TopologicalCudaMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 			STORM_LOG_THROW(env.solver().minMax().getMethod() == MinMaxMethod::TopologicalCuda, storm::exceptions::InvalidEnvironmentException, "This min max solver does not support the selected technique.");

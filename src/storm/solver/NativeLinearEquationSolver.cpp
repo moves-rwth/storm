@@ -4,20 +4,20 @@
 
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 
+#include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/PrecisionExceededException.h"
+#include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/solver/helper/OptimisticValueIterationHelper.h"
+#include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "storm/solver/multiplier/Multiplier.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/solver/helper/SoundValueIterationHelper.h"
-#include "storm/solver/helper/OptimisticValueIterationHelper.h"
-#include "storm/solver/Multiplier.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/InvalidEnvironmentException.h"
-#include "storm/exceptions/UnmetRequirementException.h"
-#include "storm/exceptions/PrecisionExceededException.h"
-#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace solver {

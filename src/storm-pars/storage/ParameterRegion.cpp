@@ -283,12 +283,12 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        void ParameterRegion<ParametricType>::setSplitThreshold(size_t splitThreshold) {
+        void ParameterRegion<ParametricType>::setSplitThreshold(uint_fast64_t splitThreshold) {
             this->splitThreshold = splitThreshold;
         }
 
         template <typename ParametricType>
-        size_t ParameterRegion<ParametricType>::getSplitThreshold() const {
+        uint_fast64_t ParameterRegion<ParametricType>::getSplitThreshold() const {
             return splitThreshold;
         }
 

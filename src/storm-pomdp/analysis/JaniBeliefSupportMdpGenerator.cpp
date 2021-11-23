@@ -76,14 +76,14 @@ namespace storm {
                 expressions::ExpressionManager& exprManager = model.getManager();
                 storm::expressions::Variable posProbVar = exprManager.declareRationalVariable("posProb");
                 model.addConstant(jani::Constant("posProb", posProbVar));
-                std::map<uint64_t, const jani::BooleanVariable*> stateVariables;
-                const jani::BoundedIntegerVariable* obsVar = &model.addVariable(jani::BoundedIntegerVariable("obs", exprManager.declareIntegerVariable("obs"), exprManager.integer(initialObs), exprManager.integer(0), exprManager.integer(pomdp.getNrObservations())));
-                const jani::BoundedIntegerVariable* oldobsActVar = &model.addVariable(jani::BoundedIntegerVariable("prevact", exprManager.declareIntegerVariable("prevact"), exprManager.integer(0), exprManager.integer(0), exprManager.integer(obsactpairs.size())));
+                std::map<uint64_t, const jani::Variable*> stateVariables;
+                const jani::Variable* obsVar = &model.addVariable(*storm::jani::Variable::makeBoundedIntegerVariable("obs", exprManager.declareIntegerVariable("obs"), exprManager.integer(initialObs), false, exprManager.integer(0), exprManager.integer(pomdp.getNrObservations())));
+                const jani::Variable* oldobsActVar = &model.addVariable(*storm::jani::Variable::makeBoundedIntegerVariable("prevact",  exprManager.declareIntegerVariable("prevact"), exprManager.integer(0), false, exprManager.integer(0), exprManager.integer(obsactpairs.size())));
 
                 for (uint64_t i = 0; i < pomdp.getNumberOfStates(); ++i) {
                     std::string name = "s" + std::to_string(i);
                     bool isInitial = pomdp.getInitialStates().get(i);
-                    stateVariables.emplace(i, &model.addVariable(jani::BooleanVariable(name, exprManager.declareBooleanVariable(name), exprManager.boolean(isInitial))));
+                    stateVariables.emplace(i, &model.addVariable(*storm::jani::Variable::makeBooleanVariable(name, exprManager.declareBooleanVariable(name), exprManager.boolean(isInitial), false)));
                 }
 
                 std::map<detail::ObsActPair, uint64_t> actionIndices;
@@ -120,12 +120,12 @@ namespace storm {
                     model.addAutomaton(aut);
                 }
                 jani::Automaton obsAut("obsAut", exprManager.declareIntegerVariable("obsAut"));
-                auto const& targetVar = model.addVariable(jani::BooleanVariable("target", exprManager.declareBooleanVariable("target"), exprManager.boolean(false), true));
+                auto const& targetVar = model.addVariable( *storm::jani::Variable::makeBooleanVariable("target",  exprManager.declareBooleanVariable("target"), exprManager.boolean(false), true));
                 std::vector<storm::expressions::Expression> notTargetExpression;
                 for (auto const& state : ~targetStates) {
                     notTargetExpression.push_back(!stateVariables.at(state)->getExpressionVariable().getExpression());
                 }
-                auto const& badVar = model.addVariable(jani::BooleanVariable("bad", exprManager.declareBooleanVariable("bad"), exprManager.boolean(false), true));
+                auto const& badVar = model.addVariable(*storm::jani::Variable::makeBooleanVariable("bad",  exprManager.declareBooleanVariable("bad"), exprManager.boolean(false), true));
                 std::vector<storm::expressions::Expression> badExpression;
                 for (auto const& state : badStates) {
                     badExpression.push_back(stateVariables.at(state)->getExpressionVariable().getExpression());

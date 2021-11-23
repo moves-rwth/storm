@@ -54,7 +54,7 @@ ExternalProject_Add(
         PATCH_COMMAND ${AUTORECONF}
         CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure --enable-shared --enable-obj --with-pic=yes --prefix=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0 --libdir=${CUDD_LIB_DIR} CC=${CMAKE_C_COMPILER} CXX=${CUDD_CXX_COMPILER} ${CUDD_INCLUDE_FLAGS}
         BUILD_COMMAND make ${STORM_CUDD_FLAGS}
-        INSTALL_COMMAND make install
+        INSTALL_COMMAND make install -j${STORM_RESOURCES_BUILD_JOBCOUNT}
         BUILD_IN_SOURCE 0
         LOG_CONFIGURE ON
         LOG_BUILD ON

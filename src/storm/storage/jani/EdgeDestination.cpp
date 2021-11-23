@@ -1,7 +1,7 @@
 #include "storm/storage/jani/EdgeDestination.h"
 
 #include "storm/utility/macros.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/exceptions/WrongFormatException.h"
 
