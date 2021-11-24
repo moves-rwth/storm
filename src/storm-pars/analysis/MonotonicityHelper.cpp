@@ -9,11 +9,9 @@
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "storm-pars/analysis/OrderExtenderDtmc.h"
-#include "storm-pars/analysis/OrderExtenderMdp.h"
 #include "storm-pars/analysis/AssumptionChecker.h"
-
-
+#include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
+#include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
 
 namespace storm {
     namespace analysis {
@@ -59,10 +57,10 @@ namespace storm {
             }
 
             if (model->isOfType(models::ModelType::Dtmc)) {
-                this->extender = new analysis::OrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
+                this->extender = new analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
             } else if (model->isOfType(models::ModelType::Mdp)) {
                 // TODO where to get prMax? Based on what was given via --prop?
-                this->extender = new analysis::OrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true);
+                this->extender = new analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for model type: ");
             }

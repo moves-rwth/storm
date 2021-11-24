@@ -349,12 +349,11 @@ namespace storm {
             return onlyBottomTopOrder;
         }
 
-        std::vector<uint_fast64_t> Order::sortStates(std::vector<uint_fast64_t>* states) {
-            assert (states != nullptr);
-            uint_fast64_t numberOfStatesToSort = states->size();
+        std::vector<uint_fast64_t> Order::sortStates(std::vector<uint_fast64_t> const& states) {
+            uint_fast64_t numberOfStatesToSort = states.size();
             std::vector<uint_fast64_t> result;
             // Go over all states
-            for (auto state : *states) {
+            for (auto & state : states) {
                 bool unknown = false;
                 if (result.size() == 0) {
                     result.push_back(state);
@@ -440,12 +439,11 @@ namespace storm {
         }
         */
 
-        std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states) {
-            assert (states != nullptr);
-            uint_fast64_t numberOfStatesToSort = states->size();
+        std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(std::vector<uint_fast64_t> const& states) {
+            uint_fast64_t numberOfStatesToSort = states.size();
             std::vector<uint_fast64_t> result;
             // Go over all states
-            for (auto state : *states) {
+            for (auto state : states) {
                 bool unknown = false;
                 if (result.size() == 0) {
                     result.push_back(state);

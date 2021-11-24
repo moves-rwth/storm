@@ -1,24 +1,23 @@
-#include <queue>
+#include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
 #include <storage/StronglyConnectedComponentDecomposition.h>
-#include "storm-pars/analysis/RewardOrderExtender.h"
-
+#include <queue>
 
 namespace storm {
     namespace analysis {
         template<typename ValueType, typename ConstantType>
-        RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
+    RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
             this->rewardModel = this->model->getUniqueRewardModel();
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
         }
 
         template<typename ValueType, typename ConstantType>
-        RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
+        RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->rewardModel = this->model->getUniqueRewardModel();
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
+        std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
             bool addedSomething = false;
             // We sort the states, this also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
             auto sortedSuccStates = this->sortStatesUnorderedPair(&successors, order);
@@ -47,7 +46,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::shared_ptr<Order> RewardOrderExtender<ValueType, ConstantType>::getInitialOrder() {
+        std::shared_ptr<Order> RewardOrderExtenderDtmc<ValueType, ConstantType>::getInitialOrder() {
             if (this->initialOrder == nullptr) {
                 assert (this->model != nullptr);
                 STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
@@ -120,12 +119,12 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
+        std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
             STORM_LOG_THROW(false, exceptions::NotImplementedException, "The function is not (yet) implemented in this class");
         }
 
         template<typename ValueType, typename ConstantType>
-        void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
+        void RewardOrderExtenderDtmc<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
             if (rewardModel.getStateActionReward(currentState) == ValueType(0)) {
                 order->addToNode(currentState, order->getNode(successor));
             } else {
@@ -135,7 +134,7 @@ namespace storm {
         }
 
 
-        template class RewardOrderExtender<RationalFunction, double>;
-        template class RewardOrderExtender<RationalFunction, RationalNumber>;
+        template class RewardOrderExtenderDtmc<RationalFunction, double>;
+        template class RewardOrderExtenderDtmc<RationalFunction, RationalNumber>;
     }
 }

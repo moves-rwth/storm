@@ -496,7 +496,7 @@ namespace storm {
         std::shared_ptr<storm::analysis::Order> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::copyOrder(std::shared_ptr<storm::analysis::Order> order) {
             auto res = order->copy();
             if (orderExtender) {
-                orderExtender->setUnknownStates(order, res);
+                orderExtender->copyUnknownStates(order, res);
                 orderExtender->copyMinMax(order, res);
             }
             return res;

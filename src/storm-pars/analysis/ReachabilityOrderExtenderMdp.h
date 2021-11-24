@@ -4,9 +4,10 @@
 namespace storm {
     namespace analysis {
         template<typename ValueType, typename ConstantType>
-        class OrderExtenderMdp : public ReachabilityOrderExtender<ValueType, ConstantType> {
+        class ReachabilityOrderExtenderMdp : public ReachabilityOrderExtender<ValueType, ConstantType> {
             public:
                 typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
+                typedef typename storage::SparseMatrix<ValueType>::rows* Rows;
 
                 enum ActionComparison {
                     GEQ,
@@ -14,19 +15,21 @@ namespace storm {
                     UNKNOWN,
                 };
 
-                OrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool prMax = true);
+                ReachabilityOrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool prMax = true);
 
-                OrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax = true);
+                ReachabilityOrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax = true);
 
                 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
+
+            protected:
+                void addInitialStatesMinMax(std::shared_ptr<Order> order) override;
 
             private:
 
                 storm::storage::BitVector gatherPotentialSuccs(uint64_t state);
 
-                std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
-
-                std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) override;
+                // Determines which choice to take, and then calls its parents extendByBackwardReasoning
+                std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
 
                 /*!
                  * Compares two rational functions
@@ -43,7 +46,7 @@ namespace storm {
 
                 std::pair<bool, uint64_t> simpleCaseCheck(uint64_t state, std::vector<uint64_t> orderedSuccs);
 
-                OrderExtenderMdp::ActionComparison actionSmtCompare(typename storage::SparseMatrix<ValueType>::rows* action1, typename storage::SparseMatrix<ValueType>::rows* action2, std::vector<uint64_t> orderedSuccs, std::shared_ptr<Order> order);
+                ReachabilityOrderExtenderMdp::ActionComparison actionSMTCompare(std::shared_ptr<Order> order, std::vector<uint64_t> const& orderedSuccs, storage::ParameterRegion<ValueType>& region, Rows action1, Rows action2, );
 
                 bool prMax{};
 

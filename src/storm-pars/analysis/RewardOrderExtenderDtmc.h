@@ -4,7 +4,7 @@
 namespace storm {
     namespace analysis {
         template<typename ValueType, typename ConstantType>
-        class RewardOrderExtender : public OrderExtender<ValueType, ConstantType> {
+        class RewardOrderExtenderDtmc : public OrderExtender<ValueType, ConstantType> {
 
 
             /*!
@@ -27,7 +27,7 @@ namespace storm {
              * @param model The model for which the order should be extended.
              * @param formula The considered formula.
              */
-            RewardOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula);
+            RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula);
 
             /*!
              * Constructs a new RewardOrderExtender.
@@ -36,7 +36,7 @@ namespace storm {
              * @param bottomStates The bottom states of the reward order.
              * @param matrix The matrix of the considered model.
              */
-            RewardOrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
+            RewardOrderExtenderDtmc(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
 
             /*!
@@ -62,7 +62,7 @@ namespace storm {
              * @param allowMerge Boolean to allow merging of states when assumptions are used
              * @return A pair of unorderable states. If no such states exist, the pair is <numberOfStates, numberOfStates>
              */
-            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) override;
+            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order,storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
 
             /*!
              * (If necessary, creates and) returns the initial order
@@ -73,7 +73,7 @@ namespace storm {
 
            private:
             // Not implemented yet but here so that this class is not abstract. Document when implemented!
-            std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) override;
+            std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
 
             /*!
              * Inserts a state into an order which has only one successor

@@ -246,7 +246,7 @@ namespace storm {
                      * @return Vector with states sorted, length equals number of states to sort.
                      * If states cannot be sorted, last state of the vector will always equal the length of the BitVector.
                      */
-                    std::vector<uint_fast64_t> sortStates(std::vector<uint_fast64_t>* states);
+                    std::vector<uint_fast64_t> sortStates(std::vector<uint_fast64_t> const& states);
                     std::pair<bool, bool> allAboveBelow(std::vector<uint_fast64_t>const states, uint_fast64_t state);
 
                     /*!
@@ -267,7 +267,7 @@ namespace storm {
                      * @return pair of unsortabe states, vector with states sorted (so far).
                      * If all states could be sorted, both values of the pair are numberOfStates and the vectors length will equal the number of states to sort.
                      */
-                    std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states);
+                    std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesUnorderedPair(std::vector<uint_fast64_t> const& states);
 
                     /*!
                      * Sorts the given states if possible.
