@@ -7,100 +7,28 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
-            // intentionally left empty
+            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
         }
 
         template<typename ValueType, typename ConstantType>
         ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
-            // intentionally left empty
-        }
-
-        template <typename ValueType, typename ConstantType>
-        void ReachabilityOrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
-            monResult->updateMonotonicityResult(param, this->monotonicityChecker.checkLocalMonotonicity(order, s, param, this->region));
-        }
-
-        template <typename ValueType, typename ConstantType>
-        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            return this->extendOrder(nullptr, region, monRes, nullptr);
-        }
-
-        template<typename ValueType, typename ConstantType>
-        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This function is only implemented in sub-classes");
-        }
-
-        template<typename ValueType, typename ConstantType>
-        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This function is only implemented in sub-classes");
-        }
-
-        template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This function is only implemented in sub-classes");
-        }
-
-        template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, const std::vector<uint_fast64_t> &successors, bool allowMerge)  {
-            // when it is cyclic and the current state is part of an SCC we do forwardreasoning
-            if (this->cyclic && !order->isTrivial(currentState) && order->contains(currentState)) {
-                // Try to extend the order for this scc
-                return  extendByForwardReasoning(order, currentState, successors, allowMerge);
-            } else {
-                assert (order->isTrivial(currentState) || !order->contains(currentState));
-                // Do backward reasoning, all successor states must be in the order
-                return  extendByBackwardReasoning(order, currentState, successors, allowMerge);
-            }
+            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
         }
 
         template <typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
-            assert (!order->isOnlyBottomTopOrder());
+            assert (!order->isOnlyInitialOrder());
             assert (successors.size() > 1);
 
             bool pla = (this->usePLA.find(order) != this->usePLA.end() && this->usePLA.at(order));
             std::vector<uint_fast64_t> sortedSuccs;
 
-            if (pla && (this->continueExtending.find(order) == this->continueExtending.end() || this->continueExtending.at(order))) {
-                for (auto& state1 : successors) {
-                    if (sortedSuccs.size() == 0) {
-                        sortedSuccs.push_back(state1);
-                    } else {
-                        bool added = false;
-                        for (auto itr = sortedSuccs.begin(); itr != sortedSuccs.end(); ++itr) {
-                            auto& state2 = *itr;
-                            auto compareRes = order->compareFast(state1, state2);
-                            if (compareRes == Order::NodeComparison::UNKNOWN) {
-                                compareRes = this->addStatesBasedOnMinMax(order, state1, state2);
-                            }
-                            if (compareRes == Order::NodeComparison::UNKNOWN) {
-                                // If fast comparison did not help, we continue by checking "slow" comparison
-                                compareRes = order->compare(state1, state2);
-                            }
-                            if (compareRes == Order::NodeComparison::ABOVE ||
-                                compareRes == Order::NodeComparison::SAME) {
-                                // insert at current pointer (while keeping other values)
-                                sortedSuccs.insert(itr, state1);
-                                added = true;
-                                break;
-                            } else if (compareRes == Order::NodeComparison::UNKNOWN) {
-                                this->continueExtending[order] = false;
-                                return {state1, state2};
-                            }
-                        }
-                        if (!added) {
-                            sortedSuccs.push_back(state1);
-                        }
-                    }
-                }
-            } else {
-                auto temp = order->sortStatesUnorderedPair(&successors);
-                if (temp.first.first != this->numberOfStates) {
-                    return temp.first;
-                } else {
-                    sortedSuccs = std::move(temp.second);
-                }
+            auto temp = this->sortStatesUnorderedPair(&successors, order);
+            if (temp.first.first != this->numberOfStates) {
+                return temp.first;
             }
+            sortedSuccs = std::move(temp.second);
+
 
             if (order->compare(sortedSuccs[0], sortedSuccs[sortedSuccs.size() - 1]) == Order::SAME) {
                 if (!order->contains(currentState)) {
@@ -202,7 +130,6 @@ namespace storm {
 
                 if (statesSorted[0] == currentState) {
                     order->addRelation(s1, statesSorted[0], allowMerge);
-                    auto res = order->compare(s1, statesSorted[0]);
                     assert ((order->compare(s1, statesSorted[0]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
                     order->addRelation(s1, statesSorted[statesSorted.size() - 1], allowMerge);
                     assert ((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
@@ -238,19 +165,6 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        bool ReachabilityOrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
-            bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
-            assert (order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
-            auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, this->region, this->minValues[order], this->maxValues[order]) : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, this->region);
-            if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                this->handleAssumption(order, assumptions.begin()->first);
-                // Assumptions worked, we continue
-                return true;
-            }
-            return false;
-        }
-
-        template<typename ValueType, typename ConstantType>
         void ReachabilityOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
             assert (order->contains(successor));
             if (currentState != successor) {
@@ -263,8 +177,8 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getBottomTopOrder() {
-            if (this->bottomTopOrder == nullptr) {
+        std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder() {
+            if (this->initialOrder == nullptr) {
                 assert (this->model != nullptr);
                 STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
                 modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*(this->model));
@@ -273,14 +187,14 @@ namespace storm {
                 assert (this->formula->isProbabilityOperatorFormula());
                 if (this->formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
                     phiStates = propositionalChecker.check(
-                            this->formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                                        this->formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                     psiStates = propositionalChecker.check(
-                            this->formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                                        this->formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 } else {
                     assert (this->formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
                     phiStates = storage::BitVector(this->numberOfStates, true);
                     psiStates = propositionalChecker.check(
-                            this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                                        this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 }
                 // Get the maybeStates
                 std::pair<storage::BitVector, storage::BitVector> statesWithProbability01 = utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
@@ -309,21 +223,42 @@ namespace storm {
                     decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
                 }
                 auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
-                this->bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
+                this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
 
                 // Build stateMap
-                this->buildStateMap(subStates);
+                for (uint_fast64_t state = 0; state < this->numberOfStates; ++state) {
+                    auto const& row = matrix.getRow(state);
+                    this->stateMap[state] = std::vector<uint_fast64_t>();
+                    std::set<VariableType> occurringVariables;
+
+                    for (auto& entry : matrix.getRow(state)) {
+
+                        // ignore self-loops when there are more transitions
+                        if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                            this->stateMap[state].push_back(entry.getColumn());
+                        }
+                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+
+                    }
+                    if (occurringVariables.empty()) {
+                        this->nonParametricStates.insert(state);
+                    }
+
+                    for (auto& var : occurringVariables) {
+                        this->occuringStatesAtVariable[var].push_back(state);
+                    }
+                    this->occuringVariablesAtState.push_back(std::move(occurringVariables));
+                }
+
             }
 
-            if (this->minValuesInit && this->maxValuesInit) {
-                this->continueExtending[this->bottomTopOrder] = true;
-                this->usePLA[this->bottomTopOrder] = true;
-                this->minValues[this->bottomTopOrder] = std::move(this->minValuesInit.get());
-                this->maxValues[this->bottomTopOrder] = std::move(this->maxValuesInit.get());
+            if (!this->minValues.empty() && !this->maxValues.empty()) {
+                this->continueExtending[this->initialOrder] = true;
+                this->usePLA[this->initialOrder] = true;
             } else {
-                this->usePLA[this->bottomTopOrder] = false;
+                this->usePLA[this->initialOrder] = false;
             }
-            return this->bottomTopOrder;
+            return this->initialOrder;
         }
 
         template class ReachabilityOrderExtender<RationalFunction, double>;
