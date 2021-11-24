@@ -262,8 +262,7 @@ namespace storm {
                     } else {
                         initBound = maxBound[*this->parametricModel->getInitialStates().begin()];
                     }
-                    orderExtender->setMinValuesInit(minBound);
-                    orderExtender->setMaxValuesInit(maxBound);
+                    orderExtender->setMinMaxValues(minBound, maxBound);
                 }
                 auto order = this->extendOrder(nullptr, region);
                 auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));

@@ -225,76 +225,37 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) {
-            assert (minValues.size() == numberOfStates);
-            assert (maxValues.size() == numberOfStates);
-            usePLA[order] = true;
-            if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
-                auto& unknownStates = unknownStatesMap[order];
-                if (unknownStates.first != numberOfStates) {
-                    continueExtending[order] = minValues[unknownStates.first] >= maxValues[unknownStates.second] ||  minValues[unknownStates.second] >= maxValues[unknownStates.first];
+        void OrderExtender<ValueType, ConstantType>::setMinMaxValues(boost::optional<std::vector<ConstantType>> &minValues, boost::optional<std::vector<ConstantType>> &maxValues, std::shared_ptr<Order> order) {
+            STORM_LOG_ASSERT(!minValues || minValues.get().size() == numberOfStates);
+            STORM_LOG_ASSERT(!maxValues || maxValues.get().size() == numberOfStates);
+            STORM_LOG_ASSERT(minValues || maxValues);
+
+            if (order == nullptr) {
+                if (minValues) {
+                    this->minValuesInit = std::move(minValues.get());
+                }
+                if (maxValues) {
+                    this->maxValuesInit = std::move(maxValues.get())
+                }
+            } else {
+                usePLA[order] = true;
+                if (minValues && maxValues && unknownStatesMap.find(order) != unknownStatesMap.end()) {
+                    auto& unknownStates = unknownStatesMap[order];
+                    if (unknownStates.first != numberOfStates) {
+                        continueExtending[order] = minValues[unknownStates.first] >= maxValues[unknownStates.second] ||  minValues[unknownStates.second] >= maxValues[unknownStates.first];
+                    } else {
+                        continueExtending[order] = true;
+                    }
                 } else {
                     continueExtending[order] = true;
                 }
-            } else {
-                continueExtending[order] = true;
-            }
-            this->minValues[order] = std::move(minValues);
-            this->maxValues[order] = std::move(maxValues);
-        }
-
-        template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues) {
-            assert (minValues.size() == numberOfStates);
-            auto& maxValues = this->maxValues[order];
-            usePLA[order] = this->maxValues.find(order) != this->maxValues.end();
-            if (maxValues.size() == 0) {
-                continueExtending[order] = false;
-            } else if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
-                auto& unknownStates = unknownStatesMap[order];
-                if (unknownStates.first != numberOfStates) {
-                    continueExtending[order] = minValues[unknownStates.first] >= maxValues[unknownStates.second] ||  minValues[unknownStates.second] >= maxValues[unknownStates.first];
-                } else {
-                    continueExtending[order] = true;
+                if (minValues) {
+                    this->minValues[order] = std::move(minValues.get());
                 }
-            } else {
-                continueExtending[order] = true;
-            }
-            this->minValues[order] = std::move(minValues);
-        }
-
-        template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& maxValues) {
-            assert (maxValues.size() == numberOfStates);
-            usePLA[order] = this->minValues.find(order) != this->minValues.end();
-            auto& minValues = this->minValues[order];
-            if (minValues.size() == 0) {
-                continueExtending[order] = false;
-            } else  if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
-                auto& unknownStates = unknownStatesMap[order];
-                if (unknownStates.first != numberOfStates) {
-                    continueExtending[order] =
-                            minValues[unknownStates.first] >= maxValues[unknownStates.second] ||
-                            minValues[unknownStates.second] >= maxValues[unknownStates.first];
-                } else {
-                    continueExtending[order] = true;
+                if (maxValues) {
+                    this->maxValues[order] = std::move(maxValues.get());
                 }
-            } else {
-                continueExtending[order] = true;
             }
-            this->maxValues[order] = std::move(maxValues);//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-
-        }
-        template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::setMinValuesInit(std::vector<ConstantType>& minValues) {
-            assert (minValues.size() == numberOfStates);
-            this->minValuesInit = std::move(minValues);
-        }
-
-        template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::setMaxValuesInit(std::vector<ConstantType>& maxValues) {
-            assert (maxValues.size() == numberOfStates);
-            this->maxValuesInit = std::move(maxValues);//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
 
         template<typename ValueType, typename ConstantType>

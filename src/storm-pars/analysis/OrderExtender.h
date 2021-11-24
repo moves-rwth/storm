@@ -64,11 +64,7 @@ namespace storm {
              */
             virtual std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) = 0;
 
-            void setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType> &minValues, std::vector<ConstantType> &maxValues);
-            void setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType> &minValues);
-            void setMaxValues(std::shared_ptr<Order> order,std::vector<ConstantType> &maxValues);
-            void setMinValuesInit(std::vector<ConstantType> &minValues);
-            void setMaxValuesInit(std::vector<ConstantType> &minValues);
+            void setMinMaxValues(boost::optional<std::vector<ConstantType>> &minValues, boost::optional<std::vector<ConstantType>> &maxValues, std::shared_ptr<Order> order = nullptr);
 
             void setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
