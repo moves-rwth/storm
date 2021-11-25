@@ -193,7 +193,7 @@ namespace storm {
                                 bool in = true;
                                 for (uint_fast64_t i = 0; i < candidates.size(); i++){
                                     auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
-                                    auto compRes = actionSMTCompare(order, orderedSuccs, region, orderedSuccs, &rowA, &rowB);
+                                    auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
                                     if(compRes == GEQ){
                                         candidates.erase(candidates.begin()+i);
                                     } else if (compRes == LEQ) {
