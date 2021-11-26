@@ -37,6 +37,11 @@ namespace storm {
         SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType boundComparisonType, ValueType const& boundThreshold, storm::storage::BitVector const& relevantValues) : optimizationDirection(optimizationDirection), comparisonType(boundComparisonType), threshold(boundThreshold), relevantValueVector(relevantValues) {
             // Intentionally left empty.
         }
+
+        template<typename ValueType>
+        SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection, storm::storage::BitVector const& relevantValues) : optimizationDirection(optimizationDirection), relevantValueVector(relevantValues) {
+            // Intentionally left empty.
+        }
         
         template<typename ValueType>
         bool SolveGoal<ValueType>::hasDirection() const {
