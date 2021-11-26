@@ -5,8 +5,6 @@
 #include <boost/graph/strong_components.hpp>
 #include "storm/storage/expressions/ExpressionManager.h"
 
-using namespace boost;
-
 namespace storm {
     namespace jani {
         namespace elimination_actions {

@@ -2,9 +2,8 @@
 #include "storm/exceptions/InvalidOperationException.h"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/strong_components.hpp>
+#include <utility>
 #include "storm/storage/expressions/ExpressionManager.h"
-
-using namespace boost;
 
 namespace storm {
     namespace jani {
@@ -115,14 +114,13 @@ namespace storm {
             void UnfoldDependencyGraph::buildGroups(Model &model) {
                 std::vector<std::pair<std::string, VariableSet *>> variableSets;
                 // Use "" for the global set, as automata must not have an empty name according to the Jani spec
-                variableSets.push_back(std::pair<std::string, VariableSet *>("", &model.getGlobalVariables()));
+                variableSets.emplace_back("", &model.getGlobalVariables());
                 for (auto &automaton : model.getAutomata())
-                    variableSets.push_back(
-                            std::pair<std::string, VariableSet *>(automaton.getName(), &automaton.getVariables()));
+                    variableSets.emplace_back(automaton.getName(), &automaton.getVariables());
 
                 std::vector<VariableInfo> variables;
 
-                for (auto variableSet : variableSets) {
+                for (const auto& variableSet : variableSets) {
                     for (auto &var : *variableSet.second) {
                         bool isConstBounded = false;
                         if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType()) {
@@ -134,30 +132,30 @@ namespace storm {
                                 int lowerBound = biVar.getLowerBound().evaluateAsInt();
                                 int upperBound = biVar.getUpperBound().evaluateAsInt();
 
-                                variables.push_back(VariableInfo(var.getExpressionVariable().getName(), var.getName(),
+                                variables.emplace_back(var.getExpressionVariable().getName(), var.getName(),
                                                                  variableSet.first == "", variableSet.first,
-                                                                 true, upperBound - lowerBound + 1));
+                                                                 true, upperBound - lowerBound + 1);
 
                                 isConstBounded = true;
                             }
                         }
                         else if (var.getType().isBasicType() && var.getType().asBasicType().isBooleanType()) {
-                            variables.push_back(VariableInfo(var.getExpressionVariable().getName(), var.getName(),
-                                                             variableSet.first == "", variableSet.first, true, 2));
+                            variables.emplace_back(var.getExpressionVariable().getName(), var.getName(),
+                                                             variableSet.first == "", variableSet.first, true, 2);
 
                             isConstBounded = true;
                         }
                         if (!isConstBounded) {
                             // Still add the variable (so that dependencies are computed correctly). The
                             // "isConstBoundedInteger" parameter ensures that this variable is not unfolded later
-                            variables.push_back(VariableInfo(var.getExpressionVariable().getName(), var.getName(),
+                            variables.emplace_back(var.getExpressionVariable().getName(), var.getName(),
                                                              variableSet.first == "", variableSet.first,
-                                                             false, 0));
+                                                             false, 0);
                         }
                     }
                 }
 
-                adjacency_list<vecS, vecS, directedS> graph(variables.size());
+                boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> graph(variables.size());
 
                 for (auto &automaton : model.getAutomata()) {
                     for (auto &janiEdge : automaton.getEdges()) {
@@ -171,7 +169,7 @@ namespace storm {
                                                                         }));
 
                                 for (auto &rightVar : asg.getAssignedExpression().getVariables()) {
-                                    std::string rightName = rightVar.getName();
+                                    const std::string& rightName = rightVar.getName();
                                     int rIndex = std::distance(variables.begin(),
                                                                std::find_if(variables.begin(), variables.end(),
                                                                             [rightName](VariableInfo &v) {
@@ -195,11 +193,11 @@ namespace storm {
                 std::vector<int> sccs(variables.size());
 
                 int num = strong_components
-                        (graph, make_iterator_property_map(sccs.begin(), get(vertex_index, graph), sccs[0]));
+                        (graph, boost::make_iterator_property_map(sccs.begin(), get(boost::vertex_index, graph), sccs[0]));
 
 
                 for (int i = 0; i < num; i++) {
-                    variableGroups.push_back(VariableGroup());
+                    variableGroups.emplace_back();
                 }
 
                 std::vector<int>::iterator i;
@@ -240,7 +238,7 @@ namespace storm {
 
             void UnfoldDependencyGraph::printGroups() {
                 int groupCounter = 0;
-                for (auto group : variableGroups) {
+                for (const auto& group : variableGroups) {
                     std::cout << std::endl << "Variable Group " << groupCounter << std::endl;
                     if (group.allVariablesUnfoldable){
                         std::cout << "\tDomain size: " << group.domainSize << std::endl;
@@ -249,7 +247,7 @@ namespace storm {
                         std::cout << "\tCan not be unfolded" << std::endl;
                     }
                     std::cout << "\tVariables:" << std::endl;
-                    for (auto var : group.variables) {
+                    for (const auto& var : group.variables) {
                         std::cout << "\t\t" << var.expressionVariableName;
                         if (var.isConstBoundedInteger)
                             std::cout << " (const-bounded integer with domain size " << var.domainSize << ")";
@@ -257,7 +255,7 @@ namespace storm {
                             std::cout << " (not a const-bounded integer)";
                         std::cout << std::endl;
                     }
-                    if (group.dependencies.size() == 0)
+                    if (group.dependencies.empty())
                         std::cout << "\tNo Dependencies" << std::endl;
                     else
                         std::cout << "\tDependencies:" << std::endl;
@@ -278,14 +276,14 @@ namespace storm {
             }
 
             std::string UnfoldDependencyGraph::toString() {
-                std::string res = "";
+                std::string res;
 
                 for (uint32_t i = 0; i < variableGroups.size(); i++){
                     auto group = variableGroups[i];
                     std::vector<uint32_t> allDependencies = getOrderedDependencies(i, false);
 
                     res += "{" + group.getVariablesAsString() + "}:";
-                    if (group.dependencies.size() > 0) {
+                    if (!group.dependencies.empty()) {
                         res += "\n\tDepends on ";
                         for (uint32_t dep : group.dependencies)
                             res += "{" + variableGroups[dep].getVariablesAsString() + "}, ";
@@ -308,7 +306,7 @@ namespace storm {
                         res += "Can be unfolded\n";
                     else{
                         res += "Can't be unfolded:\n";
-                        for (auto var : group.variables){
+                        for (const auto& var : group.variables){
                             if (!var.isConstBoundedInteger)
                                 res += "\t\tVariable " + var.expressionVariableName + " is not a const-bounded integer\n";
                         }
