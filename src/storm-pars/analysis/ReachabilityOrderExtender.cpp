@@ -7,12 +7,12 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
-            // Intentionally left empty
+            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
         }
 
         template<typename ValueType, typename ConstantType>
         ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
-            // Intentionally left empty
+            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
         }
 
         template<typename ValueType, typename ConstantType>
@@ -230,6 +230,10 @@ namespace storm {
             return {this->numberOfStates, this->numberOfStates};
         }
 
+        template <typename ValueType, typename ConstantType>
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+            return this->extendOrder(nullptr, region, monRes, nullptr);
+        }
 
         template class ReachabilityOrderExtender<RationalFunction, double>;
         template class ReachabilityOrderExtender<RationalFunction, RationalNumber>;

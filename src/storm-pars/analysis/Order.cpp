@@ -10,41 +10,45 @@ namespace storm {
         Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
             init(numberOfStates, decomposition);
             this->numberOfAddedStates = 0;
-            this->onlyBottomTopOrder = true;
-            for (auto const& i : *topStates) {
-                this->doneStates.set(i);
-                this->bottom->statesAbove.set(i);
-                this->top->states.insert(i);
-                this->nodes[i] = top;
-                numberOfAddedStates++;
+            this->onlyInitialOrder = true;
+            if(!topStates->empty()){
+                for (auto const& i : *topStates) {
+                    this->sufficientForState.set(i);
+                    this->bottom->statesAbove.set(i);
+                    this->top->states.insert(i);
+                    this->nodes[i] = top;
+                    numberOfAddedStates++;
+                }
+            } else {
+                top = nullptr;
             }
+
             this->statesSorted = statesSorted;
 
             for (auto const& i : *bottomStates) {
-                this->doneStates.set(i);
+                this->sufficientForState.set(i);
                 this->bottom->states.insert(i);
                 this->nodes[i] = bottom;
                 numberOfAddedStates++;
             }
             assert (numberOfAddedStates <= numberOfStates);
-            assert (doneStates.getNumberOfSetBits() == (topStates->getNumberOfSetBits() + bottomStates->getNumberOfSetBits()));
+            assert (sufficientForState.getNumberOfSetBits() == (topStates->getNumberOfSetBits() + bottomStates->getNumberOfSetBits()));
             if (numberOfAddedStates == numberOfStates) {
-                doneBuilding = doneStates.full();
+                doneBuilding = sufficientForState.full();
             }
-
         }
 
         Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
             init(numberOfStates, decomposition);
 
-            this->onlyBottomTopOrder = true;
-            this->doneStates.set(topState);
+            this->onlyInitialOrder = true;
+            this->sufficientForState.set(topState);
 
             this->bottom->statesAbove.set(topState);
             this->top->states.insert(topState);
             this->nodes[topState] = top;
 
-            this->doneStates.set(bottomState);
+            this->sufficientForState.set(bottomState);
 
             this->bottom->states.insert(bottomState);
             this->nodes[bottomState] = bottom;
@@ -52,9 +56,9 @@ namespace storm {
             assert (numberOfAddedStates <= numberOfStates);
 
             this->statesSorted = statesSorted;
-            assert (doneStates.getNumberOfSetBits() == 2);
+            assert (sufficientForState.getNumberOfSetBits() == 2);
             if (numberOfAddedStates == numberOfStates) {
-                doneBuilding = doneStates.full();
+                doneBuilding = sufficientForState.full();
             }
         }
 
@@ -66,27 +70,37 @@ namespace storm {
 
         void Order::add(uint_fast64_t state) {
             assert (nodes[state] == nullptr);
-            addBetween(state, top, bottom);
+            if (top == nullptr) {
+                addAbove(state, bottom);
+            } else {
+                addBetween(state, top, bottom);
+            }
             addStateToHandle(state);
         }
 
         void Order::addAbove(uint_fast64_t state, Node *node) {
             STORM_LOG_INFO("Add " << state << " above " << *node->states.begin() << std::endl);
 
-            assert (nodes[state] == nullptr);
-            Node *newNode = new Node();
-            nodes[state] = newNode;
+            // assert (nodes[state] == nullptr);
+            if(nodes[state] == nullptr){
+                Node *newNode = new Node();
+                nodes[state] = newNode;
 
-            newNode->states.insert(state);
-            newNode->statesAbove = storm::storage::BitVector(numberOfStates, false);
-            for (auto const &state : top->states) {
-                newNode->statesAbove.set(state);
-            }
-            node->statesAbove.set(state);
-            numberOfAddedStates++;
-            onlyBottomTopOrder = false;
-            if (numberOfAddedStates == numberOfStates) {
-                doneBuilding = doneStates.full();
+                newNode->states.insert(state);
+                newNode->statesAbove = storm::storage::BitVector(numberOfStates, false);
+                if (top != nullptr){
+                    for (auto const &state : top->states) {
+                        newNode->statesAbove.set(state);
+                    }
+                }
+                node->statesAbove.set(state);
+                numberOfAddedStates++;
+                onlyInitialOrder = false;
+                if (numberOfAddedStates == numberOfStates) {
+                    doneBuilding = sufficientForState.full();
+                }
+            } else {
+                addRelationNodes(nodes[state], node);
             }
 
         }
@@ -104,9 +118,9 @@ namespace storm {
             }
             bottom->statesAbove.set(state);
             numberOfAddedStates++;
-            onlyBottomTopOrder = false;
+            onlyInitialOrder = false;
             if (numberOfAddedStates == numberOfStates) {
-                doneBuilding = doneStates.full();
+                doneBuilding = sufficientForState.full();
             }
             assert (numberOfAddedStates <= numberOfStates);
 
@@ -115,6 +129,15 @@ namespace storm {
         void Order::addBetween(uint_fast64_t state, Node *above, Node *below) {
             STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin() << std::endl);
 
+            if(above == nullptr){
+                addAbove(state, below);
+                return;
+            }
+
+            if (compare(above, below) != ABOVE) {
+                invalid = true;
+                return;
+            }
             assert(compare(above, below) == ABOVE);
             assert (above != nullptr && below != nullptr);
             if (nodes[state] == nullptr) {
@@ -129,9 +152,9 @@ namespace storm {
                 }
                 below->statesAbove.set(state);
                 numberOfAddedStates++;
-                onlyBottomTopOrder = false;
+                onlyInitialOrder = false;
                 if (numberOfAddedStates == numberOfStates) {
-                    doneBuilding = doneStates.full();
+                    doneBuilding = sufficientForState.full();
                 }
                 assert (numberOfAddedStates <= numberOfStates);
             } else {
@@ -142,7 +165,8 @@ namespace storm {
         }
 
         void Order::addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below) {
-            assert (compare(above, below) == ABOVE);
+            // is done in the other addBetween anyway
+            // assert (compare(above, below) == ABOVE);
             assert (getNode(below)->states.find(below) != getNode(below)->states.end());
             assert (getNode(above)->states.find(above) != getNode(above)->states.end());
 
@@ -181,7 +205,7 @@ namespace storm {
                 nodes[state] = node;
                 numberOfAddedStates++;
                 if (numberOfAddedStates == numberOfStates) {
-                    doneBuilding = doneStates.full();
+                    doneBuilding = sufficientForState.full();
                 }
                 assert (numberOfAddedStates <= numberOfStates);
 
@@ -216,8 +240,8 @@ namespace storm {
                     }
                 }
             }
-            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                for (uint_fast64_t j= i + 1; j < numberOfStates; ++j) {
+            for (uint64_t i = 0; i < numberOfStates; ++i) {
+                for (uint64_t j= i + 1; j < numberOfStates; ++j) {
                     auto comp1 = compare(i,j);
                     auto comp2 = compare(j,i);
                     if (!((comp1 == BELOW && comp2 == ABOVE ) ||
@@ -233,8 +257,8 @@ namespace storm {
             return !invalid;
         }
 
-        bool Order::merge(uint_fast64_t var1, uint_fast64_t var2) {
-            return mergeNodes(getNode(var1), getNode(var2));
+        bool Order::merge(uint_fast64_t state1, uint_fast64_t state2) {
+            return mergeNodes(getNode(state1), getNode(state2));
         }
 
         /*** Checking on the order ***/
@@ -261,9 +285,9 @@ namespace storm {
                 if ((hypothesis == UNKNOWN || hypothesis == BELOW) && ((node2 == top || node1 == bottom) || aboveFast(node2, node1))) {
                     return BELOW;
                 }
-            }  else if (node1 == top || node2 == bottom) {
+            }  else if ((top != nullptr && node1 == top) || node2 == bottom) {
                 return ABOVE;
-            } else if (node2 == top || node1 == bottom) {
+            } else if ((top != nullptr && node1 == top) || node1 == bottom) {
                 return BELOW;
             }
             return UNKNOWN;
@@ -283,9 +307,9 @@ namespace storm {
                 if ((hypothesis == UNKNOWN || hypothesis == BELOW) && above(node2, node1)) {
                     return BELOW;
                 }
-            } else if (node1 == top || node2 == bottom) {
+            } else if ((top != nullptr && node1 == top) || node2 == bottom) {
                 return ABOVE;
-            } else if (node2 == top || node1 == bottom) {
+            } else if ((top != nullptr && node2 == top) || node1 == bottom) {
                 return BELOW;
             }
             return UNKNOWN;
@@ -300,12 +324,12 @@ namespace storm {
         }
 
         bool Order::getDoneBuilding() const {
-            assert (!doneStates.full() || numberOfAddedStates == numberOfStates);
-            return doneStates.full();
+            // assert (!sufficientForState.full() || numberOfAddedStates == numberOfStates);
+            return sufficientForState.full();
         }
 
-        uint_fast64_t Order::getNextDoneState(uint_fast64_t state) const {
-            return doneStates.getNextSetIndex(state + 1);
+        uint_fast64_t Order::getNextSufficientState(uint_fast64_t state) const {
+            return sufficientForState.getNextSetIndex(state + 1);
         }
 
         Order::Node *Order::getNode(uint_fast64_t stateNumber) const {
@@ -341,19 +365,22 @@ namespace storm {
         }
 
         bool Order::isTopState(uint_fast64_t state) const {
+            if(top == nullptr) {
+                return false;
+            }
             auto states = top->states;
             return states.find(state) != states.end();
         }
 
-        bool Order::isOnlyBottomTopOrder() const {
-            return onlyBottomTopOrder;
+        bool Order::isOnlyInitialOrder() const {
+            return onlyInitialOrder;
         }
 
         std::vector<uint_fast64_t> Order::sortStates(std::vector<uint_fast64_t> const& states) {
             uint_fast64_t numberOfStatesToSort = states.size();
             std::vector<uint_fast64_t> result;
             // Go over all states
-            for (auto & state : states) {
+            for (auto state : states) {
                 bool unknown = false;
                 if (result.size() == 0) {
                     result.push_back(state);
@@ -384,6 +411,40 @@ namespace storm {
             }
             assert (result.size() == numberOfStatesToSort);
             return result;
+        }
+
+        std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(std::vector<uint_fast64_t> const& states) {
+            uint_fast64_t numberOfStatesToSort = states.size();
+            std::vector<uint_fast64_t> result;
+            // Go over all states
+            for (auto state : states) {
+                bool unknown = false;
+                if (result.size() == 0) {
+                    result.push_back(state);
+                } else {
+                    bool added = false;
+                    for (auto itr = result.begin();  itr != result.end(); ++itr) {
+                        auto compareRes = compare(state, (*itr));
+                        if (compareRes == ABOVE || compareRes == SAME) {
+                            // insert at current pointer (while keeping other values)
+                            result.insert(itr, state);
+                            added = true;
+                            break;
+                        } else if (compareRes == UNKNOWN) {
+                            return {{(*itr), state}, std::move(result)};
+                        }
+                    }
+                    if (unknown) {
+                        break;
+                    }
+                    if (!added) {
+                        result.push_back(state);
+                    }
+                }
+            }
+
+            assert (result.size() == numberOfStatesToSort);
+            return {{numberOfStates, numberOfStates}, std::move(result)};
         }
 
         /*
@@ -439,39 +500,6 @@ namespace storm {
         }
         */
 
-        std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(std::vector<uint_fast64_t> const& states) {
-            uint_fast64_t numberOfStatesToSort = states.size();
-            std::vector<uint_fast64_t> result;
-            // Go over all states
-            for (auto state : states) {
-                bool unknown = false;
-                if (result.size() == 0) {
-                    result.push_back(state);
-                } else {
-                    bool added = false;
-                    for (auto itr = result.begin();  itr != result.end(); ++itr) {
-                        auto compareRes = compare(state, (*itr));
-                        if (compareRes == ABOVE || compareRes == SAME) {
-                            // insert at current pointer (while keeping other values)
-                            result.insert(itr, state);
-                            added = true;
-                            break;
-                        } else if (compareRes == UNKNOWN) {
-                            return {{(*itr), state}, std::move(result)};
-                        }
-                    }
-                    if (unknown) {
-                        break;
-                    }
-                    if (!added) {
-                        result.push_back(state);
-                    }
-                }
-            }
-
-            assert (result.size() == numberOfStatesToSort);
-            return {{numberOfStates, numberOfStates}, std::move(result)};
-        }
 
         std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) {
             uint_fast64_t numberOfStatesToSort = states->getNumberOfSetBits();
@@ -503,8 +531,10 @@ namespace storm {
                     }
                 }
             }
+            auto i = 0;
             while (result.size() < numberOfStatesToSort) {
                 result.push_back(numberOfStates);
+                ++i;
             }
             assert (result.size() == numberOfStatesToSort);
             return result;
@@ -516,32 +546,35 @@ namespace storm {
             assert (!isInvalid());
             std::shared_ptr<Order> copiedOrder = std::make_shared<Order>();
             copiedOrder->nodes = std::vector<Node *>(numberOfStates, nullptr);
-            copiedOrder->onlyBottomTopOrder = this->isOnlyBottomTopOrder();
+            copiedOrder->onlyInitialOrder = this->isOnlyInitialOrder();
             copiedOrder->numberOfStates = this->getNumberOfStates();
             copiedOrder->statesSorted = std::vector<uint_fast64_t>(this->statesSorted);
             copiedOrder->statesToHandle = std::vector<uint_fast64_t>(this->statesToHandle);
             copiedOrder->trivialStates = storm::storage::BitVector(trivialStates);
-            copiedOrder->doneStates = storm::storage::BitVector(doneStates);
+            copiedOrder->sufficientForState = storm::storage::BitVector(sufficientForState);
             copiedOrder->numberOfAddedStates = this->numberOfAddedStates;
             copiedOrder->doneBuilding = this->doneBuilding;
 
             auto seenStates = storm::storage::BitVector(numberOfStates, false);
             //copy nodes
-            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+            if (this->top == nullptr) {
+                copiedOrder->top = nullptr;
+            }
+            for (uint64_t state = 0; state < numberOfStates; ++state) {
                 Node *oldNode = nodes.at(state);
                 if (oldNode != nullptr) {
                     if (!seenStates[*(oldNode->states.begin())]) {
                         Node *newNode = new Node();
-                        if (oldNode == this->getTop()) {
+                        if (oldNode == this->top) {
                             copiedOrder->top = newNode;
-                        } else if (oldNode == this->getBottom()) {
+                        } else if (oldNode == this->bottom) {
                             copiedOrder->bottom = newNode;
                         }
                         newNode->statesAbove = storm::storage::BitVector(oldNode->statesAbove);
-                        for (size_t i = 0; i < oldNode->statesAbove.size(); ++i) {
+                        for (uint64_t i = 0; i < oldNode->statesAbove.size(); ++i) {
                             assert (newNode->statesAbove[i] == oldNode->statesAbove[i]);
                         }
-                        for (auto const &i : oldNode->states) {
+                        for (uint64_t const &i : oldNode->states) {
                             assert (!seenStates[i]);
                             newNode->states.insert(i);
                             seenStates.set(i);
@@ -557,18 +590,20 @@ namespace storm {
         }
 
         /*** Setters ***/
-        void Order::setDoneState(uint_fast64_t stateNumber) {
-            doneStates.set(stateNumber);
+        void Order::setSufficientForState(uint_fast64_t stateNumber) {
+            sufficientForState.set(stateNumber);
         }
 
         /*** Output ***/
+
+
         void Order::toDotOutput() const {
             // Graphviz Output start
             STORM_PRINT("Dot Output:" << std::endl << "digraph model {" << std::endl);
 
             // Vertices of the digraph
-            storm::storage::BitVector stateCoverage = storm::storage::BitVector(doneStates);
-            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
+            storm::storage::BitVector stateCoverage = storm::storage::BitVector(sufficientForState);
+            for (auto i = 0; i < numberOfStates; ++i) {
                 if (nodes[i] != nullptr) {
                     stateCoverage.set(i);
                 }
@@ -656,8 +691,8 @@ namespace storm {
             this->numberOfStates = numberOfStates;
             this->invalid = false;
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
-            this->doneStates = storm::storage::BitVector(numberOfStates, false);
-            assert (doneStates.getNumberOfSetBits() == 0);
+            this->sufficientForState = storm::storage::BitVector(numberOfStates, false);
+            assert (sufficientForState.getNumberOfSetBits() == 0);
             if (decomposition.size() == 0) {
                 this->trivialStates = storm::storage::BitVector(numberOfStates, true);
             } else {
@@ -731,7 +766,7 @@ namespace storm {
         }
 
         std::string Order::nodeLabel(Node n) const {
-            if (n.states == top->states) return "=)";
+            if (top != nullptr && n.states == top->states) return "=)";
             if (n.states == bottom->states) return "=(";
             auto itr = n.states.begin();
             std::string label = "s" + std::to_string(*itr);
@@ -741,7 +776,7 @@ namespace storm {
         }
 
         bool Order::existsNextState() {
-            return !doneStates.full();
+            return !sufficientForState.full();
         }
 
         bool Order::isTrivial(uint_fast64_t state) {
@@ -752,7 +787,7 @@ namespace storm {
             while (!statesSorted.empty()) {
                 auto state = statesSorted.back();
                 statesSorted.pop_back();
-                if (!doneStates[state]) {
+                if (!(sufficientForState[state] && contains(state))) {
                     return {state, true};
                 }
             }
@@ -767,14 +802,14 @@ namespace storm {
         }
 
         bool Order::existsStateToHandle() {
-            while (!statesToHandle.empty() && doneStates[statesToHandle.back()]) {
+            while (!statesToHandle.empty() && sufficientForState[statesToHandle.back()]) {
                 statesToHandle.pop_back();
             }
             return !statesToHandle.empty();
         }
 
         void Order::addStateToHandle(uint_fast64_t state) {
-            if (!doneStates[state]) {
+            if (!sufficientForState[state]) {
                 statesToHandle.push_back(state);
             }
         }
@@ -794,8 +829,8 @@ namespace storm {
             return {allAbove, allBelow};
         }
 
-        uint_fast64_t Order::getNumberOfDoneStates() const {
-            return doneStates.getNumberOfSetBits();
+        uint_fast64_t Order::getNumberOfSufficientStates() const {
+            return sufficientForState.getNumberOfSetBits();
         }
 
         bool Order::isInvalid() const {
@@ -819,6 +854,5 @@ namespace storm {
             if (mdpScheduler == boost::none) return false;
             return mdpScheduler.get()[state] != std::numeric_limits<uint64_t>::max();
         }
-
     }
 }

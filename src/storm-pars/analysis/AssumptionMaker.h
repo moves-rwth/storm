@@ -14,13 +14,13 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         class AssumptionMaker {
             typedef std::shared_ptr<expressions::BinaryRelationExpression> AssumptionType;
-        public:
+           public:
             /*!
              * Constructs AssumptionMaker based on the matrix of the model.
              *
              * @param matrix The matrix of the model.
              */
-            AssumptionMaker(storage::SparseMatrix<ValueType> matrix);
+            AssumptionMaker(storage::SparseMatrix<ValueType> matrix, std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel = nullptr);
 
             /*!
              * Creates assumptions, and checks them, only VALID and UNKNOWN assumptions are returned.
@@ -53,7 +53,7 @@ namespace storm {
              */
             void setSampleValues(std::vector<std::vector<ConstantType>>const & samples);
 
-        private:
+           private:
             std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
 
             AssumptionChecker<ValueType, ConstantType> assumptionChecker;

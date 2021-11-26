@@ -36,16 +36,16 @@ namespace storm {
                     STORM_LOG_ASSERT (order->contains(successors[0]), "Expecting order to contain successor of state " << currentState);
                     this->handleOneSuccessor(order, currentState, successors[0]);
                 } else if (!successors.empty()) {
-                    if (order->isOnlyBottomTopOrder()) {
+                    if (order->isOnlyInitialOrder()) {
                         order->add(currentState);
                         if (!order->isTrivial(currentState)) {
                             // This state is part of an scc, therefore, we could do forward reasoning here
-                            result = this->extendByForwardReasoning(order, currentState);
+                            result = this->extendByForwardReasoning(order, region, currentState);
                         } else {
                             result = {this->numberOfStates, this->numberOfStates};
                         }
                     } else {
-                        result = this->extendNormal(order, currentState);
+                        result = this->extendNormal(order, region, currentState);
                     }
                 }
 
@@ -57,7 +57,7 @@ namespace storm {
 
                     if (monRes != nullptr) {
                         for (auto& param : this->occuringVariablesAtState[currentState]) {
-                            this->checkParOnStateMonRes(currentState, order, param, monRes);
+                            this->checkParOnStateMonRes(currentState, order, param, region, monRes);
                         }
                     }
                     // Get the next state
@@ -66,7 +66,7 @@ namespace storm {
                     STORM_LOG_ASSERT (result.first < this->numberOfStates && result.second < this->numberOfStates, "Expecting both result numbers to correspond to states");
                     STORM_LOG_ASSERT (order->compare(result.first, result.second) == Order::UNKNOWN && order->compare(result.second, result.first) == Order::UNKNOWN, "Expecting relation between the two states to be unknown");
                     // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
-                    if (currentStateMode.second && this->extendWithAssumption(order, result.first, result.second)) {
+                    if (currentStateMode.second && this->extendWithAssumption(order, region, result.first, result.second)) {
                         continue;
                     }
                     // We couldn't extend the order
@@ -152,7 +152,7 @@ namespace storm {
                     }
                     if (all) {
                         STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
-                        order->setDoneState(state);
+                        order->setSufficientForState(state);
                     }
                     ++itr;
                 }

@@ -1,4 +1,3 @@
-#include <storm/solver/Z3SmtSolver.h>
 #include "AssumptionChecker.h"
 
 #include "storm-pars/utility/ModelInstantiator.h"
@@ -11,13 +10,17 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableExpression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
+#include "storm/solver/Z3SmtSolver.h"
 #include "storm/utility/solver.h"
 
 namespace storm {
     namespace analysis {
         template <typename ValueType, typename ConstantType>
-        AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(storage::SparseMatrix<ValueType> matrix){
+        AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(storage::SparseMatrix<ValueType> matrix, std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel){
             this->matrix = matrix;
+            if (rewardModel != nullptr) {
+                this->rewardModel = rewardModel;
+            }
             useSamples = false;
         }
 
@@ -34,7 +37,7 @@ namespace storm {
                     auto lb = region.getLowerBoundary(var.name());
                     auto ub = region.getUpperBoundary(var.name());
                     // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
-                    auto val = std::pair<VariableType, CoefficientType>(var, (lb + utility::convertNumber<CoefficientType>(i / (numberOfSamples - 1)) * (ub - lb)));
+                    auto val = std::pair<VariableType, CoefficientType>(var, (lb + utility::convertNumber<CoefficientType>(i) * (ub - lb)) / utility::convertNumber<CoefficientType>(numberOfSamples - 1));
                     valuation.insert(val);
                 }
                 models::sparse::Dtmc<ConstantType> sampleModel = instantiator.instantiate(valuation);
@@ -43,12 +46,12 @@ namespace storm {
                 if (formula->isProbabilityOperatorFormula() &&
                     formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
                     const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::UntilFormula, ConstantType>(
-                            (*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
+                        (*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
                     checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
                 } else if (formula->isProbabilityOperatorFormula() &&
                            formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
                     const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>(
-                            (*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
+                        (*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
                     checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
                 } else {
                     STORM_LOG_THROW(false, exceptions::NotSupportedException,
@@ -109,9 +112,9 @@ namespace storm {
                 assumption->gatherVariables(vars);
 
                 STORM_LOG_THROW(assumption->getRelationType() ==
-                                expressions::BinaryRelationExpression::RelationType::Greater ||
-                                assumption->getRelationType() ==
-                                expressions::BinaryRelationExpression::RelationType::Equal,
+                                        expressions::BinaryRelationExpression::RelationType::Greater ||
+                                    assumption->getRelationType() ==
+                                        expressions::BinaryRelationExpression::RelationType::Equal,
                                 exceptions::NotSupportedException,
                                 "Only Greater Or Equal assumptions supported");
                 result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
@@ -229,13 +232,22 @@ namespace storm {
             if (orderKnown) {
                 solver::Z3SmtSolver s(*manager);
                 auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
-                expressions::Expression expr1 = manager->rational(0);
+                expressions::Expression expr1;
+                expressions::Expression expr2;
+                if (rewardModel != nullptr) {
+                    // We are dealing with a reward property
+                    expr1 = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(val1));
+                    expr2 = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(val2));
+                } else {
+                    // We are dealing with a probability property
+                    expr1 = manager->rational(0);
+                    expr2 = manager->rational(0);
+                }
                 for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
                     expr1 = expr1 + (valueTypeToExpression.toExpression(itr1->getValue()) *
                                      manager->getVariable("s" + std::to_string(itr1->getColumn())));
                 }
 
-                expressions::Expression expr2 = manager->rational(0);
                 for (auto itr2 = row2.begin(); itr2 != row2.end(); ++itr2) {
                     expr2 = expr2 + (valueTypeToExpression.toExpression(itr2->getValue()) *
                                      manager->getVariable("s" + std::to_string(itr2->getColumn())));
@@ -269,9 +281,13 @@ namespace storm {
                             auto val = std::stoi(test.substr(1,test.size()-1));
                             exprBounds = exprBounds && manager->rational(minValues[val]) <= var &&
                                          var <= manager->rational(maxValues[val]);
-                        } else {
+                        } else if (rewardModel == nullptr) {
+                            // Probability property
                             exprBounds = exprBounds && manager->rational(0) <= var &&
                                          var <= manager->rational(1);
+                        } else {
+                            // Reward Property
+                            exprBounds = exprBounds && manager->rational(0) <= var;
                         }
                     } else if (find(topVariables.begin(), topVariables.end(), var) != topVariables.end()) {
                         // the var is =)
@@ -304,7 +320,7 @@ namespace storm {
                     // If there is no thing satisfying the negation we are safe.
                     result = AssumptionStatus::VALID;
                 } else if (smtRes == solver::SmtSolver::CheckResult::Sat) {
-                        result = AssumptionStatus::INVALID;
+                    result = AssumptionStatus::INVALID;
                 }
             }
             return result;
@@ -312,8 +328,8 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
-                std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order,
-                storage::ParameterRegion<ValueType> region) const {
+            std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order,
+            storage::ParameterRegion<ValueType> region) const {
             auto var1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
             auto var2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
             std::vector<ConstantType> vals;

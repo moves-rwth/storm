@@ -24,7 +24,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         class AssumptionChecker {
-        public:
+           public:
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
             typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
 
@@ -33,7 +33,7 @@ namespace storm {
              *
              * @param matrix The matrix of the considered model.
              */
-            AssumptionChecker(storage::SparseMatrix<ValueType> matrix);
+            AssumptionChecker(storage::SparseMatrix<ValueType> matrix, std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel = nullptr);
 
             /*!
              * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
@@ -72,16 +72,20 @@ namespace storm {
             AssumptionStatus validateAssumption(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,  std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
             AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;
 
-        private:
+           private:
+
+            AssumptionStatus validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValue) const;
+
+            AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
+
             bool useSamples;
 
             std::vector<std::vector<ConstantType>> samples;
 
             storage::SparseMatrix<ValueType> matrix;
 
-            AssumptionStatus validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValue) const;
-
-            AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
+            // Reward model of our model, ONLY to be initialized if we are checking a reward property
+            std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel;
         };
     }
 }

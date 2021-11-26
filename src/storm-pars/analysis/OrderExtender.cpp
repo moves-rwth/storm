@@ -24,7 +24,6 @@ namespace storm {
             this->matrix = model->getTransitionMatrix();
             this->numberOfStates = this->model->getNumberOfStates();
             this->formula = formula;
-            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
         }
 
         template <typename ValueType, typename ConstantType>
@@ -55,13 +54,12 @@ namespace storm {
 
             auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
             this->initialOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
-            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
             buildStateMap();
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
-            auto mon = monotonicityChecker.checkLocalMonotonicity(order, s, param, this->region);
+        void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
+            auto mon = monotonicityChecker.checkLocalMonotonicity(order, s, param, region);
             monResult->updateMonotonicityResult(param, mon);
         }
 
@@ -111,10 +109,10 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        bool OrderExtender<ValueType, ConstantType>::extendWithAssumption(std::shared_ptr<Order> order, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
+        bool OrderExtender<ValueType, ConstantType>::extendWithAssumption(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
             bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
             assert (order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
-            auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, this->region, this->minValues[order], this->maxValues[order]) : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, this->region);
+            auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, this->minValues[order], this->maxValues[order]) : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
             if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
                 this->handleAssumption(order, assumptions.begin()->first);
                 // Assumptions worked, we continue
@@ -124,15 +122,15 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState)  {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState)  {
             // when it is cyclic and the current state is part of an SCC we do forwardreasoning
             if (this->cyclic && !order->isTrivial(currentState) && order->contains(currentState)) {
                 // Try to extend the order for this scc
-                return  extendByForwardReasoning(order, currentState);
+                return  extendByForwardReasoning(order, region, currentState);
             } else {
                 assert (order->isTrivial(currentState) || !order->contains(currentState));
                 // Do backward reasoning, all successor states must be in the order
-                return  extendByBackwardReasoning(order, currentState);
+                return  extendByBackwardReasoning(order, region, currentState);
             }
         }
 
@@ -253,7 +251,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::setMinMaxValues(boost::optional<std::vector<ConstantType>> &minValues, boost::optional<std::vector<ConstantType>> &maxValues, std::shared_ptr<Order> order) {
+        void OrderExtender<ValueType, ConstantType>::setMinMaxValues(boost::optional<std::vector<ConstantType>&> minValues, boost::optional<std::vector<ConstantType>&> maxValues, std::shared_ptr<Order> order) {
             STORM_LOG_ASSERT(!minValues || minValues.get().size() == numberOfStates, "Expecting min values to not be initialized, or to have the size of the number of states");
             STORM_LOG_ASSERT(!maxValues || maxValues.get().size() == numberOfStates, "Expecting max values to not be initialized, or to have the size of the number of states");
             STORM_LOG_ASSERT(minValues || maxValues, "Expecting either min or max values to be initialized");
@@ -314,7 +312,7 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, bool> OrderExtender<ValueType, ConstantType>::getNextState(std::shared_ptr<Order> order, uint_fast64_t currentState, bool done) {
             if (done && currentState != numberOfStates) {
-                order->setDoneState(currentState);
+                order->setSufficientForState(currentState);
             }
             if (cyclic && order->existsStateToHandle()) {
                 return order->getStateToHandle();

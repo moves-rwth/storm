@@ -3,7 +3,7 @@
 namespace storm {
     namespace analysis {
         template<typename ValueType, typename ConstantType>
-        AssumptionMaker<ValueType, ConstantType>::AssumptionMaker(storage::SparseMatrix<ValueType> matrix) : assumptionChecker(matrix){
+        AssumptionMaker<ValueType, ConstantType>::AssumptionMaker(storage::SparseMatrix<ValueType> matrix, std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel) : assumptionChecker(matrix, rewardModel){
             numberOfStates = matrix.getColumnCount();
             expressionManager = std::make_shared<expressions::ExpressionManager>(expressions::ExpressionManager());
             for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
@@ -28,7 +28,7 @@ namespace storm {
                 result.insert(assumption);
                 if (assumption.second == AssumptionStatus::VALID) {
                     assert (createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues).second != AssumptionStatus::VALID
-                            && createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues).second != AssumptionStatus::VALID);
+                           && createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues).second != AssumptionStatus::VALID);
                     STORM_LOG_INFO("Assumption " << assumption.first << "is valid" << std::endl);
                     return result;
                 }
@@ -45,7 +45,7 @@ namespace storm {
                 }
                 result.insert(assumption);
             }
-                assert (order->compare(val1, val2) == Order::UNKNOWN);
+            assert (order->compare(val1, val2) == Order::UNKNOWN);
             assumption = createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues);
             if (assumption.second != AssumptionStatus::INVALID) {
                 if (assumption.second == AssumptionStatus::VALID) {
@@ -56,7 +56,7 @@ namespace storm {
                 }
                 result.insert(assumption);
             }
-                assert (order->compare(val1, val2) == Order::UNKNOWN);
+            assert (order->compare(val1, val2) == Order::UNKNOWN);
             STORM_LOG_INFO("None of the assumptions is valid, number of possible assumptions:  " << result.size() << std::endl);
             return result;
         }

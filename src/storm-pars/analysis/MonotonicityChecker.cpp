@@ -38,7 +38,7 @@ namespace storm {
             if (ignore) {
                 return Monotonicity::Constant;
             }
-            auto succsSorted = order->sortStates(&succs);
+            auto succsSorted = order->sortStates(succs);
 
             uint_fast64_t succSize = succs.size();
             if (succsSorted[succSize - 1] == matrix.getColumnCount()) {

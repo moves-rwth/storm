@@ -29,6 +29,7 @@ namespace storm {
              */
             RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula);
 
+            // TODO: @Jip do we want topstates here, it should be empty?
             /*!
              * Constructs a new RewardOrderExtender.
              *
@@ -51,29 +52,15 @@ namespace storm {
             StateComparison compareStateWithSuccSmt(uint_fast64_t state, uint_fast64_t succ, std::shared_ptr<Order> order, StateComparison hypothesis = UNKNOWN);
 
 
-            // Moved to public for testing
 
-            /*!
-             * Attempts to add a state to a reward order via Backward Reasoning
-             *
-             * @param order The considered reward order
-             * @param currentState The current state to be added to the reward order
-             * @param successors The state's successors (not necessarily ordered)
-             * @param allowMerge Boolean to allow merging of states when assumptions are used
-             * @return A pair of unorderable states. If no such states exist, the pair is <numberOfStates, numberOfStates>
-             */
-            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order,storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
-
-            /*!
-             * (If necessary, creates and) returns the initial order
-             *
-             * @return A pointer to the initial order
-             */
+            // Override methods from OrderExtender
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
             std::shared_ptr<Order> getInitialOrder() override;
 
            private:
-            // Not implemented yet but here so that this class is not abstract. Document when implemented!
+            //TODO Not implemented yet but here so that this class is not abstract. Document when implemented!
             std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
+            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order,storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
 
             /*!
              * Inserts a state into an order which has only one successor

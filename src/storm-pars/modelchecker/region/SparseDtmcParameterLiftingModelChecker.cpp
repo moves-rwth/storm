@@ -126,8 +126,7 @@ namespace storm {
             // For monotonicity checking
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
             // TODO change to this, results in an "undefined reference" error atm
-            this->orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
-            // this->orderExtender = storm::analysis::OrderExtender<ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+            this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType,ConstantType>>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -163,7 +162,7 @@ namespace storm {
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
 
-            this->orderExtender =  storm::analysis::ReachabilityOrderExtenderDtmc<ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+            this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType,ConstantType>>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -546,7 +545,7 @@ namespace storm {
                 auto res = this->orderExtender->extendOrder(order, region);
                 order = std::get<0>(res);
                 if (std::get<1>(res) != order->getNumberOfStates()) {
-                    this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
+                    this->orderExtender->setUnknownStates(order, std::get<1>(res), std::get<2>(res));
                 }
             } else {
                 STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
@@ -564,7 +563,7 @@ namespace storm {
                     localMonotonicityResult->setMonotoneDecreasing(var);
                 }
             }
-            auto state = order->getNextDoneState(-1);
+            auto state = order->getNextSufficientState(-1);
             auto const variablesAtState = parameterLifter->getOccurringVariablesAtState();
             while (state != order->getNumberOfStates()) {
                 if (localMonotonicityResult->getMonotonicity(state) == nullptr) {
@@ -587,7 +586,7 @@ namespace storm {
                 } else {
                     // Do nothing, we already checked this one
                 }
-                state = order->getNextDoneState(state);
+                state = order->getNextSufficientState(state);
             }
             auto const statesAtVariable = parameterLifter->getOccuringStatesAtVariable();
             bool allDone = true;

@@ -371,9 +371,9 @@ namespace storm {
                                     boundsWatch.start();
                                     numberOfPLACallsBounds++;
                                     if (minimize) {
-                                        orderExtender->setMinMaxValues(order, bounds, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                                        orderExtender->setMinMaxValues(bounds, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), order);
                                     } else {
-                                        orderExtender->setMinMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), bounds);
+                                        orderExtender->setMinMaxValues(getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), bounds, order);
                                     }
                                     boundsWatch.stop();
                                 }
@@ -495,7 +495,7 @@ namespace storm {
         template<typename SparseModelType, typename ConstantType>
         std::shared_ptr<storm::analysis::Order> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::copyOrder(std::shared_ptr<storm::analysis::Order> order) {
             auto res = order->copy();
-            if (orderExtender) {
+            if (orderExtender != nullptr) {
                 orderExtender->copyUnknownStates(order, res);
                 orderExtender->copyMinMax(order, res);
             }

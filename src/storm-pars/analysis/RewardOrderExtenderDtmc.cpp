@@ -7,29 +7,28 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
     RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
             this->rewardModel = this->model->getUniqueRewardModel();
-            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
+            this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
         }
 
         template<typename ValueType, typename ConstantType>
         RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->rewardModel = this->model->getUniqueRewardModel();
-            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
+            this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
+        std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
             bool addedSomething = false;
             // We sort the states, this also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
-            auto sortedSuccStates = this->sortStatesUnorderedPair(&successors, order);
-            for (auto& succ: successors) {
+            auto& successors = this->getSuccessors(currentState);
+            auto sortedSuccStates = order->sortStatesUnorderedPair(successors);
+            for (uint_fast64_t succ: successors) {
                 STORM_LOG_ASSERT(order->contains(succ), "Expecting order to contain all successors, otherwise backwards reasoning is not possible");
-                auto compare = this->compareStatesBasedOnMinMax(order, currentState, succ);
-                if (compare == Order::NodeComparison::ABOVE) {
-                    order->addAbove(currentState, order->getNode(succ));
+                auto addRes = this->addStatesBasedOnMinMax(order, currentState, succ);
+                if (addRes == Order::NodeComparison::ABOVE) {
                     addedSomething = true;
-                } else if (compare == Order::NodeComparison::SAME) {
+                } else if (addRes == Order::NodeComparison::SAME) {
                     addedSomething = true;
-                    order->addToNode(currentState, order->getNode(succ));
                     STORM_LOG_ASSERT (sortedSuccStates.first.first == this->numberOfStates, "Expecting all successor states to be sorted (even to be at the same node)");
                     break;
                 }
@@ -79,34 +78,7 @@ namespace storm {
 
                 // Create Order
                 this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
-
-                // Build stateMap
-                for (uint_fast64_t state = 0; state < this->numberOfStates; ++state) {
-                    auto const& row = matrix.getRow(state);
-                    this->stateMap[state] = std::vector<uint_fast64_t>();
-                    std::set<VariableType> occurringVariables;
-
-                    for (auto& entry : matrix.getRow(state)) {
-
-                        // ignore self-loops when there are more transitions
-                        if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                            //                            if (!subStates[entry.getColumn()] && !initialOrder->contains(state)) {
-                            //                                initialOrder->add(state);
-                            //                            }
-                            this->stateMap[state].push_back(entry.getColumn());
-                        }
-                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
-
-                    }
-                    if (occurringVariables.empty()) {
-                        this->nonParametricStates.insert(state);
-                    }
-
-                    for (auto& var : occurringVariables) {
-                        this->occuringStatesAtVariable[var].push_back(state);
-                    }
-                    this->occuringVariablesAtState.push_back(std::move(occurringVariables));
-                }
+                this->buildStateMap();
 
             }
 
@@ -119,9 +91,81 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
+        std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
             STORM_LOG_THROW(false, exceptions::NotImplementedException, "The function is not (yet) implemented in this class");
         }
+
+        template <typename ValueType, typename ConstantType>
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+            if (order == nullptr) {
+                order = getInitialOrder();
+                if (this->usePLA[order]) {
+                    auto &min = this->minValues[order];
+                    auto &max = this->maxValues[order];
+                    // Try to make the order as complete as possible based on pla results
+                    auto &statesSorted = order->getStatesSorted();
+                    auto itr = statesSorted.begin();
+                    while (itr != statesSorted.end()) {
+                        auto state = *itr;
+                        auto const &successors = this->getSuccessors(state);
+                        bool all = true;
+                        for (uint_fast64_t i = 0; i < successors.size(); ++i) {
+                            auto state1 = successors[i];
+                            for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
+                                auto state2 = successors[j];
+                                if (min[state1] > max[state2]) {
+                                    if (!order->contains(state1)) {
+                                        order->add(state1);
+                                    }
+                                    if (!order->contains(state2)) {
+                                        order->add(state2);
+                                    }
+                                    order->addRelation(state1, state2, false);
+                                } else if (min[state2] > max[state1]) {
+                                    if (!order->contains(state1)) {
+                                        order->add(state1);
+                                    }
+                                    if (!order->contains(state2)) {
+                                        order->add(state2);
+                                    }
+                                    order->addRelation(state2, state1, false);
+                                } else if (min[state1] == max[state2] && max[state1] == min[state2]) {
+                                    if (!order->contains(state1) && !order->contains(state2)) {
+                                        order->add(state1);
+                                        order->addToNode(state2, order->getNode(state1));
+                                    } else if (!order->contains(state1)) {
+                                        order->addToNode(state1, order->getNode(state2));
+                                    } else if (!order->contains(state2)) {
+                                        order->addToNode(state2, order->getNode(state1));
+                                    } else {
+                                        order->merge(state1, state2);
+                                        assert (!order->isInvalid());
+                                    }
+                                } else {
+                                    all = false;
+                                }
+                            }
+                        }
+                        if (all) {
+                            STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
+                            order->setSufficientForState(state);
+                        }
+                        ++itr;
+                    }
+                }
+                this->continueExtending[order] = true;
+            }
+
+            if (this->continueExtending[order] || assumption != nullptr) {
+                return extendOrder(order, region, monRes, assumption);
+            } else {
+                auto& res = this->unknownStatesMap[order];
+                this->continueExtending[order] = false;
+                return {order, res.first, res.second};
+            }
+        }
+
+
 
         template<typename ValueType, typename ConstantType>
         void RewardOrderExtenderDtmc<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {

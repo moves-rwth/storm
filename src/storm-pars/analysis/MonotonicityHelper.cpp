@@ -92,7 +92,7 @@ namespace storm {
             //output of results
             for (auto itr : monResults) {
                 if (itr.first != nullptr) {
-                    std::cout << "Number of done states: " << itr.first->getNumberOfDoneStates() << std::endl;
+                    std::cout << "Number of done states: " << itr.first->getNumberOfSufficientStates() << std::endl;
                 }
                 if (checkSamples) {
                     for (auto & entry : resultCheckOnSamples.getMonotonicityResult()) {
@@ -216,7 +216,7 @@ namespace storm {
                     monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
                     for (auto& entry : occuringStatesAtVariable) {
                         for (auto & state : entry.second) {
-                            extender->checkParOnStateMonRes(state, order, entry.first, monRes);
+                            extender->checkParOnStateMonRes(state, order, entry.first, region, monRes);
                             if (monRes->getMonotonicity(entry.first) == Monotonicity::Unknown) {
                                 break;
                             }

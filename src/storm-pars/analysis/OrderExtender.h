@@ -82,7 +82,7 @@ namespace storm {
              * @param maxValues Max values
              * @param order Order to which the min max values apply
              */
-            void setMinMaxValues(boost::optional<std::vector<ConstantType>> &minValues, boost::optional<std::vector<ConstantType>> &maxValues, std::shared_ptr<Order> order = nullptr);
+            void setMinMaxValues(boost::optional<std::vector<ConstantType>&> minValues, boost::optional<std::vector<ConstantType>&> maxValues, std::shared_ptr<Order> order = nullptr);
 
             /**
              * Sets the states which could not be ordered for the given order.
@@ -138,17 +138,26 @@ namespace storm {
              */
             std::vector<uint_fast64_t> const& getSuccessors(uint_fast64_t state, uint_fast64_t choice = 0);
 
+
+            /**
+             * Checks for local monotonicity at state for variable param in the given order. It updates the given monotonicity result.
+             * @param state State for which monotonicity has to be checked.
+             * @param order The ordering of states.
+             * @param param Variable for which monotonicity has to be checked.
+             * @param region Region at which the monotonicity has to be checked.
+             * @param monResult The monotonicity result to update the monotonicity in.
+             */
+            void checkParOnStateMonRes(uint_fast64_t state, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
+
         protected:
             virtual std::shared_ptr<Order> getInitialOrder() = 0;
             void buildStateMap();
 
-            // Monotonicity Checking
-            void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
             // Order extension
             Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
-            bool extendWithAssumption(std::shared_ptr<Order> order, uint_fast64_t succState2, uint_fast64_t succState1);
-            std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState);
+            bool extendWithAssumption(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t succState2, uint_fast64_t succState1);
+            std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState);
             virtual std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) = 0;
             virtual std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) = 0;
             virtual void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) = 0;
@@ -179,11 +188,13 @@ namespace storm {
             std::map<uint_fast64_t, std::vector<std::vector<uint_fast64_t>>> stateMap;
             boost::container::flat_set<uint_fast64_t> nonParametricStates;
 
+            // To make assumptions
+            AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
+
 
 
         private:
             MonotonicityChecker<ValueType> monotonicityChecker;
-            AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
         };
     }
 }
