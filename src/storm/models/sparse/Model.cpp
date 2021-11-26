@@ -615,7 +615,11 @@ namespace storm {
             std::unordered_map<std::string, RewardModelType> const& Model<ValueType, RewardModelType>::getRewardModels() const {
                 return this->rewardModels;
             }
-            
+            template<class CValueType, class CRewardModelType>
+            void Model<CValueType, CRewardModelType>::removeIncomingTransitions(storm::storage::sparse::state_type state) {
+                this->getTransitionMatrix().removeIncomingTransitions(state);
+            }
+
 #ifdef STORM_HAVE_CARL
             std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());

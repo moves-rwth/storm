@@ -130,6 +130,12 @@ namespace storm {
                  */
                 storm::storage::SparseMatrix<ValueType>& getTransitionMatrix();
 
+                /*!
+                 * Removes all incoming transitions to a state.
+                 *
+                 * @param state Index of the state of  which all incoming transitions should be removed.
+                 */
+                 void removeIncomingTransitions(storm::storage::sparse::state_type state);
                 
                 /*!
                  * Retrieves the reward models.

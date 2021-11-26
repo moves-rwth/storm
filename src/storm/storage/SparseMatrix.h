@@ -242,7 +242,7 @@ namespace storm {
              * @param offset Offset to add to each id in vector index.
              */
             void replaceColumns(std::vector<index_type> const& replacements, index_type offset);
-            
+
             /*!
              * Makes sure that a diagonal entry will be inserted at the given row.
              * All other entries of this row must be set immediately after calling this (without setting values at other rows in between)
@@ -251,7 +251,7 @@ namespace storm {
              * If addNextValue is called on the given row and the diagonal column, we take the sum of the two values provided to addDiagonalEntry and addNextValue
              */
             void addDiagonalEntry(index_type row, ValueType const& value);
-            
+
         private:
             // A flag indicating whether a row count was set upon construction.
             bool initialRowCountSet;
@@ -1163,7 +1163,43 @@ namespace storm {
 
 				return SparseMatrix<NewValueType>(columnCount, std::move(newRowIndications), std::move(newColumnsAndValues), std::move(newRowGroupIndices));
 			}
-            
+
+            /*!
+             * Remove all incoming transitions to this state.
+             *
+             * @param state Index of the state
+             */
+            void removeIncomingTransitions(index_type state) {
+                typename storm::storage::SparseMatrix<ValueType>::index_type endGroups;
+                typename storm::storage::SparseMatrix<ValueType>::index_type endRows;
+
+                // Iterate over all row groups.
+                for (typename storm::storage::SparseMatrix<ValueType>::index_type group = 0; group < rowGroupIndices->size(); ++group) {
+                    //std::cout << "\t---- group " << group << "/" << (rowGroupIndices->size() - 1) << " ---- " << std::endl;
+                    auto trueRowGroupIndices = rowGroupIndices.get();
+                    endGroups = group < rowGroupIndices->size()-1 ? trueRowGroupIndices[group+1] : rowIndications.size();
+                    // Iterate over all rows in a row group
+                    for (typename storm::storage::SparseMatrix<ValueType>::index_type i = trueRowGroupIndices[group]; i < endGroups; ++i) {
+                        endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
+                        // Print the actual row.
+                        //std::cout << "Row " << i << " (" << rowIndications[i] << " - " << endRows << ")" << ": ";
+                        bool remove = false;
+                        for (typename storm::storage::SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
+                            //std::cout << "(" << columnsAndValues[pos].getColumn() << ": " << columnsAndValues[pos].getValue() << ") ";
+                            if (columnsAndValues[pos].getColumn()==state) remove = true;
+                        }
+                        if (remove) {
+                            //std::cout << " REMOVED";
+                            for (typename storm::storage::SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
+                                columnsAndValues[pos].setValue(ValueType(0));
+                            }
+                        }
+                        //std::cout << std::endl;
+                    }
+                }
+                this->dropZeroEntries();
+            }
+
         private:
             /*!
              * Creates a submatrix of the current matrix by keeping only row groups and columns in the given row group
