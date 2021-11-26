@@ -97,6 +97,7 @@ namespace storm{
                 STORM_PRINT("conjuncts " << blubb.size() << std::endl);
             }
         }
+        acceptanceConditions.push_back(countAccept);
         if(!(productAutomaton->get_acceptance().is_cnf())){
             STORM_PRINT("Convert acceptance condition "<< productAutomaton->get_acceptance() << " into CNF..." << std::endl);
             // Transform the acceptance condition in disjunctive normal form and merge all the Fin-sets of each clause
