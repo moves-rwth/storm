@@ -50,8 +50,7 @@ namespace storm {
                 
                 for (auto const& pair : options.locationVariables) {
                     storm::jani::JaniLocationExpander expander(janiModel);
-                    expander.transform(pair.first, pair.second);
-                    janiModel = expander.getResult();
+                    janiModel = expander.transform(pair.first, pair.second).newModel;
                 }
             }
 

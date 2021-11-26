@@ -55,11 +55,11 @@ namespace storm {
                     expander.excludeLocation(automatonInfo.sinkIndex);
                 }
 
-                expander.transform(automatonName, variableName);
-                session.setModel(expander.getResult());
+                auto result = expander.transform(automatonName, variableName);
+                session.setModel(result.newModel);
 
                 if (automatonInfo.hasSink) {
-                    automatonInfo.sinkIndex = expander.excludedLocationsToNewIndices[automatonInfo.sinkIndex];
+                    automatonInfo.sinkIndex = result.newIndices.excludedLocationsToNewIndices[automatonInfo.sinkIndex];
                 }
 
                 // After executing the expander, we can now determine which new locations satisfy the property:
@@ -78,8 +78,8 @@ namespace storm {
                 if (partOfPropCount >= 3) {
                     std::map<expressions::Variable, expressions::Expression> substitutionMap;
                     expressions::Variable variable = session.getModel().getExpressionManager().getVariable(expressionVariableName);
-                    for (uint64_t i = 0; i < expander.variableDomain.size(); i++){
-                        substitutionMap[variable] = expander.variableDomain[i];
+                    for (uint64_t i = 0; i < result.newIndices.variableDomain.size(); i++){
+                        substitutionMap[variable] = result.newIndices.variableDomain[i];
                         bool satisfiesProperty = session.computeIsPartOfProp(substitutionMap);
                         if (!satisfiesProperty){
                             knownUnsatValues.emplace(i);
@@ -103,7 +103,7 @@ namespace storm {
                 uint64_t knownSatCounter = 0;
                 uint64_t oldLocationUnsatCounter = 0;
 
-                for (std::pair<uint64_t, std::map<int64_t, uint64_t>> oldLocMapping : expander.locationVariableValueMap) {
+                for (std::pair<uint64_t, std::map<int64_t, uint64_t>> oldLocMapping : result.newIndices.locationVariableValueMap) {
                     bool oldSatisfied = partOfProp[oldLocMapping.first];
                     for (std::pair<uint64_t, uint64_t> valueIndexPair : oldLocMapping.second){
                         if (oldSatisfied){

@@ -14,21 +14,18 @@ namespace storm {
 
         }
 
-        void JaniLocationExpander::transform(std::string const& automatonName, std::string const& variableName) {
+        JaniLocationExpander::ReturnType JaniLocationExpander::transform(std::string const& automatonName, std::string const& variableName) {
             STORM_LOG_THROW(original.hasAutomaton(automatonName), storm::exceptions::IllegalArgumentException, "Model has no automaton with name " << automatonName << ". ");
             STORM_LOG_THROW(original.getAutomaton(automatonName).hasVariable(variableName) || original.hasGlobalVariable(variableName), storm::exceptions::IllegalArgumentException, "Automaton " << automatonName << " has no variable with name " << variableName << ". ");
             newModel = original;
-            newModel.replaceAutomaton(newModel.getAutomatonIndex(automatonName), transformAutomaton(original.getAutomaton(automatonName), variableName, true));
+            AutomatonAndIndices newAutomaton = transformAutomaton(original.getAutomaton(automatonName), variableName, true);
+            newModel.replaceAutomaton(newModel.getAutomatonIndex(automatonName), newAutomaton.newAutomaton);
+            return {newModel, newAutomaton.newIndices};
         }
 
-
-        Model const& JaniLocationExpander::getResult() const {
-            return newModel;
-        }
-
-        Automaton JaniLocationExpander::transformAutomaton(Automaton const& automaton, std::string const& variableName, bool useTransientVariables) {
+        JaniLocationExpander::AutomatonAndIndices JaniLocationExpander::transformAutomaton(Automaton const& automaton, std::string const& variableName, bool useTransientVariables) {
             Automaton newAutomaton(automaton.getName(), automaton.getLocationExpressionVariable());
-
+            NewIndices newIndices;
             std::map<Variable const*, std::reference_wrapper<Variable const>> variableRemapping;
 
             for (auto const &localVariable : automaton.getVariables()){
@@ -68,7 +65,7 @@ namespace storm {
                 int64_t variableLowerBound = biVariable.getLowerBound().evaluateAsInt();
                 int64_t initialVariableValue = containingSet.getVariable(variableName).getInitExpression().evaluateAsInt();
                 for (int64_t i = variableLowerBound; i <= variableUpperBound; i++) {
-                    variableDomain.push_back(original.getExpressionManager().integer(i));
+                    newIndices.variableDomain.push_back(original.getExpressionManager().integer(i));
                 }
                 initialValueIndex = initialVariableValue - variableLowerBound;
 
@@ -78,8 +75,8 @@ namespace storm {
 
             } else if (isBool) {
                 auto boolVariable = containingSet.getVariable(variableName).getType().asBasicType();
-                variableDomain.push_back(original.getExpressionManager().boolean(false));
-                variableDomain.push_back(original.getExpressionManager().boolean(true));
+                newIndices.variableDomain.push_back(original.getExpressionManager().boolean(false));
+                newIndices.variableDomain.push_back(original.getExpressionManager().boolean(true));
                 bool initialValue = containingSet.getVariable(variableName).getInitExpression().evaluateAsBool();
                 if (initialValue) {
                     initialValueIndex = 1;
@@ -106,15 +103,15 @@ namespace storm {
 
                     Location newLoc(loc.getName(), OrderedAssignments());
                     uint64_t newLocationIndex = newAutomaton.addLocation(newLoc);
-                    excludedLocationsToNewIndices[origIndex] = newLocationIndex;
-                    for (int64_t i = 0; i < variableDomain.size(); i++) {
-                        locationVariableValueMap[origIndex][i] = newLocationIndex;
+                    newIndices.excludedLocationsToNewIndices[origIndex] = newLocationIndex;
+                    for (int64_t i = 0; i < newIndices.variableDomain.size(); i++) {
+                        newIndices.locationVariableValueMap[origIndex][i] = newLocationIndex;
                     }
                 }else{
-                    for (int64_t i = 0; i < variableDomain.size(); i++) {
+                    for (int64_t i = 0; i < newIndices.variableDomain.size(); i++) {
                         std::string newLocationName =
-                                loc.getName() + "_" + variableName + "_" + variableDomain[i].toString();
-                        substitutionMap[eliminatedExpressionVariable] = variableDomain[i];
+                                loc.getName() + "_" + variableName + "_" + newIndices.variableDomain[i].toString();
+                        substitutionMap[eliminatedExpressionVariable] = newIndices.variableDomain[i];
 
                         OrderedAssignments newAssignments = loc.getAssignments().clone();
                         newAssignments.substitute(substitutionMap);
@@ -122,24 +119,24 @@ namespace storm {
                         Location newLoc(newLocationName, newAssignments);
 
                         if (useTransientVariables)
-                            newLoc.addTransientAssignment(Assignment(newVariablePointer, variableDomain[i], 0));
+                            newLoc.addTransientAssignment(Assignment(newVariablePointer, newIndices.variableDomain[i], 0));
 
 
                         uint64_t newLocationIndex = newAutomaton.addLocation(newLoc);
-                        locationVariableValueMap[origIndex][i] = newLocationIndex;
+                        newIndices.locationVariableValueMap[origIndex][i] = newLocationIndex;
                     }
                 }
             }
 
             for (uint64_t const &initialLoc : automaton.getInitialLocationIndices()) {
-                newAutomaton.addInitialLocation(locationVariableValueMap[initialLoc][initialValueIndex]);
+                newAutomaton.addInitialLocation(newIndices.locationVariableValueMap[initialLoc][initialValueIndex]);
             }
 
             for (auto const &edge : automaton.getEdges()) {
-                for (auto const &newValueAndLocation : locationVariableValueMap[edge.getSourceLocationIndex()]) {
+                for (auto const &newValueAndLocation : newIndices.locationVariableValueMap[edge.getSourceLocationIndex()]) {
                     int64_t currentValueIndex = newValueAndLocation.first;
 
-                    substitutionMap[eliminatedExpressionVariable] = variableDomain[currentValueIndex];
+                    substitutionMap[eliminatedExpressionVariable] = newIndices.variableDomain[currentValueIndex];
 
                     uint64_t newSourceIndex = newValueAndLocation.second;
                     storm::expressions::Expression newGuard = substituteJaniExpression(edge.getGuard(),
@@ -166,7 +163,7 @@ namespace storm {
                                 if (isBoundedInteger) {
                                     // TODO: This index computation seems unnecessarily cumbersome
                                     newValueIndex = assignment.getAssignedExpression().evaluateAsInt() -
-                                                    variableDomain[0].evaluateAsInt();
+                                        newIndices.variableDomain[0].evaluateAsInt();
                                 } else if (isBool) {
                                     if (assignment.getAssignedExpression().evaluateAsBool()) {
                                         newValueIndex = 1;
@@ -179,7 +176,7 @@ namespace storm {
                             }
                         }
 
-                        if (newValueIndex < 0 || newValueIndex >= variableDomain.size()){
+                        if (newValueIndex < 0 || newValueIndex >= newIndices.variableDomain.size()){
                             STORM_LOG_WARN("Found edge that would lead to out-of-range location during unfolding. This edge will not be added to the unfolded model. It is possible that the edge guard is unsatisfiable, in which case this message can be ignored.");
                             isEdgeInvalid = true;
                             continue; // Abort this iteration to prevent weird behaviour below when accessing a non-existent element of locationVariableValueMap[destination.getLocationIndex()]
@@ -193,7 +190,7 @@ namespace storm {
                         TemplateEdgeDestination ted(oa);
                         templateEdge->addDestination(ted);
                         destinationLocationsAndProbabilities.emplace_back(
-                                locationVariableValueMap[destination.getLocationIndex()][newValueIndex],
+                                newIndices.locationVariableValueMap[destination.getLocationIndex()][newValueIndex],
                                 substituteJaniExpression(destination.getProbability(), substitutionMap));
                     }
 
@@ -210,7 +207,7 @@ namespace storm {
 
             newAutomaton.changeAssignmentVariables(variableRemapping);
 
-            return newAutomaton;
+            return {newAutomaton, newIndices};
         }
 
         void JaniLocationExpander::excludeLocation(uint64_t index) {
