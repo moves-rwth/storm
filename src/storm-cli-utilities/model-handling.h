@@ -394,14 +394,16 @@ namespace storm {
                 storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(storm::utility::getBuilderType(mpi.engine));
                 storm::api::simplifyJaniModel(output.model.get().asJaniModel(), output.properties, supportedFeatures);
 
-                auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+                const auto& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
                 if (buildSettings.isLocationEliminationSet()){
                     auto locationHeuristic = buildSettings.getLocationEliminationLocationHeuristic();
                     auto edgesHeuristic = buildSettings.getLocationEliminationEdgesHeuristic();
-                    auto eliminator = storm::jani::JaniLocalEliminator(output.model.get().asJaniModel(), output.properties);
-                    eliminator.scheduler.addAction(std::make_unique<storm::jani::elimination_actions::AutomaticAction>(locationHeuristic, edgesHeuristic));
-                    eliminator.eliminate();
-                    output.model->setModel(eliminator.getResult());
+                    output.model->setModel(
+                        storm::jani::JaniLocalEliminator::eliminateAutomatically(
+                            output.model.get().asJaniModel(),
+                            output.properties,
+                            locationHeuristic, edgesHeuristic)
+                        );
                 }
             }
 

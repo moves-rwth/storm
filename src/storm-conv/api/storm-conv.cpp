@@ -62,10 +62,7 @@ namespace storm {
             if (options.locationElimination) {
                 auto locationHeuristic = options.locationEliminationLocationHeuristic;
                 auto edgesHeuristic = options.locationEliminationEdgeHeuristic;
-                auto eliminator = storm::jani::JaniLocalEliminator(janiModel, properties);
-                eliminator.scheduler.addAction(std::make_unique<storm::jani::elimination_actions::AutomaticAction>(locationHeuristic, edgesHeuristic));
-                eliminator.eliminate();
-                janiModel = eliminator.getResult();
+                janiModel = storm::jani::JaniLocalEliminator::eliminateAutomatically(janiModel, properties, locationHeuristic, edgesHeuristic);
             }
             
             if (options.flatten) {

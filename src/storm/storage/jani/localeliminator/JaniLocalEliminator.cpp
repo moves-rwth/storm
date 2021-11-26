@@ -5,6 +5,7 @@
 #include <storm/solver/Z3SmtSolver.h>
 #include <exceptions/NotSupportedException.h>
 #include "FinishAction.h"
+#include "AutomaticAction.h"
 
 namespace storm {
     namespace jani {
@@ -26,8 +27,15 @@ namespace storm {
             scheduler = EliminationScheduler();
         }
 
+        Model JaniLocalEliminator::eliminateAutomatically(const Model& model, std::vector<jani::Property> properties, uint64_t locationHeuristic, uint64_t edgesHeuristic) {
+            auto eliminator = storm::jani::JaniLocalEliminator(model, properties);
+            eliminator.scheduler.addAction(std::make_unique<elimination_actions::AutomaticAction>(locationHeuristic, edgesHeuristic));
+            eliminator.eliminate();
+            return eliminator.getResult();
+        }
+
         void JaniLocalEliminator::eliminate(bool flatten, bool useTransientVariables) {
-            newModel = original; // TODO: Make copy instead?
+            newModel = original;
 
             Session session = Session(newModel, property, flatten);
 
