@@ -2,6 +2,8 @@
 
 #include "JaniLocalEliminator.h"
 
+// When a FinishAction is executed, it stops any further actions from being executed.
+
 namespace storm{
     namespace jani{
         namespace elimination_actions{

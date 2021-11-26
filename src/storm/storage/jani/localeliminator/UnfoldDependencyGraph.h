@@ -5,6 +5,12 @@
 #include <string>
 #include <set>
 
+
+// UnfoldDependencyGraph stores how variables depend on each other. For example, if an edge contains the assignment x=y+z, then x depends on y and z.
+// Unfolding x is only possible if y and z are already unfolded. This graph models these dependencies. It also supports cyclical dependencies (which have
+// to be unfolded together).
+// The graph is usually construction once in the beginning of the elimination process and then updated whenever a variable is unfolded.
+
 namespace storm {
     namespace jani {
         namespace elimination_actions {

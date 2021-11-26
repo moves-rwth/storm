@@ -5,6 +5,14 @@
 #include "storm/storage/jani/Property.h"
 #include "boost/variant.hpp"
 
+// This class implements "location elimination", a technique that can be applied to Jani models to reduce the size of the resulting DTMCs. The basic idea is
+// to alternate between unfolding a variable into the location space and eliminating certain locations of the model in a way that preserves reachability
+// properties.
+// The technique is described in more detail in "Out of Control: Reducing Probabilistic Models by Control-State Elimination" by T. Winkler et al (https://arxiv.org/pdf/2011.00983.pdf)
+//
+// This class keeps track of the model and some additional state, while the actual actions (such as unfolding a variable or eliminating a location) are
+// each performed in a separate class (e.g. UnfoldAction or EliminateAction).
+
 namespace storm {
     namespace jani {
         class JaniLocalEliminator{
@@ -86,6 +94,7 @@ namespace storm {
             EliminationScheduler scheduler;
             explicit JaniLocalEliminator(Model const& original, storm::jani::Property &property, bool addMissingGuards = false);
             explicit JaniLocalEliminator(Model const& original, std::vector<storm::jani::Property>& properties, bool addMissingGuards = false);
+            static Model eliminateAutomatically(const Model& model, std::vector<jani::Property> properties, uint64_t locationHeuristic, uint64_t edgesHeuristic);
             void eliminate(bool flatten = true, bool useTransientVariables = true);
             Model const& getResult();
             std::vector<std::string> getLog();

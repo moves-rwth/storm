@@ -8,6 +8,11 @@
 
 using namespace boost;
 
+// AutomaticAction performs location elimination completely automatically. For this, it alternates between unfolding a variable and eliminating as many
+// locations as possible from the model. There are two main parameters to control this process:
+// * locationLimit: If this number of locations is reached, no further unfolding will be performed
+// * newTransitionLimit: Each candidate location will only be removed if doing so creates at most this many new transitions.
+
 namespace storm{
     namespace jani{
         namespace elimination_actions {
