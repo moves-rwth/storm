@@ -51,7 +51,7 @@ namespace storm {
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced but needed.
              */
-            virtual std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr) = 0;
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
 
             /*!
              * Extends the order for the given region.

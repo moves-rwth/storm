@@ -19,5 +19,6 @@
 #include "test/storm_gtest.h"
 
 TEST(ReachabilityOrderExtenderMdpTest, Brp_with_bisimulation_on_model) {
-    EXPECT_TRUE(false, "NOT YET IMPLEMENTED");
+    ASSERT_TRUE(false);
+//    EXPECT_TRUE(false, "NOT YET IMPLEMENTED");
 }

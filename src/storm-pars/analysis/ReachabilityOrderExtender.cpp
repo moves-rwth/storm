@@ -230,11 +230,6 @@ namespace storm {
             return {this->numberOfStates, this->numberOfStates};
         }
 
-        template <typename ValueType, typename ConstantType>
-        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            return this->extendOrder(nullptr, region, monRes, nullptr);
-        }
-
         template class ReachabilityOrderExtender<RationalFunction, double>;
         template class ReachabilityOrderExtender<RationalFunction, RationalNumber>;
 
