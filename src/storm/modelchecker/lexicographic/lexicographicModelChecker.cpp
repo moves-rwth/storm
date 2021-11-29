@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "misc-throw-by-value-catch-by-reference"
 //
 // Created by steffi on 05.11.21.
 //
@@ -12,6 +14,8 @@
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/transformer/SubsystemBuilder.h"
 #include "storm//modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"
+#include "storm/environment/SubEnvironment.h"
 
 namespace storm {
     namespace modelchecker {
@@ -31,7 +35,7 @@ namespace storm {
 
         storm::automata::DeterministicAutomaton test = *productAutomaton;
         storm::automata::AcceptanceCondition condi = *(test.getAcceptance());
-        auto ags = *(condi.getAcceptanceExpression());
+        //auto ags = *(condi.getAcceptanceExpression());
         // Compute Satisfaction sets for the APs (which represent the state-subformulae
         auto apSets = computeApSets(extracted, formulaChecker);
 
@@ -170,7 +174,6 @@ namespace storm {
     std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>>
     lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::solve(std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel,
                                                                                    std::vector<uint>& acceptanceConditions,
-                                                                                   storm::logic::MultiObjectiveFormula const& formula,
                                                                                    storm::storage::BitVector& allowed) {
         const uint num_formulae = formula.getNumberOfSubformulas();
         std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, storm::storage::BitVector> result =
@@ -262,6 +265,8 @@ namespace storm {
         auto result = eliminator.transform(blaa, bcc, allowed, allowed, true);
         storm::storage::BitVector choices(result.matrix.getColumnCount(), true);
         Environment env;
+        storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, result.noEndComponents, dir, hasSchedulerHint, produceScheduler);
+        env.solver();
         // A reachability condition "F x" is transformed to "true U x"
         // phi states are all states
         // psi states are the ones from the "good bccs"
@@ -275,10 +280,12 @@ namespace storm {
             newInitalStates.push_back(result.oldToNewStateMapping[pos-1]);
         }
         storm::storage::BitVector i(result.matrix.getColumnCount(), newInitalStates);
-        ModelCheckerHint hint;
+        ExplicitModelCheckerHint<ValueType> hint = ExplicitModelCheckerHint<ValueType>();
+        hint.setNoEndComponentsInMaybeStates(false);
         storm::solver::SolveGoal<ValueType> testGoal = storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i);
         auto ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(
-            env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i), result.matrix, result.matrix.transpose(true), phiStates,
+            env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i), result.matrix,
+            result.matrix.transpose(true), phiStates,
             psiStates, false, true, hint);
         resultingProb = ret.values[newInitalStates[0]];
         return ret;
@@ -316,3 +323,5 @@ namespace storm {
         }
         }
 }
+
+#pragma clang diagnostic pop

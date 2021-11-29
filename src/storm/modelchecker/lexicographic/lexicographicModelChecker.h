@@ -41,7 +41,7 @@ namespace storm {
 
         std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> solve(
             std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<uint>& acceptanceConditions,
-            storm::logic::MultiObjectiveFormula const& formula, storm::storage::BitVector& allowed);
+            storm::storage::BitVector& allowed);
 
         MDPSparseModelCheckingHelperReturnType<ValueType> reachability(
             storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc, std::vector<std::vector<bool>> const& bccLexArray,

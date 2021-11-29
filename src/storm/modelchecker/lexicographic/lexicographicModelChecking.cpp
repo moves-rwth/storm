@@ -30,7 +30,7 @@ namespace storm {
                 auto completeProductModel = res.first;
                 auto accCond = res.second;
                 storm::storage::BitVector allowed(completeProductModel->getProductModel().getTransitionMatrix().getRowGroupCount(), true);
-                std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> result = lMC.solve(completeProductModel, accCond, formula, allowed);
+                std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> result = lMC.solve(completeProductModel, accCond, allowed);
                 STORM_PRINT("Solved ltl formula"<<std::endl);
                 storm::storage::MaximalEndComponentDecomposition<ValueType> bcc = result.first;
                 std::vector<std::vector<bool>> bccLexArrays = result.second;
