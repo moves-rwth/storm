@@ -79,9 +79,6 @@ namespace storm {
                     for (auto& entry : row) {
                         // ignore self-loops when there are more transitions
                         if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                            if (!initialOrder->contains(state)) {
-                                initialOrder->add(state);
-                            }
                             stateMap[state][currentOption].push_back(entry.getColumn());
                         }
                         storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
