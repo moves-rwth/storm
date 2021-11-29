@@ -265,8 +265,6 @@ namespace storm {
         auto result = eliminator.transform(blaa, bcc, allowed, allowed, true);
         storm::storage::BitVector choices(result.matrix.getColumnCount(), true);
         Environment env;
-        storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, result.uniqueSolution, result.noEndComponents, dir, hasSchedulerHint, produceScheduler);
-        env.solver();
         // A reachability condition "F x" is transformed to "true U x"
         // phi states are all states
         // psi states are the ones from the "good bccs"
@@ -283,11 +281,34 @@ namespace storm {
         ExplicitModelCheckerHint<ValueType> hint = ExplicitModelCheckerHint<ValueType>();
         hint.setNoEndComponentsInMaybeStates(false);
         storm::solver::SolveGoal<ValueType> testGoal = storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i);
-        auto ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(
+        MDPSparseModelCheckingHelperReturnType<ValueType> ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(
             env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i), result.matrix,
             result.matrix.transpose(true), phiStates,
             psiStates, false, true, hint);
         resultingProb = ret.values[newInitalStates[0]];
+
+        std::vector<std::vector<uint>> optimalActions;
+        std::vector<uint_fast64_t> const& rowGroupIndices = result.matrix.getRowGroupIndices();
+        for (uint currentState=0; currentState<result.matrix.getColumnCount(); currentState++) {
+            std::vector<uint> goodActionsForState;
+            auto bestAction = ret.scheduler->getChoice(currentState).getDeterministicChoice();
+            ValueType bestActionValue(0);
+            for (storm::storage::MatrixEntry<uint_fast64_t,ValueType> rowEntry : result.matrix.getRow(rowGroupIndices[currentState]+bestAction)) {
+                bestActionValue += rowEntry.getValue() * ret.values[rowEntry.getColumn()];
+            }
+            uint lastAction = rowGroupIndices[currentState] + result.matrix.getRowGroupSize(currentState);
+            auto possibleActions = result.matrix.getRowGroup(currentState);
+            for (uint action=rowGroupIndices[currentState]; action<lastAction; action++) {
+                ValueType actionValue(0);
+                for (auto rowEntry : result.matrix.getRow(action)) {
+                    actionValue += rowEntry.getValue() * ret.values[rowEntry.getColumn()];
+                }
+                if (actionValue == bestActionValue) {
+                    goodActionsForState.push_back(action);
+                }
+            }
+            optimalActions.push_back(goodActionsForState);
+        }
         return ret;
     }
 
