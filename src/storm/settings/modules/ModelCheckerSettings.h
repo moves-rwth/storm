@@ -36,6 +36,13 @@ namespace storm {
                  */
                 std::string getLtl2daTool() const;
 
+                /*!
+                 * Retrieves whether to use lexicographic model checking.
+                 *
+                 * @return True iff the option "lex" has been set.
+                 */
+                 bool isUseLex() const;
+
                 // The name of the module.
                 static const std::string moduleName;
 
@@ -43,6 +50,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string filterRewZeroOptionName;
                 static const std::string ltl2daToolOptionName;
+                static const std::string useLexicographicModelChecking;
             };
 
         } // namespace modules

@@ -35,12 +35,12 @@ namespace storm{
 
             // get map of state-expressions to propositions
             std::shared_ptr<storm::logic::Formula> ltlFormula1 = storm::logic::ExtractMaximalStateFormulasVisitor::extract(formula, extracted);
-            STORM_PRINT("Extracted: ");
+            //STORM_PRINT("Extracted: ");
             for (auto i : extracted) {
                 std::string ap = i.first;
-                STORM_PRINT(ap << "=" << i.second->toString() <<",");
+                //STORM_PRINT(ap << "=" << i.second->toString() <<",");
             }
-            STORM_PRINT(std::endl);
+            //STORM_PRINT(std::endl);
 
             // get automaton
             //std::shared_ptr<storm::automata::DeterministicAutomaton> dap = storm::automata::LTL2DeterministicAutomaton::ltl2daSpot(*ltlFormula1, true, true);
@@ -57,24 +57,24 @@ namespace storm{
             spot::translator trans = spot::translator(dict);
             trans.set_type(spot::postprocessor::Generic);
             trans.set_pref(spot::postprocessor::Deterministic | spot::postprocessor::SBAcc | spot::postprocessor::Complete);
-            STORM_PRINT("1 - Construct deterministic automaton for "<< spotFormula << std::endl);
+            //STORM_PRINT("1 - Construct deterministic automaton for "<< spotFormula << std::endl);
             // aut contains the Spot-automaton
             auto aut = trans.run(spotFormula);
-            STORM_PRINT("2 - DNF info " << aut->get_acceptance() << " " << aut->get_acceptance().is_dnf() << std::endl);
+            //STORM_PRINT("2 - DNF info " << aut->get_acceptance() << " " << aut->get_acceptance().is_dnf() << std::endl);
 
             if(!(aut->get_acceptance().is_dnf())){
-                STORM_PRINT("3 - Convert acceptance condition "<< aut->get_acceptance() << " into DNF..." << std::endl);
+                //STORM_PRINT("3 - Convert acceptance condition "<< aut->get_acceptance() << " into CNF..." << std::endl);
                 // Transform the acceptance condition in disjunctive normal form and merge all the Fin-sets of each clause
                 aut = to_generalized_streett(aut,true);
             }
             aut = spot::dnf_to_streett(aut);
-            std::ostream objOstream (std::cout.rdbuf());
-            STORM_PRINT("Automaton for " << prefixLtl << " ");
-            spot::print_dot(objOstream, aut, "cak");
+            //std::ostream objOstream (std::cout.rdbuf());
+            //STORM_PRINT("Automaton for " << prefixLtl << " " << std::endl);
+            //spot::print_dot(objOstream, aut, "cak");
 
             acceptanceConditions.push_back(countAccept);
             countAccept += aut->get_acceptance().top_conjuncts().size();
-            STORM_PRINT("4 - The deterministic automaton has acceptance condition:  "<< aut->get_acceptance() << std::endl);
+            //STORM_PRINT("4 - The deterministic automaton has acceptance condition:  "<< aut->get_acceptance() << std::endl);
             std::stringstream autStreamTemp;
             // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
             spot::print_hoa(autStreamTemp, aut, "is");
@@ -84,30 +84,30 @@ namespace storm{
                 productAutomaton = aut;
                 first = false;
 
-                auto bla = aut->get_dict();
-                std::cout << bla << std::endl;
+                //auto bla = aut->get_dict();
+                //std::cout << bla << std::endl;
                 continue;
             } else {
-                STORM_PRINT("product Automaton before ");
-                std::ostream objOstream (std::cout.rdbuf());
-                spot::print_dot(objOstream, productAutomaton, "cak");
+                //STORM_PRINT("product Automaton before ");
+                //std::ostream objOstream (std::cout.rdbuf());
+                //spot::print_dot(objOstream, productAutomaton, "cak");
                 productAutomaton = spot::product(aut,productAutomaton);
-                auto bla = productAutomaton->get_acceptance();
-                auto blubb = bla.top_conjuncts();
-                STORM_PRINT("conjuncts " << blubb.size() << std::endl);
+                //auto bla = productAutomaton->get_acceptance();
+                //auto blubb = bla.top_conjuncts();
+                //STORM_PRINT("conjuncts " << blubb.size() << std::endl);
             }
         }
         acceptanceConditions.push_back(countAccept);
         if(!(productAutomaton->get_acceptance().is_cnf())){
-            STORM_PRINT("Convert acceptance condition "<< productAutomaton->get_acceptance() << " into CNF..." << std::endl);
+            //STORM_PRINT("Convert acceptance condition "<< productAutomaton->get_acceptance() << " into CNF..." << std::endl);
             // Transform the acceptance condition in disjunctive normal form and merge all the Fin-sets of each clause
             productAutomaton = to_generalized_streett(productAutomaton,true);
         }
         std::stringstream autStream;
         // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
         spot::print_hoa(autStream, productAutomaton, "is");
-        std::ostream objOstream (std::cout.rdbuf());
-        spot::print_dot(objOstream, productAutomaton, "cak");
+        //std::ostream objOstream (std::cout.rdbuf());
+        //spot::print_dot(objOstream, productAutomaton, "cak");
 
         storm::automata::DeterministicAutomaton::ptr da = storm::automata::DeterministicAutomaton::parse(autStream);
 

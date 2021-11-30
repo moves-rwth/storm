@@ -8,8 +8,8 @@
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/logic/Formulas.h"
 #include "storm/environment/Environment.h"
-// This kills everything:
-#include "storm/storage/dd/Bdd.h"
+#include "storm/modelchecker/lexicographic/lexicographicModelChecker.h"
+
 namespace storm {
 
     class Environment;
@@ -19,7 +19,7 @@ namespace storm {
             typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
 
             template<typename SparseModelType, typename ValueType>
-            int isDone(Environment const& env, SparseModelType const& model,  CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask, CheckFormulaCallback const& formulaChecker);
+            helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const& env, SparseModelType const& model,  CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask, CheckFormulaCallback const& formulaChecker);
 
         }
     }

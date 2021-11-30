@@ -16,6 +16,7 @@
 #include "storm/transformer/DAProductBuilder.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/modelchecker/prctl/helper/MDPModelCheckingHelperReturnType.h"
+#include "storm/transformer/SubsystemBuilder.h"
 
 namespace storm {
 
@@ -29,6 +30,7 @@ namespace storm {
     class lexicographicModelChecker : public helper::SingleValueModelCheckerHelper<ValueType, storm::models::ModelRepresentation::Sparse> {
        public:
         typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
+        typedef storm::transformer::SubsystemBuilderReturnType<ValueType, storm::models::sparse::StandardRewardModel<ValueType>> SubsystemReturnType;
         using StateType = typename storm::storage::sparse::state_type;
         // using productModelType = typename std::conditional<Nondeterministic, storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Dtmc<ValueType>>::type;
         using productModelType = typename storm::models::sparse::Mdp<ValueType>;
@@ -73,8 +75,26 @@ namespace storm {
                                                 std::vector<std::vector<bool>> const& bccLexArray,
                                                 std::vector<uint_fast64_t> const& oldToNewStateMapping,
                                                 uint const& condition,
-                                                uint const numStates);
+                                                uint const numStates, std::vector<uint_fast64_t> const& compressedToReducedMapping);
 
+        MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(std::vector<uint_fast64_t>& newInitalStates,
+                                                                                storm::storage::BitVector const& psiStates,
+                                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                                                SparseModelType const& originalMdp,
+                                                                                std::vector<uint_fast64_t> const& compressedToReducedMapping,
+                                                                                std::vector<uint_fast64_t> const& oldToNewStateMapping);
+
+        SubsystemReturnType getReducedSubsystem(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+                                                MDPSparseModelCheckingHelperReturnType<ValueType> const& reachabilityResult,
+                                                std::vector<uint_fast64_t> const& newInitalStates,
+                                                storm::storage::BitVector const& goodStates);
+
+        int removeTransientSCCs(std::vector<std::vector<bool>>& bccLexArray,
+                                uint const& condition,
+                                storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc,
+                                std::vector<uint_fast64_t> const& compressedToReducedMapping,
+                                std::vector<uint_fast64_t> const& oldToNewStateMapping,
+                                MDPSparseModelCheckingHelperReturnType<ValueType> const& res);
     };
 
     } // lexicographic

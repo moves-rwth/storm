@@ -35,6 +35,9 @@
 #include <boost/core/typeinfo.hpp>
 #include <storm/models/symbolic/MarkovAutomaton.h>
 
+#include "storm/settings/modules/ModelCheckerSettings.h"
+#include "storm/settings/SettingsManager.h"
+
 namespace storm {
     namespace modelchecker {
 
@@ -52,7 +55,8 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::check(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            bool lex = true;
+            auto modelCheckerSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
+            bool lex = modelCheckerSettings.isUseLex();
             if (!lex) STORM_LOG_THROW(this->canHandle(checkTask), storm::exceptions::InvalidArgumentException, "The model checker (" << getClassName() << ") is not able to check the formula '" << formula << "'.");
             if (formula.isStateFormula()) {
                 return this->checkStateFormula(env, checkTask.substituteFormula(formula.asStateFormula()));

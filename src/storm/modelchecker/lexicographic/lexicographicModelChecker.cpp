@@ -64,9 +64,9 @@ namespace storm {
         std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> product =
             productBuilder.build<SparseModelType>(model.getTransitionMatrix(), statesOfInterest);
 
-        STORM_PRINT("Product " + (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) + " has "
-                    << product->getProductModel().getNumberOfStates() << " states and " << product->getProductModel().getNumberOfTransitions() << " transitions."
-                    << std::endl);
+        //STORM_PRINT("Product " + (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) + " has "
+        //           << product->getProductModel().getNumberOfStates() << " states and " << product->getProductModel().getNumberOfTransitions() << " transitions."
+        //           << std::endl);
         return std::make_pair(product, acceptanceConditions);
     }
 
@@ -194,7 +194,6 @@ namespace storm {
                 std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> sub = {acceptancePairs.begin() + acceptanceConditions[i],
                                                                                                acceptancePairs.begin() + acceptanceConditions[i + 1]};
                 sprimeTemp.insert(sprimeTemp.end(), sub.begin(), sub.end());
-                // TODO correct algorithm
                 bool accepts = isAcceptingStreettConditions(scc, sprimeTemp, acceptance, productModel->getProductModel());
                 if (accepts) {
                     bsccAccepting.push_back(true);
@@ -231,12 +230,14 @@ namespace storm {
 
     template<typename SparseModelType, typename ValueType, bool Nondeterministic>
     storm::storage::BitVector lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::getGoodStates(
-        storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc,
-        std::vector<std::vector<bool>> const& bccLexArray,
-        std::vector<uint_fast64_t> const& oldToNewStateMapping,
-        uint const& condition,
-        uint const numStates) {
-        STORM_LOG_ASSERT(condition<bccLexArray.size(),"Condition is not in Lex-Array!");
+            storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc,
+            std::vector<std::vector<bool>> const& bccLexArray,
+            std::vector<uint_fast64_t> const& oldToNewStateMapping,
+            uint const& condition,
+            uint const numStates,
+            std::vector<uint_fast64_t> const& compressedToReducedMapping) {
+        STORM_LOG_ASSERT(!bccLexArray.empty(),"Lex-Array is empty!");
+        STORM_LOG_ASSERT(condition<bccLexArray[0].size(),"Condition is not in Lex-Array!");
         std::vector<uint_fast64_t> goodStates;
         for(uint i=0; i<bcc.size(); i++) {
             std::vector<bool> const& bccLex = bccLexArray[i];
@@ -244,72 +245,190 @@ namespace storm {
                 auto firstElement = *bcc[i].begin();
                 uint_fast64_t bccStateOld = firstElement.first;
                 uint_fast64_t bccState = oldToNewStateMapping[bccStateOld];
-                goodStates.push_back(bccState);
+                auto pointer = std::find(compressedToReducedMapping.begin(), compressedToReducedMapping.end(), bccState);
+                if (pointer!=compressedToReducedMapping.end()) {
+                    // We have to check whether the state has already been removed
+                    uint_fast64_t bccStateReduced = pointer - compressedToReducedMapping.begin();
+                    goodStates.push_back(bccStateReduced);
+                }
             }
         }
         return {numStates, goodStates};
     }
 
+
     template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-    MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::reachability(
-        storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc, std::vector<std::vector<bool>> const& bccLexArray,
-        std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel, storm::storage::BitVector& allowed,
-        SparseModelType const& originalMdp, ValueType& resultingProb) {
-        storm::transformer::EndComponentEliminator<ValueType> eliminator = storm::transformer::EndComponentEliminator<ValueType>();
-        // storm::storage::SparseMatrix<ValueType> originalMatrix;
-        SparseModelType blubb = productModel->getProductModel();
-        auto blaa = blubb.getTransitionMatrix();
-        // storm::storage::MaximalEndComponentDecomposition<ValueType> ecs;
-        // storm::storage::BitVector subsystemStates;
-        // storm::storage::BitVector addSinkRowStates;
-        auto result = eliminator.transform(blaa, bcc, allowed, allowed, true);
-        storm::storage::BitVector choices(result.matrix.getColumnCount(), true);
+    MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::solveOneReachability(
+            std::vector<uint_fast64_t>& newInitalStates,
+            storm::storage::BitVector const& psiStates,
+            storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+            SparseModelType const& originalMdp,
+            std::vector<uint_fast64_t> const& compressedToReducedMapping,
+            std::vector<uint_fast64_t> const& oldToNewStateMapping) {
         Environment env;
         // A reachability condition "F x" is transformed to "true U x"
         // phi states are all states
         // psi states are the ones from the "good bccs"
-        storm::storage::BitVector phiStates(result.matrix.getColumnCount(), true);
-        storm::storage::BitVector psiStates = getGoodStates(bcc, bccLexArray, result.oldToNewStateMapping, 0, result.matrix.getColumnCount());
+        storm::storage::BitVector phiStates(transitionMatrix.getColumnCount(), true);
+
+        // Get initial states in the compressed model
         storm::storage::BitVector const& originalInitialStates = originalMdp.getInitialStates();
-        std::vector<uint_fast64_t> newInitalStates;
+
         uint pos = 0;
         while (originalInitialStates.getNextSetIndex(pos)!=originalInitialStates.size()) {
             pos = originalInitialStates.getNextSetIndex(pos)+1;
-            newInitalStates.push_back(result.oldToNewStateMapping[pos-1]);
+            auto pointer = std::find(compressedToReducedMapping.begin(), compressedToReducedMapping.end(), oldToNewStateMapping[pos-1]);
+            if (pointer!=compressedToReducedMapping.end()) {
+                newInitalStates.push_back(pointer - compressedToReducedMapping.begin());
+            }
         }
-        storm::storage::BitVector i(result.matrix.getColumnCount(), newInitalStates);
-        ExplicitModelCheckerHint<ValueType> hint = ExplicitModelCheckerHint<ValueType>();
-        hint.setNoEndComponentsInMaybeStates(false);
+        storm::storage::BitVector i(transitionMatrix.getColumnCount(), newInitalStates);
+
+        ModelCheckerHint hint;
         storm::solver::SolveGoal<ValueType> testGoal = storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i);
         MDPSparseModelCheckingHelperReturnType<ValueType> ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(
-            env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i), result.matrix,
-            result.matrix.transpose(true), phiStates,
+            env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i), transitionMatrix,
+            transitionMatrix.transpose(true), phiStates,
             psiStates, false, true, hint);
-        resultingProb = ret.values[newInitalStates[0]];
-
-        std::vector<std::vector<uint>> optimalActions;
-        std::vector<uint_fast64_t> const& rowGroupIndices = result.matrix.getRowGroupIndices();
-        for (uint currentState=0; currentState<result.matrix.getColumnCount(); currentState++) {
-            std::vector<uint> goodActionsForState;
-            auto bestAction = ret.scheduler->getChoice(currentState).getDeterministicChoice();
-            ValueType bestActionValue(0);
-            for (storm::storage::MatrixEntry<uint_fast64_t,ValueType> rowEntry : result.matrix.getRow(rowGroupIndices[currentState]+bestAction)) {
-                bestActionValue += rowEntry.getValue() * ret.values[rowEntry.getColumn()];
-            }
-            uint lastAction = rowGroupIndices[currentState] + result.matrix.getRowGroupSize(currentState);
-            auto possibleActions = result.matrix.getRowGroup(currentState);
-            for (uint action=rowGroupIndices[currentState]; action<lastAction; action++) {
-                ValueType actionValue(0);
-                for (auto rowEntry : result.matrix.getRow(action)) {
-                    actionValue += rowEntry.getValue() * ret.values[rowEntry.getColumn()];
-                }
-                if (actionValue == bestActionValue) {
-                    goodActionsForState.push_back(action);
-                }
-            }
-            optimalActions.push_back(goodActionsForState);
-        }
         return ret;
+    }
+
+    template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+    typename lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::SubsystemReturnType lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::getReducedSubsystem(
+            storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+            MDPSparseModelCheckingHelperReturnType<ValueType> const& reachabilityResult,
+            std::vector<uint_fast64_t> const& newInitalStates,
+            storm::storage::BitVector const& goodStates
+        ) {
+        std::vector<std::vector<uint>> optimalActions;
+        std::vector<uint_fast64_t> keptActions;
+        std::vector<uint_fast64_t> const& rowGroupIndices = transitionMatrix.getRowGroupIndices();
+        for (uint currentState=0; currentState<reachabilityResult.values.size(); currentState++) {
+            std::vector<uint> goodActionsForState;
+            uint_fast64_t bestAction;
+            if (goodStates.get(currentState)) {
+                uint lastAction = rowGroupIndices[currentState] + transitionMatrix.getRowGroupSize(currentState);
+                uint_fast64_t count = rowGroupIndices[currentState];
+                for (uint action = rowGroupIndices[currentState]; action < lastAction; action++) {
+                    for (auto rowEntry : transitionMatrix.getRow(action)) {
+                        if (rowEntry.getValue()==1 && rowEntry.getColumn() == currentState) {
+                            // Found the self-loop
+                            bestAction = count;
+                        }
+                    }
+                    count++;
+                }
+                goodActionsForState.push_back(bestAction);
+                keptActions.push_back(bestAction);
+                optimalActions.push_back(goodActionsForState);
+            } else {
+                bestAction = reachabilityResult.scheduler->getChoice(currentState).getDeterministicChoice();
+
+                ValueType bestActionValue(0);
+                for (storm::storage::MatrixEntry<uint_fast64_t, ValueType> rowEntry : transitionMatrix.getRow(rowGroupIndices[currentState] + bestAction)) {
+                    bestActionValue += rowEntry.getValue() * reachabilityResult.values[rowEntry.getColumn()];
+                }
+                uint lastAction = rowGroupIndices[currentState] + transitionMatrix.getRowGroupSize(currentState);
+                for (uint action = rowGroupIndices[currentState]; action < lastAction; action++) {
+                    ValueType actionValue(0);
+                    for (auto rowEntry : transitionMatrix.getRow(action)) {
+                        actionValue += rowEntry.getValue() * reachabilityResult.values[rowEntry.getColumn()];
+                    }
+                    if (actionValue == bestActionValue) {
+                        goodActionsForState.push_back(action);
+                        keptActions.push_back(action);
+                    }
+                }
+                optimalActions.push_back(goodActionsForState);
+            }
+        }
+        storm::storage::BitVector subSystemActions(transitionMatrix.getRowCount(), keptActions);
+        storm::storage::BitVector subSystemStates(transitionMatrix.getRowGroupCount(),true);
+        transformer::SubsystemBuilderOptions sbo;
+        sbo.fixDeadlocks = true;
+        storm::models::sparse::StateLabeling stateLabelling(transitionMatrix.getColumnCount());
+        stateLabelling.addLabel("init");
+        for (auto const& state : newInitalStates) {
+            stateLabelling.addLabelToState("init",state);
+        }
+        storm::models::sparse::Mdp<ValueType> newModel(transitionMatrix, stateLabelling);
+        SubsystemReturnType subsystemReturn = transformer::buildSubsystem(newModel, subSystemStates, subSystemActions, false, sbo);
+        return subsystemReturn;
+    }
+
+    template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+    int lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::removeTransientSCCs(std::vector<std::vector<bool>>& bccLexArray,
+                                                                                                     uint const& condition,
+                                                                                                     storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc,
+                                                                                                     std::vector<uint_fast64_t> const& compressedToReducedMapping,
+                                                                                                     std::vector<uint_fast64_t> const& oldToNewStateMapping,
+                                                                                                     MDPSparseModelCheckingHelperReturnType<ValueType> const& res){
+        int count = 0;
+        for(uint i=0; i<bcc.size(); i++) {
+            std::vector<bool>& bccLex = bccLexArray[i];
+            if (!bccLex[condition]) {
+                auto firstElement = *bcc[i].begin();
+                uint_fast64_t bccStateOld = firstElement.first;
+                uint_fast64_t bccState = oldToNewStateMapping[bccStateOld];
+                auto pointer = std::find(compressedToReducedMapping.begin(), compressedToReducedMapping.end(), bccState);
+                if (pointer != compressedToReducedMapping.end()) {
+                    // We have to check whether the state has already been removed
+                    uint_fast64_t bccStateReduced = pointer - compressedToReducedMapping.begin();
+                    if (res.values[bccStateReduced] > 0) {
+                        // SCC with probability of reaching another goal greater than 0
+                        bccLex = std::vector<bool>(bccLex.size(),false);
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+    MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelChecker<SparseModelType, ValueType, Nondeterministic>::reachability(
+            storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc, std::vector<std::vector<bool>> const& bccLexArray,
+            std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel, storm::storage::BitVector& allowed,
+            SparseModelType const& originalMdp, ValueType& resultingProb) {
+        // Eliminate all BCCs and generate one sink state instead
+        storm::transformer::EndComponentEliminator<ValueType> eliminator = storm::transformer::EndComponentEliminator<ValueType>();
+        auto result = eliminator.transform(productModel->getProductModel().getTransitionMatrix(), bcc, allowed, allowed, true);
+
+        STORM_LOG_ASSERT(!bccLexArray.empty(), "No BCCs in the model!");
+        std::vector<std::vector<bool>> bccLexArrayCurrent(bccLexArray);
+        MDPSparseModelCheckingHelperReturnType<ValueType> retResult(std::vector<ValueType>(bccLexArray[0].size()));
+        std::vector<uint_fast64_t> compressedToReducedMapping(result.matrix.getColumnCount());
+        std::iota(std::begin(compressedToReducedMapping), std::end(compressedToReducedMapping), 0);
+        storm::storage::SparseMatrix<ValueType> transitionMatrix = result.matrix;
+
+        for (uint condition=0; condition<bccLexArray[0].size(); condition++) {
+            storm::storage::BitVector psiStates =
+                getGoodStates(bcc, bccLexArrayCurrent, result.oldToNewStateMapping, condition, transitionMatrix.getColumnCount(), compressedToReducedMapping);
+            if (psiStates.getNumberOfSetBits()==0) {
+                retResult.values[condition] = 0;
+                continue;
+            }
+            std::vector<uint_fast64_t> newInitalStates;
+            auto res = solveOneReachability(newInitalStates, psiStates, transitionMatrix, originalMdp, compressedToReducedMapping, result.oldToNewStateMapping);
+            if (newInitalStates.empty()) {
+                retResult.values[condition] = 0;
+                continue;
+            }
+            retResult.values[condition] = res.values[newInitalStates[0]];
+            resultingProb = res.values[newInitalStates[0]];
+            auto removed = removeTransientSCCs(bccLexArrayCurrent, condition, bcc, compressedToReducedMapping, result.oldToNewStateMapping, res);
+            //STORM_PRINT("removed sccs "<<removed<<std::endl);
+
+            auto subsystem = getReducedSubsystem(transitionMatrix, res, newInitalStates, psiStates);
+            std::vector<uint_fast64_t> compressedToReducedMappingTemp;
+            compressedToReducedMappingTemp.reserve(compressedToReducedMapping.size());
+            for (uint_fast64_t newState : subsystem.newToOldStateIndexMapping) {
+                compressedToReducedMappingTemp.push_back(compressedToReducedMapping[newState]);
+            }
+            compressedToReducedMapping = compressedToReducedMappingTemp;
+            transitionMatrix = subsystem.model->getTransitionMatrix();
+        }
+        return retResult;
     }
 
     template<typename SparseModelType, typename ValueType, bool Nondeterministic>

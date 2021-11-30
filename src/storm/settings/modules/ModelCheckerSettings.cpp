@@ -15,10 +15,12 @@ namespace storm {
             const std::string ModelCheckerSettings::moduleName = "modelchecker";
             const std::string ModelCheckerSettings::filterRewZeroOptionName = "filterrewzero";
             const std::string ModelCheckerSettings::ltl2daToolOptionName = "ltl2datool";
+            const std::string ModelCheckerSettings::useLexicographicModelChecking = "lex";
 
             ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, filterRewZeroOptionName, false, "If set, states with reward zero are filtered out, potentially reducing the size of the equation system").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, ltl2daToolOptionName, false, "If set, use an external tool to convert LTL formulas to state-based deterministic automata in HOA format").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "A script that can be called with a prefix formula and a name for the output automaton.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, useLexicographicModelChecking, false, "If set, lexicographic model checking instead of normal multi objective is performed.").build());
             }
             
             bool ModelCheckerSettings::isFilterRewZeroSet() const {
@@ -31,6 +33,10 @@ namespace storm {
 
             std::string ModelCheckerSettings::getLtl2daTool() const {
                 return this->getOption(ltl2daToolOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            bool ModelCheckerSettings::isUseLex() const {
+                return this->getOption(useLexicographicModelChecking).getHasOptionBeenSet();
             }
             
         } // namespace modules
