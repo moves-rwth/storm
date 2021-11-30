@@ -173,6 +173,46 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
+        std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> OrderExtender<ValueType, ConstantType>::sortStatesOrderAndMinMax(std::vector<uint_fast64_t> const& states, std::shared_ptr<Order> order) {
+            uint_fast64_t numberOfStatesToSort = states.size();
+            std::vector<uint_fast64_t> result;
+            // Go over all states
+            for (auto state : states) {
+                if (result.size() == 0) {
+                    result.push_back(state);
+                } else {
+                    bool added = false;
+                    for (auto itr = result.begin();  itr != result.end(); ++itr) {
+                        auto compareRes = order->compare(state, (*itr));
+                        if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
+                            // insert at current pointer (while keeping other values)
+                            result.insert(itr, state);
+                            added = true;
+                            break;
+                        } else if (compareRes == Order::NodeComparison::UNKNOWN) {
+                            compareRes = addStatesBasedOnMinMax(order, state, *itr);
+                            if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
+                                // insert at current pointer (while keeping other values)
+                                result.insert(itr, state);
+                                added = true;
+                                break;
+                            } else if (compareRes == Order::NodeComparison::UNKNOWN) {
+                                return {{(*itr), state}, std::move(result)};
+                            }
+                        }
+                    }
+                    if (!added) {
+                        result.push_back(state);
+                    }
+                }
+            }
+
+            assert (result.size() == numberOfStatesToSort);
+            return {{numberOfStates, numberOfStates}, std::move(result)};
+        }
+
+
+        template <typename ValueType, typename ConstantType>
         Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const {
             STORM_LOG_ASSERT (order->compareFast(state1, state2) == Order::UNKNOWN, "Expecting states to be unordered");
             STORM_LOG_ASSERT (minValues.find(order) != minValues.end() && maxValues.find(order) != maxValues.end(), "Cannot add states based on min max values if the minmax values are not initialized for this order");

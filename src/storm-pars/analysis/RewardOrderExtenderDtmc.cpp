@@ -23,7 +23,7 @@ namespace storm {
 
             // We sort the states, and then apply min/max comparison.
             // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
-            auto sortedSuccStates = order->sortStatesUnorderedPair(successors);
+            auto sortedSuccStates = this->sortStatesOrderAndMinMax(successors, order);
             for (uint_fast64_t succ: successors) {
                 if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
                     auto addRes = this->addStatesBasedOnMinMax(order, currentState, succ);

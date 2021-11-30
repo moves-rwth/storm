@@ -418,7 +418,6 @@ namespace storm {
             std::vector<uint_fast64_t> result;
             // Go over all states
             for (auto state : states) {
-                bool unknown = false;
                 if (result.size() == 0) {
                     result.push_back(state);
                 } else {
@@ -433,9 +432,6 @@ namespace storm {
                         } else if (compareRes == UNKNOWN) {
                             return {{(*itr), state}, std::move(result)};
                         }
-                    }
-                    if (unknown) {
-                        break;
                     }
                     if (!added) {
                         result.push_back(state);
@@ -612,7 +608,7 @@ namespace storm {
                 for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
                     if (getNode(j) == getNode(i)) stateCoverage.set(j, false);
                 }
-                STORM_PRINT("\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];" << std::endl);
+                STORM_PRINT("\t" << nodeName(getNode(i)) << " [ label = \"" << nodeLabel(getNode(i)) << "\" ];" << std::endl);
             }
 
             // Edges of the digraph
@@ -629,7 +625,7 @@ namespace storm {
                     if (std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()) {
                         seenNodes.insert(n);
                         if (!v[state]) {
-                            STORM_PRINT("\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";" << std::endl);
+                            STORM_PRINT("\t" << nodeName(currentNode) << " ->  " << nodeName(getNode(state)) << ";" << std::endl);
                         }
                     }
                 }
@@ -652,7 +648,7 @@ namespace storm {
                     if (getNode(j) == getNode(i)) stateCoverage.set(j, false);
                 }
 
-                dotOutfile << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];" << std::endl;
+                dotOutfile << "\t" << nodeName(getNode(i)) << " [ label = \"" << nodeLabel(getNode(i)) << "\" ];" << std::endl;
             }
 
             // Edges of the digraph
@@ -673,7 +669,7 @@ namespace storm {
                     if (std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()) {
                         seenNodes.insert(n);
                         if (!v[state]) {
-                            dotOutfile << "\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";" << std::endl;
+                            dotOutfile << "\t" << nodeName(currentNode) << " ->  " << nodeName(getNode(state)) << ";" << std::endl;
                         }
 
                     }
@@ -759,19 +755,20 @@ namespace storm {
             return above;
         }
 
-        std::string Order::nodeName(Node n) const {
-            auto itr = n.states.begin();
+        std::string Order::nodeName(Node* n) const {
+            auto itr = n->states.begin();
             std::string name = "n" + std::to_string(*itr);
             return name;
         }
 
-        std::string Order::nodeLabel(Node n) const {
-            if (top != nullptr && n.states == top->states) return "=)";
-            if (n.states == bottom->states) return "=(";
-            auto itr = n.states.begin();
+        std::string Order::nodeLabel(Node* n) const {
+            if (n == top) return "=)";
+            // if topstates is empty, we have a reward formula, so we don't want =) or =(
+            if (n == bottom && top != nullptr && top->states.empty()) return "=(";
+            auto itr = n->states.begin();
             std::string label = "s" + std::to_string(*itr);
             ++itr;
-            if (itr != n.states.end()) label = "[" + label + "]";
+            if (itr != n->states.end()) label = "[" + label + "]";
             return label;
         }
 

@@ -149,6 +149,13 @@ namespace storm {
              */
             void checkParOnStateMonRes(uint_fast64_t state, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
+            /**
+             * Sort the states based on the order and if available the min/max values
+             * @param states
+             * @param order
+             * @return pair with the sorted states and a pair of states which could not be sorted
+             */
+            std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(std::vector<uint_fast64_t> const& states, std::shared_ptr<Order> order);
         protected:
             virtual std::shared_ptr<Order> getInitialOrder() = 0;
             void buildStateMap();

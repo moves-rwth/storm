@@ -485,7 +485,7 @@ namespace storm {
              * @param n The considered node in the order
              * @return The name for the node in the dotOutput
              */
-            std::string nodeName(Node n) const;
+            std::string nodeName(Node* n) const;
 
             /*!
              * Creates the name with which a node will be labeled in the dotOutput
@@ -493,7 +493,7 @@ namespace storm {
              * @param n The considered node in the order
              * @return The label for the node in the dotOutput
              */
-            std::string nodeLabel(Node n) const;
+            std::string nodeLabel(Node* n) const;
 
             //void nodeOutput();
 

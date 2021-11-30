@@ -55,33 +55,7 @@ TEST(RewardOrderExtenderTest, smt_state_succ_compare) {
     // Note: Due to Storm's parsing, state 6 is s5 in the model and state 5 is s6 in the model.
     // Everything else is the same
 
-    //    // Check if Min and Max values are right
-    //    auto minValues = extender.getMinValues(order);
-    //    auto maxValues = extender.getMaxValues(order);
-    //
-    //    ASSERT_EQ(minValues[0], 6.1);
-    //    ASSERT_EQ(minValues[1], 5);
-    //    ASSERT_EQ(minValues[2], 6);
-    //    ASSERT_EQ(minValues[3], 3.5);
-    //    ASSERT_EQ(minValues[4], 8.5);
-    //    ASSERT_EQ(minValues[5], 0);
-    //    ASSERT_EQ(minValues[6], 5);
-    //    ASSERT_EQ(minValues[7], 0);
-    //
-    //    // Cast to float bc they are not "equal" as doubles
-    //    ASSERT_EQ((float)maxValues[0], (float)14.9);
-    //    ASSERT_EQ(maxValues[1], 13);
-    //    ASSERT_EQ(maxValues[2], 14);
-    //    ASSERT_EQ(maxValues[3], 7.5);
-    //    ASSERT_EQ(maxValues[4], 12.5);
-    //    ASSERT_EQ(maxValues[5], 0);
-    //    ASSERT_EQ(maxValues[6], 5);
-    //    ASSERT_EQ(maxValues[7], 0);
-    //
-    //    // s5 check
-    //    std::vector<uint_fast64_t> succs6 = std::vector<uint_fast64_t>();
-    //    succs6.push_back(5);
-    //    succs6.push_back(7);
+    // s5 check
     extender.extendByBackwardReasoning(order, region, 6);
 
     // 5 & 7 are equal (both reward 0) so state 6 should be above them
@@ -89,18 +63,12 @@ TEST(RewardOrderExtenderTest, smt_state_succ_compare) {
     EXPECT_EQ(order->compare(6, 7), storm::analysis::Order::NodeComparison::ABOVE);
 
     // s4 check
-    //    std::vector<uint_fast64_t> succs4 = std::vector<uint_fast64_t>();
-    //    succs4.push_back(6);
-    //    succs4.push_back(7);
     extender.extendByBackwardReasoning(order, region, 4);
     EXPECT_EQ(order->compare(4, 5), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(4, 6), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(4, 7), storm::analysis::Order::NodeComparison::ABOVE);
 
     // s3 check
-    //    std::vector<uint_fast64_t> succs3 = std::vector<uint_fast64_t>();
-    //    succs3.push_back(5);
-    //    succs3.push_back(6);
     extender.extendByBackwardReasoning(order, region, 3);
 
     EXPECT_EQ(order->compare(3, 5), storm::analysis::Order::NodeComparison::ABOVE);
@@ -109,9 +77,6 @@ TEST(RewardOrderExtenderTest, smt_state_succ_compare) {
     EXPECT_EQ(order->compare(3, 4), storm::analysis::Order::NodeComparison::UNKNOWN);
 
     // s2 check
-    //    std::vector<uint_fast64_t> succs2 = std::vector<uint_fast64_t>();
-    //    succs2.push_back(3);
-    //    succs2.push_back(4);
     extender.extendByBackwardReasoning(order, region, 2);
     EXPECT_EQ(order->compare(3, 4), storm::analysis::Order::NodeComparison::BELOW);
     EXPECT_EQ(order->compare(2, 3), storm::analysis::Order::NodeComparison::ABOVE);
@@ -121,9 +86,6 @@ TEST(RewardOrderExtenderTest, smt_state_succ_compare) {
     EXPECT_EQ(order->compare(2, 7), storm::analysis::Order::NodeComparison::ABOVE);
 
     // s1 check
-    //    std::vector<uint_fast64_t> succs1 = std::vector<uint_fast64_t>();
-    //    succs1.push_back(3);
-    //    succs1.push_back(4);
     extender.extendByBackwardReasoning(order, region, 1);
     EXPECT_EQ(order->compare(1, 2), storm::analysis::Order::NodeComparison::UNKNOWN);
     EXPECT_EQ(order->compare(1, 3), storm::analysis::Order::NodeComparison::ABOVE);
@@ -133,9 +95,6 @@ TEST(RewardOrderExtenderTest, smt_state_succ_compare) {
     EXPECT_EQ(order->compare(1, 7), storm::analysis::Order::NodeComparison::ABOVE);
 
     // s1 and s2 cannot be ordered so s0 cannot be added to the order
-    //    std::vector<uint_fast64_t> succs0 = std::vector<uint_fast64_t>();
-    //    succs0.push_back(1);
-    //    succs0.push_back(2);
     auto res = extender.extendByBackwardReasoning(order, region, 0);
 
     EXPECT_TRUE(res.first != res.second);
