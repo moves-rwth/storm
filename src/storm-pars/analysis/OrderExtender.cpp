@@ -228,6 +228,8 @@ namespace storm {
                     } else {
                         order->addToNode(state2, order->getNode(state1));
                     }
+                } else if (order->contains(state2)) {
+                    order->addToNode(state1, order->getNode(state2));
                 }
                 return Order::SAME;
             } else if (mins[state1] > maxs[state2]) {
