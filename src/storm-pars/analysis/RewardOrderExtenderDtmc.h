@@ -40,17 +40,6 @@ namespace storm {
             RewardOrderExtenderDtmc(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
 
-            /*!
-             * Determines the relation of a state to one of its successor in an order
-             *
-             * @param state The considered state
-             * @param succ The considered successor
-             * @param order The considered reward order
-             * @param hypothesis Optional hypothesis to be checked first. If none or UNKNOWN is given, we check GEQ first
-             * @return Enum representing the relation between the two states
-             */
-            StateComparison compareStateWithSuccSmt(uint_fast64_t state, uint_fast64_t succ, std::shared_ptr<Order> order, StateComparison hypothesis = UNKNOWN);
-
 
             // Override methods from OrderExtender
             std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
@@ -61,8 +50,6 @@ namespace storm {
             std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order,storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
 
            private:
-
-            //TODO Not implemented yet but here so that this class is not abstract. Document when implemented!
 
             /*!
              * Inserts a state into an order which has only one successor

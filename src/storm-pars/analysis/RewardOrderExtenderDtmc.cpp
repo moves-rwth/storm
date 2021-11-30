@@ -40,10 +40,10 @@ namespace storm {
 
             if (!addedSomething && sortedSuccStates.first.first != this->numberOfStates) {
                 return sortedSuccStates.first;
-            } else if (!addedSomething) {
-                // We are considering rewards, so our current state is always above the lowest one of all our successor states
-                order->addAbove(currentState, order->getNode(sortedSuccStates.second.back()));
             }
+            // We are considering rewards, so our current state is always above the lowest one of all our successor states
+            order->addAbove(currentState, order->getNode(sortedSuccStates.second.back()));
+
             STORM_LOG_ASSERT (order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting order to contain state");
             return std::make_pair(this->numberOfStates, this->numberOfStates);
         }
@@ -96,7 +96,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
-            STORM_LOG_THROW(false, exceptions::NotImplementedException, "The function is not (yet) implemented in this class");
+            STORM_LOG_THROW(false, exceptions::NotImplementedException, "Forward reasoning implies cycles, not implemented for expected rewards");
         }
 
         template <typename ValueType, typename ConstantType>
