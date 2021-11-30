@@ -242,9 +242,16 @@ namespace storm {
 
                 modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
                 modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-                minValuesInit = minCheck.getValueVector();
-                maxValuesInit = maxCheck.getValueVector();
+
+                if (order != nullptr) {
+                    minValues[order] = minCheck.getValueVector();
+                    maxValues[order] = maxCheck.getValueVector();
+                } else {
+                    minValuesInit = minCheck.getValueVector();
+                    maxValuesInit = maxCheck.getValueVector();
+                }
             }
+
         }
 
         template <typename ValueType, typename ConstantType>

@@ -69,7 +69,7 @@ namespace storm {
         /*** Modifying the order ***/
 
         void Order::add(uint_fast64_t state) {
-            assert (nodes[state] == nullptr);
+            STORM_LOG_ASSERT (nodes[state] == nullptr, "Cannot add state that is already in the order");
             if (top == nullptr) {
                 addAbove(state, bottom);
             } else {

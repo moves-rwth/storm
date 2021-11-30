@@ -50,7 +50,7 @@ TEST(RewardOrderExtenderTest, smt_state_succ_compare) {
     auto order = extender.getInitialOrder();
     ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
 
-    extender.initializeMinMaxValues(region);
+    extender.initializeMinMaxValues(region, order);
 
     // Note: Due to Storm's parsing, state 6 is s5 in the model and state 5 is s6 in the model.
     // Everything else is the same

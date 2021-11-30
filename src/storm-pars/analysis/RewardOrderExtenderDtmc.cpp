@@ -19,18 +19,22 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
             bool addedSomething = false;
-            // We sort the states, this also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
             auto& successors = this->getSuccessors(currentState);
+
+            // We sort the states, and then apply min/max comparison.
+            // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
             auto sortedSuccStates = order->sortStatesUnorderedPair(successors);
             for (uint_fast64_t succ: successors) {
-                STORM_LOG_ASSERT(order->contains(succ), "Expecting order to contain all successors, otherwise backwards reasoning is not possible");
-                auto addRes = this->addStatesBasedOnMinMax(order, currentState, succ);
-                if (addRes == Order::NodeComparison::ABOVE) {
-                    addedSomething = true;
-                } else if (addRes == Order::NodeComparison::SAME) {
-                    addedSomething = true;
-                    STORM_LOG_ASSERT (sortedSuccStates.first.first == this->numberOfStates, "Expecting all successor states to be sorted (even to be at the same node)");
-                    break;
+                if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
+                    auto addRes = this->addStatesBasedOnMinMax(order, currentState, succ);
+                    if (addRes == Order::NodeComparison::ABOVE) {
+                        addedSomething = true;
+                    } else if (addRes == Order::NodeComparison::SAME) {
+                        addedSomething = true;
+                        STORM_LOG_ASSERT(sortedSuccStates.first.first == this->numberOfStates,
+                                         "Expecting all successor states to be sorted and to be at the same node");
+                        break;
+                    }
                 }
             }
 
