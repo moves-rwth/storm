@@ -8,11 +8,10 @@
 namespace storm {
     namespace jani {
         namespace elimination_actions {
-            UnfoldDependencyGraph::VariableGroup::VariableGroup() : domainSize(1), unfolded(false),
+            UnfoldDependencyGraph::VariableGroup::VariableGroup() : domainSize(1),
                                                                     allVariablesUnfoldable(true),
-                                                                    allDependenciesUnfolded(false) {
-
-            }
+                                                                    unfolded(false),
+                                                                    allDependenciesUnfolded(false) {}
 
             void UnfoldDependencyGraph::VariableGroup::addVariable(UnfoldDependencyGraph::VariableInfo variable) {
                 variables.push_back(variable);
@@ -46,7 +45,7 @@ namespace storm {
                     if (variableGroups[i].dependencies.count(i) != 0){
                         bool allUnfolded = true;
                         for (uint32_t dep : variableGroups[i].dependencies){
-                            if (!variableGroups[i].unfolded)
+                            if (!variableGroups[dep].unfolded)
                                 allUnfolded = false;
                         }
                         variableGroups[i].allDependenciesUnfolded = allUnfolded;
@@ -162,7 +161,7 @@ namespace storm {
                         for (auto &dest : janiEdge.getDestinations()) {
                             for (auto &asg : dest.getOrderedAssignments().getAllAssignments()) {
                                 std::string leftName = asg.getExpressionVariable().getName();
-                                int lIndex = std::distance(variables.begin(),
+                                uint64_t lIndex = std::distance(variables.begin(),
                                                            std::find_if(variables.begin(), variables.end(),
                                                                         [leftName](VariableInfo &v) {
                                                                             return v.expressionVariableName == leftName;
@@ -170,7 +169,7 @@ namespace storm {
 
                                 for (auto &rightVar : asg.getAssignedExpression().getVariables()) {
                                     const std::string& rightName = rightVar.getName();
-                                    int rIndex = std::distance(variables.begin(),
+                                    uint64_t rIndex = std::distance(variables.begin(),
                                                                std::find_if(variables.begin(), variables.end(),
                                                                             [rightName](VariableInfo &v) {
                                                                                 return v.expressionVariableName ==

@@ -26,12 +26,7 @@ namespace storm {
                 // If a location that doesn't satisfy the property is unfolded, all resulting locations also won't
                 // satisfy it. We therefore first store which old locations satisfy the property:
 
-                if (!session.getModel().hasAutomaton(automatonName)){
-                    std::cout << "Cannot find automaton with name " << automatonName << ". The model contains these automata:" << std::endl;
-                    for (const auto &automaton : session.getModel().getAutomata()){
-                        std::cout << "  " << automaton.getName() << std::endl;
-                    }
-                }
+                STORM_LOG_THROW(session.getModel().hasAutomaton(automatonName), storm::exceptions::IllegalArgumentException, "Cannot find automaton with name " << automatonName);
 
                 uint64_t partOfPropCount = 0;
 

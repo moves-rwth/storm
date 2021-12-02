@@ -7,8 +7,8 @@ namespace storm {
             EliminateAutomaticallyAction::EliminateAutomaticallyAction(const std::string &automatonName, EliminateAutomaticallyAction::EliminationOrder order, uint32_t transitionCountThreshold, bool restrictToUnnamedActions)
                     : automatonName(automatonName),
                       eliminationOrder(order),
-                      transitionCountThreshold(transitionCountThreshold),
-                      restrictToUnnamedActions(restrictToUnnamedActions) {
+                      restrictToUnnamedActions(restrictToUnnamedActions),
+                      transitionCountThreshold(transitionCountThreshold) {
             }
 
             std::string EliminateAutomaticallyAction::getDescription() {
