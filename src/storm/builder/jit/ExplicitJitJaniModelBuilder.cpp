@@ -138,7 +138,7 @@ namespace storm {
 #else
                 gmpIncludeDirectory = "";
 #endif
-                sparseppIncludeDirectory = STORM_BUILD_DIR "/include/resources/3rdparty/sparsepp/";
+                parallelHashmapIncludeDirectory = STORM_BUILD_DIR "/include/resources/3rdparty/parallel_hashmap/";
                 
                 // Register all transient variables as transient.
                 for (auto const& variable : this->model.getGlobalVariables().getTransientVariables()) {
@@ -1739,7 +1739,7 @@ namespace storm {
 #include "storm/adapters/RationalFunctionAdapter.h"
 {% endif %}
                 
-#include <sparsepp/spp.h>
+#include <parallel_hashmap/phmap.h>
                 
 #include "storm/builder/jit/StateSet.h"
 #include "storm/builder/jit/JitModelBuilderInterface.h"
@@ -1934,15 +1934,15 @@ namespace storm {
                         std::size_t operator()(storm::builder::jit::StateType const& in) const {
                             // Note: this is faster than viewing the struct as a bit field and taking hash_combine of the bytes.
                             std::size_t seed = 0;
-                            {% for variable in nontransient_variables.boolean %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.boolean %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in nontransient_variables.boundedInteger %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.boundedInteger %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in nontransient_variables.unboundedInteger %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.unboundedInteger %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in nontransient_variables.real %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.real %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in nontransient_variables.locations %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.locations %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
                             return seed;
                         }
@@ -2506,7 +2506,7 @@ namespace storm {
                                 
                             private:
                                 // State storage.
-                                spp::sparse_hash_map<StateType, IndexType> stateIds;
+                                phmap::flat_hash_map<StateType, IndexType> stateIds;
                                 std::vector<StateType> initialStates;
                                 std::vector<IndexType> deadlockStates;
 
@@ -2542,7 +2542,7 @@ namespace storm {
                 dynamicLibraryPath += DYLIB_EXTENSION;
                 std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
                 std::string includes = "";
-                for (std::string const& dir : {stormIncludeDirectory, sparseppIncludeDirectory, boostIncludeDirectory, carlIncludeDirectory, clnIncludeDirectory, gmpIncludeDirectory}) {
+                for (std::string const& dir : {stormIncludeDirectory, parallelHashmapIncludeDirectory, boostIncludeDirectory, carlIncludeDirectory, clnIncludeDirectory, gmpIncludeDirectory}) {
                     if (dir != "") {
                         includes += " -I" + dir;
                     }

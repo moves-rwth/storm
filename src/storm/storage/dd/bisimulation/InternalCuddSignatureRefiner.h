@@ -11,7 +11,7 @@
 
 #include "storm/storage/dd/cudd/utility.h"
 
-#include <sparsepp/spp.h>
+#include <parallel_hashmap/phmap.h>
 
 namespace storm {
     namespace dd {
@@ -73,10 +73,10 @@ namespace storm {
                 uint64_t numberOfRefinements;
                                 
                 // The cache used to identify states with identical signature.
-                spp::sparse_hash_map<std::pair<DdNode const*, DdNode const*>, std::pair<DdNodePtr, DdNodePtr>, CuddPointerPairHash> signatureCache;
+                phmap::flat_hash_map<std::pair<DdNode const*, DdNode const*>, std::pair<DdNodePtr, DdNodePtr>, CuddPointerPairHash> signatureCache;
                 
                 // The cache used to identify which old block numbers have already been reused.
-                spp::sparse_hash_map<DdNode const*, ReuseWrapper> reuseBlocksCache;
+                phmap::flat_hash_map<DdNode const*, ReuseWrapper> reuseBlocksCache;
             };
             
         }

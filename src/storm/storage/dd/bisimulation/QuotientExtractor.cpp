@@ -29,7 +29,7 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/BitVector.h"
 
-#include <sparsepp/spp.h>
+#include <parallel_hashmap/phmap.h>
 
 namespace storm {
     namespace dd {
@@ -144,7 +144,7 @@ namespace storm {
                 }
                 
                 ::DdManager* ddman;
-                spp::sparse_hash_map<DdNode const*, bool> visitedNodes;
+                phmap::flat_hash_map<DdNode const*, bool> visitedNodes;
             };
 
             template<>
@@ -218,8 +218,8 @@ namespace storm {
                         }
                     }
                 }
-                
-                spp::sparse_hash_map<BDD, bool> visitedNodes;
+
+                phmap::flat_hash_map<BDD, bool> visitedNodes;
             };
 
             template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
@@ -618,7 +618,7 @@ namespace storm {
                 ::DdManager* ddman;
                 
                 // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
-                spp::sparse_hash_map<DdNode const*, uint64_t> blockToOffset;
+                phmap::flat_hash_map<DdNode const*, uint64_t> blockToOffset;
             };
 
             template<typename ValueType, typename ExportValueType>
@@ -814,7 +814,7 @@ namespace storm {
                 }
                 
                 // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
-                spp::sparse_hash_map<BDD, uint64_t> blockToOffset;
+                phmap::flat_hash_map<BDD, uint64_t> blockToOffset;
             };
 
             template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
