@@ -95,7 +95,7 @@ namespace storm {
             explicit JaniLocalEliminator(Model const& original, storm::jani::Property &property, bool addMissingGuards = false);
             explicit JaniLocalEliminator(Model const& original, std::vector<storm::jani::Property>& properties, bool addMissingGuards = false);
             static Model eliminateAutomatically(const Model& model, std::vector<jani::Property> properties, uint64_t locationHeuristic, uint64_t edgesHeuristic);
-            void eliminate(bool flatten = true, bool useTransientVariables = true);
+            void eliminate(bool flatten = true);
             Model const& getResult();
             std::vector<std::string> getLog();
 

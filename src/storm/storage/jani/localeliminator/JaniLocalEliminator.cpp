@@ -34,7 +34,7 @@ namespace storm {
             return eliminator.getResult();
         }
 
-        void JaniLocalEliminator::eliminate(bool flatten, bool useTransientVariables) {
+        void JaniLocalEliminator::eliminate(bool flatten) {
             newModel = original;
 
             Session session = Session(newModel, property, flatten);
@@ -65,61 +65,6 @@ namespace storm {
             }
 
             newModel = session.getModel();
-
-            if (!useTransientVariables){
-                for (auto &automaton : newModel.getAutomata()){
-                    // Based on Automaton::pushTransientRealLocationAssignmentsToEdges, but without the restriction
-                    // to real variables
-                    std::set<std::shared_ptr<storm::jani::TemplateEdge>> encounteredTemplateEdges;
-
-                    for (uint64_t locationIndex = 0; locationIndex < automaton.getLocations().size(); ++locationIndex) {
-                        auto& location = automaton.getLocation(locationIndex);
-                        auto edges = automaton.getEdgesFromLocation(locationIndex);
-
-                        storm::jani::Location newLocation(location.getName());
-                        bool createNewLocation = true;
-                        for (auto& edge : edges) {
-                            STORM_LOG_THROW(encounteredTemplateEdges.find(edge.getTemplateEdge()) == encounteredTemplateEdges.end(), storm::exceptions::NotSupportedException, "Pushing location assignments to edges is only supported for automata with unique template edges.");
-
-                            auto& templateEdge = edge.getTemplateEdge();
-                            encounteredTemplateEdges.insert(templateEdge);
-
-                            for (auto const& assignment : location.getAssignments().getTransientAssignments()) {
-                                if (assignment.getVariable().isTransient()) {
-                                    templateEdge->addTransientAssignment(assignment, true);
-                                } else if (createNewLocation) {
-                                    newLocation.addTransientAssignment(assignment);
-                                }
-                            }
-
-                            if (createNewLocation) {
-                                createNewLocation = false;
-                            }
-                        }
-
-                        location = std::move(newLocation);
-                    }
-
-                    automaton.finalize(newModel);
-
-                    automaton.pushEdgeAssignmentsToDestinations();
-
-                    for (auto &var : automaton.getVariables()){
-                        if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType()){
-                            var.setTransient(false);
-                        }
-                    }
-                }
-
-                for (auto &var : newModel.getGlobalVariables()){
-                    // Only make integer variables non-transient, as those are the only variables added during the
-                    // process and all others were present since the beginning.
-                    if (var.getType().isBoundedType() && var.getType().asBoundedType().isIntegerType()){
-                        var.setTransient(false);
-                    }
-                }
-
-            }
             newModel.finalize();
             log = session.getLog();
         }
