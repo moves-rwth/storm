@@ -38,8 +38,9 @@ namespace storm {
             virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& matrix) override;
             
             virtual bool internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
-            
-        private:
+
+            void setSchedulerFixedForRowGroup(storm::storage::BitVector&& states) override;
+           private:
             storm::storage::SparseMatrix<ValueType> const* A;
             std::unique_ptr<storm::storage::SparseMatrix<ValueType>> localA;
             

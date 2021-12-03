@@ -1,4 +1,4 @@
-#include "storm/solver/NativeMultiplier.h"
+#include "NativeMultiplier.h"
 
 #include "storm-config.h"
 

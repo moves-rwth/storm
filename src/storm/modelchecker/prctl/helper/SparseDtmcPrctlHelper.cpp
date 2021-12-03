@@ -11,7 +11,7 @@
 #include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
 
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/hints/ExplicitModelCheckerHint.h"

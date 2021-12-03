@@ -22,6 +22,9 @@ namespace storm {
              */
             LocalMonotonicityResult(uint_fast64_t numberOfStates);
 
+            LocalMonotonicityResult(std::shared_ptr<MonotonicityResult<VariableType>> globalResult, uint_fast64_t numberOfStates);
+
+
             /*!
              * Returns the local Monotonicity of a parameter at a given state.
              *

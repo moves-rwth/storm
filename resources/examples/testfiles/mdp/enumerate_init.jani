@@ -1,0 +1,304 @@
+{
+    "actions": [],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- -(x)",
+                                    "ref": "x",
+                                    "value": {
+                                        "exp": "x",
+                                        "op": "-"
+                                    }
+                                }
+                            ],
+                            "location": "l4"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x < 0)",
+                        "exp": {
+                            "left": "x",
+                            "op": "<",
+                            "right": 0
+                        }
+                    },
+                    "location": "l2"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "b <- true",
+                                    "ref": "b",
+                                    "value": true
+                                }
+                            ],
+                            "location": "l2",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "b <- false",
+                                    "ref": "b",
+                                    "value": false
+                                }
+                            ],
+                            "location": "l1",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x > 0)",
+                        "exp": {
+                            "left": "x",
+                            "op": ">",
+                            "right": 0
+                        }
+                    },
+                    "location": "l1"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- (x - 1)",
+                                    "ref": "x",
+                                    "value": {
+                                        "left": "x",
+                                        "op": "-",
+                                        "right": 1
+                                    }
+                                }
+                            ],
+                            "location": "l1"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((b = true) & (x > 0))",
+                        "exp": {
+                            "left": "b",
+                            "op": "∧",
+                            "right": {
+                                "left": "x",
+                                "op": ">",
+                                "right": 0
+                            }
+                        }
+                    },
+                    "location": "l2"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l3"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x = 0)",
+                        "exp": {
+                            "left": "x",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l4"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- -(x)",
+                                    "ref": "x",
+                                    "value": {
+                                        "exp": "x",
+                                        "op": "-"
+                                    }
+                                }
+                            ],
+                            "location": "l2"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x < 0)",
+                        "exp": {
+                            "left": "x",
+                            "op": "<",
+                            "right": 0
+                        }
+                    },
+                    "location": "l1"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "b <- true",
+                                    "ref": "b",
+                                    "value": true
+                                }
+                            ],
+                            "location": "l2",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "b <- false",
+                                    "ref": "b",
+                                    "value": false
+                                }
+                            ],
+                            "location": "l1",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x > 0)",
+                        "exp": {
+                            "left": "x",
+                            "op": ">",
+                            "right": 0
+                        }
+                    },
+                    "location": "l2"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- (x - 1)",
+                                    "ref": "x",
+                                    "value": {
+                                        "left": "x",
+                                        "op": "-",
+                                        "right": 1
+                                    }
+                                }
+                            ],
+                            "location": "l2"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((b = true) & (x > 0))",
+                        "exp": {
+                            "left": "b",
+                            "op": "∧",
+                            "right": {
+                                "left": "x",
+                                "op": ">",
+                                "right": 0
+                            }
+                        }
+                    },
+                    "location": "l3"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l3"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x = 0)",
+                        "exp": {
+                            "left": "x",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l4"
+                }
+            ],
+            "initial-locations": [
+                "l2",
+				"l4"
+            ],
+            "locations": [
+                {
+                    "name": "l1"
+                },
+                {
+                    "name": "l2"
+                },
+                {
+                    "name": "l3"
+                },
+                {
+                    "name": "l4"
+                }
+            ],
+            "name": "main",
+            "variables": []
+        }
+    ],
+    "constants": [],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "test",
+    "properties": [],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "main"
+            }
+        ]
+    },
+    "type": "mdp",
+    "variables": [
+        {
+            "name": "x",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": -7,
+                "upper-bound": 10
+            }
+        },
+        {
+            "name": "b",
+            "type": "bool"
+        }
+    ]
+}

@@ -1,10 +1,9 @@
 #pragma once
 
-
-#include "storm/storage/SparseMatrix.h"
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
+#include "storm/solver/multiplier/Multiplier.h"
+#include "storm/storage/SparseMatrix.h"
 
 namespace storm {
     class Environment;

@@ -100,13 +100,6 @@ TYPED_TEST_SUITE(SparseDerivativeInstantiationModelCheckerTest, TestingTypes, );
 
 template<typename TestType>
 void SparseDerivativeInstantiationModelCheckerTest<TestType>::testModel(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc, std::vector<std::shared_ptr<const storm::logic::Formula>> formulas, storm::RationalFunction reachabilityFunction) {
-    uint_fast64_t initialState;           
-    const storm::storage::BitVector initialVector = dtmc->getStates("init");
-    for (uint_fast64_t x : initialVector) {
-        initialState = x;
-        break;
-    }
-
     auto formulaWithoutBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
             formulas[0]->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), storm::logic::OperatorInformation(boost::none, boost::none));
 

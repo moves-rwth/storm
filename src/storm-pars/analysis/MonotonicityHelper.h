@@ -112,6 +112,12 @@ namespace storm {
             std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, bool usePLA = false, std::string dotOutfileName = "dotOutput");
 
             /*!
+             * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity.
+             *
+             */
+            std::shared_ptr<LocalMonotonicityResult<VariableType>> createLocalMonotonicityResult(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
+
+            /*!
              * Checks for local monotonicity at the given state.
              *
              * @param order the order on which the monotonicity should be checked

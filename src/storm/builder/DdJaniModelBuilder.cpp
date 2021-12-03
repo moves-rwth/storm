@@ -442,6 +442,7 @@ namespace storm {
                 STORM_LOG_THROW(type.hasUpperBound(), storm::exceptions::NotSupportedException, "DdJaniModelBuilder only supports bounded variables. Variable " << variable.getName() <<" has no upper bound.");
                 int_fast64_t low = type.getLowerBound().evaluateAsInt();
                 int_fast64_t high = type.getUpperBound().evaluateAsInt();
+
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getExpressionVariable().getName(), low, high);
                 
                 STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");

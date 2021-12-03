@@ -1,4 +1,4 @@
-#include "storm/solver/Multiplier.h"
+#include "Multiplier.h"
 
 #include "storm-config.h"
 
@@ -7,14 +7,14 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-#include "storm/utility/macros.h"
-#include "storm/solver/SolverSelectionOptions.h"
-#include "storm/solver/NativeMultiplier.h"
-#include "storm/solver/GmmxxMultiplier.h"
+#include "NativeMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
-#include "storm/utility/SignalHandler.h"
+#include "storm/solver/SolverSelectionOptions.h"
+#include "storm/solver/multiplier/GmmxxMultiplier.h"
 #include "storm/utility/ProgressMeasurement.h"
+#include "storm/utility/SignalHandler.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
     namespace solver {

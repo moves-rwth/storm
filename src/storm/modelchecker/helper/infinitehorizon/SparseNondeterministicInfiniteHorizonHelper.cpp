@@ -7,9 +7,9 @@
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/Scheduler.h"
 
-#include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/multiplier/Multiplier.h"
 
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
