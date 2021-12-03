@@ -1,5 +1,5 @@
 mdp 
-
+// "multi( Pmax=? [GF x=1], Pmax=? [GF x=2], Pmax=? [GF x=3], Pmax=? [GF x=9])"
 const double p = 1.0; 
 
 module robot
@@ -12,7 +12,7 @@ module robot
     [] x=6 -> (e'=10);
     [] (x=6) & (e>0) -> (x'=0);
     //hallway
-    [] (x=0) & (e>0)-> p : (x'=1) & (e'=max(0,e-1)) + (1-p) : (x'=0) & (e'=max(0,e-1));
+    [] (x=0) & (e>0) -> p : (x'=1) & (e'=max(0,e-1)) + (1-p) : (x'=0) & (e'=max(0,e-1));
     [] (x=0) & (e>0) -> p : (x'=2) & (e'=max(0,e-1)) + (1-p) : (x'=0) & (e'=max(0,e-1));
     [] (x=0) & (e>0) -> p : (x'=3) & (e'=max(0,e-1)) + (1-p) : (x'=0) & (e'=max(0,e-1));
     [] (x=0) & (e>0) -> p : (x'=4) & (e'=max(0,e-1)) + (1-p) : (x'=0) & (e'=max(0,e-1));
