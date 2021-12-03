@@ -11,8 +11,16 @@ if(STORM_USE_SPOT_SYSTEM)
     endif()
 
     if (NOT SPOT_FOUND)
-        add_dependencies(resources spot)
-        set(MANUAL_SPOT_DIR "/home/steffi/Documents/so_test")
+        set(MANUAL_SPOT_DIR ${SPOT_ROOT})
+        ExternalProject_Add(spot
+                PREFIX ${SPOT_ROOT}/spot
+                SOURCE_DIR ${SPOT_ROOT}/spot_src
+                CONFIGURE_COMMAND ${SPOT_ROOT}/spot_src/configure --prefix=${MANUAL_SPOT_DIR}/spot --disable-python
+                BUILD_COMMAND make -j${STORM_RESOURCES_BUILD_JOBCOUNT}
+                INSTALL_COMMAND make install
+                BUILD_BYPRODUCTS ${SPOT_ROOT}/spot/lib/libspot${DYNAMIC_EXT}
+                )
+
         set(SPOT_INCLUDE_DIR "${MANUAL_SPOT_DIR}/spot/include/")
         set(SPOT_DIR "${MANUAL_SPOT_DIR}/spot/")
         set(SPOT_LIBRARIES ${MANUAL_SPOT_DIR}/spot/lib/libspot${DYNAMIC_EXT})
