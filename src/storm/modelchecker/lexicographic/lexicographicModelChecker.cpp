@@ -64,9 +64,6 @@ namespace storm {
         std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> product =
             productBuilder.build<SparseModelType>(model.getTransitionMatrix(), statesOfInterest);
 
-        //STORM_PRINT("Product " + (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) + " has "
-        //           << product->getProductModel().getNumberOfStates() << " states and " << product->getProductModel().getNumberOfTransitions() << " transitions."
-        //           << std::endl);
         return std::make_pair(product, acceptanceConditions);
     }
 
@@ -152,14 +149,6 @@ namespace storm {
                     }
                 }
             }
-            //                for (storm::automata::AcceptanceCondition::acceptance_expr::ptr const& streettPair : acceptancePairs) {
-            //                    STORM_PRINT("Evaluating pair : " << streettPair->toString() << std::endl);
-            //                    auto finitePart = streettPair->getLeft();
-            //                    auto infinitePart = streettPair->getRight();
-            //                    bool pairIsTrue = isAcceptingPair(scc, finitePart, infinitePart, acceptance);
-            //                    ret = pairIsTrue;
-            //                    if (!ret) break;
-            //                }
         }
         auto subMecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(model, mecStates);
         if (subMecDecomposition.empty()) {
@@ -213,17 +202,6 @@ namespace storm {
                                                                                         storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                                         storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                                                                                         storm::storage::BitVector& allowed) {
-        /*STORM_LOG_INFO("Computing accepting states for acceptance condition " << *acceptance.getAcceptanceExpression());
-        if (acceptance.getAcceptanceExpression()->isTRUE()) {
-            STORM_LOG_INFO(" TRUE -> all states accepting (assumes no deadlock in the model)");
-            return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true);
-        } else if (acceptance.getAcceptanceExpression()->isFALSE()) {
-            STORM_LOG_INFO(" FALSE -> all states rejecting");
-            return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
-        }
-        std::vector<std::vector<automata::AcceptanceCondition::acceptance_expr::ptr>> cnf = acceptance.extractFromCNF();*/
-        // storm::storage::BitVector allowed(transitionMatrix.getRowGroupCount(), true);
-        // storm::storage::StronglyConnectedComponentDecomposition<ValueType> bottomSccs(transitionMatrix, storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs().dropNaiveSccs());
         storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions, allowed);
         return std::make_pair(mecs, allowed);
     }
@@ -441,19 +419,6 @@ namespace storm {
         }
         return apSets;
     }
-
-    /*std::string exec(const char* cmd) {
-       std::array<char, 128> buffer{};
-       std::string result;
-       std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-       if (!pipe) {
-           throw std::runtime_error("popen() failed!");
-       }
-       while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-           result += buffer.data();
-       }
-       return result;
-    }*/
 
     template class lexicographic::lexicographicModelChecker<storm::models::sparse::Mdp<double>, double, true>;
     template class lexicographic::lexicographicModelChecker<storm::models::sparse::Mdp<double>, double, false>;
