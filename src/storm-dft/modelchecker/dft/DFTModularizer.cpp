@@ -38,9 +38,7 @@ std::vector<ValueType> DFTModularizer::check(FormulaVector const &formulas,
 
     std::vector<ValueType> timepoints(timepointSet.begin(), timepointSet.end());
 
-    auto topLevelElement{
-        std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(
-            workDFT->getTopLevelGate())};
+    auto topLevelElement{workDFT->getTopLevelElement()};
     replaceDynamicModules(topLevelElement, timepoints);
 
     auto const subDFT{getSubDFT(topLevelElement)};
@@ -53,9 +51,7 @@ std::vector<ValueType> DFTModularizer::getProbabilitiesAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t const chunksize) {
     workDFT = dft;
 
-    auto topLevelElement{
-        std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(
-            workDFT->getTopLevelGate())};
+    auto topLevelElement{workDFT->getTopLevelElement()};
     replaceDynamicModules(topLevelElement, timepoints);
 
     auto const subDFT{getSubDFT(topLevelElement)};
@@ -120,9 +116,7 @@ void DFTModularizer::populateDfsCounters() {
     // reset date
     lastDate = 0;
 
-    auto const topLevelElement{
-        std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(
-            dft->getTopLevelGate())};
+    auto const topLevelElement{workDFT->getTopLevelElement()};
     populateDfsCounters(topLevelElement);
 }
 
@@ -149,9 +143,7 @@ void DFTModularizer::populateElementInfos() {
         elementInfos[id] = ElementInfo{};
     }
 
-    auto const topLevelElement{
-        std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(
-            dft->getTopLevelGate())};
+    auto const topLevelElement{workDFT->getTopLevelElement()};
     populateElementInfos(topLevelElement);
 
     // free some space
@@ -245,7 +237,7 @@ void DFTModularizer::updateWorkDFT(
             builder.addBasicElementSamples(element->name(), activeSamples);
         }
     }
-    builder.setTopLevel(workDFT->getTopLevelGate()->name());
+    builder.setTopLevel(workDFT->getTopLevelElement()->name());
 
     workDFT = std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
 }

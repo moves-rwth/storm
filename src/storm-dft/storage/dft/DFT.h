@@ -213,8 +213,8 @@ namespace storm {
                 return std::static_pointer_cast<DFTBE<ValueType> const>(mElements[index]);
             }
 
-            std::shared_ptr<DFTGate<ValueType> const> getTopLevelGate() const {
-                return getGate(mTopLevelIndex);
+            DFTElementCPointer getTopLevelElement() const {
+                return getElement(getTopLevelIndex());
             }
 
             std::shared_ptr<DFTGate<ValueType> const> getGate(size_t index) const {
