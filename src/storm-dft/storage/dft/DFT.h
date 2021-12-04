@@ -111,8 +111,8 @@ namespace storm {
                 return mTopLevelIndex;
             }
 
-            DFTElementType topLevelType() const {
-                return mElements[getTopLevelIndex()]->type();
+            DFTElementType getTopLevelType() const {
+                return getTopLevelElement()->type();
             }
 
             size_t getMaxSpareChildCount() const {

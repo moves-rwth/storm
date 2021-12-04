@@ -70,7 +70,7 @@ namespace storm {
 
             // Try modularisation
             if (allowModularisation) {
-                switch (dft.topLevelType()) {
+                switch (dft.getTopLevelType()) {
                     case storm::storage::DFTElementType::AND:
                         STORM_LOG_TRACE("top modularisation called AND");
                         dfts = dft.topModularisation();
@@ -166,7 +166,7 @@ namespace storm {
 
             // Try modularisation
             if (allowModularisation) {
-                switch (dft.topLevelType()) {
+                switch (dft.getTopLevelType()) {
                     case storm::storage::DFTElementType::AND:
                         STORM_LOG_TRACE("top modularisation called AND");
                         dfts = dft.topModularisation();
