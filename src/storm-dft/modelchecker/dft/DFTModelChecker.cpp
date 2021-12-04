@@ -88,7 +88,7 @@ namespace storm {
                         STORM_LOG_TRACE("top modularisation called VOT");
                         dfts = dft.topModularisation();
                         nrK = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(
-                                dft.getTopLevelGate())->threshold();
+                                dft.getTopLevelElement())->threshold();
                         nrM = dfts.size();
                         if (nrK <= nrM / 2) {
                             nrK -= 1;
@@ -103,7 +103,7 @@ namespace storm {
 
             // Perform modularisation
             if (dfts.size() > 1) {
-                STORM_LOG_DEBUG("Modularisation of " << dft.getTopLevelGate()->name() << " into " << dfts.size() << " submodules.");
+                STORM_LOG_DEBUG("Modularisation of " << dft.getTopLevelElement()->name() << " into " << dfts.size() << " submodules.");
                 // TODO: compute simultaneously
                 dft_results results;
                 for (auto property : properties) {
