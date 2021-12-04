@@ -61,6 +61,7 @@ class DFTModularizer {
 
    private:
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
+    std::shared_ptr<storm::storage::DFT<ValueType>> workDFT{};
 
     /**
      * \return All connected DFTElements of the given element
@@ -92,8 +93,6 @@ class DFTModularizer {
     std::map<ElementId, ElementInfo> elementInfos{};
 
     uint64_t lastDate{};
-
-    std::shared_ptr<storm::storage::DFT<ValueType>> workDFT{};
 
     /**
      * Populates firstVisit, secondVisit and lastVisit.

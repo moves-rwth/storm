@@ -19,7 +19,8 @@ using FormulaVector = DFTModularizer::FormulaVector;
 
 DFTModularizer::DFTModularizer(
     std::shared_ptr<storm::storage::DFT<ValueType>> dft)
-    : dft{std::move(dft)},
+    : dft{dft},
+      workDFT{dft},
       sylvanBddManager{std::make_shared<storm::storage::SylvanBddManager>()} {
     populateDfsCounters();
     populateElementInfos();
