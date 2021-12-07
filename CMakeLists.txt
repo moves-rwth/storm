@@ -30,7 +30,7 @@ include(ProcessorCount)
 ##	CMake options of Storm
 ##
 #############################################################
-set(CMAKE_BUILD_TYPE "DEBUG")
+## set(CMAKE_BUILD_TYPE "DEBUG")
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
 option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
@@ -53,7 +53,7 @@ mark_as_advanced(USE_SMTRAT)
 option(USE_HYPRO "Sets whether HyPro should be included." OFF)
 mark_as_advanced(USE_HYPRO)
 option(STORM_USE_SPOT_SYSTEM "Sets whether the system version of Spot should be included (if found)." ON)
-option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available or not used)." ON)
+option(STORM_USE_SPOT_SHIPPED "Sets whether Spot should be downloaded and installed (if system version is not available or not used)." OFF)
 option(XML_SUPPORT "Sets whether xml based format parsing should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 mark_as_advanced(FORCE_COLOR)

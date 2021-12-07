@@ -1,0 +1,5 @@
+To run the lexicographic model checker, call some multi-objective formula (I guess, it should only be LTL formulae
+inside). Example: multi(Pmax=? [FG x=1], Pmax=? [x=2 U x=3])
+
+To build storm with the correct spot:
+cmake .. -DSPOT_ROOT Path/To/Spot
