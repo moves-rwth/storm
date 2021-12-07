@@ -34,7 +34,7 @@ class DFTModularizer {
 
     /**
      * Calculate the properties specified by the formulas
-     * \param formuals
+     * \param formulas
      * The Properties to check for.
      *
      * \note Does not work with events in dynamic modules.
@@ -148,7 +148,7 @@ class DFTModularizer {
                        std::map<ValueType, ValueType> activeSamples);
 
     /**
-     * Analyse the static Module with the given element as the root.
+     * Analyse the dynamic module with the given element as the root.
      *
      * \note
      * Updates the workDFT with the calculated probability
