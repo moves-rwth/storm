@@ -1,0 +1,192 @@
+(setq load-path (append '("@abs_top_srcdir@/elisp/") ; for hoa-mode.el
+			load-path))
+
+(setq debug-on-error t)
+
+;;; Some combination of GNU TLS and Emacs fail to retrieve archive
+;;; contents over https.
+;;; https://www.reddit.com/r/emacs/comments/cdf48c/failed_to_download_gnu_archive/
+;;; https://debbugs.gnu.org/cgi/bugreport.cgi?bug=34341
+(if (and (version< emacs-version "26.3") (>= libgnutls-version 30600))
+    (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3"))
+; work around obsolete ELPA signatures :-(
+(setq package-check-signature 'nil)
+
+(package-initialize)
+(require 'cl)
+(setq features-before features)
+
+(require 'org-version)
+(print (org-version nil t t))
+(print (concat "Org " org-version))
+
+; The Org version that ships with emacs is usually too old.
+(when (version< org-version "9.1")
+  (warn "Org-mode is too old; attempting to download a more recent version")
+  ;; we need to unload any bits of org that were loaded before calling
+  ;; install package, otherwise the byte code might mix the two versions.
+  (dolist (feature (set-difference features features-before))
+    (when (and (featurep feature)
+               (let ((feature-name (symbol-name feature)))
+                 (or (string-prefix-p "org" feature-name)
+                     (string-prefix-p "ob" feature-name))))
+      (message "unloading feature %s" feature)
+      (unload-feature feature t)))
+  ;; install org-plus-contrib, not org, as the former includes htmlize
+  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+  (package-refresh-contents)
+  (let ((org-p-c (cadr (assq 'org-plus-contrib package-archive-contents))))
+    (package-install org-p-c)))
+
+(let ((have-htmlize (require 'htmlize nil t))
+      (have-ess (require 'ess nil t)))
+  (unless (and have-htmlize have-ess)
+    (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+    (package-refresh-contents)
+    (unless have-htmlize
+      (let ((htmlize (cadr (assq 'htmlize package-archive-contents))))
+        (package-install htmlize)))
+    (unless have-ess
+      (let ((ess (cadr (assq 'ess package-archive-contents))))
+        (package-install ess)))))
+
+(require 'ox-publish)
+(require 'org-install)
+(require 'hoa-mode)
+
+; See https://github.com/emacs-ess/ESS/issues/1052
+(setq ess-gen-proc-buffer-name-function 'ess-gen-proc-buffer-name:directory)
+(setq ess-use-flymake nil)
+
+(setq org-export-htmlize-output-type 'css)
+(setq org-html-htmlize-output-type 'css)
+; the .org-timestamp directory does not always exist, is not always
+; created by org, and that causes issues on our buildfarm.
+(setq org-publish-use-timestamps-flag nil)
+;; The default value of writing to ~/.org-timestamps causes race
+;; conditions when doing concurrent builds.
+(setq org-publish-timestamp-directory "@abs_top_builddir@/.org-timestamps/")
+
+;; Prevent tabs from being inserted when org-mode reindent some code.
+(setq-default indent-tabs-mode nil)
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ `((,(if (version< org-version "8.3") 'sh 'shell) . t)
+   (dot . t)
+   (python . t)
+   (plantuml . t)
+   (R . t)
+   (C . t)))
+(setq org-confirm-babel-evaluate nil)
+(setq org-plantuml-jar-path "@abs_top_builddir@/doc/org/plantuml.jar")
+(setq org-babel-temporary-directory "@abs_top_builddir@/doc/org/tmp")
+;;; the directory might already exist from a previously aborted run.
+(if (file-directory-p org-babel-temporary-directory)
+    (delete-directory org-babel-temporary-directory t))
+(make-directory org-babel-temporary-directory t)
+(setq org-babel-python-command "@PYTHON@")
+(setq org-babel-C++-compiler "./g++wrap")
+(setq shell-file-name "@SHELL@")
+(setq ess-ask-for-ess-directory nil)
+
+(setq org-babel-default-header-args:plantuml
+      '((:results . "file")
+        (:exports . "results")
+        ;; Prevent the plantuml logo to appear on top of whatever you
+        ;; are doing when the project compiles in the background.
+        (:java . "-Djava.awt.headless=true")))
+
+(setenv "PATH"
+	(concat "@abs_top_builddir@/bin" path-separator (getenv "PATH")))
+(setenv "SPOT_UNINSTALLED" "1")
+(setenv "PYTHONPATH"
+	(concat "@abs_top_builddir@/python/.libs:"
+		"@abs_top_builddir@/python:"
+		"@abs_top_srcdir@/python:"
+		"@abs_top_builddir@/python/spot/.libs:"
+		"@abs_top_builddir@/python/spot:"
+		"@abs_top_builddir@/spot/ltsmin/.libs"
+		"@abs_top_srcdir@/python/spot:"
+		(getenv "PYTHONPATH")))
+(setenv "DYLD_LIBRARY_PATH"
+	(concat "@abs_top_builddir@/python/.libs:@abs_top_builddir@/spot/.libs:@abs_top_builddir@/buddy/src/.libs:"
+		(getenv "DYLD_LIBRARY_PATH")))
+(setenv "SPOT_DOTDEFAULT" "Brf(Lato)C(#ffffa0)")
+(setenv "SPOT_DOTEXTRA" "node[fontsize=12] fontsize=12 stylesheet=\"spot.css\" edge[arrowhead=vee, arrowsize=.7, fontsize=12]")
+
+(setq org-export-html-home/up-format
+"<div id=\"org-div-home-and-up\" style=\"text-align:center;white-space:nowrap;\">
+ <a accesskey=\"h\" href=\"%s\">UP</a> | <a accesskey=\"H\" href=\"%s\">HOME</a>
+</div>")
+
+(setq org-export-html-postamble nil)
+(setq org-html-table-header-tags
+      '("<th scope=\"%s\"%s><div><span>" . "</span></div></th>"))
+
+(defun spot-sitemap-format-entry (entry style project)
+  "Export a sitemap entry in a why that we can order them meaningfully.
+If file ENTRY has HTML_LINK_UP pointing to file up.html, and file
+up.html points to index.html, then the result is:
+      index.org/up.org/entry.org/ [[entry.org][TITLE]]"
+  (let ((linkup (org-publish-find-property entry :html-link-up project 'html))
+        (trail (concat entry "/ ")))
+    (while (and linkup (string-match "^\\(.*\\)\.html$" linkup))
+      (let ((match (concat (match-string 1 linkup) ".org")))
+        (if (string= match entry)
+            (setq linkup nil)
+          (setq linkup (org-publish-find-property match :html-link-up
+                                                  project 'html)
+                trail (concat match "/" trail)))))
+    (concat trail (org-publish-sitemap-default-entry entry style project))))
+
+(defun spot-sitemap-reorder (entries)
+  (sort entries (lambda (a b) (string< (car a) (car b)))))
+
+(defun spot-publish-sitemap (title thelist)
+  "Build Spot's sitemap.
+
+  This is done by sorting all lines, and then replacing
+  - index.org/up.org/entry.org/ [[entry.org][TITLE]]
+  by
+  - [[entry.org][TITLE]]
+  but indented according to the number of 'fake directory' parts."
+  (let ((body (org-list-to-org (cons 'unordered
+                                 (spot-sitemap-reorder (cdr thelist))))))
+    (while
+        (let* ((res (replace-regexp-in-string "\\([:space:]*\\)- [^/[:space:]]+/" "  \\1- " body))
+               (cmp (string= res body)))
+          (setq body res)
+          (not cmp)))
+    (concat "#+TITLE: " title
+            "\n#+SETUPFILE: setup.org\n#+HTML_LINK_UP: index.html\n\n"
+            body)))
+
+(setq org-publish-project-alist
+      '(("spot-html"
+	:base-directory "@abs_top_srcdir@/doc/org/"
+	:base-extension "org"
+	:publishing-directory "@abs_top_srcdir@/doc/userdoc/"
+	:recursive t
+	:exclude "setup.org"
+	:auto-sitemap t
+	:sitemap-title "Sitemap for Spot"
+        :sitemap-function spot-publish-sitemap
+        :sitemap-format-entry spot-sitemap-format-entry
+	:publishing-function org-html-publish-to-html
+	:html-head "<link rel=\"stylesheet\" type=\"text/css\" href=\"spot.css\" />"
+	:auto-preamble t)
+       ("spot-static"
+	:base-directory "@abs_top_srcdir@/doc/org/"
+	:base-extension "css\\|js\\|png\\|svg\\|jpg\\|gif\\|pdf"
+	:publishing-directory "@abs_top_srcdir@/doc/userdoc/"
+	:recursive t
+	:publishing-function org-publish-attachment)
+       ("spot-all" :components ("spot-html" "spot-static"))))
+
+(org-publish-all t)
+;;; org-babel-remove-temporary-directory does not correctly remove
+;;; nested directories and we have some files in tmp/.libs/ because of
+;;; libtool.  So we have to clean that ourselves.
+(if (file-directory-p org-babel-temporary-directory)
+    (delete-directory org-babel-temporary-directory t))

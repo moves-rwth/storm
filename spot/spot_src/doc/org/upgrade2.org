@@ -1,0 +1,680 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Upgrading from Spot 1.2.6
+#+DESCRIPTION: Help for upgrading code to Spot 2.0
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: index.html
+
+This page is for people who have code written for Spot 1.2.6, and
+would like to upgrade to Spot 2.0.  The changes listed here will
+probably also apply to code written using older Spot 1.x versions.
+
+This page is in no way exhaustive.  The main intent is just to list
+the major changes that have occurred in the library since version
+1.2.6, so that one can more easily update existing code.  The focus is
+based on features that appear to be commonly used, based on our the
+experience of updating a couple of projects that are using Spot.
+
+* Overview of the changes
+
+  Let's begin by just trying to summarize what has changed between
+  Spot 1.2.6 and Spot 2.0, just to get an idea of what will need to be
+  updated.
+
+  1. [[#cpp14][Spot now compiles using the C++14 standard]].  Compliant compiler
+     are sufficiently widespread now that this should not be an issue.
+
+  2. The layout of the source-tree and the layout of the installed
+     header files have been completely overhauled, and several header
+     files have been renamed.  An early step of upgrading existing
+     code dependent on Spot will therefore be to [[#includes][update all the
+     =#include=]].
+
+  3. [[#buddy][The customized version of BuDDy distributed with Spot has been
+     renamed]] to not clash with any regular version installed on the
+     system.
+
+  4. [[#formulas][The implementation of LTL formulas has been rewritten]].
+
+     They are no longer pointers but plain objects that performs their
+     own reference counting, freeing the programmer from this tedious
+     and error-prone task.  They could be handled as if they were
+     shared pointer, with the small difference that they are not using
+     C++'s standard shared pointers.
+
+     All operators are now implemented using a single type of node,
+     with a field that can be used to make a switch instead of what
+     used to require visitors.
+
+  5. Allocated object that are large or expected to have a long life
+     (such as automata, BDD dictionaries, accepting runs) are now
+     [[#shared_ptr][returned using shared pointers]].
+
+  6. Spot used to be centered around the concept of TGBA
+     (Transition-based Generalized Büchi Automata), i.e.,
+     \omega-automata in which a run is accepting if it visits
+     infinitely often one transition in each defined accepting set of
+     transitions.  This was implemented as a =tgba= class.
+
+     In Spot 2.0, each automaton can have a different acceptance
+     condition: this includes well known acceptance conditions such as
+     Büchi, co-Büchi, Rabin, Streett, or parity, but it could also be
+     an arbitrarily complex Boolean combination of those.  [[#tgba-twa][The central
+     automaton concept is now called T\omega{}A]] (for Transition-based
+     \omega-Automata), and implemented as a =twa= class.  The =tgba=
+     class does not exist anymore: a TGBA is just a T\omega{}A in
+     which the acceptance condition has been set to "generalized
+     Büchi".
+
+     While the gained generality on acceptance conditions allows us to
+     write algorithms that may work on any acceptance condition, Spot
+     still contains algorithms that work only on a particular
+     acceptance condition.  Those restrictions have to be ensured
+     using preconditions: the acceptance condition does not appear in
+     the type of the C++ object representing the automaton.
+
+  7. [[*Various renamings][Several class, functions, and methods, have been renamed]].  Some
+     have been completely reimplemented, with different interfaces.
+     In particular the =tgba_explicit_*= family of classes
+     (=tgba_explicit_formula=, =tgba_explicit_number=,
+     =tgba_explicit_string= used to encode a TGBA using a graph whose
+     state was named using LTL formulas, integers, or strings) are
+     replaced by a =twa_graph= class in which the representation is
+     more compact and efficient, but where states are necessarily
+     numbered.  Many algorithms have been rewritten on top of this
+     =twa_graph= class, and this simplified them a lot.
+
+* Upgrading to C++14
+  :PROPERTIES:
+  :CUSTOM_ID: cpp14
+  :END:
+
+  Because Spot now relies on C++14 features, programs that use Spot
+  should at least be compiled using this version (or a later one) of
+  the language.
+
+  Before the =g++= 6.0, the default C++ standard used was C++98, and
+  enabling C++14 is usually done by passing the option =-std=c++14=.
+  In =g++= 6.0 the default C++ standard used is C++14, so passing
+  =-std=c++14= is not necessary.
+
+  Upgrading from C++98, C++03 or C++11 to C++14 should be relatively
+  smooth as the language is /mostly/ backward compatible.
+
+* Upgrading =#include= directives
+  :PROPERTIES:
+  :CUSTOM_ID: include
+  :END:
+
+** Adjusting the search path
+  :PROPERTIES:
+  :CUSTOM_ID: include-search
+  :END:
+
+
+If Spot 1.2.6 was installed in =/usr/local=, its headers are
+in =/usr/local/include/spot=.   One would to write include statements
+such as
+#+BEGIN_SRC C++
+  #include <tgba/tgba.hh>
+  #include <ltl/formula.hh>
+#+END_SRC
+and then compile with =-I /usr/local/include/spot/= to make sure that
+the Spot headers were found.  Headers in Spot would also include other
+header in Spot by using names relative to the =/usr/local/include/spot/=
+directory.
+
+If Spot 2.0 is installed in =/usr/local=, its headers are still in
+=/usr/local/include/spot= however the =spot/= directory is and should
+always be used to refer to the header:
+#+BEGIN_SRC C++
+  #include <spot/twa/twa.hh>      // the new name of tgba/tgba.hh
+  #include <spot/tl/formula.hh>   // the new name of ltl/formula.hh
+#+END_SRC
+Now compilation should only be done with option =-I
+/usr/local/include=, which is usually already included by default.
+
+** Renaming headers files
+   :PROPERTIES:
+   :CUSTOM_ID: includes
+   :END:
+
+The following table shows all the headers installed by Spot 1.2.6, and
+the corresponding name to include in Spot 2.0.  Some of the new names
+do not exactly correspond to a renaming, but instead correspond to headers
+that provide a function with a similar service.
+
+
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| old name                           | new name or suggested replacement  | comment                                          |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~bdd.h~                            | ~bddx.h~                           | customized version of BuDDy                      |
+| ~bvec.h~                           | ~bvecx.h~                          | customized version of BuDDy                      |
+| ~fdd.h~                            | ~fddx.h~                           | customized version of BuDDy                      |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~dstarparse/public.hh~             | ~spot/parseaut/public.hh~          | single parser for all automata                   |
+| ~eltlparse/public.hh~              |                                    | not supported anymore                            |
+| ~iface/dve2/dve2.hh~               | ~spot/ltsmin/ltsmin.hh~            |                                                  |
+| ~kripke/fairkripke.hh~             | ~spot/kripke/fairkripke.hh~        |                                                  |
+| ~kripke/kripkeexplicit.hh~         | ~spot/kripke/kripkegraph.hh~       | new implementation                               |
+| ~kripke/kripke.hh~                 | ~spot/kripke/kripke.hh~            |                                                  |
+| ~kripke/kripkeprint.hh~            | ~spot/twaalgos/hoa.hh~             | adhoc output format replaced by HOA              |
+| ~kripkeparse/public.hh~            | ~spot/parseaut/public.hh~          | single parser for all automata                   |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~ltlast/allnodes.hh~               | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/atomic_prop.hh~            | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/automatop.hh~              | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/binop.hh~                  | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/bunop.hh~                  | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/constant.hh~               | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/formula.hh~                | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/multop.hh~                 | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/nfa.hh~                    |                                    | not supported anymore                            |
+| ~ltlast/predecl.hh~                |                                    | not needed anymore                               |
+| ~ltlast/refformula.hh~             |                                    | not needed anymore                               |
+| ~ltlast/unop.hh~                   | ~spot/tl/formula.hh~               | new implementation of formulas                   |
+| ~ltlast/visitor.hh~                |                                    | not supported anymore                            |
+| ~ltlenv/declenv.hh~                | ~spot/tl/declenv.hh~               |                                                  |
+| ~ltlenv/defaultenv.hh~             | ~spot/tl/defaultenv.hh~            |                                                  |
+| ~ltlenv/environment.hh~            | ~spot/tl/environment.hh~           |                                                  |
+| ~ltlparse/ltlfile.hh~              |                                    | not supported anymore                            |
+| ~ltlparse/public.hh~               | ~spot/tl/parse.hh~                 |                                                  |
+| ~ltlvisit/apcollect.hh~            | ~spot/tl/apcollect.hh~             |                                                  |
+| ~ltlvisit/clone.hh~                |                                    | not needed anymore                               |
+| ~ltlvisit/contain.hh~              | ~spot/tl/contain.hh~               |                                                  |
+| ~ltlvisit/destroy.hh~              |                                    | not needed anymore                               |
+| ~ltlvisit/dotty.hh~                | ~spot/tl/dot.hh~                   |                                                  |
+| ~ltlvisit/dump.hh~                 | ~spot/tl/formula.hh~               | member of the formula class                      |
+| ~ltlvisit/lbt.hh~                  | ~spot/tl/print.hh~                 |                                                  |
+| ~ltlvisit/length.hh~               | ~spot/tl/length.hh~                |                                                  |
+| ~ltlvisit/lunabbrev.hh~            | ~spot/tl/unabbrev.hh~              | generalized                                      |
+| ~ltlvisit/nenoform.hh~             | ~spot/tl/nenoform.hh~              |                                                  |
+| ~ltlvisit/postfix.hh~              |                                    | not supported anymore                            |
+| ~ltlvisit/randomltl.hh~            | ~spot/tl/randomltl.hh~             |                                                  |
+| ~ltlvisit/reduce.hh~               | ~spot/tl/simplify.hh~              | was already deprecated                           |
+| ~ltlvisit/relabel.hh~              | ~spot/tl/relabel.hh~               |                                                  |
+| ~ltlvisit/remove_x.hh~             | ~spot/tl/remove_x.hh~              |                                                  |
+| ~ltlvisit/simpfg.hh~               | ~spot/tl/unabbrev.hh~              | generalized                                      |
+| ~ltlvisit/simplify.hh~             | ~spot/tl/simplify.hh~              |                                                  |
+| ~ltlvisit/snf.hh~                  | ~spot/tl/snf.hh~                   |                                                  |
+| ~ltlvisit/tostring.hh~             | ~spot/tl/print.hh~                 |                                                  |
+| ~ltlvisit/tunabbrev.hh~            | ~spot/tl/unabbrev.hh~              | generalized                                      |
+| ~ltlvisit/wmunabbrev.hh~           | ~spot/lt/wmunabbrev.hh~            | generalized                                      |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~misc/bareword.hh~                 | ~spot/misc/bareword.hh~            |                                                  |
+| ~misc/bddlt.hh~                    | ~spot/misc/bddlt.hh~               |                                                  |
+| ~misc/bddop.hh~                    |                                    | not needed anymore                               |
+| ~misc/bitvect.hh~                  | ~spot/misc/bitvect.hh~             |                                                  |
+| ~misc/casts.hh~                    | ~spot/misc/casts.hh~               |                                                  |
+| ~misc/common.hh~                   | ~spot/misc/common.hh~              |                                                  |
+| ~misc/_config.h~                   | ~spot/misc/_config.h~              |                                                  |
+| ~misc/escape.hh~                   | ~spot/misc/escape.hh~              |                                                  |
+| ~misc/fixpool.hh~                  | ~spot/misc/fixpool.hh~             |                                                  |
+| ~misc/formater.hh~                 | ~spot/misc/formater.hh~            |                                                  |
+| ~misc/hashfunc.hh~                 | ~spot/misc/hashfunc.hh~            |                                                  |
+| ~misc/hash.hh~                     | ~spot/misc/hash.hh~                |                                                  |
+| ~misc/intvcmp2.hh~                 | ~spot/misc/intvcmp2.hh~            |                                                  |
+| ~misc/intvcomp.hh~                 | ~spot/misc/intvcomp.hh~            |                                                  |
+| ~misc/location.hh~                 | ~spot/misc/location.hh~            |                                                  |
+| ~misc/ltstr.hh~                    | ~spot/misc/ltstr.hh~               |                                                  |
+| ~misc/memusage.hh~                 | ~spot/misc/memusage.hh~            |                                                  |
+| ~misc/minato.hh~                   | ~spot/misc/minato.hh~              |                                                  |
+| ~misc/mspool.hh~                   | ~spot/misc/mspool.hh~              |                                                  |
+| ~misc/optionmap.hh~                | ~spot/misc/optionmap.hh~           |                                                  |
+| ~misc/position.hh~                 | ~spot/misc/position.hh~            |                                                  |
+| ~misc/random.hh~                   | ~spot/misc/random.hh~              |                                                  |
+| ~misc/satsolver.hh~                | ~spot/misc/satsolver.hh~           |                                                  |
+| ~misc/timer.hh~                    | ~spot/misc/timer.hh~               |                                                  |
+| ~misc/tmpfile.hh~                  | ~spot/misc/tmpfile.hh~             |                                                  |
+| ~misc/unique_ptr.hh~               | ~memory~                           | use =std::unique_ptr= from C++11                 |
+| ~misc/version.hh~                  | ~spot/misc/version.hh~             |                                                  |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~neverparse/public.hh~             | ~spot/parseaut/public.hh~          | single parser for all automata                   |
+| ~sabaalgos/sabadotty.hh~           |                                    | not supported anymore                            |
+| ~sabaalgos/sabareachiter.hh~       |                                    | not supported anymore                            |
+| ~saba/explicitstateconjunction.hh~ |                                    | not supported anymore                            |
+| ~saba/sabacomplementtgba.hh~       |                                    | not supported anymore                            |
+| ~saba/saba.hh~                     |                                    | not supported anymore                            |
+| ~saba/sabastate.hh~                |                                    | not supported anymore                            |
+| ~saba/sabasucciter.hh~             |                                    | not supported anymore                            |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~taalgos/dotty.hh~                 | ~spot/taalgos/dot.hh~              |                                                  |
+| ~taalgos/emptinessta.hh~           | ~spot/taalgos/emptinessta.hh~      |                                                  |
+| ~taalgos/minimize.hh~              | ~spot/taalgos/minimize.hh~         |                                                  |
+| ~taalgos/reachiter.hh~             | ~spot/taalgos/reachiter.hh~        |                                                  |
+| ~taalgos/statessetbuilder.hh~      | ~spot/taalgos/statesetbuilder.hh~  |                                                  |
+| ~taalgos/stats.hh~                 | ~spot/taalgos/stats.hh~            |                                                  |
+| ~taalgos/tgba2ta.hh~               | ~spot/taalgos/tgba2ta.hh~          |                                                  |
+| ~ta/taexplicit.hh~                 | ~spot/ta/taexplicit.hh~            | old implementation (ought to be changed)         |
+| ~ta/ta.hh~                         | ~spot/ta/ta.hh~                    |                                                  |
+| ~ta/taproduct.hh~                  | ~spot/ta/taproduct.hh~             |                                                  |
+| ~ta/tgtaexplicit.hh~               | ~spot/ta/tgtaexplicit.hh~          | old implementation (ought to be changed)         |
+| ~ta/tgta.hh~                       | ~spot/ta/tgta.hh~                  |                                                  |
+| ~ta/tgtaproduct.hh~                | ~spot/ta/tgtaproduct.hh~           |                                                  |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~tgbaalgos/bfssteps.hh~            | ~spot/twaalgos/bfssteps.hh~        |                                                  |
+| ~tgbaalgos/complete.hh~            | ~spot/twaalgos/complete.hh~        |                                                  |
+| ~tgbaalgos/compsusp.hh~            | ~spot/twaalgos/compsusp.hh~        |                                                  |
+| ~tgbaalgos/cutscc.hh~              |                                    | not supported anymore                            |
+| ~tgbaalgos/cycles.hh~              | ~spot/twaalgos/cycles.hh~          |                                                  |
+| ~tgbaalgos/degen.hh~               | ~spot/twaalgos/degen.hh~           |                                                  |
+| ~tgbaalgos/dottydec.hh~            |                                    | not supported anymore                            |
+| ~tgbaalgos/dotty.hh~               | ~spot/twaalgos/dot.hh~             |                                                  |
+| ~tgbaalgos/dtbasat.hh~             | ~spot/twaalgos/dtbasat.hh~         |                                                  |
+| ~tgbaalgos/dtgbacomp.hh~           | ~spot/twaalgos/complement.hh~      |                                                  |
+| ~tgbaalgos/dtgbasat.hh~            | ~spot/twaalgos/dtwasat.hh~         |                                                  |
+| ~tgbaalgos/dupexp.hh~              | ~spot/twaalgos/twagraph.hh~        | constructor of twa_graph                         |
+| ~tgbaalgos/eltl2tgba_lacim.hh~     |                                    | not supported anymore                            |
+| ~tgbaalgos/emptiness.hh~           | ~spot/twaalgos/emptiness.hh~       |                                                  |
+| ~tgbaalgos/emptiness_stats.hh~     | ~spot/twaalgos/emptiness_stats.hh~ |                                                  |
+| ~tgbaalgos/gtec/ce.hh~             | ~spot/twaalgos/gtec/ce.hh~         |                                                  |
+| ~tgbaalgos/gtec/explscc.hh~        |                                    | not supported anymore                            |
+| ~tgbaalgos/gtec/gtec.hh~           | ~spot/twaalgos/gtec/gtec.hh~       |                                                  |
+| ~tgbaalgos/gtec/nsheap.hh~         |                                    | not supported anymore                            |
+| ~tgbaalgos/gtec/sccstack.hh~       | ~spot/twaalgos/gtec/sccstack.hh~   |                                                  |
+| ~tgbaalgos/gtec/status.hh~         | ~spot/twaalgos/gtec/status.hh~     |                                                  |
+| ~tgbaalgos/gv04.hh~                | ~spot/twaalgos/gv04.hh~            |                                                  |
+| ~tgbaalgos/hoaf.hh~                | ~spot/twaalgos/hoa.hh~             |                                                  |
+| ~tgbaalgos/isdet.hh~               | ~spot/twaalgos/isdet.hh~           |                                                  |
+| ~tgbaalgos/isweakscc.hh~           | ~spot/twaalgos/isweakscc.hh~       |                                                  |
+| ~tgbaalgos/lbtt.hh~                | ~spot/twaalgos/lbtt.hh~            |                                                  |
+| ~tgbaalgos/ltl2taa.hh~             | ~spot/twaalgos/ltl2taa.hh~         |                                                  |
+| ~tgbaalgos/ltl2tgba_fm.hh~         | ~spot/twaalgos/ltl2tgba_fm.hh~     |                                                  |
+| ~tgbaalgos/ltl2tgba_lacim.hh~      |                                    | not supported anymore                            |
+| ~tgbaalgos/magic.hh~               | ~spot/twaalgos/magic.hh~           |                                                  |
+| ~tgbaalgos/minimize.hh~            | ~spot/twaalgos/minimize.hh~        |                                                  |
+| ~tgbaalgos/neverclaim.hh~          | ~spot/twaalgos/neverclaim.hh~      |                                                  |
+| ~tgbaalgos/postproc.hh~            | ~spot/twaalgos/postproc.hh~        |                                                  |
+| ~tgbaalgos/powerset.hh~            | ~spot/twaalgos/powerset.hh~        |                                                  |
+| ~tgbaalgos/projrun.hh~             | ~spot/twaalgos/emptiness.hh~       | use =twa_run::project()= since Spot 2.1          |
+| ~tgbaalgos/randomgraph.hh~         | ~spot/twaalgos/randomgraph.hh~     |                                                  |
+| ~tgbaalgos/reachiter.hh~           | ~spot/twaalgos/reachiter.hh~       |                                                  |
+| ~tgbaalgos/reducerun.hh~           | ~spot/twaalgos/emptiness.hh~       | now =twa_run::reduce()=                          |
+| ~tgbaalgos/reductgba_sim.hh~       | ~spot/twaalgos/simulation.hh~      | was already deprecated                           |
+| ~tgbaalgos/replayrun.hh~           | ~spot/twaalgos/emptiness.hh~       | now =twa_run::replay()=                          |
+| ~tgbaalgos/rundotdec.hh~           | ~spot/twaalgos/emptiness.hh~       | now =twa_run::highlight()=                       |
+| ~tgbaalgos/safety.hh~              | ~spot/twaalgos/strength.hh~        |                                                  |
+| ~tgbaalgos/save.hh~                | ~spot/twaalgos/hoa.hh~             | adhoc output format replaced by HOA              |
+| ~tgbaalgos/sccfilter.hh~           | ~spot/twaalgos/sccfilter.hh~       |                                                  |
+| ~tgbaalgos/scc.hh~                 | ~spot/twaalgos/sccinfo.hh~         | new implementation restricted to ~twa_graph~     |
+| ~tgbaalgos/se05.hh~                | ~spot/twaalgos/se05.hh~            |                                                  |
+| ~tgbaalgos/simulation.hh~          | ~spot/twaalgos/simulation.hh~      |                                                  |
+| ~tgbaalgos/stats.hh~               | ~spot/twaalgos/stats.hh~           |                                                  |
+| ~tgbaalgos/stripacc.hh~            | ~spot/twaalgos/stripacc.hh~        |                                                  |
+| ~tgbaalgos/tau03.hh~               | ~spot/twaalgos/tau03.hh~           |                                                  |
+| ~tgbaalgos/tau03opt.hh~            | ~spot/twaalgos/tau03opt.hh~        |                                                  |
+| ~tgbaalgos/translate.hh~           | ~spot/twaalgos/translate.hh~       |                                                  |
+| ~tgbaalgos/word.hh~                | ~spot/twaalgos/word.hh~            |                                                  |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~tgba/bdddict.hh~                  | ~spot/twa/bdddict.hh~              |                                                  |
+| ~tgba/bddprint.hh~                 | ~spot/twa/bddprint.hh~             |                                                  |
+| ~tgba/formula2bdd.hh~              | ~spot/twa/formula2bdd.hh~          |                                                  |
+| ~tgba/futurecondcol.hh~            |                                    | not supported anymore                            |
+| ~tgba/public.hh~                   | ~spot/twa/twa.hh~                  |                                                  |
+| ~tgba/sba.hh~                      |                                    | replaced by a flag in =twa=                      |
+| ~tgba/statebdd.hh~                 |                                    | not supported anymore                            |
+| ~tgba/state.hh~                    | ~spot/twa/twa.hh~                  |                                                  |
+| ~tgba/succiterconcrete.hh~         |                                    | not supported anymore                            |
+| ~tgba/succiter.hh~                 | ~spot/twa/twa.hh~                  |                                                  |
+| ~tgba/taatgba.hh~                  | ~spot/twa/taatgba.hh~              |                                                  |
+| ~tgba/tgbabddconcretefactory.hh~   |                                    | not supported anymore                            |
+| ~tgba/tgbabddconcrete.hh~          |                                    | not supported anymore                            |
+| ~tgba/tgbabddconcreteproduct.hh~   |                                    | not supported anymore                            |
+| ~tgba/tgbabddcoredata.hh~          |                                    | not supported anymore                            |
+| ~tgba/tgbabddfactory.hh~           |                                    | not supported anymore                            |
+| ~tgba/tgbaexplicit.hh~             | ~spot/twa/twagraph.hh~             |                                                  |
+| ~tgba/tgba.hh~                     | ~spot/twa/twa.hh~                  |                                                  |
+| ~tgba/tgbakvcomplement.hh~         |                                    | use ~tgba_determinize()~ and ~dualize()~         |
+| ~tgba/tgbamask.hh~                 | ~spot/twa/tgbamask.hh~             |                                                  |
+| ~tgba/tgbaproduct.hh~              | ~spot/twa/tgbaproduct.hh~          |                                                  |
+| ~tgba/tgbaproxy.hh~                |                                    | not supported anymore                            |
+| ~tgba/tgbasafracomplement.hh~      | ~spot/twaalgos/determinize.hh~     |                                                  |
+| ~tgba/tgbascc.hh~                  | ~spot/twaalgos/mask.hh~            |                                                  |
+| ~tgba/tgbasgba.hh~                 | ~spot/twaalgos/sbacc.hh~           |                                                  |
+| ~tgba/tgbatba.hh~                  | ~spot/twaalgos/degen.hh~           |                                                  |
+| ~tgba/tgbaunion.hh~                |                                    | not yet reimplemented                            |
+| ~tgba/wdbacomp.hh~                 | ~spot/twaalgos/dualize.hh~         | use ~dualize()~ instead                          |
+|------------------------------------+------------------------------------+--------------------------------------------------|
+| ~tgbaparse/public.hh~              | ~spot/parseaut/public.hh~          | single parser for all automata                   |
+
+* BuDDy was renamed
+  :PROPERTIES:
+  :CUSTOM_ID: buddy
+  :END:
+
+Spot install a customized version of the BDD library BuDDy.
+
+As shown in [[#includes][the table of renamed header files]], the header files for
+this library were all renamed: they have an =x= appended (=bddx.h=,
+=bvecx.h=, =fddx.h=).  The name of the library was renamed as well:
+=libbdd.so= and =libbdd.a= are now respectively =libbddx.so= and
+=libbddx.a=.  This means one should now pass =-lspot -lbddx= to the
+linker (instead of =-lspot -lbdd=) when linking against Spot.
+
+* New implementation for temporal logic formulas
+  :PROPERTIES:
+  :CUSTOM_ID: formulas
+  :END:
+
+As can be guessed from the [[#includes][the table of renamed header files]], the
+class hierarchy for temporal formulas has been entirely
+rewritten.  This change is actually quite massive (~13200 lines
+removed, ~8200 lines added), and brings some nice benefits:
+- LTL/PSL formulas are now represented by lightweight formula
+  objects (instead of pointers to children of an abstract
+  formula class) that perform reference counting automatically.
+- There is no hierarchy anymore: all operators are represented by
+  a single type of node in the syntax tree, and an enumerator is
+  used to distinguish between operators.
+- Visitors have been replaced by member functions such as =map()=
+  or =traverse()=, that take a function (usually written as a
+  lambda function) and apply it to the nodes of the tree.
+- As a consequence, writing algorithms that manipulate formula is more
+  friendly, and several algorithms that spanned a few pages have been
+  reduced to a few lines.  [[file:tut03.org][This page]] illustrates the new interface.
+
+Also the =spot::ltl= namespace has been removed: everything is
+directly in =spot= now.
+
+In code where formulas are just parsed from input string, and then
+passed on to other algorithms (e.g., translation to automata): it will
+suffice to change all occurrences of =const spot::ltl::formula*= into
+a plain =spot::formula=, and remove all calls to =->destroy()= or
+=->clone()= (that were used to perform explicit reference counting).
+
+* Many objects are now returned as =std::shared_ptr=
+  :PROPERTIES:
+  :CUSTOM_ID: shared_ptr
+  :END:
+
+By convention =foo_ptr= is a =typedef= for =std::share_ptr<foo>=.  The
+following typedefs are provided:
+
+#+BEGIN_SRC sh :results verbatim :exports results
+find ../../spot -name '[^.]*.hh' | xargs grep -h 'typedef.*_ptr;' | sed 's/^[ \t]*//' | sort -u
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+typedef std::shared_ptr<bdd_dict> bdd_dict_ptr;
+typedef std::shared_ptr<const fair_kripke> const_fair_kripke_ptr;
+typedef std::shared_ptr<const kripke> const_kripke_ptr;
+typedef std::shared_ptr<const kripke_explicit> const_kripke_explicit_ptr;
+typedef std::shared_ptr<const parsed_aut> const_parsed_aut_ptr;
+typedef std::shared_ptr<const taa_tgba_formula> const_taa_tgba_formula_ptr;
+typedef std::shared_ptr<const taa_tgba_string> const_taa_tgba_string_ptr;
+typedef std::shared_ptr<const ta> const_ta_ptr;
+typedef std::shared_ptr<const ta_explicit> const_ta_explicit_ptr;
+typedef std::shared_ptr<const ta_product> const_ta_product_ptr;
+typedef std::shared_ptr<const tgta> const_tgta_ptr;
+typedef std::shared_ptr<const tgta_explicit> const_tgta_explicit_ptr;
+typedef std::shared_ptr<const twa> const_twa_ptr;
+typedef std::shared_ptr<const twa_graph> const_twa_graph_ptr;
+typedef std::shared_ptr<const twa_product> const_twa_product_ptr;
+typedef std::shared_ptr<const twa_run> const_twa_run_ptr;
+typedef std::shared_ptr<emptiness_check> emptiness_check_ptr;
+typedef std::shared_ptr<emptiness_check_result> emptiness_check_result_ptr;
+typedef std::shared_ptr<fair_kripke> fair_kripke_ptr;
+typedef std::shared_ptr<kripke_explicit> kripke_explicit_ptr;
+typedef std::shared_ptr<kripke_graph> kripke_graph_ptr;
+typedef std::shared_ptr<kripke> kripke_ptr;
+typedef std::shared_ptr<parsed_aut> parsed_aut_ptr;
+typedef std::shared_ptr<taa_tgba_formula> taa_tgba_formula_ptr;
+typedef std::shared_ptr<taa_tgba_string> taa_tgba_string_ptr;
+typedef std::shared_ptr<ta_explicit> ta_explicit_ptr;
+typedef std::shared_ptr<ta_product> ta_product_ptr;
+typedef std::shared_ptr<ta> ta_ptr;
+typedef std::shared_ptr<tgta_explicit> tgta_explicit_ptr;
+typedef std::shared_ptr<tgta> tgta_ptr;
+typedef std::shared_ptr<twa_graph> twa_graph_ptr;
+typedef std::shared_ptr<twa_product> twa_product_ptr;
+typedef std::shared_ptr<twa_run> twa_run_ptr;
+typedef std::shared_ptr<twa> twa_ptr;
+#+end_example
+
+You should update any =foo*= to =foo_ptr= if it appears in this list,
+and remove any explicit call to =delete=.  Additionally, if =foo= is a
+class, there is usually a =make_foo(...)= function that calls
+=std::make_shared<foo>(...)=.
+
+As an example of usage, see [[file:tut22.org::#cpp][this example of creating an automaton
+explicitly]] where =spot::make_bdd_dict()= is used to create a BDD
+dictionary that is then passed to =spot::make_twa_graph()=.
+
+* The =twa= class replaces =tgba=
+  :PROPERTIES:
+  :CUSTOM_ID: tgba-twa
+  :END:
+
+The change has several implications besides just the changing the
+name:
+
+- =twa= can represent a larger class of automata than =tgba= could,
+  since [[file:concepts.org::#acceptance-condition][the acceptance condition can be arbitrarily complex]].
+  Algorithm that used to input =tgba= can be either generalized to
+  handle those larger acceptance conditions, or restricted to
+  generalized Büchi acceptance.   The typical way to ensure
+  that an =input= automaton has generalized Büchi acceptance is
+#+BEGIN_SRC C++
+     if (!input->acc().is_generalized_buchi())
+        throw std::runtime_error
+          ("myalgorithm() can only works with generalized Büchi acceptance");
+#+END_SRC
+
+- Some methods of the =tgba= class have been removed, include some
+  pure virtual methods. If you wrote a subclass, you may simply remove
+  the following methods:
+  - =compute_support_conditions()=,
+  - =compute_support_variables()=,
+  - =transition_annotation()=,
+  - =neg_acceptance_conditions()=.
+
+- The =succ_iter()= method lost its last two (optional) arguments.
+
+- The badly named =number_of_acceptance_conditions()= has been renamed
+  to =num_sets()=.
+
+- The =tgba_succ_iterator= class was renamed to =twa_succ_iterator=, and
+  its interface was changed:
+  - =current_state()=, =current_condition()=, and
+    =current_acceptance_conditions()= are now named respectively
+    =dst()=, =cond()=, =acc()=.
+  - the =first()= and =next()= method now return a Boolean that
+    indicates whether we moved to a new successor (=true=), or reached
+    the end of the list of successors (=false=).  This return value
+    should be the same as what =!done()= would return, and can be used
+    to avoid some costly calls to the =done()= virtual function.
+
+- Membership to acceptance sets is now represented using a bit set
+  (instead of BDDs).  An T\omega{}A =aut= uses =aut->num_sets()=
+  acceptance sets numbered from =0= to =aut->num_sets()-1=.  The bit
+  sets are implemented as instances of =spot::acc_cond::mark_t=, so
+  they are also called "acceptance marks".
+
+- The =twa::release_iter()= method allow iterators to be recycled.
+  Each =twa= now contains a mutable field =iter_cache_= where
+  =release_iter()= stores the last returned iterator.  If this field
+  is not equal to =nullptr=, then =succ_iter()= can use it to allocate
+  a new iterator more efficiently.
+
+  In the code for =succ_iter()=, instead of:
+  #+BEGIN_SRC C++
+      // ...
+      return new my_iterator(arg1, arg2, arg3);
+  #+END_SRC
+  we can now have
+  #+BEGIN_SRC C++
+      // ...
+      if (iter_cache_)
+	{
+	   my_iterator* it = static_cast<my_iterator*>(iter_cache_);
+	   iter_cache_ = nullptr;
+	   // Some method to change the member that need changing.
+	   // (Here we assume that arg2 is the same for all iterators
+	   // built on this automaton.)
+	   it->recycle(arg1, arg3);
+	   return it;
+	}
+      return new my_iterator(arg1, arg2, arg3);
+  #+END_SRC
+
+  So not only do we save the calls to =new= and =delete=, but we also
+  save the time it takes to construct the objects (including setting
+  up the virtual table), and via a =recycle()= method that has to be
+  added to the iterator, we update only the attributes that needs to
+  be updated (for instance if the iterator contains a pointer back to
+  the automaton, this pointer requires no update when the iterator is
+  recycled).
+
+  #+BEGIN_caveat
+    The iterator stored in =twa::iter_cache_= is destroyed by
+    =twa::~twa()=.  In some case, this is too late.  For instance the
+    class =twa_product= uses a custom memory pool to allocate new
+    iterators more efficiently, and this memory pool is destroyed in
+    =twa_product::~twa_product()=.  In this case, referencing
+    =twa::iter_cache_= for its deletion in =twa::~tgba()= would be
+    incorrect: it has to be done in =twa_product::~twa_product()=
+    before destroying the pool.
+  #+END_caveat
+
+
+For a TGBA =aut=, and a state =s=, the original way to loop over the
+successors of =s= was:
+#+BEGIN_SRC C++
+  tgba_succ_iterator* i = aut->succ_iter(s);
+  for (i->first(); !i->done(); i->next())
+    {
+       // use i->current_state()
+       //     i->current_condition()
+       //     i->current_acceptance_conditions()
+    }
+  delete i;
+#+END_SRC
+
+While the above would still run after a few renamings, it can now be
+written more efficiently as:
+
+#+BEGIN_SRC C++
+  twa_succ_iterator* i = aut->succ_iter(s);
+  if (i->first())
+    do
+      {
+        // use i->dst()
+        //     i->cond()
+        //     i->acc()
+      }
+    while (i->next());
+  aut->release_iter(i);
+#+END_SRC
+
+If the original code did $1$ virtual call to =first()=, $n+1$ virtual
+calls to =done()=, and $n$ virtual calls to =next()=, the new version
+does as many calls to =first()= and =done()= while avoiding all the
+calls to =done()=.  Furthermore the call =release_iter()= makes it
+possible for the next call to =succ_iter()= to reuse the same
+iterator.
+
+Because the the above loop is quite common we also have some syntactic
+sugar via the new =succ()= method that returns a fake container with
+=begin()= and =end()= methods so that this works:
+
+#+BEGIN_SRC C++
+for (auto i: aut->succ(s))
+  {
+    // use i->dst()
+    //     i->cond()
+    //     i->acc()
+  }
+#+END_SRC
+
+- Each =twa= now has a BDD dictionary, so the =get_dict()= method is
+  implemented once for all in =twa=, and should not be implemented
+  anymore in sub-classes.
+
+- There should now be very few cases where it is necessary to call
+  methods of the BDD dictionary attached to a =twa=.  Registering
+  the atomic proposition used by a =twa= should now be done via the
+  =twa::register_ap()= or =twa::copy_ap_of()= methods.  Accessing
+  all registered propositions is achievable with =twa::ap()= or
+  =twa::ap_vars()=.  All propositions registered by an automaton are
+  automatically unregistered when the automaton is destroyed.
+
+
+* Various renamings
+  :PROPERTIES:
+  :CUSTOM_ID: renamings
+  :END:
+
+  The following is a non-exhaustive list of functions or classes that
+  have been renamed.
+
+| old name                                                    | new name                                    | comment                                                   |
+|-------------------------------------------------------------+---------------------------------------------+-----------------------------------------------------------|
+| ~dstar_parse()~                                             | ~parse_aut()~                               | single parser for all automata                            |
+| ~dtgba_complement()~                                        | ~dualize()~                                 |                                                           |
+| ~dupexp_bfs()~                                              |                                             | deleted                                                   |
+| ~dupexp_dfs()~                                              | ~make_twa_graph()~                          |                                                           |
+| ~format_parse_aut_errors()~                                 | ~parsed_aut::format_errors()~               |                                                           |
+| ~emptiness_check_instantiator::construct()~                 | ~make_emptiness_check_instantiator()~       |                                                           |
+| ~emptiness_check_instantiator::max_acceptance_conditions()~ | ~emptiness_check_instantiator::max_sets()~  |                                                           |
+| ~emptiness_check_instantiator::min_acceptance_conditions()~ | ~emptiness_check_instantiator::min_sets()~  |                                                           |
+| ~hoaf_reachable()~                                          | ~print_hoa()~                               |                                                           |
+| ~is_guarantee_automaton()~                                  | ~is_terminal_automaton()~                   |                                                           |
+| ~kripke_parse()~                                            | ~parse_aut()~                               | single parser for all automata                            |
+| ~kripke_save_reachable()~                                   | ~print_hoa()~                               | adhoc output format replaced by HOA                       |
+| ~kripke_save_reachable_renumbered()~                        | ~print_hoa()~                               | adhoc output format replaced by HOA                       |
+| ~lbtt_parse()~                                              | ~parse_aut()~                               | single parser for all automata                            |
+| ~lbtt_reachable()~                                          | ~print_lbtt()~                              |                                                           |
+| ~ltl::formula::is_X_free()~                                 | ~formula::is_syntactic_stutter_invariant()~ |                                                           |
+| ~ltl::ltl_simplifier~                                       | ~tl_simplifier~                             |                                                           |
+| ~ltl::parse_boolean()~                                      | ~parse_infix_boolean()~                     |                                                           |
+| ~ltl::parse_lbt()~                                          | ~parse_prefix_ltl()~                        |                                                           |
+| ~ltl::parse()~                                              | ~parse_infix_psl()~                         |                                                           |
+| ~ltl::parse_sere()~                                         | ~parse_infix_sere()~                        |                                                           |
+| ~ltl::to_latex_string()~                                    | ~print_latex_psl()~                         | also ~str_latex_psl()~                                    |
+| ~ltl::to_lbt_string()~                                      | ~print_lbt_ltl()~                           | also ~str_lbt_ltl()~                                      |
+| ~ltl::to_sclatex_string()~                                  | ~print_sclatex_psl()~                       | also ~str_sclatex_psl()~                                  |
+| ~ltl::to_spin_string()~                                     | ~print_spin_ltl()~                          | also ~str_spin_ltl()~                                     |
+| ~ltl::to_string()~                                          | ~print_psl()~, ~print_sere()~               | also ~str_psl()~ or ~str_sere()~                          |
+| ~ltl::to_ut8_string()~                                      | ~print_utg8_psl()~, ~print_utf8_sere()~     | also ~str_utf8_psl()~ or ~str_utf8_sere()~                |
+| ~ltl::to_wring_string()~                                    | ~print_wring_ltl()~                         | also ~str_wring_ltl()~                                    |
+| ~neverclaim_parse()~                                        | ~parse_aut()~                               | single parser for all automata                            |
+| ~never_claim_reachable()~                                   | ~print_never_claim()~                       |                                                           |
+| ~print_tgba_run()~                                          | ~tgba_run::operator<<()~                    |                                                           |
+| ~reduce_run()~                                              | ~twa_run::reduce()~                         |                                                           |
+| ~replay_tgba_run()~                                         | ~twa_run::replay()~                         |                                                           |
+| ~scc_map~                                                   | ~scc_info~                                  | new implementation restricted to ~twa_graph~              |
+| ~ta_succ_iterator::current_acceptance_conditions()~         | ~ta_succ_iterator::acc()~                   |                                                           |
+| ~ta_succ_iterator::current_condition()~                     | ~ta_succ_iterator::cond()~                  |                                                           |
+| ~ta_succ_iterator::current_state()~                         | ~ta_succ_iterator::dst()~                   |                                                           |
+| ~tgba~                                                      | ~twa~                                       |                                                           |
+| ~tgba::all_acceptance_conditions()~                         |                                             | use ~tgba::acc().accepting()~ or ~tgba::acc().all_sets()~ |
+| ~tgba::neg_acceptance_conditions()~                         |                                             | deleted                                                   |
+| ~tgba::number_of_acceptance_conditions()~                   | ~tgba::num_sets()~                          |                                                           |
+| ~tgba::support_conditions()~                                |                                             | deleted                                                   |
+| ~tgba::support_variables()~                                 |                                             | deleted                                                   |
+| ~tgba_explicit_formula~                                     |                                             | deleted                                                   |
+| ~tgba_explicit_number~                                      | ~twa_graph~                                 | new implementation                                        |
+| ~tgba_explicit_string~                                      |                                             | deleted                                                   |
+| ~tgba_parse()~                                              | ~parse_aut()~                               | single parser for all automata                            |
+| ~tgba_reachable_iterator~                                   | ~twa_reachable_iterator~                    |                                                           |
+| ~tgba_reachable_iterator_breadth_first~                     | ~twa_reachable_iterator_breadth_first~      |                                                           |
+| ~tgba_reachable_iterator_depth_first~                       | ~twa_reachable_iterator_depth_first~        |                                                           |
+| ~tgba_run_to_tgba()~                                        | ~twa_run::as_twa()~                         |                                                           |
+| ~tgba_run~                                                  | ~twa_run~                                   |                                                           |
+| ~tgba_save_reachable()~                                     | ~print_hoa()~                               | adhoc output format replaced by HOA                       |
+| ~tgba_statistics::transitions()~                            | ~twa_statistics::edges()~                   |                                                           |
+| ~tgba_sub_statistics::sub_transitions()~                    | ~twa_sub_statistics::transitions()~         |                                                           |
+| ~tgba_succ_iterator::current_acceptance_conditions()~       | ~twa_succ_iterator::acc()~                  |                                                           |
+| ~tgba_succ_iterator::current_condition()~                   | ~twa_succ_iterator::cond()~                 |                                                           |
+| ~tgba_succ_iterator::current_state()~                       | ~twa_succ_iterator::dst()~                  |                                                           |
+
+#  LocalWords:  utf html cpp BuDDy ptr TGBA tgba twa tgba renamings
+#  LocalWords:  reimplemented cpp SRC bdd bddx BuDDy bvec bvecx fdd
+#  LocalWords:  fddx dstarparse eltlparse iface kripke adhoc ltlast
+#  LocalWords:  kripkeparse ltlenv ltlparse ltlvisit config sabaalgos
+#  LocalWords:  neverparse saba taalgos tgbaalgos dualize tgbaparse
+#  LocalWords:  libbdd libbddx lspot lbddx lbdd namespace ptr xargs
+#  LocalWords:  typedefs sed aut taa tgta acc buchi myalgorithm succ
+#  LocalWords:  iter num dst cond BDDs arg dstar dtgba dupexp bfs dfs
+#  LocalWords:  instantiator hoaf lbtt tl simplifier boolean psl str
+#  LocalWords:  lbt sclatex utg utf neverclaim scc

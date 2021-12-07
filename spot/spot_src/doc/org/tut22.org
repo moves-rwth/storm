@@ -1,0 +1,410 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Creating an automaton by adding states and transitions
+#+DESCRIPTION: Code example for constructing ω-automata in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:python :results output :exports both :wrap SRC hoa
+#+PROPERTY: header-args:C+++ :results verbatim :exports both :wrap SRC hoa
+
+This example demonstrates how to create an automaton and then print it.
+
+* Transition-based Generalized Büchi automaton
+  :PROPERTIES:
+  :CUSTOM_ID: tgba
+  :END:
+
+For historical reasons, TGBAs are the more commonly used type of
+automata in Spot.
+
+** C++
+  :PROPERTIES:
+  :CUSTOM_ID: cpp
+  :END:
+
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/twaalgos/hoa.hh>
+  #include <spot/twa/twagraph.hh>
+
+  int main(void)
+  {
+    // The bdd_dict is used to maintain the correspondence between the
+    // atomic propositions and the BDD variables that label the edges of
+    // the automaton.
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+    // This creates an empty automaton that we have yet to fill.
+    spot::twa_graph_ptr aut = make_twa_graph(dict);
+
+    // Since a BDD is associated to every atomic proposition, the
+    // register_ap() function returns a BDD variable number
+    // that can be converted into a BDD using bdd_ithvar().
+    bdd p1 = bdd_ithvar(aut->register_ap("p1"));
+    bdd p2 = bdd_ithvar(aut->register_ap("p2"));
+
+    // Set the acceptance condition of the automaton to Inf(0)&Inf(1)
+    aut->set_generalized_buchi(2);
+
+    // States are numbered from 0.
+    aut->new_states(3);
+    // The default initial state is 0, but it is always better to
+    // specify it explicitly.
+    aut->set_init_state(0U);
+
+    // new_edge() takes 3 mandatory parameters: source state,
+    // destination state, and label.  A last optional parameter can be
+    // used to specify membership to acceptance sets.
+    aut->new_edge(0, 1, p1);
+    aut->new_edge(1, 1, p1 & p2, {0});
+    aut->new_edge(1, 2, p2, {1});
+    aut->new_edge(2, 1, p1 | p2, {0, 1});
+
+    // Print the resulting automaton.
+    print_hoa(std::cout, aut);
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p1" "p2"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 1
+State: 1
+[0&1] 1 {0}
+[1] 2 {1}
+State: 2
+[0 | 1] 1 {0 1}
+--END--
+#+end_SRC
+
+** Python
+
+#+BEGIN_SRC python
+  import spot
+  import buddy
+
+  # The bdd_dict is used to maintain the correspondence between the
+  # atomic propositions and the BDD variables that label the edges of
+  # the automaton.
+  bdict = spot.make_bdd_dict();
+  # This creates an empty automaton that we have yet to fill.
+  aut = spot.make_twa_graph(bdict)
+
+  # Since a BDD is associated to every atomic proposition, the register_ap()
+  # function returns a BDD variable number that can be converted into a BDD
+  # using bdd_ithvar() from the BuDDy library.
+  p1 = buddy.bdd_ithvar(aut.register_ap("p1"))
+  p2 = buddy.bdd_ithvar(aut.register_ap("p2"))
+
+  # Set the acceptance condition of the automaton to Inf(0)&Inf(1)
+  aut.set_generalized_buchi(2)
+
+  # States are numbered from 0.
+  aut.new_states(3)
+  # The default initial state is 0, but it is always better to
+  # specify it explicitly.
+  aut.set_init_state(0)
+
+  # new_edge() takes 3 mandatory parameters: source state, destination state,
+  # and label.  A last optional parameter can be used to specify membership to
+  # acceptance sets.  In the Python version, the list of acceptance sets the
+  # transition belongs to should be specified as a list.
+  aut.new_edge(0, 1, p1)
+  aut.new_edge(1, 1, p1 & p2, [0])
+  aut.new_edge(1, 2, p2, [1]);
+  aut.new_edge(2, 1, p1 | p2, [0, 1]);
+
+  # Print the resulting automaton.
+  print(aut.to_str('hoa'))
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p1" "p2"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 1
+State: 1
+[0&1] 1 {0}
+[1] 2 {1}
+State: 2
+[0 | 1] 1 {0 1}
+--END--
+#+end_SRC
+
+* Büchi automaton, with state-based acceptance
+  :PROPERTIES:
+  :CUSTOM_ID: sba
+  :END:
+
+Spot does not really support state-based acceptance condition; this is
+faked as follows:
+
+- instead of marking states as accepting, we mark *all* outgoing edges
+  of accepting states,
+- additionally, we set =prop_state_acc(true)= to indicate that the
+  automaton should output as if it were state-based.
+
+Some algorithm recognize the =prop_state_acc()= properties and trigger
+some special handling of the automaton, maybe to preserve its "fake
+state-based nature".
+
+The =print_hoa()= function will check that automata marked with
+=prop_state_acc()= are actually using the same acceptance sets on all
+outgoing transitions of each state, and raise an exception otherwise.
+
+In the following example, we are going to use Büchi acceptance, but
+=prop_state_acc()= can be used with any acceptance.  Again, this property
+should be read as "this automaton with transition-based acceptance
+is actually encoding a state-based acceptance, so treat it as follows
+whenever possible".
+
+** C++
+
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/twaalgos/hoa.hh>
+  #include <spot/twa/twagraph.hh>
+
+  int main(void)
+  {
+    // The bdd_dict is used to maintain the correspondence between the
+    // atomic propositions and the BDD variables that label the edges of
+    // the automaton.
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+    // This creates an empty automaton that we have yet to fill.
+    spot::twa_graph_ptr aut = make_twa_graph(dict);
+
+    // Since a BDD is associated to every atomic proposition, the
+    // register_ap() function returns a BDD variable number
+    // that can be converted into a BDD using bdd_ithvar().
+    bdd p1 = bdd_ithvar(aut->register_ap("p1"));
+    bdd p2 = bdd_ithvar(aut->register_ap("p2"));
+
+    // Set the acceptance condition of the automaton to Inf(0)
+    aut->set_buchi();
+    // Pretend this is state-based acceptance
+    aut->prop_state_acc(true);
+
+    // States are numbered from 0.
+    aut->new_states(3);
+    // The default initial state is 0, but it is always better to
+    // specify it explicitly.
+    aut->set_init_state(0U);
+
+    // new_edge() takes 3 mandatory parameters: source state,
+    // destination state, and label.  A last optional parameter can be
+    // used to specify membership to acceptance sets.
+    aut->new_edge(0, 1, p1);
+    // All edges leaving the same state must belong to the same
+    // acceptance sets.
+    aut->new_edge(1, 1, p1 & p2, {0});
+    aut->new_edge(1, 2, p2, {0});
+    aut->new_edge(2, 1, p1 | p2);
+    // Print the resulting automaton.
+    print_hoa(std::cout, aut);
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p1" "p2"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[0] 1
+State: 1 {0}
+[0&1] 1
+[1] 2
+State: 2
+[0 | 1] 1
+--END--
+#+end_SRC
+
+** Python
+
+#+BEGIN_SRC python
+  import spot
+  import buddy
+
+  # The bdd_dict is used to maintain the correspondence between the
+  # atomic propositions and the BDD variables that label the edges of
+  # the automaton.
+  bdict = spot.make_bdd_dict();
+  # This creates an empty automaton that we have yet to fill.
+  aut = spot.make_twa_graph(bdict)
+
+  # Since a BDD is associated to every atomic proposition, the register_ap()
+  # function returns a BDD variable number that can be converted into a BDD
+  # using bdd_ithvar() from the BuDDy library.
+  p1 = buddy.bdd_ithvar(aut.register_ap("p1"))
+  p2 = buddy.bdd_ithvar(aut.register_ap("p2"))
+
+  # Set the acceptance condition of the automaton to Inf(0)
+  aut.set_buchi()
+  # Pretend this is state-based acceptance
+  aut.prop_state_acc(True);
+
+  # States are numbered from 0.
+  aut.new_states(3)
+  # The default initial state is 0, but it is always better to
+  # specify it explicitly.
+  aut.set_init_state(0)
+
+  # new_edge() takes 3 mandatory parameters: source state, destination state,
+  # and label.  A last optional parameter can be used to specify membership to
+  # acceptance sets.  In the Python version, the list of acceptance sets the
+  # transition belongs to should be specified as a list.
+  aut.new_edge(0, 1, p1)
+  # All edges leaving the same state must belong to the same acceptance sets.
+  aut.new_edge(1, 1, p1 & p2, [0])
+  aut.new_edge(1, 2, p2, [0]);
+  aut.new_edge(2, 1, p1 | p2);
+
+  # Print the resulting automaton.
+  print(aut.to_str('hoa'))
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p1" "p2"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[0] 1
+State: 1 {0}
+[0&1] 1
+[1] 2
+State: 2
+[0 | 1] 1
+--END--
+#+end_SRC
+
+* Automaton with arbitrary acceptance condition
+  :PROPERTIES:
+  :CUSTOM_ID: setacc
+  :END:
+
+Generalized Büchi, and Büchi are common enough to warrant a dedicated
+method for setting the acceptance condition in the =twa_graph= class.
+Arbitrary acceptance condition can be set with =set_acceptance=.
+
+** C++
+
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/twaalgos/hoa.hh>
+  #include <spot/twa/twagraph.hh>
+
+  int main(void)
+  {
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+    spot::twa_graph_ptr aut = make_twa_graph(dict);
+    bdd p1 = bdd_ithvar(aut->register_ap("p1"));
+    bdd p2 = bdd_ithvar(aut->register_ap("p2"));
+
+    // The acceptance condition can be parsed from a string,
+    // or built from parts using spot::acc_cond.
+    aut->set_acceptance(3, "(Inf(0) & Fin(1)) | Fin(2)");
+
+    aut->new_states(3);
+    aut->set_init_state(0U);
+    aut->new_edge(0, 1, p1);
+    aut->new_edge(1, 1, p1 & p2, {0});
+    aut->new_edge(1, 2, p2, {1});
+    aut->new_edge(2, 1, p1 | p2, {0, 2});
+
+    print_hoa(std::cout, aut);
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p1" "p2"
+Acceptance: 3 (Inf(0) & Fin(1)) | Fin(2)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 1
+State: 1
+[0&1] 1 {0}
+[1] 2 {1}
+State: 2
+[0 | 1] 1 {0 2}
+--END--
+#+end_SRC
+
+** Python
+
+#+BEGIN_SRC python
+  import spot
+  import buddy
+
+  bdict = spot.make_bdd_dict();
+  aut = spot.make_twa_graph(bdict)
+  p1 = buddy.bdd_ithvar(aut.register_ap("p1"))
+  p2 = buddy.bdd_ithvar(aut.register_ap("p2"))
+
+  # The acceptance condition can be parsed from a string,
+  # or built from parts using spot.acc_cond.
+  aut.set_acceptance(3, "(Inf(0) & Fin(1)) | Fin(2)");
+
+  aut.new_states(3)
+  aut.set_init_state(0)
+  aut.new_edge(0, 1, p1)
+  aut.new_edge(1, 1, p1 & p2, [0])
+  aut.new_edge(1, 2, p2, [1]);
+  aut.new_edge(2, 1, p1 | p2, [0, 2]);
+
+  print(aut.to_str('hoa'))
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p1" "p2"
+Acceptance: 3 (Inf(0) & Fin(1)) | Fin(2)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 1
+State: 1
+[0&1] 1 {0}
+[1] 2 {1}
+State: 2
+[0 | 1] 1 {0 2}
+--END--
+#+end_SRC
+
+#  LocalWords:  utf html args SRC tgba TGBAs cpp bdd aut twa ap buchi
+#  LocalWords:  ithvar init acc bdict BuDDy str sba setacc cond

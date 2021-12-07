@@ -1,0 +1,136 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Testing the equivalence of two formulas
+#+DESCRIPTION: Code example for testing the equivalence of two LTL or PSL formulas
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+This page shows how to test whether two LTL/PSL formulas are
+equivalent, i.e., if they denote the same languages.
+
+* Shell
+
+Using a =ltlfilt= you can use =--equivalent-to=f= to filter a list of
+LTL formula and retain only those equivalent to =f=.  So this gives an easy
+way to test the equivalence of two formulas:
+
+#+BEGIN_SRC sh
+ltlfilt -f '(a U b) U a' --equivalent-to 'b U a'
+#+END_SRC
+#+RESULTS:
+: (a U b) U a
+
+Since the input formula was output, it means it is equivalent to =b U
+a=.  You may want to add =-c= to count the number of formula output if
+you prefer a 1/0 answer:
+
+#+BEGIN_SRC sh
+ltlfilt -c -f '(a U b) U a' --equivalent-to 'b U a'
+#+END_SRC
+#+RESULTS:
+: 1
+
+Or use =-q= if you only care about the exit status of =ltlfilt=: the
+exist status is =0= if some formula matched, and =1= if no formula
+matched.  (The effect of these =-c= and =-q= options should be
+familiar to =grep= users.)
+
+* Python
+
+In Python, we can implement this in a number of ways.  The
+easiest is to use the =spot.are_equivalent()= function.
+
+#+BEGIN_SRC python :results output :exports both
+import spot
+are_eq = spot.are_equivalent("(a U b) U a", "b U a")
+print("Equivalent" if are_eq else "Not equivalent")
+#+END_SRC
+#+RESULTS:
+: Equivalent
+
+The equivalence check is done by converting the input formulas $f$ and
+$g$ and their negation into four automata $A_f$, $A_{\lnot f}$, $A_g$,
+and $A_{\lnot g}$, and then making sure that $A_f\otimes A_{\lnot g}$
+and $A_g\otimes A_{\lnot f}$ are empty.
+
+We could also write this check by doing [[file:tut10.org][the translation]] and emptiness
+check ourselves.  For instance:
+
+#+BEGIN_SRC python
+import spot
+
+def implies(f, g):
+    a_f = f.translate()
+    a_ng = spot.formula.Not(g).translate()
+    return spot.product(a_f, a_ng).is_empty()
+
+def equiv(f, g):
+    return implies(f, g) and implies(g, f)
+
+f = spot.formula("(a U b) U a")
+g = spot.formula("b U a")
+print("Equivalent" if equiv(f, g) else "Not equivalent")
+#+END_SRC
+#+RESULTS:
+: Equivalent
+
+
+This can also be done via a =language_containment_checker= object:
+
+#+BEGIN_SRC python
+import spot
+f = spot.formula("(a U b) U a")
+g = spot.formula("b U a")
+c = spot.language_containment_checker()
+print("Equivalent" if c.equal(f, g) else "Not equivalent")
+#+END_SRC
+#+RESULTS:
+: Equivalent
+
+The =language_containment_checker= object essentially performs the
+same work, but it also implements a cache to avoid translating the
+same formulas multiple times when it is used to test multiple
+equivalences.
+
+* C++
+
+Here are possible C++ implementations using either =are_equivalent()=
+or the =language_containment_checker=.  Note that the
+=are_equivalent()= function also work with automata.
+
+#+BEGIN_SRC C++
+#include <iostream>
+#include <spot/tl/parse.hh>
+#include <spot/twaalgos/contains.hh>
+
+int main()
+{
+  spot::formula f = spot::parse_formula("(a U b) U a");
+  spot::formula g = spot::parse_formula("b U a");
+  std::cout << (spot::are_equivalent(f, g) ?
+                "Equivalent\n" : "Not equivalent\n");
+}
+#+END_SRC
+#+RESULTS:
+: Equivalent
+
+#+BEGIN_SRC C++
+#include <iostream>
+#include <spot/tl/parse.hh>
+#include <spot/tl/contain.hh>
+
+int main()
+{
+  spot::formula f = spot::parse_formula("(a U b) U a");
+  spot::formula g = spot::parse_formula("b U a");
+  spot::language_containment_checker c;
+  std::cout << (c.equal(f, g) ? "Equivalent\n" : "Not equivalent\n");
+}
+#+END_SRC
+
+#+RESULTS:
+: Equivalent
+
+#  LocalWords:  utf html args ltlfilt SRC eq lnot otimes ng iostream

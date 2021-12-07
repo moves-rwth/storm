@@ -1,0 +1,297 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009-2019 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+# Copyright (C) 2003-2004 Laboratoire d'Informatique de Paris 6
+# (LIP6), département Systèmes Répartis Coopératifs (SRC), Université
+# Pierre et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+cat >check.txt <<\EOF
+a
+a U b
+X a
+a & b & c
+a | b | (c U (d & (g U (h ^ i))))
+Xa & (b U !a) & (b U !a)
+Fa & Xb & GFc & Gd
+Fa & Xa & GFc & Gc
+Fc & X(a | Xb) & GF(a | Xb) & Gc
+a R (b R c)
+(a U b) U (c U d)
+
+((Xp2)U(X(1)))&(p1 R(p2 R p0))
+
+{a*;c}<>->GFb
+{((a*;b;c)*)&((b*;a;c)*)}<>->x
+{(g;y;r)*}<>->x
+G({(g;y;r)*}<>->x)
+G({(a;b)*}<>->x)&G({(c;d)*}<>->y)
+# try sub-braces
+G({{a;b}*}[]->x)&G({{c;d}*}[]->y)
+{([*0] + a):c*:([*0] + b)}<>->d
+{a;e;f:(g*);h}<>->d
+{(a:b)* & (c*:d)}<>->e
+{(a:b)*}
+G{(a:b)*}
+{a;b}
+{(a;b)*}
+G{(a;b)*}
+{a*}[]->{b*}
+{a*}[]=>{b*}
+{a*&b}
+{a*&b*}
+{((!c;b*) & d);e}
+{(a* & (c;b*) & d);e}
+{[*2];a[*2..4]}|->b
+{a[*2..5] && b[*..3]}|->c
+{{[+];a;[+]} && {[+];b;[+]}}<>->c
+{(a[->3]) & {[+];b}}<>->c
+# This formula (built by a random formula generator), exhibited an
+# infinite recursion in the translation:
+{(a|[*0])[*];1}
+# Example from "Beyond Hardware Verification" by Glazberg, Moulin, Orni,
+# Ruah, Zarpas (2007).
+{[*];req;ack}|=>{start;busy[*];done}
+# Examples from "Property-by-Example Guide: a Handbook of PSL Examples"
+# by Ben David and Orni (2005)/
+# - 2.27.A
+{end[=3]}(false)
+# - 3.5.A
+{[*]; {read[=3]} && {write[=2]}} |=> {(!read && !write)[*]; ready}
+# - 2.33  (abridged to fit in 80 cols)
+{[*];st&&comp_d_en;!comp_d_en&&good_c;{st_v[->]}&&{stop[=0];true}}|->{!d_out}
+
+# Some tricky cases that require the rational automaton to be pruned
+# before it is used in the translation.
+{{b[*];c} | {{a && !a}}[=2]}
+{((a&!b);((!a&!b)*))&&(!b*;(!a&b))}
+# When translating this formula, we expect the translator to ignore
+# `a;(f&!f)[=2];c' on one side because it as already seen it on the
+# other side.
+{c;a;(f&!f)[=2];c}|{b;a;(!f&f)[=2];c}
+
+# these were mis-translated in Spot 0.9
+G!{(b;1)*;a}
+(G!{(b;1)*;a} && ({1;1[*3]*}[]->{(b&!a)[*2];!b&!a}))
+EOF
+
+run 0 ../checkpsl check.txt
+
+# Make sure False has one acceptance set when generating Büchi automata
+test 1 -eq `ltl2tgba -B false --stats %a`
+
+test "`echo 1,2,a,4 | ltl2tgba -F-/3 --stats='%<,%f,%>'`" = "1,2,a,4"
+
+# In particular, Spot 0.9 would incorrectly reject the sequence:
+# (a̅b;a̅b;a̅b̅);(a̅b;a̅b;a̅b̅);(a̅b;a̅b;a̅b̅);... in 'G!{(b;1)*;a}'
+# This means the following automaton was incorrectly empty in Spot 0.9.
+run 0 ../ikwiad -e -R3 '(G!{(b;1)*;a} && ({1;1[*3]*}[]->{(b&!a)[*2];!b&!a}))'
+
+# Make sure 'a U (b U c)' has 3 states and 6 transitions,
+# before and after degeneralization.
+for opt in '' -DT -DS; do
+  ../ikwiad -ks -f -R3 $opt 'a U (b U c)' > stdout
+  grep 'edges: 6$' stdout
+  grep 'states: 3$' stdout
+done
+
+# Make sure '!(Ga U b)' has 3 states and 6 transitions,
+# before and after degeneralization.
+for opt in '' -DT -DS; do
+  ../ikwiad -kt -f -R3 $opt '!(Ga U b)' > stdout
+  grep 'transitions: 11$' stdout
+  grep 'edges: 6$' stdout
+  grep 'states: 3$' stdout
+done
+
+# Make sure 'Ga U b' has 4 states and 6 transitions,
+# before and after degeneralization.
+for opt in '' -DT -DS; do
+  ../ikwiad -kt -f -R3 $opt 'Ga U b' > stdout
+  grep 'transitions: 12$' stdout
+  grep 'edges: 6$' stdout
+  grep 'states: 4$' stdout
+done
+
+# Make sure '(G (p -> F q)) && ((X (p) U q) || ! X (p U (p && q)))'
+# has 6 states and 15 transitions, before and after degeneralization.
+f='(G (p -> F q)) && ((X (p) U q) || ! X (p U (p && q)))'
+for opt in '' -DT -DS; do
+  ../ikwiad -ks -f -R3 $opt "$f" > stdout
+  grep 'edges: 15$' stdout
+  grep 'states: 6$' stdout
+  ../ikwiad -ks -f -R3f $opt "$f" > stdout
+  grep 'edges: 15$' stdout
+  grep 'states: 6$' stdout
+done
+
+# Make sure 'GFa & GFb & GFc & GFd & GFe & GFf'
+# has 7 states and 34 transitions after degeneralization.
+f='GFa & GFb & GFc & GFd & GFe & GFg'
+../ikwiad -ks -DS -x -f "$f" > stdout
+grep 'edges: 34$' stdout
+grep 'states: 7$' stdout
+
+# Make sure 'Ga & XXXX!a' is minimized to one state.
+f='Ga & XXXX!a'
+../ikwiad -ks -f "$f" > stdout
+grep 'edges: 4$' stdout
+grep 'states: 5$' stdout
+../ikwiad -ks -Rm -f "$f" > stdout
+grep 'edges: 0$' stdout
+grep 'states: 1$' stdout
+
+# Make sure a monitor for F(a & F(b)) accepts everything.
+run 0 ../ikwiad -M -f "F(a & F(b))" | grep ' ->' > stdout
+cat >expected <<EOF
+  I -> 0
+  0 -> 0 [label="1"]
+EOF
+cmp stdout expected
+
+# This formula caused a segfault with Spot 0.7.
+run 0 ../ikwiad -Rm -ks -f "Gq|Gr|(G(q|FGp)&G(r|FG!p))" >stdout
+grep 'edges: 5$' stdout
+grep 'states: 3$' stdout
+
+# Adding -R3 used to make it work...
+run 0 ../ikwiad -R3 -Rm -ks -f "Gq|Gr|(G(q|FGp)&G(r|FG!p))" >stdout
+grep 'edges: 5$' stdout
+grep 'states: 3$' stdout
+
+# Make sure FGa|GFb has the same number of states/transitions when
+# output as a never claim or are a degeneralized BA in HOAF.
+# The option -R1q -R1t used to cause two degeneralizations to
+# occur.
+run 0 ../ikwiad -R1q -R1t -N 'FGa|FGb' > out.never
+run 0 ../ikwiad -XN -kt out.never > count.never
+run 0 ../ikwiad -R1q -R1t -DS -H 'FGa|FGb' > out.hoa
+run 0 ../ikwiad -XH -kt out.hoa > count.hoa
+cmp count.never count.hoa
+
+# The following automaton should have only 4 states.
+run 0 ../ikwiad -R3 -ks -f '(p&XF!p)|(!p&XFp)|X(Fp&F!p)' >stdout
+grep 'edges: 7$' stdout
+grep 'states: 4$' stdout
+
+# A bug in the translation of !{xxx} when xxx reduces to false caused
+# the following formula to be considered equivalent to anything...
+ltlfilt -f '!{[*2] && [*0..1]}' --equivalent-to 'false' && exit 1
+ltlfilt -f '!{[*2] && [*0..1]}' --equivalent-to 'true'
+
+# Test some equivalences fixed in Spot 1.1.4
+ltlfilt    -f '{{a;b}[*]}'  --equivalent-to 'a & Xb'
+ltlfilt -r -f '{{a;b}[*]}'  --equivalent-to 'a & Xb'
+ltlfilt    -f '!{{a;b}[*]}' --equivalent-to '!a | X!b'
+ltlfilt -r -f '!{{a;b}[*]}' --equivalent-to '!a | X!b'
+ltlfilt    -f '{a[*];b[*]}' --equivalent-to 'a | b'
+ltlfilt -r -f '{a[*];b[*]}' --equivalent-to 'a | b'
+
+
+# A couple of tests for the [:*i..j] operator
+ltlfilt -q    -f '{{a;b}[:*1..2];c}' \
+		  --equivalent-to '(a&X(b&Xc)) | a&(X(b&a&X(b&Xc)))'
+ltlfilt -q -r -f '{{a;b}[:*1..2];c}' \
+		  --equivalent-to '(a&X(b&Xc)) | a&(X(b&a&X(b&Xc)))'
+ltlfilt -q    -f '{{a*}[:+];c}' --equivalent-to 'Xc R a'
+ltlfilt -q -r -f '{{a*}[:+];c}' --equivalent-to 'Xc R a'
+ltlfilt -q    -f '{c && {b | [*0]}[:+]}' --equivalent-to 'c & b'
+ltlfilt -q -r -f '{c && {b | [*0]}[:+]}' --equivalent-to 'c & b'
+
+
+# The ##[i:j] operator introduced in 2.8 has four different rewritings
+# depending on whether a or b accepts [*0].
+
+for a in 'a1;a2' 'a1[*];a2[*]'; do
+    for b in 'b1;b2' 'b1[*];b2[*]'; do
+        ltlfilt -q -f "{($a) ##[0:8] ($b)}[]->c" \
+          --equivalent-to "{(($a):($b))|(($a);[*0:7];($b))}[]->c" || exit 1
+    done
+done
+
+# test unknown dot options
+ltl2tgba --dot=@ a 2>stderr && exit 1
+grep 'ltl2tgba: unknown option.*@' stderr
+
+# Make sure the count of AP is correct through never claims or LBTT
+ltl2tgba -f a -s | autfilt -q --ap=1 --lbtt | autfilt -q --ap=1
+
+# Such a large formula will fill the BuDDy unicity table and trigger a
+# resize.  At the time this test is introduced, this is the only place
+# of the test-suite where this resize is triggered, so do not remove
+# it unless you can find another place that triggers that.
+genltl --go-theta=18 | ltl2tgba --low --any -q
+
+# Calling ltl2tgba once for two formulas should give the same result
+# as calling twice on each formula.  We had a problem where the order
+# of atomic propositions would be sensible to the formulas seen
+# before.
+(ltl2tgba Fb ; ltl2tgba 'GFa & GFb') >out1
+ltl2tgba Fb 'GFa & GFb' >out2
+diff out1 out2
+
+# Because atomic proposition were not released by bdd_dict, different
+# order of transitions could be observed in automata output after a
+# previous translation by the same process.  (issue #262).
+ltl2tgba --low --any 'Xp1 xor (Fp1 M (!p1 M (Fp0 W p1)))' \
+         'Fp0 -> XXG(1 U Gp1)' > res1
+ltl2tgba --low --any 'Xp1 xor (Fp1 M (!p1 M (Fp0 W p1)))' >res2
+ltl2tgba --low --any 'Fp0 -> XXG(1 U Gp1)' >>res2
+diff res1 res2
+
+# The same should work when printing SCCs or atomic propositions
+s='--stats=%c,%[,]x'
+ltl2tgba --low --any 'Xp1 xor (Fp1 M (!p1 M (Fp0 W p1)))' \
+         'Fp0 -> XXG(1 U Gp1)' "$s" >res1
+ltl2tgba --low --any 'Xp1 xor (Fp1 M (!p1 M (Fp0 W p1)))' "$s" >res2
+ltl2tgba --low --any 'Fp0 -> XXG(1 U Gp1)' "$s" >>res2
+diff res1 res2
+
+# Another case where different but isomorphic automata
+# were output (issue #262 again).
+f1='F(Gp0 <-> Gp1)'
+f2='Gp1 | FGp0'
+(ltl2tgba -xsimul=1 --low "$f1"; ltl2tgba -xsimul=1 --low "$f2") > res1
+ltl2tgba -xsimul=1 --low "$f1" "$f2" > res2
+diff res1 res2
+
+test 3 = `ltl2tgba -f 'G(Fa & Fb) U a' --stats=%s`
+
+# issue #286, the following automaton caused the print_hoa() function to
+# report inconsistent "universal" property.
+ltl2tgba --low 'X(((1) U (p1)) | (((p1) | (F(p0))) U ((0) R ((p2) M (p1)))))'>o
+grep deterministic o
+
+# test tls-impl=N
+f='(Fp0 W p0) & G((Gp0 W Xp0) M !Gp1)'
+ltl2tgba -f "$f" --low -x tls-impl=4 --stats=%s && exit 1
+test 4 = `ltl2tgba -f "$f" --low -x tls-impl=0 --stats=%s`
+test 3 = `ltl2tgba -f "$f" --low -x tls-impl=1 --stats=%s`
+test 2 = `ltl2tgba -f "$f" --low -x tls-impl=2 --stats=%s`
+test 2 = `ltl2tgba -f "$f" --low -x tls-impl=3 --stats=%s`
+
+# This is not optimal, the smallest DBA for this formula has 2 states.
+test 3 = `ltl2tgba -BD -f 'GF((p0 & GF!p0) | (!p0 & FGp0))' --stats=%s`
+
+# Some versions of Spot incorrectly returned "t" automata with -B
+test "Inf(0)" = "`ltl2tgba -B 'Xb | G!b' --stats=%g`"

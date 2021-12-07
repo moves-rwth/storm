@@ -1,0 +1,3 @@
+hoa-mode.el is used when building the documentation for syntax
+highlighting the HOA files displayed in the examples.  But you may
+also want to use it for editing and displaying HOA files.

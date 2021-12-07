@@ -1,0 +1,55 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2011, 2015-2017 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+# The following command, reported by Tomáš Babiak, used to output many
+# different automata, because state addresses were used to order the
+# successors in the degeneralization.
+
+# Make sure all these runs output the same automaton.
+
+# With valgrind
+run 0 ../ikwiad -r7 -x -R3 -N "XF(Gp2 | F(p0 U (p1 & (! p4 | p3))))" > out1
+# Without valgrind
+for i in 2 3 4 5; do
+  ../ikwiad -r7 -x -R3 -N "XF(Gp2 | F(p0 U (p1 & (! p4 | p3))))" > out
+  cmp out out1 || exit 1
+done
+
+# The next formula used to be translated into a 6-state automaton
+# instead of a 4-state automaton, because of an error in the
+# implementation of the degen-lcache=1 option causing the last level
+# used to be reused, instead of the first one.
+run 0 ltl2tgba -B -f '(b & Fa) U XXG(a M Gb)' --stats=%s,%t >out
+test "4,14" = "`cat out`"
+
+# Some optimization in the degeneralization allows this formula
+# to be reduced to 3 and 5 states...
+run 0 ltl2tgba -B -f 'G(Fp1 & (F!p1 W X!p1))' -f 'F(!p0 & Fp0) W Gp0' \
+    --stats=%s >out
+cat >exp<<EOF
+3
+5
+EOF
+diff out exp

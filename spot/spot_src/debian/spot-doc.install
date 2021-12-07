@@ -1,0 +1,3 @@
+doc/userdoc/* usr/share/doc/spot/userdoc/
+doc/spot.html/* usr/share/doc/spot/doxygen/
+doc/tl/tl.pdf usr/share/doc/spot/tl/

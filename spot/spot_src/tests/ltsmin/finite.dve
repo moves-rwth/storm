@@ -1,0 +1,11 @@
+process P {
+ int a = 0, b = 0;
+ state x;
+ init x;
+
+ trans
+   x -> x { guard a < 3 && b < 3; effect a = a + 1; },
+   x -> x { guard a < 3 && b < 3; effect b = b + 1; };
+}
+
+system async;

@@ -1,0 +1,39 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2011, 2012, 2014, 2015, 2016, 2019 Laboratoire de Recherche
+# et Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+# Generate 50 random unique PSL formula that do not simplify to LTL
+# formulae, and that have a size of at least 12.
+# The seed is selected so the test is fast enough, feel free to
+# adjust it whenever something changes in formula generation.
+randltl -n -1 --tree-size 30 --seed 13 --psl a b c |
+ltlfilt -r --size 12.. --unique |
+ltlfilt -v --ltl -n 50 | tee formulas |
+ltlcross '../ikwiad -R3 -t %f >%T' '../ikwiad -x -R3 -t %f >%T' \
+  -F - -f '{{(p1)}[*]:{(p3) && {{!(p1)} xor {!(p3)}}}}'
+
+test `wc -l < formulas` = 50
+
+
+randltl --psl --sere-priorities=first_match=10 -n 100 2 | grep first_match

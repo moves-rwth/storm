@@ -1,0 +1,1182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:48 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SAT-based Minimization of Deterministic ω-Automata</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Spot command-line tools for minimizing ω-automata"
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tools.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title">SAT-based Minimization of Deterministic ω-Automata</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org5d4a24c">How to change the SAT solver used</a></li>
+<li><a href="#org80bc376">Enabling SAT-based minimization in <code>ltl2tgba</code> or <code>dstar2tgba</code></a></li>
+<li><a href="#org74554f5">More acceptance sets</a></li>
+<li><a href="#org1347fb4">Low-level details</a></li>
+<li><a href="#org8ee3fbc">Using <code>autfilt --sat-minimize</code> to minimize any deterministic ω-automaton</a></li>
+<li><a href="#org38a9e1e">Logging statistics</a></li>
+<li><a href="#orgba979f6">Python interface</a></li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+This page explains how to use <a href="ltl2tgba.html"><code>ltl2tgba</code></a>, <a href="dstar2tgba.html"><code>dstar2tgba</code></a>, or <a href="autfilt.html"><code>autfilt</code></a>
+to minimize deterministic automata using a SAT solver.
+</p>
+
+<p>
+Let us first state a few facts about this minimization procedure.
+</p>
+
+<ol class="org-ol">
+<li>The procedure works only on <b>deterministic</b> Büchi automata: any
+recurrence property can be converted into a deterministic Büchi
+automaton, and sometimes there are several ways of doing so.</li>
+<li>Spot actually implements two SAT-based minimization procedures: one
+that builds a deterministic transition-based Büchi automaton
+(DTBA), and one that builds a deterministic transition-based
+ω-automaton with arbitrary acceptance condition (DTωA).  In
+<a href="ltl2tgba.html"><code>ltl2tgba</code></a> and <a href="dstar2tgba.html"><code>dstar2tgba</code></a>, the latter procedure is restricted to
+TGBA.  In <a href="autfilt.html"><code>autfilt</code></a> it can use different and acceptance conditions
+for input and output, so you could for instance input a Rabin
+automaton, and produce a Streett automaton.</li>
+<li>These two procedures can optionally constrain their output to
+use state-based acceptance. (They simply restrict all the outgoing
+transitions of a state to belong to the same acceptance sets.)</li>
+<li>Spot is built using PicoSAT 965.
+This solver was chosen for its performance, simplicity of
+integration and license compatibility.  However, it is
+still possible to use an external SAT solver (as described below).</li>
+<li><a href="ltl2tgba.html"><code>ltl2tgba</code></a> and <a href="dstar2tgba.html"><code>dstar2tgba</code></a> will always try to output an automaton.
+If they fail to determinize the property, they will simply output a
+nondeterministic automaton, if they managed to obtain a
+deterministic automaton but failed to minimize it (e.g., the
+requested number of states in the final automaton is too low), they
+will return that "unminimized" deterministic automaton.  There are
+only two cases where these tool will abort without returning an
+automaton: when the number of clauses output by Spot (and to be fed
+to the SAT solver) exceeds \(2^{31}\), or when the SAT-solver was
+killed by a signal. <a href="autfilt.html"><code>autfilt --sat-minimize</code></a> will only output an
+automaton if the SAT-based minimization was successful.</li>
+<li>Our <a href="https://www.lrde.epita.fr/~adl/dl/adl/baarir.14.forte.pdf">FORTE'14 paper</a> describes the SAT encoding for the minimization
+of deterministic BA and TGBA.  Our <a href="https://www.lrde.epita.fr/~adl/dl/adl/baarir.15.lpar.pdf">LPAR'15 paper</a> describes the
+generalization of the SAT encoding to deal with deterministic TωA
+with any acceptance condition.</li>
+</ol>
+
+<div id="outline-container-org5d4a24c" class="outline-2">
+<h2 id="org5d4a24c">How to change the SAT solver used</h2>
+<div class="outline-text-2" id="text-org5d4a24c">
+<p>
+By default Spot uses PicoSAT 965, this SAT-solver
+is built into the Spot library, so that no temporary files are used to
+store the problem.
+</p>
+
+<p>
+The environment variable <code>SPOT_SATSOLVER</code> can be used to change the
+SAT solver used by Spot.  This variable should describe a shell command
+to run the SAT-solver on an input file called <code>%I</code> so that a model satisfying
+the formula will be written in <code>%O</code>.  For instance to use <a href="http://www.labri.fr/perso/lsimon/glucose/">Glucose 3.0</a>, instead
+of the builtin version of PicoSAT, define
+</p>
+<div class="org-src-container">
+<pre class="src src-sh"><span class="org-builtin">export</span> <span class="org-variable-name">SPOT_SATSOLVER</span>=<span class="org-string">'glucose -verb=0 -model %I &gt;%O'</span>
+</pre>
+</div>
+<p>
+We assume the SAT solver follows the input/output conventions of the
+<a href="http://www.satcompetition.org/">SAT competition</a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org80bc376" class="outline-2">
+<h2 id="org80bc376">Enabling SAT-based minimization in <code>ltl2tgba</code> or <code>dstar2tgba</code></h2>
+<div class="outline-text-2" id="text-org80bc376">
+<p>
+Both tools follow the same interface, because they use the same
+post-processing steps internally (i.e., the <code>spot::postprocessor</code>
+class).
+</p>
+
+<p>
+First, option <code>-D</code> should be used to declare that you are looking for
+more determinism.  This will tweak the translation algorithm used by
+<code>ltl2tgba</code> to improve determinism, and will also instruct the
+post-processing routine used by both tools to prefer a
+deterministic automaton over a smaller equivalent nondeterministic
+automaton.
+</p>
+
+<p>
+However <code>-D</code> is not a guarantee to obtain a deterministic automaton,
+even if one exists.  For instance, <code>-D</code> fails to produce a
+deterministic automaton for <code>a U X(b | GF!b)</code>.  Instead we get a 4-state
+non-deterministic automaton.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltl2tgba -D <span class="org-string">'a U X(b | GF!b)'</span> --stats=<span class="org-string">'states=%s, det=%d'</span>
+</pre>
+</div>
+<pre class="example">
+states=4, det=0
+
+</pre>
+
+<p>
+Option <code>-x tba-det</code> enables an additional
+determinization procedure, that would otherwise not be used by <code>-D</code>
+alone.  This procedure will work on any automaton that can be
+represented by a DTBA; if the automaton to process use multiple
+acceptance conditions, it will be degeneralized first.
+</p>
+
+<p>
+On our example, <code>-x tba-det</code> successfully produces a deterministic
+TBA, but a non-minimal one:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltl2tgba -D -x tba-det <span class="org-string">'a U X(b | GF!b)'</span> --stats=<span class="org-string">'states=%s, det=%d'</span>
+</pre>
+</div>
+<pre class="example">
+states=8, det=1
+
+</pre>
+
+<p>
+Option <code>-x sat-minimize</code> will turn-on SAT-based minimization.  It also
+implies <code>-x tba-det</code>, so there is no need to supply both options.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltl2tgba -D -x sat-minimize <span class="org-string">'a U X(b | GF!b)'</span> --stats=<span class="org-string">'states=%s, det=%d'</span>
+</pre>
+</div>
+<pre class="example">
+states=5, det=1
+
+</pre>
+
+<p>
+We can draw it:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org95fba46">ltl2tgba -D -x sat-minimize <span class="org-string">'a U X(b | GF!b)'</span> -d
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="gfaexxb3.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+Clearly this automaton benefits from the transition-based
+acceptance.  If we want a traditional Büchi automaton, with
+state-based acceptance, we only need to add the <code>-B</code> option.  The
+result will of course be slightly bigger.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="orgf951188">ltl2tgba -BD -x sat-minimize <span class="org-string">'a U X(b | GF!b)'</span> -d
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="gfaexxb4.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+There are cases where <code>ltl2tgba</code>'s <code>tba-det</code> algorithm fails to
+produce a deterministic automaton.  In that case, SAT-based
+minimization is simply skipped.  For instance:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltl2tgba -D -x sat-minimize <span class="org-string">'G(F(!b &amp; (X!a M (F!a &amp; F!b))) U !b)'</span> --stats=<span class="org-string">'states=%s, det=%d'</span>
+</pre>
+</div>
+<pre class="example">
+states=5, det=0
+
+</pre>
+
+<p>
+The question, of course, is whether there exist a deterministic
+automaton for this formula, in other words: is this a recurrence
+property?  There are two ways to answer this question using Spot and
+some help from <a href="http://www.ltl2dstar.de/"><code>ltl2dstar</code></a>.
+</p>
+
+<p>
+The first is purely syntactic.  If a formula belongs to the class of
+"syntactic recurrence formulas", it expresses a syntactic property.
+(Of course there are formulas that expresses a syntactic properties
+without being syntactic recurrences.)  <a href="ltlfilt.html"><code>ltlfilt</code></a> can be instructed to
+print only formulas that are syntactic recurrences:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt --syntactic-recurrence -f <span class="org-string">'G(F(!b &amp; (X!a M (F!a &amp; F!b))) U !b)'</span>
+</pre>
+</div>
+<pre class="example">
+G(F(!b &amp; (X!a M (F!a &amp; F!b))) U !b)
+
+</pre>
+
+<p>
+Since our input formula was output, it expresses a recurrence property.
+</p>
+
+<p>
+The second way to check whether a formula is a recurrence is by
+converting a deterministic Rabin automaton using <a href="dstar2tgba.html"><code>dstar2tgba</code></a>.  The
+output is guaranteed to be deterministic if and only if the input DRA
+expresses a recurrence property.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt --remove-wm -f <span class="org-string">'G(F(!b &amp; (X!a M (F!a &amp; F!b))) U !b)'</span> -l |
+ltl2dstar --ltl2nba=spin:ltl2tgba@-Ds - - |
+dstar2tgba -D --stats=<span class="org-string">'input(states=%S) output(states=%s, acc-sets=%a, det=%d)'</span>
+</pre>
+</div>
+<pre class="example">
+input(states=11) output(states=8, acc-sets=1, det=1)
+
+</pre>
+
+<p>
+In the above command, <code>ltldo</code> is used to convert the LTL formula into
+<code>ltl2dstar</code>'s syntax.  Then <code>ltl2dstar</code> creates a deterministic Rabin
+automaton (using <code>ltl2tgba</code> as an LTL to BA translator), and the
+resulting 11-state DRA is converted
+into a 8-state DTBA by <code>dstar2tgba</code>.
+Since that result is deterministic, we can conclude that the formula
+was a recurrence.
+</p>
+
+<p>
+As far as SAT-based minimization goes, <code>dstar2tgba</code> will take the same
+options as <code>ltl2tgba</code>.  For instance we can see that the smallest DTBA
+has 4 states:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt --remove-wm -f <span class="org-string">'G(F(!b &amp; (X!a M (F!a &amp; F!b))) U !b)'</span> -l |
+ltl2dstar --ltl2nba=spin:ltl2tgba@-Ds - - |
+dstar2tgba -D -x sat-minimize --stats=<span class="org-string">'input(states=%S) output(states=%s, acc-sets=%a, det=%d)'</span>
+</pre>
+</div>
+<pre class="example">
+input(states=11) output(states=4, acc-sets=1, det=1)
+
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org74554f5" class="outline-2">
+<h2 id="org74554f5">More acceptance sets</h2>
+<div class="outline-text-2" id="text-org74554f5">
+<p>
+The formula "<code>G(F(!b &amp; (X!a M (F!a &amp; F!b))) U !b)</code>" can in fact be
+minimized into an even smaller automaton if we use multiple acceptance
+sets.
+</p>
+
+<p>
+Unfortunately because <code>dstar2tgba</code> does not know the formula being
+translated, and it always convert a DRA into a DBA (with a single
+acceptance set) before further processing, it does not know if using
+more acceptance sets could be useful to further minimize it.   This
+number of acceptance sets can however be specified on the command-line
+with option <code>-x sat-acc=M</code>.  For instance:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt --remove-wm -f <span class="org-string">'G(F(!b &amp; (X!a M (F!a &amp; F!b))) U !b)'</span> -l |
+ltl2dstar --ltl2nba=spin:ltl2tgba@-Ds - - |
+dstar2tgba -D -x sat-minimize,sat-acc=2 --stats=<span class="org-string">'input(states=%S) output(states=%s, acc-sets=%a, det=%d)'</span>
+</pre>
+</div>
+<pre class="example">
+input(states=11) output(states=3, acc-sets=2, det=1)
+
+</pre>
+
+<p>
+Beware that the size of the SAT problem is exponential in the number
+of acceptance sets (adding one acceptance set, in the input automaton
+or in the output automaton, will double the size of the problem).
+</p>
+
+<p>
+The case of <code>ltl2tgba</code> is slightly different because it can remember
+the number of acceptance sets used by the translation algorithm, and
+reuse that for SAT-minimization even if the automaton had to be
+degeneralized in the meantime for the purpose of determinization.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1347fb4" class="outline-2">
+<h2 id="org1347fb4">Low-level details</h2>
+<div class="outline-text-2" id="text-org1347fb4">
+<p>
+The following figure (from our <a href="https://www.lrde.epita.fr/~adl/dl/adl/baarir.14.forte.pdf">FORTE'14 paper</a>) gives an overview of
+the processing chains that can be used to turn an LTL formula into a
+minimal DBA/DTBA/DTGBA.  The blue area at the top describes <code>ltl2tgba
+-D -x sat-minimize</code>, while the purple area at the bottom corresponds
+to <code>dstar2tgba -D -x stat-minimize</code> (but <code>autfilt</code> support similar
+options).
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="satmin.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+The picture is slightly inaccurate in the sense that both <code>ltl2tgba</code>
+and <code>dstar2tgba</code> are actually using the same post-processing chain:
+only the initial translation to TGBA or conversion to DBA differs, the
+rest is the same.  However in the case of <code>dstar2tgba</code>, no
+degeneration or determinization are needed.
+</p>
+
+<p>
+Also the picture does not show what happens when <code>-B</code> is used: any
+DTBA is degeneralized into a DBA, before being sent to "DTBA SAT
+minimization", with a special option to request state-based output.
+</p>
+
+<p>
+The WDBA-minimization boxes are able to produce minimal Weak DBA from
+any TGBA representing an obligation property.  In that case using
+transition-based or generalized acceptance will not allow further
+reduction.  This minimal WDBA is always used when <code>-D</code> is given
+(otherwise, for the default <code>--small</code> option, the minimal WDBA is only
+used if it is smaller than the nondeterministic automaton it has been
+built from).
+</p>
+
+<p>
+The "simplify" boxes are actually simulation-based reductions, and
+SCC-based simplifications.
+</p>
+
+<p>
+The red boxes "not in TCONG" or "not a recurrence" correspond to
+situations where the tools will produce non-deterministic automata.
+</p>
+
+<p>
+The following options can be used to fine-tune this procedure:
+</p>
+
+<dl class="org-dl">
+<dt><code>-x tba-det</code></dt><dd>attempt a powerset construction and check if
+there exists an acceptance set such that the
+resulting DTBA is equivalent to the input.</dd>
+<dt><code>-x sat-minimize</code></dt><dd>enable SAT-based minimization. It is the same as
+<code>-x sat-minimize=1</code> (which is the default value). It performs a dichotomy
+to find the correct automaton size.This option implies <code>-x tba-det</code>.</dd>
+<dt><code>-x sat-minimize</code>[2|3]=</dt><dd><p>
+enable SAT-based
+minimization. Let us consider each intermediate automaton as a <code>step</code>
+towards the minimal automaton and assume <code>N</code> as the size of the starting
+automaton. <code>2</code> and <code>3</code> have been implemented with the aim of not
+restarting the encoding from scratch at each step. To do so, both restart
+the encoding after <code>N-1-(sat-incr-steps)</code> states have been won. Now,
+where is the difference? They both start by encoding the research of the
+<code>N-1</code> step and then:
+</p>
+<ul class="org-ul">
+<li><code>2</code> uses PicoSAT assumptions. It adds <code>sat-incr-steps</code> assumptions
+(each of them removing one more state) and then checks directly the
+<code>N-1-(sat-incr-steps)</code> step. If such automaton is found, the process is
+restarted. Otherwise, a binary search begins between <code>N-1</code> and
+<code>N-1-sat-incr-steps</code>. If not provided, <code>sat-incr-steps</code> default value
+is 6.</li>
+<li><code>3</code> checks incrementally each <code>N-(2+i)</code> step, <code>i</code> ranging from <code>0</code> to
+<code>sat-incr-steps</code>. This process is fully repeated until the minimal
+automaton is found. The last SAT problem solved correspond to the
+minimal automaton. <code>sat-incr-steps</code> defaults to 2.</li>
+</ul>
+<p>
+Both implies <code>-x tba-det</code>.
+</p></dd>
+<dt><code>-x sat-minimize=4</code></dt><dd>enable SAT-based minimization. It tries to reduce the
+size of the automaton one state at a time. This option implies
+<code>-x tba-det</code>.</dd>
+<dt><code>-x sat-incr-steps=N</code></dt><dd>set the value of <code>sat-incr-steps</code> to N. It does not
+make sense to use it without <code>-x sat-minimize=2</code> or <code>-x sat-minimize=3</code>.</dd>
+<dt><code>-x sat-acc=$m$</code></dt><dd>attempt to build a minimal DTGBA with \(m\) acceptance sets.
+This options implies <code>-x sat-minimize</code>.</dd>
+<dt><code>-x sat-states=$n$</code></dt><dd>attempt to build an equivalent DTGBA with \(n\)
+states.  This also implies <code>-x sat-minimize</code> but won't perform
+any loop to lower the number of states.  Note that \(n\) should be
+the number of states in a complete automaton, while <code>ltl2tgba</code>
+and <code>dstar2tgba</code> both remove sink states in their output by
+default (use option <code>--complete</code> to output a complete automaton).
+Also note that even with the <code>--complete</code> option, the output
+automaton may have appear to have less states because the other
+are unreachable.</dd>
+<dt><code>-x state-based</code></dt><dd>for all outgoing transition of each state
+to belong to the same acceptance sets.</dd>
+<dt><code>-x !wdba-minimize</code></dt><dd>disable WDBA minimization.</dd>
+</dl>
+
+<p>
+When options <code>-B</code> and <code>-x sat-minimize</code> are both used, <code>-x
+state-based</code> and <code>-x sat-acc=1</code> are implied.  Similarly, when option
+<code>-S</code> and <code>-x sat-minimize</code> are both used, then option <code>-x state-based</code>
+is implied.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8ee3fbc" class="outline-2">
+<h2 id="org8ee3fbc">Using <code>autfilt --sat-minimize</code> to minimize any deterministic ω-automaton</h2>
+<div class="outline-text-2" id="text-org8ee3fbc">
+<p>
+This interface is new in Spot 1.99 and allows to minimize any
+deterministic ω-automaton, regardless of the acceptance condition
+used.  By default, the procedure will try to use the same acceptance
+condition (or any inferior one) and produce transition-based
+acceptance.
+</p>
+
+<p>
+For our example, let us first generate a deterministic Rabin
+automaton with <a href="http://www.ltl2dstar.de/"><code>ltl2dstar</code></a>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt -f <span class="org-string">'FGa | FGb'</span> -l |
+ltl2dstar --ltl2nba=spin:ltl2tgba@-Ds --output-format=hoa - - &gt; output.hoa
+</pre>
+</div>
+
+<p>
+Let's draw it:
+</p>
+<div class="org-src-container">
+<pre class="src src-sh" id="orgf281742">autfilt output.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm1.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+So this is a state-based Rabin automaton with two pairs.  If we call
+<code>autfilt</code> with the <code>--sat-minimize</code> option, we can get the following
+transition-based version (the output may change depending on the SAT
+solver used):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="orgc78e4cb">autfilt --sat-minimize output.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm2.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+We can also attempt to build a state-based version with
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org0946d05">autfilt -S --sat-minimize output.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm3.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+This is clearly smaller than the input automaton.  In this example the
+acceptance condition did not change.  The SAT-based minimization only
+tries to minimize the number of states, but sometime the
+simplifications algorithms that are run before we attempt SAT-solving
+will simplify the acceptance, because even removing a single
+acceptance set can halve the run time.
+</p>
+
+<p>
+You can however force a specific acceptance to be used as output.
+Let's try with generalized co-Büchi for instance:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org5c8b00f">autfilt -S --sat-minimize=<span class="org-string">'acc="generalized-co-Buchi 2"'</span> output.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm4.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+Note that instead of naming the acceptance condition, you can actually
+give an acceptance formula in the <a href="http://adl.github.io/hoaf/#acceptance">HOA syntax</a>.  For example we can
+attempt to create a co-Büchi automaton with
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org28f0ab9">autfilt -S --sat-minimize=<span class="org-string">'acc="Fin(0)"'</span> output.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm5.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+When forcing an acceptance condition, you should keep in mind that the
+SAT-based minimization algorithm will look for automata that have
+fewer states than the original automaton (after preliminary
+simplifications).  This is not always reasonable.  For instance
+constructing a Streett automaton from a Rabin automaton might require
+more states.  An upper bound on the number of state can be passed
+using a <code>max-states=123</code> argument to <code>--sat-minimize</code>.
+</p>
+
+<p>
+If the input automaton is transition-based, but option <code>-S</code> is used to
+produce a state-based automaton, then the original automaton is
+temporarily converted into an automaton with state-based acceptance to
+obtain an upper bound on the number of states if you haven't specified
+<code>max-state</code>.  This upper bound might be larger than the one you would
+specify by hand.
+</p>
+
+<p>
+Here is an example demonstrating the case where the input automaton is
+smaller than the output.   Let's take this small TGBA as input:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org341ad66">ltl2tgba <span class="org-string">'GFa &amp; GFb'</span> &gt;output2.hoa
+autfilt output2.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm6.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+If we attempt to minimize it into a transition-based Büchi automaton,
+with fewer states, it will fail, output no result, and return with a
+non-zero exit code (because no automata were output).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="orgacc820c">autfilt --sat-minimize=<span class="org-string">'acc="Buchi"'</span> output2.hoa
+<span class="org-builtin">echo</span> $<span class="org-variable-name">?</span>
+</pre>
+</div>
+<pre class="example">
+1
+
+</pre>
+
+<p>
+However if we allow more states, it will work:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="orgf9686ef">autfilt --sat-minimize=<span class="org-string">'acc="Buchi",max-states=3'</span> output2.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm8.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+By default, the SAT-based minimization tries to find a smaller automaton by
+performing a binary search starting from <code>N/2</code> (N being the size of the
+starting automaton). After various benchmarks, this algorithm proves to be the
+best. However, in some cases, other rather similar methods might be better. The
+algorithm to execute and some other parameters can be set thanks to the
+<code>--sat-minimize</code> option.
+</p>
+
+<p>
+The <code>--sat-minimize</code> option takes a comma separated list of arguments
+that can be any of the following:
+</p>
+
+<dl class="org-dl">
+<dt><code>acc=DOUBLEQUOTEDSTRING</code></dt><dd>where the <code>DOUBLEQUOTEDSTRING</code> is an
+acceptance formula in the <a href="http://adl.github.io/hoaf/#acceptance">HOA syntax</a>, or a parameterized acceptance
+name (the different <a href="http://adl.github.io/hoaf/#acceptance-specifications"><code>acc-name:</code> options from HOA</a>).</dd>
+<dt><code>max-states=N</code></dt><dd>where <code>N</code> is an upper-bound on the maximum
+number of states of the constructed automaton.</dd>
+<dt><code>states=M</code></dt><dd>where <code>M</code> is a fixed number of states to use in the
+result (all the states needs not be accessible in the result,
+so the output might be smaller nonetheless).  If this option is
+used the SAT-based procedure is just used once to synthesize
+one automaton, and no further minimization is attempted.</dd>
+<dt><code>sat-incr</code>[1|2]=</dt><dd><p>
+<code>1</code> and <code>2</code> correspond respectively to
+<code>-x sat-minimize=2</code> and <code>-x sat-minimize=3</code> options.
+They have been implemented with the aim of not restarting the
+encoding from scratch at each step - a step is a minimized intermediate
+automaton. To do so, both restart the encoding after
+<code>N-1-(sat-incr-steps)</code> states have been won - <code>N</code> being the size of the
+starting automaton. Now, where is the difference? They both start by
+encoding the research of the <code>N-1</code> step and then:
+</p>
+<ul class="org-ul">
+<li><code>1</code> uses PicoSAT assumptions. It adds <code>steps</code> assumptions (each of
+them removing one more state) and then checks directly the
+<code>N-1-(sat-incr-steps)</code> step. If such automaton is found, the process is
+restarted. Otherwise, a binary search begins between <code>N-1</code> and
+<code>N-1-sat-incr-steps</code>. If not provided, <code>sat-incr-steps</code> defaults to 6.</li>
+<li><code>2</code> checks incrementally each <code>N-(2+i)</code> step, <code>i</code> ranging from <code>0</code> to
+<code>sat-incr-steps</code>. This process is fully repeated until the minimal
+automaton is found. The last SAT problem solved correspond to the
+minimal automaton. <code>sat-incr-steps</code> defaults to 2.</li>
+</ul>
+<p>
+Both implies <code>-x tba-det</code>.
+</p></dd>
+<dt><code>sat-incr-steps=N</code></dt><dd>set the value of <code>sat-incr-steps</code> to <code>N</code>.
+This is used by <code>sat-incr</code> option.</dd>
+<dt><code>sat-naive</code></dt><dd>use the <code>naive</code> algorithm to find a smaller automaton. It starts
+from <code>N</code> and then checks <code>N-1</code>, <code>N-2</code>, etc. until the last successful
+check.</dd>
+<dt><code>sat-langmap</code></dt><dd>Find  the lower bound of default sat-minimize procedure. This
+relies on the fact that the size of the minimal automaton is at least equal
+to the  total  number  of different languages recognized by the automaton's
+states.</dd>
+<dt><code>colored</code></dt><dd>force all transitions (or all states if <code>-S</code> is used)
+to belong to exactly one acceptance condition.</dd>
+</dl>
+
+
+<p>
+The <code>colored</code> option is useful when used in conjunction with a parity
+acceptance condition.  Indeed, the parity acceptance condition by
+itself does not require that the acceptance sets form a partition of
+the automaton (which is expected from parity automata).
+</p>
+
+<p>
+Compare the following, where parity acceptance is used, but the
+automaton is not colored:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="orgb5abb07">autfilt -S --sat-minimize=<span class="org-string">'acc="parity max even 3"'</span> output2.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm9.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+&#x2026; to the following, where the automaton is colored, i.e., each state
+belong to exactly one acceptance set:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org533dd1d">autfilt -S --sat-minimize=<span class="org-string">'acc="parity max even 3",colored'</span> output2.hoa --dot
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="autfiltsm10.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org38a9e1e" class="outline-2">
+<h2 id="org38a9e1e">Logging statistics</h2>
+<div class="outline-text-2" id="text-org38a9e1e">
+<p>
+If the environment variable <code>SPOT_SATLOG</code> is set to the name of a
+file, the minimization function will append statistics about each of
+its iterations in this file.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">rm -f stats.csv
+<span class="org-builtin">export</span> <span class="org-variable-name">SPOT_SATLOG</span>=stats.csv
+ltlfilt -f <span class="org-string">'Ga R (F!b &amp; (c U b))'</span> -l |
+ltl2dstar --ltl2nba=spin:ltl2tgba@-Ds - - |
+dstar2tgba -D -x sat-minimize,sat-acc=2 --stats=<span class="org-string">'input(states=%S) output(states=%s, acc-sets=%a, det=%d)'</span>
+</pre>
+</div>
+<pre class="example">
+input(states=11) output(states=5, acc-sets=2, det=1)
+
+</pre>
+
+<p>
+Here is the contents of the <code>stats.csv</code> file:
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right"><div><span>input.states</span></div></th>
+<th scope="col" class="org-right"><div><span>target.states</span></div></th>
+<th scope="col" class="org-right"><div><span>reachable.states</span></div></th>
+<th scope="col" class="org-right"><div><span>edges</span></div></th>
+<th scope="col" class="org-right"><div><span>transitions</span></div></th>
+<th scope="col" class="org-right"><div><span>variables</span></div></th>
+<th scope="col" class="org-right"><div><span>clauses</span></div></th>
+<th scope="col" class="org-right"><div><span>enc.user</span></div></th>
+<th scope="col" class="org-right"><div><span>enc.sys</span></div></th>
+<th scope="col" class="org-right"><div><span>sat.user</span></div></th>
+<th scope="col" class="org-right"><div><span>sat.sys</span></div></th>
+<th scope="col" class="org-left"><div><span>automaton</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">4</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">5120</td>
+<td class="org-right">446320</td>
+<td class="org-right">43</td>
+<td class="org-right">5</td>
+<td class="org-right">33</td>
+<td class="org-right">0</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">6</td>
+<td class="org-right">6</td>
+<td class="org-right">29</td>
+<td class="org-right">48</td>
+<td class="org-right">11520</td>
+<td class="org-right">1515749</td>
+<td class="org-right">145</td>
+<td class="org-right">10</td>
+<td class="org-right">401</td>
+<td class="org-right">0</td>
+<td class="org-left">HOA:&#x2026;</td>
+</tr>
+
+<tr>
+<td class="org-right">8</td>
+<td class="org-right">5</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">8000</td>
+<td class="org-right">874992</td>
+<td class="org-right">81</td>
+<td class="org-right">0</td>
+<td class="org-right">126</td>
+<td class="org-right">0</td>
+<td class="org-left">&#xa0;</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+The generated CSV file use the following columns:
+</p>
+<ul class="org-ul">
+<li><code>input.states</code>: the number of states of the reference automaton at this step</li>
+<li><code>target.states</code>: the n passed to the SAT-based minimization algorithm
+(it means the input automaton had n+1 states)</li>
+<li><code>reachable.states</code>: number of reachable states in the output of
+the minimization (with any luck this can be smaller than <code>target.states</code>)</li>
+<li><code>edges</code>, <code>transitions</code>: number of edges or transitions in the output</li>
+<li><code>variables</code>, <code>clauses</code>: size of the SAT problem</li>
+<li><code>enc.user</code>, <code>enc.sys</code>: user and system time for encoding the SAT problem</li>
+<li><code>sat.user</code>, <code>sat.sys</code>: user and system time for solving the SAT problem</li>
+<li><code>automaton</code>: the automaton produced in HOA format.</li>
+</ul>
+
+<p>
+Times are measured with the times() function, and expressed in ticks
+(usually: 1/100 of seconds).  The encoding of the automaton in the CSV
+file follows RFC4180 in escaping double-quote by doubling them.
+</p>
+
+<p>
+In the above example, the DRA produced by <code>ltl2dstar</code> had 11 states.
+In the first line of the <code>stats.csv</code> file, you can see the
+minimization function had a 8-state input, which means that
+<code>dstar2tgba</code> first reduced the 11-state (complete) DRA into a 8-state
+(complete) DBA before calling the SAT-based minimization (the fact
+that the input was reduced to a <b>DBA</b> is not very obvious from this
+trace), This first line shows the SAT-based minimization for a
+(complete) 5-state DTGBA and failing to find one.  Then on the next
+line it looks for a 6-state solution, finds one.  Finally, it looks
+for a 5-state solution, and cannot find one.  The reason the 5-state
+attempt uses the 8-state automaton as input rather than the 6-state
+automaton is because the 8-state automaton uses 1 acceptance states
+(it's a DBA) while the 6-state automaton uses 2.
+</p>
+
+<p>
+The final output is reported with 5 states, because by default we
+output trim automata. If the <code>--complete</code> option had been given, the
+useless sink state would have been kept and the output automaton would
+have 6 states.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgba979f6" class="outline-2">
+<h2 id="orgba979f6">Python interface</h2>
+<div class="outline-text-2" id="text-orgba979f6">
+<p>
+See the <a href="https://spot.lrde.epita.fr/ipynb/satmin.html"><code>satmin.ipynb</code></a> notebook.
+</p>
+</div>
+</div>
+</div>
+</body>
+</html>

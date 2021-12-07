@@ -1,0 +1,134 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010, 2014, 2015, 2018 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set +x
+set -e
+
+cat >obligations.txt <<EOF
+G(!p)
+Fr->(!p U r)
+G(q->G(!p))
+G((q&!r&Fr)->(!p U r))
+G(q&!r->((!p U r)|G!p ))
+(!r U (p&!r))|(G!r)
+G(q&!r->((!r U (p&!r))|G!r))
+(!p U ((p U ((!p U ((p U G!p)|Gp))|G!p))|Gp))|G!p
+Fr->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|(!p U r)))))))))
+Fq->(!q U (q&((!p U ((p U ((!p U ((p U G!p)|Gp))|G!p))|Gp))|G!p)))
+G((q&Fr)->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|(!p U r))))))))))
+G(q->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|((!p U r)|G!p)|Gp)))))))))
+G(p)
+Fr->(p U r)
+G(q->G(p))
+G((p&!r&Fr)->(p U r))
+G(q&!r->((p U r)|Gp))
+Fr->(!p U (s|r))
+G((q&!r&Fr)->(!p U (s|r)))
+G(q&!r->((!p U (s|r))|G!p))
+Fr->(p->(!r U (s&!r))) U r
+G((q&!r&Fr)->(p->(!r U (s&!r))) U r)
+Fp->(!p U (s&!p&X(!p U t)))
+Fr->(!p U (r|(s&!p&X(!p U t))))
+(G!q)|(!q U (q&Fp->(!p U (s&!p&X(!p U t)))))
+G((q&Fr)->(!p U (r|(s&!p&X(!p U t)))))
+G(q->(Fp->(!p U (r|(s&!p&X(!p U t))))))
+(F(s&XFt))->((!s) U p)
+Fr->((!(s&(!r)&X(!r U (t&!r))))U(r|p))
+(G!q)|((!q)U(q&((F(s&XFt))->((!s) U p))))
+G((q&Fr)->((!(s&(!r)&X(!r U (t&!r))))U(r|p)))
+Fr->(p->(!r U (s&!r&X(!r U t)))) U r
+G((q&Fr)->(p->(!r U (s&!r&X(!r U t)))) U r)
+Fr->(p->(!r U (s&!r&!z&X((!r&!z) U t)))) U r
+G((q&Fr)->(p->(!r U (s&!r&!z&X((!r&!z) U t)))) U r)
+Fp
+G(!q)|F(q&Fp)
+(!p U s)|Gp
+G(q->(!(s&(!r)&X(!r U (t&!r)))U(r|p)|G(!(s&XFt))))
+Fr->(s&X(!r U t)->X(!r U (t&Fp))) U r
+EOF
+
+cat >non-obligations.txt <<EOF
+G(q&!r->(!r U (p&!r)))
+G!q|F(q&((!p U s)|G!p))
+G(p->Fs)
+G(q->G(p->Fs))
+G(q&!r->(((p->(!r U (s&!r))) U r)|G(p->(!r U (s&!r)))))
+G(s&XFt->X(F(t&Fp)))
+G(q->G(s&XFt->X(!t U (t&Fp))))
+G((q&Fr)->(s&X(!r U t)->X(!r U (t&Fp))) U r)
+G(q->(s&X(!r U t)->X(!r U (t&Fp)))U(r|G(s&X(!r U t)->X(!r U (t&Fp)))))
+G(p->F(s&XFt))
+G(q->G(p->(s&XFt)))
+G(q->(p->(!r U (s&!r&X(!r U t))))U(r|G(p->(s&XFt))))
+G(p->F(s&!z&X(!z U t)))
+G(q->G(p->(s&!z&X(!z U t))))
+G(q->(p->(!r U (s&!r&!z&X((!r&!z) U t))))U(r|G(p->(s&!z&X(!z U t)))))
+EOF
+
+success=:
+i=0
+while read f; do
+  # Run ltl2tgba through valgrind with some combination of options to
+  # detect any crash.  Do that only for the first few formula, because
+  # it takes a long time.
+  if test $i -lt 5; then
+    run 0 ../ikwiad -f -R3 -DS -Rm "!($f)" >/dev/null
+    i=`expr $i + 1`
+  fi
+
+  # If the labels of the state have only digits, assume the minimization
+  # worked.
+  x=`../ikwiad -f -Rm "!($f)" |
+     grep -v -- '->' |
+     sed -n 's/.*\[.*label="\(..*\)".*/\1/p' |
+     tr -d '0-9\n'`
+  case $x in
+  "") echo "OK !($f)";;
+  *) echo "KO !($f)"; success=false;;
+  esac
+done < obligations.txt
+
+echo ====
+
+i=0
+while read f; do
+  # Run ltl2tgba through valgrind with ANOTHER combination of options
+  # to detect any crash.  Do that only for the first few formula, because
+  # it takes a long time.
+  if test $i -lt 5; then
+    run 0 ../ikwiad -taa -DS -Rm "!($f)" >/dev/null
+    i=`expr $i + 1`
+  fi
+
+  # If the labels of the state have only digits, assume the minimization
+  # worked.
+  ../ikwiad -kt -Rm "!($f)" > out1
+  ../ikwiad -kt -R3 "!($f)" > out2
+  if cmp out1 out2; then
+     echo "OK !($f)";
+  else
+     echo "wrongly minimized !($f)";
+     success=false;
+  fi
+done < non-obligations.txt
+
+$success

@@ -1,0 +1,92 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2015-2017 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Do some quick translations to make sure the neverclaims produced by
+# spot actually look correct!  We do that by parsing them via ltlcross.
+# ltl2neverclaim-lbtt.test does the same with LBTT if it is installed.
+
+. ./defs
+set -e
+
+# Skip this test if ltl2dstar is not installed.
+(ltl2dstar --version) || exit 77
+
+# Make sure all recurrence formulas are translated into deterministic
+# Büchi automata by the DRA->TGBA converter.
+# (Note that ltl2tgba is not called with -D when want to make
+# sure we get a deterministic output even if the automaton generated
+# by Spot initially was non-deterministic)
+
+randltl -n -1 a b --tree-size=5..15 |
+ltlfilt --syntactic-recurrence --remove-wm -r -u \
+         --size-min=4 --size-max=15 --relabel=abc |
+head -n 20 > formulas
+
+randltl -n -1 a b --tree-size=5..15 |
+ltlfilt -v --obligation |
+ltlfilt --syntactic-recurrence --remove-wm -r -u --size=4..15 --relabel=abc |
+head -n 20 >> formulas
+
+while read f; do
+  ltlfilt -f "$f" -l |
+  ltl2dstar --ltl2nba=spin:ltl2tgba@-s - foo
+  echo "$f"
+  det=`dstar2tgba foo --stats '%d'`
+  test $det -eq 1;
+done < formulas
+
+echo ==========================
+
+# For obligation formulas, the output of dstar2tgba should
+# have the same size as the input when option -D is used.
+randltl -n -1 a b --tree-size=5..15 |
+ltlfilt --obligation --size=4..15 --relabel=abc --remove-wm -r -u |
+head -n 20 > formulas
+
+while read f; do
+  expected=`ltl2tgba "$f" -BD --stats '%s %e 1 %d'`
+  ltlfilt -f "$f" -l |
+  ltl2dstar --ltl2nba=spin:ltl2tgba@-Ds - foo
+  echo "$f"
+  output=`dstar2tgba foo -BD --stats '%s %e %d 1'`
+  # the '1 %d' matching '%d 1' makes sure input and output are deterministic.
+  test "$output" = "$expected";
+done < formulas
+
+echo ==========================
+
+# Now make sure that some obviously non-deterministic property
+# are not translated to deterministic.
+
+cat >formulas <<EOF
+FGa
+GFa->GFb
+GFa & FGb
+FGa | FGb
+FGa & FGb
+EOF
+
+while read f; do
+  ltlfilt -f "$f" -l |
+  ltl2dstar --ltl2nba=spin:ltl2tgba@-s - foo
+  echo "$f"
+  det=`dstar2tgba foo --stats '%d'`
+  test $det -eq 0;
+done < formulas

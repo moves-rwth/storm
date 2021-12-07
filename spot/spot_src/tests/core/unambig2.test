@@ -1,0 +1,123 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2019 Laboratoire de Recherche et
+# Developpement de l'Epita
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+# The following list of formulas was reported by Simon Jantsch.
+cat >errors <<EOF
+| G ! "2" F & X "1" F "2"
+| V X "2" "2" F W "2" f
+| & "2" G "1" F G "2"
+i U t "2" U F "2" "1"
+& G F "1" i "1" F "2"
+& G F "2" ^ "2" X G "2"
+| F G "1" & "1" X "1"
+i W "2" G "1" G "1"
+! | | "2" G "1" F G "2"
+i | G "1" W "2" "1" F G "2"
+i ^ "2" G X "2" F G "1"
+& & "2" G F "1" U t "1"
+| F G "1" i F "1" "2"
+| U "1" X ! "1" F G ! "1"
+! & ! F G "1" i G "1" "2"
+i ! F G "2" i U t "2" "1"
+| ! G F "2" & "2" G "1"
+| & "1" ! U t "2" F ! F "2"
+& G ! G "1" | "1" X "1"
+& G ! G "2" | "1" F "2"
+i G F "2" & "2" X "2"
+& ! G "1" W "2" G "1"
+& | "2" F "1" G F "2"
+| F G "1" & "1" W "2" f
+& F "2" W "1" ! F "2"
+| G | X "1" G "2" F ! F "1"
+| F W "2" f i F "2" "1"
+& W F "2" f i G "1" "2"
+| ! F "2" U F "2" "1"
+& G F "2" ! & "2" G "1"
+| | "1" ! F "2" F G "1"
+& & "2" U t "1" G U t "2"
+i G U t "2" & "1" ! F "2"
+& G ! G "1" W X "1" "1"
+| & "2" X "1" F G "1"
+i G F "2" & "2" G "1"
+! & & "2" F "1" G F "1"
+& & "1" F "2" ! F G "2"
+| & "2" X "2" F W "2" f
+i X W "1" G "2" G "2"
+i X G "2" ! W "1" G "2"
+! i i "2" X "2" F G "2"
+& G U t "2" i G "1" "2"
+i G F "1" & F "2" X "1"
+| F G "2" & "1" X "2"
+i G F "2" & ! "2" G "1"
+| G ! "2" U U t "2" "1"
+i W F "2" f ! V "2" X "1"
+| F V f "2" & "2" X "2"
+& | "2" F "1" G F "1"
+& F "2" ! U F "2" "1"
+& G ! G "1" | "2" X "2"
+G ^ ! G "2" F ^ "1" G ! G "2"
+i ! F G "2" i "1" ! F "2"
+& G F "2" i W "2" f "1"
+& F "2" ! U F "2" ! "1"
+& G F "1" i G "1" "2"
+i G F "2" & "1" X "1"
+! i W ! G "2" f V X "2" "2"
+| G i "1" X "2" i G F "2" G "1"
+& F "2" W "1" W ! "2" f
+| F G ! "2" & "2" X "2"
+! & i "2" F "1" ! U t G "2"
+| F G "2" & "1" ! F "2"
+! & U t "1" ! U F "1" "2"
+! | | "2" ! G ! G "2" G "1"
+| i F "2" "1" F G "1"
+| F G "1" & ! "1" G "2"
+& | "1" X "1" G F "1"
+& i "2" F "1" G F "1"
+& & "1" F "2" G F "1"
+! & F "1" ! X U F "1" "2"
+i ! F G "2" V F "2" "1"
+i ! U ! G "1" "2" G "1"
+i i "1" F "2" F ! F "2"
+i F "1" | "2" F G "2"
+& U t "2" W "1" ! F "2"
+i G | G "2" W "1" "2" G "2"
+! & ! F G "2" | F "2" ! F "2"
+| F W "1" f & "2" ! F "1"
+| F G "1" U ! "1" X "1"
+& i X "2" "2" ! F G "2"
+& | "1" X "1" ! F W "1" f
+& ! G "2" ! U ! G "2" "1"
+| F G "2" & "1" W "2" f
+& i ! U t "1" "2" G ! G "1"
+& V "2" X "1" G F "1"
+| F G "2" & ! "2" W "1" f
+! i W "2" F "1" F G "2"
+& & "2" G F "2" ! G "1"
+| ! F "1" F & F "1" X "2"
+| F G "2" & ! "2" X "2"
+| F G "2" i F "2" & "1" "2"
+i i X "2" "2" F G "2"
+EOF
+
+ltlcross --lbt-input -F errors 'ltl2tgba -U -B --low' 'ltl2tgba'

@@ -1,0 +1,1156 @@
+#+TITLE: Support for the Hanoi Omega Automata (HOA) Format
+#+DESCRIPTION: Details about support of the HOA format in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+
+The [[http://adl.github.io/hoaf/][Hanoi Omega-Automata format]] is a textual representation of
+ω-automata labeled by Boolean formulas over a set of atomic
+propositions, and using an arbitrary acceptance condition. The
+typical acceptances conditions like Büchi, generalized-Büchi,
+co-Büchi, Rabin, Streett, parity, ... are all supported, but the main
+advantage of this format is that any arbitrary acceptance condition
+can be defined.  The HOA format has support for many features such as
+non-determinism, alternation, multiple initial states, transition or
+state-based acceptance, named states, and a range of property flags
+making it possible to store additional information about the
+automaton.
+
+The HOA format is already supported in [[http://adl.github.io/hoaf/support.html][several tools]].  The goal of
+this page is to detail the support of this format in Spot.  It contains
+some information that are useful to better understand the behavior
+of the tools distributed by Spot, and it also look at some lower-level,
+discussing details that are interesting when programming with Spot.
+
+Spot can read files written using either version 1 or version 1.1 of
+the HOA format.  It currently outputs version 1 by default, but
+version 1.1 can be requested from the command-line using option
+=-H1.1=.  Future version of Spot are likely to switch to version 1.1
+of HOA by default, so version 1 can already be requested explicitly
+using =-H1=.  Note that version 1.1 is not yet published at the time
+of writing, and that there are discussion about calling it version 2
+instead.
+
+* Format, files, and TωA
+
+Some note about the abbreviation first.  We usually write "HOA format"
+or occasionally HOAF to denote the format (as a specification), and
+HOA or "HOA file" to denote an automaton in that format.  In most
+examples involving HOA files, we use =*.hoa= as a filename extension
+(even if the actual extension does not matter).
+
+When an HOA file is loaded by Spot, it is stored into the
+data-structure used by Spot to represent ω-Automata.  This structure
+is called Transition-based ω-Automaton, henceforth abbreviated TωA.
+Such a TωA can be saved back as an HOA file.  If you run a command
+such as =autfilt input.hoa >output.hoa= this is exactly what
+happens: the file =input.hoa= is parsed to create a TωA, and this TωA
+is then printed in the HOA format into =output.hoa=.
+
+Since the TωA structure is not a perfect one-to-one representation of
+the HOA format, the output may not be exactly the same as the input.
+
+* Features of the HOA format with no or limited support in Spot
+   :PROPERTIES:
+   :CUSTOM_ID: restrictions
+   :END:
+
+- Automata using explicit alphabet (introduced in version 1.1 of the
+  format via =Alphabet:=) are not supported.
+
+- The maximum number of acceptance sets used is limited to 32.
+
+  In the past, this limitation has forced us to improve some of our
+  algorithms to be less wasteful and not introduce useless acceptance
+  sets.
+
+  This hard-coded limit can be augmented at configure time
+  using option `--enable-max-accsets=N`, but doing so will consume
+  more memory and time.
+
+- Multiple (or missing) initial states are emulated.
+
+  The internal TωA representation used by Spot supports only a single
+  initial state.  When an HOA with multiple initial states is read, it
+  is transformed into an equivalent TωA by merging the initial states
+  into a single one.  The merged state can either be one of the
+  original initial states (if one of those has no incoming edge) or a
+  new state introduced for that purpose.
+
+  Similarly, when an automaton with no initial state is loaded (this
+  includes the case where the automaton has no state), a disconnected
+  initial state is added.  As a consequence, Spot's HOA output always
+  contains at least one state, even when the input had no state.
+
+- =Fin(!x)= and =Inf(!x)= are rewritten away.
+
+  Internally Spot only deals with acceptance conditions involving the
+  primitives =Fin(x)= or =Inf(x)=.  When the parser encounters the
+  variants =Fin(!x)= or =Inf(!x)=, it automatically complements the
+  set =x= so that the resulting acceptance uses only =Fin(x)= and
+  =Inf(x)=.  For instance =Fin(0)&Inf(!1)= gets rewritten into
+  =Fin(0)&Inf(1)= and the membership of all transitions to the set =1=
+  is reversed.
+
+  If =x= was already used without complementation in another
+  primitive, then a new set has to be created.  For instance the
+  acceptance =Inf(0)&Inf(!0)= can only be fixed by adding a new set,
+  =1=, that stores the complement of set =0=, and using
+  =Inf(0)&Inf(1)=.
+
+* Internal representations of some features
+
+In this section we discuss features of the format that are fully
+supported, but in a way that so people could find unexpected.  These
+design choices do not affect the semantics of the HOA format in any
+way.
+
+** State-based vs. transition-based acceptance
+
+A Transition-based ω-Automaton (TωA), as its name implies, uses
+transition-based acceptance sets.  Each edge is stored as a
+quadruplet $(s,d,\ell,F)$ where $s$ and $d$ are the source and
+destination state numbers, $\ell$ is a Binary Decision Diagram (BDD)
+representing the Boolean function labeling the edge, and $F$ is a
+bit-vector representing the membership of the transition to each
+declared acceptance set.
+
+States are just numbers, and may not belong to any accepting set.
+When reading a HOA file that use state-based acceptance (or even
+a mix of state-based and transitions-based acceptance), all the
+acceptance are pushed onto the outgoing transitions.
+
+So an automaton represented as an HOA file with this transition
+structure:
+
+#+BEGIN_SRC sh :results silent :exports results
+cat >stvstracc.hoa <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p0" "p1"
+Acceptance: 2 Inf(0)&Inf(1)
+--BODY--
+/* state-based acceptance */
+State: 0 {0 1}
+[0&!1] 0
+[0&1] 1
+[!0] 2
+/* mixed state- and transition-based acceptance */
+State: 1 {0}
+[0] 1 {1}
+[0&1] 2
+/* transition-based acceptance */
+State: 2
+[!0] 1 {0}
+[0]  2 {1}
+--END--
+EOF
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC sh :exports results :wrap SRC hoa
+sed -n '/--BODY/,/--END/p' stvstracc.hoa | grep -v -- --
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+/* state-based acceptance */
+State: 0 {0 1}
+[0&!1] 0
+[0&1] 1
+[!0] 2
+/* mixed state- and transition-based acceptance */
+State: 1 {0}
+[0] 1 {1}
+[0&1] 2
+/* transition-based acceptance */
+State: 2
+[!0] 1 {0}
+[0]  2 {1}
+#+END_SRC
+
+will always be stored as a TωA with this transition structure:
+
+#+BEGIN_SRC sh :exports results :wrap SRC hoa
+autfilt -Ht stvstracc.hoa | sed -n '/--BODY/,/--END/p' | grep -v -- --
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+State: 0
+[0&!1] 0 {0 1}
+[0&1] 1 {0 1}
+[!0] 2 {0 1}
+State: 1
+[0] 1 {0 1}
+[0&1] 2 {0}
+State: 2
+[!0] 1 {0}
+[0] 2 {1}
+#+END_SRC
+
+Even if an input HOA file uses only state-based acceptance, Spot
+internally stores it using transition-based acceptance.  However in
+that case the TωA will have a property flag indicating that it actually
+represents an automaton with the "state-based acceptance" property:
+this implies that transitions leaving one state all belong to the same
+acceptance sets.  A couple of algorithms in Spot checks for this
+property, and enable specialized treatments of state-based automata.
+
+Furthermore, even if an automaton does not have the "state-based
+acceptance" property flag set, the HOA output routine may detect that
+the automaton satisfies this property.  In that case, it outputs the
+automaton with state-based acceptance.
+
+For instance in the following automaton, the outgoing transitions of
+each states belong to the same sets:
+
+#+NAME: state-based-example
+#+BEGIN_SRC sh :wrap SRC hoa
+cat >sba.hoa <<EOF_HOA
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 2 Inf(0)&Inf(1)
+--BODY--
+State: 0 {0}
+[0&!1] 0
+[0&1] 1
+[!0] 2
+State: 1
+[0] 1 {1}
+[0&1] 2 {1}
+State: 2
+[!0] 1 {0 1}
+[0]  2 {0 1}
+--END--
+EOF_HOA
+autfilt sba.hoa
+#+END_SRC
+
+so the HOA output of =autfilt= automatically uses state-based acceptance:
+
+#+RESULTS: state-based-example
+#+BEGIN_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0 {0}
+[0&!1] 0
+[0&1] 1
+[!0] 2
+State: 1 {1}
+[0] 1
+[0&1] 2
+State: 2 {0 1}
+[!0] 1
+[0] 2
+--END--
+#+END_SRC
+
+The rational for this automatic switch to state-based acceptance is as follows:
+- Tools that support transition-based acceptance can easily see
+  state-based acceptance as syntactic sugar, so they should be
+  able to process state-based or transition-based acceptance
+  indifferently.
+- Tools that support only state-based acceptance, cannot easily
+  process automata with transition-based acceptance.  So by using
+  state-based acceptance whenever possible, we are making these
+  automata compatible with a larger number of tools.
+- Using state-based acceptance is slightly more space efficient,
+  because there is less redundancy in the output file.
+
+Nevertheless, should you really insist on having an output with
+transition-based acceptance, you can do so by passing the option =t=
+to the HOA printer:
+
+#+BEGIN_SRC sh :wrap SRC hoa
+autfilt -Ht sba.hoa
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0&!1] 0 {0}
+[0&1] 1 {0}
+[!0] 2 {0}
+State: 1
+[0] 1 {1}
+[0&1] 2 {1}
+State: 2
+[!0] 1 {0 1}
+[0] 2 {0 1}
+--END--
+#+END_SRC
+
+By default, the output uses either state-based acceptance, or
+transition-based acceptance.  However there is no restriction in the
+format to prevents mixing the two: if you use =-Hm=, the decision of
+using state or transition-based acceptance will be made for each state
+separately.  For instance:
+
+#+BEGIN_SRC sh :wrap SRC hoa
+ltl2tgba -Hm 'GFa | Fb'
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+name: "F(b | GFa)"
+States: 3
+Start: 1
+AP: 2 "b" "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels complete stutter-invariant
+--BODY--
+State: 0 {0}
+[t] 0
+State: 1
+[0] 0
+[!0] 1
+[!0&1] 2
+State: 2
+[1] 2 {0}
+[!1] 2
+--END--
+#+END_SRC
+
+
+So far we have discussed transforming state-based acceptance into
+transition-based acceptance (this can be seen as removing syntactic
+sugar), and representing transition-based acceptance into state-based
+acceptance when this is possible (adding syntactic sugar) to do so
+without adding states.
+
+It is also possible to transform automata with transition-based
+acceptance into automata with state-based acceptance, adding states
+when necessary.  Most tools have a =-S= option (or
+=--state-based-acceptance=) for this purpose.  Compare the following
+output with the previous one.
+
+#+BEGIN_SRC sh :wrap SRC hoa
+ltl2tgba -S -Hm 'GFa | Fb'
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+name: "F(b | GFa)"
+States: 4
+Start: 0
+AP: 2 "b" "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels complete stutter-invariant
+--BODY--
+State: 0
+[0] 1
+[!0] 0
+[!0&1] 2
+State: 1 {0}
+[t] 1
+State: 2 {0}
+[1] 2
+[!1] 3
+State: 3
+[1] 2
+[!1] 3
+--END--
+#+END_SRC
+
+** Generic acceptance
+
+Currently, Spot's parser for HOA ignores the optional =acc-name:=
+line, and only uses the mandatory =Acceptance:= line.  As explained
+earlier, if this line contains primitives of the form =Inf(!x)= or
+=Fin(!x)= these are rewritten away, because internally Spot only works
+with primitives of the form =Inf(x)= or =Fin(x)=.  This also means
+that Spot will never produce an acceptance condition containing
+=Fin(!x)= or =Inf(!x)=.
+
+Whenever an HOA file is output, Spot attempts to recognize the
+acceptance condition to give it a suitable =acc-name:= (even if Spot
+does not use this line, it is useful to tools that only deal with one
+specific acceptance condition and that do not want to parse the
+=Acceptance:= line).  However the HOA output routine has no idea of
+what type of automata you are trying to output: it is only looking at
+the acceptance condition and trying to name it as precisely as
+possible.  This could be a problem when a given condition accepts
+multiple names.
+
+For instance according to the [[http://adl.github.io/hoaf/#canonical-acceptance-specifications-for-classical-conditions][canonical encodings specified by the HOA
+format]] the condition =Inf(0)= could be called =Buchi=, or
+=generalized-Buchi 1=, or (why not?) =parity min even 1= or =parity
+max even 1=.  Spot will always call this acceptance condition =Buchi=.
+
+Similarly the acceptance condition =t= is always called =all= (not
+=generalized-Buchi 0= or =Rabin 0=, etc.), and while =f= is always
+named =none=.
+
+
+One of the consequence is that when you run =ltl2tgba= with its
+default settings (which are to produce automata with transition-based
+generalized Büchi acceptance) you actually obtain an output that:
+- has an =Acceptance:= line that is a conjunction of =Inf(x)= primitives (or =t=), because
+  that is what generalized Büchi is;
+- has an =acc-name:= line that can be either =generalized-Buchi n=
+  (for $n>1$) or =Buchi= (corresponding to $n=1$) or =all= (corresponding to $n=0$).
+
+The use of =Buchi= or =all= instead of =generalized-Buchi n= follow
+the same idea as our use of state-based acceptance whenever possible.
+By using the name of these inferior acceptance conditions, we hope
+that the resulting automaton can be easier to use with tools that only
+deal with such inferior acceptance conditions.  However, unlike for
+state vs. transition-based acceptance, there is currently no means to
+request another acceptance name to be used.
+
+The [[http://adl.github.io/hoaf/#canonical-acceptance-specifications-for-classical-conditions][canonical encodings for acceptance conditions]] are specified quite
+strictly in the HOA format.  For instance =generalized-Buchi 2=
+corresponds to =Inf(0)&Inf(1)=, not to =Inf(1)&Inf(0)=, even though
+the two formulas are equivalent.  Spot's HOA output routine contains
+some limited form of equivalence check (based mostly on associativity
+and commutativity of the Boolean operators), so that if it detects
+such a simple inversion, it will output it in the order required to be
+allowed to name the acceptance condition.
+
+In the following example, you can see =autfilt= removing the duplicate
+Rabin pair, and reordering the remaining pair to fit the syntax
+corresponding to =Rabin 1=.
+
+#+BEGIN_SRC sh :wrap SRC hoa
+autfilt <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 2 (Inf(1) & Fin(0)) | (Inf(1) & Fin(0))
+--BODY--
+State: 0 {0}
+[0&!1] 0
+[0&1] 1
+[!0] 2
+State: 1
+[0] 1 {1}
+[0&1] 2 {1}
+State: 2
+[!0] 1 {0 1}
+[0]  2 {0 1}
+--END--
+EOF
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Rabin 1
+Acceptance: 2 Fin(0) & Inf(1)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0 {0}
+[0&!1] 0
+[0&1] 1
+[!0] 2
+State: 1 {1}
+[0] 1
+[0&1] 2
+State: 2 {0 1}
+[!0] 1
+[0] 2
+--END--
+#+END_SRC
+
+Internally, the acceptance condition is stored as an array in reverse
+polish notation, and the primitives =Inf= and =Fin= are actually
+parametered by bitsets representing multiple sets numbers.  For
+instance the generalized Büchi acceptance
+=Inf(0)&Inf(1)&Inf(2)&Inf(3)= is actually stored as a single term
+=Inf({0,1,2,3})=.  Similarly, =Fin({1,3,5})= is our internal encoding
+for =Fin(1)|Fin(3)|Fin(5)=.
+
+A more complex acceptance condition, such as
+=(Fin(0)&Inf(1))|(Fin(2)&Inf(3)&Inf(4))|Fin(5)= (a generalized-Rabin
+acceptance), would be encoded as the following 8-element array.
+
+: Fin({5}) Inf({3,4}) Fin({2}) 2& Inf({1}) Fin(0) 2& 3|
+
+This has to be read as a [[http://en.wikipedia.org/wiki/Reverse_Polish_notation][reverse Polish notation]] where the numbers in
+front of the operators =&= and =|= indicate the number of arguments
+they consume (these operators are n-ary).
+
+When you look at an acceptance condition output by Spot, you can
+actually spot the terms that have been grouped together internally by
+looking at the spacing around operators =&= and =|=.  For instance:
+
+#+BEGIN_SRC sh :wrap SRC hoa
+randaut -A"Fin(0)|Fin(1)|Fin(2)&Fin(3)&Inf(4)&Inf(5)" 0 | grep Acceptance:
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+Acceptance: 6 (Fin(0)|Fin(1)) | (Fin(2) & Fin(3) & (Inf(4)&Inf(5)))
+#+END_SRC
+
+Here =Fin(0)|Fin(1)= is actually a single internal term =Fin({0,1})=,
+and likewise for =Inf(4)&Inf(5)=.
+
+** State-based vs. transition-based labels
+
+State labels are handled in the same way as state-based acceptance:
+Spot store labels on transitions internally, so if an input automaton
+has state labels, those are pushed to all outgoing transitions.
+
+For instance an automaton declared in some HOA file with this body:
+
+#+BEGIN_SRC sh :results silent :exports results
+cat >stvstrlab.hoa <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p0" "p1"
+Acceptance: 1 Inf(1)
+--BODY--
+State: [0&1] 0
+0 1 2
+State: [!0&1] 1 {0}
+0 1
+State: [!1] 2
+2 1
+--END--
+EOF
+#+END_SRC
+
+#+RESULTS:
+
+#+BEGIN_SRC sh :exports results :wrap SRC hoa
+sed -n '/--BODY/,/--END/p' stvstrlab.hoa | grep -v -- --
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+State: [0&1] 0
+0 1 2
+State: [!0&1] 1 {0}
+0 1
+State: [!1] 2
+2 1
+#+END_SRC
+
+will always be stored as an automaton with the following transition
+structure
+
+
+#+BEGIN_SRC sh :exports results :wrap SRC hoa
+autfilt -Ht stvstrlab.hoa | sed -n '/--BODY/,/--END/p' | grep -v -- --
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+State: 0
+[0&1] 0
+[0&1] 1
+[0&1] 2
+State: 1
+[!0&1] 0 {0}
+[!0&1] 1 {0}
+State: 2
+[!1] 2
+[!1] 1
+#+END_SRC
+
+The HOA printer has an option to output automata using state-based
+labels whenever that is possible.  The option is named =k= (i.e., use
+=-Hk= with command-line tools) because it is useful when the HOA file
+is used to describe a Kripke structure.
+
+** Property flags
+   :PROPERTIES:
+   :CUSTOM_ID: property-bits
+   :END:
+
+The =HOA= format supports a number of optional =property:= tokens.
+These properties can be useful to speedup certain algorithms: for
+instance it is easier to complement a deterministic automaton that is
+known to be inherently weak.
+
+Spot stores the properties that matters to its algorithms as
+[[file:concepts.org::#property-flags][additional bits attached to each automaton]].  Currently the HOA parser
+ignores all the properties that are unused by Spot.
+
+Some of the supported properties are double-checked when the automaton
+is parsed; this is for instance the case of =deterministic=,
+=state-based=.  The parser will in fact infer these properties from the
+body of the file, and then return and error if what has been declared
+does not correspond to the reality.
+
+Some supported properties (like =weak=, =inherently-weak=,
+=very-weak=, =terminal=, =unambiguous=, =semi-deterministic=, or
+=stutter-invariant=) are not double-checked, because that would
+require more operations.  Command-line tools that read HOA files all
+take a =--trust-hoa=no= option to ignore properties that are not
+double-checked by the parser.
+
+It should be noted that each property can take three values: true,
+false, or maybe.  So actually two bits are used per property.  For
+instance if in some algorithm you want to know whether an automaton is
+complete (the equivalent of calling =autfilt -q
+--is-complete aut.hoa= from the command-line), you should not
+call the method =aut->prop_complete()= because that only checks
+the property bits, and it might return =maybe= even if =aut= is
+deterministic.  Instead, call the function =is_complete(aut)=.
+This function will first test the property bits, and do the actual
+check in case it is unknown.
+
+Algorithms that update a TωA should call the method =prop_keep()= and
+use the argument to specify which of the properties they preserve.
+Algorithms that input a TωA and output a new one may call the method
+=prop_copy()= to copy over the subset of properties they preserve.
+Using these two functions ensure that in the future, whenever a new
+property is added to the TωA class, we cannot forget to update all the
+calls =prop_copy()= or =prop_keep()= (because these functions will
+take a new argument).
+
+The =HOA= printer also tries to not bloat the output with many
+redundant and useless properties.  For instance =deterministic=
+automata are necessarily =unambiguous=, and people interested in
+unambiguous automata know that, so Spot only outputs the =unambiguous=
+property if an unambiguous automaton is non-deterministic.  Similarly,
+while Spot may output alternating automata, it does not output
+the =no-univ-branch= property because we cannot think of a situation
+where this would be useful.  This decision can be overridden by
+passing the =-Hv= (or =--hoa=v=) option to the command-line tools:
+this requests "verbose" properties.
+
+The following table summarizes how supported properties are handled.  In
+particular:
+- For the parser, =checked= means that the property is always inferred
+  and checked against any declaration (if present), =trusted= means
+  that the property will be stored without being checked (unless
+  =--trust-hoa=no= is specified).
+- Stored properties are those represented as bits in the automaton.
+- The printer will sometime check some properties when it can do
+  it as part of its initial "survey scan" of the automaton; in that
+  case the stored property is not used.  This makes it possible
+  to detect deterministic automata that have been output by algorithms
+  that do not try to output deterministic automata.
+
+| property             | parser  | stored | printer                                                 | notes                                                            |
+|----------------------+---------+--------+---------------------------------------------------------+------------------------------------------------------------------|
+| =state-labels=       | checked | no     | checked if =-Hk=                                        | state labels are converted to transition labels when reading TωA |
+| =trans-labels=       | checked | no     | always, unless =-Hi= or =-Hk=                           |                                                                  |
+| =implicit-labels=    | checked | no     | if =-Hi=                                                | =-Hi= only works for deterministic automata                      |
+| =explicit-labels=    | checked | no     | always, unless =-Hi=                                    |                                                                  |
+| =state-acc=          | checked | yes    | checked, unless =-Ht= or =-Hm=                          |                                                                  |
+| =trans-acc=          | checked | no     | if not =state-acc= and not =-Hm=                        |                                                                  |
+| =no-univ-branch=     | ignored | no     | only if =-Hv=                                           |                                                                  |
+| =univ-branch=        | checked | no     | checked                                                 |                                                                  |
+| =deterministic=      | checked | yes    | checked                                                 |                                                                  |
+| =complete=           | checked | yes    | checked                                                 |                                                                  |
+| =unambiguous=        | trusted | yes    | as stored if (=-Hv= or not =deterministic=)             | can be checked with =--check=unambiguous=                        |
+| =semi-deterministic= | trusted | yes    | as stored if (=-Hv= or not =deterministic=)             | can be checked with =--check=semi-deterministic=                 |
+| =stutter-invariant=  | trusted | yes    | as stored                                               | can be checked with =--check=stuttering=                         |
+| =stutter-sensitive=  | trusted | yes    | as stored (opposite of =stutter-invariant=)             | can be checked with =--check=stuttering=                         |
+| =terminal=           | trusted | yes    | as stored                                               | can be checked with =--check=strength=                           |
+| =very-weak=          | trusted | yes    | as stored if (=-Hv= or not =terminal=)                  | can be checked with =--check=strength=                           |
+| =weak=               | trusted | yes    | as stored if (=-Hv= or not (=terminal= or =very-weak=)) | can be checked with =--check=strength=                           |
+| =inherently-weak=    | trusted | yes    | as stored if (=-Hv= or not =weak=)                      | can be checked with =--check=strength=                           |
+| =colored=            | ignored | no     | checked                                                 |                                                                  |
+
+The above table is for version 1 of the format.  When version 1.1 is
+selected (using =-H1.1=), some negated properties may be output.  In
+particular, =stutter-sensitive= is replaced by =!stutter-invariant=.
+The logic of not cluttering the output with all of =!terminal=,
+=!weak=, and =!inherently-weak= is similar to the positive versions:
+=!inherently-weak= implies =!weak= which in turn implies =!terminal=,
+so only one of those is emitted unless =-Hv= is used.
+
+** Named properties
+   :PROPERTIES:
+   :CUSTOM_ID: named-properties
+   :END:
+
+In addition to the bit properties discussed above, a TωA can carry
+named properties of any type.  When attaching a property to a TωA, you
+only supply a name for the property, a pointer, and an optional
+destructor function.
+
+There are currently two [[file:concepts.org::#named-properties][named properties]] related to the HOA format.
+
+- =automaton-name= :: Is a string that stores the name of the automaton (the one given after =name:= in the HOA format)
+- =state-names= :: is a vector of strings that stores the name of the states (in case states are named in the HOA format)
+
+You can see these properties being preserved when an automaton is read and then immediately output:
+
+#+NAME: hello-world
+#+BEGIN_SRC sh :wrap SRC hoa
+cat >hw.hoa <<EOF
+HOA: v1
+name: "hello world!"
+States: 3
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 2 Inf(0)&Inf(1)
+--BODY--
+State: 0 {0}
+[0&!1] 0
+[0&1] 1
+[!0] 2
+State: 1 "I am a state"
+[0] 1 {1}
+[0&1] 2 {1}
+State: 2 "so am I"
+[!0] 1 {0 1}
+[0]  2 {0 1}
+--END--
+EOF
+autfilt hw.hoa
+#+END_SRC
+
+#+RESULTS: hello-world
+#+BEGIN_SRC hoa
+HOA: v1
+name: "hello world!"
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0 {0}
+[0&!1] 0
+[0&1] 1
+[!0] 2
+State: 1 "I am a state" {1}
+[0] 1
+[0&1] 2
+State: 2 "so am I" {0 1}
+[!0] 1
+[0] 2
+--END--
+#+END_SRC
+
+However if =autfilt= performs some transformation, and actually has to
+construct a new automaton, those properties will not be quarried over
+to the new automaton.  First because it is not obvious that the new
+automaton should have the same name, and second because if a new
+automaton is created, there might not be clear correspondence between
+the old states and the new ones.
+
+
+Here is for instance the result when =autfilt= is instructed to
+simplify the automaton:
+
+#+BEGIN_SRC sh :wrap SRC hoa
+autfilt --small hw.hoa
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0&!1] 0
+[0&1] 1
+[!0] 2
+State: 1
+[0&!1] 1
+[0&1] 2
+State: 2 {0}
+[!0] 1
+[0] 2
+--END--
+#+END_SRC
+
+
+Note that if the name of the automaton is important to you, it can be
+fixed via the =--name= option.  For instance =--name=%M= will
+construct the new name by simply copying the one of the original
+automaton.
+
+#+BEGIN_SRC sh :wrap SRC hoa
+autfilt --small hw.hoa --name=%M
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+name: "hello world!"
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0&!1] 0
+[0&1] 1
+[!0] 2
+State: 1
+[0&!1] 1
+[0&1] 2
+State: 2 {0}
+[!0] 1
+[0] 2
+--END--
+#+END_SRC
+
+The page about [[file:oaut.org][common output option for automata]] has a section showing
+how =--name= can be used to construct complex pipelines with automata that
+preserve their equivalent LTL formula in the =name:= field.
+
+* Streaming support
+
+The HOA format has been designed to easily allow multiple automata to
+be concatenated together (in the same file, or in a pipe) and
+processed in batch.  Spot's parser supports this scenario and can be
+called repeatedly to read the next automaton from the input stream.
+
+For instance the following creates 3 formulas of the form $\bigwedge_i
+\mathsf{G}\mathsf{F} p_i$, translates those into Büchi automata output
+in the HOA format, and then read those automata with =autfilt= to
+randomize the order of their transitions and states before printing
+them in HOA format.
+
+#+BEGIN_SRC sh :wrap SRC hoa
+genltl --and-gf=1..3 | ltl2tgba -B | autfilt --randomize
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+name: "GFp1"
+States: 2
+Start: 1
+AP: 1 "p1"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic stutter-invariant
+--BODY--
+State: 0
+[0] 1
+[!0] 0
+State: 1 {0}
+[!0] 0
+[0] 1
+--END--
+HOA: v1
+name: "G(Fp1 & Fp2)"
+States: 3
+Start: 1
+AP: 2 "p1" "p2"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic stutter-invariant
+--BODY--
+State: 0
+[0] 1
+[!0] 0
+State: 1 {0}
+[0&1] 1
+[!1] 2
+[!0&1] 0
+State: 2
+[!1] 2
+[0&1] 1
+[!0&1] 0
+--END--
+HOA: v1
+name: "G(Fp1 & Fp2 & Fp3)"
+States: 4
+Start: 1
+AP: 3 "p1" "p2" "p3"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic stutter-invariant
+--BODY--
+State: 0
+[!0] 0
+[0] 1
+State: 1 {0}
+[!2] 3
+[!1&2] 2
+[0&1&2] 1
+[!0&1&2] 0
+State: 2
+[!1] 2
+[!0&1] 0
+[0&1] 1
+State: 3
+[0&1&2] 1
+[!1&2] 2
+[!0&1&2] 0
+[!2] 3
+--END--
+#+END_SRC
+
+
+It should be noted that the HOA parser is less efficient when it reads
+from a pipe than when it reads from a file.  The reason is that if two
+commands =A | B= exchange automata via a pipe, the command =A= may
+require some time between the output of two automata, so if =B= does a
+block read on its input to fill the parser's buffer, it might not be
+able to process any automaton before =A= has produced enough automata
+to fill the input buffer of =B=.  To avoid this delay, whenever =B=
+detects that the input is a pipe (or a terminal), it switches to an
+interactive mode, where the input is read one character at a time.
+This way an automaton can be processed by =B= as soon as its =--END--=
+has been received.
+
+The HOA format has support for a =--ABORT--= token, that can be used
+by tools that produce automata in a stream to cancel the current one.
+This makes sense for instance when the automaton is constructed
+on-the-fly, while it is being output.  This scenario does not occur in
+Spot (automata are constructed before they are output), so it does not
+emit =--ABORT--=.  However the input parser is fully aware of this
+token.  Tools like =autfilt= will diagnose aborted automata in the
+input, and continue processing with the next automaton.  The Python
+bindings for the HOA parser can be configured in two modes: skip
+aborted automata, or flag them as errors.
+
+* Error recovery
+
+The HOA parser does a fair amount of error recovery.  It is important
+that when parsing a stream of automata, a syntax error in one
+automaton does not invalidate the following automata (the parser
+should at least be able to ignore everything up to =--END--= if it
+cannot recover before).
+
+Another scenario where syntax errors are more frequent is when an HOA
+file is hand-edited.  For instance one could edit an HOA file to add a
+few states and transitions, and forget to update the total number of
+states in the format.  In that case the parser will diagnose the problem,
+and fix the number of states.
+
+* Checked properties
+
+When an automaton is output in HOA format, the =property:= lines
+includes property registered into the automaton (see the Property
+bits section above), and property that are trivial to compute.
+
+Command-line tools with a HOA output all have a =--check= option that
+can be used to request additional checks such as testing whether the
+automaton is stutter-invariant, unambiguous, (inherently) weak, and
+terminal.
+* Extensions
+   :PROPERTIES:
+   :CUSTOM_ID: extensions
+   :END:
+
+** Highlighting states and edges
+
+Spot supports two additional headers that are not part of the standard
+HOA format.  These are =spot.highlight.states= and
+=spot.highlight.edges=.  These are used to [[file:autfilt.org::#decoration][decorate states and edges]]
+with colors.
+
+#+NAME: decorate
+#+BEGIN_SRC sh :exports code
+cat >decorate.hoa <<EOF
+HOA: v1.1
+States: 3
+Start: 1
+AP: 2 "a" "b"
+Acceptance: 0 t
+spot.highlight.states: 1 0 2 3
+spot.highlight.edges: 1 1 2 2
+--BODY--
+State: 0
+[t] 0         /* edge #1 */
+State: 1
+[t] 2         /* edge #2 */
+State: 2
+[1] 0         /* edge #3 */
+[0&!1] 2      /* edge #4 */
+--END--
+EOF
+
+autfilt decorate.hoa -d'.#'
+#+END_SRC
+
+#+BEGIN_SRC dot :file decorate.svg :var txt=decorate :exports results
+  $txt
+#+END_SRC
+
+#+RESULTS:
+[[file:decorate.svg]]
+
+
+On the above example, we call =autfilt= with option =-d#= to display
+edges numbers, which helps identifying the edges to highlight.  The
+headers ~spot.highlight.states:~ and ~spot.highlight.edges:~ are both
+followed by a list of alternating state/edges numbers and color numbers.
+
+So in the above file,
+#+BEGIN_SRC sh :exports results :wrap SRC hoa
+grep spot.highlight decorate.hoa
+#+END_SRC
+#+RESULTS:
+#+BEGIN_SRC hoa
+spot.highlight.states: 1 0 2 3
+spot.highlight.edges: 1 1 2 2
+#+END_SRC
+specifies that states =#1= should have color =0=, state =#2= should have
+color =3=, edge =#1= should have color =1=, and edge =#2= should have
+color =2=.
+
+State numbers obviously correspond to the state numbers used in the
+HOA file, and are 0-based.  Edge numbers are 1-based (because that is
+how they are actually stored in Spot), and numbered in the order they
+appear in the HOA file.
+
+The color palette is currently the same that is used for coloring
+acceptance sets.  This might change in the future.
+
+The automaton parser will not complain if these headers are used in
+some =HOA: v1= file, even if =v1= disallows dots in header names.
+However [[https://en.wikipedia.org/wiki/Robustness_principle][the automaton printer is more rigorous]] and will only output
+these lines when version 1.1 is selected.
+
+Compare:
+
+#+BEGIN_SRC sh :wrap SRC hoa
+autfilt -H1 decorate.hoa; echo
+autfilt -H1.1 decorate.hoa
+#+END_SRC
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+States: 3
+Start: 1
+AP: 2 "a" "b"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[t] 0
+State: 1
+[t] 2
+State: 2
+[1] 0
+[0&!1] 2
+--END--
+
+HOA: v1.1
+States: 3
+Start: 1
+AP: 2 "a" "b"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc !complete
+properties: deterministic
+spot.highlight.states: 1 0 2 3
+spot.highlight.edges: 1 1 2 2
+--BODY--
+State: 0
+[t] 0
+State: 1
+[t] 2
+State: 2
+[1] 0
+[0&!1] 2
+--END--
+#+END_SRC
+
+** Sample words
+
+When the =--check=stutter-sensitive-example= option is used, and when
+a stutter-sensitive automaton is output, two sample words are added to
+the HOA output as a proof that the automaton is stutter-sensitive.
+One of these words is accepted, the other is rejected, and the two are
+stutter-equivalent (i.e., they differ only by some stuttering).
+
+The headers are called =spot.accepted-word= and =spot.rejected-word=
+if HOA v1.1 is selected.  However since these are also useful to
+third-party tools, we also output them as =spot-accepted-word= and
+=spot-rejected-word= in HOA v1.
+
+#+BEGIN_SRC sh :wrap SRC hoa
+ltl2tgba --check=stutter-sensitive-example -H1 Xa; echo
+ltl2tgba --check=stutter-sensitive-example -H1.1 Xa
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+name: "Xa"
+States: 3
+Start: 1
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: stutter-sensitive terminal
+spot-accepted-word: "!a; cycle{a}"
+spot-rejected-word: "!a; !a; cycle{a}"
+--BODY--
+State: 0
+[0] 2
+State: 1
+[t] 0
+State: 2 {0}
+[t] 2
+--END--
+
+HOA: v1.1
+name: "Xa"
+States: 3
+Start: 1
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc !complete
+properties: deterministic !stutter-invariant terminal
+spot.accepted-word: "!a; cycle{a}"
+spot.rejected-word: "!a; !a; cycle{a}"
+--BODY--
+State: 0
+[0] 2
+State: 1
+[t] 0
+State: 2 {0}
+[t] 2
+--END--
+#+end_SRC
+
+
+#+BEGIN_SRC sh :results silent :exports results
+rm -f stvstracc.hoa sba.hoa stvstrlab.hoa decorate.hoa
+#+END_SRC
+
+#  LocalWords:  html args Büchi accsets BDD SRC stvstracc EOF sed sba
+#  LocalWords:  acc Buchi Hm tgba GFa Fb encodings parametered ary Hk
+#  LocalWords:  bitsets randaut stvstrlab aut Hv hw bigwedge mathsf
+#  LocalWords:  genltl gf GFp Fp parser's rankdir br labelloc ffffa
+#  LocalWords:  fillcolor fontname svg txt Xa

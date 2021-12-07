@@ -1,0 +1,67 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017, 2019 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+# This make sure that the degeneralize fonction does not create
+# new SCCs.
+#
+# The following cases were found with
+#
+# % randltl -n -1 3 | ltl2tgba | autfilt --acc-sets=3.. |
+#   autfilt -Bx'!degen-remscc' --stats='%C,%c,%M' |
+#   awk -F, '{ if ($1 < $2) { print $0; } }'
+cat >input <<EOF
+GF((Fp2 & X((p0 & Gp1) | (!p0 & F!p1))) | (G!p2 & X((p0 & F!p1) | (!p0 & Gp1))))
+((Gp2&FG((Gp1&Xp0)|(F!p1&X!p0)))|(F!p2 & GF((Gp1 & X!p0) | (Xp0 & F!p1)))) W !p0
+G(Fp0 & (F!p1 U (G!p2 M !p0)))
+G(((Fp1 & (p1 W Fp0)) | (G!p1 & (!p1 M G!p0))) M FG!p2)
+Xp0 R F((p0 & FG(Gp2 U p1)) | (!p0 & GF(F!p2 R !p1)))
+GF(p0 & (((p1 & Fp2) | (!p1 & G!p2)) M Gp1))
+F(G!p0 | GF((Gp0 & (!p2 R !p1)) | ((p2 U p1) & F!p0)))
+p1|X(p1 R F((((p2&G!p0)|(!p2&Fp0))&FGp0)|(((p2 & Fp0) | (!p2 & G!p0)) & GF!p0)))
+G(!p1 | (!p2 & F!p1) | (GFp2 U p0))
+GF((Fp2&(p0 U((p1&GFp0)|(!p1&FG!p0))))|(G!p2&(!p0 R((p1&FG!p0)|(!p1&GFp0)))))
+GF((XFp1 & ((p0 & G!p2) | (!p0 & Fp2))) | (XG!p1 & ((p0 & Fp2) | (!p0 & G!p2))))
+F(!p2 | GF((Fp0 & ((p0 & Gp1)|(!p0&F!p1)))|(G!p0&((p0&F!p1)|(!p0&Gp1)))))
+G(XF((p2 & F!p1) | (!p2 & Gp1)) | (p1 & Fp0))
+!p0 | GF((p1 & (Xp2 W Gp2)) | (!p1 & (X!p2 M F!p2)))
+G!p0 | G((Fp1 U p2) & F!p2)
+EOF
+
+
+
+# We want to make sure the degeneralized automaton has fewer SCCs
+# (it can be less if the simulation on the BA is lukier than on the TGBA)
+ltl2tgba < input | autfilt -B --stats=": '%M'; test %C -ge %c" > test.sh
+sh -x -e test.sh
+
+# Make sure that this degen-remscc optimizition is actually doing something.
+# The following test could fail in the future if we improve the translation
+# of some of these formulas.  In that case, regenerate the list of test
+# formula using the command displayed above.
+ltl2tgba < input |
+  autfilt -Bx'!degen-remscc' --stats=": '%M'; test %C -lt %c" > test.sh
+sh -x -e test.sh
+
+# We also want to make sure those degeneralized automata are correct
+ltlcross -F input ltl2tgba 'ltl2tgba -B' 'ltl2tgba %f | autfilt -B > %O'

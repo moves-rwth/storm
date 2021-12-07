@@ -1,0 +1,75 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2014, 2015, 2017 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check for the stutter-invariant formula detection
+. ./defs || exit 1
+
+set -e
+
+# Use time only if it is available
+time=time
+if ($time ls) >/dev/null 2>&1; then
+    :
+else
+    time=
+fi
+
+FILE=formulae
+rm -f $FILE
+for i in 10 12 14 16 18 20; do
+  randltl --seed 0   --tree-size $i a b c       -n 100 >> $FILE
+  randltl --seed 100 --tree-size $i a b c d e f -n 100 >> $FILE
+done
+
+# We do not check i=0 and i=9, as they are too slow.
+for i in 1 2 3 4 5 6 7 8; do
+    SPOT_STUTTER_CHECK=$i
+    export SPOT_STUTTER_CHECK
+    $time ltlfilt --stutter-invariant -F $FILE > res.$i
+done
+
+# All results should be equal
+for i in 2 3 4 5 6 7 8; do
+    diff res.1 res.$i
+done
+
+
+# Do a similar test on fewer formulas, so we can cover 0 and 9.
+cat >$FILE <<EOF
+F(a & X(!a & b))
+F(a & X(!a & Xb))
+F(a & X!a & Xb)
+F(a & X(a & Xb))
+F(a & Xb)
+Xa
+EOF
+
+# We do not check i=0 and i=9, as they are too slow.
+for i in 0 1 2 3 4 5 6 7 8 9; do
+    SPOT_STUTTER_CHECK=$i
+    export SPOT_STUTTER_CHECK
+    $time ltlfilt --stutter-invariant -F $FILE > res.$i
+done
+
+# All results should be equal
+for i in 1 2 3 4 5 6 7 8 9; do
+    diff res.0 res.$i
+done

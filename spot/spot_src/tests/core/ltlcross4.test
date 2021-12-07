@@ -1,0 +1,81 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012-2014, 2017, 2020 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+test -z "$PYTHON" && exit 77
+
+cat >formulas.txt <<EOF
+GFa & GFb
+GFa -> GFb
+EOF
+
+ltlcross -F formulas.txt \
+  "{ltl2tgba any} ltl2tgba --lbtt --any %f > %T" \
+  "{ltl2tgba det} ltl2tgba --lbtt --deterministic %f > %T" \
+  "{ltl2tgba sma} ltl2tgba --lbtt --small %f > %T" \
+  --csv=output.csv 2> stderr
+
+cat stderr
+grep -F -q '[P0: ltl2tgba any]' stderr
+grep -F -q '[P1: ltl2tgba det]' stderr
+grep -F -q '[P2: ltl2tgba sma]' stderr
+grep -F -q '[N0: ltl2tgba any]' stderr
+grep -F -q '[N1: ltl2tgba det]' stderr
+grep -F -q '[N2: ltl2tgba sma]' stderr
+
+cat >test.py <<EOF
+import sys
+try:
+  import pandas
+  import numpy as np
+except ImportError:
+  sys.exit(77)
+
+x = pandas.read_csv("output.csv")
+# We used to call describe() instead of agg(),
+# but the output of this function was changed
+# in pandas 0.20.
+print(x.filter(('formula', 'tool',
+                'states', 'transitions')).\
+        groupby('tool').\
+        agg([np.mean, np.std, np.min, np.max]))
+EOF
+
+# will exit 77 if panda is not installed
+$PYTHON test.py >out.1
+
+# remove trailing whitespace from pandas' output, and limit to 6
+# lines, because Pandas 0.13 adds the size of the dataframe
+# afterwards.  Alse the spacing between columns differs from version
+# to version.
+sed 's/[ \t]*$//g;6q' <out.1 | sed 's/  */ /g' > py.out
+
+cat >expected <<EOF
+ states transitions
+ mean std amin amax mean std amin amax
+tool
+ltl2tgba any 2.25 0.957427 1 3 10.00 5.163978 4 16
+ltl2tgba det 2.25 0.957427 1 3 9.25 4.573474 4 14
+ltl2tgba sma 2.25 0.957427 1 3 9.25 4.573474 4 14
+EOF
+
+diff py.out expected

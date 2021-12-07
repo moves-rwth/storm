@@ -1,0 +1,470 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Parsing and Printing LTL Formulas
+#+DESCRIPTION: Code example for parsing and printing formulas in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+Our first task is to read formulas and print them in another syntax.
+
+* Shell command
+
+Using =ltlfilt=, you can easily read an LTL formula in one syntax, and
+output it in another syntax.  By default the parser will accept a
+formula in [[file:ioltl.org][any infix syntax]], but if the input is in the prefix syntax
+of LBT, you should use [[file:ioltl.org][=--lbt-input=]].  The output syntax is controlled
+using different options such as (=--spin=, =--lbt=, =--latex=, etc.).
+Full parentheses can also be requested using =-p=.
+
+#+BEGIN_SRC sh
+ltlfilt -f '[]<>p0 || <>[]p1'
+formula='& & G p0 p1 p2'
+ltlfilt --lbt-input -f "$formula" --latex
+ltlfilt --lbt-input -f "$formula" --lbt
+ltlfilt --lbt-input -f "$formula" --spin -p
+#+END_SRC
+
+#+RESULTS:
+: GFp0 | FGp1
+: p_{1} \land p_{2} \land \G p_{0}
+: & & p1 p2 G p0
+: (p1) && (p2) && ([](p0))
+
+The reason the LBT parser has to be explicitly enabled is because of
+some corner cases that have different meanings in the two syntaxes.
+(For instance =t= and =f= are the true and false constants in LBT's
+syntax, but they are considered as atomic propositions in all the
+other syntaxes.)
+
+* Python bindings
+
+Here are the same operations in Python
+
+#+BEGIN_SRC python
+import spot
+print(spot.formula('[]<>p0 || <>[]p1'))
+f = spot.formula('& & G p0 p1 p2')
+print(f.to_str('latex'))
+print(f.to_str('lbt'))
+print(f.to_str('spin', parenth=True))
+#+END_SRC
+
+#+RESULTS:
+: GFp0 | FGp1
+: p_{1} \land p_{2} \land \G p_{0}
+: & & p1 p2 G p0
+: (p1) && (p2) && ([](p0))
+
+The =spot.formula= function wraps the calls to the two formula parsers
+of Spot.  It first tries to parse the formula using infix syntaxes,
+and if it fails, it tries to parse it with the prefix parser.  (So
+this might fail to correctly interpret =t= or =f= if you are
+processing a list of LBT formulas.)  Using =spot.formula=, parse
+errors are returned as an exception.
+
+* C++
+
+** Simple wrapper for the two parsers
+
+We first start with the easy parser interface, similar to the one used
+above in the python bindings.  Here parse errors would be returned as
+exceptions.
+
+#+NAME: 1stex
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/tl/parse.hh>
+  #include <spot/tl/print.hh>
+
+  int main()
+  {
+    std::cout << spot::parse_formula("[]<>p0 || <>[]p1") << '\n';
+    spot::formula f = spot::parse_formula("& & G p0 p1 p2");
+    print_latex_psl(std::cout, f) << '\n';
+    print_lbt_ltl(std::cout, f) << '\n';
+    print_spin_ltl(std::cout, f, true) << '\n';
+    return 0;
+  }
+#+END_SRC
+
+After [[file:compile.org][compiling and executing]] we get:
+
+#+RESULTS: 1stex
+: GFp0 | FGp1
+: p_{1} \land p_{2} \land \G p_{0}
+: & & p1 p2 G p0
+: (p1) && (p2) && ([](p0))
+
+Notice that, except for the =<<= operator, the different output
+routines specify in their name the syntax to use for output, and the
+type of formula they can output.  Here we are only using LTL formulas
+for demonstration, and PSL is a superset of LTL, so those three output
+functions are all OK with that.  The routine used by =<<= is
+=print_psl()=, the default syntax used by Spot.
+
+We do not recommend using the =parse_formula()= interface because of
+the potential formulas (like =f= or =t=) that have different meanings
+in the two parsers that are tried.
+
+Instead, depending on whether you want to parse formulas with infix
+syntax, or formulas with prefix syntax, you should call the appropriate
+parser.  Additionally, this give you control over how to print errors.
+
+** Calling the infix parser explicitly
+
+Here is how to call the infix parser explicitly:
+
+#+BEGIN_SRC C++
+  #include <string>
+  #include <iostream>
+  #include <spot/tl/parse.hh>
+  #include <spot/tl/print.hh>
+
+  int main()
+  {
+    std::string input = "[]<>p0 || <>[]p1";
+    spot::parsed_formula pf = spot::parse_infix_psl(input);
+    if (pf.format_errors(std::cerr))
+      return 1;
+    std::cout << pf.f << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: GFp0 | FGp1
+
+Note that as its name implies, this parser can read more than LTL
+formulas: the fragment of PSL we support is basically LTL extended
+with regular expressions.  (Refer to the [[https://spot.lrde.epita.fr/tl.pdf][temporal logic specifications]]
+for the syntax and semantics.)
+
+The =parse_infix_psl()= function processes =input=, and returns a
+=spot::parsed_formula= object.  In addition to the =spot::formula= we
+desire (stored as the =spot::parsed_formula::f= attribute), the
+=spot::parsed_formula= also stores any diagnostic collected during the
+parsing.  Those diagnostics are stored in the
+=spot::parsed_formula::errors= attribute, but they can conveniently be
+printed by calling the =spot::parsed_formula::format_errors()= method:
+this method returns =true= if and only if a diagnostic was output, so
+this is usually used to abort the program with an error status as
+above.
+
+
+The parser usually tries to do some error recovery, so the =f=
+attribute can be non-null even if some parsing errors were returned.
+For instance if you have input =(a U b))= the parser will complain
+about the extra parenthesis, but it will still return a formula that
+is equivalent to =a U b=.  You could decide to continue with the
+"fixed" formula if you wish.  Here is an example:
+
+#+BEGIN_SRC C++
+  #include <string>
+  #include <iostream>
+  #include <spot/tl/parse.hh>
+  #include <spot/tl/print.hh>
+
+  int main()
+  {
+    std::string input = "(a U b))";
+    spot::parsed_formula pf = spot::parse_infix_psl(input);
+    // Use std::cout instead of std::cerr because we can only
+    // show the output of std::cout in this documentation.
+    (void) pf.format_errors(std::cout);
+    if (pf.f == nullptr)
+      return 1;
+    std::cout << "Parsed formula: " << pf.f << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: >>> (a U b))
+:            ^
+: syntax error, unexpected closing parenthesis
+:
+: >>> (a U b))
+:            ^
+: ignoring trailing garbage
+:
+: Parsed formula: a U b
+
+
+The formula =pf.f= would only be returned as null when the parser
+really cannot recover anything.
+
+** Calling the prefix parser explicitly
+
+The only difference here is the call to =parse_prefix_ltl()= instead
+of =parse_infix_psl()=.
+
+#+BEGIN_SRC C++
+  #include <string>
+  #include <iostream>
+  #include <spot/tl/parse.hh>
+  #include <spot/tl/print.hh>
+
+  int main()
+  {
+    std::string input = "& & G p0 p1 p2";
+    spot::parsed_formula pf = spot::parse_prefix_ltl(input);
+    if (pf.format_errors(std::cerr))
+      return 1;
+    spot::formula f = pf.f;
+    print_latex_psl(std::cout, f) << '\n';
+    print_lbt_ltl(std::cout, f) << '\n';
+    print_spin_ltl(std::cout, f, true) << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: p_{1} \land p_{2} \land \G p_{0}
+: & & p1 p2 G p0
+: (p1) && (p2) && ([](p0))
+
+
+* Additional Comments
+
+** PSL vs LTL
+
+LTL is a subset of PSL as far as Spot is concerned, so you can parse
+an LTL formula with =parse_infix_psl()=, and later print it with for
+instance =print_spin_ltl()= (which, as its name implies, can only
+print LTL formulas).  There is no =parse_infix_ltl()= function because
+you can simply use =parse_infix_psl()= to parse LTL formulas.
+
+There is a potential problem if you design a tool that only works with
+LTL formulas, but call =parse_infix_psl()= to parse user input.  In
+that case, the user might input a PSL formula and cause problem
+down the line.
+
+For instance, let's see what happens if a PSL formulas is passed to
+=print_spin_ltl=:
+
+#+BEGIN_SRC C++
+  #include <string>
+  #include <iostream>
+  #include <spot/tl/parse.hh>
+  #include <spot/tl/print.hh>
+
+  int main()
+  {
+    std::string input = "{a*;b}<>->(a U (b & GF c))";
+    spot::parsed_formula pf = spot::parse_infix_psl(input);
+    if (pf.format_errors(std::cerr))
+      return 1;
+    print_spin_ltl(std::cout, pf.f) << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: {a[*];b}<>-> (a U (b && []<>c))
+
+The output is a 'best effort' output.  The LTL subformulas have been
+rewritten, but the PSL-specific part (the SERE and =<>->= operator)
+are output in the only syntax Spot knows, definitively not
+Spin-compatible.
+
+If that is unwanted, here are two possible solutions.
+
+The first is to simply diagnose non-LTL formulas.
+
+#+BEGIN_SRC C++ :exports code
+  #include <string>
+  #include <iostream>
+  #include <spot/tl/parse.hh>
+  #include <spot/tl/print.hh>
+
+  int main()
+  {
+    std::string input = "{a*;b}<>->(a U (b & GF c))";
+    spot::parsed_formula pf = spot::parse_infix_psl(input);
+    if (pf.format_errors(std::cerr))
+      return 1;
+    spot::formula f = pf.f;
+    if (!f.is_ltl_formula())
+      {
+        std::cerr << "Only LTL formulas are supported.\n";
+        return 1;
+      }
+    print_spin_ltl(std::cout, f) << '\n';
+    return 0;
+  }
+#+END_SRC
+
+A second (but slightly weird) idea would be to try to simplify the PSL
+formula, and hope that the simplifier is able to come up with an
+equivalent LTL formula.  This does not always work, so you need to be
+prepared to reject the formula anyway.  In our example, we are lucky
+(maybe because it was carefully chosen...):
+
+#+BEGIN_SRC C++
+  #include <string>
+  #include <iostream>
+  #include <spot/tl/parse.hh>
+  #include <spot/tl/print.hh>
+  #include <spot/tl/simplify.hh>
+
+  int main()
+  {
+    std::string input = "{a*;b}<>->(a U (b & GF c))";
+    spot::parsed_formula pf = spot::parse_infix_psl(input);
+    if (pf.format_errors(std::cerr))
+      return 1;
+    spot::formula f = pf.f;
+    if (!f.is_ltl_formula())
+      {
+        spot::tl_simplifier simp;
+        f = simp.simplify(f);
+      }
+    if (!f.is_ltl_formula())
+      {
+        std::cerr << "Only LTL formulas are supported.\n";
+        return 1;
+      }
+    print_spin_ltl(std::cout, f) << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: a U (b && (a U (b && []<>c)))
+
+** Lenient parsing
+
+In version 6, Spin extended its command-line LTL parser to accept
+arbitrary atomic propositions to be specified.  For instance =(a > 4)
+U (b < 5)= would be correct input, with =a > 4= and =b < 5= considered
+as two atomic propositions.  Of course the atomic proposition could be
+arbitrarily complex, and there is no way we can teach Spot about the
+syntax for atomic propositions supported by any tool.  The usual
+workaround in Spot is to double-quote any arbitrary atomic
+proposition:
+
+#+BEGIN_SRC sh
+echo compare
+ltlfilt -f '"a > 4" U "b < 5"'
+echo and
+ltlfilt -f '"a > 4" U "b < 5"' --spin
+#+END_SRC
+
+#+RESULTS:
+: compare
+: "a > 4" U "b < 5"
+: and
+: (a > 4) U (b < 5)
+
+When the Spin output is requested, these atomic propositions are
+atomically output in a way that Spin can parse.
+
+This Spin syntax is not accepted by default by the infix parser, but
+it has an option for that.  This is called /lenient parsing/: when the
+parser finds a parenthetical block it does not understand, it simply
+assume that this block represents an atomic proposition.
+
+#+BEGIN_SRC sh
+ltlfilt --lenient -f '(a > 4) U (b < 5)'
+#+END_SRC
+
+#+RESULTS:
+: "a > 4" U "b < 5"
+
+Lenient parsing is risky, because any parenthesized sub-formula that
+is a syntax-error will be treated as an atomic proposition:
+
+#+BEGIN_SRC sh
+ltlfilt --lenient -f '(a U ) U c'
+#+END_SRC
+
+#+RESULTS:
+: "a U" U c
+
+In C++ you can enable lenient using one of the Boolean arguments of
+=parse_infix_psl()=.
+** Python formatting
+
+Formulas have a custom format specification language that allows you
+to easily change the way a formula should be output when using the
+=format()= method of strings.
+
+#+BEGIN_SRC python
+import spot
+formula = spot.formula('a U b U "$strange[0]=name"')
+print("""\
+Default output:    {f}
+Spin syntax:       {f:s}
+(Spin syntax):     {f:sp}
+Default for shell: echo {f:q} | ...
+LBT for shell:     echo {f:lq} | ...
+Default for CSV:   ...,{f:c},...
+Wring, centered:   {f:w:~^50}""".format(f = formula))
+#+END_SRC
+
+#+RESULTS:
+: Default output:    a U (b U "$strange[0]=name")
+: Spin syntax:       a U (b U ($strange[0]=name))
+: (Spin syntax):     (a) U ((b) U ($strange[0]=name))
+: Default for shell: echo 'a U (b U "$strange[0]=name")' | ...
+: LBT for shell:     echo 'U "a" U "b" "$strange[0]=name"' | ...
+: Default for CSV:   ...,"a U (b U ""$strange[0]=name"")",...
+: Wring, centered:   ~~~~~(a=1) U ((b=1) U ("$strange[0]=name"=1))~~~~~
+
+The specifiers after the first =:= are specific to formulas.  The
+specifiers after the second =:= (if any) are the usual [[https://docs.python.org/3/library/string.html#formatspec][format
+specifiers]] (typically alignment choices) and are applied on the string
+produced from the formula.
+
+The complete list of specifier that apply to formulas can always be
+printed with =help(spot.formula.__format__)=:
+
+#+BEGIN_SRC python :exports results
+import spot
+help(spot.formula.__format__)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Help on function _formula_format in module spot:
+
+_formula_format(self, spec)
+    Format the formula according to spec.
+
+    'spec' should be a list of letters that select
+    how the formula should be formatted.
+
+    Use one of the following letters to select the syntax:
+
+    - 'f': use Spot's syntax (default)
+    - '8': use Spot's syntax in UTF-8 mode
+    - 's': use Spin's syntax
+    - 'l': use LBT's syntax
+    - 'w': use Wring's syntax
+    - 'x': use LaTeX output
+    - 'X': use self-contained LaTeX output
+
+    Add some of those letters for additional options:
+
+    - 'p': use full parentheses
+    - 'c': escape the formula for CSV output (this will
+           enclose the formula in double quotes, and escape
+           any included double quotes)
+    - 'h': escape the formula for HTML output
+    - 'd': escape double quotes and backslash,
+           for use in C-strings (the outermost double
+           quotes are *not* added)
+    - 'q': quote and escape for shell output, using single
+           quotes or double quotes depending on the contents.
+
+    - ':spec': pass the remaining specification to the
+               formating function for strings.
+
+#+end_example
+
+#  LocalWords:  utf html args ltlfilt LBT lbt SRC GFp FGp LBT's str
+#  LocalWords:  parenth parsers stex iostream psl superset nullptr GF
+#  LocalWords:  subformulas simplifier simp sp lq CSV formatspec
+#  LocalWords:  LaTeX formating

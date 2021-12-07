@@ -1,0 +1,285 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+cat >input1 <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0 {0}
+[0] 1
+[1] 2
+State: 1
+State: 2 {0}
+[!0] 0
+[2] 1
+--END--
+EOF
+
+cat >input2 <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "b" "a"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0 {0}
+[0] 1
+State: 1 {1}
+[1] 0
+--END--
+EOF
+
+cat >input3 <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 0 {0}
+[1] 1
+State: 1
+[1] 1
+--END--
+EOF
+
+cat >input4 <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc univ-branch
+--BODY--
+State: 0
+[0] 1&0
+State: 1
+[1] 0 {0}
+--END--
+EOF
+
+cat >false1 <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+--BODY--
+State: 0
+[t] 0 {0}
+--END--
+EOF
+
+cat >false2 <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+--BODY--
+State: 0
+[t] 0
+--END--
+EOF
+
+cat >expected <<EOF
+HOA: v1
+States: 6
+Start: 5
+AP: 3 "a" "b" "c"
+Acceptance: 3 (Inf(0)&Inf(1)) | Inf(2)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[1] 1 {0}
+State: 1
+[0] 0 {1}
+State: 2
+[0] 3 {2}
+[1] 4 {2}
+State: 3
+State: 4
+[!0] 2 {2}
+[2] 3 {2}
+State: 5
+[0] 3
+[1] 1
+[1] 4
+--END--
+HOA: v1
+States: 6
+Start: 5
+AP: 3 "a" "b" "c"
+acc-name: Streett 1
+Acceptance: 2 Fin(0) | Inf(1)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 0 {0}
+[1] 1
+State: 1
+[1] 1
+State: 2
+[0] 3 {0 1}
+[1] 4 {0 1}
+State: 3
+State: 4
+[!0] 2 {0 1}
+[2] 3 {0 1}
+State: 5
+[0] 0
+[0] 3
+[1] 1
+[1] 4
+--END--
+HOA: v1
+States: 6
+Start: 5
+AP: 3 "a" "b" "c"
+Acceptance: 2 Inf(0) | Inf(1)
+properties: trans-labels explicit-labels trans-acc univ-branch
+--BODY--
+State: 0
+[0] 0&1
+State: 1
+[1] 0 {0}
+State: 2
+[0] 3 {1}
+[1] 4 {1}
+State: 3
+State: 4
+[!0] 2 {1}
+[2] 3 {1}
+State: 5
+[0] 0&1
+[0] 3
+[1] 4
+--END--
+EOF
+
+run 0 autfilt input2 --sum input1 input3 input4 --hoaf=t | tee stdout
+diff stdout expected
+
+cat >expected <<EOF
+HOA: v1
+States: 3
+Start: 2
+AP: 1 "a"
+acc-name: Streett 1
+Acceptance: 2 Fin(0) | Inf(1)
+properties: trans-labels explicit-labels trans-acc complete
+--BODY--
+State: 0
+[t] 0 {0}
+State: 1
+[t] 1 {0}
+State: 2
+[t] 0
+[t] 1
+--END--
+EOF
+
+run 0 autfilt false1 --sum false2 --hoaf=t | tee stdout
+diff stdout expected
+rm stdout
+
+cat >expected <<EOF
+HOA: v1
+States: 7
+Start: 0&2&5
+AP: 3 "b" "a" "c"
+Acceptance: 4 Fin(0) | Inf(1) | (Inf(2)&Inf(3))
+properties: trans-labels explicit-labels trans-acc univ-branch
+--BODY--
+State: 0
+[1] 0 {0}
+[0] 1
+State: 1
+[0] 1
+State: 2
+[1] 3 {0 1}
+[0] 4 {0 1}
+State: 3
+State: 4
+[!1] 2 {0 1}
+[2] 3 {0 1}
+State: 5
+[0] 6 {0 2}
+State: 6
+[1] 5 {0 3}
+--END--
+EOF
+
+run 0 autfilt input1 --sum-and input2 | tee temp
+run 0 autfilt input3 --sum-and temp | tee stdout
+diff stdout expected
+rm stdout
+
+cat >expected <<EOF
+HOA: v1
+States: 8
+Start: 7
+AP: 3 "b" "a" "c"
+Acceptance: 4 Fin(0) | Inf(1) | (Inf(2)&Inf(3))
+properties: trans-labels explicit-labels trans-acc univ-branch
+--BODY--
+State: 0
+[1] 0 {0}
+[0] 1
+State: 1
+[0] 1
+State: 2
+[1] 3 {0 1}
+[0] 4 {0 1}
+State: 3
+State: 4
+[!1] 2 {0 1}
+[2] 3 {0 1}
+State: 5
+[0] 6 {0 2}
+State: 6
+[1] 5 {0 3}
+State: 7
+[0&1] 3&6
+[0] 1
+[0] 4&6
+[1] 0
+--END--
+EOF
+
+run 0 autfilt input3 --sum temp | tee stdout
+diff stdout expected
+rm false1 false2 input1 input2 input3 input4 expected stdout temp

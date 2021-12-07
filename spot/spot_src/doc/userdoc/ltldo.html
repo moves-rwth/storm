@@ -1,0 +1,1070 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:52 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><code>ltldo</code></title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Spot's wrapper for third-party LTL translators"
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tools.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title"><code>ltldo</code></h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orge34dbb4">Example: computing statistics for <code>ltl3ba</code></a></li>
+<li><a href="#org130bdf6">Example: running <code>spin</code> and producing HOA</a></li>
+<li><a href="#org4c810fa">Syntax for specifying tools to call</a></li>
+<li><a href="#orgcf12d11">Shorthands for existing tools</a></li>
+<li><a href="#orgc9062f6">Transparent renaming</a></li>
+<li><a href="#portfolio">Acting as a portfolio of translators</a></li>
+<li><a href="#orgc4dec64">Controlling and measuring time</a></li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+This tool is a wrapper for tools that read LTL/PSL formulas and
+(optionally) output automata.
+</p>
+
+<p>
+It reads formulas specified using the <a href="ioltl.html">common options for specifying
+input</a> and passes each formula to a tool (or a list of tools) specified
+using options similar to those of <a href="ltlcross.html"><code>ltlcross</code></a>.  In case that tool
+returns an automaton, the resulting automaton is read back by <code>ltldo</code>
+and is finally output as specified using the <a href="oaut.html">common options for
+outputing automata</a>.
+</p>
+
+<p>
+In effect, <code>ltldo</code> wraps the I/O interface of the Spot tools on top of
+any other tool.
+</p>
+
+<div id="outline-container-orge34dbb4" class="outline-2">
+<h2 id="orge34dbb4">Example: computing statistics for <code>ltl3ba</code></h2>
+<div class="outline-text-2" id="text-orge34dbb4">
+<p>
+As a motivating example, consider a scenario where we want to run
+<a href="https://sourceforge.net/projects/ltl3ba/"><code>ltl3ba</code></a> on a set of 10 formulas stored in a file.  For each formula
+we would like to compute compute the number of states and edges in the
+Büchi automaton produced by <code>ltl3ba</code>.
+</p>
+
+<p>
+Here is the input file:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">cat &gt;sample.ltl &lt;&lt;EOF
+<span class="org-sh-heredoc">1</span>
+<span class="org-sh-heredoc">1 U a</span>
+<span class="org-sh-heredoc">!(!((a U Gb) U b) U GFa)</span>
+<span class="org-sh-heredoc">(b &lt;-&gt; Xc) xor Fb</span>
+<span class="org-sh-heredoc">FXb R (a R (1 U b))</span>
+<span class="org-sh-heredoc">Ga</span>
+<span class="org-sh-heredoc">G(!(c | (a &amp; (a W Gb))) M Xa)</span>
+<span class="org-sh-heredoc">GF((b R !a) U (Xc M 1))</span>
+<span class="org-sh-heredoc">G(Xb | Gc)</span>
+<span class="org-sh-heredoc">XG!F(a xor Gb)</span>
+<span class="org-sh-heredoc">EOF</span>
+</pre>
+</div>
+<p>
+We will first implement this scenario without <code>ltldo</code>.
+</p>
+
+<p>
+A first problem that the input is not in the correct syntax: although
+<code>ltl3ba</code> understands <code>G</code> and <code>F</code>, it does not support <code>xor</code> or <code>M</code>,
+and requires the Boolean operators <code>||</code> and <code>&amp;&amp;</code>.  This syntax
+issue can be fixed by processing the input with <a href="ltlfilt.html"><code>ltlfilt -s</code></a>.
+</p>
+
+<p>
+A second problem is that <code>ltl3ba</code> (at least version 1.1.1) can only
+process one formula at a time.  So we'll need to call <code>ltl3ba</code> in a
+loop.
+</p>
+
+<p>
+Finally, one way to compute the size of the resulting Büchi automaton
+is to pipe the output of <code>ltl3ba</code> through <a href="autfilt.html"><code>autfilt</code></a>.
+</p>
+
+<p>
+Here is how the shell command could look like:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt -F sample.ltl -s |
+<span class="org-keyword">while </span><span class="org-builtin">read</span> f; <span class="org-keyword">do</span>
+  ltl3ba -f <span class="org-string">"$f"</span> | autfilt --stats=<span class="org-string">"$f,%s,%t"</span>
+<span class="org-keyword">done</span>
+</pre>
+</div>
+<pre class="example">
+true,1,1
+true U a,2,4
+!(!((a U []b) U b) U []&lt;&gt;a),2,4
+!((b &lt;-&gt; Xc) &lt;-&gt; &lt;&gt;b),7,21
+&lt;&gt;Xb V (a V (true U b)),6,28
+[]a,1,1
+[](Xa U (Xa &amp;&amp; !(c || (a &amp;&amp; [](a || []b))))),1,0
+[]&lt;&gt;((b V !a) U &lt;&gt;Xc),2,4
+[](Xb || []c),3,11
+X[]!&lt;&gt;!(a &lt;-&gt; []b),4,10
+</pre>
+
+
+<p>
+Using <code>ltldo</code> the above command can be reduced to this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo <span class="org-string">'ltl3ba -f %s&gt;%O'</span> -F sample.ltl --stats=<span class="org-string">'%f,%s,%t'</span>
+</pre>
+</div>
+<pre class="example">
+1,1,1
+1 U a,2,4
+!(!((a U Gb) U b) U GFa),2,4
+(b &lt;-&gt; Xc) xor Fb,7,21
+FXb R (a R (1 U b)),6,28
+Ga,1,1
+G(!(c | (a &amp; (a W Gb))) M Xa),1,0
+GF((b R !a) U (Xc M 1)),2,4
+G(Xb | Gc),3,11
+XG!F(a xor Gb),4,10
+</pre>
+
+<p>
+Note that the formulas look different in both cases, because in the
+<code>while</code> loop the formula printed has already been processed with
+<code>ltlfilt</code>, while <code>ltldo</code> emits the input string untouched.
+</p>
+
+<p>
+In fact, as we will discuss below, <code>ltl3ba</code> is a tool that <code>ltldo</code>
+already knows about, so there is a shorter way to run the above
+command:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo ltl3ba -F sample.ltl --stats=<span class="org-string">'%f,%s,%t'</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org130bdf6" class="outline-2">
+<h2 id="org130bdf6">Example: running <code>spin</code> and producing HOA</h2>
+<div class="outline-text-2" id="text-org130bdf6">
+<p>
+Here is another example, where we use Spin to produce two automata in
+the <a href="http://adl.github.io/hoaf/">HOA format</a>.  Spin has no support for HOA, but <code>ltldo</code> simply
+converts the never claim produced by <code>spin</code> into this format.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo <span class="org-string">'spin -f %s&gt;%O'</span> -f a -f GFa
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-hoa"><span class="org-hoa-header-uppercase">HOA:</span> v1
+<span class="org-hoa-header-uppercase">States:</span> 2
+<span class="org-hoa-header-uppercase">Start:</span> 0
+<span class="org-hoa-header-uppercase">AP:</span> 1 <span class="org-string">"a"</span>
+<span class="org-hoa-header-lowercase">acc-name:</span> Buchi
+<span class="org-hoa-header-uppercase">Acceptance:</span> 1 <span class="org-hoa-builtin">Inf</span>(<span class="org-hoa-acceptance-set">0</span>)
+<span class="org-hoa-header-lowercase">properties:</span> trans-labels explicit-labels state-acc colored
+<span class="org-hoa-header-lowercase">properties:</span> deterministic
+<span class="org-hoa-keyword">--BODY--</span>
+<span class="org-hoa-header-uppercase">State:</span> 0 {<span class="org-hoa-acceptance-set">0</span>}
+[<span class="org-hoa-ap-number">0</span>] 1
+<span class="org-hoa-header-uppercase">State:</span> 1 {<span class="org-hoa-acceptance-set">0</span>}
+[<span class="org-hoa-builtin">t</span>] 1
+<span class="org-hoa-keyword">--END--</span>
+<span class="org-hoa-header-uppercase">HOA:</span> v1
+<span class="org-hoa-header-uppercase">States:</span> 2
+<span class="org-hoa-header-uppercase">Start:</span> 0
+<span class="org-hoa-header-uppercase">AP:</span> 1 <span class="org-string">"a"</span>
+<span class="org-hoa-header-lowercase">acc-name:</span> Buchi
+<span class="org-hoa-header-uppercase">Acceptance:</span> 1 <span class="org-hoa-builtin">Inf</span>(<span class="org-hoa-acceptance-set">0</span>)
+<span class="org-hoa-header-lowercase">properties:</span> trans-labels explicit-labels state-acc complete
+<span class="org-hoa-keyword">--BODY--</span>
+<span class="org-hoa-header-uppercase">State:</span> 0
+[<span class="org-hoa-ap-number">0</span>] 1
+[<span class="org-hoa-builtin">t</span>] 0
+<span class="org-hoa-header-uppercase">State:</span> 1 {<span class="org-hoa-acceptance-set">0</span>}
+[<span class="org-hoa-builtin">t</span>] 0
+<span class="org-hoa-keyword">--END--</span>
+</pre>
+</div>
+
+<p>
+Again, using the shorthands defined below, the previous command can be
+simplified to just this:
+</p>
+
+<pre class="example">
+ltldo spin -f a -f GFa
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org4c810fa" class="outline-2">
+<h2 id="org4c810fa">Syntax for specifying tools to call</h2>
+<div class="outline-text-2" id="text-org4c810fa">
+<p>
+The syntax for specifying how a tool should be called is the same as
+in <a href="ltlcross.html"><code>ltlcross</code></a>.  Namely, the following sequences are available.
+</p>
+
+<pre class="example">
+%%                         a single %
+%f,%s,%l,%w                the formula as a (quoted) string in Spot, Spin,
+                           LBT, or Wring's syntax
+%F,%S,%L,%W                the formula as a file in Spot, Spin, LBT, or
+                           Wring's syntax
+%O                         the automaton output in HOA, never claim, LBTT, or
+                           ltl2dstar's format
+
+</pre>
+
+<p>
+Contrarily to <code>ltlcross</code>, it this not mandatory to specify an output
+filename using one of the sequence for that last line.  For instance
+we could simply run a formula though <code>echo</code> to compare different
+output syntaxes:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo -f <span class="org-string">'p0 U p1'</span> -f <span class="org-string">'GFp0'</span> <span class="org-string">'echo %f, %s, %l, %w'</span>
+</pre>
+</div>
+<pre class="example">
+(p0) U (p1), (p0) U (p1), U p0 p1, (p0=1) U (p1=1)
+G(F(p0)), [](&lt;&gt;(p0)), G F p0, G(F(p0=1))
+
+</pre>
+
+<p>
+In this case (i.e., when the command does not specify any output
+filename), <code>ltldo</code> will not output anything.
+</p>
+
+
+<p>
+As will <code>ltlcross</code>, multiple commands can be given, and they will be
+executed on each formula in the same order.
+</p>
+
+<p>
+A typical use-case is to compare statistics of different tools:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo -F sample.ltl <span class="org-string">'spin -f %s&gt;%O'</span> <span class="org-string">'ltl3ba -f %s&gt;%O'</span> --stats=%T,%f,%s,%e
+</pre>
+</div>
+
+<p>
+Here we used <code>%T</code> to output the name of the tool used to translate the
+formula <code>%f</code> as an automaton with <code>%s</code> states and <code>%e</code> edges.
+If you feel that <code>%T</code> has too much clutter, you can give each tool
+a shorter name by prefixing its command with <code>{name}</code>.
+</p>
+
+<p>
+In the following example, we moved the formula used on its own line
+using the trick that the command <code>echo %f</code> will not be subject to
+<code>--stats</code> (since it does not declare any output automaton).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo -F sample.ltl  --stats=%T,%s,%e <span class="org-sh-escaped-newline">\</span>
+      <span class="org-string">'echo "#" %f'</span> <span class="org-string">'{spin}spin -f %s&gt;%O'</span> <span class="org-string">'{ltl3ba}ltl3ba -f %s&gt;%O'</span>
+</pre>
+</div>
+
+<p>
+Much more readable!
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgcf12d11" class="outline-2">
+<h2 id="orgcf12d11">Shorthands for existing tools</h2>
+<div class="outline-text-2" id="text-orgcf12d11">
+<p>
+There is a list of existing tools for which <code>ltldo</code> (and <code>ltlcross</code>)
+have built-in specifications.  This list can be printed using the
+<code>--list-shorthands</code> option:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo --list-shorthands
+</pre>
+</div>
+<pre class="example">
+If a COMMANDFMT does not use any %-sequence, and starts with one of
+the following words, then the string on the right is appended.
+
+  delag        %f&gt;%O
+  lbt          &lt;%L&gt;%O
+  ltl2ba       -f %s&gt;%O
+  ltl2da       %f&gt;%O
+  ltl2dgra     %f&gt;%O
+  ltl2dpa      %f&gt;%O
+  ltl2dra      %f&gt;%O
+  ltl2dstar    --output-format=hoa %[MW]L %O
+  ltl2ldba     %f&gt;%O
+  ltl2na       %f&gt;%O
+  ltl2nba      %f&gt;%O
+  ltl2ngba     %f&gt;%O
+  ltl2tgba     -H %f&gt;%O
+  ltl3ba       -f %s&gt;%O
+  ltl3dra      -f %s&gt;%O
+  ltl3hoa      -f %f&gt;%O
+  ltl3tela     -f %f&gt;%O
+  modella      %[MWei^]L %O
+  spin         -f %s&gt;%O
+
+Any {name} and directory component is skipped for the purpose of
+matching those prefixes.  So for instance
+  '{DRA} ~/mytools/ltl2dstar-0.5.2'
+will be changed into
+  '{DRA} ~/mytools/ltl2dstar-0.5.2 --output-format=hoa %[MW]L %O'
+</pre>
+
+<p>
+Therefore you can type the following to obtain a Dot output (as
+requested with <code>-d</code>) for the neverclaim produced by <code>ltl2ba -f a</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo ltl2ba -f a -d
+</pre>
+</div>
+<pre class="example">
+digraph "" {
+  rankdir=LR
+  label="\n[Büchi]"
+  labelloc="t"
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -&gt; 0
+  0 [label="0", peripheries=2]
+  0 -&gt; 1 [label="a"]
+  1 [label="1", peripheries=2]
+  1 -&gt; 1 [label="1"]
+}
+</pre>
+
+<p>
+The <code>ltl2ba</code> argument passed to <code>ltldo</code> was interpreted as if you had
+typed <code>{ltl2ba}ltl2ba -f %s&gt;%O</code>.
+</p>
+
+<p>
+The shorthand is only used if it is the first word of a command
+string that does not use any <code>%</code> character.  This makes it possible to
+add options:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo ltl3ba <span class="org-string">'ltl3ba -H2'</span> -f GFa --stats=<span class="org-string">'%T, %s states, %e edges'</span>
+</pre>
+</div>
+<pre class="example">
+ltl3ba, 2 states, 4 edges
+ltl3ba -H2, 1 states, 2 edges
+
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgc9062f6" class="outline-2">
+<h2 id="orgc9062f6">Transparent renaming</h2>
+<div class="outline-text-2" id="text-orgc9062f6">
+<p>
+If you have ever tried to use <code>spin</code>, <code>ltl2ba</code>, or <code>ltl3ba</code>, to translate
+a formula such as <code>[]!Error</code>, you have noticed that it does not work:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">spin -f <span class="org-string">'[]!Error'</span>
+</pre>
+</div>
+<pre class="example">
+tl_spin: expected predicate, saw 'E'
+tl_spin: []!Error
+-------------^
+
+</pre>
+
+<p>
+All these tools are based on the same LTL parser, that allows
+only atomic propositions starting with a lowercase letter.
+</p>
+
+<p>
+Running the same command through <code>ltldo</code> will work:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo spin -f <span class="org-string">'[]!Error'</span> -s
+</pre>
+</div>
+<pre class="example">
+never {
+accept_init:
+  if
+  :: (!(Error)) -&gt; goto accept_init
+  fi;
+}
+
+</pre>
+
+<p>
+(We need the <code>-s</code> option to obtain a never claim, instead of the
+default HOA output.)
+</p>
+
+<p>
+What happened is that <code>ltldo</code> renamed the atomic propositions in the
+formula before calling <code>spin</code>.  So <code>spin</code> actually received the
+formula <code>[]!p0</code> and produced a never claim using <code>p0</code>.  That never
+claim was then relabeled by <code>ltldo</code> to use <code>Error</code> instead of <code>p0</code>.
+</p>
+
+<p>
+This renaming occurs any time some command uses <code>%s</code> or <code>%S</code> and the
+formula has atomic propositions incompatible with Spin's conventions;
+or when some command uses <code>%l</code> or <code>%L</code>, and the formula has
+atomic propositions incompatible with <a href="http://www.tcs.hut.fi/Software/maria/tools/lbt/">LBT's conventions</a>.
+</p>
+
+<p>
+For <code>%f</code>, <code>%w</code>, <code>%F</code>, and <code>%W</code>, no relabeling is automatically
+performed, but you can pass option <code>--relabel</code> if you need to force it
+for some reason (e.g., if you have a tool that uses almost Spot's
+syntax, but cannot cope with double-quoted atomic propositions).
+</p>
+
+<p>
+There are some cases where the renaming is not completely transparent.
+For instance if a translator tool outputs some HOA file named after
+the formula translated, the name will be output unmodified (since this
+can be any text string, there is not way for <code>ltldo</code> to assume it is
+an LTL formula).  In the following example, you can see that the
+automaton uses the atomic proposition <code>Error</code>, but its name contains a
+reference to <code>p0</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo <span class="org-string">'ltl3ba -H'</span> -f <span class="org-string">'[]!Error'</span>
+</pre>
+</div>
+<div class="org-src-container">
+<pre class="src src-hoa"><span class="org-hoa-header-uppercase">HOA:</span> v1
+<span class="org-hoa-header-lowercase">name:</span> <span class="org-string">"BA for [](!(p0))"</span>
+<span class="org-hoa-header-uppercase">States:</span> 1
+<span class="org-hoa-header-uppercase">Start:</span> 0
+<span class="org-hoa-header-uppercase">AP:</span> 1 <span class="org-string">"Error"</span>
+<span class="org-hoa-header-lowercase">acc-name:</span> Buchi
+<span class="org-hoa-header-uppercase">Acceptance:</span> 1 <span class="org-hoa-builtin">Inf</span>(<span class="org-hoa-acceptance-set">0</span>)
+<span class="org-hoa-header-lowercase">properties:</span> trans-labels explicit-labels state-acc colored
+<span class="org-hoa-header-lowercase">properties:</span> deterministic
+<span class="org-hoa-keyword">--BODY--</span>
+<span class="org-hoa-header-uppercase">State:</span> 0 <span class="org-string">"accept_init"</span> {<span class="org-hoa-acceptance-set">0</span>}
+[!<span class="org-hoa-ap-number">0</span>] 0
+<span class="org-hoa-keyword">--END--</span>
+</pre>
+</div>
+
+<p>
+If this is a problem, you can always force a new name with the
+<code>--name</code> option:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo <span class="org-string">'ltl3ba -H'</span> -f <span class="org-string">'[]!Error'</span> --name=<span class="org-string">'BA for %f'</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-hoa"><span class="org-hoa-header-uppercase">HOA:</span> v1
+<span class="org-hoa-header-lowercase">name:</span> <span class="org-string">"BA for []!Error"</span>
+<span class="org-hoa-header-uppercase">States:</span> 1
+<span class="org-hoa-header-uppercase">Start:</span> 0
+<span class="org-hoa-header-uppercase">AP:</span> 1 <span class="org-string">"Error"</span>
+<span class="org-hoa-header-lowercase">acc-name:</span> Buchi
+<span class="org-hoa-header-uppercase">Acceptance:</span> 1 <span class="org-hoa-builtin">Inf</span>(<span class="org-hoa-acceptance-set">0</span>)
+<span class="org-hoa-header-lowercase">properties:</span> trans-labels explicit-labels state-acc colored
+<span class="org-hoa-header-lowercase">properties:</span> deterministic
+<span class="org-hoa-keyword">--BODY--</span>
+<span class="org-hoa-header-uppercase">State:</span> 0 <span class="org-string">"accept_init"</span> {<span class="org-hoa-acceptance-set">0</span>}
+[!<span class="org-hoa-ap-number">0</span>] 0
+<span class="org-hoa-keyword">--END--</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgd9709f4" class="outline-2">
+<h2 id="portfolio"><a id="orgd9709f4"></a>Acting as a portfolio of translators</h2>
+<div class="outline-text-2" id="text-portfolio">
+<p>
+Here is a formula on which different translators produce Büchi automata of
+different sizes (states and edges):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo ltl2ba ltl3ba <span class="org-string">'ltl2tgba -s'</span> -f <span class="org-string">'F(a &amp; Xa | FGa)'</span> <span class="org-sh-escaped-newline">\</span>
+      --stats=<span class="org-string">'%T: %s st. (%n non-det.), %e ed.'</span>
+</pre>
+</div>
+
+<pre class="example">
+ltl2ba: 5 st. (2 non-det.), 9 ed.
+ltl3ba: 3 st. (1 non-det.), 4 ed.
+ltl2tgba -s: 3 st. (0 non-det.), 5 ed.
+
+</pre>
+
+<p>
+Instead of outputting the result of the translation of each formula by each
+translator, <code>ltldo</code> can also be configured to output the smallest
+automaton obtained for each formula:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo ltl2ba ltl3ba <span class="org-string">'ltl2tgba -s'</span> -f <span class="org-string">'F(a &amp; Xa | FGa)'</span> --smallest
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-hoa"><span class="org-hoa-header-uppercase">HOA:</span> v1
+<span class="org-hoa-header-uppercase">States:</span> 3
+<span class="org-hoa-header-uppercase">Start:</span> 0
+<span class="org-hoa-header-uppercase">AP:</span> 1 <span class="org-string">"a"</span>
+<span class="org-hoa-header-lowercase">acc-name:</span> Buchi
+<span class="org-hoa-header-uppercase">Acceptance:</span> 1 <span class="org-hoa-builtin">Inf</span>(<span class="org-hoa-acceptance-set">0</span>)
+<span class="org-hoa-header-lowercase">properties:</span> trans-labels explicit-labels state-acc
+<span class="org-hoa-keyword">--BODY--</span>
+<span class="org-hoa-header-uppercase">State:</span> 0
+[<span class="org-hoa-builtin">t</span>] 0
+[<span class="org-hoa-ap-number">0</span>] 1
+<span class="org-hoa-header-uppercase">State:</span> 1
+[<span class="org-hoa-ap-number">0</span>] 2
+<span class="org-hoa-header-uppercase">State:</span> 2 {<span class="org-hoa-acceptance-set">0</span>}
+[<span class="org-hoa-builtin">t</span>] 2
+<span class="org-hoa-keyword">--END--</span>
+</pre>
+</div>
+
+<p>
+Therefore, in practice, <code>ltldo --smallest trans1 trans2 trans3...</code>
+acts like a portfolio of translators, always returning the smallest
+produced automaton.
+</p>
+
+<p>
+The sorting criterion can be specified using <code>--smallest</code> or
+<code>--greatest</code>, optionally followed by a format string with
+<code>%</code>-sequences.  The default criterion is <code>%s,%e</code>, so the number of
+states will be compared first, and in case of equality the number of
+edges.  If we desire the automaton that has the fewest states, and in
+case of equality the smallest number of non-deterministic states, we
+can use the following command instead.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltldo ltl2ba ltl3ba <span class="org-string">'ltl2tgba -s'</span> -f <span class="org-string">'F(a &amp; Xa | FGa)'</span> --smallest=%s,%n
+</pre>
+</div>
+
+<pre class="example">
+HOA: v1
+name: "F(a &amp; Xa)"
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic terminal
+--BODY--
+State: 0
+[!0] 0
+[0] 1
+State: 1
+[!0] 0
+[0] 2
+State: 2 {0}
+[t] 2
+--END--
+</pre>
+
+<p>
+We can of course apply this on a large number of formulas.  For
+instance here is a more complex pipeline, where we take 11 patterns
+from Dwyer et al. (FMSP'98), and print which translator among
+<code>ltl2ba</code>, <code>ltl3ba</code>, and <code>ltl2tgba -s</code> would produce the smallest
+automaton.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">genltl --dac=10..20 --format=%F:%L,%f |
+  ltldo -F-/2 ltl2ba ltl3ba <span class="org-string">'ltl2tgba -s'</span> --smallest --stats=<span class="org-string">'%&lt;,%T'</span>
+</pre>
+</div>
+<pre class="example">
+dac-patterns:10,ltl2ba
+dac-patterns:11,ltl2ba
+dac-patterns:12,ltl2tgba -s
+dac-patterns:13,ltl2tgba -s
+dac-patterns:14,ltl2tgba -s
+dac-patterns:15,ltl2tgba -s
+dac-patterns:16,ltl2ba
+dac-patterns:17,ltl2tgba -s
+dac-patterns:18,ltl2ba
+dac-patterns:19,ltl3ba
+dac-patterns:20,ltl2ba
+</pre>
+
+<p>
+Note that in case of equality, only the first translator is returned.
+So when <code>ltl2ba</code> is output above, it could be (and it probably is, see
+below) the case that <code>ltl3ba</code> or <code>ltl2tgba -s</code> are also producing
+automata of equal size.
+</p>
+
+<p>
+To understand the above pipeline, remove the <code>ltldo</code> invocation.  The
+<a href="genltl.html"><code>genltl</code></a> command outputs this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">genltl --dac=10..20 --format=%F:%L,%f
+</pre>
+</div>
+<pre class="example">
+dac-patterns:10,G((p0 &amp; !p1) -&gt; (!p1 U (!p1 &amp; p2)))
+dac-patterns:11,!p0 W (p0 W (!p0 W (p0 W G!p0)))
+dac-patterns:12,Fp0 -&gt; ((!p0 &amp; !p1) U (p0 | ((!p0 &amp; p1) U (p0 | ((!p0 &amp; !p1) U (p0 | ((!p0 &amp; p1) U (p0 | (!p1 U p0)))))))))
+dac-patterns:13,Fp0 -&gt; (!p0 U (p0 &amp; (!p1 W (p1 W (!p1 W (p1 W G!p1))))))
+dac-patterns:14,G((p0 &amp; Fp1) -&gt; ((!p1 &amp; !p2) U (p1 | ((!p1 &amp; p2) U (p1 | ((!p1 &amp; !p2) U (p1 | ((!p1 &amp; p2) U (p1 | (!p2 U p1))))))))))
+dac-patterns:15,G(p0 -&gt; ((!p1 &amp; !p2) U (p2 | ((p1 &amp; !p2) U (p2 | ((!p1 &amp; !p2) U (p2 | ((p1 &amp; !p2) U (p2 | (!p1 W p2) | Gp1)))))))))
+dac-patterns:16,Gp0
+dac-patterns:17,Fp0 -&gt; (p1 U p0)
+dac-patterns:18,G(p0 -&gt; Gp1)
+dac-patterns:19,G((p0 &amp; !p1 &amp; Fp1) -&gt; (p2 U p1))
+dac-patterns:20,G((p0 &amp; !p1) -&gt; (p2 W p1))
+</pre>
+
+<p>
+This is a two-column CSV file where each line is a description of the
+origin of the formula (<code>%F:%L</code>), followed by the formula itself
+(<code>%f</code>).  The <code>ltldo</code> from the previous pipeline simply takes its input
+from the second column of its standard input (<code>-F-/2</code>), run that
+formula through the three translator, pick the smallest automaton
+(<code>--smallest</code>), and for this automaton, it display the translator that
+was used (<code>%T</code>) along with the portion of the CSV file that was before
+the input column (<code>%&lt;</code>).
+</p>
+
+
+<p>
+If you are curious about the actually size of the automata produced by
+<code>ltl2ba</code>, <code>ltl3ba</code>, and <code>ltl2tgba -s</code> in the above example, you can
+quickly build a CSV file using the following pipeline where each
+command append a new column.  We wrap <code>ltl2ba</code> and <code>ltl3ba</code> with
+<code>ltldo</code> so that they can process one column of the CSV that is input,
+and output statistics in CSV as output.  <code>ltl2tgba</code> does not need
+that, as it already supports those features. In the resulting CSV
+file, displayed as a table below, entries like <code>2s 4e 0d</code> represent an
+automaton with 2 states, 4 edges, and that is not deterministic.  .
+(We have a <a href="csv.html">separate page</a> with more examples of reading and writing CSV
+files.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org5c10c0c"><span class="org-builtin">echo</span> input,ltl2ba,ltl3ba,ltl2tgba -s
+genltl --dac=10..20 --format=%F:%L,%f |
+  ltldo -F-/2 ltl2ba --stats <span class="org-string">'%&lt;,%f,%ss %ee %dd'</span> |
+  ltldo -F-/2 ltl3ba --stats <span class="org-string">'%&lt;,%f,%&gt;,%ss %ee %dd'</span> |
+  ltl2tgba -s -F-/2 --stats <span class="org-string">'%&lt;,%&gt;,%ss %ee %dd'</span>
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides" class="table-pre">
+
+
+<colgroup>
+<col  class="org-center" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-center"><div><span>input</span></div></th>
+<th scope="col" class="org-right"><div><span>ltl2ba</span></div></th>
+<th scope="col" class="org-right"><div><span>ltl3ba</span></div></th>
+<th scope="col" class="org-right"><div><span>ltl2tgba -s</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-center">dac-patterns:10</td>
+<td class="org-right">2s 4e 0d</td>
+<td class="org-right">2s 4e 1d</td>
+<td class="org-right">2s 4e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:11</td>
+<td class="org-right">5s 9e 1d</td>
+<td class="org-right">5s 9e 1d</td>
+<td class="org-right">5s 9e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:12</td>
+<td class="org-right">8s 29e 0d</td>
+<td class="org-right">8s 20e 0d</td>
+<td class="org-right">7s 17e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:13</td>
+<td class="org-right">8s 17e 0d</td>
+<td class="org-right">8s 17e 0d</td>
+<td class="org-right">6s 12e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:14</td>
+<td class="org-right">16s 62e 0d</td>
+<td class="org-right">11s 33e 0d</td>
+<td class="org-right">7s 19e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:15</td>
+<td class="org-right">10s 47e 0d</td>
+<td class="org-right">10s 41e 0d</td>
+<td class="org-right">6s 17e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:16</td>
+<td class="org-right">1s 1e 1d</td>
+<td class="org-right">1s 1e 1d</td>
+<td class="org-right">1s 1e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:17</td>
+<td class="org-right">4s 7e 0d</td>
+<td class="org-right">4s 7e 0d</td>
+<td class="org-right">3s 5e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:18</td>
+<td class="org-right">2s 3e 0d</td>
+<td class="org-right">2s 3e 1d</td>
+<td class="org-right">2s 3e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:19</td>
+<td class="org-right">4s 8e 0d</td>
+<td class="org-right">3s 6e 0d</td>
+<td class="org-right">3s 7e 1d</td>
+</tr>
+
+<tr>
+<td class="org-center">dac-patterns:20</td>
+<td class="org-right">2s 4e 0d</td>
+<td class="org-right">2s 4e 1d</td>
+<td class="org-right">2s 4e 1d</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-orgc4dec64" class="outline-2">
+<h2 id="orgc4dec64">Controlling and measuring time</h2>
+<div class="outline-text-2" id="text-orgc4dec64">
+<p>
+The run time of each command can be restricted with the <code>-T NUM</code>
+option.  The argument is the maximum number of seconds that each
+command is allowed to run.
+</p>
+
+<p>
+When a timeout occurs a warning is printed on stderr, and no automaton
+(or statistic) is output by <code>ltdo</code> for this specific pair of
+command/formula.  The processing then continue with other formulas and
+tools.  Timeouts are not considered as errors, so they have no effect
+on the exit status of <code>ltldo</code>.  This behavior can be changed with
+option <code>--fail-on-timeout</code>, in which case timeouts are considered
+as errors.
+</p>
+
+<p>
+For each command (that does not terminate with a timeout) the runtime
+can be printed using the <code>%r</code> escape sequence.  This makes <code>ltldo</code> an
+alternative to <a href="ltlcross.html"><code>ltlcross</code></a> for running benchmarks without any
+verification.
+</p>
+</div>
+</div>
+</div>
+</body>
+</html>

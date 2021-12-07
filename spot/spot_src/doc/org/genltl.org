@@ -1,0 +1,361 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =genltl=
+#+DESCRIPTION: Spot command-line tool that generates LTL formulas from known patterns
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+This tool outputs LTL formulas that either comes from named lists of
+formulas, or from scalable patterns.
+
+These patterns are usually taken from the literature (see the
+[[./man/genltl.1.html][=genltl=]](1) man page for references).  Sometimes the same pattern is
+given different names in different papers, so we alias different
+option names to the same pattern.
+
+#+BEGIN_SRC sh :exports results
+genltl --help | sed -n '/Pattern selection:/,/^$/p' | sed '1d;$d'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+      --and-f=RANGE, --gh-e=RANGE
+                             F(p1)&F(p2)&...&F(pn)
+      --and-fg=RANGE         FG(p1)&FG(p2)&...&FG(pn)
+      --and-gf=RANGE, --ccj-phi=RANGE, --gh-c2=RANGE
+                             GF(p1)&GF(p2)&...&GF(pn)
+      --ccj-alpha=RANGE      F(p1&F(p2&F(p3&...F(pn)))) &
+                             F(q1&F(q2&F(q3&...F(qn))))
+      --ccj-beta=RANGE       F(p&X(p&X(p&...X(p)))) & F(q&X(q&X(q&...X(q))))
+      --ccj-beta-prime=RANGE F(p&(Xp)&(XXp)&...(X...X(p))) &
+                             F(q&(Xq)&(XXq)&...(X...X(q)))
+      --dac-patterns[=RANGE], --spec-patterns[=RANGE]
+                             Dwyer et al. [FMSP'98] Spec. Patterns for LTL
+                             (range should be included in 1..55)
+      --eh-patterns[=RANGE]  Etessami and Holzmann [Concur'00] patterns (range
+                             should be included in 1..12)
+      --fxg-or=RANGE         F(p0 | XG(p1 | XG(p2 | ... XG(pn))))
+      --gf-equiv=RANGE       (GFa1 & GFa2 & ... & GFan) <-> GFz
+      --gf-equiv-xn=RANGE    GF(a <-> X^n(a))
+      --gf-implies=RANGE     (GFa1 & GFa2 & ... & GFan) -> GFz
+      --gf-implies-xn=RANGE  GF(a -> X^n(a))
+      --gh-q=RANGE           (F(p1)|G(p2))&(F(p2)|G(p3))&...&(F(pn)|G(p{n+1}))
+      --gh-r=RANGE           (GF(p1)|FG(p2))&(GF(p2)|FG(p3))&...
+                             &(GF(pn)|FG(p{n+1}))
+      --go-theta=RANGE       !((GF(p1)&GF(p2)&...&GF(pn)) -> G(q->F(r)))
+      --gxf-and=RANGE        G(p0 & XF(p1 & XF(p2 & ... XF(pn))))
+      --hkrss-patterns[=RANGE], --liberouter-patterns[=RANGE]
+                             Holeček et al. patterns from the Liberouter
+                             project (range should be included in 1..55)
+      --kr-n=RANGE           linear formula with doubly exponential DBA
+      --kr-nlogn=RANGE       quasilinear formula with doubly exponential DBA
+      --kv-psi=RANGE, --kr-n2=RANGE
+                             quadratic formula with doubly exponential DBA
+      --ms-example=RANGE[,RANGE]
+                             GF(a1&X(a2&X(a3&...Xan)))&F(b1&F(b2&F(b3&...&Xbm)))
+      --ms-phi-h=RANGE       FG(a|b)|FG(!a|Xb)|FG(a|XXb)|FG(!a|XXXb)|...
+      --ms-phi-r=RANGE       (FGa{n}&GFb{n})|((FGa{n-1}|GFb{n-1})&(...))
+      --ms-phi-s=RANGE       (FGa{n}|GFb{n})&((FGa{n-1}&GFb{n-1})|(...))
+      --or-fg=RANGE, --ccj-xi=RANGE
+                             FG(p1)|FG(p2)|...|FG(pn)
+      --or-g=RANGE, --gh-s=RANGE   G(p1)|G(p2)|...|G(pn)
+      --or-gf=RANGE, --gh-c1=RANGE
+                             GF(p1)|GF(p2)|...|GF(pn)
+      --p-patterns[=RANGE], --beem-patterns[=RANGE], --p[=RANGE]
+                             Pelánek [Spin'07] patterns from BEEM (range
+                             should be included in 1..20)
+      --r-left=RANGE         (((p1 R p2) R p3) ... R pn)
+      --r-right=RANGE        (p1 R (p2 R (... R pn)))
+      --rv-counter=RANGE     n-bit counter
+      --rv-counter-carry=RANGE   n-bit counter w/ carry
+      --rv-counter-carry-linear=RANGE
+                             n-bit counter w/ carry (linear size)
+      --rv-counter-linear=RANGE   n-bit counter (linear size)
+      --sb-patterns[=RANGE]  Somenzi and Bloem [CAV'00] patterns (range should
+                             be included in 1..27)
+      --sejk-f=RANGE[,RANGE] f(0,j)=(GFa0 U X^j(b)), f(i,j)=(GFai U
+                             G(f(i-1,j)))
+      --sejk-j=RANGE         (GFa1&...&GFan) -> (GFb1&...&GFbn)
+      --sejk-k=RANGE         (GFa1|FGb1)&...&(GFan|FGbn)
+      --sejk-patterns[=RANGE]   φ₁,φ₂,φ₃ from Sikert et al's [CAV'16]
+                             paper (range should be included in 1..3)
+      --tv-f1=RANGE          G(p -> (q | Xq | ... | XX...Xq)
+      --tv-f2=RANGE          G(p -> (q | X(q | X(... | Xq)))
+      --tv-g1=RANGE          G(p -> (q & Xq & ... & XX...Xq)
+      --tv-g2=RANGE          G(p -> (q & X(q & X(... & Xq)))
+      --tv-uu=RANGE          G(p1 -> (p1 U (p2 & (p2 U (p3 & (p3 U ...))))))
+      --u-left=RANGE, --gh-u=RANGE
+                             (((p1 U p2) U p3) ... U pn)
+      --u-right=RANGE, --gh-u2=RANGE, --go-phi=RANGE
+                             (p1 U (p2 U (... U pn)))
+#+end_example
+
+An example is probably all it takes to understand how this tool works:
+
+#+BEGIN_SRC sh
+genltl --and-gf=1..5 --u-left=1..5
+#+END_SRC
+#+RESULTS:
+#+begin_example
+GFp1
+GFp1 & GFp2
+GFp1 & GFp2 & GFp3
+GFp1 & GFp2 & GFp3 & GFp4
+GFp1 & GFp2 & GFp3 & GFp4 & GFp5
+p1
+p1 U p2
+(p1 U p2) U p3
+((p1 U p2) U p3) U p4
+(((p1 U p2) U p3) U p4) U p5
+#+end_example
+
+=genltl= supports the [[file:ioltl.org][common option for output of LTL formulas]], so you
+may output these pattern for various tools.
+
+For instance here is the same formulas, but formatted in a way that is
+suitable for being included in a LaTeX table.
+
+
+#+BEGIN_SRC sh
+genltl --and-gf=1..5 --u-left=1..5 --latex --format='%F & %L & $%f$ \\'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+and-gf & 1 & $\G \F p_{1}$ \\
+and-gf & 2 & $\G \F p_{1} \land \G \F p_{2}$ \\
+and-gf & 3 & $\G \F p_{1} \land \G \F p_{2} \land \G \F p_{3}$ \\
+and-gf & 4 & $\G \F p_{1} \land \G \F p_{2} \land \G \F p_{3} \land \G \F p_{4}$ \\
+and-gf & 5 & $\G \F p_{1} \land \G \F p_{2} \land \G \F p_{3} \land \G \F p_{4} \land \G \F p_{5}$ \\
+u-left & 1 & $p_{1}$ \\
+u-left & 2 & $p_{1} \U p_{2}$ \\
+u-left & 3 & $(p_{1} \U p_{2}) \U p_{3}$ \\
+u-left & 4 & $((p_{1} \U p_{2}) \U p_{3}) \U p_{4}$ \\
+u-left & 5 & $(((p_{1} \U p_{2}) \U p_{3}) \U p_{4}) \U p_{5}$ \\
+#+end_example
+
+Note that for the =--lbt= syntax, each formula is relabeled using
+=p0=, =p1=, ...  before it is output, when the pattern (like
+=--ccj-alpha=) use different names.  Compare:
+
+#+BEGIN_SRC sh
+genltl --ccj-alpha=3
+#+END_SRC
+#+RESULTS:
+: F(p1 & F(p2 & Fp3)) & F(q1 & F(q2 & Fq3))
+
+with
+
+#+BEGIN_SRC sh
+genltl --ccj-alpha=3 --lbt
+#+END_SRC
+#+RESULTS:
+: & F & p0 F & p1 F p2 F & p3 F & p4 F p5
+
+This is because most tools using =lbt='s syntax require atomic
+propositions to have the form =pNN=.
+
+
+Five options provide lists of unrelated LTL formulas, taken from the
+literature (see the [[./man/genltl.1.html][=genltl=]](1) man page for references):
+=--dac-patterns=, =--eh-patterns=, =--hkrss-patterns=, =--p-patterns=,
+and =--sb-patterns=.  With these options, the range is used to select
+a subset of the list of formulas.  Without range, all formulas are
+used.  Here is the complete list:
+
+#+BEGIN_SRC sh
+  genltl --dac --eh --hkrss --p --sb --format='%F=%L,%f'
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+dac-patterns=1,G!p0
+dac-patterns=2,Fp0 -> (!p1 U p0)
+dac-patterns=3,G(p0 -> G!p1)
+dac-patterns=4,G((p0 & !p1 & Fp1) -> (!p2 U p1))
+dac-patterns=5,G((p0 & !p1) -> (!p2 W p1))
+dac-patterns=6,Fp0
+dac-patterns=7,!p0 W (!p0 & p1)
+dac-patterns=8,G!p0 | F(p0 & Fp1)
+dac-patterns=9,G((p0 & !p1) -> (!p1 W (!p1 & p2)))
+dac-patterns=10,G((p0 & !p1) -> (!p1 U (!p1 & p2)))
+dac-patterns=11,!p0 W (p0 W (!p0 W (p0 W G!p0)))
+dac-patterns=12,Fp0 -> ((!p0 & !p1) U (p0 | ((!p0 & p1) U (p0 | ((!p0 & !p1) U (p0 | ((!p0 & p1) U (p0 | (!p1 U p0)))))))))
+dac-patterns=13,Fp0 -> (!p0 U (p0 & (!p1 W (p1 W (!p1 W (p1 W G!p1))))))
+dac-patterns=14,G((p0 & Fp1) -> ((!p1 & !p2) U (p1 | ((!p1 & p2) U (p1 | ((!p1 & !p2) U (p1 | ((!p1 & p2) U (p1 | (!p2 U p1))))))))))
+dac-patterns=15,G(p0 -> ((!p1 & !p2) U (p2 | ((p1 & !p2) U (p2 | ((!p1 & !p2) U (p2 | ((p1 & !p2) U (p2 | (!p1 W p2) | Gp1)))))))))
+dac-patterns=16,Gp0
+dac-patterns=17,Fp0 -> (p1 U p0)
+dac-patterns=18,G(p0 -> Gp1)
+dac-patterns=19,G((p0 & !p1 & Fp1) -> (p2 U p1))
+dac-patterns=20,G((p0 & !p1) -> (p2 W p1))
+dac-patterns=21,!p0 W p1
+dac-patterns=22,Fp0 -> (!p1 U (p0 | p2))
+dac-patterns=23,G!p0 | F(p0 & (!p1 W p2))
+dac-patterns=24,G((p0 & !p1 & Fp1) -> (!p2 U (p1 | p3)))
+dac-patterns=25,G((p0 & !p1) -> (!p2 W (p1 | p3)))
+dac-patterns=26,G(p0 -> Fp1)
+dac-patterns=27,Fp0 -> ((p1 -> (!p0 U (!p0 & p2))) U p0)
+dac-patterns=28,G(p0 -> G(p1 -> Fp2))
+dac-patterns=29,G((p0 & !p1 & Fp1) -> ((p2 -> (!p1 U (!p1 & p3))) U p1))
+dac-patterns=30,G((p0 & !p1) -> ((p2 -> (!p1 U (!p1 & p3))) W p1))
+dac-patterns=31,Fp0 -> (!p0 U (!p0 & p1 & X(!p0 U p2)))
+dac-patterns=32,Fp0 -> (!p1 U (p0 | (!p1 & p2 & X(!p1 U p3))))
+dac-patterns=33,G!p0 | (!p0 U ((p0 & Fp1) -> (!p1 U (!p1 & p2 & X(!p1 U p3)))))
+dac-patterns=34,G((p0 & Fp1) -> (!p2 U (p1 | (!p2 & p3 & X(!p2 U p4)))))
+dac-patterns=35,G(p0 -> (Fp1 -> (!p1 U (p2 | (!p1 & p3 & X(!p1 U p4))))))
+dac-patterns=36,F(p0 & XFp1) -> (!p0 U p2)
+dac-patterns=37,Fp0 -> (!(!p0 & p1 & X(!p0 U (!p0 & p2))) U (p0 | p3))
+dac-patterns=38,G!p0 | (!p0 U (p0 & (F(p1 & XFp2) -> (!p1 U p3))))
+dac-patterns=39,G((p0 & Fp1) -> (!(!p1 & p2 & X(!p1 U (!p1 & p3))) U (p1 | p4)))
+dac-patterns=40,G(p0 -> ((!(!p1 & p2 & X(!p1 U (!p1 & p3))) U (p1 | p4)) | G!(p2 & XFp3)))
+dac-patterns=41,G((p0 & XFp1) -> XF(p1 & Fp2))
+dac-patterns=42,Fp0 -> (((p1 & X(!p0 U p2)) -> X(!p0 U (p2 & Fp3))) U p0)
+dac-patterns=43,G(p0 -> G((p1 & XFp2) -> X(!p2 U (p2 & Fp3))))
+dac-patterns=44,G((p0 & Fp1) -> (((p2 & X(!p1 U p3)) -> X(!p1 U (p3 & Fp4))) U p1))
+dac-patterns=45,G(p0 -> (((p1 & X(!p2 U p3)) -> X(!p2 U (p3 & Fp4))) U (p2 | G((p1 & X(!p2 U p3)) -> X(!p2 U (p3 & Fp4))))))
+dac-patterns=46,G(p0 -> F(p1 & XFp2))
+dac-patterns=47,Fp0 -> ((p1 -> (!p0 U (!p0 & p2 & X(!p0 U p3)))) U p0)
+dac-patterns=48,G(p0 -> G(p1 -> (p2 & XFp3)))
+dac-patterns=49,G((p0 & Fp1) -> ((p2 -> (!p1 U (!p1 & p3 & X(!p1 U p4)))) U p1))
+dac-patterns=50,G(p0 -> ((p1 -> (!p2 U (!p2 & p3 & X(!p2 U p4)))) U (p2 | G(p1 -> (p3 & XFp4)))))
+dac-patterns=51,G(p0 -> F(p1 & !p2 & X(!p2 U p3)))
+dac-patterns=52,Fp0 -> ((p1 -> (!p0 U (!p0 & p2 & !p3 & X((!p0 & !p3) U p4)))) U p0)
+dac-patterns=53,G(p0 -> G(p1 -> (p2 & !p3 & X(!p3 U p4))))
+dac-patterns=54,G((p0 & Fp1) -> ((p2 -> (!p1 U (!p1 & p3 & !p4 & X((!p1 & !p4) U p5)))) U p1))
+dac-patterns=55,G(p0 -> ((p1 -> (!p2 U (!p2 & p3 & !p4 & X((!p2 & !p4) U p5)))) U (p2 | G(p1 -> (p3 & !p4 & X(!p4 U p5))))))
+eh-patterns=1,p0 U (p1 & Gp2)
+eh-patterns=2,p0 U (p1 & X(p2 U p3))
+eh-patterns=3,p0 U (p1 & X(p2 & F(p3 & XF(p4 & XF(p5 & XFp6)))))
+eh-patterns=4,F(p0 & XGp1)
+eh-patterns=5,F(p0 & X(p1 & XFp2))
+eh-patterns=6,F(p0 & X(p1 U p2))
+eh-patterns=7,FGp0 | GFp1
+eh-patterns=8,G(p0 -> (p1 U p2))
+eh-patterns=9,G(p0 & XF(p1 & XF(p2 & XFp3)))
+eh-patterns=10,GFp0 & GFp1 & GFp2 & GFp3 & GFp4
+eh-patterns=11,(p0 U (p1 U p2)) | (p1 U (p2 U p0)) | (p2 U (p0 U p1))
+eh-patterns=12,G(p0 -> (p1 U (Gp2 | Gp3)))
+hkrss-patterns=1,G(Fp0 & F!p0)
+hkrss-patterns=2,GFp0 & GF!p0
+hkrss-patterns=3,GF(!(p1 <-> Xp1) | !(p0 <-> Xp0))
+hkrss-patterns=4,GF(!(p1 <-> Xp1) | !(p0 <-> Xp0) | !(p2 <-> Xp2) | !(p3 <-> Xp3))
+hkrss-patterns=5,G!p0
+hkrss-patterns=6,G((p0 -> F!p0) & (!p0 -> Fp0))
+hkrss-patterns=7,G(p0 -> F(p0 & p1))
+hkrss-patterns=8,G(p0 -> F((!p0 & p1 & p2 & p3) -> Fp4))
+hkrss-patterns=9,G(p0 -> F!p1)
+hkrss-patterns=10,G(p0 -> Fp1)
+hkrss-patterns=11,G(p0 -> F(p1 -> Fp2))
+hkrss-patterns=12,G(p0 -> F((p1 & p2) -> Fp3))
+hkrss-patterns=13,G((p0 -> Fp1) & (p2 -> Fp3) & (p4 -> Fp5) & (p6 -> Fp7))
+hkrss-patterns=14,G(!p0 & !p1)
+hkrss-patterns=15,G!(p0 & p1)
+hkrss-patterns=16,G(p0 -> p1)
+hkrss-patterns=17,G((p0 -> !p1) & (p1 -> !p0))
+hkrss-patterns=18,G(!p0 -> (p1 <-> !p2))
+hkrss-patterns=19,G((!p0 & (p1 | p2 | p3)) -> p4)
+hkrss-patterns=20,G((p0 & p1) -> (p2 | !(p3 & p4)))
+hkrss-patterns=21,G((!p0 & p1 & !p2 & !p3 & !p4) -> F(!p5 & !p6 & !p7 & !p8))
+hkrss-patterns=22,G((p0 & p1 & !p2 & !p3 & !p4) -> F(p5 & !p6 & !p7 & !p8))
+hkrss-patterns=23,G(!p0 -> !(p1 & p2 & p3 & p4 & p5))
+hkrss-patterns=24,G(!p0 -> ((p1 & p2 & p3 & p4) -> !p5))
+hkrss-patterns=25,G((p0 & p1) -> (p2 | p3 | !(p4 & p5)))
+hkrss-patterns=26,G((!p0 & (p1 | p2 | p3 | p4)) -> (!p5 <-> p6))
+hkrss-patterns=27,G((p0 & p1) -> (p2 | p3 | p4 | !(p5 & p6)))
+hkrss-patterns=28,G((p0 & p1) -> (p2 | p3 | p4 | p5 | !(p6 & p7)))
+hkrss-patterns=29,G((p0 & p1 & !p2 & Xp2) -> X(p3 | X(!p1 | p3)))
+hkrss-patterns=30,G((p0 & p1 & !p2 & Xp2) -> X(X!p1 | (p2 U (!p2 U (p2 U (!p1 | p3))))))
+hkrss-patterns=31,G(p0 & p1 & !p2 & Xp2) -> X(X!p1 | (p2 U (!p2 U (p2 U (!p1 | p3)))))
+hkrss-patterns=32,G(p0 -> (p1 U (!p1 U (!p2 | p3))))
+hkrss-patterns=33,G(p0 -> (p1 U (!p1 U (p2 | p3))))
+hkrss-patterns=34,G((!p0 & p1) -> Xp2)
+hkrss-patterns=35,G(p0 -> X(p0 | p1))
+hkrss-patterns=36,G((!(p1 <-> Xp1) | !(p0 <-> Xp0) | !(p2 <-> Xp2) | !(p3 <-> Xp3)) -> (X!p4 & X(!(!(p1 <-> Xp1) | !(p0 <-> Xp0) | !(p2 <-> Xp2) | !(p3 <-> Xp3)) U p4)))
+hkrss-patterns=37,G((p0 & !p1 & Xp1 & Xp0) -> (p2 -> Xp3))
+hkrss-patterns=38,G(p0 -> X(!p0 U p1))
+hkrss-patterns=39,G((!p0 & Xp0) -> X((p0 U p1) | Gp0))
+hkrss-patterns=40,G((!p0 & Xp0) -> X(p0 U (p0 & !p1 & X(p0 & p1))))
+hkrss-patterns=41,G((!p0 & Xp0) -> X(p0 U (p0 & !p1 & X(p0 & p1 & (p0 U (p0 & !p1 & X(p0 & p1)))))))
+hkrss-patterns=42,G((p0 & X!p0) -> X(!p0 U (!p0 & !p1 & X(!p0 & p1 & (!p0 U (!p0 & !p1 & X(!p0 & p1)))))))
+hkrss-patterns=43,G((p0 & X!p0) -> X(!p0 U (!p0 & !p1 & X(!p0 & p1 & (!p0 U (!p0 & !p1 & X(!p0 & p1 & (!p0 U (!p0 & !p1 & X(!p0 & p1))))))))))
+hkrss-patterns=44,G((!p0 & Xp0) -> X(!(!p0 & Xp0) U (!p1 & Xp1)))
+hkrss-patterns=45,G(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X!p0)))))))))))
+hkrss-patterns=46,G((Xp0 -> p0) -> (p1 <-> Xp1))
+hkrss-patterns=47,G((Xp0 -> p0) -> ((p1 -> Xp1) & (!p1 -> X!p1)))
+hkrss-patterns=48,!p0 U G!((p1 & p2) | (p3 & p4) | (p2 & p3) | (p2 & p4) | (p1 & p4) | (p1 & p3))
+hkrss-patterns=49,!p0 U p1
+hkrss-patterns=50,(p0 U p1) | Gp0
+hkrss-patterns=51,p0 & XG!p0
+hkrss-patterns=52,XG(p0 -> (G!p1 | (!Xp1 U p2)))
+hkrss-patterns=53,XG((p0 & !p1) -> (G!p1 | (!p1 U p2)))
+hkrss-patterns=54,XG((p0 & p1) -> ((p1 U p2) | Gp1))
+hkrss-patterns=55,Xp0 & G((!p0 & Xp0) -> XXp0)
+p-patterns=1,G(p0 -> Fp1)
+p-patterns=2,(GFp1 & GFp0) -> GFp2
+p-patterns=3,G(p0 -> (p1 & (p2 U p3)))
+p-patterns=4,F(p0 | p1)
+p-patterns=5,GF(p0 | p1)
+p-patterns=6,(p0 U p1) -> ((p2 U p3) | Gp2)
+p-patterns=7,G(p0 -> (!p1 U (p1 U (!p1 & (p2 R !p1)))))
+p-patterns=8,G(p0 -> (p1 R !p2))
+p-patterns=9,G(!p0 -> Fp0)
+p-patterns=10,G(p0 -> F(p1 | p2))
+p-patterns=11,!(!(p0 | p1) U p2) & G(p3 -> !(!(p0 | p1) U p2))
+p-patterns=12,G!p0 -> G!p1
+p-patterns=13,G(p0 -> (G!p1 | (!p2 U p1)))
+p-patterns=14,G(p0 -> (p1 R (p1 | !p2)))
+p-patterns=15,G((p0 & p1) -> (!p1 R (p0 | !p1)))
+p-patterns=16,G(p0 -> F(p1 & p2))
+p-patterns=17,G(p0 -> (!p1 U (p1 U (p1 & p2))))
+p-patterns=18,G(p0 -> (!p1 U (p1 U (!p1 U (p1 U (p1 & p2))))))
+p-patterns=19,GFp0 -> GFp1
+p-patterns=20,GF(p0 | p1) & GF(p1 | p2)
+sb-patterns=1,p0 U p1
+sb-patterns=2,p0 U (p1 U p2)
+sb-patterns=3,!(p0 U (p1 U p2))
+sb-patterns=4,GFp0 -> GFp1
+sb-patterns=5,Fp0 U Gp1
+sb-patterns=6,Gp0 U p1
+sb-patterns=7,!(Fp0 <-> Fp1)
+sb-patterns=8,!(GFp0 -> GFp1)
+sb-patterns=9,!(GFp0 <-> GFp1)
+sb-patterns=10,p0 R (p0 | p1)
+sb-patterns=11,(Xp0 U Xp1) | !X(p0 U p1)
+sb-patterns=12,(Xp0 U p1) | !X(p0 U (p0 & p1))
+sb-patterns=13,G(p0 -> Fp1) & ((Xp0 U p1) | !X(p0 U (p0 & p1)))
+sb-patterns=14,G(p0 -> Fp1) & ((Xp0 U Xp1) | !X(p0 U p1))
+sb-patterns=15,G(p0 -> Fp1)
+sb-patterns=16,!G(p0 -> X(p1 R p2))
+sb-patterns=17,!(FGp0 | FGp1)
+sb-patterns=18,G(Fp0 & Fp1)
+sb-patterns=19,Fp0 & F!p0
+sb-patterns=20,(p0 & Xp1) R X(((p2 U p3) R p0) U (p2 R p0))
+sb-patterns=21,Gp2 | (G(p0 | GFp1) & G(p2 | GF!p1)) | Gp0
+sb-patterns=22,Gp0 | Gp2 | (G(p0 | FGp1) & G(p2 | FG!p1))
+sb-patterns=23,!(Gp2 | (G(p0 | GFp1) & G(p2 | GF!p1)) | Gp0)
+sb-patterns=24,!(Gp0 | Gp2 | (G(p0 | FGp1) & G(p2 | FG!p1)))
+sb-patterns=25,G(p0 | XGp1) & G(p2 | XG!p1)
+sb-patterns=26,G(p0 | (Xp1 & X!p1))
+sb-patterns=27,p0 | (p1 U p0)
+#+end_example
+
+Note that ~--sb-patterns=2 --sb-patterns=4 --sb-patterns=21..22~ also
+have their complement formulas listed as ~--sb-patterns=3
+--sb-patterns=8 --sb-patterns=23..24~.  So if you build the set of
+formulas output by =genltl --sb-patterns= plus their negations, it will
+contain only 46 formulas, not 54.
+
+#+BEGIN_SRC sh
+genltl --sb | ltlfilt --uniq --count
+genltl --sb --pos --neg | ltlfilt --uniq --count
+#+END_SRC
+#+RESULTS:
+: 27
+: 46
+
+#  LocalWords:  genltl num toc LTL scalable SRC sed gh pn fg FG gf qn
+#  LocalWords:  ccj Xp XXp Xq XXq rv GFp lbt utf SETUPFILE html dac
+#  LocalWords:  Dwyer et al FMSP Etessami Holzmann sb Somenzi Bloem
+#  LocalWords:  CAV LaTeX Fq Fp pNN Gp XFp XF XGp FGp XG ltlfilt uniq
+#  LocalWords:  args fxg GFa GFan GFz xn gxf hkrss liberouter Holeček
+#  LocalWords:  kr DBA nlogn quasilinear kv Xb XXb XXXb FGa GFb beem
+#  LocalWords:  Pelánek sejk GFai GFbn FGb FGbn Sikert al's tv uu pos

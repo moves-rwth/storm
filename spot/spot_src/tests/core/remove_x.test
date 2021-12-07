@@ -1,0 +1,48 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2014, 2015 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+run 0 ltlfilt -q --remove-x -f 'Xa' --equivalent-to 'Ga | (!a & Fa)'
+
+run 1 ltlfilt -q --stutter-invariant -f 'Xa'
+
+run 0 ltlfilt -q --stutter-invariant -f 'F(!a & Xa & Xb)'
+
+run 1 ltlfilt -q --stutter-invariant -f 'F(Xa & Xb)'
+
+run 0 ltlfilt --remove-x -f 'F(!a & Xa & Xb)' > out
+grep -v X out
+run 0 ltlfilt -q --stutter-invariant -F 'out'
+
+
+run 1 ltlfilt -q --stutter-invariant -f 'F(!a & Xb)'
+run 0 ltlfilt --remove-x -f 'F(!a & Xb)' > out
+grep -v X out
+# The output is stutter invariant, even if the input wasn't.
+run 0 ltlfilt -q --stutter-invariant -F 'out'
+
+# Ensure remove_x does not depend on clang or gcc recursive calls
+echo 'F(a & ((a & (a U (!a & b)) & ((!b U !a) | (b U !a))) |'\
+' (!a & (!a U (a & !a & b)) & ((!b U a) | (b U a))) | (b & (b U (!a & b & !b))'\
+' & ((!a U !b) | (a U !b))) | (!b & (!b U (!a & b)) & ((!a U b) | (a U b)))'\
+' | (!a & b & (G!a | Ga) & (G!b | Gb))))' > expected
+run 0 ltlfilt --remove-x -f 'F(a & X(!a & b))' >  'out'
+diff expected out

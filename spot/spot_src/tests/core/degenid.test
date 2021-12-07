@@ -1,0 +1,258 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2011, 2013, 2014, 2015, 2017, 2018 Laboratoire de
+# Recherche et Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+# Make sure degeneralization is idempotent
+
+for f in 'FGa|GFb' 'GFa & GFb & GFc' 'GF(a->FGb)&GF(c->FGd)'; do
+  for opt in -DS -DT; do
+    ../ikwiad $opt -H "$f" > autX.spot
+    ../ikwiad -XH -kt autX.spot > base.size
+    cat base.size
+    for x in X XX XXX; do
+      ../ikwiad -XH $opt -H aut$x.spot > autX$x.spot
+      ../ikwiad -XH -kt autX$x.spot > new.size
+      cat new.size
+      cmp base.size new.size
+    done
+  done
+done
+
+
+# This is another 6-state degeneralized automaton that
+# we used the "redegeneralize" to a 8-state BA...
+cat > bug <<EOF
+HOA: v1
+States: 6
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete deterministic
+--BODY--
+State: 0 {0}
+[!0 | !1] 1
+[0&1] 2
+State: 1 {0}
+[!0&1] 1
+[!0&!1] 3
+[0] 4
+State: 2
+[0&!1] 0
+[!0&!1] 1
+[0&1] 2
+[!0&1] 5
+State: 3
+[0&1] 0
+[!0&1] 1
+[!0&!1] 3
+[0&!1] 4
+State: 4
+[1] 0
+[0&!1] 2
+[!0&!1] 5
+State: 5
+[!1] 0
+[!0&1] 3
+[0&1] 4
+--END--
+EOF
+
+run 0 ../ikwiad -ks -XH -DS bug > out
+grep 'states: 6' out
+
+
+# This 8-state degeneralized automaton used
+# to be "degeneralized" to a 9-state BA...
+cat > bug2 <<EOF
+HOA: v1
+States: 8
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete deterministic
+--BODY--
+State: 0
+[t] 1
+State: 1 {0}
+[t] 2
+State: 2
+[0&!1] 2
+[0&1] 3
+[!0&!1] 4
+[!0&1] 5
+State: 3 {0}
+[0] 2
+[!0] 4
+State: 4
+[0&!1] 2
+[0&1] 3
+[!0&1] 5
+[!0&!1] 6
+State: 5 {0}
+[0&!1] 2
+[0&1] 3
+[!0&1] 5
+[!0&!1] 6
+State: 6
+[0&!1] 2
+[0&1] 3
+[!0&!1] 6
+[!0&1] 7
+State: 7
+[0] 3
+[!0] 7
+--END--
+EOF
+
+run 0 ../ikwiad -ks -XH -DS bug2 >out
+grep 'states: 8' out
+
+
+# This automaton should have a 3-state BA, but it's really
+# easy to obtain a 4-state BA when tweaking the degeneralization
+# to ignore arc entering an SCC.
+test 3 = "`ltl2tgba -B 'G(a|G(b|Fc))' --stats=%s`"
+
+
+# This 7-state DRA (built with
+#   ltlfilt -f 'F(a & GFb) | (Fc & Fa & F(c & GF!b))' -l  |
+#   ltl2dstar --ltl2nba=spin:ltl2tgba@-sD - -
+# should be converted in into a 5-state DBA.
+cat >in.dra <<EOF
+DRA v2 explicit
+Comment: "Union{Safra[NBA=3],Safra[NBA=5]}"
+States: 7
+Acceptance-Pairs: 2
+Start: 5
+AP: 3 "a" "b" "c"
+---
+State: 0
+Acc-Sig: +0 +1
+1
+1
+2
+2
+1
+1
+2
+2
+State: 1
+Acc-Sig: +1
+1
+1
+2
+2
+1
+1
+2
+2
+State: 2
+Acc-Sig: +0
+1
+1
+2
+2
+1
+1
+2
+2
+State: 3
+Acc-Sig: +0
+6
+6
+3
+3
+1
+1
+0
+0
+State: 4
+Acc-Sig:
+4
+0
+4
+0
+4
+0
+4
+0
+State: 5
+Acc-Sig:
+5
+3
+5
+3
+4
+0
+4
+0
+State: 6
+Acc-Sig:
+6
+6
+3
+3
+1
+1
+0
+0
+EOF
+
+run 0 dstar2tgba in.dra -BD --stats=%s > out.stat
+test 5 = "`cat out.stat`"
+
+# Only one state should be accepting.  In spot 1.2.x an initial state
+# in a trivial SCC was marked as accepting: this is superfluous.
+ltl2tgba -BH 'a & GFb & GFc' > out
+cat out
+cat >expected<<EOF
+HOA: v1
+name: "a & G(Fb & Fc)"
+States: 4
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: stutter-invariant
+--BODY--
+State: 0
+[0&1&2] 1
+[0&!2] 2
+[0&!1&2] 3
+State: 1 {0}
+[1&2] 1
+[!2] 2
+[!1&2] 3
+State: 2
+[1&2] 1
+[!2] 2
+[!1&2] 3
+State: 3
+[1] 1
+[!1] 3
+--END--
+EOF
+diff out expected

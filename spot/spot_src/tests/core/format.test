@@ -1,0 +1,156 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016, 2017 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs || exit 1
+
+set -e
+
+genltl --dac=1..10 --stats='%s,%b,%x,%f,%[G]n,%[FUM]n,%[~GUM]n' > output
+cat >expected <<EOF
+3,2,1,G!p0,1,0,1
+7,6,2,Fp0 -> (!p1 U p0),0,1,1
+6,5,2,G(p0 -> G!p1),2,0,2
+13,9,3,G((p0 & !p1 & Fp1) -> (!p2 U p1)),1,1,2
+10,6,3,G((p0 & !p1) -> (!p2 W p1)),1,0,1
+2,2,1,Fp0,0,1,0
+7,3,2,!p0 W (!p0 & p1),0,0,0
+9,8,2,G!p0 | F(p0 & Fp1),1,2,1
+13,6,3,G((p0 & !p1) -> (!p1 W (!p1 & p2))),1,0,1
+13,6,3,G((p0 & !p1) -> (!p1 U (!p1 & p2))),1,1,2
+EOF
+diff output expected
+
+genltl --dac --stats='%n' 2> stderr && exit 1
+cat stderr
+grep -F "genltl: %n expects arguments" stderr
+ltlfilt -f a --stats='%[]n' 2> stderr && exit 1
+cat stderr
+grep -F "ltlfilt: %n expects arguments" stderr
+randltl 2 --stats='%[;]n' 2> stderr && exit 1
+cat stderr
+grep "randltl: .*unknown.*;" stderr
+
+genltl --dac | ltlfilt --output='ap-%x.ltl'
+test 4 = `wc -l<ap-1.ltl`
+test 10 = `wc -l<ap-2.ltl`
+test 16 = `wc -l<ap-3.ltl`
+test 13 = `wc -l<ap-4.ltl`
+test 10 = `wc -l<ap-5.ltl`
+test 2 = `wc -l<ap-6.ltl`
+
+genltl --dac --output='ap-%x.ltl2'
+for i in 1 2 3 4 5 6; do
+  cmp ap-$i.ltl ap-$i.ltl2 || exit 1
+done
+
+ltl2tgba GFa > GFa
+out=`<GFa autfilt --stats='%W,%w' --complement`
+test "$out" = "cycle{a},cycle{!a}"
+ltl2tgba FGa > FGa
+test "0,1,0,1" = "`<FGa autfilt -D --stats='%D,%d,%P,%p'`"
+test '0,0,0,1,"a"' = "`<FGa autfilt -C --stats='%D,%d,%P,%p,%[d]x'`"
+# We had some issues in the pase where %P was set only if %p was used
+# as well.  So we make separate tests for this.
+test "0,0" = "`<FGa autfilt -C --stats='%D,%P'`"
+test "1,1" = "`<GFa autfilt -C --stats='%D,%P'`"
+test "0,1" = "`<FGa autfilt -C --stats='%d,%p'`"
+test "1,1" = "`<GFa autfilt -C --stats='%d,%p'`"
+test "1,0" = "`<FGa autfilt -D --stats='%N,%n'`"
+
+test "4" = "`ltl2tgba '(Ga -> Gb)W c' --stats=%c`"
+test "4,5" = "`ltl2tgba '(Ga -> Gb)W c' | autfilt -C --stats=%C,%c`"
+
+out=`ltl2tgba '(Ga->Gb)W c' --stats=%[r]c,%[a]c,%[t]c,%[w]c,%[wT]c,%[W]c,%[Wt]c`
+test "1,3,1,3,2,1,0" = "$out"
+
+ltl2tgba 'a' --stats='%[z]c' 2>stderr && exit 1
+cat stderr
+grep -F "ltl2tgba: unknown option 'z' in '%[z]c'" stderr
+
+
+# From issue #269.
+f='!X(FG((a & b) | (a & c) | (a & d) | (a & e) | (a & f) | (g & h) |
+(g & i) | (g & j) | (g & k) | (g & l) | (m & n) | (m & o) | (m & p) |
+(m & q) | (m & r) | (s & t) | (s & u) | (s & v) | (s & w) | (s & x) |
+(y & z) | (ab & y) | (bb & y) | (cb & y) | (db & y) | (eb & g) | (c &
+eb) | (d & eb) | (e & eb) | (eb & f) | (b & m) | (b & i) | (b & j) |
+(b & k) | (b & l) | (h & s) | (h & o) | (h & p) | (h & q) | (h & r) |
+(n & y) | (n & u) | (n & v) | (n & w) | (n & x) | (fb & t) | (ab & t)
+| (bb & t) | (cb & t) | (db & t) | (g & gb) | (b & gb) | (d & gb) |
+(e & gb) | (f & gb) | (c & m) | (c & h) | (c & j) | (c & k) | (c & l) |
+(i & s) | (i & n) | (i & p) | (i & q) | (i & r) | (o & y) | (o & t) |
+(o & v) | (o & w) | (o & x) | (fb & u) | (u & z) | (bb & u) | (cb &
+u) | (db & u) | (g & hb) | (b & hb) | (c & hb) | (e & hb) | (f & hb) |
+(d & m) | (d & h) | (d & i) | (d & k) | (d & l) | (j & s) | (j & n) |
+(j & o) | (j & q) | (j & r) | (p & y) | (p & t) | (p & u) | (p & w) |
+(p & x) | (fb & v) | (v & z) | (ab & v) | (cb & v) | (db & v) | (g &
+ib) | (b & ib) | (c & ib) | (d & ib) | (f & ib) | (e & m) | (e & h) |
+(e & i) | (e & j) | (e & l) | (k & s) | (k & n) | (k & o) | (k & p) |
+(k & r) | (q & y) | (q & t) | (q & u) | (q & v) | (q & x) | (fb & w) |
+(w & z) | (ab & w) | (bb & w) | (db & w) | (g & jb) | (b & jb) | (c &
+jb) | (d & jb) | (e & jb) | (f & m) | (f & h) | (f & i) | (f & j) |
+(f & k) | (l & s) | (l & n) | (l & o) | (l & p) | (l & q) | (r & y) |
+(r & t) | (r & u) | (r & v) | (r & w) | (fb & x) | (x & z) | (ab & x) |
+(bb & x) | (cb & x)) U ((a & b) | (a & c) | (a & d) | (a & e) | (a & f) |
+(g & h) | (g & i) | (g & j) | (g & k) | (g & l) | (m & n) | (m & o) |
+(m & p) | (m & q) | (m & r) | (s & t) | (s & u) | (s & v) | (s & w) |
+(s & x) | (y & z) | (ab & y) | (bb & y) | (cb & y) | (db & y) | (eb &
+g) | (c & eb) | (d & eb) | (e & eb) | (eb & f) | (b & m) | (b & i) |
+(b & j) | (b & k) | (b & l) | (h & s) | (h & o) | (h & p) | (h & q) |
+(h & r) | (n & y) | (n & u) | (n & v) | (n & w) | (n & x) | (fb & t) |
+(ab & t) | (bb & t) | (cb & t) | (db & t) | (g & gb) | (b & gb) | (d &
+gb) | (e & gb) | (f & gb) | (c & m) | (c & h) | (c & j) | (c & k) |
+(c & l) | (i & s) | (i & n) | (i & p) | (i & q) | (i & r) | (o & y) |
+(o & t) | (o & v) | (o & w) | (o & x) | (fb & u) | (u & z) | (bb & u)
+| (cb & u) | (db & u) | (g & hb) | (b & hb) | (c & hb) | (e & hb) |
+(f & hb) | (d & m) | (d & h) | (d & i) | (d & k) | (d & l) | (j & s) |
+(j & n) | (j & o) | (j & q) | (j & r) | (p & y) | (p & t) | (p & u) |
+(p & w) | (p & x) | (fb & v) | (v & z) | (ab & v) | (cb & v) | (db &
+v) | (g & ib) | (b & ib) | (c & ib) | (d & ib) | (f & ib) | (e & m) |
+(e & h) | (e & i) | (e & j) | (e & l) | (k & s) | (k & n) | (k & o) |
+(k & p) | (k & r) | (q & y) | (q & t) | (q & u) | (q & v) | (q & x) |
+(fb & w) | (w & z) | (ab & w) | (bb & w) | (db & w) | (g & jb) | (b &
+jb) | (c & jb) | (d & jb) | (e & jb) | (f & m) | (f & h) | (f & i) |
+(f & j) | (f & k) | (l & s) | (l & n) | (l & o) | (l & p) | (l & q) |
+(r & y) | (r & t) | (r & u) | (r & v) | (r & w) | (fb & x) | (x & z) |
+(ab & x) | (bb & x) | (cb & x)))'
+test 3,5 = `ltl2tgba --low --any --stats=%s,%e "$f"`
+# While we are at it, make sure we can translate this beast.  Dispite
+# the huge number of atomic propositiions, there is only one Boolean
+# subformula and it is used twice.
+test 3,4 = `ltl2tgba --stats=%s,%e "$f"`
+
+cat >foo <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 0
+Acceptance: 0 t
+--BODY--
+State: 0
+[t] 1
+State: 1
+[t] 0
+State: 2
+[t] 2
+--END--
+EOF
+test 2,2 = `autfilt --stats=%S,%s foo`

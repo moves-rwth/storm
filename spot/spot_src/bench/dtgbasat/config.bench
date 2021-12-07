@@ -1,0 +1,33 @@
+# This is a comment.
+# This file is only used by the gen.py script.
+#
+# If you need to execute some shell code before a method, just write:
+# 'sh "your_shell_code_in_one_line"' before that method.
+#
+# For each method, here is the syntax:
+# "name_of_the_bench":"short_code">"some -x options"
+#                                  (see man spot-x for details)"
+
+sh export SPOT_SATSOLVER="glucose -verb=0 -model %I > %O"
+Glucose (As before):glu>sat-minimize=4
+
+sh export SPOT_SATSOLVER="picosat %I > %O"
+PicoSAT (As before):pic>sat-minimize=4
+
+sh unset SPOT_SATSOLVER
+PicoLibrary:libp>sat-minimize=4
+
+Incr Naive:incr1>sat-minimize=3,param=-1
+Incr param=1:incr2p1>sat-minimize=3,param=1
+Incr param=2:incr2p2>sat-minimize=3,param=2
+Incr param=4:incr2p4>sat-minimize=3,param=4
+Incr param=8:incr2p8>sat-minimize=3,param=8
+Assume param=1:assp1>sat-minimize=2,param=1
+Assume param=2:assp2>sat-minimize=2,param=2
+Assume param=3:assp3>sat-minimize=2,param=2
+Assume param=4:assp4>sat-minimize=2,param=4
+Assume param=5:assp5>sat-minimize=2,param=5
+Assume param=6:assp6>sat-minimize=2,param=6
+Assume param=7:assp7>sat-minimize=2,param=7
+Assume param=8:assp8>sat-minimize=2,param=8
+Dichotomy:dicho>sat-minimize

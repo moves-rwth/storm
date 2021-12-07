@@ -1,0 +1,301 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Mon Jan 18 11:47:54 2021 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>LTL2TGTA</title>
+
+ <LINK REL="stylesheet" TYPE="text/css" HREF="../spot.css">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body class="man"><div id="org-div-home-and-up"><a accesskey="h" href="../tools.html"> UP </a>| <a accesskey="H" href="../index.html"> HOME </a></div>
+
+<h1 align="center">LTL2TGTA</h1>
+
+<div id="table-of-contents"><h2>Table of Contents</h2><div id="text-table-of-contents"><ul>
+<li><a href="#NAME">NAME</a></li>
+<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+<li><a href="#BIBLIOGRAPHY">BIBLIOGRAPHY</a></li>
+<li><a href="#REPORTING BUGS">REPORTING BUGS</a></li>
+<li><a href="#COPYRIGHT">COPYRIGHT</a></li>
+<li><a href="#SEE ALSO">SEE ALSO</a></li>
+</ul></div></div>
+
+
+<div class="outline-2"><h2>NAME
+<a name="NAME"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">ltl2tgta -
+translate LTL/PSL formulas into Testing Automata</p>
+
+<div class="outline-2"><h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ltl2tgta</b>
+[<i>OPTION</i>...] [<i>FORMULA</i>...]</p>
+
+<div class="outline-2"><h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Translate
+linear-time formulas (LTL/PSL) into Testing Automata.</p>
+
+<p style="margin-left:11%; margin-top: 1em">By default it
+outputs a transition-based generalized Testing Automaton the
+smallest Transition-based Generalized B&uuml;chi Automata,
+in GraphViz&rsquo;s format. The input formula is assumed to
+be stuttering-insensitive.</p>
+
+<h3 style="margin-left:11%">Automaton
+type:</h3>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--gta</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Generalized Testing Automaton</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--ta</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Testing Automaton</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--tgta</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Transition-based Generalized Testing Automaton
+(default)</p> </td></tr>
+</table>
+
+<h3 style="margin-left:11%">Input
+options:</h3><p style="margin-left:11%"><b>
+-f</b>, <b>--formula</b>=<i>STRING</i></p>
+
+<p style="margin-left:22%;">process the formula STRING</p>
+
+<p style="margin-left:11%;"><b>-F</b>,
+<b>--file</b>=<i>FILENAME</i>[<i>/COL</i>]</p>
+
+<p style="margin-left:22%;">process each line of FILENAME
+as a formula; if COL is a positive integer, assume a CSV
+file and read column COL; use a negative COL to drop the
+first line of the CSV file</p>
+
+<p style="margin-left:11%;"><b>--lbt-input</b></p>
+
+<p style="margin-left:22%;">read all formulas using
+LBT&rsquo;s prefix syntax</p>
+
+<p style="margin-left:11%;"><b>--lenient</b></p>
+
+<p style="margin-left:22%;">parenthesized blocks that
+cannot be parsed as subformulas are considered as atomic
+properties</p>
+
+<h3 style="margin-left:11%">Options for
+TA and GTA creation:</h3><p style="margin-left:11%"><b>
+--multiple-init</b></p>
+
+<p style="margin-left:22%;">do not create the fake initial
+state</p>
+
+<p style="margin-left:11%;"><b>--single-pass</b></p>
+
+<p style="margin-left:22%;">create a single-pass (G)TA
+without artificial livelock state</p>
+
+<p style="margin-left:11%;"><b>--single-pass-lv</b></p>
+
+<p style="margin-left:22%;">add an artificial livelock
+state to obtain a single-pass (G)TA</p>
+
+<h3 style="margin-left:11%">Output
+options:</h3><p style="margin-left:11%"><b>
+-8</b>, <b>--utf8</b></p>
+
+<p style="margin-left:22%;">enable UTF-8 characters in
+output</p>
+
+
+<h3 style="margin-left:11%">Simplification
+goal:</h3><p style="margin-left:11%"><b>
+-a</b>, <b>--any</b></p>
+
+<p style="margin-left:22%;">no preference, do not bother
+making it small or deterministic</p>
+
+<p style="margin-left:11%;"><b>-D</b>,
+<b>--deterministic</b></p>
+
+<p style="margin-left:22%;">prefer deterministic
+automata</p>
+
+<p style="margin-left:11%;"><b>--small</b></p>
+
+<p style="margin-left:22%;">prefer small automata
+(default)</p>
+
+
+<h3 style="margin-left:11%">Simplification
+level:</h3>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--high</b></p></td>
+<td width="2%"></td>
+<td width="66%">
+
+
+<p>all available optimizations (slow, default)</p></td>
+<td width="12%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--low</b></p></td>
+<td width="2%"></td>
+<td width="66%">
+
+
+<p>minimal optimizations (fast)</p></td>
+<td width="12%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--medium</b></p>
+
+<p style="margin-left:22%;">moderate optimizations</p>
+
+
+<h3 style="margin-left:11%">Miscellaneous
+options:</h3><p style="margin-left:11%"><b>
+-x</b>, <b>--extra-options</b>=<i>OPTS</i></p>
+
+<p style="margin-left:22%;">fine-tuning options (see spot-x
+(7))</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--help</b></p></td>
+<td width="2%"></td>
+<td width="23%">
+
+
+<p>print this help</p></td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--version</b></p>
+
+<p style="margin-left:22%;">print program version</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory or
+optional arguments to long options are also mandatory or
+optional for any corresponding short options.</p>
+
+<div class="outline-2"><h2>BIBLIOGRAPHY
+<a name="BIBLIOGRAPHY"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">If you would
+like to give a reference to this tool in an article, we
+suggest you cite the following paper:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>&bull;</p></td>
+<td width="88%">
+
+
+<p>Ala Eddine Ben Salem, Alexandre Duret-Lutz, and Fabrice
+Kordon: Model checking using generalized testing automata.
+Transactions on Petri Nets and Other Models of Concurrency
+(ToPNoC VI), 7400:94-112, 2012.</p></td></tr>
+</table>
+
+<div class="outline-2"><h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs to
+&lt;<a href="mailto:spot@lrde.epita.fr">spot@lrde.epita.fr</a>&gt;.</p>
+
+<div class="outline-2"><h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 2021 Laboratoire de Recherche et D&eacute;veloppement
+de l&rsquo;Epita. License GPLv3+: <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 3 or later</a>. <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<div class="outline-2"><h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><a href="spot-x.7.html"><b>spot-x</b></a>(7)</p>
+</body>
+</html>

@@ -1,0 +1,50 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015-2017, 2019 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+test -n "$LTL2BA" || exit 77
+
+genltl --or-g=1..2 |
+    run 0 ltldo -d "$LTL2BA -f %s>%H" '{foo}ltl2ba' >output
+test 4 = `grep -c digraph output`
+
+
+test "ltl2tgba,4" = "`ltldo 'ltl2tgba -D' ltl2tgba \
+                      -f 'Ga | Gb | Gc' --stats='%T,%s' --smallest`"
+
+ltldo 'ltl2tgba -D' ltl2tgba -f 'Ga | Gb | Gc' --smallest=%n > aut1.hoa
+ltl2tgba -D 'Ga | Gb | Gc' > aut2.hoa
+diff aut1.hoa aut2.hoa
+
+test "ltl2tgba -D" = \
+  "`ltldo 'ltl2tgba -D' ltl2tgba -f 'Ga | Gb | Gc' --greatest=%e --stats=%T`"
+
+
+ltldo --negate 'ltl2tgba -D' -f FGa --stats=%f,%s >out.csv
+ltldo --negate 'ltl2tgba -D' --lbt-input -f 'F G a' --stats=%f,%s >>out.csv
+ltl2tgba --negate -D FGa --stats=%f,%s >>out.csv
+cat >expected <<EOF
+!FGa,1
+! F G "a",1
+GF!a,1
+EOF
+diff out.csv expected

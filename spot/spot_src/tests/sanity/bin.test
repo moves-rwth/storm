@@ -1,0 +1,124 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017, 2020 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+set +x
+
+exit_status=0
+
+for binary in "$top_builddir"/bin/*
+do
+    test -f "$binary" || continue
+    test -x "$binary" || continue
+    case $binary in
+        *.py) continue
+    esac
+    binary=${binary##*/}
+
+    # All binaries should have a man page
+    manpage=
+    # Man pages are built in builddir, but as we distribute
+    # them they may also be in srcdir.
+    for man in "$top_srcdir"/bin/man/$binary.* \
+               "$top_builddir"/bin/man/$binary.*; do
+        case $man in
+            *.[0-9]) manpage=${man##*/};;
+        esac
+    done
+    if test -z $manpage; then
+        echo "bin/$binary has no man page"
+        exit_status=2
+    else
+        if ! grep -q "man/${manpage}.html" $top_srcdir/doc/org/tools.org; then
+            echo "bin/man/$manpage is not listed in doc/org/tools.org"
+            exit_status=2
+        fi
+        if ! grep -q "$manpage" $top_srcdir/bin/man/Makefile.am; then
+            echo "bin/man/$manpage is not listed in man/Makefile.am"
+            exit_status=2
+        fi
+    fi
+
+    case $binary in
+        spot);;
+        *)
+            if ! grep -q "BR $binary " $top_srcdir/bin/man/spot.x; then
+                echo "bin/$binary is not listed in bin/man/spot.x"
+                exit_status=2
+            fi
+            ;;
+    esac
+    case $binary in
+        spot);;
+        spot-x);;
+        *)
+            if ! grep -q "\"$binary\"" $top_srcdir/bin/spot.cc; then
+                echo "bin/$binary is not listed in bin/spot.cc"
+                exit_status=2
+            fi
+            ;;
+    esac
+
+    # All man pages
+    case $manpage in
+        *.1)
+            if ! test -f $top_srcdir/doc/org/$binary.org; then
+                echo "bin/$binary has no doc/org/$binary.org page"
+                exit_status=2
+            else
+                if ! grep -q "${binary}.org" $top_srcdir/doc/org/tools.org; then
+                    echo "${binary}.org is not listed in doc/org/tools.org page"
+                    exit_status=2
+                fi
+                if ! grep -q "${binary}.org" $top_srcdir/doc/Makefile.am; then
+                    echo "${binary}.org does not occur in doc/Makefile.am"
+                    exit_status=2
+                fi
+            fi
+            if ! grep -q "{$binary" $top_srcdir/doc/org/arch.tex; then
+                echo "$binary does not occur in doc/org/arch.tex"
+                exit_status=2
+            fi
+    esac
+
+    # Check --help text.  Set a high rmargin to workaround some
+    # bug in argp where an extra line it sometimes added if the end
+    # of the document string fall right into the rmargin.
+    ARGP_HELP_FMT=rmargin=10000 \
+    $top_builddir/bin/$binary --help > help-$binary.tmp
+    if ! $PERL -ne '/\n\s*\n(\s*-.*\n)/ && print("$1") && exit(1)' \
+            -0777 help-$binary.tmp > help-err
+    then
+        echo "bin/$binary --help has options after blank line;" \
+             "missing section header?"
+        cat help-err
+    fi
+    rm -f help-$binary.tmp help-err
+
+done
+
+grep '^.BR [a-z0-9-]* ([0-9])' "$top_srcdir"/bin/man/spot.x |
+    while read br tool num; do
+        if ! test -f $top_builddir/bin/$tool; then
+            echo "bin/man/spot.x mentions unexisting tool $tool"
+            exit_status=2
+        fi
+    done
+
+exit $exit_status

@@ -1,0 +1,283 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =randaut=
+#+DESCRIPTION: Spot command-line tool for generating random ω-automata.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports code
+
+The =randaut= tool generates random (connected) automata.
+
+By default, it will generate a random automaton with 10 states, no
+acceptance sets, and using a set of atomic propositions you have to
+supply.
+
+#+NAME: randaut1
+#+BEGIN_SRC sh
+randaut a b --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut1.svg :var txt=randaut1 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:randaut1.svg]]
+
+As for [[file:randltl.org][=randltl=]], you can supply a number of atomic propositions
+instead of giving a list of atomic propositions.
+
+* States and density
+
+The numbers of states can be controlled using the =-Q= option.  This
+option will accept a range as argument, so for instance =-Q3..6= will
+generate an automaton with 3 to 6 states.
+
+The number of edges can be controlled using the =-e= (or
+=--density=) option.  The argument should be a number between 0 and 1.
+In an automaton with $Q$ states and density $e$, the degree of each
+state will follow a normal distribution with mean $1+(Q-1)d$ and
+variance $(Q-1)e(1-e)$.
+
+In particular =-e0= will cause all states to have 1 successors, and
+=-e1= will cause all states to be interconnected.
+
+#+NAME: randaut2
+#+BEGIN_SRC sh
+randaut -Q3 -e0 2 --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut2.svg :var txt=randaut2 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:randaut2.svg]]
+
+#+NAME: randaut3
+#+BEGIN_SRC sh
+randaut -Q3 -e1 2 --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut3.svg :var txt=randaut3 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:randaut3.svg]]
+
+* Acceptance condition
+
+The generation of the acceptance condition and acceptance sets is
+controlled with the following four parameters:
+
+ - =-A ACCEPTANCE= (or =--acceptance=ACCEPTANCE=) controls both the
+   acceptance condition, and the number of associated acceptance sets.
+   The =ACCEPTANCE= argument is documented in =--help= as follows:
+#+BEGIN_SRC sh :exports results
+randaut --help | sed -n '/^ \(ACCEPTANCE\|RANGE\)/,/^$/p'
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+ RANGE may have one of the following forms: 'INT', 'INT..INT', or '..INT'.
+ In the latter case, the missing number is assumed to be 1.
+
+ ACCEPTANCE may be either a RANGE (in which case generalized Büchi is
+ assumed), or an arbitrary acceptance formula such as 'Fin(0)|Inf(1)&Fin(2)' in
+ the same syntax as in the HOA format, or one of the following patterns:
+   none
+   all
+   Buchi
+   co-Buchi
+   generalized-Buchi RANGE
+   generalized-co-Buchi RANGE
+   Rabin RANGE
+   Streett RANGE
+   generalized-Rabin INT RANGE RANGE ... RANGE
+   parity (min|max|rand) (odd|even|rand) RANGE
+   random RANGE
+   random RANGE PROBABILITY
+ The random acceptance condition uses each set only once, unless a probability
+ (to reuse the set again every time it is used) is given.
+
+#+end_example
+
+ When a range of the form $i..j$ is used, the actual value is taken randomly
+ between $i$ and $j$ (included).
+
+ - =-a= (or =--acc-probability=) controls the probability that any
+   transition belong to a given acceptance set.
+ - =-S= (or =--state-based-acceptance=) requests that the automaton
+   use state-based acceptance.  In this case, =-a= is the probability
+   that a /state/ belong to the acceptance set.  (Because Spot only
+   deals with transition-based acceptance internally, this options
+   force all transitions leaving a state to belong to the same
+   acceptance sets.  But if the output format allows state-based
+   acceptance, it will be used.)
+ - =--colored= requests that each transition (of state if combined with =-S=)
+   in the generated automaton should belong to exactly one set (in that
+   case =-a= is ignored, and =-A= must be used to specify an acceptance
+   condition with at least one set).
+
+In addition, =-B= (or =--ba=) is a shorthand for =-A1 -S=,
+ans =-s= (or =--spin=) implies =-B=.
+
+
+#+NAME: randaut4
+#+BEGIN_SRC sh
+randaut -Q3 -e0.5 -A3 -a0.5 2 --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut4.svg :var txt=randaut4 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:randaut4.svg]]
+
+
+#+NAME: randaut5
+#+BEGIN_SRC sh
+randaut -Q3 -e0.4 -B -a0.7 2 --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut5.svg :var txt=randaut5 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:randaut5.svg]]
+
+#+NAME: randaut5b
+#+BEGIN_SRC sh
+randaut -Q6 -e0.4 -S -a.2 -A 'Streett 1..3' 2 --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut5b.svg :var txt=randaut5b :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:randaut5b.svg]]
+
+For generating random parity automata you should use the option
+=--colored= to make sure each transition (or state in the following
+example) belong to exactly one acceptance set.  Note that you can
+specify a precise parity acceptance such as =parity min even 3=, or
+give =randaut= some freedom, as in this example.
+
+#+NAME: randaut5c
+#+BEGIN_SRC sh
+randaut -Q10 -S --colored -A 'parity rand rand 3..4' 2 --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut5c.svg :var txt=randaut5c :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:randaut5c.svg]]
+
+* Determinism
+
+The output can only contain a single edge between two given states.
+By default, the label of this edge is a random assignment of all
+atomic propositions.  Two edges leaving the same state may therefore
+have the same label.
+
+If the =-D= (or =--deterministic=) option is supplied, the labels
+are generated differently: once the degree $m$ of a state has been
+decided, the algorithm will compute a set of $m$ disjoint
+Boolean formulas over the given atomic propositions, such that the
+sum of all these formulas is $\top$.  The resulting automaton is
+therefore deterministic and complete.
+
+#+NAME: randaut6
+#+BEGIN_SRC sh
+randaut -D -Q3 -e0.6 -A2 -a0.5 2 --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut6.svg :var txt=randaut6 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:randaut6.svg]]
+
+
+Note that in a deterministic automaton with $a$ atomic propositions,
+it is not possible to have states with more than $2^a$ successors.  If
+the combination of =-e= and =-Q= allows the situation where a state
+can have more than $2^a$ successors, the degree will be clipped to
+$2^a$.  When working with random deterministic automata over $a$
+atomic propositions, we suggest you always request more than $2^a$
+states.
+
+* Output formats
+
+The output format can be controlled using [[file:oaut.org][the common output options]]
+like =--hoaf=, =--dot==, =--lbtt=, and =--spin=.  Note that =--spin=
+automatically implies =--ba=.
+
+Automata are send to standard output by default, by you can use =-o=
+to give a filename, or even a pattern for filenames.  For instance the
+following generates 20 automata, but store them in different files
+according to the acceptance condition.  The format =%g= represent the
+formula for the acceptance condition and would not make a nice
+filename, but =%[s]g= is a short name for that acceptance condition
+(its is replaced by "other" if Spot does not know better).  We use
+=-Hl= to output one automaton per line, so that =wc -l= will count
+automata.
+
+#+BEGIN_SRC sh :exports both
+randaut -n20 -Q10 -A 'random 3' 2 -Hl -o 'randaut-%[s]g.hoa'
+wc -l randaut-*.hoa
+#+END_SRC
+
+#+RESULTS:
+:     1 randaut-Fin-less.hoa
+:     4 randaut-Rabin-like.hoa
+:     7 randaut-Streett-like.hoa
+:     2 randaut-generalized-Buchi.hoa
+:     1 randaut-generalized-Rabin.hoa
+:     1 randaut-generalized-Streett.hoa
+:     4 randaut-other.hoa
+:    20 total
+
+#+BEGIN_SRC sh :results silent :exports results
+rm -f rautaut-*.hoa
+#+END_SRC
+
+* Generating a stream of automata
+
+Use option =-n= to specify a number of automata to build.  A negative
+value will cause an infinite number of automata to be produced.  This
+generation of multiple automata is useful when piped to another tool
+that can process automata in batches.
+
+Here is an example were we use [[file:autfilt.org][=autfilt=]] to scan an infinite stream
+(=-n -1=) of random parity automata for the first automaton (=-n 1=)
+that have exactly 5 SCCs of particular natures: we want 1 trivial SCC
+(i.e. an SCC with no cycle), 1 rejecting SCC (an SCC without any
+accepting SCCs), 2 inherently weak SCCs (SCCs contains only rejecting
+cycles) among which one should be weak (all transitions should belong
+to the same sets).  This leaves us with one extra SCC that should
+necessarily mix accepting and rejecting cycles.
+
+(Note: the '=.=' argument passed to =--dot= below hides default
+options discussed [[file:oaut.org::#default-dot][on another page]], while '=s=' causes SCCs to be
+displayed.)
+
+#+NAME: randaut7
+#+BEGIN_SRC sh
+randaut -n -1 --colored -A'parity min odd 4' a b |
+autfilt --sccs=5 --trivial-sccs=1 --rejecting-sccs=1 \
+        --inherently-weak-sccs=2 --weak-sccs=1 -n 1 --dot=.s
+#+END_SRC
+
+#+BEGIN_SRC dot :file randaut7.svg :var txt=randaut7 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:randaut7.svg]]
+
+You should be able to find each of the expected type of SCCs in the above picture.
+The green rectangles mark the three SCCs that contain some accepting cycles.
+
+#  LocalWords:  utf randaut html args SRC svg txt randltl sed Buchi
+#  LocalWords:  acc ba rankdir hoaf lbtt Hl wc rautaut SCCs SCC sccs
+#  LocalWords:  A'parity

@@ -1,0 +1,57 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016, 2020 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs || exit 1
+
+set -e
+test -w /dev/full || exit 77
+
+# Make sure we diagnose write errors.  As we use streams, the error
+# usually has to be detected when closing the file.
+
+genltl --dac >/dev/full && exit 1
+genltl --dac | ltlfilt >/dev/full && exit 1
+genltl --dac | ltlfilt -c >/dev/full && exit 1
+genltl --eh | ltl2tgba --stats=%s >/dev/full && exit 1
+genltl --eh | ltl2tgba >/dev/full && exit 1
+randltl -n5 2 >/dev/full && exit 1
+randaut 2 >/dev/full && exit
+randaut 2 --stats=%s >/dev/full && exit 1
+randaut 2 | autfilt >/dev/full && exit 1
+randaut 2 | autfilt -c >/dev/full && exit 1
+randaut 2 | autfilt --stats=%s >/dev/full && exit 1
+randaut 2 | autfilt --output=/dev/full && exit 1
+randaut 2 | autfilt --output=- >/dev/full && exit 1
+randaut 2 | dstar2tgba >/dev/full && exit 1
+randaut 2 | dstar2tgba --stats=%s >/dev/full && exit 1
+ltlgrind -f GFa >/dev/full && exit 1
+ltlcross -f GFa ltl2tgba --csv=/dev/full && exit 1
+ltlcross -f GFa ltl2tgba --csv >/dev/full && exit 1
+ltlcross -f GFa ltl2tgba --json=/dev/full && exit 1
+ltlcross -f GFa ltl2tgba --json >/dev/full && exit 1
+ltlcross -f GFa ltl2tgba --save-inclusion-products=/dev/full && exit 1
+ltlcross -f GFa ltl2tgba --save-inclusion-products=- >/dev/full && exit 1
+ltldo ltl2tgba -f GFa >/dev/full && exit 1
+ltldo ltl2tgba -f GFa --output=- >/dev/full && exit 1
+ltldo ltl2tgba -f GFa --output=/dev/full && exit 1
+ltldo ltl2tgba -f GFa --stats=%s >/dev/full && exit 1
+
+:

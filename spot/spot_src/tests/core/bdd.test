@@ -1,0 +1,36 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017, 2018 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# Make sure that setting the SPOT_BDD_TRACE envvar actually does
+# something.
+genltl --kr-nlogn=2 | SPOT_BDD_TRACE=1 ltl2tgba -D >out 2>err
+cat err
+grep spot: out && exit 1
+grep 'spot: BDD package initialized' err
+# This value below, which is the number of time we need to garbage
+# collect might change if we improve the tool or change the way BuDDy
+# is initialized.
+test 63 = `grep -c 'spot: BDD GC' err`
+# Minimal size for this automaton.
+# See also https://www.lrde.epita.fr/dload/spot/mochart10-fixes.pdf
+test "147,207" = `autfilt --stats=%s,%e out`

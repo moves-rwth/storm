@@ -1,0 +1,161 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Relabeling Formulas
+#+DESCRIPTION: Code example for relabeling formulas in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+The task is to read an LTL formula, relabel all (possibly
+double-quoted) atomic propositions, and provide =#define= statements
+for each of these renamings, writing everything in Spin's syntax.
+
+* Shell
+
+#+BEGIN_SRC sh
+ltlfilt -ps --relabel=pnn --define -f '"Proc@Here" U ("var > 10" | "var < 4")'
+#+END_SRC
+
+#+RESULTS:
+: #define p0 (Proc@Here)
+: #define p1 (var < 4)
+: #define p2 (var > 10)
+: (p0) U ((p1) || (p2))
+
+When is this output interesting, you may ask?  It is useful for
+instance if you want to call =ltl2ba= (or any other LTL-to-Büchi
+translator) using a formula with complex atomic propositions it cannot
+parse.  Then you can pass the rewritten formula to =ltl2ba=, and
+prepend all those =#define= to its output.  For instance:
+
+#+BEGIN_SRC sh
+ltlfilt -ps --relabel=pnn --define=tmp.defs -f '"Proc@Here" U ("var > 10" | "var < 4")' >tmp.ltl
+cat tmp.defs; ltl2ba -F tmp.ltl
+rm tmp.defs tmp.ltl
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+#define p0 (Proc@Here)
+#define p1 (var < 4)
+#define p2 (var > 10)
+never { /* (p0) U ((p1) || (p2))
+ ,*/
+T0_init:
+	if
+	:: (p0) -> goto T0_init
+	:: (p1) || (p2) -> goto accept_all
+	fi;
+accept_all:
+	skip
+}
+#+end_example
+
+Aside: another way to work around syntax limitations of tools is to
+use [[file:ltldo.org][=ltldo=]].  On the above example, =ltldo ltl2ba -f '"Proc@Here" U
+("var > 10" | "var < 4")' -s= would produce a never claim with the
+correct atomic propositions, even though =ltl2ba= cannot parse them.
+
+* Python
+
+The =spot.relabel= function takes an optional third parameter that
+should be a =relabeling_map=.  If supplied, this map is filled with
+pairs of atomic propositions of the form (new-name, old-name).
+
+#+BEGIN_SRC python
+import spot
+m = spot.relabeling_map()
+g = spot.relabel('"Proc@Here" U ("var > 10" | "var < 4")', spot.Pnn, m)
+for newname, oldname in m.items():
+    print("#define {} ({})".format(newname.to_str(), oldname.to_str('spin', True)))
+    print(g.to_str('spin', True))
+#+END_SRC
+
+#+RESULTS:
+: #define p0 (Proc@Here)
+: #define p1 (var < 4)
+: #define p2 (var > 10)
+: (p0) U ((p1) || (p2))
+
+* C++
+
+The =spot::relabeling_map= is just implemented as a =std::map=.
+
+#+BEGIN_SRC C++
+  #include <string>
+  #include <iostream>
+  #include <spot/tl/parse.hh>
+  #include <spot/tl/print.hh>
+  #include <spot/tl/relabel.hh>
+
+  int main()
+  {
+    std::string input = "\"Proc@Here\" U (\"var > 10\" | \"var < 4\")";
+    spot::parsed_formula pf = spot::parse_infix_psl(input);
+    if (pf.format_errors(std::cerr))
+      return 1;
+    spot::formula f = pf.f;
+    spot::relabeling_map m;
+    f = spot::relabel(f, spot::Pnn, &m);
+    for (auto& i: m)
+      {
+        std::cout << "#define " << i.first << " (";
+        print_spin_ltl(std::cout, i.second, true) << ")\n";
+      }
+    print_spin_ltl(std::cout, f, true) << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: #define p0 (Proc@Here)
+: #define p1 (var < 4)
+: #define p2 (var > 10)
+: (p0) U ((p1) || (p2))
+
+* Additional comments
+
+** Two ways to name atomic propositions
+
+   Instead of =--relabel=pnn= (or =spot.Pnn=, or =spot::Pnn=), you can
+   actually use =--relabel=abc= (or =spot.Abc=, or =spot::Abc=) to have
+   the atomic propositions named =a=, =b=, =c=, etc.
+
+** Relabeling Boolean sub-expressions
+
+   Instead of relabeling each atomic proposition, you could decide to
+   relabel each Boolean sub-expression:
+
+#+BEGIN_SRC sh
+ltlfilt -ps --relabel-bool=pnn --define -f '"Proc@Here" U ("var > 10" | "var < 4")'
+#+END_SRC
+
+#+RESULTS:
+: #define p0 (Proc@Here)
+: #define p1 ((var < 4) || (var > 10))
+: (p0) U (p1)
+
+   The relabeling routine is smart enough to not give different names
+   to Boolean expressions that have some sub-expression in common.
+
+   For instance =a U (a & b)= will not be relabeled into =(p0) U (p1)=
+   because that would hide the fact that both =p0= and =p1= check for
+   =a=.  Instead we get this:
+
+#+BEGIN_SRC sh
+ltlfilt -ps --relabel-bool=pnn --define -f 'a U (a & b)'
+#+END_SRC
+
+#+RESULTS:
+: #define p0 (a)
+: #define p1 (b)
+: (p0) U ((p0) && (p1))
+
+   This "Boolean sub-expression" relabeling is available in Python and
+   C++ via the =relabel_bse= function.  The interface is identical to
+   =relabel=.
+
+#  LocalWords:  utf html args renamings SRC ltlfilt ps pnn ba prepend
+#  LocalWords:  tmp defs init fi ltldo newname oldname str iostream
+#  LocalWords:  abc Abc bool bse

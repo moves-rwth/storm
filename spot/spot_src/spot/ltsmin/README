@@ -1,0 +1,5 @@
+This directory contains an interface that presents DiVinE and PROMELA
+models as kripke* objects for Spot.
+
+For usage and installation instructions, see the README in
+tests/ltsmin/README.

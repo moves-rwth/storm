@@ -1,0 +1,104 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2008, 2009, 2013, 2014, 2016 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004, 2005 Laboratoire d'Informatique de
+# Paris 6 (LIP6), département Systèmes Répartis Coopératifs (SRC),
+# Université Pierre et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+cat >input1 <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0 {0}
+[0] 1
+[1] 2
+State: 1
+State: 2 {0}
+[!0] 0
+[2] 1
+--END--
+EOF
+
+cat >input2 <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "b" "a"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0 {0}
+[0] 1
+State: 1 {1}
+[1] 0
+--END--
+EOF
+
+cat >expected <<EOF
+HOA: v1
+States: 4
+Start: 0
+AP: 3 "b" "a" "c"
+acc-name: generalized-Buchi 3
+Acceptance: 3 Inf(0)&Inf(1)&Inf(2)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0 {0 1}
+[0&1] 1
+[0] 2
+State: 1
+State: 2 {0 2}
+[1&2] 3
+State: 3
+--END--
+EOF
+
+run 0 autfilt input1 --product input2 --hoa | tee stdout
+diff stdout expected
+
+cat >expected <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 0
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+--END--
+EOF
+
+run 0 autfilt input1 --product input2 --hoa --small | tee stdout
+run 0 autfilt -F stdout --isomorph expected
+
+# Reading two automata from stdin
+ltl2tgba '!a' 'a U b' | autfilt --product=- - > aut1
+ltl2tgba '!a&b' | autfilt -q --equivalent-to=aut1

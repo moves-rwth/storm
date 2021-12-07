@@ -1,0 +1,65 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =genaut=
+#+DESCRIPTION: Spot command-line tool that generates ω-automata from known patterns
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+This tool outputs ω-automata generated from scalable patterns.
+
+These patterns are usually taken from the literature (see the
+[[./man/genaut.1.html][=genaut=]](1) man page for references).
+
+#+BEGIN_SRC sh :exports results
+genaut --help | sed -n '/Pattern selection:/,/^$/p' | sed '1d;$d'
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+      --ks-nca=RANGE         A co-Büchi automaton with 2N+1 states for which
+                             any equivalent deterministic co-Büchi automaton
+                             has at least 2^N/(2N+1) states.
+      --l-dsa=RANGE          A deterministic Streett automaton with 4N states
+                             with no equivalent deterministic Rabin automaton
+                             of less than N! states.
+      --l-nba=RANGE          A Büchi automaton with 3N+1 states whose
+                             complementary Streett automaton needs at least N!
+                             states.
+      --m-nba=RANGE          An NBA with N+1 states whose determinization needs
+                             at least N! states
+#+end_example
+
+
+By default, the output format is [[file:hoa.org][HOA]], but this can be controlled using
+[[file:oaut.org][the common output options for automata.]]
+
+For instance:
+#+NAME: kscobuchi2
+#+BEGIN_SRC sh :exports code
+genaut --ks-nca=2 --dot
+#+END_SRC
+
+#+BEGIN_SRC dot :file kscobuchi2.svg :var txt=kscobuchi2 :exports results
+  $txt
+#+END_SRC
+
+#+RESULTS:
+[[file:kscobuchi2.svg]]
+
+The patterns can be specified using a range of the form =N= (a single
+value), =N..M= (all values between N and M included), or =..M= (all
+values between 1 and M included).
+
+#+BEGIN_SRC sh :results verbatim :exports both
+genaut --ks-nca=..5 --stats='%F=%L has %s states'
+#+END_SRC
+
+#+RESULTS:
+: ks-nca=1 has 3 states
+: ks-nca=2 has 5 states
+: ks-nca=3 has 7 states
+: ks-nca=4 has 9 states
+: ks-nca=5 has 11 states
+
+#  LocalWords:  utf genaut html args scalable SRC sed nca dsa nba svg
+#  LocalWords:  kscobuchi txt

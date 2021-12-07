@@ -1,0 +1,564 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013-2020 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check several options of ltlfilt
+
+. ./defs || exit 1
+
+set -e
+
+checkopt()
+{
+  cat >exp
+  run 0 ltlfilt "$@" formulas > out
+  diff -u exp out
+}
+
+# The empty lines in the file are meant, we want to make sure that
+# they are ignored.
+cat >formulas <<EOF
+GFa | FGb /* comment to ignore */
+F(GFa | /* tricky /* comment */)*/ Gb)
+
+F(b W GFa)
+GFa | Gb
+b W GFa
+!{a;b*;c}!
+!{a:b[*/*ignore me*/]:c/*ignore this comment*/}
+a U Fb
+G(a & Xb)
+Xa
+F(a & !Xa & Xb)
+{a & {b|c} }
+((a && b) U (! (X 1)))
+((a && b) U (! (X[!] 1)))
+
+{a[=2:3]}|->b
+{a[->2:3]}|->b
+{a[->1];a*}|->b  /* becomes {(!a)*;a[+]}|->b */
+{a*;(!a)*;a*}|->b
+{a*;(!a)[+];a*}|->b
+{a[+];(!a)*;a*}|->b
+{a*;(!a)*;a[+]}|->b
+{a*;(!a)[+];a[+]}|->b
+{a*;(!c)[+];a[+]}|->b
+{a* ##0 b*}|->c
+EOF
+
+checkopt --boolean <<EOF
+a & (b | c)
+0
+EOF
+
+checkopt --bsize-min=2 --bsize-max=4 <<EOF
+a U Fb
+Xa
+EOF
+
+checkopt --size-min=2 --size-max=4 <<EOF
+a U Fb
+Xa
+EOF
+
+checkopt --eventual <<EOF
+GFa | FGb
+F(GFa | Gb)
+F(b W GFa)
+a U Fb
+F(a & !Xa & Xb)
+0
+(a & b) U !X[!]1
+EOF
+
+checkopt --universal <<EOF
+GFa | FGb
+F(GFa | Gb)
+GFa | Gb
+G(a & Xb)
+0
+EOF
+
+checkopt --eventual --universal <<EOF
+GFa | FGb
+F(GFa | Gb)
+0
+EOF
+
+checkopt --suspendable <<EOF
+GFa | FGb
+F(GFa | Gb)
+0
+EOF
+
+checkopt --stutter-invariant <<EOF
+GFa | FGb
+F(GFa | Gb)
+F(b W GFa)
+GFa | Gb
+b W GFa
+!{a:b[*]:c}
+a U Fb
+F(a & !Xa & Xb)
+a & (b | c)
+0
+(a & b) U !X[!]1
+{{!a}[*];a[+]}[]-> b
+{a[*];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[+];a[*]}[]-> b
+{a[+];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[*];a[+]}[]-> b
+{a[*];{!a}[+];a[+]}[]-> b
+{a[*]:b[*]}[]-> c
+EOF
+
+checkopt -c --stutter-invariant <<EOF
+18
+EOF
+
+checkopt --syntactic-stutter-invariant <<EOF
+GFa | FGb
+F(GFa | Gb)
+F(b W GFa)
+GFa | Gb
+b W GFa
+a U Fb
+a & (b | c)
+0
+{{!a}[*];a[+]}[]-> b
+{a[*];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[+];a[*]}[]-> b
+{a[+];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[*];a[+]}[]-> b
+{a[*]:b[*]}[]-> c
+EOF
+
+checkopt --simplify <<EOF
+F(GFa | Gb)
+F(GFa | Gb)
+F(b W GFa)
+GFa | Gb
+b W GFa
+!a | X(!b R !c)
+!{a:b[*]:c}
+Fb
+G(a & Xb)
+Xa
+F(a & X(!a & b))
+a & (b | c)
+0
+0
+a R (!a | X({a[->1..2]}[]-> (b & X(b W a))))
+a R (!a | X({a[->1..2]}[]-> b))
+a R (b W !a)
+{a[*];{!a}[*];a[*]}[]-> b
+!a R ((b & X(b W !a)) W a)
+(b & X((b W !a) & ((b & X(b W !a)) W a))) W !a
+!a R (a R (b W !a))
+!a R (a | X(a R (b W !a)))
+!a R (c | X(c R (b W !a)))
+(c W !b) W !a
+EOF
+
+checkopt --simplify --eventual --unique <<EOF
+F(GFa | Gb)
+F(b W GFa)
+Fb
+F(a & X(!a & b))
+0
+EOF
+
+checkopt --liveness <<EOF
+GFa | FGb
+F(GFa | Gb)
+F(b W GFa)
+GFa | Gb
+b W GFa
+a U Fb
+F(a & !Xa & Xb)
+EOF
+
+checkopt --safety <<EOF
+!({a;b[*];c}!)
+G(a & Xb)
+Xa
+a & (b | c)
+0
+(a & b) U !X[!]1
+{a[=2..3]}[]-> b
+{a[->2..3]}[]-> b
+{{!a}[*];a[+]}[]-> b
+{a[*];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[+];a[*]}[]-> b
+{a[+];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[*];a[+]}[]-> b
+{a[*];{!a}[+];a[+]}[]-> b
+{a[*];{!c}[+];a[+]}[]-> b
+{a[*]:b[*]}[]-> c
+EOF
+
+checkopt --obligation <<EOF
+!({a;b[*];c}!)
+!{a:b[*]:c}
+a U Fb
+G(a & Xb)
+Xa
+F(a & !Xa & Xb)
+a & (b | c)
+0
+(a & b) U !X[!]1
+{a[=2..3]}[]-> b
+{a[->2..3]}[]-> b
+{{!a}[*];a[+]}[]-> b
+{a[*];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[+];a[*]}[]-> b
+{a[+];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[*];a[+]}[]-> b
+{a[*];{!a}[+];a[+]}[]-> b
+{a[*];{!c}[+];a[+]}[]-> b
+{a[*]:b[*]}[]-> c
+EOF
+
+checkopt --guarantee <<EOF
+!{a:b[*]:c}
+a U Fb
+Xa
+F(a & !Xa & Xb)
+a & (b | c)
+0
+(a & b) U !X[!]1
+EOF
+
+checkopt -v --ltl <<EOF
+!({a;b[*];c}!)
+!{a:b[*]:c}
+{a[=2..3]}[]-> b
+{a[->2..3]}[]-> b
+{{!a}[*];a[+]}[]-> b
+{a[*];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[+];a[*]}[]-> b
+{a[+];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[*];a[+]}[]-> b
+{a[*];{!a}[+];a[+]}[]-> b
+{a[*];{!c}[+];a[+]}[]-> b
+{a[*]:b[*]}[]-> c
+EOF
+
+checkopt -v --ap=3 <<EOF
+GFa | FGb
+F(GFa | Gb)
+F(b W GFa)
+GFa | Gb
+b W GFa
+a U Fb
+G(a & Xb)
+Xa
+F(a & !Xa & Xb)
+0
+(a & b) U !X[!]1
+{a[=2..3]}[]-> b
+{a[->2..3]}[]-> b
+{{!a}[*];a[+]}[]-> b
+{a[*];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[+];a[*]}[]-> b
+{a[+];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[*];a[+]}[]-> b
+{a[*];{!a}[+];a[+]}[]-> b
+EOF
+
+checkopt --ap=2..3 <<EOF
+GFa | FGb
+F(GFa | Gb)
+F(b W GFa)
+GFa | Gb
+b W GFa
+!({a;b[*];c}!)
+!{a:b[*]:c}
+a U Fb
+G(a & Xb)
+F(a & !Xa & Xb)
+a & (b | c)
+(a & b) U !X[!]1
+{a[=2..3]}[]-> b
+{a[->2..3]}[]-> b
+{{!a}[*];a[+]}[]-> b
+{a[*];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[+];a[*]}[]-> b
+{a[+];{!a}[*];a[*]}[]-> b
+{a[*];{!a}[*];a[+]}[]-> b
+{a[*];{!a}[+];a[+]}[]-> b
+{a[*];{!c}[+];a[+]}[]-> b
+{a[*]:b[*]}[]-> c
+EOF
+
+checkopt -v --stutter-invariant <<EOF
+!({a;b[*];c}!)
+G(a & Xb)
+Xa
+{a[=2..3]}[]-> b
+{a[->2..3]}[]-> b
+{a[*];{!c}[+];a[+]}[]-> b
+EOF
+
+checkopt --equivalent-to 'GFa | FGb' <<EOF
+GFa | FGb
+F(GFa | Gb)
+F(b W GFa)
+EOF
+
+checkopt --ltl --from-ltlf=al <<EOF
+al & (G(!al | F(a & al)) | F(al & G(!al | b))) & (al U G!al)
+al & F(al & (G(!al | F(a & al)) | G(!al | b))) & (al U G!al)
+al & F(al & ((!al | b) W G(!al | F(a & al)))) & (al U G!al)
+al & (G(!al | F(a & al)) | G(!al | b)) & (al U G!al)
+al & ((!al | b) W G(!al | F(a & al))) & (al U G!al)
+al & (a U (al & F(al & b))) & (al U G!al)
+al & G(!al | (a & X(!al | b))) & (al U G!al)
+al & X(a | !al) & (al U G!al)
+al & F(a & al & !X(a | !al) & X(!al | b)) & (al U G!al)
+a & al & (b | c) & (al U G!al)
+0
+al & ((a & b) U (al & !Xal)) & (al U G!al)
+EOF
+
+checkopt --ltl --from-ltlf='!dead' <<EOF
+!dead & (G(dead | F(a & !dead)) | F(!dead & G(b | dead))) & (!dead U Gdead)
+!dead & F(!dead & (G(dead | F(a & !dead)) | G(b | dead))) & (!dead U Gdead)
+!dead & F(!dead & ((b | dead) W G(dead | F(a & !dead)))) & (!dead U Gdead)
+!dead & (G(dead | F(a & !dead)) | G(b | dead)) & (!dead U Gdead)
+!dead & ((b | dead) W G(dead | F(a & !dead))) & (!dead U Gdead)
+!dead & (a U (!dead & F(b & !dead))) & (!dead U Gdead)
+!dead & G(dead | (a & X(b | dead))) & (!dead U Gdead)
+!dead & X(a | dead) & (!dead U Gdead)
+!dead & F(a & !dead & !X(a | dead) & X(b | dead)) & (!dead U Gdead)
+a & !dead & (b | c) & (!dead U Gdead)
+0
+!dead & ((a & b) U (!dead & !X!dead)) & (!dead U Gdead)
+EOF
+
+cat >in <<EOF
+a & Xb & c
+a & b & GF(a | c) & FG(a | c)
+b & GF(a | c) & FG(a | c)
+G(d & e) | FG(Xf| !c) | h | i
+b & !Xc & e & (f | g)
+b & GF(a | c) & !GF!(a | c)
+F(a <-> b) -> (c xor d)
+EOF
+
+cat >exp <<EOF
+p0 & Xp1
+p0 & p1 & GF(p0 | p2) & FG(p0 | p2)
+p0 & GFp1 & FGp1
+p0 | Gp1 | FG(p2 | Xp3)
+p0 | Gp1
+EOF
+
+run 0 ltlfilt -u --nnf --relabel-bool=pnn in >out
+diff exp out
+
+cat >exp <<EOF
+#define p0 (a && c)
+#define p1 (b)
+p0 && Xp1
+#define p0 (a)
+#define p1 (b)
+#define p2 (c)
+p0 && p1 && []<>(p0 || p2) && <>[](p0 || p2)
+#define p0 (b)
+#define p1 (a || c)
+p0 && []<>p1 && <>[]p1
+#define p0 (h || i)
+#define p1 (d && e)
+#define p2 (!c)
+#define p3 (f)
+p0 || []p1 || <>[](p2 || Xp3)
+#define p0 ((c && !d) || (!c && d))
+#define p1 ((a && !b) || (!a && b))
+p0 || []p1
+EOF
+
+run 0 ltlfilt -s -u --nnf --relabel-bool=pnn --define in >out
+diff exp out
+
+cat >exp <<EOF
+#define p0 (a)
+#define p1 (c)
+#define p2 (b)
+p0 && p1 && Xp2
+#define p0 (a)
+#define p1 (b)
+#define p2 (c)
+p0 && p1 && []<>(p0 || p2) && <>[](p0 || p2)
+#define p0 (b)
+#define p1 (a)
+#define p2 (c)
+p0 && []<>(p1 || p2) && <>[](p1 || p2)
+#define p0 (h)
+#define p1 (i)
+#define p2 (d)
+#define p3 (e)
+#define p4 (c)
+#define p5 (f)
+p0 || p1 || [](p2 && p3) || <>[](!p4 || Xp5)
+#define p0 (b)
+#define p1 (e)
+#define p2 (f)
+#define p3 (g)
+#define p4 (c)
+p0 && p1 && (p2 || p3) && !Xp4
+#define p0 (b)
+#define p1 (a)
+#define p2 (c)
+p0 && []<>(p1 || p2) && ![]<>!(p1 || p2)
+#define p0 (a)
+#define p1 (b)
+#define p2 (c)
+#define p3 (d)
+<>(p0 <-> p1) -> !(p2 <-> p3)
+EOF
+
+run 0 ltlfilt -s -u --relabel=pnn --define in >out
+diff exp out
+
+toolong='((p2=0) * (p3=1))' # work around the 80-col check
+cat >exp <<EOF
+#define p0 (a=1)
+#define p1 (c=1)
+#define p2 (b=1)
+(p0=1) * (p1=1) * (X(p2=1))
+#define p0 (a=1)
+#define p1 (b=1)
+#define p2 (c=1)
+(p0=1) * (p1=1) * (G(F((p0=1) + (p2=1)))) * (F(G((p0=1) + (p2=1))))
+#define p0 (b=1)
+#define p1 (a=1)
+#define p2 (c=1)
+(p0=1) * (G(F((p1=1) + (p2=1)))) * (F(G((p1=1) + (p2=1))))
+#define p0 (h=1)
+#define p1 (i=1)
+#define p2 (d=1)
+#define p3 (e=1)
+#define p4 (c=1)
+#define p5 (f=1)
+(p0=1) + (p1=1) + (G((p2=1) * (p3=1))) + (F(G((p4=0) + (X(p5=1)))))
+#define p0 (b=1)
+#define p1 (e=1)
+#define p2 (f=1)
+#define p3 (g=1)
+#define p4 (c=1)
+(p0=1) * (p1=1) * ((p2=1) + (p3=1)) * (X(p4=0))
+#define p0 (c=1)
+#define p1 (d=1)
+#define p2 (a=1)
+#define p3 (b=1)
+((p0=1) * (p1=0)) + ((p0=0) * (p1=1)) + (G(((p2=1) * (p3=0)) + $toolong))
+EOF
+run 0 ltlfilt -p --wring -u --nnf --relabel=pnn --define in >out
+diff exp out
+
+run 0 ltlfilt -0 in > out
+$PERL -i -pe 's/\0/@\n/g' out
+cat >exp <<EOF
+a & c & Xb@
+a & b & GF(a | c) & FG(a | c)@
+b & GF(a | c) & FG(a | c)@
+h | i | G(d & e) | FG(!c | Xf)@
+b & e & (f | g) & !Xc@
+b & GF(a | c) & !GF!(a | c)@
+F(a <-> b) -> (c xor d)@
+EOF
+diff exp out
+
+SPOT_STUTTER_CHECK=0 \
+ltlfilt --stutter-invariant -f '!{a:b*:c}' 2> stderr && exit 1
+test $? = 2
+grep 'non-LTL' stderr
+
+SPOT_STUTTER_CHECK=555 \
+ltlfilt --stutter-invariant -f '!{a:b*:c}' 2> stderr && exit 1
+test $? = 2
+grep 'invalid' stderr
+
+SPOT_STUTTER_CHECK=5 \
+ltlfilt --stutter-invariant -f '!{a:b*:c}'
+
+# This one was incorrectly diagnosed as stutter invariant because of a
+# bug in the bitvectors.
+ltlfilt --stutter-invariant -f 'F(a & XXXXXX!a)' && exit 1
+
+ltlfilt --syntactic-stutter-invariant -f 'GFa <-> GFb'
+ltlfilt --syntactic-stutter-invariant -f 'GXa <-> GFb' && exit 1
+
+
+ltlfilt -c -o 'foo' -f a 2>stderr && exit 1
+grep 'ltlfilt: options --output and --count are incompatible' stderr
+
+out=`ltlfilt -f 'G(a xor b) -> F(c <-> Xd)' --unabbreviate='^iF'`
+exp='(1 U (c <-> Xd)) | !G!(a <-> b)'
+test "$out" = "$exp"
+
+ltlfilt -f 'GF"a\"\\b"' > out
+test "`cat out`" = 'GF"a\"\\b"'
+
+ltlfilt --lbt-input -f 'G F "a\"\\b"' -l > out
+test "`cat out`" = 'G F "a\"\\b"'
+
+
+ltlfilt --size=foo=2..3  2>stderr && exit 1
+grep 'invalid range.*should start with' stderr
+
+
+cat >out <<EOF
+test1,"""a b"" U c"
+"""a b"" U c",test2
+EOF
+ltlfilt out/1 > out.1
+ltlfilt out/2 > out.2
+diff out out.1
+diff out out.2
+
+test a = `ltlfilt -r2 -f a`
+ltlfilt -r4 -f a 2>err && exit 1
+grep "invalid simplification level '4'" err
+ltlfilt -ra -f a 2>err && exit 1
+grep "invalid simplification level 'a'" err
+
+ltlfilt --ignore-errors -f 'F' > out 2> out && exit 1
+test $? = 1
+cat >exp <<EOF
+EOF
+diff out exp
+
+run 2 ltlfilt --drop-errors -f 'F' > out
+cat >exp <<EOF
+EOF
+diff out exp
+
+run 2 ltlfilt --skip-errors -f 'F' > out
+cat >exp <<EOF
+F
+EOF
+diff out exp
+
+f1=`genltl --pps-arbiter-standard=2`
+f2=`genltl --pps-arbiter-strict=2`
+run 1 ltlfilt -f "$f2" --implied-by "$f1"
+run 0 ltlfilt -f "$f1" --implied-by "$f2"

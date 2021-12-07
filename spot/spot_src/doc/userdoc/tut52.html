@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:53 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Playing with explicit Kripke structures</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Kripke structures that are fully stored in memory, as explicit graphs."
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tut.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title">Playing with explicit Kripke structures</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orgf1ed76a">C++ implementation</a>
+<ul>
+<li><a href="#org2a7a12f">Building the state space</a></li>
+<li><a href="#orgabac516">Checking a property on this state space</a></li>
+</ul>
+</li>
+<li><a href="#orgcee2ce0">Python implementation</a>
+<ul>
+<li><a href="#org3c32fdd">Building the state space</a></li>
+<li><a href="#org092aadd">Checking a property on this state space</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+Kripke structures, can be defined as ω-automata in which labels are on
+states, and where all runs are accepting (i.e., the acceptance
+condition is <code>t</code>).  They are typically used by model checkers to
+represent the state space of the model to verify.
+</p>
+
+<p>
+On <a href="tut51.html">another page</a> we have described how to implement a Kripke structure
+that can be explored on the fly, by implementing a function that take
+the current state, and produce its successor states.  While
+implementing an on-the-fly Kripke structure is good for large example,
+it requires some implementation effort we are not always willing to
+put for a toy example.
+</p>
+
+<p>
+This document shows how to create a Kripke structure that is stored as
+an explicit graph.  The class for those is <code>spot::kripke_graph</code> and
+works in a similar way as the class <code>spot::twa_graph</code> used for
+automata.  The main difference between those two classes is that
+Kripke structures labels the states instead of the transitions.  Using
+<code>spot::kripke_graph</code> instead of <code>spot::twa_graph</code> saves a bit of
+memory.
+</p>
+
+<p>
+Our Kripke structure represent a model whose states consist of pairs
+of modulo-3 integers \((x,y)\). At any state the possible actions
+will be to increment any one of the two integers (nondeterministically).
+That increment is obviously done modulo 3.  For instance state \((1,2)\)
+has two possible successors:
+</p>
+<ul class="org-ul">
+<li>\((2,2)\) if <code>x</code> was incremented, or</li>
+<li>\((1,0)\) if <code>y</code> was incremented.</li>
+</ul>
+<p>
+Initially both variables will be 0.  The complete state space has
+9 states, that we will store explicitly as a graph.
+</p>
+
+<p>
+In addition, we would like to label each state by atomic propositions
+<code>odd_x</code> and <code>odd_y</code> that are true only when the corresponding
+variables are odd.  Using such variables, we could try to verify
+whether if <code>odd_x</code> infinitely often holds, then <code>odd_y</code> infinitely
+often holds as well.
+</p>
+
+
+<div id="outline-container-orgf1ed76a" class="outline-2">
+<h2 id="orgf1ed76a">C++ implementation</h2>
+<div class="outline-text-2" id="text-orgf1ed76a">
+</div>
+<div id="outline-container-org2a7a12f" class="outline-3">
+<h3 id="org2a7a12f">Building the state space</h3>
+<div class="outline-text-3" id="text-org2a7a12f">
+<p>
+Here is how we could create the Kripke structure:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++" id="org7c444a4"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/kripke/kripkegraph.hh&gt;</span>
+
+<span class="org-constant">spot</span>::<span class="org-type">kripke_graph_ptr</span> <span class="org-function-name">create_kripke</span>(<span class="org-constant">spot</span>::<span class="org-type">bdd_dict_ptr</span> <span class="org-variable-name">dict</span>,
+                                     <span class="org-type">bool</span> <span class="org-variable-name">named_states</span> = <span class="org-constant">false</span>)
+{
+  <span class="org-constant">spot</span>::<span class="org-type">kripke_graph_ptr</span> <span class="org-variable-name">k</span> = <span class="org-constant">spot</span>::make_kripke_graph(dict);
+
+  <span class="org-type">bdd</span> <span class="org-variable-name">odd_x</span> = bdd_ithvar(k-&gt;register_ap(<span class="org-string">"odd_x"</span>));
+  <span class="org-type">bdd</span> <span class="org-variable-name">odd_y</span> = bdd_ithvar(k-&gt;register_ap(<span class="org-string">"odd_y"</span>));
+
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x0y0</span> = k-&gt;new_state((<span class="org-negation-char">!</span>odd_x) &amp; <span class="org-negation-char">!</span>odd_y);
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x0y1</span> = k-&gt;new_state((<span class="org-negation-char">!</span>odd_x) &amp; odd_y);
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x0y2</span> = k-&gt;new_state((<span class="org-negation-char">!</span>odd_x) &amp; <span class="org-negation-char">!</span>odd_y);
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x1y0</span> = k-&gt;new_state(<span class="org-type">odd_x</span> &amp; <span class="org-negation-char">!</span>odd_y);
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x1y1</span> = k-&gt;new_state(odd_x &amp; odd_y);
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x1y2</span> = k-&gt;new_state(<span class="org-type">odd_x</span> &amp; <span class="org-negation-char">!</span>odd_y);
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x2y0</span> = k-&gt;new_state((<span class="org-negation-char">!</span>odd_x) &amp; <span class="org-negation-char">!</span>odd_y);
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x2y1</span> = k-&gt;new_state((<span class="org-negation-char">!</span>odd_x) &amp; odd_y);
+  <span class="org-type">unsigned</span> <span class="org-variable-name">x2y2</span> = k-&gt;new_state((<span class="org-negation-char">!</span>odd_x) &amp; <span class="org-negation-char">!</span>odd_y);
+
+  k-&gt;set_init_state(x0y0);
+
+  k-&gt;new_edge(x0y0, x0y1); k-&gt;new_edge(x0y0, x1y0);
+  k-&gt;new_edge(x0y1, x0y2); k-&gt;new_edge(x0y1, x1y1);
+  k-&gt;new_edge(x0y2, x0y0); k-&gt;new_edge(x0y2, x1y2);
+  k-&gt;new_edge(x1y0, x1y1); k-&gt;new_edge(x1y0, x2y0);
+  k-&gt;new_edge(x1y1, x1y2); k-&gt;new_edge(x1y1, x2y1);
+  k-&gt;new_edge(x1y2, x1y0); k-&gt;new_edge(x1y2, x2y2);
+  k-&gt;new_edge(x2y0, x2y1); k-&gt;new_edge(x2y0, x0y0);
+  k-&gt;new_edge(x2y1, x2y2); k-&gt;new_edge(x2y1, x0y1);
+  k-&gt;new_edge(x2y2, x2y0); k-&gt;new_edge(x2y2, x0y2);
+
+  <span class="org-keyword">if</span> (named_states)
+    {
+      <span class="org-keyword">auto</span> <span class="org-variable-name">names</span> = <span class="org-keyword">new</span> <span class="org-constant">std</span>::<span class="org-type">vector</span>&lt;<span class="org-constant">std</span>::string&gt;
+        { <span class="org-string">"x0y0"</span>, <span class="org-string">"x0y1"</span>, <span class="org-string">"x0y2"</span>,
+          <span class="org-string">"x1y0"</span>, <span class="org-string">"x1y1"</span>, <span class="org-string">"x1y2"</span>,
+          <span class="org-string">"x2y0"</span>, <span class="org-string">"x2y1"</span>, <span class="org-string">"x2y2"</span> };
+      k-&gt;set_named_prop(<span class="org-string">"state-names"</span>, names);
+    }
+  <span class="org-keyword">return</span> k;
+}
+</pre>
+</div>
+
+<p>
+To display this Kripke structure, we can call the <code>print_dot()</code>
+function:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++" id="org4a307ab"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twaalgos/dot.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">bdd_dict_ptr</span> <span class="org-variable-name">dict</span> = <span class="org-constant">spot</span>::make_bdd_dict();
+  <span class="org-constant">spot</span>::print_dot(<span class="org-constant">std</span>::cout, create_kripke(dict));
+}
+</pre>
+</div>
+
+<p>
+<code>print_dot()</code> will output the graph in <a href="https://graphviz.gitlab.io/">GraphViz's syntax</a>, and you just
+have to pass it to GraphViz's <code>dot</code> command to render it:
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="kripke-52.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+By default, states are just numbered.  If you want to name them, for
+instance for debugging, you should define the <code>"state-names"</code>
+properties to a vector of names.  Our <code>create_kripke()</code> function does
+that when passed a true argument.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++" id="org72cad65"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twaalgos/dot.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">bdd_dict_ptr</span> <span class="org-variable-name">dict</span> = <span class="org-constant">spot</span>::make_bdd_dict();
+  <span class="org-constant">spot</span>::print_dot(<span class="org-constant">std</span>::cout, create_kripke(dict, <span class="org-constant">true</span>));
+}
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="kripke-52b.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgabac516" class="outline-3">
+<h3 id="orgabac516">Checking a property on this state space</h3>
+<div class="outline-text-3" id="text-orgabac516">
+<p>
+Let us pretend that we want to verify the following property: if
+<code>odd_x</code> infinitely often holds, then <code>odd_y</code> infinitely often holds.
+</p>
+
+<p>
+In LTL, that would be <code>GF(odd_x) -&gt; GF(odd_y)</code>.
+</p>
+
+<p>
+To check this formula, we translate its negation into an automaton,
+build the product of this automaton with our Kripke structure, and
+check whether the output is empty.  If it is not, that means we have
+found a counterexample.  Here is some code that would show this
+counterexample:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++" id="orgb77ec9e"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twaalgos/translate.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twaalgos/emptiness.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+   <span class="org-keyword">auto</span> <span class="org-variable-name">d</span> = <span class="org-constant">spot</span>::make_bdd_dict();
+
+   <span class="org-comment-delimiter">// </span><span class="org-comment">Parse the input formula.</span>
+   <span class="org-constant">spot</span>::<span class="org-type">parsed_formula</span> <span class="org-variable-name">pf</span> = <span class="org-constant">spot</span>::parse_infix_psl(<span class="org-string">"GF(odd_x) -&gt; GF(odd_y)"</span>);
+   <span class="org-keyword">if</span> (pf.format_errors(<span class="org-constant">std</span>::cerr))
+     <span class="org-keyword">return</span> 1;
+
+   <span class="org-comment-delimiter">// </span><span class="org-comment">Translate its negation.</span>
+   <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::Not(pf.f);
+   <span class="org-constant">spot</span>::<span class="org-type">twa_graph_ptr</span> <span class="org-variable-name">af</span> = <span class="org-constant">spot</span>::translator(d).run(f);
+
+   <span class="org-comment-delimiter">// </span><span class="org-comment">Find a run of our Kripke structure that intersects af.</span>
+<span id="coderef-ck" class="coderef-off">   <span class="org-keyword">auto</span> <span class="org-variable-name">k</span> = create_kripke(d, <span class="org-constant">true</span>);</span>
+   <span class="org-keyword">if</span> (<span class="org-keyword">auto</span> <span class="org-variable-name">run</span> = k-&gt;intersecting_run(af))
+     <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"formula is violated by the following run:\n"</span> &lt;&lt; *run;
+   <span class="org-keyword">else</span>
+     <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"formula is verified\n"</span>;
+}
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-text">formula is violated by the following run:
+Prefix:
+  x0y0
+  |  !odd_x &amp; !odd_y
+  x1y0
+  |  odd_x &amp; !odd_y
+Cycle:
+  x2y0
+  |  !odd_x &amp; !odd_y
+  x0y0
+  |  !odd_x &amp; !odd_y
+  x1y0
+  |  odd_x &amp; !odd_y
+</pre>
+</div>
+
+<p>
+Note that this main function is similar to the main function we used
+for <a href="tut51.html#check-prop">the on-the-fly version</a> except for <a href="#coderef-ck" class="coderef" onmouseover="CodeHighlightOn(this, 'coderef-ck');" onmouseout="CodeHighlightOff(this, 'coderef-ck');">the line that creates the Kripke
+structure</a>.  You can modify it to display the counterexample in a
+similar way.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgcee2ce0" class="outline-2">
+<h2 id="orgcee2ce0">Python implementation</h2>
+<div class="outline-text-2" id="text-orgcee2ce0">
+</div>
+<div id="outline-container-org3c32fdd" class="outline-3">
+<h3 id="org3c32fdd">Building the state space</h3>
+<div class="outline-text-3" id="text-org3c32fdd">
+<div class="org-src-container">
+<pre class="src src-python" id="org140186c"><span class="org-keyword">import</span> spot
+<span class="org-keyword">from</span> buddy <span class="org-keyword">import</span> bdd_ithvar
+
+<span class="org-keyword">def</span> <span class="org-function-name">create_kripke</span>(bdddict, name_states=<span class="org-constant">False</span>):
+  <span class="org-variable-name">k</span> = spot.make_kripke_graph(bdddict)
+  <span class="org-variable-name">odd_x</span> = bdd_ithvar(k.register_ap(<span class="org-string">"odd_x"</span>))
+  <span class="org-variable-name">odd_y</span> = bdd_ithvar(k.register_ap(<span class="org-string">"odd_y"</span>))
+
+  <span class="org-variable-name">x0y0</span> = k.new_state(-odd_x &amp; -odd_y);
+  <span class="org-variable-name">x0y1</span> = k.new_state(-odd_x &amp; odd_y);
+  <span class="org-variable-name">x0y2</span> = k.new_state(-odd_x &amp; -odd_y);
+  <span class="org-variable-name">x1y0</span> = k.new_state(odd_x &amp; -odd_y);
+  <span class="org-variable-name">x1y1</span> = k.new_state(odd_x &amp; odd_y);
+  <span class="org-variable-name">x1y2</span> = k.new_state(odd_x &amp; -odd_y);
+  <span class="org-variable-name">x2y0</span> = k.new_state(-odd_x &amp; -odd_y);
+  <span class="org-variable-name">x2y1</span> = k.new_state(-odd_x &amp; odd_y);
+  <span class="org-variable-name">x2y2</span> = k.new_state(-odd_x &amp; -odd_y);
+
+  k.set_init_state(x0y0);
+
+  k.new_edge(x0y0, x0y1); k.new_edge(x0y0, x1y0);
+  k.new_edge(x0y1, x0y2); k.new_edge(x0y1, x1y1);
+  k.new_edge(x0y2, x0y0); k.new_edge(x0y2, x1y2);
+  k.new_edge(x1y0, x1y1); k.new_edge(x1y0, x2y0);
+  k.new_edge(x1y1, x1y2); k.new_edge(x1y1, x2y1);
+  k.new_edge(x1y2, x1y0); k.new_edge(x1y2, x2y2);
+  k.new_edge(x2y0, x2y1); k.new_edge(x2y0, x0y0);
+  k.new_edge(x2y1, x2y2); k.new_edge(x2y1, x0y1);
+  k.new_edge(x2y2, x2y0); k.new_edge(x2y2, x0y2);
+
+  <span class="org-keyword">if</span> name_states:
+<span id="coderef-ns" class="coderef-off">    k.set_state_names([<span class="org-string">"x0y0"</span>, <span class="org-string">"x0y1"</span>, <span class="org-string">"x0y2"</span>,</span>
+                       <span class="org-string">"x1y0"</span>, <span class="org-string">"x1y1"</span>, <span class="org-string">"x1y2"</span>,
+                       <span class="org-string">"x2y0"</span>, <span class="org-string">"x2y1"</span>, <span class="org-string">"x2y2"</span>])
+  <span class="org-keyword">return</span> k;
+</pre>
+</div>
+
+<p>
+To display this structure, we would just call <code>to_str('dot')</code> (and
+convert the resulting textual output into graphical form using the
+<code>dot</code> command).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="org303db39">
+<span class="org-variable-name">k</span> = create_kripke(spot.make_bdd_dict())
+<span class="org-keyword">print</span>(k.to_str(<span class="org-string">'dot'</span>))
+</pre>
+</div>
+
+<p>
+<code>print_dot()</code> will output the graph in <a href="https://graphviz.gitlab.io/">GraphViz's syntax</a>, and you just
+have to pass it to GraphViz's <code>dot</code> command to render it:
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="kripke-52c.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+Again, states may be named if that can help.  This is done by passing
+a vector of names (indexed by state numbers) to the <code>set_name_states()</code> method,
+<a href="#coderef-ns" class="coderef" onmouseover="CodeHighlightOn(this, 'coderef-ns');" onmouseout="CodeHighlightOff(this, 'coderef-ns');">as done conditionally in our <code>create_kripke()</code> function</a>.
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-python" id="org8bdff93">
+<span class="org-variable-name">k</span> = create_kripke(spot.make_bdd_dict(), <span class="org-constant">True</span>)
+<span class="org-keyword">print</span>(k.to_str(<span class="org-string">'dot'</span>))
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="kripke-52d.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org092aadd" class="outline-3">
+<h3 id="org092aadd">Checking a property on this state space</h3>
+<div class="outline-text-3" id="text-org092aadd">
+<p>
+Here is the Python code equivalent to our C++ check.  Please
+read the C++ description for details.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="orgdcc8ea8">
+
+<span class="org-variable-name">d</span> = spot.make_bdd_dict()
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Translate the negation of the formula</span>
+<span class="org-variable-name">f</span> = spot.formula.Not(<span class="org-string">"GF(odd_x) -&gt; GF(odd_y)"</span>)
+<span class="org-variable-name">af</span> = spot.translate(f, <span class="org-builtin">dict</span>=d)
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Find a run of our Kripke structure that intersects af.</span>
+<span class="org-variable-name">k</span> = create_kripke(d, <span class="org-constant">True</span>)
+<span class="org-variable-name">run</span> = k.intersecting_run(af)
+<span class="org-keyword">if</span> run:
+  <span class="org-keyword">print</span>(<span class="org-string">"formula is violated by the following run:\n"</span>, run)
+<span class="org-keyword">else</span>:
+  <span class="org-keyword">print</span>(<span class="org-string">"formula is verified"</span>)
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-text">formula is violated by the following run:
+ Prefix:
+  x0y0
+  |  !odd_x &amp; !odd_y
+  x1y0
+  |  odd_x &amp; !odd_y
+Cycle:
+  x2y0
+  |  !odd_x &amp; !odd_y
+  x0y0
+  |  !odd_x &amp; !odd_y
+  x1y0
+  |  odd_x &amp; !odd_y
+
+
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

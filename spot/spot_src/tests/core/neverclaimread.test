@@ -1,0 +1,404 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010-2015, 2017-2018, 2020 Laboratoire
+# de Recherche et Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+cat >input <<EOF
+never {
+T2_init:
+if
+:: (1) -> goto T2_init
+:: (p1 && p0) -> goto T1
+fi;
+T1:
+T1b: /* alias */
+if
+:: (p1 && (! p0)) -> goto alias2
+:: !(p1) -> goto T1b
+:: ! (p1) -> goto T2_init
+fi;
+alias1:
+accept_all:
+alias2:
+skip
+}
+EOF
+
+run 0 ../ikwiad -XN -H input > stdout
+
+cat >expected <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[t] 0
+[0&1] 1
+State: 1
+[!1] 0
+[!1] 1
+[!0&1] 2
+State: 2 {0}
+[t] 2
+--END--
+EOF
+
+run 0 autfilt -F stdout --isomorph expected
+
+rm input stdout expected
+
+
+# Same test, but with the newer syntax output since Spin 6.24
+cat >input <<EOF
+never {
+T2_init:
+do
+:: (1) -> goto T2_init
+:: (p1 && p0) -> goto T1
+od;
+T1:
+do
+:: atomic { (p1 && (! p0)) -> assert(!(p1 && (! p0))) }
+:: !(p1) -> goto T1
+:: ! (p1) -> goto T2_init
+od;
+}
+EOF
+
+run 0 ../ikwiad -XN -H input > stdout
+
+cat >expected <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[t] 0
+[0&1] 1
+State: 1
+[!1] 0
+[!1] 1
+[!0&1] 2
+State: 2 {0}
+[t] 2
+--END--
+EOF
+
+run 0 autfilt -F stdout --isomorph expected
+
+rm input stdout expected
+
+
+# Unparenthesed disjunction
+cat >input <<EOF
+never { /* p0 || p1  */
+accept_init:
+        if
+        :: (p1) && (p0) -> goto accept_all
+        :: (p1) && !(p0) -> goto accept_all
+        fi;
+accept_all:
+        skip
+}
+EOF
+run 0 ../ikwiad -XN input > stdout
+
+cat >expected <<EOF
+digraph "" {
+  rankdir=LR
+  label="\n[Büchi]"
+  labelloc="t"
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label="0", peripheries=2]
+  0 -> 1 [label="p1"]
+  1 [label="1", peripheries=2]
+  1 -> 1 [label="1"]
+}
+EOF
+
+diff stdout expected
+
+rm input stdout expected
+
+# Test broken guards in input
+cat >input <<EOF
+never {
+T2_init:
+if
+:: (1) -> goto T2_init
+:: (p1 && ) -> goto T1
+fi;
+T1:
+if
+:: (p1 && ! p0)) -> goto accept_all
+:: (p1) -> goto T1
+fi;
+accept_all:
+skip
+}
+EOF
+
+# We used to catch the following error:
+#   input:5.11: syntax error, unexpected closing parenthesis
+#   input:5.8-9: missing right operand for "and operator"
+# but since the guard parser is more lenient, we just assume
+# that "p1 && " is an atomic property.
+
+run 2 ../ikwiad -XN input > stdout 2>stderr
+cat >expected <<\EOF
+input:9.16: syntax error, unexpected ')', expecting fi or ':'
+EOF
+grep input: stderr > stderrfilt
+diff stderrfilt expected
+
+
+# This output from MoDeLLa was not property parsed by Spot because of
+# the missing parentheses around p0.  Report from František Blahoudek.
+cat >input <<EOF
+never{
+T0_init:
+	if
+	:: true -> goto T1
+	:: p0 -> goto T2
+	fi;
+T1:
+	if
+	:: true -> goto T1
+	:: p0 -> goto accept_T3
+	fi;
+T2:
+	if
+	:: p0 -> goto accept_T3
+	fi;
+accept_T3:
+	if
+	:: p0 -> goto T2
+	fi;
+}
+EOF
+cat >expected<<EOF
+edges: 6
+states: 4
+EOF
+
+run 0 ../ikwiad -ks -XN input > output
+diff output expected
+
+
+# Test duplicated labels.  The following neverclaim was produced by
+# ltl2ba 1.1 for '[](<>[]p1 U X[]<>Xp0)', but is rejected by Spin
+# because of a duplicate label (accept_S10).  We should
+# complain as well.  This was reported by Joachim Klein.
+
+cat >input <<\EOF
+never { /* [](<>[]p1 U X[]<>Xp0) */
+T0_init:
+	if
+	:: (1) -> goto accept_S2
+	:: (1) -> goto T1_S3
+	:: (p1) -> goto T2_S4
+	fi;
+accept_S2:
+	if
+	:: (1) -> goto accept_S39
+	:: (1) -> goto T1_S24
+	:: (p1) -> goto accept_S10
+	fi;
+accept_S39:
+	if
+	:: (p0) -> goto accept_S39
+	:: (1) -> goto T0_S39
+	:: (1) -> goto T0_S24
+	:: (p1) -> goto T0_S10
+	fi;
+T0_S39:
+	if
+	:: (p0) -> goto accept_S39
+	:: (1) -> goto T0_S39
+	:: (1) -> goto T0_S24
+	:: (p1) -> goto T0_S10
+	fi;
+T0_S24:
+	if
+	:: (1) -> goto T0_S24
+	:: (p1) -> goto T0_S10
+	fi;
+T0_S10:
+	if
+	:: (p0 && p1) -> goto accept_S10
+	:: (p1) -> goto T0_S10
+	fi;
+accept_S10:
+	if
+	:: (p0 && p1) -> goto accept_S10
+	:: (p1) -> goto T0_S10
+	fi;
+T1_S24:
+	if
+	:: (1) -> goto T1_S24
+	:: (p1) -> goto accept_S10
+	fi;
+accept_S10:
+	if
+	:: (p1) -> goto accept_S10
+	fi;
+T1_S3:
+	if
+	:: (1) -> goto T1_S3
+	:: (1) -> goto T1_S24
+	:: (p1) -> goto T2_S4
+	:: (p1) -> goto accept_S10
+	fi;
+T2_S4:
+	if
+	:: (p1) -> goto T2_S4
+	:: (p1) -> goto accept_S10
+	fi;
+}
+EOF
+
+run 2 ../ikwiad -ks -XN input > stdout 2>stderr
+cat stderr
+cat >expected-err <<\EOF
+input:48.1-10: redefinition of accept_S10...
+input:38.1-10: ... accept_S10 previously defined here
+EOF
+grep input: stderr > stderrfilt
+diff stderrfilt expected-err
+
+# DOS-style new lines should have the same output.
+$PERL -pi -e 's/$/\r/' input
+run 2 ../ikwiad -ks -XN input > stdout 2>stderr
+cat stderr
+grep input: stderr > stderrfilt
+diff stderrfilt expected-err
+
+
+# Empty guards should be diagnosed at the correct location
+cat >input <<EOF
+never { /* a U b */
+T0_init:
+  if
+  :: ((b)) -> goto accept_all
+  :: ( ) -> goto T0_init
+  fi;
+accept_all:
+  skip
+}
+never { /* a U b */
+T0_init:
+  if
+  :: ((b)) -> goto accept_all
+  :: ((b) -> goto T0_init
+  fi;
+accept_all:
+  skip
+}
+EOF
+autfilt --name=%F --dot=nsc <input >stdout 2>stderr && exit 1
+cat >expected <<EOF
+digraph "-" {
+  rankdir=LR
+  label="-\n[Büchi]"
+  labelloc="t"
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  subgraph cluster_0 {
+  color=green
+  label=""
+  1 [label="1", peripheries=2]
+  }
+  subgraph cluster_1 {
+  color=black
+  label=""
+  0 [label="0"]
+  }
+  0 -> 1 [label="b"]
+  0 -> 0 [label="0"]
+  1 -> 1 [label="1"]
+}
+EOF
+diff stdout expected
+# FIXME: the "ignoring trailing garbage" is unwanted
+cat >expected.err <<EOF
+5.6-8: unexpected empty block
+5.6-8: ignoring trailing garbage
+14.6-19.1: missing closing parenthese
+19.1: syntax error, unexpected end of file, expecting fi or ':'
+autfilt: failed to read automaton from -
+EOF
+diff stderr expected.err
+
+
+cat >formulae<<EOF
+a
+FG a
+X false
+(G a) U X b
+(a U b) U (c U d)
+true
+(Ga && XXXX!a)
+"a > b" U "process@foo"
+GF("(a + b) == 42" U "process@foo")
+EOF
+while read f
+do
+    run 0 ltl2tgba -H "!($f)" > f.hoa
+    run 0 ltl2tgba -s -f "$f" > f.spot
+    # Make sure there is no `!x' occurring in the
+    # output.  Because `x' is usually #define'd, we
+    # should use `!(x)' in guards.
+    grep '![^(].*->' f.spot && exit 1
+    # In case we cannot run spin or ltl2ba, use the spot output
+    cp f.spot f.spin
+    cp f.spot f.ltl2ba
+
+    sf=`ltlfilt -sf "$f"`
+
+    if test -n "$SPIN"; then
+        # Old spin versions cannot parse formulas such as ((a + b) == 42).
+	$SPIN -f "$sf" > f.spin.tmp && mv f.spin.tmp f.spin
+    fi
+    case $f in
+      *\"*);;
+      *)
+      if test -n "$LTL2BA"; then
+	  $LTL2BA -f "$sf" > f.ltl2ba
+      fi
+    esac
+
+    run 0 autfilt --count -v --intersect=f.hoa \
+	                    f.spot f.spin f.ltl2ba >out
+    test 3 = `cat out`
+done  <formulae

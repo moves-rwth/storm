@@ -1,0 +1,220 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2014, 2015 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004, 2005 Laboratoire d'Informatique de
+# Paris 6 (LIP6), département Systèmes Répartis Coopératifs (SRC),
+# Université Pierre et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+expect_ce()
+{
+  run 0 ../ikwiad -CR -e -XH "$1"
+  run 0 ../ikwiad -CR -e -DT -XH "$1"
+  run 0 ../ikwiad -CR -e'Cou99(shy)' -XH "$1"
+  run 0 ../ikwiad -CR -e'Cou99(shy)' -DT -XH "$1"
+  run 0 ../ikwiad -CR -eCVWY90 -XH "$1"
+  run 0 ../ikwiad -CR -eGV04 -XH "$1"
+  run 0 ../ikwiad -CR -eSE05 -XH "$1"
+  run 0 ../ikwiad -CR -eTau03 -XH "$1"
+}
+
+cat >input <<'EOF'
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0 {0 1}
+[0&!1] 1
+State: 1 {0}
+[0] 2
+State: 2
+[t] 0
+--END--
+EOF
+
+expect_ce input
+
+#       ________
+#      /        v
+#    >a--->d--->g
+#    /^   /^   /^
+#   L |  L |  L |{A}
+#  b->c e->f h->i
+#
+cat >input <<'EOF'
+HOA: v1
+States: 9
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0
+[t] 1
+[t] 3
+[t] 6
+State: 1
+[t] 2
+State: 2
+[t] 0
+State: 3
+[t] 4
+[t] 6
+State: 4
+[t] 5
+State: 5
+[t] 3
+State: 6
+[t] 7
+State: 7
+[t] 8
+State: 8 {0}
+[t] 6
+--END--
+EOF
+
+expect_ce input
+
+#        v
+#     d->a
+#     ^  |
+#     |  v
+#     c<-b<-.
+#     ^  |A |B
+#    B|  v  |
+#     `--e->f
+#
+# The arcs are ordered so that Couvreur99 succeed after exploring
+# the following subgraph (which is one accepting SCC):
+#
+#        v
+#     d->a
+#     ^  |
+#     |  v
+#     c<-b<-.
+#        |A |B
+#        v  |
+#        e->f
+#
+# However when computing a counter-example the greedy BFS algorithm
+# will fail to return the minimal a->b->e->f->b run.  Indeed it first
+# walks through a->b->e (which gives acceptance condition A), and
+# prefer to continue with e->c (because it gives acceptance condition B),
+# and finally closes the cycle with c->d->a
+#
+cat >input <<'EOF'
+HOA: v1
+States: 6
+Start: 0
+AP: 0
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc complete
+--BODY--
+State: 0
+[t] 1
+State: 1
+[t] 2
+[t] 4 {0}
+State: 2
+[t] 3
+State: 3
+[t] 0
+State: 4
+[t] 2 {1}
+[t] 5
+State: 5
+[t] 1 {1}
+--END--
+EOF
+
+expect_ce input
+
+
+# This graph was randomly generated, and contains one accepting path.
+# It triggered a bug in our implementation of GV04 (that didn't see any
+# accepting path).
+cat >input <<EOF
+HOA: v1
+States: 20
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[t] 1
+State: 1
+[t] 2
+[t] 3
+State: 2
+[t] 4
+[t] 5 {0}
+[t] 6
+State: 3
+[t] 6
+[t] 7
+State: 4
+[t] 8
+State: 5
+[t] 9
+State: 6
+[t] 2
+State: 7
+[t] 10
+[t] 11
+State: 8
+[t] 12
+State: 9
+[t] 13
+State: 10
+[t] 13
+[t] 14
+[t] 15
+State: 11
+[t] 2
+State: 12
+[t] 3
+State: 13
+[t] 16
+State: 14
+State: 15
+[t] 4
+State: 16
+[t] 17
+State: 17
+[t] 18
+State: 18
+[t] 10
+[t] 19
+State: 19
+--END--
+EOF
+
+expect_ce input

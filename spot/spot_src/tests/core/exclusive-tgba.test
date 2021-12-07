@@ -1,0 +1,181 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015-2016, 2018-2019 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs || exit 1
+
+set -e
+
+cat >automaton <<EOF
+HOA: v1
+States: 4
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[0] 1
+State: 1
+[1] 2
+[2&!1] 2
+State: 2 {0}
+[1] 2
+[0&1] 1
+[1&2] 3
+State: 3
+[t] 3
+--END--
+EOF
+
+cat >expected <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0&!1&!2] 1
+State: 1
+[!0&1&!2] 2
+[!0&!1&2] 2
+State: 2 {0}
+[!0&1&!2] 2
+--END--
+EOF
+
+cat >expected-simpl <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0] 1
+State: 1
+[1 | 2] 2
+State: 2 {0}
+[1] 2
+--END--
+EOF
+
+run 0 autfilt -H --exclusive-ap=a,b,c --exclusive-ap=d,e \
+    automaton >out
+cat out
+diff out expected
+
+run 0 autfilt -H --exclusive-ap=a,b,c --exclusive-ap=d,e \
+    --simplify-exclusive-ap automaton >out2
+cat out2
+diff out2 expected-simpl
+
+cat >automaton <<EOF
+HOA: v1
+States: 4
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[0] 1
+State: 1
+[1] 2
+[0&!1] 2
+State: 2 {0}
+[1] 2
+[0&1] 1
+[1&0] 3
+State: 3
+[t] 3
+--END--
+EOF
+
+cat >expected <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0&!1] 1
+State: 1
+[!0&1] 2
+[0&!1] 2
+State: 2 {0}
+[!0&1] 2
+--END--
+EOF
+
+cat >expected-simpl <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0] 1
+State: 1
+[0 | 1] 2
+State: 2 {0}
+[1] 2
+--END--
+EOF
+
+run 0 autfilt -H --exclusive-ap=a,b,c --exclusive-ap=d,e \
+    automaton >out
+cat out
+diff out expected
+
+run 0 autfilt -H --exclusive-ap=a,b,c --exclusive-ap=d,e \
+    --simplify-exclusive-ap automaton >out2
+cat out2
+diff out2 expected-simpl
+
+
+# Example from the paper
+test "6,50,14" = `ltl2tgba -B -f 'F(Ga | (GFb <-> GFc))' --stats='%s,%t,%e'`
+test "6,24,12" = `ltl2tgba -B -f 'F(Ga | (GFb <-> GFc))' |
+                  autfilt --exclusive-ap=a,b,c --stats='%s,%t,%e'`
+test "4,18,8" = `ltl2tgba -B -f 'F(Ga | (GFb <-> GFc))' |
+   autfilt --small --exclusive-ap=a,b,c --stats='%s,%t,%e' --ap=3`
+# The final automaton has 3 atomic propositions before
+# simplifications, but only 2 after that.
+ltl2tgba -B -f 'F(Ga | (GFb <-> GFc))' |
+  autfilt --small --exclusive-ap=a,b,c --simplify-ex --ap=3 > out
+test "4,17,8" = `autfilt out --stats='%s,%t,%e' --ap=2`
+
+
+# Issue #363.
+ltl2tgba 'a U b' |
+  autfilt --exclusive-ap=a,b,c --simplify-exclusive-ap > out
+test "2,8,3" = `autfilt out --stats='%s,%t,%e' --ap=2`

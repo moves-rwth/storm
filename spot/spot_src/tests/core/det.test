@@ -1,0 +1,299 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013-2019 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+cat >formulas <<'EOF'
+1,13,X((a M F((!b & !c) | (b & c))) W (G!c U b))
+1,5,X(((a & b) R (!a U !c)) R b)
+1,8,XXG(Fa U Xb)
+1,5,(!a M !b) W F!c
+1,3,(b & GFc) R a
+1,2,(a R (b W a)) W G(!a M (b | c))
+1,11,(Fa W b) R (!a | Fc)
+1,6,X(G(!a M !b) | G(a | G!a))
+1,2,Fa W Gb
+1,2,Ga | GFb
+1,9,G((G!a & ((!b & X!c) | (b & Xc))) | (Fa & ((!b & Xc) | (b & X!c))))
+1,5,a M G(F!b | X!a)
+1,3,G!a R XFb
+1,4,XF(!a | GFb)
+1,5,X(GF!a U a)
+1,5,(a | G(a M !b)) W Fc
+1,6,Fa W Xb
+1,9,X(a R ((!b & F!c) M X!a))
+1,2,XG!a R Fb
+1,4,GFc | (a & Fb)
+1,6,X(a R (Fb R F!b))
+1,1,G(Xa M Fa)
+1,3,X(Gb | GFa)
+1,9,X(Gc | XG((b & Ga) | (!b & F!a)))
+1,2,Ga R Fb
+1,3,G(a U (b | X((!a & !c) | (a & c))))
+1,5,XG((G!a & F!b) | (Fa & (a | Gb)))
+1,7,(a U X!a) | XG(!b & Fc)
+1,3,X(G!a | GFa)
+1,4,G(G!a | F!c | G!b)
+EOF
+
+ltl2tgba -x tba-det --det --stats '%d,%s,%f' -F formulas/3 > out
+diff formulas out
+
+cat >in.hoa <<'EOF'
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete deterministic
+--BODY--
+State: 0
+[!0] 0
+[0] 1 {0}
+State: 1
+[!0] 0
+[0] 2 {0}
+State: 2
+[!0] 0
+[0] 2
+--END--
+EOF
+
+cat >ex.hoa <<'EOF'
+HOA: v1
+States: 5
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc inherently-weak
+--BODY--
+State: 0
+[!0] 0
+[0] 1
+[!0] 3
+State: 1
+[!0] 0
+[0] 2
+[!0] 3
+State: 2
+[!0] 0
+[0] 2
+[!0] 3
+[0] 4
+State: 3 {0}
+[!0] 3
+State: 4 {0}
+[!0] 3
+[0] 4
+--END--
+EOF
+
+run 0 ../ikwiad -H -DC -XH in.hoa > out.hoa
+run 1 autfilt -q --are-isomorph in.hoa out.hoa
+run 0 autfilt -q --are-isomorph ex.hoa out.hoa
+
+run 0 ../ikwiad -x -DC 'GFa & XGFb' > out.tgba
+cat >ex.tgba <<EOF
+digraph "GFa & XGFb" {
+  rankdir=LR
+  label="\n[Büchi]"
+  labelloc="t"
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label="0"]
+  0 -> 1 [label="1"]
+  1 [label="1"]
+  1 -> 1 [label="1"]
+  1 -> 2 [label="!a"]
+  1 -> 3 [label="!b"]
+  2 [label="2", peripheries=2]
+  2 -> 2 [label="!a"]
+  3 [label="3", peripheries=2]
+  3 -> 3 [label="!b"]
+}
+EOF
+diff out.tgba ex.tgba
+
+
+# This formula produce a co-deterministic automaton that is not deterministic,
+# and a bug in the cosimulation caused the result to be marked as deterministic.
+run 0 ltl2tgba -H '(0 R Xa) R (a xor Fa)' > out.hoa
+grep deterministic out.hoa && exit 1
+
+# We can highlight nondeterminism
+autfilt -H1.1 --highlight-nondet-states=1 \
+        --highlight-nondet-edges=2 out.hoa >out-nd.hoa
+cat >expected-nd.hoa <<EOF
+HOA: v1.1
+name: "XGa R (!a & Fa)"
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc !complete
+properties: !deterministic exist-branch
+spot.highlight.states: 0 1
+spot.highlight.edges: 1 2 2 2
+--BODY--
+State: 0
+[!0] 0
+[!0] 1
+State: 1 {0}
+[0] 1
+--END--
+EOF
+diff expected-nd.hoa out-nd.hoa
+
+# While we are at it, make sure randomize preserves highlighted states
+# (but not highlighted edges, at least until someone implement it).
+autfilt -H1.1 --seed=3 --randomize out-nd.hoa > rand.hoa
+cat >expected-rand.hoa <<EOF
+HOA: v1.1
+name: "XGa R (!a & Fa)"
+States: 2
+Start: 1
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc !complete
+properties: !deterministic exist-branch
+spot.highlight.states: 1 1
+--BODY--
+State: 0 {0}
+[0] 0
+State: 1
+[!0] 1
+[!0] 0
+--END--
+EOF
+diff expected-rand.hoa rand.hoa
+
+# --highlight-nondet=N is a short for
+# --highlight-nondet-states=N --highlight-nondet-edges=N
+autfilt -H1.1 --seed=3 --randomize --highlight-nondet=5 out-nd.hoa > rand2.hoa
+cat >expected-rand2.hoa <<EOF
+HOA: v1.1
+name: "XGa R (!a & Fa)"
+States: 2
+Start: 1
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc !complete
+properties: !deterministic exist-branch
+spot.highlight.states: 1 5
+spot.highlight.edges: 2 5 3 5
+--BODY--
+State: 0 {0}
+[0] 0
+State: 1
+[!0] 1
+[!0] 0
+--END--
+EOF
+diff expected-rand2.hoa rand2.hoa
+
+# These highlighted a bug in the bitvector routines because their
+# state count is a multiple of 64.
+cat >input <<EOF
+G(!a | Xa),2
+G(!a | XXa),4
+G(!a | XXXa),8
+G(!a | XXXXa),16
+G(!a | XXXXXa),32
+G(!a | XXXXXXa),64
+G(!a | XXXXXXXa),128
+G(!a | XXXXXXXXa),256
+EOF
+run 0 ltl2tgba -D -F input/1 --stats='%f,%s' > output
+cat output
+diff input output
+
+ltl2tgba -f 'Ga & FGb' -f 'Ga | FGb' > out.hoa
+test "`autfilt --nondet-states=1 --stats=%M out.hoa`" = "Ga & FGb"
+test "`autfilt --nondet-states=2 --stats=%M out.hoa`" = "Ga | FGb"
+
+cat >input <<EOF
+HOA: v1.1
+name: "FGa"
+States: 2
+Start: 1
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+spot.highlight.edges: 1 3 2 3
+spot.highlight.states: 0 2
+--BODY--
+State: 0 {0}
+[0] 0
+State: 1
+[0] 0
+[t] 1
+--END--
+EOF
+autfilt -H1.1 --highlight-nondet=5 input > output
+cat >expected <<EOF
+HOA: v1.1
+name: "FGa"
+States: 2
+Start: 1
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc !complete
+properties: !deterministic exist-branch
+spot.highlight.states: 0 2 1 5
+spot.highlight.edges: 1 3 2 5 3 5
+--BODY--
+State: 0 {0}
+[0] 0
+State: 1
+[0] 0
+[t] 1
+--END--
+EOF
+diff output expected
+
+# This is a syntactically non-deterministic automaton, which is
+# semantically equivalent to a deterministic automaton (once
+# transitions with compatible src/dst are merged).  Running
+# --merge-transition on this used to fail because merge_edges() would
+# preserve the determism bit (or rather, the non-determinism bit).
+cat >in.hoa <<EOF
+HOA: v1
+States: 2
+Start: 1
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[t] 0
+State: 1
+[0] 0
+[1] 0
+--END--
+EOF
+autfilt -q --is-deterministic in.hoa && exit 1
+autfilt --merge-transitions in.hoa | autfilt --is-deterministic

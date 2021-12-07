@@ -1,0 +1,18 @@
+#!/bin/sh
+# This is a wrapper around the compiler, to ensure that the code
+# example run from the org-mode file are all linked with Spot.
+#
+# Also we save errors to org.errors, so that we can detect issues
+# after org-mode has exported everything.  Otherwise these errors
+# would go undetected.
+@top_builddir@/libtool link @CXX@ @CXXFLAGS@ @CPPFLAGS@ -Wall -Werror \
+ -I@abs_top_builddir@ -I@abs_top_srcdir@ -I@abs_top_srcdir@/buddy/src \
+ "$@" @abs_top_builddir@/spot/libspot.la \
+      @abs_top_builddir@/buddy/src/libbddx.la 2> errors.$$
+code=$?
+if test $code -ne 0 && test -s errors.$$; then
+    cat errors.$$ >>org.errors
+    cat errors.$$ >&2
+fi
+rm -f errors.$$
+exit $code

@@ -1,0 +1,93 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =ltlgrind=
+#+DESCRIPTION: Spot command-line tool for mutating LTL formulas.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+:results scalar: Is the same as :results verbatim.
+
+:results table: Interprets the results as an Org This tool lists
+formulas that are similar to but simpler than a given formula by
+applying simple mutations to it, like removing operands or
+operators. This is meant to be used with ltlcross to simplify a
+formula that caused a problem before trying to debug it (see also
+=ltlcross --grind=FILENAME=).
+
+Here is a list of the different kinds of mutations that can be applied:
+
+#+BEGIN_SRC sh :exports results
+ltlgrind --help | sed -n '/Mutation rules.*:/,/^$/p' | sed '1d;$d'
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+      --ap-to-const          atomic propositions are replaced with true/false
+      --remove-multop-operands   remove one operand from multops
+      --remove-one-ap        all occurrences of an atomic proposition are
+                             replaced with another atomic proposition used in
+                             the formula
+      --remove-ops           replace unary/binary operators with one of their
+                             operands
+      --rewrite-ops          rewrite operators that have a semantically simpler
+                             form: a U b becomes a W b, etc.
+      --simplify-bounds      on a bounded unary operator, decrement one of the
+                             bounds, or set min to 0 or max to unbounded
+      --split-ops            when an operator can be expressed as a
+                             conjunction/disjunction using simpler operators,
+                             each term of the conjunction/disjunction is a
+                             mutation. e.g. a <-> b can be written as ((a & b)
+                             | (!a & !b)) or as ((a -> b) & (b -> a)) so those
+                             four terms can be a mutation of a <-> b
+#+end_example
+
+By default, all rules are applied. But if one or more rules are
+specified, only those will be applied.
+
+#+BEGIN_SRC sh
+ltlgrind -f 'a U G(b <-> c)' --split-ops --rewrite-ops --remove-ops
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+a
+G(b <-> c)
+a W G(b <-> c)
+a U (b <-> c)
+a U Gb
+a U Gc
+a U G(b -> c)
+a U G(c -> b)
+a U G(b & c)
+a U G(!b & !c)
+#+end_example
+
+The idea behind this tool is that when a bogus algorithm is found with
+=ltlcross=, you probably want to debug it using a smaller formula than
+the one found by =ltlcross=. So you would give the formula found by
+=ltlcross= as an argument to =ltlgrind= and then use the resulting
+mutations as an new input for =ltlcross=. It might report an error on
+one of the mutation, which is guaranteed to be simpler than the
+initial formula. The process can then be repeated until no error is
+reported by =ltlcross=.
+
+Since the whole process can become quite tedious, it can be done
+automatically by calling =ltlcross= with the =--grind=FILENAME=
+argument.
+
+* Miscellaneous options
+** =--sort=
+  Output formulas from the shortest to the longest one. The
+  length of a formula is the number of atomic propositions, constants
+  and operators occurring in the formula.
+** =-m N=, =--mutations=N=
+  Specify the number of mutations to be applied to the formula. By
+  default, =N=1=, so using this option is like calling ltlgrind on its
+  own output several times, except for the fact that, when called on
+  several formulas, ltlgrind doesn't handle duplicates.
+** =-n N=, =--max-output=N=
+   Limit the number of mutated formulas output to =N=.
+
+#  LocalWords:  ltlgrind num toc html ltlcross FILENAME SRC sed ap Gb
+#  LocalWords:  const multop multops unary decrement disjunction Gc
+#  LocalWords:  utf args

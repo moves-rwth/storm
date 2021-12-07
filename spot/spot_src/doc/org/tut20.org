@@ -1,0 +1,324 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Converting a never claim into HOA
+#+DESCRIPTION: Code example for parsing and printing ω-automata in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+The goal is to start from a never claim, as produced by Spin, e.g.:
+
+#+BEGIN_SRC sh
+  spin -f '[]<>foo U bar' > tut20.never
+  cat tut20.never
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+never  {    /* []<>foo U bar */
+T0_init:
+	do
+	:: atomic { ((bar)) -> assert(!((bar))) }
+	:: (1) -> goto T0_S53
+	od;
+accept_S42:
+	do
+	:: (1) -> goto T0_S42
+	od;
+T0_S42:
+	do
+	:: ((foo)) -> goto accept_S42
+	:: (1) -> goto T0_S42
+	od;
+T0_S53:
+	do
+	:: (1) -> goto T0_S53
+	:: ((bar) && (foo)) -> goto accept_S42
+	:: ((bar)) -> goto T0_S42
+	od;
+accept_all:
+	skip
+}
+#+end_example
+
+and convert this into an automaton in [[file:hoa.org][the HOA format]].
+
+Note that the automaton parser of Spot can read automata written
+either as never claims, in LBTT's format, in ltl2dstar's format or in
+the HOA format, and there is no need to specify which format you
+expect.  Even if our example uses a never claim as input, the code we
+write will read any of those formats.
+
+* Shell
+
+This is very simple: [[file:autfilt.org][=autfilt=]] can read automata in any of the
+supported formats, and outputs it in the HOA format by default:
+
+#+BEGIN_SRC sh :wrap SRC hoa
+autfilt tut20.never
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 5
+Start: 0
+AP: 2 "bar" "foo"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0
+[0] 1
+[t] 2
+State: 1 {0}
+[t] 1
+State: 2
+[t] 2
+[0&1] 3
+[0] 4
+State: 3 {0}
+[t] 4
+State: 4
+[1] 3
+[t] 4
+--END--
+#+end_SRC
+
+* Python
+
+Another one-liner.  The =spot.automaton()= function reads a single
+automaton, and each automaton has a =to_str()= method that can print
+in =hoa=, =lbtt=, =spin= (for never claim) or =dot=.
+
+#+BEGIN_SRC python :wrap SRC hoa
+import spot
+print(spot.automaton('tut20.never').to_str('hoa'))
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 5
+Start: 0
+AP: 2 "bar" "foo"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0
+[0] 1
+[t] 2
+State: 1 {0}
+[t] 1
+State: 2
+[t] 2
+[0&1] 3
+[0] 4
+State: 3 {0}
+[t] 4
+State: 4
+[1] 3
+[t] 4
+--END--
+#+end_SRC
+
+* C++
+
+Parsing an automaton is similar to [[file:tut01.org][parsing an LTL formula]].  The
+=parse_aut()= function takes a filename and a BDD dictionary (to be
+discussed later on this page).  It returns a shared pointer to a
+structure that has a couple of important fields: =aborted= is a
+Boolean telling if the input automaton was voluntarily aborted (a
+feature of [[file:hoa.org][the HOA format]]), =errors= is a list of syntax errors that
+occurred while parsing the automaton (printing these errors is up to
+you), and =aut= is the actual automaton.  The parser usually tries to
+recover from errors, so =aut= may not be null even if =errors= is
+non-empty.
+
+#+BEGIN_SRC C++ :wrap SRC hoa
+  #include <string>
+  #include <iostream>
+  #include <spot/parseaut/public.hh>
+  #include <spot/twaalgos/hoa.hh>
+
+  int main()
+  {
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+    spot::parsed_aut_ptr pa = parse_aut("tut20.never", dict);
+    if (pa->format_errors(std::cerr))
+      return 1;
+    // This cannot occur when reading a never claim, but
+    // it could while reading a HOA file.
+    if (pa->aborted)
+      {
+        std::cerr << "--ABORT-- read\n";
+        return 1;
+      }
+    spot::print_hoa(std::cout, pa->aut) << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 5
+Start: 0
+AP: 2 "bar" "foo"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0
+[0] 1
+[t] 2
+State: 1 {0}
+[t] 1
+State: 2
+[t] 2
+[0&1] 3
+[0] 4
+State: 3 {0}
+[t] 4
+State: 4
+[1] 3
+[t] 4
+--END--
+#+end_SRC
+
+In the Spot representation of automata, transitions guards are
+represented by BDDs.  The role of the =bdd_dict= object is to keep
+track of the correspondence between BDD variables and atomic
+propositions such as =foo= and =bar= in the above example.  So each
+automaton has a shared pointer to some =bdd_dict= (this shared pointer
+is what the =bdd_dict_ptr= type is), and operations between automata
+(like a product) can only work on automata that share the same
+pointer.  Here, when we call the automaton parser, we supply the
+=bdd_dict_ptr= that should be used to do the mapping between atomic
+propositions and BDD variables.  Atomic propositions that were not
+already registered will get a new BDD variable number, and while
+existing atomic propositions will reuse the existing variable.
+
+In the example for [[file:tut10.org][translating LTL into BA]], we did not specify any
+=bdd_dict=, because the =translator= object will create a new one by
+default.  However it is possible to supply such a =bdd_dict= to the
+translator as well.  Similarly, in the Python bindings, there is a
+global =bdd_dict= that is implicitly used for all operations, but it
+can be specified if needed.
+
+* Additional comments
+
+There are actually different C++ interfaces to the automaton parser,
+depending on your use case.  For instance the parser is able to read a
+stream of automata stored in the same file, so that they could be
+processed in a loop.  For this, you would instantiate a
+=spot::automaton_stream_parser= object and call its =parse()= method
+in a loop.  Each call to this method will either return one
+=spot::parsed_aut_ptr=, or =nullptr= if there is no more automaton to
+read.  The =parse_aut()= function is actually a simple convenience
+wrapper that instantiates an =automaton_stream_parser= and calls its
+=parse()= method once.
+
+
+In Python, you can easily iterate over a file containing multiple
+automata by doing:
+
+#+BEGIN_SRC python :wrap SRC hoa
+import spot
+for aut in spot.automata('tut20.never'):
+    print(aut.to_str('hoa'))
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 5
+Start: 0
+AP: 2 "bar" "foo"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0
+[0] 1
+[t] 2
+State: 1 {0}
+[t] 1
+State: 2
+[t] 2
+[0&1] 3
+[0] 4
+State: 3 {0}
+[t] 4
+State: 4
+[1] 3
+[t] 4
+--END--
+#+end_SRC
+
+In fact =spot.automaton()= is just a wrapper around =spot.automata()=
+to return only the first automaton.
+
+Still in Python, both =spot.automaton()= and =spot.automata()= can
+accept three types of arguments:
+- file names (such as in the above examples)
+- commands that output automata on their standard output.  Those can
+  be any shell expression, and must have '=|=' as their last
+  character.  For instance here is how to convert Spin's output into
+  LBTT's formula without using temporary files.
+#+BEGIN_SRC python
+import spot
+print(spot.automaton('spin -f "[]<>p0" |').to_str('lbtt'))
+#+END_SRC
+
+#+RESULTS:
+: 2 1
+: 0 1 -1
+: 1 p0
+: 0 t
+: -1
+: 1 0 0 -1
+: 0 t
+: -1
+:
+
+- a string that includes new lines, in which case it is assumed
+  to describe an automaton (or multiple automata) and is
+  passed directly to the parser:
+
+#+BEGIN_SRC python
+import spot
+print(spot.automaton("""
+HOA: v1
+States: 2
+Start: 0
+AP: 1 "a"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[0] 1
+State: 1 {0}
+[t] 1
+--END--
+""").to_str('spin'))
+#+END_SRC
+
+#+RESULTS:
+: never {
+: T0_init:
+:   if
+:   :: (a) -> goto accept_all
+:   fi;
+: accept_all:
+:   skip
+: }
+:
+
+#+BEGIN_SRC sh :results silent :exports results
+rm -f tut20.never
+#+END_SRC
+
+#  LocalWords:  utf html args SRC init od LBTT's dstar's acc Buchi fi
+#  LocalWords:  str lbtt aut BDDs bdd ptr nullptr

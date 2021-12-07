@@ -1,0 +1,1000 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016-2018, 2020 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+cat >alt.hoa <<EOF
+HOA: v1.1
+States: 7
+Start: 0&2
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+AP: 2 "b" "a"
+properties: trans-labels explicit-labels state-acc univ-branch very-weak
+spot.highlight.edges: 2 5 7 2
+--BODY--
+State: 0 "((((a) U (b)) && GF(b)) && FG(a))"
+ [(0)] 3&1
+ [(!0 & 1)] 5&3&1
+State: 1 "FG(a)" {0}
+ [(1)] 2
+ [t] 1
+State: 2 "G(a)"
+ [(1)] 2
+State: 3 "GF(b)"
+ [(0)] 3
+ [(!0)] 4&3
+State: 4 "F(b)" {0}
+ [(0)] 6
+ [(!0)] 4
+State: 5 "((a) U (b))" {0}
+ [(0)] 6
+ [(!0 & 1)] 5
+State: 6 "t"
+ [t] 6
+--END--
+EOF
+
+test "1 2 4" = "`autfilt --stats='%u %[s]u %[e]u' alt.hoa`"
+
+autfilt --has-univ-branch --has-exist-branch --dot=bans alt.hoa >alt.dot
+
+cat >expect.dot <<EOF
+digraph "" {
+  rankdir=LR
+  label="Fin(⓿)\n[co-Büchi]"
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  I [label="", style=invis, width=0]
+  I -> -11 [arrowhead=onormal]
+  subgraph cluster_0 {
+  color=green
+  label=""
+  2 [label="G(a)"]
+  }
+  subgraph cluster_1 {
+  color=red
+  label=""
+  1 [label="FG(a)\n⓿"]
+  }
+  subgraph cluster_2 {
+  color=green
+  label=""
+  6 [label="t"]
+  }
+  subgraph cluster_3 {
+  color=red
+  label=""
+  4 [label="F(b)\n⓿"]
+  }
+  subgraph cluster_4 {
+  color=green
+  label=""
+  3 [label="GF(b)"]
+  -8 [label=<>,shape=point,width=0.05,height=0.05]
+  }
+  subgraph cluster_5 {
+  color=red
+  label=""
+  5 [label="((a) U (b))\n⓿"]
+  }
+  subgraph cluster_6 {
+  color=black
+  label=""
+  0 [label="((((a) U (b)) && GF(b)) && FG(a))"]
+  }
+  -11 [label=<>,shape=point,width=0.05,height=0.05]
+  -11 -> 0
+  -11 -> 2
+  0 -> -1 [label="b", arrowhead=onormal]
+  -1 [label=<>,shape=point,width=0.05,height=0.05]
+  -1 -> 1
+  -1 -> 3
+  0 -> -4 [label="a & !b", style=bold, color="#E31A1C", arrowhead=onormal]
+  -4 [label=<>,shape=point,width=0.05,height=0.05]
+  -4 -> 1 [style=bold, color="#E31A1C"]
+  -4 -> 3 [style=bold, color="#E31A1C"]
+  -4 -> 5 [style=bold, color="#E31A1C"]
+  1 -> 2 [label="a"]
+  1 -> 1 [label="1"]
+  2 -> 2 [label="a"]
+  3 -> 3 [label="b"]
+  3 -> -8 [label="!b", style=bold, color="#FF7F00", arrowhead=onormal]
+  -8 -> 3 [style=bold, color="#FF7F00"]
+  -8 -> 4 [style=bold, color="#FF7F00"]
+  4 -> 6 [label="b"]
+  4 -> 4 [label="!b"]
+  5 -> 6 [label="b"]
+  5 -> 5 [label="a & !b"]
+  6 -> 6 [label="1"]
+}
+EOF
+
+diff expect.dot alt.dot
+
+autfilt --trust=no --check=strength alt.hoa | grep properties: >output
+cat >expected <<EOF
+properties: trans-labels explicit-labels state-acc univ-branch
+properties: very-weak
+EOF
+diff output expected
+
+
+cat >out.hoa <<EOF
+HOA: v1
+tool: "ltl3dra" "0.2.2"
+name: "VWAA for GFa"
+States: 3
+Start: 0
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+AP: 1 "a"
+properties: trans-labels explicit-labels state-acc univ-branch very-weak
+--BODY--
+State: 0 "GF(a)"
+ [t] 0&1
+State: 1 "F(a)" {0}
+ [(0)] 2
+ [t] 1
+State: 2 "t"
+ [t] 2
+--END--
+EOF
+test 3 = `autfilt --stats=%s out.hoa`
+test 2 = `autfilt --tgba --stats=%s out.hoa`
+
+# If we have a weak input, remove-fin can just transform co-Büchi into
+# Büchi.
+autfilt --remove-fin out.hoa >res
+cat >expected <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete univ-branch
+properties: very-weak
+--BODY--
+State: 0 {0}
+[t] 0&1
+State: 1
+[0] 2
+[t] 1
+State: 2 {0}
+[t] 2
+--END--
+EOF
+diff expected res
+
+# If we do not know that the input is weak, remove-fin will call
+# remove_alternation().
+autfilt --remove-fin --trust-hoa=no out.hoa >res
+cat >expected <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete
+--BODY--
+State: 0
+[t] 1
+State: 1
+[t] 1
+[0] 1 {0}
+--END--
+EOF
+diff expected res
+
+
+cat >ex1<<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic univ-branch
+--BODY--
+State: 0
+[0] 0
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+--END--
+EOF
+
+cat >ex2<<EOF
+HOA: v1
+States: 3
+Start: 0&1
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic univ-branch
+--BODY--
+State: 0
+[0] 0
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+--END--
+EOF
+
+cat >ex3<<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic univ-branch
+--BODY--
+State: 0
+[0] 1
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+--END--
+EOF
+
+autfilt --has-exist-branch ex3 && exit 1
+
+autfilt -q --equivalent-to=ex1 ex2
+autfilt -q --included-in=ex1 ex2
+autfilt -q --equivalent-to=ex1 ex3 && exit 1
+autfilt -q --intersect=ex1 ex3
+
+
+cat >ex4<<EOF
+HOA: v1
+States: 5
+Start: 0&2
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+properties: univ-branch
+--BODY--
+State: 0
+[0] 0
+[!0] 0&2
+State: 1
+[t] 1&4
+State: 2
+[!0] 2 {0}
+[0] 3
+State: 3
+[t] 3
+State: 4
+--END--
+HOA: v1
+States: 5
+Start: 0&2&4
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+properties: univ-branch
+--BODY--
+State: 0
+[0] 0
+[!0] 0&2
+State: 1
+[t] 1&4
+State: 2
+[!0] 2 {0}
+[0] 3
+State: 3
+[t] 3
+State: 4
+--END--
+EOF
+
+cat >expect4<<EOF
+HOA: v1
+States: 3
+Start: 0&1
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic univ-branch
+--BODY--
+State: 0
+[0] 0
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+--END--
+HOA: v1
+States: 4
+Start: 0&1&3
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+properties: univ-branch
+--BODY--
+State: 0
+[0] 0
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+State: 3
+--END--
+EOF
+
+cat >expect4d<<EOF
+HOA: v1
+States: 3
+Start: 0&1
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic univ-branch
+--BODY--
+State: 0
+[0] 0
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: stutter-invariant weak
+--BODY--
+State: 0
+--END--
+EOF
+
+run 0 autfilt --remove-unreachable-states ex4 > out4
+diff expect4 out4
+run 0 autfilt --remove-dead-states ex4 > out4
+diff expect4d out4
+
+
+cat >ex5<<EOF
+HOA: v1
+States: 2
+Start: 0&1
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+--BODY--
+State: 0
+State: 1
+--END--
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+Acceptance: 0 t
+--BODY--
+State: 0
+[0] 1&2
+[!0] 1
+State: 1
+[!0] 1
+State: 2
+--END--
+HOA: v1
+States: 4
+Start: 0&1
+AP: 1 "a"
+Acceptance: 0 t
+--BODY--
+State: 0
+[0] 1&2
+State: 1
+[!0] 1&0&3
+State: 2
+State: 3
+[t] 3
+--END--
+EOF
+
+run 0 autfilt --remove-dead-states ex5 > out5
+cat >expect <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: stutter-invariant weak
+--BODY--
+State: 0
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[!0] 1
+State: 1
+[!0] 1
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+properties: stutter-invariant weak
+--BODY--
+State: 0
+--END--
+EOF
+diff out5 expect
+
+# Test if split option with color is correct
+cat >ex6<<EOF
+HOA: v1.1
+States: 2
+Start: 0&1
+AP: 3 "c" "b" "a"
+Acceptance: 1 Fin(0)
+spot.highlight.edges: 2 1 3 2
+--BODY--
+State: 0
+[!0&!2] 0
+[!0&1&2] 0&1
+[!0&2] 0&1
+State: 1
+[1] 1
+--END--
+EOF
+
+run 0 autfilt --dot='baryf(Lato)' ex6 > ex6.dot
+
+style='arrowhead=onormal'
+cat >expect6.dot<<EOF
+digraph "" {
+  rankdir=LR
+  label=<Fin(<font color="#1F78B4">⓿</font>)<br/>[co-Büchi]>
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  fontname="Lato"
+  node [fontname="Lato"]
+  edge [fontname="Lato"]
+  I [label="", style=invis, width=0]
+  I -> -1 [arrowhead=onormal]
+  -1 [label=<>,shape=point,width=0.05,height=0.05]
+  -1 -> 0
+  -1 -> 1
+  0 [label=<0>]
+  0 -> 0 [label=<!a &amp; !c>]
+  0 -> -1.1 [label=<a &amp; b &amp; !c>, style=bold, color="#FF4DA0", $style]
+  -1.1 [label=<>,shape=point,width=0.05,height=0.05]
+  -1.1 -> 0 [style=bold, color="#FF4DA0"]
+  -1.1 -> 1 [style=bold, color="#FF4DA0"]
+  0 -> -1.2 [label=<a &amp; !c>, style=bold, color="#FF7F00", arrowhead=onormal]
+  -1.2 [label=<>,shape=point,width=0.05,height=0.05]
+  -1.2 -> 0 [style=bold, color="#FF7F00"]
+  -1.2 -> 1 [style=bold, color="#FF7F00"]
+  1 [label=<1>]
+  1 -> 1 [label=<b>]
+}
+EOF
+diff ex6.dot expect6.dot
+
+cat >ex7<<EOF
+HOA: v1
+tool: "LTL3HOA"
+name: "SLAA for c R (c | G(a & b) | (F!b & F!a))"
+States: 5
+AP: 3 "c" "a" "b"
+Start: 0
+Acceptance: 2 Fin(1) & Fin(0)
+--BODY--
+State: 0 "c R (c | G(a & b) | (F!b & F!a))"
+  [(0)] 4
+  [(!0 & !1 & !2)] 0
+  [(!0 & 1 & 2)] 0&1
+  [(!0 & 1 & !2)] 0&2
+  [(!0 & !1 & 2)] 0&3
+  [(!0 & 1 & 2)] 0&2&3
+State: 1 "G(a & b)"
+  [(1 & 2)] 1
+State: 2 "F!a"
+  [(!1)] 4
+  [(1)] 2 {1}
+State: 3 "F!b"
+  [(!2)] 4
+  [(2)] 3 {0}
+State: 4 "t"
+  [t] 4
+--END--
+EOF
+
+run 0 autfilt --dot='sbarf(Lato)' ex7 > ex7.dot
+
+color='<font color="#1F78B4">⓿</font>'
+color1='<font color="#FF4DA0">❶</font>'
+cat >expect7.dot<<EOF
+digraph "SLAA for c R (c | G(a & b) | (F!b & F!a))" {
+  rankdir=LR
+  label=<Fin($color1) &amp; Fin($color)<br/>[Streett-like 2]>
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  fontname="Lato"
+  node [fontname="Lato"]
+  edge [fontname="Lato"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  subgraph cluster_0 {
+  color=green
+  label=""
+  4 [label=<t>]
+  }
+  subgraph cluster_1 {
+  color=green
+  label=""
+  1 [label=<G(a &amp; b)>]
+  }
+  subgraph cluster_2 {
+  color=red
+  label=""
+  2 [label=<F!a>]
+  }
+  subgraph cluster_3 {
+  color=red
+  label=""
+  3 [label=<F!b>]
+  }
+  subgraph cluster_4 {
+  color=green
+  label=""
+  0 [label=<c R (c | G(a &amp; b) | (F!b &amp; F!a))>]
+  -1 [label=<>,shape=point,width=0.05,height=0.05]
+  -4 [label=<>,shape=point,width=0.05,height=0.05]
+  -7 [label=<>,shape=point,width=0.05,height=0.05]
+  -10 [label=<>,shape=point,width=0.05,height=0.05]
+  }
+  0 -> 4 [label=<c>]
+  0 -> 0 [label=<!a &amp; !b &amp; !c>]
+  0 -> -1 [label=<a &amp; b &amp; !c>, arrowhead=onormal]
+  -1 -> 0
+  -1 -> 1
+  0 -> -4 [label=<a &amp; !b &amp; !c>, arrowhead=onormal]
+  -4 -> 0
+  -4 -> 2
+  0 -> -7 [label=<!a &amp; b &amp; !c>, arrowhead=onormal]
+  -7 -> 0
+  -7 -> 3
+  0 -> -10 [label=<a &amp; b &amp; !c>, arrowhead=onormal]
+  -10 -> 0
+  -10 -> 2
+  -10 -> 3
+  1 -> 1 [label=<a &amp; b>]
+  2 -> 4 [label=<!a>]
+  2 -> 2 [label=<a<br/><font color="#FF4DA0">❶</font>>]
+  3 -> 4 [label=<!b>]
+  3 -> 3 [label=<b<br/><font color="#1F78B4">⓿</font>>]
+  4 -> 4 [label=<1>]
+}
+EOF
+
+diff ex7.dot expect7.dot
+
+cat >ex8<<EOF
+HOA: v1
+tool: "LTL3HOA"
+name: "SLAA for c R (c | G(a & b) | (F!b & F!a))"
+States: 5
+AP: 3 "c" "a" "b"
+Start: 0
+Acceptance: 2 Fin(1) & Fin(0)
+--BODY--
+State: 0 "c R (c | G(a & b) | (F!b & F!a))"
+  [(0)] 4
+  [(!0 & !1 & !2)] 0
+  [(!0 & 1 & 2)] 0&1
+  [(!0 & 1 & !2)] 0&2
+  [(!0 & !1 & 2)] 0&3
+State: 1 "G(a & b)"
+  [(1 & 2)] 1
+  [(!0 & 1 & 2)] 0&2&3
+State: 2 "F!a"
+  [(!1)] 4
+  [(1)] 2 {1}
+State: 3 "F!b"
+  [(!2)] 4
+  [(2)] 3 {0}
+State: 4 "t"
+  [t] 4
+--END--
+EOF
+
+run 0 autfilt --has-exist-branch --dot='sbarf(Lato)' ex8 > ex8.dot
+
+cat >expect8.dot<<EOF
+digraph "SLAA for c R (c | G(a & b) | (F!b & F!a))" {
+  rankdir=LR
+  label=<Fin($color1) &amp; Fin($color)<br/>[Streett-like 2]>
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  fontname="Lato"
+  node [fontname="Lato"]
+  edge [fontname="Lato"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  subgraph cluster_0 {
+  color=green
+  label=""
+  4 [label=<t>]
+  }
+  subgraph cluster_1 {
+  color=red
+  label=""
+  2 [label=<F!a>]
+  }
+  subgraph cluster_2 {
+  color=red
+  label=""
+  3 [label=<F!b>]
+  }
+  subgraph cluster_3 {
+  color=green
+  label=""
+  0 [label=<c R (c | G(a &amp; b) | (F!b &amp; F!a))>]
+  -1 [label=<>,shape=point,width=0.05,height=0.05]
+  -4 [label=<>,shape=point,width=0.05,height=0.05]
+  -7 [label=<>,shape=point,width=0.05,height=0.05]
+  1 [label=<G(a &amp; b)>]
+  -10 [label=<>,shape=point,width=0.05,height=0.05]
+  }
+  0 -> 4 [label=<c>]
+  0 -> 0 [label=<!a &amp; !b &amp; !c>]
+  0 -> -1 [label=<a &amp; b &amp; !c>, arrowhead=onormal]
+  -1 -> 0
+  -1 -> 1
+  0 -> -4 [label=<a &amp; !b &amp; !c>, arrowhead=onormal]
+  -4 -> 0
+  -4 -> 2
+  0 -> -7 [label=<!a &amp; b &amp; !c>, arrowhead=onormal]
+  -7 -> 0
+  -7 -> 3
+  1 -> 1 [label=<a &amp; b>]
+  1 -> -10 [label=<a &amp; b &amp; !c>, arrowhead=onormal]
+  -10 -> 0
+  -10 -> 2
+  -10 -> 3
+  2 -> 4 [label=<!a>]
+  2 -> 2 [label=<a<br/><font color="#FF4DA0">❶</font>>]
+  3 -> 4 [label=<!b>]
+  3 -> 3 [label=<b<br/><font color="#1F78B4">⓿</font>>]
+  4 -> 4 [label=<1>]
+}
+EOF
+
+diff ex8.dot expect8.dot
+
+cat >ex9 <<EOF
+HOA: v1.1
+States:3
+Start: 0
+AP: 3 "c" "b" "a"
+Acceptance: 1 Fin(0)
+spot.highlight.edges: 1 1 2 1 3 2
+--BODY--
+State: 0
+[0&1] 1&2
+State: 1
+[1&2] 1&2
+State: 2
+[!0&!1&!2] 1&2
+--END--
+EOF
+
+run 0 autfilt -v --has-exist-branch --dot='baryf(Lato)' ex9 > ex9.dot
+
+cat >expect9.dot <<EOF
+digraph "" {
+  rankdir=LR
+  label=<Fin(<font color="#1F78B4">⓿</font>)<br/>[co-Büchi]>
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  fontname="Lato"
+  node [fontname="Lato"]
+  edge [fontname="Lato"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label=<0>]
+  0 -> -1.1 [label=<b &amp; c>, style=bold, color="#FF4DA0", arrowhead=onormal]
+  -1.1 [label=<>,shape=point,width=0.05,height=0.05]
+  -1.1 -> 1 [style=bold, color="#FF4DA0"]
+  -1.1 -> 2 [style=bold, color="#FF4DA0"]
+  1 [label=<1>]
+  1 -> -1.1 [label=<a &amp; b>, style=bold, color="#FF4DA0", arrowhead=onormal]
+  2 [label=<2>]
+  2 -> -1.2 [label=<!a &amp; !b &amp; !c>, style=bold, color="#FF7F00", $style]
+  -1.2 [label=<>,shape=point,width=0.05,height=0.05]
+  -1.2 -> 1 [style=bold, color="#FF7F00"]
+  -1.2 -> 2 [style=bold, color="#FF7F00"]
+}
+EOF
+
+diff ex9.dot expect9.dot
+
+cat >ex10 <<EOF
+HOA: v1.1
+States:3
+Start: 0
+AP: 3 "c" "b" "a"
+Acceptance: 1 Fin(0)
+spot.highlight.edges: 1 1 2 3 3 2
+--BODY--
+State: 0
+[0&1] 1&2
+State: 1
+[1&2] 1&2
+State: 2
+[!0&!1&!2] 1&2
+--END--
+EOF
+
+run 0 autfilt --dot='baryf(Lato)' ex10 > ex10.dot
+
+cat >expect10.dot <<EOF
+digraph "" {
+  rankdir=LR
+  label=<Fin(<font color="#1F78B4">⓿</font>)<br/>[co-Büchi]>
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  fontname="Lato"
+  node [fontname="Lato"]
+  edge [fontname="Lato"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label=<0>]
+  0 -> -1.1 [label=<b &amp; c>, style=bold, color="#FF4DA0", arrowhead=onormal]
+  -1.1 [label=<>,shape=point,width=0.05,height=0.05]
+  -1.1 -> 1 [style=bold, color="#FF4DA0"]
+  -1.1 -> 2 [style=bold, color="#FF4DA0"]
+  1 [label=<1>]
+  1 -> -1.3 [label=<a &amp; b>, style=bold, color="#6A3D9A", arrowhead=onormal]
+  -1.3 [label=<>,shape=point,width=0.05,height=0.05]
+  -1.3 -> 1 [style=bold, color="#6A3D9A"]
+  -1.3 -> 2 [style=bold, color="#6A3D9A"]
+  2 [label=<2>]
+  2 -> -1.2 [label=<!a &amp; !b &amp; !c>, style=bold, color="#FF7F00", $style]
+  -1.2 [label=<>,shape=point,width=0.05,height=0.05]
+  -1.2 -> 1 [style=bold, color="#FF7F00"]
+  -1.2 -> 2 [style=bold, color="#FF7F00"]
+}
+EOF
+
+diff ex10.dot expect10.dot
+
+cat >ex11 <<EOF
+HOA: v1
+tool: "LTL3HOA"
+name: "SLAA for G((b & Fa) | (!b & G!a))"
+States: 4
+AP: 2 "b" "a"
+Start: 0
+Acceptance: 1 Fin(0)
+--BODY--
+State: 0 "G((b & Fa) | (!b & G!a))"
+  [(0 & 1)] 0
+  [(0 & !1)] 0&1
+  [(!0 & !1)] 0&2
+State: 1 "Fa"
+  [(1)] 3
+  [(!1)] 1 {1}
+State: 2 "G!a"
+  [(!1)] 2
+State: 3 "t"
+  [t] 3
+--END--
+EOF
+
+run 2 autfilt --dot='sbarf(Lato)' ex11 > ex11.dot
+
+cat >expect11.dot <<EOF
+digraph "SLAA for G((b & Fa) | (!b & G!a))" {
+  rankdir=LR
+  label=<Fin(<font color="#1F78B4">⓿</font>)<br/>[co-Büchi]>
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  fontname="Lato"
+  node [fontname="Lato"]
+  edge [fontname="Lato"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  subgraph cluster_0 {
+  color=green
+  label=""
+  3 [label=<t>]
+  }
+  subgraph cluster_1 {
+  color=green
+  label=""
+  1 [label=<Fa>]
+  }
+  subgraph cluster_2 {
+  color=green
+  label=""
+  2 [label=<G!a>]
+  }
+  subgraph cluster_3 {
+  color=green
+  label=""
+  0 [label=<G((b &amp; Fa) | (!b &amp; G!a))>]
+  -1 [label=<>,shape=point,width=0.05,height=0.05]
+  -4 [label=<>,shape=point,width=0.05,height=0.05]
+  }
+  0 -> 0 [label=<a &amp; b>]
+  0 -> -1 [label=<!a &amp; b>, arrowhead=onormal]
+  -1 -> 0
+  -1 -> 1
+  0 -> -4 [label=<!a &amp; !b>, arrowhead=onormal]
+  -4 -> 0
+  -4 -> 2
+  1 -> 3 [label=<a>]
+  1 -> 1 [label=<!a>]
+  2 -> 2 [label=<!a>]
+  3 -> 3 [label=<1>]
+}
+EOF
+
+diff ex11.dot expect11.dot
+
+# Detect cases where alternation-removal cannot work.
+cat >in <<EOF
+HOA: v1
+name: "SLAA for p1 & FGp1"
+States: 3
+Start: 0&1
+AP: 1 "p1"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+properties: univ-branch
+--BODY--
+State: 0 "p1"
+[0] 2
+State: 1 "FGp1"
+[0] 1
+[!0] 1 {0}
+State: 2 "t"
+[t] 2
+--END--
+EOF
+autfilt --tgba in 2>out && exit 1
+grep 'autfilt.*weak.*alternating' out
+test '0 2 2 1'  = "`autfilt --stats='%[Wiw]c %[w]c %[iw]c %[W]c' in`"
+
+cat >in <<EOF
+HOA: v1
+States: 4
+AP: 2 "a" "b"
+Start: 0&1
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[0] 2
+State: 2 /*{0}*/
+[0] 0
+State: 1 {0}
+[1] 3
+State: 3 /*{0}*/
+[1] 1
+--END--
+EOF
+autfilt --tgba in 2>out && exit 1
+grep 'autfilt.*weak.*alternating' out
+test '2 0 2 2'  = "`autfilt --stats='%[Wiw]c %[w]c %[iw]c %[W]c' in`"
+
+
+cat >in <<EOF
+HOA: v1
+States: 2
+AP: 1 "a"
+Start: 0
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[0] 1&0 {0}
+[!0] 0
+State: 1
+[t] 0&1
+--END--
+EOF
+test '0 1 1 0 0'  = "`autfilt --stats='%[iw]c %[W]c %[c]c %[C]c %[t]c' in`"
+
+cat >in <<EOF
+HOA: v1
+States: 3
+AP: 1 "a"
+Start: 0
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[t] 0&1
+State: 1
+[0] 1&2 {0}
+[!0] 1
+State: 2
+[t] 2&1
+--END--
+EOF
+test '1 1 1 1 0'  = "`autfilt --stats='%[iw]c %[W]c %[c]c %[C]c %[t]c' in`"
+
+cat >in <<EOF
+HOA: v1
+States: 3
+AP: 1 "a"
+Start: 0
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[t] 0&1
+State: 1 {0}
+[0] 1&2
+[!0] 1
+State: 2 {0}
+[t] 2&1
+--END--
+EOF
+stats='%[iw]c_%[W]c_%[c]c_%[C]c_%[t]c_%U_%[e]U_%[s]U'
+test '2_0_1_1_1_1_3_3' = "`autfilt --stats=$stats in`"
+
+
+autfilt --stats='%[x]U' in 2>stderr && exit2
+grep '%\[x\]U' stderr

@@ -1,0 +1,41 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015, 2017 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test ltl2dstar's HOA output with ltlcross.
+
+. ./defs
+set -e
+
+# Skip this test if ltl2dstar is not installed.
+(ltl2dstar --version) || exit 77
+
+RAB='--automata=rabin --output-format=hoa'
+STR='--automata=streett --output-format=hoa'
+
+# Run ltlcross without product, because this requires too much memory.
+randltl -n 25 a b | ltlfilt --remove-wm |
+ltlcross -F- -f 'GFa & GFb & GFc' -f '(GFa -> GFb) & (GFc -> GFd)' \
+--timeout=30 --verbose --csv=out.csv --products=0 \
+"ltl2tgba -s %f >%N" \
+"ltl2dstar $RAB --ltl2nba=spin:ltl2tgba@-s %L %H" \
+"ltl2dstar $STR --ltl2nba=spin:ltl2tgba@-s %L %H"
+
+grep '"in_type"' out.csv && exit 1
+exit 0

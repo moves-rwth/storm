@@ -1,0 +1,334 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014, 2017, 2019 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+# This failure to produce a deterministic automaton was noticed by
+# Alexandre Lewkowicz.
+
+# The following is the output of
+#   ltlfilt -f 'G(F!a | (Fb U c))' -l |
+#     ltl2dstar --ltl2nba=spin:$HOME/usr/bin/ltl2tgba@-s - -
+
+cat > in.dra <<EOF
+DRA v2 explicit
+Comment: "Safra[NBA=8]"
+States: 29
+Acceptance-Pairs: 3
+Start: 7
+AP: 3 "a" "b" "c"
+---
+State: 0
+Acc-Sig: -2
+21
+0
+20
+1
+15
+4
+13
+22
+State: 1
+Acc-Sig: -2
+21
+0
+20
+1
+13
+22
+13
+22
+State: 2
+Acc-Sig: -2
+15
+3
+13
+12
+15
+2
+13
+14
+State: 3
+Acc-Sig: -2
+16
+3
+20
+12
+15
+2
+13
+14
+State: 4
+Acc-Sig: -2
+15
+3
+13
+12
+15
+4
+13
+22
+State: 5
+Acc-Sig: -2
+15
+17
+13
+12
+15
+5
+13
+14
+State: 6
+Acc-Sig: -2
+28
+6
+20
+18
+15
+5
+13
+14
+State: 7
+Acc-Sig: -1 -2
+13
+19
+13
+18
+13
+13
+13
+13
+State: 8
+Acc-Sig: -1 -2
+23
+9
+13
+1
+23
+8
+13
+22
+State: 9
+Acc-Sig: -1 -2
+24
+9
+20
+1
+23
+8
+13
+22
+State: 10
+Acc-Sig: -1 -2
+26
+11
+25
+10
+13
+22
+13
+22
+State: 11
+Acc-Sig: -1 -2
+26
+11
+25
+10
+23
+8
+13
+22
+State: 12
+Acc-Sig: +0 -1 -2
+21
+0
+20
+1
+13
+22
+13
+22
+State: 13
+Acc-Sig: +0 -1 -2
+13
+11
+13
+10
+13
+13
+13
+13
+State: 14
+Acc-Sig: +0 -1 -2
+13
+19
+13
+18
+13
+22
+13
+22
+State: 15
+Acc-Sig: +0 -1 -2
+23
+6
+13
+18
+23
+23
+13
+13
+State: 16
+Acc-Sig: +0 -1 -2
+24
+6
+20
+18
+23
+23
+13
+13
+State: 17
+Acc-Sig: +0 -1 -2
+24
+9
+20
+1
+23
+8
+13
+22
+State: 18
+Acc-Sig: +0 -1 -2
+26
+11
+25
+10
+13
+22
+13
+22
+State: 19
+Acc-Sig: +0 -1 -2
+26
+11
+25
+10
+23
+8
+13
+22
+State: 20
+Acc-Sig: +0 -1 -2
+26
+19
+25
+18
+13
+13
+13
+13
+State: 21
+Acc-Sig: +0 -1 -2
+26
+19
+25
+18
+23
+23
+13
+13
+State: 22
+Acc-Sig: +1 -2
+13
+19
+13
+18
+13
+22
+13
+22
+State: 23
+Acc-Sig: +1 -2
+23
+6
+13
+18
+23
+23
+13
+13
+State: 24
+Acc-Sig: +1 -2
+24
+6
+20
+18
+23
+23
+13
+13
+State: 25
+Acc-Sig: +1 -2
+26
+19
+25
+18
+13
+13
+13
+13
+State: 26
+Acc-Sig: +1 -2
+26
+19
+25
+18
+23
+23
+13
+13
+State: 27
+Acc-Sig: +1 -2
+28
+6
+20
+18
+15
+5
+13
+14
+State: 28
+Acc-Sig: +2
+28
+27
+20
+18
+15
+15
+13
+13
+EOF
+
+autcross 'dstar2tgba -D' --language-preserved -F in.dra --csv=out.csv
+cat out.csv
+grep '3,17,104,136,1,1,0,0,0$' out.csv

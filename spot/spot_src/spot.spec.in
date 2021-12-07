@@ -1,0 +1,186 @@
+Name:           spot
+Version:        @VERSION@
+Release:        @GITPATCH@%{?dist}
+Summary:        Model checking and omega-automata manipulation library
+
+License:        GPLv3
+URL:            https://spot.lrde.epita.fr
+
+Source0:        http://www.lrde.epita.fr/dload/spot/%{name}-%{version}.tar.gz
+
+BuildRequires:  make
+BuildRequires:  automake
+BuildRequires:  autoconf
+BuildRequires:  gcc-c++
+BuildRequires:  swig
+BuildRequires:  python3-devel
+BuildRequires:  python3-ipykernel
+BuildRequires:  python3-nbformat
+BuildRequires:  graphviz
+BuildRequires:  chrpath
+
+#-- main spot rpm -------------------------------------------------------------
+Requires: libspot = %{version}-%{release}
+
+%description
+Tools to manipulate omega-automata as well as linear-time temporal
+logic (LTL & PSL).
+
+%files
+%{_bindir}/autcross
+%{_bindir}/autfilt
+%{_bindir}/dstar2tgba
+%{_bindir}/genaut
+%{_bindir}/genltl
+%{_bindir}/ltl2tgba
+%{_bindir}/ltl2tgta
+%{_bindir}/ltlcross
+%{_bindir}/ltldo
+%{_bindir}/ltlfilt
+%{_bindir}/ltlgrind
+%{_bindir}/ltlsynt
+%{_bindir}/randaut
+%{_bindir}/randltl
+%{_mandir}/man1/autcross.1*
+%{_mandir}/man1/autfilt.1*
+%{_mandir}/man1/dstar2tgba.1*
+%{_mandir}/man1/genaut.1*
+%{_mandir}/man1/genltl.1*
+%{_mandir}/man1/ltl2tgba.1*
+%{_mandir}/man1/ltl2tgta.1*
+%{_mandir}/man1/ltlcross.1*
+%{_mandir}/man1/ltldo.1*
+%{_mandir}/man1/ltlfilt.1*
+%{_mandir}/man1/ltlgrind.1*
+%{_mandir}/man1/ltlsynt.1*
+%{_mandir}/man1/randaut.1*
+%{_mandir}/man1/randltl.1*
+%{_mandir}/man7/spot-x.7*
+%{_mandir}/man7/spot.7*
+%license COPYING
+%doc AUTHORS COPYING NEWS README THANKS
+
+#-- the spot library ----------------------------------------------------------
+%package -n libspot
+Summary:  Model checking and omega-automata manipulation library
+Provides: libspot = %{version}-%{release}
+
+%description -n libspot
+Library to manipulate omega-automata as well as linear-time temporal
+logic (LTL & PSL).
+
+%files -n libspot
+%{_libdir}/libbddx.a
+%{_libdir}/libbddx.la
+%{_libdir}/libbddx.so*
+%{_libdir}/libspot.a
+%{_libdir}/libspot.la
+%{_libdir}/libspot.so*
+%{_libdir}/libspotgen.a
+%{_libdir}/libspotgen.la
+%{_libdir}/libspotgen.so*
+%{_libdir}/libspotltsmin.a
+%{_libdir}/libspotltsmin.la
+%{_libdir}/libspotltsmin.so*
+%license COPYING
+%doc AUTHORS COPYING NEWS README THANKS
+
+#-- development headers for libspot -------------------------------------------
+%package devel
+Summary:  Headers for the Spot model checking library
+Requires: libspot = %{version}-%{release}
+
+%description devel
+C++ headers for the Spot library.
+
+%files devel
+%{_libdir}/pkgconfig/libbddx.pc
+%{_libdir}/pkgconfig/libspot.pc
+%{_libdir}/pkgconfig/libspotgen.pc
+%{_libdir}/pkgconfig/libspotltsmin.pc
+%{_includedir}/bddx.h
+%{_includedir}/bvecx.h
+%{_includedir}/fddx.h
+%dir %{_includedir}/spot
+%{_includedir}/spot/*
+%license COPYING
+%doc AUTHORS COPYING NEWS README THANKS
+
+#-- python bindings -----------------------------------------------------------
+%package -n python3-spot
+Summary:  Python 3 binding for Spot
+Requires: libspot = %{version}-%{release}
+
+%description -n python3-spot
+Spot allows manipulation of omega-automata as well as linear-time
+temporal logic (LTL & PSL).
+
+%files -n python3-spot
+%{python3_sitearch}/__pycache__/buddy.cpython-*.pyc
+%{python3_sitearch}/buddy.py
+%dir %{python3_sitearch}/spot
+%{python3_sitearch}/spot/*
+%{python3_sitearch}/_buddy.a
+%{python3_sitearch}/_buddy.la
+%{python3_sitearch}/_buddy.so
+%license COPYING
+%doc AUTHORS COPYING NEWS README THANKS
+
+#-- separate documentation package --------------------------------------------
+%package doc
+Summary: Documentation for Spot
+
+%description doc
+HTML and PDF documentation for Spot.
+
+%files doc
+%doc doc/userdoc
+%doc /usr/share/doc/spot/tl.pdf
+%license COPYING
+%doc AUTHORS COPYING NEWS README THANKS
+
+
+#-- build ---------------------------------------------------------------------
+%prep
+%autosetup
+
+
+%build
+%configure --disable-devel --enable-optimizations
+%make_build
+
+
+%install
+%make_install
+
+# remove rpaths
+chrpath --delete $RPM_BUILD_ROOT%{python3_sitearch}/spot/_ltsmin.so
+chrpath --delete $RPM_BUILD_ROOT%{python3_sitearch}/spot/_gen.so
+chrpath --delete $RPM_BUILD_ROOT%{python3_sitearch}/spot/_impl.so
+chrpath --delete $RPM_BUILD_ROOT%{python3_sitearch}/_buddy.so
+chrpath --delete $RPM_BUILD_ROOT%{_libdir}/libspotgen.so.0.0.0
+chrpath --delete $RPM_BUILD_ROOT%{_libdir}/libspotltsmin.so.0.0.0
+chrpath --delete $RPM_BUILD_ROOT%{_libdir}/libspot.so.0.0.0
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/autcross
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/autfilt
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/dstar2tgba
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/genaut
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/genltl
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/ltl2tgba
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/ltl2tgta
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/ltlcross
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/ltldo
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/ltlfilt
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/ltlgrind
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/ltlsynt
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/randaut
+chrpath --delete $RPM_BUILD_ROOT%{_bindir}/randltl
+
+
+%check
+make check
+
+
+%changelog
+* Tue Jun 19 2018 Antoine Martin <amartin@lrde.epita.fr>
+- Initial packaging

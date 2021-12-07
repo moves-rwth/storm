@@ -1,0 +1,83 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010, 2011, 2013 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+cat >obligations.txt <<EOF
+G(!p)
+Fr->(!p U r)
+G(q->G(!p))
+G((q&!r&Fr)->(!p U r))
+G(q&!r->((!p U r)|G!p))
+Fp
+(!r U (p&!r))|(G!r)
+G(!q)|F(q&Fp)
+G(q&!r->((!r U (p&!r))|G!r))
+(!p U ((p U ((!p U ((p U G!p)|Gp))|G!p))|Gp))|G!p
+Fr->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|(!p U r)))))))))
+Fq->(!q U (q&((!p U ((p U ((!p U ((p U G!p)|Gp))|G!p))|Gp))|G!p)))
+G((q&Fr)->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|(!p U r))))))))))
+G(q->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|((!p U r)|G!p)|Gp)))))))))
+G(p)
+Fr->(p U r)
+G(q->G(p))
+G((p&!r&Fr)->(p U r))
+G(q&!r->((p U r)|Gp))
+(!p U s)|Gp
+Fr->(!p U (s|r))
+G((q&!r&Fr)->(!p U (s|r)))
+G(q&!r->((!p U (s|r))|G!p))
+Fr->(p->(!r U (s&!r))) U r
+G((q&!r&Fr)->(p->(!r U (s&!r))) U r)
+Fp->(!p U (s&!p&X(!p U t)))
+Fr->(!p U (r|(s&!p&X(!p U t))))
+(G!q)|(!q U (q&Fp->(!p U (s&!p&X(!p U t)))))
+G((q&Fr)->(!p U (r|(s&!p&X(!p U t)))))
+G(q->(Fp->(!p U (r|(s&!p&X(!p U t))))))
+(F(s&XFt))->((!s) U p)
+Fr->((!(s&(!r)&X(!r U (t&!r))))U(r|p))
+(G!q)|((!q)U(q&((F(s&XFt))->((!s) U p))))
+G((q&Fr)->((!(s&(!r)&X(!r U (t&!r))))U(r|p)))
+G(q->(!(s&(!r)&X(!r U (t&!r)))U(r|p)|G(!(s&XFt))))
+Fr->(s&X(!r U t)->X(!r U (t&Fp))) U r
+Fr->(p->(!r U (s&!r&X(!r U t)))) U r
+G((q&Fr)->(p->(!r U (s&!r&X(!r U t)))) U r)
+Fr->(p->(!r U (s&!r&!z&X((!r&!z) U t)))) U r
+G((q&Fr)->(p->(!r U (s&!r&!z&X((!r&!z) U t)))) U r)
+EOF
+
+LTL2TGBA=../../src/tests/ikwiad
+
+(
+line=0
+echo "# form. nbr., states, trans., states minimized, trans. minimized, formula"
+while read f; do
+  "$LTL2TGBA" -f -r7 -x -R3 -DS -kt "!($f)" >out
+  states=`sed -n 's/^states: \([0-9]*\)$/\1/p' out`
+  transitions=`sed -n 's/^sub trans.: \([0-9]*\)$/\1/p' out`
+
+  "$LTL2TGBA" -f -r1 -R3 -Rm -kt "!($f)" >out
+  states2=`sed -n 's/^states: \([0-9]*\)$/\1/p' out`
+  transitions2=`sed -n 's/^sub trans.: \([0-9]*\)$/\1/p' out`
+
+  line=`expr $line + 1`
+  echo "$line, $states, $transitions, $states2, $transitions2, !($f)"
+done < obligations.txt
+) | tee results.txt
+
+rm -f out obligations.txt

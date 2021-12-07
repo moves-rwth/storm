@@ -1,0 +1,94 @@
+This benchmark shows the size of 40 obligation formulae translated by
+Spot to degeneralized state-based Büchi automata, before and after
+reductions using the WDBA technique introduced in the following paper.
+
+@InProceedings{	  dax.07.atva,
+  author	= {Christian Dax and Jochen Eisinger and Felix Klaedtke},
+  title		= {Mechanizing the Powerset Construction for Restricted
+		  Classes of {$\omega$}-Automata},
+  year		= 2007,
+  series	= {Lecture Notes in Computer Science},
+  publisher	= {Springer-Verlag},
+  volume	= 4762,
+  booktitle	= {Proceedings of the 5th International Symposium on
+		  Automated Technology for Verification and Analysis
+		  (ATVA'07)},
+  editor	= {Kedar S. Namjoshi and Tomohiro Yoneda and Teruo Higashino
+		  and Yoshio Okamura},
+  month		= oct
+}
+
+This is meant to complement the experiment 1 at
+http://www.daxc.de/eth/atva07/index.html
+
+The formulae used here are the same as the formulae used on the above
+page, and are presented in the same order.
+
+Running the `./run' script should produce an output similar to the
+following:
+
+# form. nbr., states, trans., states minimized, trans. minimized, formula
+1, 2, 4, 2, 4, !(G(!p))
+2, 3, 10, 3, 10, !(Fr->(!p U r))
+3, 3, 13, 3, 12, !(G(q->G(!p)))
+4, 4, 30, 4, 32, !(G((q&!r&Fr)->(!p U r)))
+5, 3, 21, 3, 24, !(G(q&!r->((!p U r)|G!p)))
+6, 1, 1, 1, 1, !(Fp)
+7, 2, 7, 2, 7, !((!r U (p&!r))|(G!r))
+8, 2, 5, 2, 5, !(G(!q)|F(q&Fp))
+9, 3, 23, 3, 24, !(G(q&!r->((!r U (p&!r))|G!r)))
+10, 6, 12, 6, 12, !((!p U ((p U ((!p U ((p U G!p)|Gp))|G!p))|Gp))|G!p)
+11, 7, 18, 7, 18, !(Fr->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|(!p U r))))))))))
+12, 7, 28, 7, 28, !(Fq->(!q U (q&((!p U ((p U ((!p U ((p U G!p)|Gp))|G!p))|Gp))|G!p))))
+13, 8, 46, 8, 64, !(G((q&Fr)->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|(!p U r)))))))))))
+14, 7, 38, 7, 56, !(G(q->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|((!p U r)|G!p)|Gp))))))))))
+15, 2, 4, 2, 4, !(G(p))
+16, 3, 10, 3, 10, !(Fr->(p U r))
+17, 3, 13, 3, 12, !(G(q->G(p)))
+18, 4, 15, 4, 16, !(G((p&!r&Fr)->(p U r)))
+19, 3, 21, 3, 24, !(G(q&!r->((p U r)|Gp)))
+20, 4, 12, 4, 12, !((!p U s)|Gp)
+21, 3, 18, 3, 18, !(Fr->(!p U (s|r)))
+22, 4, 54, 4, 64, !(G((q&!r&Fr)->(!p U (s|r))))
+23, 3, 37, 3, 48, !(G(q&!r->((!p U (s|r))|G!p)))
+24, 3, 19, 3, 20, !(Fr->(p->(!r U (s&!r))) U r)
+25, 4, 59, 4, 64, !(G((q&!r&Fr)->(p->(!r U (s&!r))) U r))
+26, 3, 20, 3, 20, !(Fp->(!p U (s&!p&X(!p U t))))
+27, 4, 44, 4, 44, !(Fr->(!p U (r|(s&!p&X(!p U t)))))
+28, 4, 48, 4, 48, !((G!q)|(!q U (q&Fp->(!p U (s&!p&X(!p U t))))))
+29, 5, 128, 5, 160, !(G((q&Fr)->(!p U (r|(s&!p&X(!p U t))))))
+30, 4, 92, 4, 128, !(G(q->(Fp->(!p U (r|(s&!p&X(!p U t)))))))
+31, 4, 34, 3, 20, !((F(s&XFt))->((!s) U p))
+32, 4, 46, 4, 44, !(Fr->((!(s&(!r)&X(!r U (t&!r))))U(r|p)))
+33, 5, 82, 4, 52, !((G!q)|((!q)U(q&((F(s&XFt))->((!s) U p)))))
+34, 5, 130, 5, 160, !(G((q&Fr)->((!(s&(!r)&X(!r U (t&!r))))U(r|p))))
+35, 10, 254, 4, 128, !(G(q->(!(s&(!r)&X(!r U (t&!r)))U(r|p)|G(!(s&XFt)))))
+36, 4, 36, 5, 50, !(Fr->(s&X(!r U t)->X(!r U (t&Fp))) U r)
+37, 4, 52, 4, 52, !(Fr->(p->(!r U (s&!r&X(!r U t)))) U r)
+38, 5, 148, 5, 160, !(G((q&Fr)->(p->(!r U (s&!r&X(!r U t)))) U r))
+39, 4, 104, 4, 104, !(Fr->(p->(!r U (s&!r&!z&X((!r&!z) U t)))) U r)
+40, 5, 296, 5, 320, !(G((q&Fr)->(p->(!r U (s&!r&!z&X((!r&!z) U t)))) U r))
+
+
+The first number is the number of the formula, so you can compare with
+the number displayed at http://www.daxc.de/eth/atva07/index.html.
+The second and third numbers give the number of states and transitions
+of the automaton produced by Spot (with formula simplifications and SCC
+simplifications turned on), while the fourth and fifth number show the
+number of states and transitions with an additional WDBA minimization step.
+
+When counting transitions, we are actually counting the number of
+"sub-transitions".  That is, on an automaton defined over two atomic
+properties "p" and "q", a transition labelled by "p" actually stands
+for two sub-transitions labelled by "p&q" and "p&!q".  So we are
+counting it as two transitions.
+
+You can observe that some minimized automata have more transitions:
+this is because their structure changed when they were determinized.
+Even though they have the same number of states as the non-minimized
+automaton, their states do not accept the same languages.  There is
+even one case (formula 36) where the minimized automaton got one more
+state.
+
+In two cases (formulae 31 and 35) the minimization actually removed
+states in addition to making the automata deterministic.

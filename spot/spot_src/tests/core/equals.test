@@ -1,0 +1,227 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2011, 2012, 2014, 2015 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004 Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check for the equals visitor
+
+. ./defs || exit 1
+set -e
+
+cat >equal.txt <<\EOF
+# A few things which are equal
+a, a
+~a, !a
+1, 1
+0, 0
+a => b, a --> b
+a <-> b, a <--> b
+G a ,  G a
+a U b, a U b
+a & b, a & b
+a & b, b & a
+a & b & c, c & a && b
+a & b & c, b & c & a
+a && b & a, b & a & b
+a & b, b & a & b
+a & b, b & a & a
+a & b & (c |(f U g)|| e), b & a & a & (c | e |(f U g)| e | c) & b
+a & a, a
+a & a & true, a
+a & false & a, false
+a | false | a, a
+true | a | a, true
+Ga=1*Gb=0, (G(a)) & (G(!b))
+FFx, Fx
+FFFFFx, Fx
+GGx, Gx
+GGGGGx, Gx
+!!x, x
+!!!!!x, !x
+{[*0];x}<>->1, {x}<>->1
+{x;[*0]}<>->1, {x}<>-> 1
+{[*0];x;[*0];[*0]}<>->1, {x}<>->1
+{[*0];x;[*0];x;[*0]}<>->1, {x;x}<>->1
+{x;x;x;[*0];x;x}<>->1, {x;x;x;x;x}<>->1
+{x;0;x;x;x}<>->1, 0
+{x;0;x;x;x}[]->1, 1
+{0*;1}<>->x, x
+{[*0]*;1}<>->x, x
+{x;x}<>->FF(0), 0
+{x;x}<>->GX(1), {x;x}<>->1
+{x;x}[]->GX(1), 1
+{x;x}[]->FF(0), {x;x}[]->0
+{x;x}[]->y, {x;x}|->y
+{x;x}[]->y, {x;x}(y)
+{a*}!, {a*}<>->1
+{a -> b} (c), !(a->b)|c
+{a & !b}!, a & !b
+{a;[*0]}|->!Xb, !a | !Xb
+{{a;b}:b:c:d*:e:f}!, {{a;b}:{b && c }:d[*]:{e && f}}!
+{a:b:c}|->!Xb, !(a&&b&&c) | !Xb
+{a:b:c*}|->!Xb, {(a&&b):c*}|-> !Xb
+{a&b&c*}|->!Xb, {(a&&b)&c*}|-> !Xb
+{[*]&&a&&[*]}!, a
+{[*]||a||[*]}!, {[*]}!
+{0&{f;g*}}!, 0
+{1&{f;g*}}!, {f;g*}!
+# Precedence
+a & b ^ c | d, d | c ^ b & a
+
+# Corner cases parsing
+FFG__GFF, F(F(G("__GFF")))
+
+# Trivial simplifications
+{0*}<>->a, {[*0]}<>->a
+{[*0]*}<>->a, {[*0]}<>->a
+{Exp**}<>->a, {Exp*}<>->a
+FF(Exp), F(Exp)
+GG(Exp), G(Exp)
+F(0), 0
+G(0), 0
+F(1), 1
+G(1), 1
+F({[*0]}<>->1), F({[*0]}<>->1)
+G({[*0]}<>->1), G({[*0]}<>->1)
+F({1}<>->1), 1
+G({1}<>->1), 1
+!1, 0
+!0, 1
+!!Exp, Exp
+
+(1 => Exp), Exp
+(0 => Exp), 1
+(Exp => 1), 1
+(Exp => 0), !Exp
+(Exp => Exp), 1
+(1 ^ Exp), !Exp
+(0 ^ Exp), Exp
+(Exp ^ Exp), 0
+(0 <=> Exp), !Exp
+(1 <=> Exp), Exp
+(Exp <=> Exp), 1
+(Exp U 1), 1
+(Exp U 0), 0
+(0 U Exp), Exp
+(Exp U Exp), Exp
+(Exp R 1), 1
+(Exp R 0), 0
+(Exp R Exp), Exp
+(1 R Exp), Exp
+(Exp W 1), 1
+(0 W Exp), Exp
+(1 W Exp), 1
+(Exp W Exp), Exp
+(Exp M 0), 0
+(1 M Exp), Exp
+(0 M Exp), 0
+(Exp M Exp), Exp
+
+{1:{a;b}:1:c*}!, {{a;b}:c*}!
+{c*:1:{a;b}:1}!, {c*:{a;b}}!
+
+{z;a*;b*;*;c;d;*;b*;e;a*;*;b*}, {z;[*];c;d;[*];e;[*]}
+{((a;b)|[*0]);[*];c}!, {[*];c}!
+{a;a;a*;a;b;b[*];c[*2:3];c[*4:5]}, {a[*3..];b[+];c[*6..8]}
+
+{a[*0]}, {[*0]}
+{a[*..]}, {a[*]}
+{a[*2..3][*4..5]}, {a[*8..15]}
+{a[*4..5][*2..3]}, {a[*4..5][*2..3]}
+{a[*2:3][*]}, {a[*2 to 3][*]}
+{a[*1..3][*]}, {a[*]}
+{a[*][*2..3]}, {a[*]}
+{a[*..3][*2]}, {a[*..6]}
+{a[*..3][*to2]}, {a[*:6]}
+{a[*..3][*2..$]}, {a[*]}
+{a[*..3][*2:]}, {a[*:inf]}
+{a[*1..]}, {a[+]}
+{a[*1]}, {a}
+{a[+][*1..3]}, {a[+]}
+{a[*1..3][+]}, {a[+]}
+{[*2][+]}, {[*2][+]}
+{[+][*2]}, {[*2..inf]}
+
+{0[=2]}, 0
+{0[=2..]}, 0
+{0[=1..10]}, 0
+{0[=0]}, {[*]}
+{0[=0..10]}, {*}
+{0[=0..]}, {*}
+{1[=0]}, {[*0]}
+{1[=1..2]}, {[*1\,2]}
+{1[=..4]}, {1[*..4]}
+{b[=0]}, {(!b)[*]}
+{b[=0to$]}, {*}
+
+{0[->10..100];b}, 0
+{0[->1..];b}, 0
+{0[->0\,100];b}, b
+{0[->0..$];b}, b
+!{1[->0];b}, !b
+{1[->10\,20];b}, {[*10..20];b}
+{1[->..];b}, {[*1..];b}
+{{a&!c}[->0];b}, b
+
+{(a|c)[:*0..3];d}, {1;d}
+{(a|c)[:*1..3];d}, {(a|c);d}
+{0[:*0..3];d}, {1;d}
+{0[:*1..3];d}, 0
+{1[:*0..3];d}, {1;d}
+{1[:*1..3];d}, {1;d}
+{[*0][:*0..3];d}, {1;d}
+{[*0][:*1..3];d}, 0
+{(a*;b|c)[:*1to3][:*2:4]}, {(a*;b|c)[:*2..12]}
+{(a*;b|c)[:*][:+]}, {(a*;b|c)[:*]}
+{(a*;b|c)[:*0]}, 1
+{(a*;b|c)[:*1]}, {(a*;b|c)}
+{(a;b):(a;b):(a;b)[:*2]:(a;b):b*:b*:(c;d)[:*1]}, {(a;b)[:*5]:b*[:*2]:(c;d)}
+EOF
+
+
+cat >nequal.txt <<\EOF
+# other formulae which are not
+a, b
+1, 0
+a => b, b => a
+a => b, a <=> b
+a => b, a U b
+a R b, a U b
+a & b & c, c & a
+b & c, c & a & b
+a & b & (c |(f U g)| e), b & a & a & (c | e |(g U g)| e | c) & b
+{a*}, {a*}<>->1
+!{a*}, {a*}<>->1
+{a*}, {a*}!
+!{a*}, {a*}!
+
+# 1 should not be removed in the following two formulae
+{1&{g*}}!, {g*}!
+{1|{b;c}}<>->a, {b;c}<>->a
+# make sure twin arguments are not reduced in Fusion.
+{(a;!a)*:(a;!a)*:b}!, {(a;!a)*:b}!
+# make sure 1:a* is not reduced to a*.
+{(1:a*);b}!, {a*;b}!
+EOF
+
+run 0 ../equals equal.txt
+run 0 ../nequals nequal.txt

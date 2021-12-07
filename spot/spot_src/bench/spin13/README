@@ -1,0 +1,81 @@
+This contains most of the a benchmark used for the paper
+
+  "Compositional Approach to Suspension and Other Improvements to LTL
+  Translation", Tomáš Babiak, Thomas Badie, Alexandre Duret-Lutz,
+  Mojmír Křetínský, and Jan Strejček.
+
+To appear in the proceedings of Spin'13.
+
+By "most" we means that some lines of the table will actually be missing
+because we cannot compute them with the current version of Spot.  The
+missing lines are those with a small "a", that use the old SCC-based
+simplification, and not the new one which is presented in section 4.1
+of the paper.
+
+If you have any interest in reproducing the data from the paper, using
+exactly the same versions (yes, that's a plural), please head over to
+  http://www.lrde.epita.fr/~adl/spin13/
+
+Keep in mind that as Spot is evolving, the results from this benchmark
+may evolve (hopefully for the best!) with time.
+
+The benchmark has been updated to use ltl3ba 1.1.1 released on
+2014-01-24 (because the set of optimizations that are now activated by
+default is different).
+
+Running instructions
+====================
+
+To run the benchmark:
+
+  1) Now configure and compile the current tarball with
+       ./configure --disable-shared --disable-devel
+       make
+     but to not install it.
+  2) Go to directory bench/spin13/ and run the script "run.sh",
+     this will just build "run.mk"
+  3) Run "make -f run.mk -j4", adjusting "-j8" to the number of
+     cores that your computer have.
+
+The run.mk makefile will launch several instances of ltlcross in
+parallel (depending on the -j argument).  There are 22 of them
+to run in total.  Once that is done, the different data are
+collated into a LaTeX file (using the ../ltl2tgba/sum.py script)
+which is then compiled to PDF (using latexmk).  Finally, all
+data are compacted into a tarball named with the date.
+
+
+Results
+=======
+
+The results are more detailed that Table 1 in the Spin'13 paper.
+
+ba-sum.pdf and tgba-sum.pdf show the main results over several sets
+of formulae:
+ - known.ltl is the set described in the paper;
+ - new-fair3.ltl.pos is what we call fair3.ltl in the paper;
+ - new-strong2.ltl.pos is what we call strong2.ltl in the paper.
+The extra sets are:
+ - new-ltl.pos: the set of random \varphi_i formula used to build
+                new-fair3.ltl.pos and new-strong2.ltl.pos;
+ - new-fair2.ltl.pos: the above formulae combined with weak
+                fairness hypothesis of the form (FG(a)->GF(b));
+ - new-strong1.ltl.pos: simimular to strong2 but using only
+                one strong fairness hypothesis of the form
+                (GF(a)->GF(b)).
+
+Additionally, for all *.ltl.pos files, we have an *.ltl.neg file that
+contains the negated formulas.
+
+These 11 sets are translated to TGBA or BA using different
+translation configurations.  Many of the configurations should be
+recognized from the name in the paper.  The "Early" lines describe
+an extra experiement (not discussed in the paper), where
+composition of the suspended subformula starts on the transition
+that enters an accepting SCC (not in the SCC itself).
+
+In addition to the summaries in ba-sum.pdf and tgba-sum.pdf, detailled
+results are provided as CSV files, slightly better formated JSON
+files, and in HTML pages that can be used to explore the results
+interactively.  (It probably does not work with Internet Explorer.  If
+you have problems, install FireFox or Chrome.)

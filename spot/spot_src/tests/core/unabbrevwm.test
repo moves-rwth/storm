@@ -1,0 +1,64 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012, 2015, 2017, 2018 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check for the unabbreviate_logic visitor
+
+. ./defs || exit 1
+
+set -e
+
+# Removing W,M in this formula caused a segfault at some point.
+run 0 ltlfilt --remove-wm <<EOF | uniq >out
+(!((G(p0)) U ((F(p0)) M ((F(X(p1))) & ((p2) W (G(p2))))))) M (F(p0))
+F(Fp0 & !(Gp0 U ((FXp1 & G(p2 | Gp2)) U (Fp0 & FXp1 & G(p2 | Gp2)))))
+EOF
+
+# The first formula will be simplified to the second, so after uniq
+# the output should have one line.
+test `wc -l <out` = 1
+
+f='(Fp0 U(Fp0&!(Gp0 U((FXp1 &(Gp2 R(p2|Gp2))) U(Fp0&FXp1&(Gp2 R(p2|Gp2)))))))'
+test `ltlfilt -c --equivalent-to="$f" out` = 1
+
+
+# From issue #362.
+simon='!p0 W (p0 W (!p0 W (p0 W G!p0)))'
+ltlfilt --unabbrev=WRMF -f "$simon" -f 'FGFa' -f 'a M Fb' -f 'a R Gb' >out
+cat out
+cat >expected <<EOF
+G(!p0 | G(p0 | G(!p0 | G(p0 | G!p0))))
+G(1 U a)
+1 U (a & (1 U b))
+Gb
+EOF
+diff out expected
+
+
+for i in 'GFa' 'a R b' 'a W b' 'a M b' "$simon"; do
+    for fg in '' F G GF; do
+	for rwm in '' R W M RW RM WM RWM; do
+	    ltlfilt -f "$i" --unabbrev=$fg$rwm --equivalent-to "$i" >out
+	    test -n "$rwm" && grep "[$rwm]" out && exit 1
+	done
+    done
+done
+
+true

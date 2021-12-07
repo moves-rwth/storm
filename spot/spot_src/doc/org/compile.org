@@ -1,0 +1,251 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Compiling against Spot
+#+DESCRIPTION: How to compile C++14 programs using Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+This page is not about compiling Spot itself (for this, please refer
+to the [[file:install.org][installation instructions]]), but about how to compile and
+execute a C++ program written using Spot.  Even if some of those
+explanations might be GNU/Linux specific, they may hint you amount how
+to solve problems on other systems.
+
+As an example we will take the following simple program, stored in a
+file called =hello.cc=:
+
+#+NAME: hello-word
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/misc/version.hh>
+
+  int main()
+  {
+    std::cout << "Hello world!\nThis is Spot " << spot::version() << ".\n";
+    return 0;
+  }
+#+END_SRC
+
+After compilation and execution, this should simply display some
+greetings and the Spot version:
+
+#+RESULTS: hello-word
+: Hello world!
+: This is Spot 2.7.2.dev.
+
+
+To successfully compile this example program, we need a C++ compiler,
+obviously.  On this page, we are going to assume that you use =g++=
+(version 4.8 or later), but other compilers like =clang++= share the
+same user interface.  To successfully build the =hello= program, we
+might need to tell the compiler several things:
+
+1. The language that we use is C++14 (or optionally C++17).  This
+   usually requires passing an option like =-std=c++14=.  Note that
+   with version 6 of =g++= the default is now to compile C++14, so
+   this option is not necessary.
+2. The C++ preprocessor should be able to find =spot/misc/version.hh=.
+   This might require appending another directory to the include
+   search path with =-I location=.
+3. The linker should be able to find the Spot library (on Linux it would
+   be called =libspot.so=, unless you forced a static compilation, in which
+   case it would be  =libspot.a=).  This might require appending another
+   directory to the library search path with =-L location= in addition to
+   passing the =-lspot= option.
+
+In the likely case linking was made against the shared library
+=libspot.so=, the dynamic loader will have to locate =libspot.so=
+every time the =hello= program is started, so this too might require
+some fiddling, for instance using the environment variable
+=LD_LIBRARY_PATH= if the library has not been installed in a standard
+location.
+
+
+Below we review four typical scenarios that differ in how Spot
+was compiled and installed.
+
+
+* Case 1: You installed Spot using the Debian packages
+
+In particular, you have installed the =libspot-dev= package: this is
+the one that contains the header files.
+
+In that case all the C++ headers have been installed under
+=/usr/include/spot/=, and the shared library =libspot.so= has been
+installed in some subdirectory of =/usr/lib/=.
+
+In this scenario, the preprocessor, linker, and dynamic linker should
+be able to find everything by default, and you should be able to
+compile =hello.cc= and then execute =hello= with
+
+#+BEGIN_SRC sh
+g++ -std=c++14 hello.cc -lspot -o hello
+./hello
+#+END_SRC
+
+
+* Case 2: You compiled Spot yourself, and installed it in the default location
+
+It does not matter if you compiled from the GIT repository, or from
+the latest tarball.  If you ran something like
+#+BEGIN_SRC sh
+./configure
+make
+sudo make install
+#+END_SRC
+to install Spot, then the default installation prefix is =/usr/local/=.
+
+This means that all spot headers have been installed in
+=/usr/local/include/spot/=, and the libraries (there is more than just
+=libspot.so=, we will discuss that below) have been installed in
+=/usr/local/lib/=.
+
+Usually, these directories are searched by default, so
+#+BEGIN_SRC sh
+g++ -std=c++14 hello.cc -lspot -o hello
+#+END_SRC
+should still work.  But if that is not the case, add
+#+BEGIN_SRC sh
+g++ -std=c++14 -I/usr/local/include hello.cc -L/usr/local/lib -lspot -o hello
+#+END_SRC
+
+If running =./hello= fails with a message about not finding =libspot.so=,
+first try to run =sudo ldconfig= to make sure =ld.so='s cache is up-to-date, and
+if that does not help, use
+#+BEGIN_SRC sh
+export LD_LIBRARY_PATH=/usr/local/lib:"$LD_LIBRARY_PATH"
+#+END_SRC
+to tell the dynamic loader about this location.
+
+
+* Case 3: You compiled Spot yourself, and installed it in a custom directory
+
+For instance you might have used
+#+BEGIN_SRC sh
+./configure --prefix ~/usr
+make
+make install
+#+END_SRC
+to install everything in your home directory.  In that case the Spot
+headers have been installed in =$HOME/usr/include/spot= and the
+libraries in =$HOME/usr/lib=.
+
+You would compile =hello.cc= with
+#+BEGIN_SRC sh
+g++ -std=c++14 -I$HOME/usr/include hello.cc -L$HOME/usr/lib -lspot -o hello
+#+END_SRC
+and execute with
+#+BEGIN_SRC sh
+export LD_LIBRARY_PATH=$HOME/usr/lib:"$LD_LIBRARY_PATH"
+./hello
+#+END_SRC
+but it will be more convenient to define =LD_LIBRARY_PATH= once for
+all in your shell's configuration, so that you do not have to redefine
+it every time you want to run a binary that depends on Spot.
+
+
+* Case 4: You compiled Spot yourself, but did not install it
+
+We do not recommend this, but it is possible to compile programs
+that uses an uninstalled version of Spot.
+
+So you would just compile Spot in some directory (let's call it
+=/dir/spot-X.Y/=) with
+#+BEGIN_SRC sh
+./configure
+make
+#+END_SRC
+
+And then compile =hello.cc= by pointing the compiler to the above directory.
+
+There are at least two traps with this scenario:
+1. The subdirectory =/dir/spot-X.Y/spot/= contains the
+   headers that would normally be installed in
+   =/usr/local/include/spot/= using the same layout, but it also
+   includes some private, internal headers.  These headers are
+   normally not installed, so in the other scenarios you cannot use
+   them.  In this setup however, you might use them by mistake.  Also
+   that directory contains =*.cc= files implementing all the features
+   of the library.  Clearly those file should be considered private as
+   well.
+2. The subdirectory =/dir/spot-X.Y/buddy/src= contains a few header
+   files (for the BDD library) that would normally be installed
+   directly in =/usr/local/include=, so this directory has to be
+   searched for as well.
+3. Spot uses [[http://www.gnu.org/software/libtool/][GNU Libtool]] to make it easy to build shared and static
+   libraries portably.  All the process of compiling, linking, and
+   installing libraries is done through the concept of /Libtool
+   archive/ (some file with a =*.la= extension) that is an abstraction
+   for a library (be it static, shared, or both), and its dependencies
+   or options.  During =make install=, these /Libtool archives/ are
+   transformed into actual shared or static libraries, installed and
+   configured properly.  But since in this scenario =make install= is
+   not run, you have to deal with the /Libtool archives/ directly.
+
+
+So compiling against a non-installed Spot would look like this:
+#+BEGIN_SRC sh
+/dir/spot-X.Y/libtool link g++ -std=c++14 -I/dir/spot-X.Y -I/dir/spot-X.Y/buddy/src hello.cc /dir/spot-X.Y/spot/libspot.la -o hello
+#+END_SRC
+
+Using =libtool link g++= instead of =g++= will cause =libtool= to
+edit the =g++= command line, and replace
+=/dir/spot-X.Y/spot/libspot.la= by whatever options are
+needed to link against the library represented by this /Libtool
+archive/.  Furthermore the resulting =hello= executable will not be a
+binary, but a shell script that defines some necessary environment
+variables (like =LD_LIBRARY_PATH= to make sure the Spot library is
+found) before running the actual binary.
+
+The fact that =hello= is a script can be a problem with some
+development tools.  For instance running =gdb hello= will not work as
+expected.  You would need to run =libtool execute gdb hello= to obtain
+the desired result.  See the [[http://www.gnu.org/software/libtool/manual/][GNU Libtool manual]] for more details.
+
+* Other libraries
+
+If your program has to handle BDDs directly (for instance if you are
+[[file:tut22.org][creating an automaton]] explicitly), or if your system does not support
+one library requiring another, you will need to link with the =bddx=
+library.  This should be as simple as adding =-lbddx= after =-lspot=
+in the first three cases.
+
+In the fourth case where =libtool= is used to link against
+=libspot.la= linking against =libbddx.la= should not be necessary because
+Libtool already handles such dependencies.  However the version of =libtool=
+distributed with Debian is patched to ignore those dependencies, so in this
+case you 2
+
+* Additional suggestions
+
+In all the above invocations to =g++=, we have focused on arguments
+that are strictly necessary to link against Spot.  Obviously in
+practice you may want to add other options like =-Wall -Wextra= for
+more warnings, and optimization options like =-g -Og= when debugging
+or =-O3= when not debugging.
+
+The Spot library itself can be compiled in two modes.  Using
+#+BEGIN_SRC sh
+./configure --enable-devel
+#+END_SRC
+will turn on assertions, and debugging options, while
+#+BEGIN_SRC sh
+./configure --disable-devel
+#+END_SRC
+will disable assertions and enable more optimizations.
+
+If you are writing programs against Spot, we recommend to compile Spot
+with =--enable-devel= while your are developing your programs (the
+assertions in Spot can be useful to diagnose problems in your program,
+or in Spot), and then use =--disable-devel= once you are confident and
+desire speed.
+
+On all releases (i.e., version numbers ending with a digit) =configure=
+will default to =--disable-devel=.
+
+Development versions (i.e., versions ending with a letter) default to
+=--enable-devel=.
+
+#  LocalWords:  utf html args SRC nThis preprocessor libspot lspot LD
+#  LocalWords:  dev subdirectory sudo ldconfig ld usr Libtool libtool
+#  LocalWords:  portably gdb BDDs bddx lbddx libbddx Wextra Og devel

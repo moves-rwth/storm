@@ -1,0 +1,91 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013-2018 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Do some quick translations to make sure the neverclaims produced by
+# spot actually look correct!  We do that by parsing them via ltlcross.
+# ltl2neverclaim-lbtt.test does the same with LBTT if it is installed.
+
+. ./defs
+set -e
+
+# Skip this test if ltl2dstar is not installed.
+(ltl2dstar --version) || exit 77
+
+ltlfilt -f 'a U b' -l |
+ltl2dstar --ltl2nba=spin:ltl2tgba@-s - - |
+dstar2tgba --stats '%s %e %t %a %d' |
+tee out
+
+test "`cat out`" = '2 3 7 1 1'
+
+RAB=--automata=rabin
+STR=--automata=streett
+
+randltl -n 15 a b | ltlfilt --nnf --remove-wm |
+ltlcross -F - -f 'GFa & GFb & GFc' --timeout=30 \
+"ltl2tgba -s %f >%N" \
+"ltl2dstar $RAB --output=nba --ltl2nba=spin:ltl2tgba@-s %L %T" \
+"ltl2dstar $RAB --ltl2nba=spin:ltl2tgba@-s %L %D" \
+"ltl2dstar $RAB --ltl2nba=spin:ltl2tgba@-s %L - | dstar2tgba --low -s >%N" \
+"ltl2dstar $STR --output=nba --ltl2nba=spin:ltl2tgba@-s %L %T" \
+"ltl2dstar $STR --ltl2nba=spin:ltl2tgba@-s %L %D" \
+"ltl2dstar $STR --ltl2nba=spin:ltl2tgba@-s %L - | dstar2tgba --low -s >%N" \
+--csv=out.csv
+
+# We used to include the following formula in the above test, but the
+# --output=nba option of ltl2dstar is too memory-hungry on this
+# formula, and this is causing issues in our builds.  We also reduce
+# the size of the products, as they would be too huge.
+ltlcross -f '(GFa -> GFb) & (GFc -> GFd)' --verbose --states=100 --timeout=30 \
+"ltl2tgba -s %f >%N" \
+"ltl2dstar $RAB --output=nba --ltl2nba=spin:ltl2tgba@-s %L %T" \
+"ltl2dstar $RAB --ltl2nba=spin:ltl2tgba@-s %L %D" \
+"ltl2dstar $RAB --ltl2nba=spin:ltl2tgba@-s %L - | dstar2tgba --low -s >%N" \
+"ltl2dstar $STR --ltl2nba=spin:ltl2tgba@-s %L %D" \
+"ltl2dstar $STR --ltl2nba=spin:ltl2tgba@-s %L - | dstar2tgba --low -s >%N" \
+--csv='>>out.csv'
+
+# A bug in ltlcross <=1.2.5 caused it to not use the complement of the
+# negative automaton.
+ltlcross -f 'GFa' --verbose \
+"ltl2dstar $RAB --ltl2nba=spin:ltl2tgba@-s %L %D" \
+"ltl2dstar $STR --ltl2nba=spin:ltl2tgba@-s %L %D" 2>err
+test `grep -c 'info: check_empty.*Comp' err` = 2
+ltlcross -f 'FGa' --verbose \
+"ltl2dstar $RAB --ltl2nba=spin:ltl2tgba@-s %L %D" \
+"ltl2dstar $STR --ltl2nba=spin:ltl2tgba@-s %L %D" 2>err
+test `grep -c 'info: check_empty.*Comp' err` = 2
+
+
+# Make sure ltldo preserve the Rabin acceptance by default
+ltldo \
+    "ltl2dstar --ltl2nba=spin:ltl2tgba@-s --output-format=hoa %L %O" \
+    -f 'GFa -> GFb' -Hi > out.hoa
+
+grep 'acc-name:\|Acceptance:' out.hoa > out2
+cat >expected <<EOF
+acc-name: Rabin 2
+Acceptance: 4 (Fin(0) & Inf(1)) | (Fin(2) & Inf(3))
+EOF
+diff out2 expected
+
+# Test the stutter-invariant check on Rabin
+autfilt --trust-hoa=no --check=stutter out.hoa -H1.1 |
+    grep ' stutter-invariant'

@@ -1,0 +1,1500 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =ltlcross=
+#+DESCRIPTION: Spot command-line tool for cross-comparing the output of LTL translators.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+#+PROPERTY: header-args:R :session :results output :exports both
+
+=ltlcross= is a tool for cross-comparing the output of LTL-to-automata
+translators.  It is actually a Spot-based clone of [[http://www.tcs.hut.fi/Software/lbtt/][LBTT]], the
+/LTL-to-Büchi Translator Testbench/, that essentially performs the
+same sanity checks.
+
+The main differences with LBTT are:
+  - *support for PSL formulas in addition to LTL*
+  - support for (non-alternating) automata with *any type of acceptance condition*,
+  - support for *weak alternating automata*,
+  - additional intersection *checks with the complement* allowing to
+    check equivalence of automata more precisely,
+  - *more statistics*, especially:
+    - the number of logical transitions represented by each physical edge,
+    - the number of deterministic states and automata
+    - the number of SCCs with their various strengths (nonaccepting, terminal, weak, strong)
+    - the number of terminal, weak, and strong automata
+  - an option to *reduce counterexamples* by attempting to mutate and
+    shorten troublesome formulas (option =--grind=),
+  - statistics output in *CSV* for easier post-processing,
+  - *more precise time measurement* (LBTT was only precise to
+    1/100 of a second, reporting most times as "0.00s").
+
+Although =ltlcross= performs similar sanity checks as LBTT, it does
+not implement any of the interactive features of LBTT.  In our almost
+10-year usage of LBTT, we never had to use its interactive features to
+understand bugs in our translation.  Therefore =ltlcross= will report
+problems, maybe with a counterexample, but you will be on your own to
+investigate and fix them (the =--grind= option may help you reduce the
+problem to a shorter formula).
+
+The core of =ltlcross= is a loop that does the following steps:
+  - Input a formula
+  - Translate the formula and its negation using each configured translator.
+    If there are 3 translators, the positive and negative translations
+    will be denoted =P0=, =N0=, =P1=, =N1=, =P2=, =N2=.
+  - Optionally build complemented automata denoted =Comp(P0)=, =Comp(N0)=, etc.
+    (By default, this is done only for small automata, but see options =-D=,
+    =--determinize-max-states= and =--determinize-max-edges=.)
+  - Perform sanity checks between all these automata to detect any problem.
+  - Optionally build the products of these automata with a random state-space (the same
+    state-space for all translations).  (If the =--products=N= option is given,
+    =N= products are performed instead.)
+  - Gather statistics if requested.
+
+* Formula selection
+
+Formulas to translate should be specified using the [[file:ioltl.org][common input
+options]].  Standard input is read if it is not connected to a terminal,
+and no =-f= or =-F= options are given.
+
+* Configuring translators
+
+** Translator specifications
+
+Each translator should be specified as a string that use some of the
+following character sequences:
+
+#+BEGIN_SRC sh :exports results
+  ltlcross --help | sed -n '/character sequences:/,/^$/p' | sed '1d;$d'
+#+END_SRC
+#+RESULTS:
+:   %%                         a single %
+:   %f,%s,%l,%w                the formula as a (quoted) string in Spot, Spin,
+:                              LBT, or Wring's syntax
+:   %F,%S,%L,%W                the formula as a file in Spot, Spin, LBT, or
+:                              Wring's syntax
+:   %O                         the automaton output in HOA, never claim, LBTT, or
+:                              ltl2dstar's format
+
+For instance here is how we could cross-compare the never claims
+output by =spin= and =ltl2tgba= for the formulas =GFa= and =X(a U b)=.
+
+#+BEGIN_SRC sh :exports code
+ltlcross -f 'GFa' -f 'X(a U b)' 'ltl2tgba -s %s >%O' 'spin -f %s >%O'
+#+END_SRC
+#+RESULTS:
+
+When =ltlcross= executes these commands, =%s= will be replaced
+by the formula in Spin's syntax, and =%O= will be replaced by a
+temporary file into which the output of the translator is redirected
+before it is read back by =ltlcross=.
+
+#+BEGIN_SRC sh :exports results
+ltlcross -f 'GFa' -f 'X(a U b)' 'ltl2tgba -s %s >%O' 'spin -f %s >%O' 2>&1
+#+END_SRC
+#+RESULTS:
+#+begin_example
+([](<>(a)))
+Running [P0]: ltl2tgba -s '([](<>(a)))' >'lcr-o0-hvzgTC'
+Running [P1]: spin -f '([](<>(a)))' >'lcr-o1-iYh45L'
+Running [N0]: ltl2tgba -s '(!([](<>(a))))' >'lcr-o0-z6nzjV'
+Running [N1]: spin -f '(!([](<>(a))))' >'lcr-o1-8JB5F4'
+Performing sanity checks and gathering statistics...
+
+(X((a) U (b)))
+Running [P0]: ltl2tgba -s '(X((a) U (b)))' >'lcr-o0-rqfB6d'
+Running [P1]: spin -f '(X((a) U (b)))' >'lcr-o1-OUNHEn'
+Running [N0]: ltl2tgba -s '(!(X((a) U (b))))' >'lcr-o0-qzVvdx'
+Running [N1]: spin -f '(!(X((a) U (b))))' >'lcr-o1-eUfHTG'
+Performing sanity checks and gathering statistics...
+
+No problem detected.
+#+end_example
+
+To handle tools that do not support some LTL operators, the character
+sequences ~%f~, ~%s~, ~%l~, ~%w~, ~%F~, ~%S~, ~%L~, and ~%W~ can be
+"infixed" by a bracketed list of operators to rewrite away.  For
+instance if a tool reads LTL formulas from a file in LBT's syntax, but
+does not support operators ~M~ (strong until) and ~W~ (weak until),
+use ~%[WM]L~ instead of just ~%L~; this way operators ~W~ and ~M~ will
+be rewritten using the other supported operators.
+
+=ltlcross= can only read four kinds of output:
+  - Never claims (only if they are restricted to representing an
+    automaton using =if=, =goto=, and =skip= statements) such as those
+    output by [[http://spinroot.com/][=spin=]], [[http://www.lsv.ens-cachan.fr/~gastin/ltl2ba/][=ltl2ba=]], [[https://sourceforge.net/projects/ltl3ba/][=ltl3ba=]], or =ltl2tgba --spin=.  The
+    newer syntax introduced by Spin 6.24, using =do= instead of =if=,
+    is also supported.
+  - [[http://www.tcs.hut.fi/Software/lbtt/doc/html/Format-for-automata.html][LBTT's format]], which supports generalized Büchi automata with
+    either state-based acceptance or transition-based acceptance.
+    This output is used for instance by [[http://www.tcs.hut.fi/Software/maria/tools/lbt/][=lbt=]], [[http://web.archive.org/web/20080607170403/http://www.science.unitn.it/~stonetta/modella.html][=modella=]], or =ltl2tgba
+    --lbtt=.
+  - Non-alternating automata in [[file:http://adl.github.io/hoaf/][the HOA format]] with any acceptance
+    condition.
+  - [[file:concepts.org::#property-flags][Weak]] alternating automata in [[file:http://adl.github.io/hoaf/][the HOA format]].
+  - [[http://www.ltl2dstar.de/docs/ltl2dstar.html][=ltl2dstar='s format]], which supports deterministic Rabin or Streett
+    automata.
+
+Files in any of these format should be indicated with =%O=.  (Past
+versions of =ltlcross= used different letters for each format, but the
+four parsers have been merged into a single one.)
+
+Of course all configured tools need not use the same =%= sequences.
+The following list shows some typical configurations for some existing
+tools:
+
+  - '=spin -f %s >%O='
+  - '=ltl2ba -f %s >%O='
+  - '=ltl3ba -M0 -f %s >%O=' (less deterministic output, can be smaller)
+  - '=ltl3ba -M1 -f %s >%O=' (more deterministic output)
+  - '=modella -r12 -g -e %[MWei^]L %O='
+  - '=/path/to/script4lbtt.py %L %O=' (script supplied by [[http://web.archive.org/web/20070214050826/http://estragon.ti.informatik.uni-kiel.de/~fritz/][ltl2nba]] for
+    its interface with LBTT)
+  - '=ltl2tgba -s %f >%O=' (smaller output, Büchi automaton)
+  - '=ltl2tgba -s -D %f >%O=' (more deterministic output, Büchi automaton)
+  - '=ltl2tgba -H %f >%O=' (smaller output, TGBA)
+  - '=ltl2tgba -H -D %f >%O=' (more deterministic output, TGBA)
+  - '=lbt <%L >%O='
+  - '~ltl2dstar --ltl2nba=spin:path/to/ltl2tgba@-sD
+    --output-format=hoa %[MW]L %O~' deterministic Rabin output in HOA, as
+    supported since version 0.5.2 of =ltl2dstar=.
+  - '~ltl2dstar --ltl2nba=spin:path/to/ltl2tgba@-sD --automata=streett
+    --output-format=hoa %[MW]L %O~' deterministic Streett output in HOA,
+    as supported since version 0.5.2 of =ltl2dstar=.
+  - '=ltl2dstar --ltl2nba=spin:path/to/ltl2tgba@-sD %[MW]L %O=' (Rabin
+    output in DSTAR format, as supported in older versions of
+    =ltl2dstar=.
+  - '=ltl2dstar --ltl2nba=spin:path/to/ltl2tgba@-sD %L - | dstar2tgba
+    -s >%O=' (external conversion from Rabin to Büchi done by
+    =dstar2tgba= for more reduction of the Büchi automaton than what
+    =ltlcross= would provide)
+  - '=java -jar Rabinizer.jar -ltl2dstar %[MW]F %O; mv %O.dst %O=' (Rabinizer
+    uses the last =%O= argument as a prefix to which it always append =.dst=,
+    so we have to rename =%O.dst= as =%O= so that =ltlcross= can find the file)
+  - '~java -jar rabinizer3.1.jar -in=formula -silent -out=std -format=hoa -auto=tr %[MWRei^]f >%O~'
+    (rabinizer 3.1 can output automata in the HOA format)
+  - '=ltl3dra -f %s >%O=' (The HOA format is the default for =ltl3dra=.)
+  - '=ltl3tela -f %s >%O=' (The HOA format is the default for =ltl3tela=.)
+
+To simplify the use of some of the above tools, a set of predefined
+shorthands are available.  Those can be listed with the
+=--list-shorthands= option.
+
+#+BEGIN_SRC sh
+ltlcross --list-shorthands
+#+END_SRC
+#+RESULTS:
+#+begin_example
+If a COMMANDFMT does not use any %-sequence, and starts with one of
+the following words, then the string on the right is appended.
+
+  delag        %f>%O
+  lbt          <%L>%O
+  ltl2ba       -f %s>%O
+  ltl2da       %f>%O
+  ltl2dgra     %f>%O
+  ltl2dpa      %f>%O
+  ltl2dra      %f>%O
+  ltl2ldba     %f>%O
+  ltl2dstar    --output-format=hoa %[MW]L %O
+  ltl2tgba     -H %f>%O
+  ltl3ba       -f %s>%O
+  ltl3dra      -f %s>%O
+  ltl3hoa      -f %f>%O
+  ltl3tela     -f %f>%O
+  modella      %[MWei^]L %O
+  spin         -f %s>%O
+
+Any {name} and directory component is skipped for the purpose of
+matching those prefixes.  So for instance
+  '{DRA} ~/mytools/ltl2dstar-0.5.2'
+will be changed into
+  '{DRA} ~/mytools/ltl2dstar-0.5.2 --output-format=hoa %[MW]L %O'
+#+end_example
+
+What this implies is that running =ltlcross ltl2ba ltl3ba ...= is
+the same as running =ltlcross 'ltl2ba -f %s>%O' 'ltl3ba -f %s>%O' ...=
+
+Because only the prefix of the actual command is checked, you can
+still specify some options.  For instance =ltlcross 'ltl2tgba -D' ...=
+is short for =ltlcross 'ltl2tgba -D -H %F>%O' ...=
+
+** Trusted and untrusted translators
+
+By default, all translators specified are not trusted.  This means
+that =ltlcross= will cross-compare the output of all translators,
+possibly yielding a quadratic number of tests.
+
+It is possible to declare that certain translators should be trusted
+by specifying them with the =--reference=COMMANDFMT= option.  This has
+a few implications:
+  - the automata output by reference translators are not tested
+  - a pair of positive and negative reference automata are selected
+    from the reference translators (the smallest automata, in case
+    multiple references are available), and all other translators will
+    only be compared to these reference automata.
+
+Consequently, the number of test performed is now linear in the number
+of untrusted references.  The easiest way to observe the effect of
+=--reference= is to run the =ltlcross= with the [[#verbose][=--verbose= option]],
+with and without some =--reference= translators.
+
+* Detecting problems
+   :PROPERTIES:
+   :CUSTOM_ID: checks
+   :END:
+
+If a translator exits with a non-zero status code, or fails to output
+an automaton =ltlcross= can read, and error will be displayed and the
+result of the translation will be discarded.
+
+Otherwise =ltlcross= performs the following checks on all translated
+formulas ($P_i$ and $N_i$ designate respectively the translation of
+positive and negative formulas by the ith translator).
+
+  - Intersection check: $P_i\otimes N_j$ must be empty for all
+    pairs of $(i,j)$.
+
+    A single failing translator might generate a lot of lines of
+    the form:
+
+    : error: P0*N1 is nonempty; both automata accept the infinite word:
+    :        cycle{p0 & !p1}
+    : error: P1*N0 is nonempty; both automata accept the infinite word:
+    :        p0; !p1; cycle{p0 & p1}
+    : error: P1*N1 is nonempty; both automata accept the infinite word:
+    :        p0; cycle{!p1 & !p0}
+    : error: P1*N2 is nonempty; both automata accept the infinite word:
+    :        p0; !p1; cycle{p0 & p1}
+    : error: P1*N3 is nonempty; both automata accept the infinite word:
+    :        p0; !p1; cycle{p0 & p1}
+    : error: P1*N4 is nonempty; both automata accept the infinite word:
+    :        p0; cycle{!p1 & !p0}
+    : error: P2*N1 is nonempty; both automata accept the infinite word:
+    :        p0; !p1; !p0; cycle{!p1 & !p0; p0 & !p1; !p1; !p1; p0 & !p1}
+    : error: P3*N1 is nonempty; both automata accept the infinite word:
+    :        p0; !p1; !p1 & !p0; cycle{p0 & !p1}
+    : error: P4*N1 is nonempty; both automata accept the infinite word:
+    :        p0; !p1; !p1 & !p0; cycle{p0 & !p1}
+
+    In this example, translator number =1= looks clearly faulty
+    (at least the other 4 translators do not contradict each other).
+
+    Examples of infinite words that are accepted by both automata
+    always have the form of a lasso: a (possibly empty) finite prefix
+    followed by a cycle that should be repeated infinitely often.
+    The cycle part is denoted by =cycle{...}=.
+
+  - Complemented intersection check.  If $P_i$ and $N_i$ are
+    deterministic or if they are small enough, =ltlcross= attempts to
+    build their complements, $Comp(P_i)$ and $Comp(N_i)$.
+
+    Complementation is not always attempted, especially when it
+    requires a determinization-based construction.  The conditions
+    specifying when the complement automata are constructed can be
+    modified with the =--determinize-max-states=N= and
+    =--determinize-max-edges=M= options, which abort the
+    complementation if it would produce an automaton with more than
+    =N= states (500 by default) or more than =M= edges (5000 by
+    default).  Alternatively, use =--determinize= (a.k.a. =-D=) to
+    force the complementation of all automata.
+
+    If both complement automata could be computed, =ltlcross= ensures that
+    $Comp(P_i)\otimes Comp(N_i)$ is empty.
+
+    If only one automaton has been complemented, for instance $P_i$,
+    =ltlcross= checks that $P_j\otimes Comp(P_i)$ for all $j \ne i$;
+    likewise if it's $N_i$ that is deterministic.
+
+    When validating a translator with =ltlcross= without using the
+    =--determinize= option we highly recommend to include a translator
+    with good deterministic output to augment test coverage.  Using
+    '=ltl2tgba -D %f >%O=' will produce deterministic automata for all
+    obligation properties and many recurrence properties.  Using
+    '=ltl2tgba -PD %f >%O=' will systematically produce a
+    deterministic Parity automaton (that =ltlcross= can complement
+    easily).
+
+  - Cross-comparison checks: for some state-space $S$,
+    all $P_i\otimes S$ are either all empty, or all non-empty.
+    Similarly all $N_i\otimes S$ are either all empty, or all non-empty.
+
+    A cross-comparison failure could be displayed as:
+
+    : error: {P0,P2} disagree with {P1} when evaluating the state-space
+    :        the following word(s) are not accepted by {P1}:
+    :  P0 accepts: p0 & !p1 & !p2 & p3; p0 & p1 & !p2 & p3; p0 & p1 & p2 & p3; cycle{p0 & p1 & p2 & p3; p0 & p1 & !p2 & !p3; p0 & p1 & p2 & !p3; p0 & p1 & !p2 & !p3}
+    :  P2 accepts: p0 & !p1 & !p2 & p3; cycle{p0 & p1 & !p2 & !p3; p0 & p1 & p2 & p3; p0 & p1 & !p2 & p3}
+
+    If =--products=N= is used with =N= greater than one, the number of
+    the state-space is also printed.  This number is of no use by
+    itself, except to explain why you may get multiple disagreement
+    between the same sets of automata.
+
+    These products tests may sometime catch errors that were not
+    captured by the first two tests if one non-deterministic automaton
+    recognize less words than what it should.  If the input automata
+    are all deterministic or the =--determinize= option is used, this test
+    is redundant and can be disabled.  (In fact, the =--determinize=
+    option implies option =--product=0= to do so.)
+
+  - Consistency check:
+
+    For each $i$, the products $P_i\otimes S$ and $N_i\otimes S$
+    actually cover all states of $S$.  Because $S$ does not have any
+    deadlock, any of its infinite path must be accepted by $P_i$ or
+    $N_i$ (or both).
+
+    An error in that case is displayed as
+
+    : error: inconsistency between P1 and N1
+
+    If =--products=N= is used with =N= greater than one, the number of
+    the state-space in which the inconsistency was detected is also
+    printed.
+
+    This test may catch errors that were not captured by the first two
+    tests if one non-deterministic automaton recognize less words than
+    what it should.  If the input automata are deterministic or the
+    =--determinize= option is used, this test is redundant and can be
+    disabled.  (In fact, the =--determinize= option implies option
+    =--product=0= to do so.)
+
+The above checks are similar to those that are performed by [[http://www.tcs.hut.fi/Software/lbtt/][LBTT]],
+except for the complemented intersection check, which is only done in
+=ltlcross=.
+
+If any problem was reported during the translation of one of the
+formulas, =ltlcheck= will exit with an exit status of =1=.  Statistics
+(if requested) are output nonetheless, and include any faulty
+automaton as well.
+
+* Getting statistics
+
+Detailed statistics about the result of each translation, and the
+product of that resulting automaton with the random state-space, can
+be obtained using the =--csv=FILE= or =--json=FILE= option.
+
+** CSV or JSON output (or both!)
+
+The following compare =ltl2tgba=, =spin=, and =lbt= on three random
+formulas (where =W= and =M= operators have been rewritten away because
+they are not supported by =spin= and =lbt=).
+
+#+BEGIN_SRC sh :results verbatim :exports code
+randltl -n 3 --seed=5 a b |
+ltlfilt --remove-wm |
+ltlcross --csv=results.csv \
+         'ltl2tgba -s %f >%O' \
+         'spin -f %s >%O' \
+         'lbt < %L >%O'
+#+END_SRC
+#+RESULTS:
+
+#+BEGIN_SRC sh :results verbatim :exports results
+randltl -n 3 --seed=5 a b | ltlfilt --remove-wm |
+ltlcross --csv=results.csv --json=results.json \
+         'ltl2tgba -s %f >%O' \
+         'spin -f %s >%O' \
+         'lbt < %L >%O' 2>&1
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+-:1: G(!((!(p0)) & ((X(p0)) | (F((p1) R (X(p0)))))))
+Running [P0]: ltl2tgba -s 'G(!((!(p0)) & ((X(p0)) | (F((p1) R (X(p0)))))))' >'lcr-o0-UWmAOs'
+Running [P1]: spin -f '[](!((!(p0)) && ((X(p0)) || (<>((p1) V (X(p0)))))))' >'lcr-o1-UALknk'
+Running [P2]: lbt < 'lcr-i0-7JlcYb' >'lcr-o2-Yqa4y3'
+Running [N0]: ltl2tgba -s '!(G(!((!(p0)) & ((X(p0)) | (F((p1) R (X(p0))))))))' >'lcr-o0-O9vcaV'
+Running [N1]: spin -f '!([](!((!(p0)) && ((X(p0)) || (<>((p1) V (X(p0))))))))' >'lcr-o1-jwQ2NM'
+Running [N2]: lbt < 'lcr-i0-eDh8rE' >'lcr-o2-kjYd6v'
+Performing sanity checks and gathering statistics...
+
+-:2: F(p0)
+Running [P0]: ltl2tgba -s 'F(p0)' >'lcr-o0-yDowOn'
+Running [P1]: spin -f '<>(p0)' >'lcr-o1-zxU8yf'
+Running [P2]: lbt < 'lcr-i1-l78Dj7' >'lcr-o2-NcC93Y'
+Running [N0]: ltl2tgba -s '!(F(p0))' >'lcr-o0-5xUjPQ'
+Running [N1]: spin -f '!(<>(p0))' >'lcr-o1-fD4OCI'
+Running [N2]: lbt < 'lcr-i1-G0kdqA' >'lcr-o2-ZsPBds'
+Performing sanity checks and gathering statistics...
+
+-:3: (X(p0)) U ((!(p0)) & (X(p0)))
+Running [P0]: ltl2tgba -s '(X(p0)) U ((!(p0)) & (X(p0)))' >'lcr-o0-I2461j'
+Running [P1]: spin -f '(X(p0)) U ((!(p0)) && (X(p0)))' >'lcr-o1-IxFTSb'
+Running [P2]: lbt < 'lcr-i2-02hRJ3' >'lcr-o2-yl6OAV'
+Running [N0]: ltl2tgba -s '!((X(p0)) U ((!(p0)) & (X(p0))))' >'lcr-o0-yTDisN'
+Running [N1]: spin -f '!((X(p0)) U ((!(p0)) && (X(p0))))' >'lcr-o1-CUj4lF'
+Running [N2]: lbt < 'lcr-i2-xWC2fx' >'lcr-o2-aHi19o'
+Performing sanity checks and gathering statistics...
+
+No problem detected.
+#+end_example
+
+After this execution, the file =results.csv= contains the following:
+
+#+BEGIN_SRC sh :results output raw :exports results
+sed 's/"//g
+s/|/\\vert{}/g
+s/--/@@html:--@@/g
+1a\
+|-|
+s/^/| /
+s/$/ |/
+s/,/|/g
+' results.csv
+#+END_SRC
+
+#+ATTR_HTML: :class csv-table
+#+RESULTS:
+| formula                                                  | tool               | exit_status | exit_code |        time | states | edges | transitions | acc | scc | nondet_states | nondet_aut | complete_aut | product_states | product_transitions | product_scc |
+|----------------------------------------------------------+--------------------+-------------+-----------+-------------+--------+-------+-------------+-----+-----+---------------+------------+--------------+----------------+---------------------+-------------|
+| G(!((!(p0)) & ((X(p0)) \vert{} (F((p1) R (X(p0)))))))    | ltl2tgba -s %f >%O | ok          |         0 |   0.0125294 |      2 |     3 |           3 |   1 |   2 |             0 |          0 |            0 |            400 |                6276 |           2 |
+| G(!((!(p0)) & ((X(p0)) \vert{} (F((p1) R (X(p0)))))))    | spin -f %s >%O     | ok          |         0 |   0.0127994 |      7 |    21 |          35 |   1 |   2 |             7 |          1 |            0 |           1200 |               29442 |           4 |
+| G(!((!(p0)) & ((X(p0)) \vert{} (F((p1) R (X(p0)))))))    | lbt < %L >%O       | ok          |         0 |  0.00127784 |      6 |    14 |          28 |   1 |   5 |             6 |          1 |            0 |           1000 |               20970 |         403 |
+| !(G(!((!(p0)) & ((X(p0)) \vert{} (F((p1) R (X(p0)))))))) | ltl2tgba -s %f >%O | ok          |         0 |   0.0130485 |      3 |     5 |           6 |   1 |   3 |             0 |          0 |            1 |            600 |               12633 |           3 |
+| !(G(!((!(p0)) & ((X(p0)) \vert{} (F((p1) R (X(p0)))))))) | spin -f %s >%O     | ok          |         0 |  0.00115759 |      6 |    13 |          32 |   1 |   5 |             4 |          1 |            0 |           1200 |               33622 |         204 |
+| !(G(!((!(p0)) & ((X(p0)) \vert{} (F((p1) R (X(p0)))))))) | lbt < %L >%O       | ok          |         0 |  0.00120846 |     13 |    28 |          67 |   2 |  13 |             7 |          1 |            0 |           2400 |               59006 |        1604 |
+| F(p0)                                                    | ltl2tgba -s %f >%O | ok          |         0 |   0.0124681 |      2 |     3 |           4 |   1 |   2 |             0 |          0 |            1 |            400 |                8264 |           2 |
+| F(p0)                                                    | spin -f %s >%O     | ok          |         0 | 0.000771485 |      2 |     3 |           5 |   1 |   2 |             1 |          1 |            1 |            400 |               10323 |           2 |
+| F(p0)                                                    | lbt < %L >%O       | ok          |         0 |  0.00188293 |      4 |     6 |          10 |   1 |   4 |             2 |          1 |            1 |            601 |               14487 |         203 |
+| !(F(p0))                                                 | ltl2tgba -s %f >%O | ok          |         0 |   0.0125541 |      1 |     1 |           1 |   1 |   1 |             0 |          0 |            0 |            200 |                2073 |           1 |
+| !(F(p0))                                                 | spin -f %s >%O     | ok          |         0 | 0.000802091 |      1 |     1 |           1 |   1 |   1 |             0 |          0 |            0 |            200 |                2073 |           1 |
+| !(F(p0))                                                 | lbt < %L >%O       | ok          |         0 |  0.00127165 |      2 |     2 |           2 |   0 |   2 |             0 |          0 |            0 |            201 |                2081 |           2 |
+| (X(p0)) U ((!(p0)) & (X(p0)))                            | ltl2tgba -s %f >%O | ok          |         0 |   0.0121934 |      3 |     3 |           4 |   1 |   3 |             0 |          0 |            0 |            208 |                4118 |           9 |
+| (X(p0)) U ((!(p0)) & (X(p0)))                            | spin -f %s >%O     | ok          |         0 | 0.000795817 |      4 |     6 |           7 |   1 |   4 |             1 |          1 |            0 |            408 |                6159 |          10 |
+| (X(p0)) U ((!(p0)) & (X(p0)))                            | lbt < %L >%O       | ok          |         0 |   0.0011121 |      6 |     7 |          10 |   1 |   6 |             1 |          1 |            0 |            484 |                7467 |          86 |
+| !((X(p0)) U ((!(p0)) & (X(p0))))                         | ltl2tgba -s %f >%O | ok          |         0 |   0.0122315 |      3 |     4 |           5 |   1 |   3 |             0 |          0 |            0 |            208 |                4128 |           9 |
+| !((X(p0)) U ((!(p0)) & (X(p0))))                         | spin -f %s >%O     | ok          |         0 | 0.000903485 |      4 |     8 |          10 |   1 |   3 |             2 |          1 |            0 |            800 |               20222 |         203 |
+| !((X(p0)) U ((!(p0)) & (X(p0))))                         | lbt < %L >%O       | ok          |         0 |  0.00182082 |      9 |    17 |          23 |   0 |   9 |             4 |          1 |            0 |           1601 |               34445 |        1004 |
+
+This file can be loaded in any spreadsheet or statistical application.
+
+Although we only supplied 2 random generated formulas, the output
+contains 4 formulas because =ltlcross= had to translate the positive
+and negative version of each.
+
+If we had used the option =--json=results.json= instead of (or in
+addition to) =--cvs=results.csv=, the file =results.json= would have
+contained the following [[http://www.json.org/][JSON]] output.
+
+#+BEGIN_SRC sh :exports results :wrap SRC json
+cat results.json
+#+END_SRC
+#+RESULTS:
+#+begin_SRC json
+{
+  "tool": [
+    "ltl2tgba -s %f >%O",
+    "spin -f %s >%O",
+    "lbt < %L >%O"
+  ],
+  "formula": [
+    "G(!((!(p0)) & ((X(p0)) | (F((p1) R (X(p0)))))))",
+    "!(G(!((!(p0)) & ((X(p0)) | (F((p1) R (X(p0))))))))",
+    "F(p0)",
+    "!(F(p0))",
+    "(X(p0)) U ((!(p0)) & (X(p0)))",
+    "!((X(p0)) U ((!(p0)) & (X(p0))))"
+  ],
+  "fields":  [
+  "formula","tool","exit_status","exit_code","time","states","edges","transitions","acc","scc","nondet_states","nondet_aut","complete_aut","product_states","product_transitions","product_scc"
+  ],
+  "inputs":  [ 0, 1 ],
+  "results": [
+    [ 0,0,"ok",0,0.0132415,2,3,3,1,2,0,0,0,400,6276,2 ],
+    [ 0,1,"ok",0,0.0129795,7,21,35,1,2,7,1,0,1200,29442,4 ],
+    [ 0,2,"ok",0,0.00126994,6,14,28,1,5,6,1,0,1000,20970,403 ],
+    [ 1,0,"ok",0,0.0130197,3,5,6,1,3,0,0,1,600,12633,3 ],
+    [ 1,1,"ok",0,0.00115913,6,13,32,1,5,4,1,0,1200,33622,204 ],
+    [ 1,2,"ok",0,0.00120161,13,28,67,2,13,7,1,0,2400,59006,1604 ],
+    [ 2,0,"ok",0,0.012826,2,3,4,1,2,0,0,1,400,8264,2 ],
+    [ 2,1,"ok",0,0.000675097,2,3,5,1,2,1,1,1,400,10323,2 ],
+    [ 2,2,"ok",0,0.0011281,4,6,10,1,4,2,1,1,601,14487,203 ],
+    [ 3,0,"ok",0,0.0122189,1,1,1,1,1,0,0,0,200,2073,1 ],
+    [ 3,1,"ok",0,0.000746496,1,1,1,1,1,0,0,0,200,2073,1 ],
+    [ 3,2,"ok",0,0.00124168,2,2,2,0,2,0,0,0,201,2081,2 ],
+    [ 4,0,"ok",0,0.0130605,3,3,4,1,3,0,0,0,208,4118,9 ],
+    [ 4,1,"ok",0,0.000788826,4,6,7,1,4,1,1,0,408,6159,10 ],
+    [ 4,2,"ok",0,0.0012278,6,7,10,1,6,1,1,0,484,7467,86 ],
+    [ 5,0,"ok",0,0.0124917,3,4,5,1,3,0,0,0,208,4128,9 ],
+    [ 5,1,"ok",0,0.000906358,4,8,10,1,3,2,1,0,800,20222,203 ],
+    [ 5,2,"ok",0,0.00129181,9,17,23,0,9,4,1,0,1601,34445,1004 ]
+  ]
+}
+#+end_SRC
+
+Here the =fields= table describes the columns of the =results= table.
+The =inputs= tables lists the columns that are considered as inputs
+for the experiments.  The values in the columns corresponding to the
+fields =formula= and =tool= contains indices relative to the =formula=
+and =tool= tables.  This format is more compact when dealing with lots
+of translators and formulas, because they don't have to be repeated on
+each line as in the CSV version.
+
+JSON data can be easily processed in any language.  For instance the
+following Python3 script averages each column (except the first four)
+for each tool, and presents the results in a form that can almost be
+copied into a LaTeX table (the =%= in the tool names have to be taken
+care of).  Note that for simplicity we assume that the first two
+columns are inputs, instead of reading the =inputs= field.
+
+#+BEGIN_SRC python :results output :exports both
+#!/usr/bin/python3
+import json
+data = json.load(open('results.json'))
+datacols = range(4, len(data["fields"]))
+# Index results by tool
+results = { t:[] for t in range(0, len(data["tool"])) }
+for l in data["results"]:
+  results[l[1]].append(l)
+# Average columns for each tool, and display them as a table
+print("%-18s & count & %s \\\\" % ("tool", " & ".join(data["fields"][4:])))
+for i in range(0, len(data["tool"])):
+  c = len(results[i])
+  sums = ["%6.1f" % (sum([x[j] for x in results[i]])/c)
+          for j in datacols]
+  print("%-18s & %3d & %s \\\\" % (data["tool"][i], c,
+        " & ".join(sums)))
+#+END_SRC
+#+RESULTS:
+: tool               & count & time & states & edges & transitions & acc & scc & nondet_states & nondet_aut & complete_aut & product_states & product_transitions & product_scc \\
+: ltl2tgba -s %f >%O &   6 &    0.0 &    2.3 &    3.2 &    3.8 &    1.0 &    2.3 &    0.0 &    0.0 &    0.3 &  336.0 & 6248.7 &    4.3 \\
+: spin -f %s >%O     &   6 &    0.0 &    4.0 &    8.7 &   15.0 &    1.0 &    2.8 &    2.5 &    0.8 &    0.2 &  701.3 & 16973.5 &   70.7 \\
+: lbt < %L >%O       &   6 &    0.0 &    6.7 &   12.3 &   23.3 &    0.8 &    6.5 &    3.3 &    0.8 &    0.2 & 1047.8 & 23076.0 &  550.3 \\
+
+The script =bench/ltl2tgba/sum.py= is a more evolved version of the
+above script that generates two kinds of LaTeX tables.
+
+When computing such statistics, you should be aware that inputs for
+which a tool failed to generate an automaton (e.g. it crashed, or it
+was killed if you used =ltlcross='s =--timeout= option to limit run
+time) will appear as mostly empty lines in the CSV or JSON files,
+since most statistics cannot be computed without an automaton...
+Those lines with missing data can be omitted with the =--omit-missing=
+option (this used to be the default up to Spot 1.2).
+
+However data for bogus automata are still included: as shown below
+=ltlcross= will report inconsistencies between automata as errors, but
+it does not try to guess who is incorrect.
+
+** Description of the columns
+
+The number of column output in the CSV or JSON outputs depend on the
+options passed to =ltlcross=. Additional columns will be output if
+=--strength=, =--ambiguous=, =--automata=, or =--product=+N= are used.
+
+Columns =formula= and =tool= contain the formula translated and the
+command run to translate it.  In the CSV, these columns contain the
+actual text.  In the JSON output, these column contains an index into
+the =formula= and =tool= table declared separately.
+
+=exit_status= and =exit_code= are used to indicate if the translator
+successfully produced an automaton, or if it failed.  On successful
+translation, =exit_status= is equal to "=ok=" and =exit_code= is 0.
+If the translation took more time than allowed with the =--timeout=
+option, =exit_status= will contain "=timeout=" and =exit_code= will be
+set to -1.  Other values are used to diagnose various issues: please
+check the man-page for =ltlcross= for a list of them.
+
+=time= obviously contains the time used by the translation.  Time is
+measured with some high-resolution clock when available (that's
+nanosecond accuracy under Linux), but because translator commands are
+executed through a shell, it also includes the time to start a shell.
+(This extra cost apply identically to all translators, so it is not unfair.)
+
+
+All the values that follow will be missing if =exit_status= is not
+equal to "=ok=".  (You may instruct =ltlcross= not to output lines with
+such missing data with the option =--omit-missing=.)
+
+=states=, =edges=, =transitions=, =acc= are size measures for the
+automaton that was translated.  =acc= counts the number of acceptance
+sets.  When building (degeneralized) Büchi automata, it will always be
+=1=, so its value is meaningful only when evaluating translations to
+generalized Büchi automata.  =edges= counts the actual number of edges
+in the graph supporting the automaton; an edge (labeled by a Boolean
+formula) [[file:concepts.org::#trans-edge][might actually represent several transitions]] (each labeled by
+assignment of all atomic propositions).  For instance in an automaton
+where the atomic proposition are $a$ and $b$, one edge labeled by
+$a\lor b$ actually represents three transitions $a b$, $a\bar b$, and
+$\bar a b$.
+
+=scc= counts the number of strongly-connected components in the
+automaton.
+
+If option =--strength= is passed to =ltlcross=, these SCCs are
+also partitioned on four sets based on their strengths:
+- =nonacc_scc= for non-accepting SCCs (such as states A1 and A2 in the
+  previous picture).
+- =terminal_scc= for accepting SCCs where all states or edges belong
+  to the same acceptance sets, and that are complete (i.e., any state
+  in a terminal SCC accepts the universal language).  States
+  B1 and B2 in the previous picture are two terminal SCCs.
+- =weak_scc= for accepting SCCs where all states or edges belong
+  to the same acceptance sets, but that are not complete.
+- =strong_scc= for accepting SCCs that are not weak.
+
+These SCC strengths can be used to compute the strength of the
+automaton as a whole:
+- an automaton is terminal if it contains only non-accepting or
+  terminal SCCs,
+- an automaton is weak if it it contains only non-accepting,
+  terminal, or weak SCCs,
+- an automaton is strong if it contains at least one strong SCC.
+
+This classification is used to fill the =terminal_aut=, =weak_aut=,
+=strong_aut= columns with Boolean values (still only if option
+=--strength= is passed).  Only one of these should contain =1=.  We
+usually prefer terminal automata over weak automata, and weak automata
+over strong automata, because the emptiness check of terminal (and
+weak) automata is easier.  When working with alternating automata, all
+those strength-related columns will be empty, because the routines
+used to compute those statistic do not yet support universal edges.
+
+=nondetstates= counts the number of non-deterministic states in the
+automaton.  =nondeterministic= is a Boolean value indicating if the
+automaton is not deterministic.  For instance in the previous picture
+showing two automata for =a U b=, the first automaton is deterministic
+(these two fields will contain 0), while the second automaton contain
+a nondeterministic state (state A2 has two possible successors for the
+assignment $ab$) and is therefore not deterministic.
+
+If option =--ambiguous= was passed to =ltlcross=, the column
+=ambiguous_aut= holds a Boolean indicating whether the automaton is
+ambiguous, i.e., if there exists a word that can be accepted by at
+least two different runs.  (This information is not yet available for
+alternating automata.)
+
+=complete_aut= is a Boolean indicating whether the automaton is
+complete.
+
+Columns =product_states=, =product_transitions=, and =product_scc=
+count the number of state, transitions and strongly-connect components
+in the product that has been built between the translated automaton
+and a random model.  For a given formula, the same random model is of
+course used against the automata translated by all tools.  Comparing
+the size of these product might give another indication of the
+"conciseness" of a translated automaton.
+
+There is of course a certain "luck factor" in the size of the product.
+Maybe some translator built a very dumb automaton, with many useless
+states, in which just a very tiny part is translated concisely.  By
+luck, the random model generated might synchronize with this tiny part
+only, and ignore the part with all the useless states.  A way to
+lessen this luck factor is to increase the number of products
+performed against the translated automaton.  If option =--products=N=
+is used, =N= products are builds instead of one, and the fields
+=product_states=, =product_transitions=, and =product_scc= contain
+average values.
+
+If the option =--products=+N= is used (with a =+= in front of the
+number), then no average value is computed.  Instead, three columns
+=product_states=, =product_transitions=, and =product_scc= are output
+for each individual product (i.e., $3\times N$ columns are output).
+This might be useful if you want to compute different kind of
+statistic (e.g., a median instead of a mean) or if you want to build
+scatter plots of all these products.
+
+Finally, if the =--automata= option was passed to =ltlcross=, the CSV
+or JSON output will contain a column named =automaton= encoding each
+produced automaton in the HOA format.
+
+** Changing the name of the translators
+
+By default, the names used in the CSV and JSON output to designate the
+translators are the command specified on the command line.
+
+For instance in the following, =ltl2tgba= is run in two
+configurations, and the strings =ltl2tgba -s --small %f >%O= and
+=ltl2tgba -s --deter %f >%O= appear verbatim in the output:
+
+#+NAME: ltlcross-unnamed
+#+BEGIN_SRC sh :exports code
+ltlcross -f a -f Ga 'ltl2tgba -s --small %f >%O' 'ltl2tgba -s --deter %f >%O' --csv
+#+END_SRC
+
+#+BEGIN_SRC sh :results output raw :exports results :noweb yes
+sed 's/"//g
+s/|/\\vert{}/g
+s/--/@@html:--@@/g
+s/^/| /
+s/$/ |/
+s/,/|/g
+$d
+1a\
+|-|
+' <<EOF
+<<ltlcross-unnamed()>>
+EOF
+#+END_SRC
+
+#+ATTR_HTML: :class csv-table
+#+RESULTS:
+| formula | tool                                | exit_status | exit_code |      time | states | edges | transitions | acc | scc | nondet_states | nondet_aut | complete_aut | product_states | product_transitions | product_scc |
+|---------+-------------------------------------+-------------+-----------+-----------+--------+-------+-------------+-----+-----+---------------+------------+--------------+----------------+---------------------+-------------|
+| a       | ltl2tgba -s @@html:--@@small %f >%O | ok          |         0 |  0.045425 |      2 |     2 |           3 |   1 |   2 |             0 |          0 |            0 |            201 |                4144 |           2 |
+| a       | ltl2tgba -s @@html:--@@deter %f >%O | ok          |         0 | 0.0452103 |      2 |     2 |           3 |   1 |   2 |             0 |          0 |            0 |            201 |                4144 |           2 |
+| !(a)    | ltl2tgba -s @@html:--@@small %f >%O | ok          |         0 | 0.0475807 |      2 |     2 |           3 |   1 |   2 |             0 |          0 |            0 |            201 |                4149 |           2 |
+| !(a)    | ltl2tgba -s @@html:--@@deter %f >%O | ok          |         0 | 0.0441754 |      2 |     2 |           3 |   1 |   2 |             0 |          0 |            0 |            201 |                4149 |           2 |
+| G(a)    | ltl2tgba -s @@html:--@@small %f >%O | ok          |         0 | 0.0453961 |      1 |     1 |           1 |   1 |   1 |             0 |          0 |            0 |            200 |                2059 |           1 |
+| G(a)    | ltl2tgba -s @@html:--@@deter %f >%O | ok          |         0 | 0.0467509 |      1 |     1 |           1 |   1 |   1 |             0 |          0 |            0 |            200 |                2059 |           1 |
+| !(G(a)) | ltl2tgba -s @@html:--@@small %f >%O | ok          |         0 | 0.0459274 |      2 |     3 |           4 |   1 |   2 |             0 |          0 |            1 |            400 |                8264 |           2 |
+| !(G(a)) | ltl2tgba -s @@html:--@@deter %f >%O | ok          |         0 |   0.04534 |      2 |     3 |           4 |   1 |   2 |             0 |          0 |            1 |            400 |                8264 |           2 |
+
+To present these results graphically, or even when analyzing these
+data, it might be convenient to give each configured tool a shorter
+name.  =ltlcross= supports the specification of such short names by
+looking whether the command specification for a translator has the
+form "={short name}actual command=".
+
+For instance:
+#+BEGIN_SRC sh :prologue "exec 2>&1"
+genltl --and-f=1..5 |
+ltlcross '{small} ltl2tgba -s --small %f >%O' \
+         '{deter} ltl2tgba -s --deter %f >%O' --csv=ltlcross.csv
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+-:1: F(p1)
+Running [P0: small]: ltl2tgba -s --small 'F(p1)' >'lcr-o0-gizrt5'
+Running [P1: deter]: ltl2tgba -s --deter 'F(p1)' >'lcr-o1-E2Y2os'
+Running [N0: small]: ltl2tgba -s --small '!(F(p1))' >'lcr-o0-LiBWmP'
+Running [N1: deter]: ltl2tgba -s --deter '!(F(p1))' >'lcr-o1-ztzWmc'
+Performing sanity checks and gathering statistics...
+
+-:2: (F(p1)) & (F(p2))
+Running [P0: small]: ltl2tgba -s --small '(F(p1)) & (F(p2))' >'lcr-o0-DCyLpz'
+Running [P1: deter]: ltl2tgba -s --deter '(F(p1)) & (F(p2))' >'lcr-o1-MeEivW'
+Running [N0: small]: ltl2tgba -s --small '!((F(p1)) & (F(p2)))' >'lcr-o0-X5oXCj'
+Running [N1: deter]: ltl2tgba -s --deter '!((F(p1)) & (F(p2)))' >'lcr-o1-APddNG'
+Performing sanity checks and gathering statistics...
+
+-:3: (F(p1)) & (F(p2)) & (F(p3))
+Running [P0: small]: ltl2tgba -s --small '(F(p1)) & (F(p2)) & (F(p3))' >'lcr-o0-D8un13'
+Running [P1: deter]: ltl2tgba -s --deter '(F(p1)) & (F(p2)) & (F(p3))' >'lcr-o1-njT4hr'
+Running [N0: small]: ltl2tgba -s --small '!((F(p1)) & (F(p2)) & (F(p3)))' >'lcr-o0-YNmfBO'
+Running [N1: deter]: ltl2tgba -s --deter '!((F(p1)) & (F(p2)) & (F(p3)))' >'lcr-o1-2bGzWb'
+Performing sanity checks and gathering statistics...
+
+-:4: (F(p1)) & (F(p2)) & (F(p3)) & (F(p4))
+Running [P0: small]: ltl2tgba -s --small '(F(p1)) & (F(p2)) & (F(p3)) & (F(p4))' >'lcr-o0-rlrmnz'
+Running [P1: deter]: ltl2tgba -s --deter '(F(p1)) & (F(p2)) & (F(p3)) & (F(p4))' >'lcr-o1-KobkRW'
+Running [N0: small]: ltl2tgba -s --small '!((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)))' >'lcr-o0-5DFKnk'
+Running [N1: deter]: ltl2tgba -s --deter '!((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)))' >'lcr-o1-8IIcXH'
+Performing sanity checks and gathering statistics...
+
+-:5: (F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5))
+Running [P0: small]: ltl2tgba -s --small '(F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5))' >'lcr-o0-h7sYE5'
+Running [P1: deter]: ltl2tgba -s --deter '(F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5))' >'lcr-o1-ypOBqt'
+Running [N0: small]: ltl2tgba -s --small '!((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5)))' >'lcr-o0-2rJtfR'
+Running [N1: deter]: ltl2tgba -s --deter '!((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5)))' >'lcr-o1-qK2p7e'
+Performing sanity checks and gathering statistics...
+
+No problem detected.
+#+end_example
+
+When =ltlcross= is running, the short name is now displayed on stderr
+before the command.  Furthermore, the file =ltlcross.csv= now use the
+short name in the =tool= column:
+
+#+BEGIN_SRC sh :results output raw :exports results
+sed 's/"//g
+s/|/\\vert{}/g
+s/--/@@html:--@@/g
+s/^/| /
+s/$/ |/
+s/,/|/g
+$d
+1a\
+|-|
+' ltlcross.csv
+#+END_SRC
+
+#+ATTR_HTML: :class csv-table
+#+RESULTS:
+| formula                                            | tool  | exit_status | exit_code |      time | states | edges | transitions | acc | scc | nondet_states | nondet_aut | complete_aut | product_states | product_transitions | product_scc |
+|----------------------------------------------------+-------+-------------+-----------+-----------+--------+-------+-------------+-----+-----+---------------+------------+--------------+----------------+---------------------+-------------|
+| F(p1)                                              | small | ok          |         0 | 0.0143077 |      2 |     3 |           4 |   1 |   2 |             0 |          0 |            1 |            400 |                8272 |           3 |
+| F(p1)                                              | deter | ok          |         0 | 0.0143547 |      2 |     3 |           4 |   1 |   2 |             0 |          0 |            1 |            400 |                8272 |           3 |
+| !(F(p1))                                           | small | ok          |         0 | 0.0146721 |      1 |     1 |           1 |   1 |   1 |             0 |          0 |            0 |            200 |                2055 |           2 |
+| !(F(p1))                                           | deter | ok          |         0 | 0.0145825 |      1 |     1 |           1 |   1 |   1 |             0 |          0 |            0 |            200 |                2055 |           2 |
+| (F(p1)) & (F(p2))                                  | small | ok          |         0 | 0.0147275 |      4 |     9 |          16 |   1 |   4 |             0 |          0 |            1 |            798 |               16533 |           5 |
+| (F(p1)) & (F(p2))                                  | deter | ok          |         0 | 0.0144936 |      4 |     9 |          16 |   1 |   4 |             0 |          0 |            1 |            798 |               16533 |           5 |
+| !((F(p1)) & (F(p2)))                               | small | ok          |         0 | 0.0147704 |      3 |     5 |           7 |   1 |   3 |             0 |          0 |            0 |            598 |                7367 |           4 |
+| !((F(p1)) & (F(p2)))                               | deter | ok          |         0 | 0.0146198 |      3 |     5 |           7 |   1 |   3 |             0 |          0 |            0 |            598 |                7367 |           4 |
+| (F(p1)) & (F(p2)) & (F(p3))                        | small | ok          |         0 | 0.0153116 |      8 |    27 |          64 |   1 |   8 |             0 |          0 |            1 |           1587 |               33068 |          34 |
+| (F(p1)) & (F(p2)) & (F(p3))                        | deter | ok          |         0 | 0.0156095 |      8 |    27 |          64 |   1 |   8 |             0 |          0 |            1 |           1587 |               33068 |          34 |
+| !((F(p1)) & (F(p2)) & (F(p3)))                     | small | ok          |         0 |  0.015041 |      4 |     6 |          24 |   1 |   4 |             1 |          1 |            0 |            601 |                6171 |           4 |
+| !((F(p1)) & (F(p2)) & (F(p3)))                     | deter | ok          |         0 | 0.0151199 |      7 |    19 |          37 |   1 |   7 |             0 |          0 |            0 |           1387 |               18792 |          33 |
+| (F(p1)) & (F(p2)) & (F(p3)) & (F(p4))              | small | ok          |         0 | 0.0166691 |     16 |    81 |         256 |   1 |  16 |             0 |          0 |            1 |           2727 |               57786 |          74 |
+| (F(p1)) & (F(p2)) & (F(p3)) & (F(p4))              | deter | ok          |         0 | 0.0161634 |     16 |    81 |         256 |   1 |  16 |             0 |          0 |            1 |           2727 |               57786 |          74 |
+| !((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)))           | small | ok          |         0 | 0.0167047 |      5 |     8 |          64 |   1 |   5 |             1 |          1 |            0 |            801 |                8468 |           5 |
+| !((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)))           | deter | ok          |         0 | 0.0160785 |     15 |    65 |         175 |   1 |  15 |             0 |          0 |            0 |           2527 |               37226 |          73 |
+| (F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5))    | small | ok          |         0 |  0.018485 |     32 |   243 |        1024 |   1 |  32 |             0 |          0 |            1 |           5330 |              114068 |         350 |
+| (F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5))    | deter | ok          |         0 | 0.0209914 |     32 |   243 |        1024 |   1 |  32 |             0 |          0 |            1 |           5330 |              114068 |         350 |
+| !((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5))) | small | ok          |         0 | 0.0196063 |      6 |    10 |         160 |   1 |   6 |             1 |          1 |            0 |           1000 |               10707 |           6 |
+
+In this last example, we saved the CSV output to =ltlcross.csv= so we
+can play with it in the next section.
+
+** Working with these CSV files in R
+
+The produced CSV should be directly readable by R's CSV input functions like
+=read.csv()=, =readr::read_csv()=, or =data.table::fread()=.
+
+#+BEGIN_SRC R
+library(data.table)
+dt <- fread('ltlcross.csv')
+str(dt)
+#+END_SRC
+#+RESULTS:
+#+begin_example
+data.table 1.12.0  Latest news: r-datatable.com
+
+Classes ‘data.table’ and 'data.frame':	20 obs. of  16 variables:
+ $ formula            : chr  "F(p1)" "F(p1)" "!(F(p1))" "!(F(p1))" ...
+ $ tool               : chr  "small" "deter" "small" "deter" ...
+ $ exit_status        : chr  "ok" "ok" "ok" "ok" ...
+ $ exit_code          : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ time               : num  0.0284 0.0283 0.0283 0.0282 0.029 ...
+ $ states             : int  2 2 1 1 4 4 3 3 8 8 ...
+ $ edges              : int  3 3 1 1 9 9 5 5 27 27 ...
+ $ transitions        : int  4 4 1 1 16 16 7 7 64 64 ...
+ $ acc                : int  1 1 1 1 1 1 1 1 1 1 ...
+ $ scc                : int  2 2 1 1 4 4 3 3 8 8 ...
+ $ nondet_states      : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ nondet_aut         : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ complete_aut       : int  1 1 0 0 1 1 0 0 1 1 ...
+ $ product_states     : int  400 400 200 200 798 798 598 598 1587 1587 ...
+ $ product_transitions: int  8272 8272 2055 2055 16533 16533 7367 7367 33068 33068 ...
+ $ product_scc        : int  3 3 2 2 5 5 4 4 34 34 ...
+ - attr(*, ".internal.selfref")=<externalptr>
+#+end_example
+
+Currently the data frame shows one line per couple (formula, tool).
+This makes comparing tools quite difficult, as their results are on
+different lines.
+
+A common transformation is to group the results of all tools on the
+same line: using exactly one line per formula.  This is easily
+achieved using =dcast()= from the =data.table= library.
+
+#+BEGIN_SRC R
+dt2 <- dcast(dt, formula ~ tool, value.var=names(dt)[-(1:2)], sep=".")
+str(dt2)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+
+Classes ‘data.table’ and 'data.frame':	10 obs. of  29 variables:
+ $ formula                  : chr  "!((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)) & (F(p5)))" "!((F(p1)) & (F(p2)) & (F(p3)) & (F(p4)))" "!((F(p1)) & (F(p2)) & (F(p3)))" "!((F(p1)) & (F(p2)))" ...
+ $ exit_status.deter        : chr  "ok" "ok" "ok" "ok" ...
+ $ exit_status.small        : chr  "ok" "ok" "ok" "ok" ...
+ $ exit_code.deter          : int  0 0 0 0 0 0 0 0 0 0
+ $ exit_code.small          : int  0 0 0 0 0 0 0 0 0 0
+ $ time.deter               : num  0.0172 0.0212 0.02 0.0191 0.0282 ...
+ $ time.small               : num  0.0172 0.0221 0.0203 0.0195 0.0283 ...
+ $ states.deter             : int  31 15 7 3 1 4 8 16 32 2
+ $ states.small             : int  6 5 4 3 1 4 8 16 32 2
+ $ edges.deter              : int  211 65 19 5 1 9 27 81 243 3
+ $ edges.small              : int  10 8 6 5 1 9 27 81 243 3
+ $ transitions.deter        : int  781 175 37 7 1 16 64 256 1024 4
+ $ transitions.small        : int  160 64 24 7 1 16 64 256 1024 4
+ $ acc.deter                : int  1 1 1 1 1 1 1 1 1 1
+ $ acc.small                : int  1 1 1 1 1 1 1 1 1 1
+ $ scc.deter                : int  31 15 7 3 1 4 8 16 32 2
+ $ scc.small                : int  6 5 4 3 1 4 8 16 32 2
+ $ nondet_states.deter      : int  0 0 0 0 0 0 0 0 0 0
+ $ nondet_states.small      : int  1 1 1 0 0 0 0 0 0 0
+ $ nondet_aut.deter         : int  0 0 0 0 0 0 0 0 0 0
+ $ nondet_aut.small         : int  1 1 1 0 0 0 0 0 0 0
+ $ complete_aut.deter       : int  0 0 0 0 0 1 1 1 1 1
+ $ complete_aut.small       : int  0 0 0 0 0 1 1 1 1 1
+ $ product_states.deter     : int  5130 2527 1387 598 200 798 1587 2727 5330 400
+ $ product_states.small     : int  1000 801 601 598 200 798 1587 2727 5330 400
+ $ product_transitions.deter: int  82897 37226 18792 7367 2055 16533 33068 57786 114068 8272
+ $ product_transitions.small: int  10707 8468 6171 7367 2055 16533 33068 57786 114068 8272
+ $ product_scc.deter        : int  349 73 33 4 2 5 34 74 350 3
+ $ product_scc.small        : int  6 5 4 4 2 5 34 74 350 3
+ - attr(*, ".internal.selfref")=<externalptr>
+ - attr(*, "sorted")= chr "formula"
+#+end_example
+
+Using the above form, it is easy to compare two tools on some given
+measurement, as we just need to plot two columns.  For example to
+compare the number of states produced by the two configurations of
+=ltl2tgba= for each formula, we just need to plot column
+=dt2$state.small= against =dt2$state.deter=.
+
+#+BEGIN_SRC R :results output graphics :width 5 :height 5 :file ltlcross-r.svg
+library(ggplot2)
+ggplot(dt2, aes(x=states.small, y=states.deter)) +
+   geom_abline(colour='white') + geom_point()
+#+END_SRC
+
+#+RESULTS:
+[[file:ltlcross-r.svg]]
+
+
+We should probably print the formulas for the cases where the two
+sizes differ.
+
+#+BEGIN_SRC R :results output graphics :width 5 :height 5 :file ltlcross-r2.svg
+ggplot(dt2, aes(x=states.small, y=states.deter)) +
+   geom_abline(colour='white') + geom_point() +
+   geom_text(data=subset(dt2, states.small != states.deter),
+             aes(label=formula), hjust=0, nudge_x=.5)
+#+END_SRC
+
+#+RESULTS:
+[[file:ltlcross-r2.svg]]
+
+* Miscellaneous options
+
+** =--stop-on-error=
+
+The =--stop-on-error= option will cause =ltlcross= to abort on the
+first detected error.  This include failure to start some translator,
+read its output, or failure to passe the sanity checks.  Timeouts are
+allowed unless =--fail-on-time= is also given.
+
+One use for this option is when =ltlcross= is used in combination with
+=randltl= to check translators on an infinite stream of formulas.
+
+For instance the following will cross-compare =ltl2tgba= against
+=ltl3ba= until it finds an error, or your interrupt the command, or it
+runs out of memory (the hash tables used by =randltl= and =ltlcross=
+to remove duplicate formulas will keep growing).
+
+#+BEGIN_SRC sh :exports code :eval no
+randltl -n -1 --tree-size 10..25 a b c | ltlcross --stop-on-error 'ltl2tgba --lbtt %f >%O' 'ltl3ba -f %s >%O'
+#+END_SRC
+
+** =--save-bogus=FILENAME=
+
+The =--save-bogus=FILENAME= will save any formula for which an error
+was detected (either some translation failed, or some problem was
+detected using the resulting automata) in =FILENAME=.  Again, timeouts
+are not considered to be errors and therefore not reported in this
+file, unless =--fail-on-timeout= is given.
+
+The main use for this feature is in conjunction with =randltl='s
+generation of random formulas.  For instance the following command
+will run the translators on an infinite number of formulas, saving
+any problematic formula in =bugs.ltl=.
+
+#+BEGIN_SRC sh :exports code :eval no
+randltl -n -1 --tree-size 10..25 a b c | ltlcross --save-bogus=bugs.ltl 'ltl2tgba --lbtt %f >%O' 'ltl3ba -f %s >%O'
+#+END_SRC
+
+You can periodically check the contents of =bugs.ltl=, and then run
+=ltlcross= only on those formulas to look at the problems:
+
+#+BEGIN_SRC sh :exports code :eval no
+ltlcross -F bugs.ltl 'ltl2tgba --lbtt %f >%O' 'ltl3ba -f %s >%O'
+#+END_SRC
+
+** =--grind=FILENAME=
+
+This option tells =ltlcross= that, when a problem is detected, it
+should try to find a smaller formula that still exhibits the
+problem.
+
+Here is the procedure used:
+   - internally list the mutations of the bogus formula and sort
+     them by length (as [[file:ltlgrind.org][=ltlgrind --sort=]] would do)
+   - process every mutation until one is found that exhibit the bug
+   - repeat the process with this new formula, and again until a formula
+     is found for which no mutation exhibit the bug
+   - output that last formula in =FILENAME=
+
+If =--save-bogus=OTHERFILENAME= is provided, every bogus formula found
+during the process will be saved in =OTHERFILENAME=.
+
+Example:
+#+BEGIN_SRC sh :prologue "exec 2>&1" :epilogue true
+ltlcross -f '(G!b & (!c | F!a)) | (c & Ga & Fb)' "modella %L %O" \
+  --save-bogus=bogus \
+  --grind=bogus-grind
+#+END_SRC
+#+RESULTS:
+#+begin_example
+| & G ! p0 | ! p1 F ! p2 & & p1 G p2 F p0
+Running [P0]: modella 'lcr-i0-Nc8B1P' 'lcr-o0-CDjvYF'
+Running [N0]: modella 'lcr-i0-Io4LVv' 'lcr-o0-C482Sl'
+Performing sanity checks and gathering statistics...
+error: P0*N0 is nonempty; both automata accept the infinite word:
+       cycle{!p0 & !p1}
+
+Trying to find a bogus mutation of (G!b & (!c | F!a)) | (c & Ga & Fb)...
+Mutation 1/22: & & p0 G p1 F p2
+Running [P0]: modella 'lcr-i1-EmhjSb' 'lcr-o0-q1GzR1'
+Running [N0]: modella 'lcr-i1-mwR1QR' 'lcr-o0-gEcuQH'
+Performing sanity checks and gathering statistics...
+
+Mutation 2/22: & G ! p0 | ! p1 F ! p2
+Running [P0]: modella 'lcr-i2-4UoNQx' 'lcr-o0-W9W6Qn'
+Running [N0]: modella 'lcr-i2-h5IDRd' 'lcr-o0-VDFaS3'
+Performing sanity checks and gathering statistics...
+
+Mutation 3/22: | G ! p0 & & p1 G p2 F p0
+Running [P0]: modella 'lcr-i3-bkvvTT' 'lcr-o0-wMAQUJ'
+Running [N0]: modella 'lcr-i3-qoYoWz' 'lcr-o0-ILwXXp'
+Performing sanity checks and gathering statistics...
+error: P0*N0 is nonempty; both automata accept the infinite word:
+       cycle{!p0 & !p1}
+
+Trying to find a bogus mutation of G!b | (c & Ga & Fb)...
+Mutation 1/16: t
+Running [P0]: modella 'lcr-i4-avS30f' 'lcr-o0-MYCa45'
+Running [N0]: modella 'lcr-i4-vJss7V' 'lcr-o0-ItCKaM'
+Performing sanity checks and gathering statistics...
+
+Mutation 2/16: G ! p0
+Running [P0]: modella 'lcr-i5-TG7leC' 'lcr-o0-N6UXhs'
+Running [N0]: modella 'lcr-i5-KwJJli' 'lcr-o0-kbRvp8'
+Performing sanity checks and gathering statistics...
+
+Mutation 3/16: & & p0 G p1 F p2
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 4/16: | G ! p0 & p1 F p0
+Running [P0]: modella 'lcr-i6-otaRtY' 'lcr-o0-bRLcyO'
+Running [N0]: modella 'lcr-i6-3DMJCE' 'lcr-o0-v04gHu'
+Performing sanity checks and gathering statistics...
+error: P0*N0 is nonempty; both automata accept the infinite word:
+       cycle{!p0 & !p1}
+
+Trying to find a bogus mutation of G!b | (c & Fb)...
+Mutation 1/10: t
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 2/10: G ! p0
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 3/10: & p0 F p1
+Running [P0]: modella 'lcr-i7-gKcHMk' 'lcr-o0-UPD7Ra'
+Running [N0]: modella 'lcr-i7-4HUKX0' 'lcr-o0-Dpno3Q'
+Performing sanity checks and gathering statistics...
+
+Mutation 4/10: | p0 G ! p1
+Running [P0]: modella 'lcr-i8-H6GH9G' 'lcr-o0-xyO1fx'
+Running [N0]: modella 'lcr-i8-w3vxmn' 'lcr-o0-wgw3sd'
+Performing sanity checks and gathering statistics...
+
+Mutation 5/10: | G ! p0 F p0
+Running [P0]: modella 'lcr-i9-vt8eA3' 'lcr-o0-982qHT'
+Running [N0]: modella 'lcr-i9-qrbNOJ' 'lcr-o0-ceD9Vz'
+Performing sanity checks and gathering statistics...
+
+Mutation 6/10: | ! p0 & p1 F p0
+Running [P0]: modella 'lcr-i10-6upQ3p' 'lcr-o0-EStxbg'
+Running [N0]: modella 'lcr-i10-7nUoj6' 'lcr-o0-e4DgrW'
+Performing sanity checks and gathering statistics...
+
+Mutation 7/10: | & p1 F p0 G p0
+Running [P0]: modella 'lcr-i11-ohXyzM' 'lcr-o0-bozRHC'
+Running [N0]: modella 'lcr-i11-6wYkQs' 'lcr-o0-TCxOYi'
+Performing sanity checks and gathering statistics...
+
+Mutation 8/10: | & p0 p1 G ! p0
+Running [P0]: modella 'lcr-i12-51Vd88' 'lcr-o0-uWKDhZ'
+Running [N0]: modella 'lcr-i12-0OkfrP' 'lcr-o0-aEdRAF'
+Performing sanity checks and gathering statistics...
+
+Mutation 9/10: | G ! p0 & p0 F p0
+Running [P0]: modella 'lcr-i13-vy57Kv' 'lcr-o0-lcfpVl'
+Running [N0]: modella 'lcr-i13-D7SQ5b' 'lcr-o0-k8Hig2'
+Performing sanity checks and gathering statistics...
+error: P0*N0 is nonempty; both automata accept the infinite word:
+       cycle{!p0}
+
+Trying to find a bogus mutation of G!c | (c & Fc)...
+Mutation 1/7: t
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 2/7: G ! p0
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 3/7: & p0 F p0
+Running [P0]: modella 'lcr-i14-AvSorS' 'lcr-o0-AZkvCI'
+Running [N0]: modella 'lcr-i14-Hd7LNy' 'lcr-o0-pM82Yo'
+Performing sanity checks and gathering statistics...
+
+Mutation 4/7: | p0 G ! p0
+Running [P0]: modella 'lcr-i15-tygKaf' 'lcr-o0-YHFrm5'
+Running [N0]: modella 'lcr-i15-GL9iyV' 'lcr-o0-riOaKL'
+Performing sanity checks and gathering statistics...
+
+Mutation 5/7: | G ! p0 F p0
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 6/7: | ! p0 & p0 F p0
+Running [P0]: modella 'lcr-i16-M0RHWB' 'lcr-o0-iVlf9r'
+Running [N0]: modella 'lcr-i16-WD4Xli' 'lcr-o0-Ez6Gy8'
+Performing sanity checks and gathering statistics...
+
+Mutation 7/7: | G p0 & p0 F p0
+Running [P0]: modella 'lcr-i17-F1BLLY' 'lcr-o0-Z9nQYO'
+Running [N0]: modella 'lcr-i17-efo5bF' 'lcr-o0-fFzkpv'
+Performing sanity checks and gathering statistics...
+
+Smallest bogus mutation found for (G!b & (!c | F!a)) | (c & Ga & Fb) is G!c | (c & Fc).
+
+error: some error was detected during the above runs.
+       Check file bogus for problematic formulas.
+#+end_example
+
+#+BEGIN_SRC sh
+cat bogus
+#+END_SRC
+
+#+RESULTS:
+: (G!b & (!c | F!a)) | (c & Ga & Fb)
+: G!b | (c & Ga & Fb)
+: G!b | (c & Fb)
+: G!c | (c & Fc)
+
+#+BEGIN_SRC sh
+cat bogus-grind
+#+END_SRC
+
+#+RESULTS:
+: G!c | (c & Fc)
+
+** =--no-check=
+
+The =--no-check= option disables all sanity checks, and only use the supplied
+formulas in their positive form.
+
+When checks are enabled, the negated formulas are intermixed with the
+positives ones in the results.  Therefore the =--no-check= option can
+be used to gather statistics about a specific set of formulas.
+
+** =--verbose=
+   :PROPERTIES:
+   :CUSTOM_ID: verbose
+   :END:
+
+The verbose option can be useful to troubleshoot problems or simply
+follow the list of transformations and tests performed by =ltlcross=.
+
+For instance here is what happens if we try to cross check =ltl2tgba=
+and =ltl3ba -H1= on the formula =FGa=.  Note that =ltl2tgba= will
+produce transition-based generalized Büchi automata, while =ltl3ba
+-H1= produces co-Büchi alternating automata.
+
+#+BEGIN_SRC sh :prologue "export SPOT_HOA_TOLERANT=1; exec 2>&1"
+ltlcross -f 'FGa' ltl2tgba 'ltl3ba -H1' --verbose
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+F(G(a))
+Running [P0]: ltl2tgba -H 'F(G(a))'>'lcr-o0-ltzvEc'
+Running [P1]: ltl3ba -H1 -f '<>([](a))'>'lcr-o1-dqnX28'
+Running [N0]: ltl2tgba -H '!(F(G(a)))'>'lcr-o0-wmIXr5'
+Running [N1]: ltl3ba -H1 -f '!(<>([](a)))'>'lcr-o1-yJesT1'
+info: collected automata:
+info:   P0	(2 st.,3 ed.,1 sets)
+info:   N0	(1 st.,2 ed.,1 sets) deterministic complete
+info:   P1	(2 st.,3 ed.,1 sets)
+info:   N1	(3 st.,5 ed.,1 sets) univ-edges complete
+Performing sanity checks and gathering statistics...
+info: getting rid of universal edges...
+info:   N1	(3 st.,5 ed.,1 sets) -> (2 st.,4 ed.,1 sets)
+info: complementing automata...
+info:   P0	(2 st.,3 ed.,1 sets) -> (2 st.,4 ed.,1 sets)	Comp(P0)
+info:   N0	(1 st.,2 ed.,1 sets) -> (1 st.,2 ed.,1 sets)	Comp(N0)
+info:   P1	(2 st.,3 ed.,1 sets) -> (2 st.,4 ed.,1 sets)	Comp(P1)
+info:   N1	(2 st.,4 ed.,1 sets) -> (2 st.,4 ed.,1 sets)	Comp(N1)
+info: getting rid of any Fin acceptance...
+info:	Comp(N0)	(1 st.,2 ed.,1 sets) -> (2 st.,3 ed.,1 sets)
+info:	     P1 	(2 st.,3 ed.,1 sets) -> (2 st.,3 ed.,1 sets)
+info:	Comp(N1)	(2 st.,4 ed.,1 sets) -> (3 st.,6 ed.,1 sets)
+info: check_empty P0*N0
+info: check_empty Comp(N0)*Comp(P0)
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+info: cross_checks and consistency_checks unnecessary
+
+No problem detected.
+#+end_example
+
+First =FGa= and its negations =!FGa= are translated with the two
+tools, resulting in four automata: two positive automata =P0= and =P1=
+for =FGa=, and two negative automata =N0= and =N1=.
+
+Some basic information about the collected automata are displayed.
+For instance we can see that although =ltl3ba -H1= outputs co-Büchi
+alternating automata, only automaton =N1= uses universal edges: the
+automaton =P1= can be used like a non-alternating co-Büchi automaton.
+
+=ltlcross= then proceeds to transform alternating automata (only weak
+alternating automata are supported) into non-alternating automata.
+Here only =N1= needs this transformation.
+
+Then =ltlcross= computes the complement of these four
+automata.
+
+Now that =ltlcross= has four complemented automata, it has to make
+sure they use only =Inf= acceptance because that is what our emptiness
+check procedure can handle.  So there is a new pass over all automata,
+rewriting them to get rid of any =Fin= acceptance.
+
+After this preparatory work, it is time to actually compare these
+automata.  Together, the tests =P0*N0= and =Comp(N0)*Comp(P0)= ensure
+that the automaton =N0= is really the complement of =P0=.  Similarly
+=P1*N1= and =Comp(N1)*Comp(P1)= ensure that =N1= is the complement of
+=P1=.  Finally =P0*N1= and =P1*N0= ensure that =P1= is equivalent to
+=P0= and =N1= is equivalent to =N0=.
+
+Note that if we reduce =ltlcross='s ability to determinize
+automata for complementation, the procedure
+can look slightly more complex:
+
+#+BEGIN_SRC sh :prologue "export SPOT_HOA_TOLERANT=1; exec 2>&1"
+ltlcross -f 'FGa' ltl2tgba 'ltl3ba -H1' --determinize-max-states=1 --verbose
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+F(G(a))
+Running [P0]: ltl2tgba -H 'F(G(a))'>'lcr-o0-HHyVWR'
+Running [P1]: ltl3ba -H1 -f '<>([](a))'>'lcr-o1-scKnIH'
+Running [N0]: ltl2tgba -H '!(F(G(a)))'>'lcr-o0-6Wloux'
+Running [N1]: ltl3ba -H1 -f '!(<>([](a)))'>'lcr-o1-MQ7Rin'
+info: collected automata:
+info:   P0	(2 st.,3 ed.,1 sets)
+info:   N0	(1 st.,2 ed.,1 sets) deterministic complete
+info:   P1	(2 st.,3 ed.,1 sets)
+info:   N1	(3 st.,5 ed.,1 sets) univ-edges complete
+Performing sanity checks and gathering statistics...
+info: getting rid of universal edges...
+info:   N1	(3 st.,5 ed.,1 sets) -> (2 st.,4 ed.,1 sets)
+info: complementing automata...
+info:   P0	not complemented (more than 1 states required)
+info:   N0	(1 st.,2 ed.,1 sets) -> (1 st.,2 ed.,1 sets)	Comp(N0)
+info:   P1	not complemented (more than 1 states required)
+info:   N1	(2 st.,4 ed.,1 sets) -> (2 st.,4 ed.,1 sets)	Comp(N1)
+info: getting rid of any Fin acceptance...
+info:	Comp(N0)	(1 st.,2 ed.,1 sets) -> (2 st.,3 ed.,1 sets)
+info:	     P1 	(2 st.,3 ed.,1 sets) -> (2 st.,3 ed.,1 sets)
+info:	Comp(N1)	(2 st.,4 ed.,1 sets) -> (3 st.,6 ed.,1 sets)
+info: check_empty P0*N0
+info: check_empty P0*N1
+info: check_empty Comp(N0)*N1
+info: check_empty P1*N0
+info: check_empty Comp(N1)*N0
+info: check_empty P1*N1
+info: complements were not computed for some automata
+info: continuing with cross_checks and consistency_checks
+info: building state-space #1/1 of 200 states with seed 0
+info: state-space has 4136 edges
+info: building product between state-space and P0 (2 st., 3 ed.)
+info:   product has 400 st., 8298 ed.
+info:               2 SCCs
+info: building product between state-space and P1 (2 st., 3 ed.)
+info:   product has 400 st., 8298 ed.
+info:               2 SCCs
+info: building product between state-space and N0 (1 st., 2 ed.)
+info:   product has 200 st., 4136 ed.
+info:               1 SCCs
+info: building product between state-space and N1 (2 st., 4 ed.)
+info:   product has 400 st., 8272 ed.
+info:               1 SCCs
+info: cross_check {P0,P1}, state-space #0/1
+info: cross_check {N0,N1}, state-space #0/1
+info: consistency_check (P0,N0), state-space #0/1
+info: consistency_check (P1,N1), state-space #0/1
+
+No problem detected.
+#+end_example
+
+In this case, =ltlcross= does not have any complement automaton for
+=P0= and =P1=, so it cannot make sure that =P0= and =P1= are
+equivalent.  If we imagine for instance that =P0= has an empty
+language, we can see that the six =check_empty= tests would still
+succeed.
+
+So =ltlcross= builds a random state-space of 200 states, synchronize
+it with the four automata, and then performs additional checks
+(=cross_check= and =consistency_check=) on these products as described
+[[#checks][earlier]].  While these additional checks do not make a proof that =P0=
+and =P1= are equivalent, they can catch some problems, and would
+easily catch the case of an automaton with an empty language by
+mistake.
+
+Here is the same example, if we declare that =ltl3ba= is a reference
+implementation that should not be checked, and we just want to check
+the output of =ltl2tgba= against this reference.  See how the number
+of tests performed has been reduced.
+
+#+BEGIN_SRC sh  :prologue "export SPOT_HOA_TOLERANT=1; exec 2>&1"
+ltlcross -f 'FGa' ltl2tgba --reference 'ltl3ba -H1' --verbose
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+F(G(a))
+Running [P0]: ltl3ba -H1 -f '<>([](a))'>'lcr-o0-bh9PHg'
+Running [P1]: ltl2tgba -H 'F(G(a))'>'lcr-o1-LvvYEm'
+Running [N0]: ltl3ba -H1 -f '!(<>([](a)))'>'lcr-o0-bcUDEs'
+Running [N1]: ltl2tgba -H '!(F(G(a)))'>'lcr-o1-Pw1REy'
+info: collected automata:
+info:   P0	(2 st.,3 ed.,1 sets)
+info:   N0	(3 st.,5 ed.,1 sets) univ-edges complete
+info:   P1	(2 st.,3 ed.,1 sets)
+info:   N1	(1 st.,2 ed.,1 sets) deterministic complete
+Performing sanity checks and gathering statistics...
+info: getting rid of universal edges...
+info:   N0	(3 st.,5 ed.,1 sets) -> (2 st.,4 ed.,1 sets)
+info: complementing automata...
+info:   P1	(2 st.,3 ed.,1 sets) -> (2 st.,4 ed.,1 sets)	Comp(P1)
+info:   N1	(1 st.,2 ed.,1 sets) -> (1 st.,2 ed.,1 sets)	Comp(N1)
+info: getting rid of any Fin acceptance...
+info:	     P0 	(2 st.,3 ed.,1 sets) -> (2 st.,3 ed.,1 sets)
+info:	Comp(N1)	(1 st.,2 ed.,1 sets) -> (2 st.,3 ed.,1 sets)
+info: P0 and N0 assumed correct and used as references
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+info: cross_checks and consistency_checks unnecessary
+
+No problem detected.
+#+end_example
+
+* Running =ltlcross= in parallel
+   :PROPERTIES:
+   :CUSTOM_ID: parallel
+   :END:
+
+  The =ltlcross= command itself has no built-in support for
+  parallelization (patches welcome).  However its interface makes it
+  rather easy to parallelize =ltlcross= runs with third-party tools
+  such as:
+
+  - =xargs= from [[https://www.gnu.org/software/findutils/][GNU findutils]].  The [[https://www.gnu.org/software/findutils/manual/html_node/find_html/Controlling-Parallelism.html#Controlling-Parallelism][=-P n= option]] is a GNU extension
+    to specify that n commands should be run in parallel.
+
+    For instance the following command tests =ltl2tgba= and =ltl3ba=
+    against 1000 formulas, running 8 formulas in parallel.
+
+    #+begin_src sh :exports code
+      randltl -n-1 3 | ltlfilt --relabel=pnn --unique -n1000 |
+          xargs -P8 -I'{}' ltlcross -q --save-bogus='>>bugs.ltl' ltl2tgba ltl3ba -f '{}'
+    #+end_src
+
+    #+RESULTS:
+
+    The above pipeline uses =randltl= to generate an infinite number
+    of LTL formulas (=-n-1=) over three atomic propositions.  Those
+    formules are then relabeled with =ltlfilt= (so that =a U b= and =b
+    U a= both get mapped to the same =p0 U p1=) and filtered for
+    duplicates (=--unique=).  This first 1000 formulas (=-n1000=) are
+    then passed on to =xargs=. The command =xargs -I'{}' ltlcross...=
+    takes each line of input, and executes the command =ltlcross...=
+    with ={}= replaced by the input line.  The option =-P8= does this
+    with 8 processes in parallel.  Here =ltlcross= is called with
+    option =-q= to silence most its regular output as the 8 instances
+    of =ltlcross= would be otherwise writing to the same terminal.
+    With =-q=, only errors are displayed.  Additionally =--save-bogus=
+    is used to keep track of all formulas causing errors.  The =>>bugs.ltl=
+    syntax means to open =bugs.ltl= in append mode, so that =bugs.ltl= does
+    not get overwritten each time a new =ltlcross= instance finds a bug.
+
+  - [[https://www.gnu.org/software/parallel/][GNU parallel]] or [[https://joeyh.name/code/moreutils/][moreutils's parallel]] can also be used similarly.
+
+  - =make -j n= is another option: first convert the list of formulas
+    into a =Makefile= that calls =ltlcross= for each of them.
+
+    For instance here is how to build a makefile called =ltlcross.mk=
+    testing =ltl2tgba= and =ltl3ba= against all formulas produced by
+    =genltl --eh=, and gathering statistics from all runs in =all.csv=.
+
+    #+NAME: ltlcross.mk
+    #+begin_src sh :epilogue "cat ltlcross.mk" :wrap src makefile
+    echo 'LTLCROSS=ltlcross -q ltl2tgba ltl3ba' > ltlcross.mk
+    echo "ALL= $(echo $(genltl --eh --format="%F%L.csv"))" >> ltlcross.mk
+    echo "all.csv: \$(ALL); cat \$(ALL) | sed -e 1n -e '/^\"formula\"/d' > \$@" >>ltlcross.mk
+    genltl --eh --format="%F%L.csv:; \$(LTLCROSS) --csv=\$@ -f '%f'" >>ltlcross.mk
+    #+end_src
+
+    This creates =ltlcross.mk=:
+    #+RESULTS: ltlcross.mk
+    #+begin_src makefile
+    LTLCROSS=ltlcross -q ltl2tgba ltl3ba
+    ALL= eh-patterns1.csv eh-patterns2.csv eh-patterns3.csv eh-patterns4.csv eh-patterns5.csv eh-patterns6.csv eh-patterns7.csv eh-patterns8.csv eh-patterns9.csv eh-patterns10.csv eh-patterns11.csv eh-patterns12.csv
+    all.csv: $(ALL); cat $(ALL) | sed -e 1n -e '/^"formula"/d' > $@
+    eh-patterns1.csv:; $(LTLCROSS) --csv=$@ -f 'p0 U (p1 & Gp2)'
+    eh-patterns2.csv:; $(LTLCROSS) --csv=$@ -f 'p0 U (p1 & X(p2 U p3))'
+    eh-patterns3.csv:; $(LTLCROSS) --csv=$@ -f 'p0 U (p1 & X(p2 & F(p3 & XF(p4 & XF(p5 & XFp6)))))'
+    eh-patterns4.csv:; $(LTLCROSS) --csv=$@ -f 'F(p0 & XGp1)'
+    eh-patterns5.csv:; $(LTLCROSS) --csv=$@ -f 'F(p0 & X(p1 & XFp2))'
+    eh-patterns6.csv:; $(LTLCROSS) --csv=$@ -f 'F(p0 & X(p1 U p2))'
+    eh-patterns7.csv:; $(LTLCROSS) --csv=$@ -f 'FGp0 | GFp1'
+    eh-patterns8.csv:; $(LTLCROSS) --csv=$@ -f 'G(p0 -> (p1 U p2))'
+    eh-patterns9.csv:; $(LTLCROSS) --csv=$@ -f 'G(p0 & XF(p1 & XF(p2 & XFp3)))'
+    eh-patterns10.csv:; $(LTLCROSS) --csv=$@ -f 'GFp0 & GFp1 & GFp2 & GFp3 & GFp4'
+    eh-patterns11.csv:; $(LTLCROSS) --csv=$@ -f '(p0 U (p1 U p2)) | (p1 U (p2 U p0)) | (p2 U (p0 U p1))'
+    eh-patterns12.csv:; $(LTLCROSS) --csv=$@ -f 'G(p0 -> (p1 U (Gp2 | Gp3)))'
+    #+end_src
+
+    This makefile could be executed for instance with =make -f
+    ltlcross.mk -j 4=, where =-j 4= specifies that 4 processes can be
+    executed in parallel.  Using different =csv= files for each
+    process avoids potential race conditions that could occur if each
+    instance of =ltlcross= was appending to the same file.  The =sed=
+    command used while merging all =csv= files keeps the first header
+    line (=1n=) while removing all subsequent ones (=/"formula"/d=).
+
+#+BEGIN_SRC sh :results silent :exports results
+rm -f results.csv results.json ltlcross.csv bogus-grind bogus ltlcross.mk
+#+END_SRC
+
+#  LocalWords:  ltlcross num toc LTL Büchi LBTT Testbench PSL SRC sed
+#  LocalWords:  automata LBT LBTT's ltl tgba GFa lck iDGV sA FYp BYY
+#  LocalWords:  ClVQg wyErP UNE dQ coM tH eHPoQy goto ba lbt modella
+#  LocalWords:  lbtt csv json randltl ltlfilt wm eGEYaZ nYpFBX fGdZQ
+#  LocalWords:  CPs kXiZZS ILLzR wU CcMCaQ IOckzW tsT RZ TJXmT jb XRO
+#  LocalWords:  nxqfd hS vNItGg acc scc nondetstates nondeterministic
+#  LocalWords:  cvs LaTeX datacols len ith otimes ltlcheck eval setq
+#  LocalWords:  setenv concat getenv utf html args SCCs nonaccepting
+#  LocalWords:  dstar's lcr hvzgTC iYh nzjV rqfB OUNHEn qzVvdx eUfHTG
+#  LocalWords:  infixed LBT's dstar parsers MWei nba streett mv dst
+#  LocalWords:  Rabinizer MWRei rabinizer dra tela COMMANDFMT delag
+#  LocalWords:  da dgra dpa ldba untrusted ne UWmAOs UALknk JlcYb Yqa
+#  LocalWords:  vcaV jwQ eDh rE kjYd yDowOn zxU yf Dj NcC xUjPQ fD yl
+#  LocalWords:  OCI kdqA ZsPBds IxFTSb hRJ OAV yTDisN CUj lF xWC fx
+#  LocalWords:  aHi ATTR nondet aut ok degeneralized lor nonacc noweb
+#  LocalWords:  EOF genltl gizrt os LiBWmP ztzWmc DCyLpz MeEivW oXCj
+#  LocalWords:  APddNG un njT YNmfBO bGzWb rlrmnz KobkRW DFKnk IIcXH
+#  LocalWords:  sYE ypOBqt rJtfR qK stderr dt str SRC datatable chr
+#  LocalWords:  ok num acc scc nondet aut attr dcast SRC dt sep str
+#  LocalWords:  chr ok num acc scc nondet aut selfref attr chr tgba
+#  LocalWords:  dt SRC ltlcross svg ggplot aes abline colour hjust ba
+#  LocalWords:  randltl eval lbtt ltlgrind OTHERFILENAME Fb modella
+#  LocalWords:  lcr Nc CDjvYF LVv Sl EmhjSb GzR mwR gEcuQH UoNQx Qn
+#  LocalWords:  IDRd VDFaS bkvvTT wMAQUJ qoYoWz ILwXXp avS MYCa vJss
+#  LocalWords:  ItCKaM TG leC UXhs KwJJli kbRvp dups otaRtY bRLcyO GH
+#  LocalWords:  DMJCE gHu gKcHMk UPD HUKX Dpno xyO fx vxmn wgw sd vt
+#  LocalWords:  eA qHT qrbNOJ ceD Vz upQ EStxbg nUoj DgrW ohXyzM Vd
+#  LocalWords:  bozRHC wYkQs TCxOYi uWKDhZ OkfrP aEdRAF vy Kv lcfpVl
+#  LocalWords:  Hig Fc AvSorS AZkvCI Hd LNy pM tygKaf YHFrm GL iyV WD
+#  LocalWords:  riOaKL RHWB iVlf Xli Ez Gy BLLY nQYO efo bF fFzkpv MQ
+#  LocalWords:  FGa ltzvEc dqnX wmIXr yJesT HHyVWR scKnIH Wloux Rin
+#  LocalWords:  SCCs bh PHg LvvYEm bcUDEs Pw REy parallelization src
+#  LocalWords:  parallelize xargs findutils ltlfilt pnn formules mk
+#  LocalWords:  moreutils's Makefile makefile fread externalptr Gp XF
+#  LocalWords:  XFp XGp FGp GFp

@@ -1,0 +1,73 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2011, 2014 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004 Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check for the negative_normal_form visitor
+
+. ./defs || exit 1
+
+set -e
+
+cat >nenoform.txt<<EOF
+# A few things that do not change
+a, a
+1, 1
+0, 0
+!a, !a
+a U b, a U b
+a & b, a & b
+a & b, b & a
+a & !b & c, c & a & !b
+a & b & c, b & c & a
+Xa & b & Xa, b & Xa & b
+a & b, b & a & b
+a & !b, !b & a & a
+a & b & (Xc |(f U !g)| e), b & a & a & (Xc | e |(f U !g)| e | Xc) & b
+GFa => FGb, FG!a || FGb
+
+# Basic rewritings
+!!a, a
+!!!!!a, !a
+!Xa, X!a
+!Fa, G!a
+!Ga, F!a
+!(a ^ b), !a&!b | a&b
+!(a <=> b), (!a&b) | a&!b
+!(a => b), a&!b
+!(!a => !b), !a&b
+!(a U b), !a R !b
+!(a R b), !a U !b
+!(!a R !b), a U b
+!(a & b & c & d & b), !a | !b | !c | !d
+!(a | b | c | d), !a & !b & !c & !d
+
+# Nested rewritings
+!(a U (!b U ((a & b & c) R d))), !a R (b R ((!a | !b | !c) U !d))
+!(GF a => FG b), GFa & GF!b
+
+# Rational operators
+!X{a;b}<>->Fx, X{a;b}[]->G!x
+!F({a*}<>->{b*}<>->c), G({a*}[]->{b*}[]->!c)
+EOF
+
+run 0 ../nenoform nenoform.txt

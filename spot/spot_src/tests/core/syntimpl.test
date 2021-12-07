@@ -1,0 +1,99 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2012 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2004 Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check syntactic implication.
+
+. ./defs || exit 1
+
+#
+#GFa && GFb && FG(!a && !b)
+run 1 ../syntimpl 0 'a' 'a | b'
+run 1 ../syntimpl 0 'F(a)' 'F(a | b)'
+run 1 ../syntimpl 0 'G(a)' 'G(a | b)'
+run 1 ../syntimpl 0 'GF(a)' 'GF(a | b)'
+run 1 ../syntimpl 0 'GF(a)' '!FG(!a && !b)'
+
+run 1 ../syntimpl 0 'Xa' 'X(b U a)'
+run 1 ../syntimpl 0 'XXa' 'XX(b U a)'
+
+run 1 ../syntimpl 0 '(e R f)' '(g U f)'
+run 1 ../syntimpl 0 '( X(a + b))' '( X((a + b)+(c)+(d)))'
+run 1 ../syntimpl 0 '( X(a + b)) U (e R f)' '( X((a + b)+(c)+(d))) U (g U f)'
+
+run 1 ../syntimpl 0 '1' '1'
+run 1 ../syntimpl 0 '0' '0'
+
+run 1 ../syntimpl 0 'a' '1'
+run 1 ../syntimpl 0 'a' 'a'
+
+run 1 ../syntimpl 0 'a' 'a & 1'
+
+run 1 ../syntimpl 0 'a & b' 'b'
+run 1 ../syntimpl 0 'a & b' 'a'
+
+run 1 ../syntimpl 0 'a' 'a + b'
+run 1 ../syntimpl 0 'b' 'a + b'
+
+run 1 ../syntimpl 0 'a + b' '1'
+
+run 1 ../syntimpl 0 'a' 'b U a'
+run 1 ../syntimpl 0 'a' 'b U 1'
+run 1 ../syntimpl 0 'a U b' '1'
+
+run 1 ../syntimpl 0 'a' '1 R a'
+run 1 ../syntimpl 0 'a' 'a R 1'
+run 1 ../syntimpl 0 'a R b' 'b'
+run 1 ../syntimpl 0 'a R b' '1'
+
+run 1 ../syntimpl 0 'Xa' 'X(b U a)'
+run 1 ../syntimpl 0 'X(a R b)' 'Xb'
+
+run 1 ../syntimpl 0 'a U b' '1 U b'
+run 1 ../syntimpl 0 'a R b' '1 R b'
+
+run 1 ../syntimpl 0 'b & (a U b)' 'a U b'
+run 1 ../syntimpl 0 'a U b' 'c + (a U b)'
+
+run 0 ../syntimpl 0 'Xa' 'XX(b U a)'
+run 0 ../syntimpl 0 'XXa' 'X(b U a)'
+
+run 0 ../syntimpl 0 '( X(a + b))' '( X(X(a + b)+(c)+(d)))'
+run 0 ../syntimpl 0 '( X(a + b)) U (e R f)' '( X(X(a + b)+(c)+(d))) U (g U f)'
+
+run 0 ../syntimpl 0 'a' 'b'
+run 0 ../syntimpl 0 'a' 'b + c'
+run 0 ../syntimpl 0 'a + b' 'a'
+run 0 ../syntimpl 0 'a' 'a & c'
+run 0 ../syntimpl 0 'a & b' 'c'
+run 0 ../syntimpl 0 'a' 'a U b'
+run 0 ../syntimpl 0 'a' 'a R b'
+run 0 ../syntimpl 0 'a R b' 'a'
+
+run 0 ../syntimpl 0 'p2' 'p3 || G(p2 && p5)'
+run 0 ../syntimpl 0 '!(p3 || G(p2 && p5))' '!p2'
+
+run 0 ../syntimpl 0 'Xc W 0' 'Xc R b'
+run 1 ../syntimpl 0 '(c&b) W (b&a)' 'a R b'
+
+exit 0

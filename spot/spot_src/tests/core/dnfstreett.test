@@ -1,0 +1,97 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+
+cat >accs << 'EOF'
+(Fin(0) & Inf(1)) | Fin(2)
+(Fin(0) & Inf(1)) | Inf(2)
+(Fin(0) & Fin(1) & Fin(2) & Inf(3)) | Inf(4) | Fin(5)
+Rabin1
+Rabin2
+Rabin3
+(Fin(0) & Inf(1)) | (Fin(2) & Fin(3) & Fin(4)) | (Inf(5) & Inf(6) & Inf(7))
+Fin(0) | (Fin(1) & Fin(2) & Inf(3)) | (Inf(4) & Inf(5) & Fin(6))
+Fin(0) | Inf(1) | Inf(2) | Fin(3)
+EOF
+
+while read line
+do
+  randaut -A "$line" a b c > input.hoa
+  autfilt --streett-like input.hoa > res.hoa
+  autfilt input.hoa --equivalent-to='res.hoa'
+  autfilt --complement input.hoa > input_comp.hoa
+  autfilt --complement res.hoa > res_comp.hoa
+  autfilt input_comp.hoa --equivalent-to='res_comp.hoa'
+done < accs
+
+cat >random_ltl<< 'EOF'
+F(a R !c)
+XXF(a R b)
+FG(Xa xor !(a W c))
+XX(1 U ((X(b W a) M 1) R c))
+(b | GFXb) -> (a xor b)
+F(!a R c) | (b <-> XX(!Gb R b))
+X!G(0 R (b M 1))
+XF((Fc <-> (!b W c)) <-> (Gc M 1))
+F((!b | FGc) -> (b W (!c <-> Xc)))
+((a xor b) -> a) U (Ga & (b R c))
+F((a M Xc) | FG(Xb <-> X(b | c)))
+XFG!a
+((b R c) | F!XGF(b | c)) R !b
+Xc U Ga
+(Fa & Xc) | G(b U Ga)
+X!(((c <-> (!a M b)) W 0) W 0)
+b U (c W Fa)
+F(Xa W (b xor (Ga U !Xb)))
+!(G(c R Gc) U X(Fc W !Xb))
+F(0 R (c W a))
+EOF
+ltlcross -F random_ltl \
+  --timeout=60 \
+  '{1} ltl2tgba %f | autfilt --gra >%T' \
+  '{2} ltl2tgba %f | autfilt --gra | autfilt --streett-like >%T'
+
+cat >input.hoa<< 'EOF'
+HOA: v1
+States: 4
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 6 (Fin(0) & Inf(1)) | (Fin(2) & Inf(3)) | (Fin(4) & Inf(5))
+--BODY--
+State: 0
+[!0&!1] 3
+[!0&!1] 1
+State: 1
+[0&1] 2 {1 2 4}
+State: 2
+[0&1] 1
+State: 3
+[!0&1] 0 {0 3 5}
+[!0&!1] 2 {1 2 4}
+--END--
+EOF
+autfilt --streett-like input.hoa > res.hoa
+autfilt input.hoa --equivalent-to='res.hoa'
+autfilt --complement input.hoa > input_comp.hoa
+autfilt --complement res.hoa > res_comp.hoa
+autfilt input_comp.hoa --equivalent-to='res_comp.hoa'

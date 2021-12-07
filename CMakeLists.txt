@@ -30,7 +30,6 @@ include(ProcessorCount)
 ##	CMake options of Storm
 ##
 #############################################################
-## set(CMAKE_BUILD_TYPE "DEBUG")
 option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
 option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
@@ -75,7 +74,7 @@ set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optiona
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The hint to the root directory of CUDA (optional).")
 set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
-set(SPOT_ROOT "" CACHE STRING "The hint to the root directory of Spot (optional).")
+set(SPOT_ROOT "${PROJECT_SOURCE_DIR}/spot")
 MARK_AS_ADVANCED(SPOT_ROOT)
 option(STORM_LOAD_QVBS "Sets whether the Quantitative Verification Benchmark Set (QVBS) should be downloaded." OFF)
 set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Verification Benchmark Set (QVBS) in case it should not be downloaded (optional).")

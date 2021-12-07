@@ -1,0 +1,297 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Common input and output options for LTL/PSL formulas
+#+DESCRIPTION: Options for input and output of temporal logic formulas in Spot's command-line tools
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+Spot supports different syntaxes for LTL/PSL formulas.  This page
+documents the options, common to all tools where it makes sense, that
+are used to specify input and output of formula.
+
+* Common input options
+
+All tools that read LTL/PSL formulas implement the following options:
+
+#+BEGIN_SRC sh :exports results
+ltl2tgba --help | sed -n '/Input options:/,/^$/p' | sed '1d;$d'
+#+END_SRC
+#+RESULTS:
+:   -f, --formula=STRING       process the formula STRING
+:   -F, --file=FILENAME[/COL]  process each line of FILENAME as a formula; if COL
+:                              is a positive integer, assume a CSV file and read
+:                              column COL; use a negative COL to drop the first
+:                              line of the CSV file
+:       --lbt-input            read all formulas using LBT's prefix syntax
+:       --lenient              parenthesized blocks that cannot be parsed as
+:                              subformulas are considered as atomic properties
+
+=-f= is used to pass one formula on the command line, but this option can
+be repeated to pass multiple formulas.
+
+=-F= is used to read formulas from a file (one formula per line).
+This option can also be repeated to pass multiple files.  If the
+filename specified is =-= (as in =-F-=), then formulas are read from
+standard input.  If a filename is suffixed with =/COL=, where =COL= is
+a positive integer, then the file is assumed to be a CSV file, and
+formulas are read from its =COL=-th column.  Use =/-COL= to read from
+column =COL= and ignore the first line of the CSV file (which often
+contains column headers).  We have [[file:csv.org][examples of reading or writing CSV
+files on a separate page]].
+
+** Default parser
+   :PROPERTIES:
+   :CUSTOM_ID: infix
+   :END:
+
+
+
+Spot's default LTL parser is able to parse the syntaxes of many tools,
+such as [[http://spinroot.com][Spin]], [[http://vlsi.colorado.edu/~rbloem/wring.html][Wring]], [[http://goal.im.ntu.edu.tw][Goal]], etc.  For instance here are the preferred ways
+to express the same formula for different tools.
+
+#+NAME: tab:formula-syntaxes
+| Tool         | Formula                 |
+|--------------+-------------------------|
+| Spot         | =G(a -> (b R !c))=      |
+| Spot (UTF-8) | =□(a → (b R c̅))=        |
+| Spin         | =[](a -> (b V !c))=     |
+| Wring        | =G(a=1 -> (b=1 R c=0))= |
+| Goal         | =G(a --> (b R ~c))=     |
+
+Spot's default LTL parser will understand all of them.
+
+For a complete definition of the supported operators, including PSL
+operators, please refer to the
+[[https://spot.lrde.epita.fr/tl.pdf][=doc/tl/tl.pdf= document inside the Spot distribution]].
+
+For Spot, an atomic proposition is any alphanumeric string that does
+not start with the (upper case) characters =F=, =G=, or =X=.  For
+instance =gfa= is an atomic proposition, but =GFa= actually denotes
+the LTL formula =G(F(a))=.  Any double-quoted string is also
+considered to be an atomic proposition, so if =GFa= had to be an
+atomic proposition, it could be written
+@@html:<code>@@"GFa"@@html::</code>@@.
+
+These double-quote strings also make it possible to embed arbitrarily
+complex expressions that represent an atomic proposition that Spot
+should not try to interpret.  For instance:
+: "a < b" U "process[2]@ok"
+
+** Lenient mode
+   :PROPERTIES:
+   :CUSTOM_ID: lenient
+   :END:
+
+In version 6, Spin extended its syntax to support arbitrary atomic expression
+in LTL formulas. The previous formula would be written simply:
+: (a < b) U (process[2]@ok)
+
+While Spot cannot read the above syntax by default, it can do it if
+you specify the =--lenient= option.  (This global option affects all
+formulas that are input.)
+
+The same parser is used, however its processing of parenthesis blocks
+is different: every time a parenthesis block is scanned, the parser
+first tries to recursively parse the block as an LTL/PSL formula, and
+if this parsing failed, the block is considered to be an atomic
+proposition.
+
+
+For instance =(a U b) U c= will be successfully converted into an LTL
+formula with two operators, while parsing =(a + b < 2) U c= will
+consider =a + b < 2= as an atomic proposition.
+
+An unfortunate side-effect of =--lenient= parsing is that many syntax
+errors will not be caught.  Compare the following syntax error:
+
+#+BEGIN_SRC sh :prologue "exec 2>&1" :epilogue true
+ltlfilt -f '(a U b U) U c'
+#+END_SRC
+#+RESULTS:
+: >>> (a U b U) U c
+:             ^
+: syntax error, unexpected closing parenthesis
+:
+: >>> (a U b U) U c
+:            ^
+: missing right operand for "until operator"
+:
+
+With the same command in =--lenient= mode:
+
+#+BEGIN_SRC sh :results verbatim :exports both
+ltlfilt --lenient -f '(a U b U) U c'
+#+END_SRC
+#+RESULTS:
+: "a U b U" U c
+
+Here =a U b U= was taken as an atomic proposition.
+
+** Prefix parser
+   :PROPERTIES:
+   :CUSTOM_ID: prefix
+   :END:
+
+The prefix syntax used by tools such as [[http://www.tcs.hut.fi/Software/maria/tools/lbt/][LBT]], [[http://www.tcs.hut.fi/Software/lbtt/][LBTT]], [[http://tcs.legacy.ics.tkk.fi/users/tlatvala/scheck/][scheck]] or [[http://www.ltl2dstar.de][ltl2dstar]]
+requires a different parser.  For these tools, the above example
+formula has to be written =G i p0 V p1 ! p2= (in LBT's syntax, atomic
+propositions must start with =p= and be followed by a number).  Spot's
+=--lbt-input= option can be used to activate the parser for this
+syntax.
+
+The following operators are supported:
+
+| syntax | meaning        |
+|--------+----------------|
+|  <c>   | <l>            |
+|  =t=   | true           |
+|  =f=   | false          |
+|  =!=   | not            |
+|  =&=   | and            |
+| \vert  | or             |
+|  =^=   | xor            |
+|  =i=   | implies        |
+|  =e=   | equivalent     |
+|  =X=   | next           |
+|  =F=   | eventually     |
+|  =G=   | globally       |
+|  =U=   | strong until   |
+|  =V=   | weak release   |
+|  =M=   | strong release |
+|  =W=   | weak until     |
+|--------+----------------|
+
+As an extension to LBT's syntax, alphanumeric atomic propositions that
+follow the "=p= + number" rule will be accepted if they do not
+conflict with one of the operators (e.g., =i=, the /implies/ operator,
+cannot be used as an atomic proposition).  Also any atomic proposition
+may be double-quoted.  These extensions are compatible with the syntax
+used by [[http://www.ltl2dstar.de][ltl2dstar]].
+
+=--lbt-input= is a global option that affects *all* formulas that are read.
+
+
+* Common output options
+   :PROPERTIES:
+   :CUSTOM_ID: output-options
+   :END:
+
+All tools that output LTL/PSL formulas implement the following options:
+
+#+BEGIN_SRC sh :exports results
+ltlfilt --help | sed -n '/Output options:/,/^$/p' |
+  sed '1d;$d;/--.*count/d;/--quiet/d'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+  -0, --zero-terminated-output   separate output formulas with \0 instead of \n
+                             (for use with xargs -0)
+  -8, --utf8                 output using UTF-8 characters
+      --format=FORMAT, --stats=FORMAT
+                             specify how each line should be output (default:
+                             "%f")
+  -l, --lbt                  output in LBT's syntax
+      --latex                output using LaTeX macros
+  -o, --output=FORMAT        send output to a file named FORMAT instead of
+                             standard output.  The first formula sent to a file
+                             truncates it unless FORMAT starts with '>>'.
+  -p, --full-parentheses     output fully-parenthesized formulas
+  -s, --spin                 output in Spin's syntax
+      --spot                 output in Spot's syntax (default)
+      --wring                output in Wring's syntax
+#+end_example
+
+The =--spot=, =--utf-8=, =--spin=, =--wring= options select different
+output syntaxes as seen in [[tab:formula-syntaxes][the above table]].
+
+Option =--latex= causes formulas to be output using LaTeX macros for
+each operator.  You may define these macros as you wish, and some
+example definitions are in =doc/tl/spotltl.sty=.
+
+The =-p= option can be used to request that parentheses be used at all
+levels.
+
+Note that by default Spot always outputs parentheses around operators
+such as =U=, because not all tools agree on their associativity.  For
+instance =a U b U c= is read by Spot as =a U (b U c)= (because =U= is
+right-associative in the PSL standard), while Spin (among other tools)
+with read it as =(a U b) U c=.
+
+The =--lbt= option requests an output in LBT's prefix format, and in
+that case discussing associativity and parentheses makes no sense.
+
+The =--csv= causes the formulas to be double-quoted (with inner
+double-quotes doubled, as per RFC 4180), regardless of the selected
+format.  This is needed if the formula should appear in a CSV file,
+and you want to be robust to formulas that contains commas or
+double-quotes.  We have [[file:csv.org][examples of reading or writing CSV files on a
+separate page]].
+
+The =--format= option can be used to fine-tune the way the formula is
+output.  Not using the =--format= option is equivalent to using
+=--format=%f=.  The semantic of the available =%=-sequences differ
+from tool to tool:
+
+|            | =%f=           | =%F=           | =%L=              | =%<=         | =%>=          |
+|------------+----------------+----------------+-------------------+--------------+---------------|
+| [[file:ltlfilt.org][=ltlfilt=]]  | output formula | input filename | input line        | leading text | trailing text |
+| [[file:genltl.org][=genltl=]]   | output formula | pattern name   | pattern parameter | (empty)      | (empty)       |
+| [[file:randltl.org][=randltl=]]  | output formula | (empty)        | formula number    | (empty)      | (empty)       |
+| [[file:ltlfilt.org][=ltlgrind=]] | output formula | input filename | input line        | leading text | trailing text |
+
+Other =%=-sequences are supported by these tools, and documented in
+the output of =--help=.  For instance =%s= can be used to compute the
+size of a formula.
+
+By default everything is output to standard output, so that you can
+redirect the output to a file, and pipe it to another tool.  The
+=--output= (or =-o=) allows you to construct a filename using some of
+the above =%=-sequences.
+
+For instance the following invocation of [[file:randltl.org][=randltl=]] will create 5
+random formulas, but in 5 different files:
+
+#+BEGIN_SRC sh :epilogue "rm -f example-*.ltl"
+randltl -n5 a b -o example-%L.ltl
+wc -l example-*.ltl
+#+END_SRC
+#+RESULTS:
+:  1 example-1.ltl
+:  1 example-2.ltl
+:  1 example-3.ltl
+:  1 example-4.ltl
+:  1 example-5.ltl
+:  5 total
+
+Option =-0= is useful if the list of formulas is passed to =xargs=.
+=xargs= normally splits its input on white space (which are frequent
+in LTL formulas), but you can use =xargs -0= to split the input on
+null characters.   So for instance the following two invocations have
+nearly the same output:
+
+#+BEGIN_SRC sh
+genltl -0 --gh-q=1..4 | xargs -0 ltl2tgba --stats='%F,%f,%s'
+genltl --gh-q=1..4 | ltl2tgba -F- --stats='%F,%f,%s'
+#+END_SRC
+
+#+RESULTS:
+: ,Fp1 | Gp2,3
+: ,(Fp1 | Gp2) & (Fp2 | Gp3),8
+: ,(Fp1 | Gp2) & (Fp2 | Gp3) & (Fp3 | Gp4),18
+: ,(Fp1 | Gp2) & (Fp2 | Gp3) & (Fp3 | Gp4) & (Fp4 | Gp5),42
+: -,Fp1 | Gp2,3
+: -,(Fp1 | Gp2) & (Fp2 | Gp3),8
+: -,(Fp1 | Gp2) & (Fp2 | Gp3) & (Fp3 | Gp4),18
+: -,(Fp1 | Gp2) & (Fp2 | Gp3) & (Fp3 | Gp4) & (Fp4 | Gp5),42
+
+The only difference is that for the first command, =ltl2tgba= received
+its formulas from the command-line arguments supplied by =xargs= (so
+=%F= is empty as there is no input file), while in the second case the
+formula where read from standard input (denoted by =-=).
+
+
+
+#  LocalWords:  lbt LBT's filename UTF gfa GFa ltlfilt LBTT scheck
+#  LocalWords:  utf associativity
+#  LocalWords:  syntaxes LTL PSL num toc SRC ltl tgba sed FILENAME

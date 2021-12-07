@@ -1,0 +1,102 @@
+@font-face{font-family:Lato;src:local("Lato"),local("Lato-Regular"),url("https://spot.lrde.epita.fr/Lato-Regular.ttf");}
+a{color:inherit;background-color:inherit;font:inherit;text-decoration:inherit}
+a:hover{text-decoration:underline}
+/* http://paletton.com/#uid=33i0X0kz3BrkeHdpSD1C7r1FAlb */
+body{font-family:Lato, sans-serif;font-size:12pt;font-weight:normal;max-width:90ch;margin:auto;padding:0 .5em}
+body.man{padding:0 .5em 3em .5em}
+body #content{padding-top:45px}
+body pre{background:#fbfbfb;border:none;font-family:monospace, courier}
+body code{font-weight:bold}
+body a{color:#008181}
+h1{display:block;width:calc(100% - 1em);position:relative;padding:.5em}
+h1::before{content:"";position:absolute;z-index:-1;background-color:#ffe35e;left:0em;bottom:0em;width:100%;height:100%;border-radius:10px;transform:skew(10deg)}
+#table-of-contents{font-size:80%;padding-left:0.5em;padding-right:0.5em;text-align:right;float:right;border-left:1px solid #ffd300;border-bottom:1px solid #ffd300;background:#ffe35e}
+#table-of-contents ul{padding-left:1em}
+#table-of-contents h2{font-size:100%;font-weight:normal;padding-left:0.5em;padding-right:0.5em;padding-top:0.05em;padding-bottom:0.05em}
+#table-of-contents #text-table-of-contents{text-align:left}
+#org-div-home-and-up{text-align:center;font-size:100%}
+.outline-2 h2{display:block;width:100%;position:relative}
+.outline-2 h2::before{content:"";height:100%;width:calc(100% + 2em);position:absolute;z-index:-1;bottom:0em;left:-1em;background-color:#ffe35e;background:linear-gradient(45deg,#ffe35e 50%,transparent 75%);transform:skew(10deg);border-radius:5px;}
+.outline-3 h3{display:block;width:auto;position:relative}
+.outline-3 h3::before{content:"";position:absolute;z-index:-1;width:calc(100% + 2em);height:100%;left:-1em;bottom:0em;;background-color:#ffe35e;background:linear-gradient(45deg,#ffe35e 25%,transparent 50%);transform:skew(10deg);border-radius:3px}
+.outline-2 h2:hover::before,.outline-3 h3:hover::before{background-color:#ffe35e}
+pre{margin:1.2ex}
+pre.src{padding-top:8px;border-left-style:solid;border-color:#00adad;overflow:auto;margin-top:0;margin-bottom:0}
+pre.src-hoa{border-color:#d70079}
+pre.example{border-left-style:solid;border-color:#d70079;margin-top:0;position:relative;z-index:2}
+div.org-src-container+pre.example{border-top-width:1px;border-top-color:#ddd;border-top-style:dashed}
+div.org-src-container+div.org-src-container pre.src{border-top-width:1px;border-top-color:#ddd;border-top-style:dashed}
+div.org-src-container {margin-top:0;margin-bottom:0;position:relative;z-index:1}
+pre.src-text{border-left-style:solid;border-color:#d70079}
+pre.src::before{border:none;border-bottom-style:solid;border-color:#00adad;top:0px;}
+pre.src-python::before{content:'Python'}
+pre.src-C\+\+::before{content:'C++'}
+pre.src-hoa::before{content:'HOA';border-color:#d70079}
+img{max-width:100%}
+svg.org-svg{width:auto;max-width:100%}
+table{margin-top:1em}
+table.csv-table,table.table-pre{font-family:monospace, courier}
+table.csv-table th{vertical-align:bottom}
+table.csv-table th div{text-align:center}
+table.csv-table th div span{text-align:left;writing-mode:vertical-lr;transform:rotate(180deg);display:inline-block;white-space:nowrap}
+@media only screen and (max-width:100ch){
+#spotlogo{display:none}
+.outline-2 h2::before,.outline-3 h3::before,h1.title::before{transform:none;}
+}
+@media screen{
+#table-of-contents{position:fixed;right:0em;top:0em;max-width:50%;max-height:80%;overflow:auto;z-index:10}
+#table-of-contents #text-table-of-contents{display:none}
+#table-of-contents:hover #text-table-of-contents{display:block;padding:0.5em;margin-top:-1.5em}
+#spotlogo{position:absolute;top:10px;left:10px;z-index:-1}
+}
+@media print{
+#table-of-contents{border:1px solid #ffd300}
+#org-div-home-and-up{visibility:hidden}
+#spotlogo{width:2cm;position:absolute;top:0px;left:0px;z-index:-1}
+pre.src{word-wrap:break-word;white-space:pre-wrap}
+pre.example{word-wrap:break-word;white-space:pre-wrap}
+}
+thead tr{background:#ffe35e}
+#content tbody:nth-child(odd) tr:nth-child(even){background:#fff0a6}
+#content tbody:nth-child(odd) tr:nth-child(odd){background:#fff7cf}
+#content tbody:nth-child(even) tr:nth-child(even){background:#fff3bc}
+#content tbody:nth-child(even) tr:nth-child(odd){background:#fffbe0}
+.org-svg{max-width:100%;width:auto}
+.org-keyword,.org-builtin,.org-preprocessor,.org-py-import-from,.org-py-def-class{font-weight:bold}
+.org-string{font-weight:bold;color:#00adad}
+.src-hoa .org-string{font-weight:bold;color:#d70079}
+.src-makefile .org-variable-name{font-weight:bold;color:#d70079}
+.org-makefile-targets{font-weight:bold;color:#00adad}
+.org-function-name{font-weight:bold;color:#d70079}
+.org-type{font-weight:bold;color:#00adad}
+.org-comment-delimiter{font-weight:bold;color:#a13672}
+.org-comment{font-style:italic;color:#a13672}
+.org-hoa-keyword,.org-hoa-builtin,.org-hoa-acceptance-set{font-weight:bold}
+.org-hoa-header-uppercase{font-weight:bold;color:#00adad}
+.org-hoa-header-lowercase{color:#00adad}
+.org-hoa-ap-number{color:#d70079}
+.implem{background:#fff0a6;padding:0.5ex 1ex 0.5ex 1ex;margin:1ex;border-color:#ffe35e;border-style:solid none}
+.implem::before{background:#ffe35e;content:"Implementation detail";padding:.5ex;position:relative;top:0;left:0;font-weight:bold}
+.caveat{background:#ef99c9;padding:0.5ex 1ex 0.5ex 1ex;margin:1ex;border-color:#d70079;border-style:solid none}
+.caveat::before{background:#d70079;content:"Caveat";padding:.5ex;position:relative;top:0;left:0;font-weight:bold}
+.spotlogo{transform-origin:50% 50%;animation-duration:2s;animation-name:animspotlogo}
+g.spotlogobg{transform-origin:50% 50%;animation-duration:2s;animation-name:animspotlogobg}
+g#version{transform-origin:50% 50%;animation-duration:3s;animation-name:animspotlogover}
+@keyframes animspotlogo{
+0%{transform:rotateY(90deg)}
+80%{transform:rotateY(0deg)}
+100%{transform:rotateY(0deg)}
+}
+@keyframes animspotlogobg{
+0%{transform:rotateY(90deg)}
+50%{transform:rotate(0deg)rotateY(0deg)}
+100%{transform:rotate(360deg)rotateY(0deg)}
+}
+@keyframes animspotlogover{
+0%{transform:scale(.9)}
+50%{transform:scale(.9)}
+62%{transform:scale(1.1)}
+75%{transform:scale(.9)}
+88%{transform:scale(1.1)}
+100%{transform:scale(1)}
+}

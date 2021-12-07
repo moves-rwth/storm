@@ -1,0 +1,1000 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Mon Jan 18 11:47:57 2021 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>SPOT-X</title>
+
+ <LINK REL="stylesheet" TYPE="text/css" HREF="../spot.css">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body class="man"><div id="org-div-home-and-up"><a accesskey="h" href="../tools.html"> UP </a>| <a accesskey="H" href="../index.html"> HOME </a></div>
+
+<h1 align="center">SPOT-X</h1>
+
+<div id="table-of-contents"><h2>Table of Contents</h2><div id="text-table-of-contents"><ul>
+<li><a href="#NAME">NAME</a></li>
+<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+<li><a href="#SAT-MINIMIZE VALUES">SAT-MINIMIZE VALUES</a></li>
+<li><a href="#ENVIRONMENT VARIABLES">ENVIRONMENT VARIABLES</a></li>
+<li><a href="#BIBLIOGRAPHY">BIBLIOGRAPHY</a></li>
+<li><a href="#REPORTINGBUGS">REPORTINGBUGS</a></li>
+<li><a href="#COPYRIGHT">COPYRIGHT</a></li>
+<li><a href="#SEE ALSO">SEE ALSO</a></li>
+</ul></div></div>
+
+
+<div class="outline-2"><h2>NAME
+<a name="NAME"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">spot-x - Common
+fine-tuning options and environment variables.</p>
+
+<div class="outline-2"><h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--extra-options
+STRING <br>
+-x STRING</b></p>
+
+<div class="outline-2"><h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Common
+fine-tuning options for binaries built with Spot.</p>
+
+<p style="margin-left:11%; margin-top: 1em">The argument of
+<b>-x</b> or <b>--extra-options</b> is a comma-separated
+list of KEY=INT assignments that are passed to the
+post-processing routines (they may be passed to other
+algorithms in the future). These options are mostly used for
+benchmarking and debugging purpose. KEYR (without any value)
+is a shorthand for KEY=1, while !KEY is a shorthand for
+KEY=0.</p>
+
+<h3 style="margin-left:11%">Temporal
+logic simplification options:</h3><p style="margin-left:11%">
+tls-impl</p>
+
+<p style="margin-left:22%;">Control usage of
+implication-based rewriting. (0) disables it, (1) enables
+rules based on syntactic implications, (2) additionally
+allows automata-based implication checks, (3) enables more
+rules based on automata-based implication checks. The
+default value depends on the <b>--low</b>, <b>--medium</b>,
+or <b>--high</b> settings.</p>
+
+<h3 style="margin-left:11%">Translation
+options:</h3><p style="margin-left:11%">
+comp-susp</p>
+
+<p style="margin-left:22%;">Set to 1 to enable
+compositional suspension, as described in our SPIN&rsquo;13
+paper (see Bibliography below). Set to 2, to build only the
+skeleton TGBA without composing it. Set to 0 (the default)
+to disable.</p>
+
+<p style="margin-left:11%;">early-susp</p>
+
+<p style="margin-left:22%;">When set to 1, start
+compositional suspension on the transitions that enter
+accepting SCCs, and not only on the transitions inside
+accepting SCCs. This option defaults to 0, and is only used
+when comp-susp=1.</p>
+
+<p style="margin-left:11%;">ltl-split</p>
+
+<p style="margin-left:22%;">Set to 0 to disable the
+translation of automata as product or sum of
+subformulas.</p>
+
+<p style="margin-left:11%;">skel-simul</p>
+
+<p style="margin-left:22%;">Default to 1. Set to 0 to
+disable simulation on the skeleton automaton during
+compositional suspension. Only used when comp-susp=1.</p>
+
+<p style="margin-left:11%;">skel-wdba</p>
+
+<p style="margin-left:22%;">Set to 0 to disable WDBA
+minimization on the skeleton automaton during compositional
+suspension. Set to 1 always WDBA-minimize the skeleton . Set
+to 2 to keep the WDBA only if it is smaller than the
+original skeleton. This option is only used when comp-susp=1
+and default to 1 or 2 depending on whether <b>--small</b> or
+<b>--deterministic</b> is specified.</p>
+
+
+<h3 style="margin-left:11%">Postprocessing
+options:</h3><p style="margin-left:11%">
+ba-simul</p>
+
+<p style="margin-left:22%;">Set to 0 to disable
+simulation-based reductions on automata where state-based
+acceptance must be preserved (e.g., after degeneralization
+has been performed). The name suggests this applies only to
+B&uuml;chi automata for historical reasons; it really
+applies to any state-based acceptance nowadays. Set to 1 to
+use only direct simulation. Set to 2 to use only reverse
+simulation. Set to 3 to iterate both direct and reverse
+simulations. The default is 3 in <b>--high</b> mode, and 0
+otherwise.</p>
+
+<p style="margin-left:11%;">degen-lcache</p>
+
+<p style="margin-left:22%;">If non-zero (the default is 1),
+whenever the degeneralization algorithm enters an SCC on a
+state that has already been associated to a level elsewhere,
+it should reuse that level. Different values can be used to
+select which level to reuse: 1 always uses the first level
+created, 2 uses the minimum level seen so far, and 3 uses
+the maximum level seen so far. The &quot;lcache&quot; stands
+for &quot;level cache&quot;.</p>
+
+<p style="margin-left:11%;">degen-lowinit</p>
+
+<p style="margin-left:22%;">Whenever the degeneralization
+algorihm enters a new SCC (or starts from the initial
+state), it starts on some level L that is compatible with
+all outgoing transitions. If degen-lowinit is zero (the
+default) and the corresponding state (in the generalized
+automaton) has an accepting self-loop, then level L is
+replaced by the accepting level, as it might favor finding
+accepting cycles earlier. If degen-lowinit is non-zero, then
+level L is always used without looking for the presence of
+an accepting self-loop.</p>
+
+<p style="margin-left:11%;">degen-lskip</p>
+
+<p style="margin-left:22%;">If non-zero (the default), the
+degeneralization algorithm will skip as much levels as
+possible for each transition. This is enabled by default as
+it very often reduce the number of resulting states. A
+consequence of skipping levels is that the degeneralized
+automaton tends to have smaller cycles around the accepting
+states. Disabling skipping will produce automata with large
+cycles, and often with more states.</p>
+
+<p style="margin-left:11%;">degen-order</p>
+
+<p style="margin-left:22%;">If non-zero, the
+degeneralization algorithm will compute an independent
+degeneralization order for each SCC it processes. This is
+currently disabled by default.</p>
+
+<p style="margin-left:11%;">degen-remscc</p>
+
+<p style="margin-left:22%;">If non-zero (the default), make
+sure the output of the degenalization has as many SCCs as
+the input, by removing superfluous ones.</p>
+
+<p style="margin-left:11%;">degen-reset</p>
+
+<p style="margin-left:22%;">If non-zero (the default), the
+degeneralization algorithm will reset its level any time it
+exits an SCC.</p>
+
+<p style="margin-left:11%;">det-max-edges</p>
+
+<p style="margin-left:22%;">When defined to a positive
+integer N, determinizations will be aborted whenever the
+number of generated edges would exceed N. In this case a
+non-deterministic automaton will be returned.</p>
+
+<p style="margin-left:11%;">det-max-states</p>
+
+<p style="margin-left:22%;">When defined to a positive
+integer N, determinizations will be aborted whenever the
+number of generated states would exceed N. In this case a
+non-deterministic automaton will be returned.</p>
+
+<p style="margin-left:11%;">det-scc</p>
+
+<p style="margin-left:22%;">Set to 0 to disable scc-based
+optimizations in the determinization algorithm.</p>
+
+<p style="margin-left:11%;">det-simul</p>
+
+<p style="margin-left:22%;">Set to 0 to disable
+simulation-based optimizations in the determinization
+algorithm.</p>
+
+<p style="margin-left:11%;">det-stutter</p>
+
+<p style="margin-left:22%;">Set to 0 to disable
+optimizations based on the stutter-invariance in the
+determinization algorithm.</p>
+
+<p style="margin-left:11%;">gen-reduce-parity</p>
+
+<p style="margin-left:22%;">When the postprocessor routines
+are configured to output automata with any kind of
+acceptance condition, but they happen to process an
+automaton with parity acceptance, they call a function to
+minimize the number of colors needed. This option controls
+what happen when this reduction does not reduce the number
+of colors: when set (the default) the output of the
+reduction is returned, this means the colors in the
+automaton may have changed slightly, and in particular,
+there is no transition with more than one color; when unset,
+the original automaton is returned.</p>
+
+<p style="margin-left:11%;">gf-guarantee</p>
+
+<p style="margin-left:22%;">Set to 0 to disable alternate
+constructions for GF(guarantee)-&gt;[D]BA and
+FG(safety)-&gt;DCA. Those constructions are from an
+LICS&rsquo;18 paper by J. Esparza, J.
+K&#345;ent&iacute;nsk&yacute;, and S. Sickert. This is
+enabled by default for medium and high optimization levels.
+Unless we are building deterministic automata, the resulting
+automata are compared to the automata built using the more
+traditional pipeline, and only kept if they are better.</p>
+
+<p style="margin-left:11%;">relabel-bool</p>
+
+<p style="margin-left:22%;">If set to a positive integer N,
+a formula with N atomic propositions or more will have its
+Boolean subformulas abstracted as atomic propositions during
+the translation to automaton. This relabeling can speeds the
+translation if a few Boolean subformulas use a large number
+of atomic propositions. By default N=4. Setting this value
+to 0 will disable the rewriting.</p>
+
+<p style="margin-left:11%;">sat-acc</p>
+
+<p style="margin-left:22%;">When this is set to some
+positive integer, the SAT-based will attempt to construct a
+TGBA with the given number of acceptance sets. states. It
+may however return an automaton with less acceptance sets if
+some of these are useless. Setting sat-acc automatically
+sets sat-minimize to 1 if not set differently.</p>
+
+<p style="margin-left:11%;">sat-incr-steps</p>
+
+<p style="margin-left:22%;">Set the value of
+sat-incr-steps. This variable is used by two SAT-based
+minimization algorithms: (2) and (3). They are both
+described below.</p>
+
+<p style="margin-left:11%;">sat-langmap</p>
+
+<p style="margin-left:22%;">Find the lower bound of default
+sat-minimize procedure (1). This relies on the fact that the
+size of the minimal automaton is at least equal to the total
+number of different languages recognized by the
+automaton&rsquo;s states.</p>
+
+<p style="margin-left:11%;">sat-minimize</p>
+
+<p style="margin-left:22%;">Set it to enable SAT-based
+minimization of deterministic TGBA. Depending on its value
+(from 1 to 4) it changes the algorithm to perform. The
+default value is (1) and it proves to be the most effective
+method. SAT-based minimization uses PicoSAT (distributed
+with Spot), but another installed SAT-solver can be set
+thanks to the SPOT_SATSOLVER environment variable. Enabling
+SAT-based minimization will also enable tba-det.</p>
+
+<p style="margin-left:11%;">sat-states</p>
+
+<p style="margin-left:22%;">When this is set to some
+positive integer, the SAT-based minimization will attempt to
+construct a TGBA with the given number of states. It may
+however return an automaton with less states if some of
+these are unreachable or useless. Setting sat-states
+automatically enables sat-minimize, but no iteration is
+performed. If no equivalent automaton could be constructed
+with the given number of states, the original automaton is
+returned.</p>
+
+<p style="margin-left:11%;">scc-filter</p>
+
+<p style="margin-left:22%;">Set to 1 (the default) to
+enable SCC-pruning and acceptance simplification at the
+beginning of post-processing. Transitions that are outside
+of accepting SCC are removed from accepting sets, except
+those that enter into an accepting SCC. Set to 2 to remove
+even these entering transition from the accepting sets. Set
+to 0 to disable this SCC-pruning and acceptance
+simpification pass.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p>simul</p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Set to 0 to disable simulation-based reductions. Set to
+1 to use only direct simulation. Set to 2 to use only
+reverse simulation. Set to 3 to iterate both direct and
+reverse simulations. The default is 3, except when option
+<b>--low</b> is specified, in which case the default is
+1.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;">state-based</p>
+
+<p style="margin-left:22%;">Set to 1 to instruct the
+SAT-minimization procedure to produce a TGBA where all
+outgoing transition of a state have the same acceptance
+sets. By default this is only enabled when option <b>-B</b>
+is used.</p>
+
+<p style="margin-left:11%;">tba-det</p>
+
+<p style="margin-left:22%;">Set to 1 to attempt a powerset
+determinization if the TGBA is not already deterministic.
+Doing so will degeneralize the automaton. This is disabled
+by default, unless sat-minimize is set.</p>
+
+<p style="margin-left:11%;">wdba-minimize</p>
+
+<p style="margin-left:22%;">Set to 0 to disable
+WDBA-minimization, to 1 to always try it, or 2 to attempt it
+only on syntactic obligations or on automata that are weak
+and deterministic. The default is 1 in <b>--high</b> mode,
+else 2 in <b>--medium</b> or <b>--deterministic</b> modes,
+else 0 in <b>--low</b> mode.</p>
+
+<div class="outline-2"><h2>SAT-MINIMIZE VALUES
+<a name="SAT-MINIMIZE VALUES"></a>
+</h2></div>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p style="margin-top: 1em"><b>1</b></p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Used by default, <b>1</b>
+performs a binary search, checking N/2, etc. The upper bound
+being N (the size of the starting automaton), the lower
+bound is always 1 except when <b>sat-langmap</b> option is
+used.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p><b>2</b></p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>Use PicoSAT assumptions. Each iteration encodes the
+search of an (N-1) state equivalent automaton, and
+additionally assumes that the last <b>sat-incr-steps</b>
+states are unnecessary. On failure, relax the assumptions to
+do a binary search between N-1 and
+N-1-<b>sat-incr-steps</b>. <b>sat-incr-steps</b> defaults to
+6.</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p><b>3</b></p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>After an (N-1) state automaton has been found, use
+incremental solving for the next <b>sat-incr-steps</b>
+iterations by forbidding the usage of an additional state
+without reencoding the problem again. A full encoding will
+occur after <b>sat-incr-steps</b> iterations unless
+<b>sat-incr-steps=-1</b> (see <b>SPOT_XCNF</b> environment
+variable). <b>sat-incr-steps</b> defaults to 2.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p><b>4</b></p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>This naive method tries to reduce the size of the
+automaton one state at a time. Note that it restarts all the
+encoding each time.</p></td></tr>
+</table>
+
+<div class="outline-2"><h2>ENVIRONMENT VARIABLES
+<a name="ENVIRONMENT VARIABLES"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>SPOT_BDD_TRACE</b></p>
+
+<p style="margin-left:22%;">If this variable is set to any
+value, statistics about BDD garbage collection and resizing
+will be output on standard error.</p>
+
+<p style="margin-left:11%;"><b>SPOT_DEFAULT_FORMAT</b></p>
+
+<p style="margin-left:22%;">Set to a value of <b>dot</b> or
+<b>hoa</b> to override the default format used to output
+automata. Up to Spot 1.9.6 the default output format for
+automata used to be <b>dot</b>. Starting with Spot 1.9.7,
+the default output format switched to <b>hoa</b> as it is
+more convenient when chaining tools in a pipe. Set this
+variable to <b>dot</b> to get the old behavior. Additional
+options may be passed to the printer by suffixing the output
+format with <b>=</b> and the options. For instance
+running</p>
+
+<p style="margin-left:28%;">% SPOT_DEFAULT_FORMAT=dot=bar
+autfilt ...</p>
+
+<p style="margin-left:22%;">is the same as running</p>
+
+<p style="margin-left:28%;">% autfilt --dot=bar ...</p>
+
+<p style="margin-left:22%;">but the use of the environment
+variable makes more sense if you set it up once for many
+commands.</p>
+
+<p style="margin-left:11%;"><b>SPOT_DEBUG_PARSER</b></p>
+
+<p style="margin-left:22%;">If this variable is set to any
+value, the automaton parser of Spot is executed in debug
+mode, showing how the input is processed.</p>
+
+<p style="margin-left:11%;"><b>SPOT_DOTDEFAULT</b></p>
+
+<p style="margin-left:22%;">Whenever the --dot option is
+used without argument (even implicitely via
+<b>SPOT_DEFAULT_FORMAT</b>), the contents of this variable
+is used as default argument. If you have some default
+settings in <b>SPOT_DOTDEFAULT</b> and want to append to
+options xyz temporarily for one call, use --dot=.xyz: the
+dot character will be replaced by the contents of the
+SPOT_DOTDEFAULT environment variable.</p>
+
+<p style="margin-left:11%;"><b>SPOT_DOTEXTRA</b></p>
+
+<p style="margin-left:22%;">The contents of this variable
+is added to any dot output, immediately before the first
+state is output. This makes it easy to override global
+attributes of the graph.</p>
+
+<p style="margin-left:11%;"><b>SPOT_HOA_TOLERANT</b></p>
+
+<p style="margin-left:22%;">If this variable is set, a few
+sanity checks performed by the HOA parser are skipped. The
+tests in questions correspond to issues in third-party tools
+that output incorrect HOA (e.g., declaring the automaton
+with property &quot;univ-branch&quot; when no universal
+branching is actually used)</p>
+
+<p style="margin-left:11%;"><b>SPOT_O_CHECK</b></p>
+
+<p style="margin-left:22%;">Specifies the default algorithm
+that should be used by the is_obligation() function. The
+value should be one of the following:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>1</p></td>
+<td width="9%"></td>
+<td width="26%">
+
+
+<p>Make sure that the formula and its negation are
+realizable by non-deterministic co-B&uuml;chi automata.</p></td>
+<td width="31%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>2</p></td>
+<td width="9%"></td>
+<td width="26%">
+
+
+<p>Make sure that the formula and its negation are
+realizable by deterministic B&uuml;chi automata.</p></td>
+<td width="31%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>3</p></td>
+<td width="9%"></td>
+<td width="26%">
+
+
+<p>Make sure that the formula is realizable by a weak and
+deterministic B&uuml;chi automata.</p></td>
+<td width="31%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>SPOT_OOM_ABORT</b></p>
+
+<p style="margin-left:22%;">If this variable is set,
+Out-Of-Memory errors will abort() the program (potentially
+generating a coredump) instead of raising an exception. This
+is useful to debug a program and to obtain a stack trace
+pointing to the function doing the allocation. When this
+variable is unset (the default), std::bad_alloc are thrown
+on memory allocation failures, and the stack is usually
+unwinded up to top-level, losing the original context of the
+error. Note that at least ltlcross has some custom handling
+of std::bad_alloc to recover from products that are too
+large (by ignoring them), and setting this variable will
+interfer with that.</p>
+
+<p style="margin-left:11%;"><b>SPOT_PR_CHECK</b></p>
+
+<p style="margin-left:22%;">Select the default algorithm
+that must be used to check the persistence or recurrence
+property of a formula f. The values it can take are between
+1 and 3. All methods work either on f or !f thanks to the
+duality of persistence and recurrence classes. See
+<a href="https://spot.lrde.epita.fr/hierarchy.html">this
+page</a> for more details. If it is set to:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>1</p></td>
+<td width="9%"></td>
+<td width="31%">
+
+
+<p>It will try to check if f (or !f) is co-B&uuml;chi
+realizable in order to tell if f belongs to the persistence
+(or the recurrence) class.</p></td>
+<td width="26%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>2</p></td>
+<td width="9%"></td>
+<td width="31%">
+
+
+<p>It checks if f (or !f) is det-B&uuml;chi realizable via
+a reduction to deterministic-Rabin in order to tell if f
+belongs to the recurrence (or the persistance) class.</p></td>
+<td width="26%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>3</p></td>
+<td width="9%"></td>
+<td width="31%">
+
+
+<p>It checks if f (or !f) is det-B&uuml;chi realizable via
+a reduction to deterministic-parity in order to tell if f
+belongs to the recurrence (or the persistance) class.</p></td>
+<td width="26%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>SPOT_SATLOG</b></p>
+
+<p style="margin-left:22%;">If set to a filename, the
+SAT-based minimization routines will append statistics about
+each iteration to the named file. Each line lists the
+following comma-separated values: input number of states,
+target number of states, number of reachable states in the
+output, number of edges in the output, number of transitions
+in the output, number of variables in the SAT problem,
+number of clauses in the SAT problem, user time for encoding
+the SAT problem, system time for encoding the SAT problem,
+user time for solving the SAT problem, system time for
+solving the SAT problem, automaton produced at this step in
+HOA format.</p>
+
+<p style="margin-left:11%;"><b>SPOT_SATSOLVER</b></p>
+
+<p style="margin-left:22%;">If set, this variable should
+indicate how to call an external SAT-solver - by default,
+Spot uses PicoSAT, which is distributed with. This is used
+by the sat-minimize option described above. The format to
+follow is the following: &quot;&lt;sat_solver&gt; [options]
+%I &gt;%O&quot;. The escape sequences %I and %O respectively
+denote the names of the input and output files. These
+temporary files are created in the directory specified by
+<b>SPOT_TMPDIR</b> or <b>TMPDIR</b> (see below). The
+SAT-solver should follow the convention of the SAT
+Competition for its input and output format.</p>
+
+
+<p style="margin-left:11%;"><b>SPOT_STREETT_CONV_MIN</b></p>
+
+<p style="margin-left:22%;">The number of Streett pairs
+above which conversion from Streett acceptance to
+generalized-B&uuml;chi acceptance should be made with a
+dedicated algorithm. By default this is 3, i.e., if a
+Streett automaton with 3 acceptance pairs or more has to be
+converted into generalized-B&uuml;chi, the dedicated
+algorithm is used. This algorithm is close to the classical
+conversion from Streett to B&uuml;chi, but with several
+tweaks. When this algorithm is not used, the standard
+&quot;Fin-removal&quot; approach is used instead: first the
+acceptance condition is converted into disjunctive normal
+form (DNF), then Fin acceptance is removed like for Rabin
+automata, yielding a disjuction of generalized B&uuml;chi
+acceptance, and the result is finally converted into
+conjunctive normal form (CNF) to obtain a generalized
+B&uuml;chi acceptance. Both algorithms have a worst-case
+size that is exponential in the number of Streett pairs, but
+in practice the dedicated algorithm works better for most
+Streett automata with 3 or more pairs (and many 2-pair
+Streett automata as well, but the difference here is less
+clear). Setting this variable to 0 will disable the
+dedicated algorithm. Setting it to 1 will enable it for all
+Streett automata, however we do not recommand setting it to
+less than 2, because the &quot;Fin-removal&quot; approach is
+better for single-pair Streett automata.</p>
+
+<p style="margin-left:11%;"><b>SPOT_STUTTER_CHECK</b></p>
+
+<p style="margin-left:22%;">Select the default check used
+to decide stutter invariance. The variable should hold a
+value between 1 and 8, corresponding to the following tests
+described in our Spin&rsquo;15 paper (see the BIBLIOGRAPHY
+section). The default is 8.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>1</p></td>
+<td width="9%"></td>
+<td width="15%">
+
+
+<p>sl(a) x sl(!a)</p></td>
+<td width="42%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>2</p></td>
+<td width="9%"></td>
+<td width="15%">
+
+
+<p>sl(cl(a)) x !a</p></td>
+<td width="42%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>3</p></td>
+<td width="9%"></td>
+<td width="15%">
+
+
+<p>cl(sl(a)) x !a</p></td>
+<td width="42%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>4</p></td>
+<td width="9%"></td>
+<td width="15%">
+
+
+<p>sl2(a) x sl2(!a)</p></td>
+<td width="42%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>5</p></td>
+<td width="9%"></td>
+<td width="15%">
+
+
+<p>sl2(cl(a)) x !a</p></td>
+<td width="42%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>6</p></td>
+<td width="9%"></td>
+<td width="15%">
+
+
+<p>cl(sl2(a)) x !a</p></td>
+<td width="42%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>7</p></td>
+<td width="9%"></td>
+<td width="15%">
+
+
+<p>sl(a) x sl(!a), performed on-the-fly</p></td>
+<td width="42%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="32%"></td>
+<td width="2%">
+
+
+<p>8</p></td>
+<td width="9%"></td>
+<td width="15%">
+
+
+<p>cl(a) x cl(!a)</p></td>
+<td width="42%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">This variable is used by the
+<b>--check=stutter-invariance</b> and
+<b>--stutter-invariant</b> options, but it is ignored by
+<b>--check=stutter-sensitive-example</b>. <b><br>
+SPOT_TMPDIR</b>, <b><br>
+TMPDIR</b></p>
+
+<p style="margin-left:22%;">These variables control in
+which directory temporary files (e.g., those who contain the
+input and output when interfacing with translators) are
+created. <b>TMPDIR</b> is only read if <b>SPOT_TMPDIR</b>
+does not exist. If none of these environment variables
+exist, or if their value is empty, files are created in the
+current directory.</p>
+
+<p style="margin-left:11%;"><b>SPOT_TMPKEEP</b></p>
+
+<p style="margin-left:22%;">When this variable is defined,
+temporary files are not removed. This is mostly useful for
+debugging.</p>
+
+<p style="margin-left:11%;"><b>SPOT_XCNF</b></p>
+
+<p style="margin-left:22%;">Assign a folder path to this
+variable to generate XCNF files whenever SAT-based
+minimization is used - the file is outputed as
+&quot;incr.xcnf&quot; in the specified directory. This
+feature works only with an external SAT-solver. See
+<b>SPOT_SATSOLVER</b> to know how to provide one. Also note
+that this needs an incremental approach without restarting
+the encoding i.e &quot;sat-minimize=3,param=-1&quot; for
+ltl2tgba and ltl2tgta or &quot;incr,param=-1&quot; for
+autfilt (see sat-minimize options described above or autfilt
+man page). The XCNF format is the one used by the SAT
+incremental competition.</p>
+
+<div class="outline-2"><h2>BIBLIOGRAPHY
+<a name="BIBLIOGRAPHY"></a>
+</h2></div>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">1.</p></td>
+<td width="8%"></td>
+<td width="18%">
+
+
+<p style="margin-top: 1em">Christian Dax, Jochen Eisinger,
+Felix Klaedtke: Mechanizing the Powerset Construction for
+Restricted Classes of &omega;-Automata. Proceedings of
+ATVA&rsquo;07. LNCS 4762.</p></td>
+<td width="60%">
+</td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Describes the
+WDBA-minimization algorithm implemented in Spot. The
+algorithm used for the tba-det options is also a
+generalization (to TBA instead of BA) of what they describe
+in sections 3.2 and 3.3.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">2.</p></td>
+<td width="8%"></td>
+<td width="20%">
+
+
+<p style="margin-top: 1em">Tom&aacute;&scaron; Babiak,
+Thomas Badie, Alexandre Duret-Lutz, Mojm&iacute;r
+K&#345;et&iacute;nsk&yacute;, Jan Strej&#269;ek:
+Compositional Approach to Suspension and Other Improvements
+to LTL Translation. Proceedings of SPIN&rsquo;13. LNCS
+7976.</p> </td>
+<td width="58%">
+</td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Describes the
+compositional suspension, the simulation-based reductions,
+and the SCC-based simplifications.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">3.</p></td>
+<td width="8%"></td>
+<td width="20%">
+
+
+<p style="margin-top: 1em">R&uuml;diger Ehlers: Minimising
+Deterministic B&uuml;chi Automata Precisely using SAT
+Solving. Proceedings of SAT&rsquo;10. LNCS 6175.</p></td>
+<td width="58%">
+</td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Our SAT-based
+minimization procedures are generalizations of this paper to
+deal with TBA or TGBA.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">4.</p></td>
+<td width="8%"></td>
+<td width="27%">
+
+
+<p style="margin-top: 1em">Thibaud Michaud and Alexandre
+Duret-Lutz: Practical stutter-invariance checks for
+&omega;-regular languages, Proceedings of SPIN&rsquo;15.
+LNCS 9232.</p></td>
+<td width="51%">
+</td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Describes the
+stutter-invariance checks that can be selected through
+<b>SPOT_STUTTER_CHECK</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">5.</p></td>
+<td width="8%"></td>
+<td width="16%">
+
+
+<p style="margin-top: 1em">Javier Esparza, Jan
+K&#345;et&iacute;nsk&yacute; and Salomon Sickert: One
+Theorem to Rule Them All: A Unified Translation of LTL into
+&omega;-Automata. Proceedings of LICS&rsquo;18. To
+appear.</p> </td>
+<td width="62%">
+</td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Describes
+(among other things) the constructions used for translating
+formulas of the form GF(guarantee) or FG(safety), that can
+be disabled with <b>-x gf-guarantee=0</b>.</p>
+
+<div class="outline-2"><h2>REPORTINGBUGS
+<a name="REPORTINGBUGS"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs to
+&lt;<a href="mailto:spot@lrde.epita.fr">spot@lrde.epita.fr</a>&gt;.</p>
+
+<div class="outline-2"><h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 2021 Laboratoire de Recherche et D&eacute;veloppement
+de l&rsquo;Epita. License GPLv3+: <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 3 or later</a>. <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<div class="outline-2"><h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><a href="ltl2tgba.1.html"><b>ltl2tgba</b></a>(1)
+<a href="ltl2tgta.1.html"><b>ltl2tgta</b></a>(1) <a href="dstar2tgba.1.html"><b>dstar2tgba</b></a>(1)
+<a href="autfilt.1.html"><b>autfilt</b></a>(1)</p>
+</body>
+</html>

@@ -1,0 +1,116 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =ltl2tgta=
+#+DESCRIPTION: Spot command-line tool for translating LTL into Transition-based Generalized Testing Automata.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports code
+
+This tool generates various form of Testing Automata, i.e., automata
+that observe the /changes/ of atomic propositions, not their values.
+
+Three types of automata can be output.  The only output format
+supported currently is [[http://www.graphviz.org/][GraphViz]]'s format, with option =-8= to enable
+UTF-8 characters as in other tools.
+
+The =--ta= option will translate a formula into Testing Automaton, as
+described by [[http://spinroot.com/spin/Workshops/ws06/039.pdf][Geldenhuys and Hansen (Spin'06)]].
+
+Here is the output on =a U Gb= (we omit the call to =dot=, as shown while
+discussing [[file:ltl2tgba.org][=ltl2tgba=]]).
+
+#+NAME: augb-ta
+#+BEGIN_SRC sh
+ltl2tgta --ta --multiple-init 'a U Gb'
+#+END_SRC
+
+#+BEGIN_SRC dot :file augb-ta.svg :var txt=augb-ta :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:augb-ta.svg]]
+
+As always, the labels of the states have no influence on the language
+recognized by the automaton.  This automaton has three possible
+initial states.  The initial state should be chosen depending on the
+initial valuation of =a= and =b= in the system to be synchronized with
+this testing automaton.  For instance if =a= is true and =b= false in
+the initial state, the testing automaton should start in the state
+pointed to by the initial arrow labeled =a & !b=.  In the rest of the
+testing automaton, the transitions are labeled by the sets of atomic
+propositions that should change in the system for the testing
+automaton to progress.  States with a double enclosure are Büchi
+accepting, meaning that any execution that visits one of these states
+is accepting.  All states have an implicit self-loop labeled by ={}=:
+if the system progress without changing the value of =a= and =b=, the
+testing automaton remains in the same state.  Rectangle states are
+livelock-accepting: any execution of the system that get stuck into
+one of these state is accepting.
+
+Without the =--multiple-init= option, a fake initial state is added.
+This is the default since it often makes the result more readable.
+
+#+NAME: augb-ta2
+#+BEGIN_SRC sh
+ltl2tgta --ta 'a U Gb'
+#+END_SRC
+
+#+BEGIN_SRC dot :file augb-ta2.svg :var txt=augb-ta2 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:augb-ta2.svg]]
+
+The =--gba= option can be used to request a Generalized Testing
+Automaton, i.e., a Testing Automaton with Generalized Büchi
+acceptance.  In that case double-enclosures are not used anymore, and
+Büchi accepting transitions are marked with the same ={0,1}=
+notation used in TGBA.
+
+#+NAME: gfagfb-gta
+#+BEGIN_SRC sh
+ltl2tgta --gta 'GFa & GFb'
+#+END_SRC
+
+#+BEGIN_SRC dot :file gfagfb-gta.svg :var txt=gfagfb-gta :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:gfagfb-gta.svg]]
+
+The interpretation is similar to that of the TA.  Execution that
+stutter in a livelock-accepting (square) state are accepting as well
+as execution that visit the =0= and =1= acceptance sets
+infinitely often.  Those acceptance sets are carried by transitions,
+as in TGBAs.
+
+Finally, the default is to output a Transition-based Generalized
+Testing Automaton [fn:topnoc].  In TGTAs, the stuttering states are
+made explicit with ={}= self-loops.  Since these self-loop can be in
+acceptance sets, livelock acceptance states are no longer needed.
+
+#+NAME: gfagfb-tgta
+#+BEGIN_SRC sh
+ltl2tgta 'GFa & GFb'
+#+END_SRC
+
+#+BEGIN_SRC dot :file gfagfb-tgta.svg :var txt=gfagfb-tgta :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:gfagfb-tgta.svg]]
+
+
+[fn:topnoc]: This new class of automata, as well as the implementation
+of the previous testing automata classes, is part of Ala Eddine BEN
+SALEM's PhD work, and is discussed in [[https://www.lrde.epita.fr/~adl/dl/adl/bensalem.12.topnoc.pdf][*Model checking using
+generalized testing automata*]], /Ala Eddine Ben Salem/, /Alexandre
+Duret-Lutz/, and /Fabrice Kordon/, in Transactions on Petri Nets and
+Other Models of Concurrency (ToPNoC VI), LNCS 7400, p. 94--112, 2012.
+
+
+#  LocalWords:  ltl tgta num toc Automata automata GraphViz UTF Gb na
+#  LocalWords:  Geldenhuys tgba SRC init invis nb Acc augb sed png fn
+#  LocalWords:  cmdline Tpng txt Büchi livelock gba gta GFa GFb TGTAs
+#  LocalWords:  gfagfb topnoc Eddine SALEM's ToPNoC LNCS eval setenv
+#  LocalWords:  concat getenv setq utf html args svg TGBAs Alexandre
+#  LocalWords:  Duret Lutz Fabrice Kordon Petri

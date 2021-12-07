@@ -1,0 +1,90 @@
+This benchmark was used in the FORTE'14 paper "Mechanizing the
+Minimization of Deterministic Generalized Büchi Automata", by
+Souheib Baarir and Alexandre Duret-Lutz.  The generated data
+used in the paper are at
+
+  https://www.lrde.epita.fr/~adl/forte14/
+
+Note that the encoding used in the SAT-based minimization have evolved
+since the paper, so if you want to reproduce exactly the benchmark
+from the paper, you should download a copy of Spot 1.2.3.
+
+This benchmark has grown since FORTE'14. Some new SAT-based methods have
+been implemented. This benchmark measures all the methods and identifies the
+best.
+
+To reproduce, follow these instructions:
+
+1) Compile Spot and install if it is not already done.
+
+2) Compile Glucose 3 from http://www.labri.fr/perso/lsimon/glucose/
+   and make sure the 'glucose' binary is in your PATH.
+
+3) Compile ltl2dstar from http://www.ltl2dstar.de/ and
+   make sure the 'ltl2dstar' binary is in your path.
+
+4) Compile DBAminimizer from
+   http://www.react.uni-saarland.de/tools/dbaminimizer
+
+   and define the path to minimize.py with
+
+   % export DBA_MINIMIZER=$HOME/dbaminimizer/minimize.py
+
+5) Then make sure you are in this directory:
+
+   % cd bench/dtgbasat/
+
+6) Classify the set of formulas with
+
+   % ./prepare.sh
+
+   This will read the formulas from file "formulas" and output a file
+   "info.ltl", in which each formula is associated to a class (the ①,
+   ②, ③, and ④ of the paper), and a number of acceptance conditions
+   (the "m" of the paper).
+
+7) Build a makefile to run all experiments
+
+   % ./stats.sh
+
+8) You may optionally change the directory that contains temporary
+    files with
+
+   % export TMPDIR=someplace
+
+   (These temporary files can be several GB large.)
+
+   Note that runtime will be limited to 2h, but memory is not bounded.
+   You should set such a limit with "ulimit" if you like.  For instance
+   % ulimit -v 41943040
+
+9) Before running the experiment, as Spot has now more SAT-based minimization
+   methods, you may want to reduce or choose the methods to be benched.
+   Have a look at the 'config.bench' file. By default, it contains all the
+   possible methods. Leave it unchanged if you want to compare all methods.
+   If it is changed, you need to re-generate the stat-gen.sh file by running:
+   % ./gen.py script --timeout <int> --unit <h|m|s>
+
+10) Actually run all experiments
+
+    % make -j4 -f stat.mk
+
+    This will build a CSV file called "all.csv".
+
+11) You may generate LaTeX code for the tables with 'gen.py'. This script is
+    really helpful as it permits you to generate even partial results. If after
+    all benchmarks, you want to compare only two methods among the others, just
+    comment the others in the configuration file 'config.bench' and run this
+    script.
+    % ./gen.py results
+
+    This scripts read the all.csv file generated at the end of the benchmark
+    and outputs two PDF documents:
+    -results.pdf: Which contains all statistics about each formula for each
+     method.
+    -resume.pdf which present two tables that count how many times a method
+     is better than another.
+
+
+For more instruction about how to use ltl2tgba and dstar2tgba to
+compute minimal DTGBA or DTBA, please read doc/userdoc/satmin.html

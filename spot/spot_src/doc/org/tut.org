@@ -1,0 +1,96 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Code Examples
+#+DESCRIPTION: Directory of code examples for using Spot in C++14, Python, and shell.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: index.html
+
+
+This section contains code examples for using Spot.  This is a work in
+progress.  Feel free to [[mailto:spot@lrde.epita.fr][send]] suggestions of small tasks you would like
+to see illustrated here.
+
+If you have difficulties compiling the C++ examples, check out [[file:compile.org][these
+instructions]].
+
+Reading the [[file:concepts.org][concepts page]] might help if you are not familiar with some
+of the objects or concepts used here.
+
+* Examples with Shell, Python, and C++
+
+All the following pages show how to perform the same task using the
+three interfaces supported by Spot: shell commands, Python, or C++.
+
+- [[file:tut01.org][Parsing and Printing LTL Formulas]]
+- [[file:tut02.org][Relabeling Formulas]]
+- [[file:tut04.org][Testing the equivalence of two LTL formulas]]
+- [[file:tut10.org][Translating an LTL formula into a never claim]]
+- [[file:tut11.org][Translating an LTL formula into a monitor]]
+- [[file:tut12.org][Working with LTL formulas with finite semantics]]
+- [[file:tut20.org][Converting a never claim into HOA]]
+- [[file:tut30.org][Converting Rabin (or Other) to Büchi, and simplifying it]]
+- [[file:tut31.org][Removing alternation]]
+
+* Examples in Python and C++
+
+- [[file:tut03.org][Constructing and transforming formulas]]
+- [[file:tut21.org][Custom print of an automaton]]
+- [[file:tut22.org][Creating an automaton by adding states and transitions]]
+- [[file:tut23.org][Creating an alternating automaton by adding states and transitions]]
+- [[file:tut24.org][Iterating over alternating automata]]
+- [[file:tut52.org][Creating an explicit Kripke structure]]
+- [[file:tut90.org][Using the =bdd_dict= to associate atomic proposition to BDD
+  variables, or allocate anonymous BDD variables (advanced)]]
+
+* Examples in C++ only
+
+- [[file:tut50.org][Explicit vs. on-the-fly: two interfaces for exploring automata]]
+- [[file:tut51.org][Implementing an on-the-fly Kripke structure]]
+
+* Examples in Python only
+
+In directory =python/tests=, the [[file:install.org][Spot tarball]] contains a small
+collection of IPython notebooks.  As the name of the directory implies,
+these are part of the test suite for the Python bindings, however they
+can be interesting to look at if you want to see more code examples.
+
+For convenience, the following links offer static HTML renderings of
+these notebooks, but we strongly suggest interactively evaluating the
+real notebooks instead.
+
+- [[https://spot.lrde.epita.fr/ipynb/formulas.html][=formulas.ipynb=]] covers the basics of LTL/PSL formula parsing and
+  printing, with some light operations
+- [[https://spot.lrde.epita.fr/ipynb/automata.html][=automata.ipynb=]] covers translation from formulas to automata,
+  automata printing, and some lights transformations
+- [[https://spot.lrde.epita.fr/ipynb/automata-io.html][=automata-io.ipynb=]] shows how to save and read automata from files
+- [[https://spot.lrde.epita.fr/ipynb/randaut.html][=randaut.ipynb=]] shows a simple case where the [[file:randaut.org][=randaut=]] commands
+  generated random automata, which are displayed in a table before and
+  after acceptance simplification
+- [[https://spot.lrde.epita.fr/ipynb/accparse.html][=accparse.ipynb=]] exercises the acceptance condition parser
+- [[https://spot.lrde.epita.fr/ipynb/acc_cond.html][=acc_cond.ipynb=]] documents the interface for manipulating acceptance
+  conditions
+- [[https://spot.lrde.epita.fr/ipynb/contains.html][=contains.ipynb=]] demonstrates containment checks between formulas or
+  automata
+- [[https://spot.lrde.epita.fr/ipynb/parity.html][=parity.ipynb=]] documents algorithms for manipulating parity automata
+  in Python
+- [[https://spot.lrde.epita.fr/ipynb/product.html][=product.ipynb=]] shows how to re-implement the product of two automata
+  in Python
+- [[https://spot.lrde.epita.fr/ipynb/randltl.html][=randltl.ipynb=]] demonstrates a Python-version of [[file:randltl.org][=randltl=]]
+- [[https://spot.lrde.epita.fr/ipynb/gen.html][=gen.ipynb=]] show how to generate families of LTL formulas (as done in [[file:genltl.org][=genltl=]]) or automata ([[file:genaut.org][=genaut=]])
+- [[https://spot.lrde.epita.fr/ipynb/decompose.html][=decompose.ipynb=]] illustrates the =decompose_strength()=, =decompose_acc_scc()= and =decompose_scc()= functions
+- [[https://spot.lrde.epita.fr/ipynb/testingaut.html][=testingaut.ipynb=]] shows the steps necessary to build a testing
+  automaton
+- [[https://spot.lrde.epita.fr/ipynb/ltsmin-dve.html][=ltsmin-dve.ipynb=]] loading a DiVinE model using the LTSmin interface.
+- [[https://spot.lrde.epita.fr/ipynb/ltsmin-pml.html][=ltsmin-pml.ipynb=]] loading a Promela model using the LTSmin interface.
+- [[https://spot.lrde.epita.fr/ipynb/word.html][=word.ipynb=]] example for the =twa_run= and =twa_word= classes.
+- [[https://spot.lrde.epita.fr/ipynb/highlighting.html][=highlighting.ipynb=]] shows how to highlight states or edges in
+  automata.
+- [[https://spot.lrde.epita.fr/ipynb/atva16-fig2a.html][=atva16-fig2a.ipynb=]] first example from our [[https://www.lrde.epita.fr/~adl/dl/adl/duret.16.atva2.pdf][ATVA'16 tool paper]].
+- [[https://spot.lrde.epita.fr/ipynb/atva16-fig2b.html][=atva16-fig2b.ipynb=]] second example from our [[https://www.lrde.epita.fr/~adl/dl/adl/duret.16.atva2.pdf][ATVA'16 tool paper]].
+- [[https://spot.lrde.epita.fr/ipynb/alternation.html][=alternation.ipynb=]] examples of alternating automata.
+- [[https://spot.lrde.epita.fr/ipynb/stutter-inv.html][=stutter-inv.ipynb=]] working with stutter-invariant formulas properties.
+- [[https://spot.lrde.epita.fr/ipynb/satmin.html][=satmin.ipynb=]] Python interface for [[file:satmin.org][SAT-based minimization of deterministic ω-automata]].
+- [[https://spot.lrde.epita.fr/ipynb/twagraph-internals.html][=twagraph-internals.ipynb=]] Inner workings of the =twa_graph= class.
+
+#  LocalWords:  utf html bdd IPython ipynb io randaut accparse acc
+#  LocalWords:  cond randltl genltl genaut scc testingaut ltsmin dve
+#  LocalWords:  DiVinE LTSmin pml twa atva inv satmin twagraph

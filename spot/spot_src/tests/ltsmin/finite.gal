@@ -1,0 +1,19 @@
+gal finite
+{
+  //arrays
+  //variables
+  int P.a=0;
+  int P.b=0;
+  //transitions 
+  transition t0  [ ( ( P.a < 3 ) && ( P.b < 3 ) ) ] 
+     {     P.a = ( 1 + P.a );
+    }
+
+  transition t1  [ ( ( P.a < 3 ) && ( P.b < 3 ) ) ] 
+     {     P.b = ( 1 + P.b );
+    }
+
+
+}
+
+

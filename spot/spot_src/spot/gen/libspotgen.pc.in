@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+includedir=@includedir@
+libdir=@libdir@
+
+Name: Spot-gen
+Description: Generate LTL and automata patterns for Spot
+URL: https://spot.lrde.epita.fr/
+Version: @PACKAGE_VERSION@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lspotgen
+Requires: libspot

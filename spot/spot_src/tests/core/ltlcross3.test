@@ -1,0 +1,362 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012-2020 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+check_csv()
+{
+  # Make sure all lines in $1 have the same number of comas
+  sed 's/[^,]//g' < "$1" |
+  ( read first
+  while read l; do
+    test "x$first" = "x$l" || exit 1
+  done)
+}
+
+# Make sure ltlcross quotes formulas correctly
+cat >formula <<\EOF
+G"a'-'>'b"
+FGa & GFb
+EOF
+run 0 ltlcross -F formula --csv=out.csv \
+                         "ltl2tgba -s %f >%N" \
+                         "ltl2tgba --lenient -s %s >%N" \
+                         --verbose 2> error
+cat >ceplan <<EOF
+info: check_empty P0*N0
+info: check_empty Comp(N0)*Comp(P0)
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+info: check_empty P0*N0
+info: check_empty Comp(N0)*Comp(P0)
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+EOF
+grep 'info: check_empty' error > ce
+diff -u ce ceplan
+
+ltlcross -F formula --csv=out.csv \
+                   --ref "ltl2tgba -s %f >%N" \
+                   "ltl2tgba --lenient -s %s >%N" \
+                   --determinize-max-states=0 \
+                   --verbose 2> error
+cat >ceplan <<EOF
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+EOF
+grep 'info: check_empty' error > ce
+diff -u ce ceplan
+
+ltlcross -F formula --csv=out.csv \
+                   -D "ltl2tgba -s %f >%N" \
+                   "ltl2tgba --lenient -s %s >%N" \
+                   --verbose 2> error
+cat >ceplan <<EOF
+info: check_empty P0*N0
+info: check_empty Comp(N0)*Comp(P0)
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+info: check_empty P0*N0
+info: check_empty Comp(N0)*Comp(P0)
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+EOF
+grep 'info: check_empty' error > ce
+diff -u ce ceplan
+
+ltlcross -F formula --csv=out.csv \
+                   -D --ref "ltl2tgba -s %f >%N" \
+                   "ltl2tgba --lenient -s %s >%N" \
+                   --verbose 2> error
+
+cat >ceplan <<EOF
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+EOF
+grep 'info: check_empty' error > ce
+diff -u ce ceplan
+
+ltlcross -F formula --csv=out.csv \
+                    --ref "ltl2tgba -s %f >%N" \
+                    --ref "ltl2tgba --lenient -s %s >%N" \
+                    --verbose 2> error
+grep 'info: check_empty' error && exit 1
+
+run 2 ltlcross "ltl2tgba -s %f >%N" 'foo bar' 2>stderr -f a
+grep 'ltlcross.*no input.*in.*foo bar' stderr
+
+# Make sure non-zero exit codes are reported...
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+                         -f a --csv=out.csv 2>stderr
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 2
+check_csv out.csv
+
+# ... unless --omit-missing is supplied.
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+                         -f a --csv=out.csv --omit-missing 2>stderr
+grep '"exit_status"' out.csv && exit 1
+grep '"exit_code"' out.csv && exit 1
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 0
+check_csv out.csv
+
+# Additional columns should not be an issue
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+               -f a --csv=out.csv --strength 2>stderr
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+grep '"nonacc_scc","terminal_scc","weak_scc","strong_scc"' out.csv
+grep '"terminal_aut","weak_aut","strong_aut"' out.csv
+grep -v '"ambiguous_aut"' out.csv
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 2
+check_csv out.csv
+
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+               -f a --csv=out.csv --ambiguous 2>stderr
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+grep '"ambiguous_aut"' out.csv
+grep -v '"terminal_aut"' out.csv
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 2
+check_csv out.csv
+
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+               -f a --csv=out.csv --ambiguous --strength 2>stderr
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+grep '"nonacc_scc","terminal_scc","weak_scc","strong_scc"' out.csv
+grep '"terminal_aut","weak_aut","strong_aut"' out.csv
+grep '"ambiguous_aut"' out.csv
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 2
+check_csv out.csv
+
+# Likewise for timeouts
+echo foo >bug
+run 0 ltlcross 'sleep 5; false %f >%N' 'false %f >%N' \
+                         --timeout 2 -f a --csv=out.csv \
+                         --ignore-execution-failures \
+                         --save-bogus=bug 2>stderr
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+test `grep 'warning:.*timeout' stderr | wc -l` -eq 2
+test `grep 'warning:.*exit code 1' stderr | wc -l` -eq 2
+test `grep '"timeout",-1' out.csv | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 2
+
+grep 'No major problem detected' stderr
+grep '2 timeouts occurred' stderr
+grep '2 non-zero exit statuses were ignored' stderr
+check_csv out.csv
+# 'bug' should exist but be empty
+test -f bug
+test -s bug && exit 1
+
+run 0 ltlcross 'sleep 5; false %f >%N' \
+                         --timeout 2 --omit-missing -f a --csv=out.csv 2>stderr
+grep '"exit_status"' out.csv && exit 1
+grep '"exit_code"' out.csv && exit 1
+test `grep 'warning:.*timeout' stderr | wc -l` -eq 2
+test `wc -l < out.csv` -eq 1
+check_csv out.csv
+
+run 1 ltlcross 'sleep 5; false %f >%N' --fail-on-timeout \
+                  --timeout 2 -f a --csv=out.csv 2>stderr
+test `grep 'error:.*timeout' stderr | wc -l` -eq 2
+test `wc -l < out.csv` -eq 3
+check_csv out.csv
+
+run 1 ltlcross 'sleep 5; false %f >%N' --fail-on-timeout \
+    --stop-on-error --timeout 2 -f a -f b --csv=out.csv \
+    --save-bogus=bogous 2>stderr
+test `grep 'error:.*timeout' stderr | wc -l` -eq 2
+test `wc -l < out.csv` -eq 3
+test `wc -l < bogous` -eq 1
+check_csv out.csv
+
+# Check with --products=5 --automata
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+      -f a --csv=out.csv --products=5 --automata 2>stderr
+p=`sed 's/[^,]//g;q' out.csv | wc -c`
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 2
+test `grep '"HOA:.*--BODY--.*--END--"' out.csv | wc -l` -eq 2
+check_csv out.csv
+
+# ... unless --omit-missing is supplied.
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+      -f a --csv=out.csv --omit-missing --products=5  2>stderr
+grep '"exit_status"' out.csv && exit 1
+grep '"exit_code"' out.csv && exit 1
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 0
+check_csv out.csv
+
+
+# Check with --products=+5
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+      -f a --csv=out.csv --products=+5 --automata 2>stderr
+q=`sed 's/[^,]//g;q' out.csv | wc -c`
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 2
+test `grep '"HOA:.*--BODY--.*--END--"' out.csv | wc -l` -eq 2
+check_csv out.csv
+
+# ... unless --omit-missing is supplied.
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%N' \
+      -f a --csv=out.csv --omit-missing --products=+5  2>stderr
+grep '"exit_status"' out.csv && exit 1
+grep '"exit_code"' out.csv && exit 1
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 0
+check_csv out.csv
+
+test $q -eq `expr $p + 12`
+
+
+# Check with Rabin/Streett output
+first="should not be erased"
+echo "$first" > bug.txt
+run 1 ltlcross "ltl2tgba -s %f >%N" 'false %f >%D' \
+      -f 'X  a' --csv=out.csv --save-bogus='>>bug.txt' 2>stderr
+q=`sed 's/[^,]//g;q' out.csv | wc -c`
+test $q -eq `expr $p - 1`
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+test `grep 'error:.*returned exit code 1' stderr | wc -l` -eq 2
+test `grep '"exit code",1' out.csv | wc -l` -eq 2
+check_csv out.csv
+grep 'X  a' bug.txt
+test "`head -n 1 bug.txt`" = "$first"
+
+
+# Support for --ABORT-- in HOA.
+run 1 ltlcross 'echo HOA: --ABORT-- %f > %H' \
+   -f a --csv=out.csv 2>stderr
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+test `grep ': echo HOA' stderr | wc -l` -eq 2
+grep -q -i 'performing' stderr
+test `grep 'error:.*aborted' stderr | wc -l` -eq 2
+test `grep '"aborted",-1' out.csv | wc -l` -eq 2
+test 3 = `wc -l < out.csv`
+check_csv out.csv
+
+# Support for --ABORT-- in HOA.
+run 1 ltlcross -q 'echo HOA: --ABORT-- %f > %H' \
+   -f a --csv=out.csv 2>stderr
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+test `grep ': echo HOA' stderr | wc -l` -eq 2
+grep -q -i 'performing' stderr && exit 1
+test `grep 'error:.*aborted' stderr | wc -l` -eq 2
+test `grep '"aborted",-1' out.csv | wc -l` -eq 2
+test 3 = `wc -l < out.csv`
+check_csv out.csv
+
+# The header of CSV file is not output in append mode
+run 1 ltlcross 'echo HOA: --ABORT-- %f > %H' \
+   -f a --csv='>>out.csv' 2>stderr
+grep '"exit_status"' out.csv
+grep '"exit_code"' out.csv
+test `grep 'error:.*aborted' stderr | wc -l` -eq 2
+test `grep '"aborted",-1' out.csv | wc -l` -eq 4
+test 5 = `wc -l < out.csv`
+check_csv out.csv
+
+# Diagnose empty automata, and make sure %% is correctly replaced by %
+ltlcross --density 2.01 ltl2tgba 2>stderr && exit 1
+grep 'not between 0 and 1' stderr
+
+# Diagnose empty automata, and make sure %% is correctly replaced by %
+run 1 ltlcross --density 0.01 ': %f >%O; echo %%>foo' -f a 2>stderr
+test 2 = `grep -c ':.*empty input' stderr`
+cat foo
+cat >expected<<EOF
+%
+EOF
+diff foo expected
+
+
+# This command used to crash.  Report from František Blahoudek.
+run 0 ltlcross --verbose --no-checks -f 'FGa' 'ltl2tgba'
+
+# In spot 2.9 and 2.9.1 the following command used to report a bug
+# that did not exist.  Issue #420.
+ltlcross --csv=/dev/null ltl2tgba 'ltl2tgba -D -G' --states=5 \
+         -f '(G(F(((a) & (X(X(a)))) | ((!(a)) & (X(X(!(a))))))))'
+# And this related one even survived in 2.9.2...
+ltlcross --csv=/dev/null ltl2tgba 'ltl2tgba -P -D' --states=45 \
+         -f 'F(G((X(X(b))) | ((c) U (X(X(d))))))'
+
+# The CSV file should not talk about product if --products=0
+ltlcross --color --products=0 ltl2tgba -f GFa -f FGa --csv=out.csv
+grep product out.csv && exit 1
+check_csv out.csv
+
+# --determinize and --determinize-max-states are incompatible.
+ltlcross -f a ltl2tgba --determinize --determinize-max-states=10 2>stderr &&
+    exit 1
+grep 'max-states.*incompatible' stderr
+ltlcross -f a ltl2tgba --determinize-max-states=10 --determinize 2>stderr &&
+    exit 1
+grep 'max-states.*incompatible' stderr
+
+# --determinize and --determinize-max-edges are incompatible.
+ltlcross -f a ltl2tgba --determinize-max-edges=10 --determinize  2>stderr &&
+    exit 1
+grep 'max-edges.*incompatible' stderr
+ltlcross -f a ltl2tgba --determinize-max-edges=10 --determinize  2>stderr &&
+    exit 1
+grep 'max-edges.*incompatible' stderr
+
+# Make sure save-inclusion-products outputs the expected number of products.
+ltlcross ltl2tgba 'ltl2tgba -D' -f GFa -f FGa \
+         --verbose --save-inclusion-products=prod.hoa
+test 12 = `autfilt -c prod.hoa`

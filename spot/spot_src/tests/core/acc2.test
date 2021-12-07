@@ -1,0 +1,127 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015, 2017 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+ltl2tgba -H 'GFa & GFb' > in
+grep 'Acceptance:' in > expected
+grep 'acc-name:' in > expected-b
+ltl2tgba -H 'GFa & GFb' --stats='Acceptance: %a %g' > out1
+ltl2tgba -H 'GFa & GFb' --stats='acc-name: %[]g' > out1b
+autfilt -H in --format='Acceptance: %A %G' > out2
+autfilt -H in --format='acc-name: %[]G' > out2b
+diff out1 expected
+diff out2 expected
+diff out1b expected-b
+diff out2b expected-b
+
+autfilt -H in --format='%[d]G, %[0lo]g, %[0abdglmpos]g' > out3
+echo 'gen. Büchi 2, generalized-Buchi, gen. Büchi' >exp3
+diff out3 exp3
+
+autfilt -H in --format='%[bug]g' 2>err && exit 1
+grep '%\[bug\]g.*: u' err
+
+cat >header <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+EOF
+
+cat >body <<EOF
+--BODY--
+State: 0
+[0&1] 0 {0 1}
+[!0&!1] 0
+[!0&1] 0 {1}
+[0&!1] 0 {0}
+--END--
+EOF
+
+#------------- DNF -------------
+
+res="(Fin(1) & Fin(2) & Inf(0)) | (Inf(0)&Inf(1)&Inf(3))"
+cat >acceptances<<EOF
+2 Inf(0)&Inf(1), 2 Inf(0)&Inf(1)
+2 Fin(0) & Inf(1), 2 Fin(0) & Inf(1)
+2 t, 2 t
+2 f, 2 f
+3 (Inf(1) | Fin(2)) & Inf(0), 3 (Inf(0)&Inf(1)) | (Fin(2) & Inf(0))
+4 (Inf(1) | Fin(2)) & (Fin(1) | Inf(3)) & Inf(0), 4 $res
+4 $res, 4 $res
+3 (Fin(0)|Fin(1)) & Fin(2), 3 (Fin(0) & Fin(2)) | (Fin(1) & Fin(2))
+EOF
+
+while IFS=, read a b
+do
+    (cat header; echo 'Acceptance:' $a; cat body) |
+	autfilt -H --dnf-acc --stats '%A %G, %a %g'
+done < acceptances > output
+
+diff acceptances output
+
+#------------- CNF -------------
+
+res="Inf(0) & (Inf(1) | Fin(2)) & (Inf(3) | Fin(1))"
+cat >acceptances<<EOF
+2 Inf(0)&Inf(1), 2 Inf(0)&Inf(1)
+2 Fin(0) & Inf(1), 2 Fin(0) & Inf(1)
+2 t, 2 t
+2 f, 2 f
+3 (Inf(1) | Fin(2)) & Inf(0), 3 Inf(0) & (Inf(1) | Fin(2))
+4 (Fin(1) & Fin(2) & Inf(0)) | (Inf(0)&Inf(1)&Inf(3)), 4 $res
+4 $res, 4 $res
+3 (Fin(0) & Fin(2)) | (Fin(1) & Fin(2)), 3 (Fin(0)|Fin(1)) & Fin(2)
+EOF
+
+while IFS=, read a b
+do
+    (cat header; echo 'Acceptance:' $a; cat body) |
+	autfilt -H --cnf-acc --stats '%A %G, %a %g'
+done < acceptances > output
+
+diff acceptances output
+
+#------------- COMP -------------
+
+a="(Inf(1) | Fin(2)) & (Fin(1) | Inf(3)) & Inf(0)"
+b="(Fin(1) & Inf(2)) | (Inf(1) & Fin(3)) | Fin(0)"
+cat >acceptances<<EOF
+2 Inf(0)&Inf(1), 2 Fin(0)|Fin(1)
+2 Fin(0) & Inf(1), 2 Inf(0) | Fin(1)
+2 t, 2 f
+2 f, 2 t
+3 (Inf(1) | Fin(2)) & Inf(0), 3 (Fin(1) & Inf(2)) | Fin(0)
+4 $a, 4 $b
+4 $b, 4 (Inf(1) | Fin(2)) & (Fin(1) | Inf(3)) & Inf(0)
+3 (Fin(0)|Fin(1)) & Fin(2), 3 (Inf(0)&Inf(1)) | Inf(2)
+EOF
+
+while IFS=, read a b
+do
+    (cat header; echo 'Acceptance:' $a; cat body) |
+	autfilt -H --complement-acc --stats '%A %G, %a %g'
+done < acceptances > output
+
+diff acceptances output

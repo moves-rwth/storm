@@ -1,0 +1,6 @@
+usr/include/fddx.h
+usr/include/bvecx.h
+usr/include/bddx.h
+usr/lib/*-*/libbddx.so
+usr/lib/*-*/libbddx.a
+usr/lib/*-*/pkgconfig/libbddx.pc

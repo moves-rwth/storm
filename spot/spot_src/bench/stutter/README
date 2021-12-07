@@ -1,0 +1,22 @@
+This benchmark measures the performance of different algorithms to
+check if a property is stutter-invariant.  When the benchmark is run
+on formulas, the translation time is not included in the measured
+time.
+
+To reproduce the benchmark run
+
+  % ./stutter_bench.sh -j8
+
+(Adjust -j8 to the number of cores you have.)
+
+This should create three files:
+
+  - bench_formulas.csv
+      running stutter checks on LTL formulas, but without including
+      LTL translation time.
+  - bench_randgraph.csv
+      unning stutter checks on deterministic TGBA, without including
+      complementation time.
+  - ltl-user-bench.csv
+      running stutter checks on LTL formulas, from the user point
+      of view, i.e., timing the whole "ltlfilt" run.

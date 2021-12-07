@@ -1,0 +1,61 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012, 2014, 2015 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check LTL reductions for U, W, M and R.
+# These formulas comes from an appendix of tl/tl.tex
+
+. ./defs || exit 1
+set -e
+
+cat >input.txt<<EOF
+# Equivalences with U
+1 U f, Ff
+!F!f, !(1 U!f), Gf
+(f U g)|(G f), (f U g) | !(1 U ! f), f U (g | G f), f U (g | !(1 U !f)), f W g
+g U (f & g), f M g
+g W (f & g), (g U (f & g)) | !(1 U ! g), g U ((f & g) | !(1 U ! g)), f R g
+
+# Equivalences with W
+!G!f, !((! f) W 0), Ff
+0 R f, f W 0, Gf
+(f W g) & (F g), (f W g) & !((! g) W 0), f U g
+(g W (f & g)) & (F f), (g W (f & g)) & !((!f) W 0), f M g
+g W (f & g), f R g
+
+# Equivalences with R
+!G!f, !(0 R !f), Ff
+0 R f, Gf
+# (((X g) R f) & F g) | g, (((X g) R f ) & (!(0 R ! g))) | g, f U g
+((X g) R f) | g, g R (f | g), f W g
+(f R g) & F f, (f R g) & !(0 R !f), f R (g & F f), f R (g & !(0 R !f)), f M g
+
+# Equivalences with M
+f M 1, Ff
+!F!f, !((!f) M 1), Gf
+((X g) M f) | g, g M (f | g), f U g
+(f U g) | G f, ((X g) M f) | g | !((! f ) M 1), f W g
+(f M g) | G g, (f M g) | !((! g) M 1), f R g
+
+# Example from tl.tex
+#(((f U (Xg & f))|!(1 U !f))&(1 U Xg)) | g, f U g
+EOF
+
+run 0 ../reduccmp input.txt

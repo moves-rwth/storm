@@ -1,0 +1,261 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Working with LTL formulas with finite semantics
+#+DESCRIPTION: Code example for using Spot to translate LTLf formulas
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+The LTL operators used by Spot are defined over infinite words, and
+the various type of automata supported are all \omega-automata, i.e.,
+automata over infinite words.
+
+#+name: from_ltlf
+#+begin_src sh :exports none :var f="bug"
+ltlfilt --from-ltlf -f "$f"
+#+end_src
+
+However there is a trick we can use in case we want to use Spot to
+build a finite automaton that recognize some LTLf (i.e. LTL with
+finite semantics) property.  The plan is as follows:
+
+1. Have Spot read the input LTLf formula as if it was LTL.
+2. Rewrite this formula in a way that embeds the semantics of LTLf in
+   LTL.  First, introduce a new atomic proposition =alive= that will
+   be true initially, but that will eventually become false forever.
+   Then adjust all original LTL operators so that they have to be
+   satisfied during the =alive= part of the word. For instance the
+   formula =(a U b) & Fc= would be transformed into
+   call_from_ltlf(f="(a U b) & Fc").
+3. Convert the resulting formula into a Büchi automaton:
+   #+name: tut12a
+   #+begin_src sh :exports none
+   ltlfilt --from-ltlf -f "(a U b) & Fc" | ltl2tgba -B -d
+   #+end_src
+   #+BEGIN_SRC dot :file tut12a.svg :var txt=tut12a :exports results
+     $txt
+   #+END_SRC
+   #+RESULTS:
+   [[file:tut12a.svg]]
+4. Remove the =alive= property, and, while we are at it, simplify the
+   Büchi automaton:
+   #+name: tut12b
+   #+begin_src sh :exports none
+   ltlfilt --from-ltlf -f "(a U b) & Fc" | ltl2tgba -B | autfilt --remove-ap=alive -B --small -d
+   #+end_src
+   #+BEGIN_SRC dot :file tut12b.svg :var txt=tut12b :exports results
+     $txt
+   #+END_SRC
+   #+RESULTS:
+   [[file:tut12b.svg]]
+5. Interpret the above automaton as finite automaton.  (This part is
+   out of scope for Spot.)
+
+The above sequence of operations was described by De Giacomo & Vardi
+in their [[https://www.cs.rice.edu/~vardi/papers/ijcai13.pdf][IJCAI'13 paper]] and by Dutta & Vardi in their [[https://www.cs.rice.edu/~vardi/papers/memocode14a.pdf][Memocode'14
+paper]].  However, beware that the LTLf to LTL rewriting suggested in
+theorem 1 of the [[https://www.cs.rice.edu/~vardi/papers/ijcai13.pdf][IJCAI'13 paper]] has a typo (=t(φ₁ U φ₂)= should be
+equal to =t(φ₁) U t(φ₂ & alive)=) that is fixed in the [[https://www.cs.rice.edu/~vardi/papers/memocode14a.pdf][Memocode'14
+paper]], but that second paper forgets to ensure that =alive= holds
+initially, as required in the first paper...
+
+* Shell version
+
+The first four steps of the above sequence of operations can be
+executed as follows.  Transforming LTLf to LTL can be done using
+[[file:ltlfilt.org][=ltlfilt=]]'s =--from-ltlf= option, translating the resulting formula
+into a Büchi automaton is obviously done with [[file:ltl2tgba.org][=ltl2tgba=]], and removing
+an atomic proposition from an automaton can be done using [[file:autfilt.org][=autfilt=]]'s
+=--remove-ap= option (adding =--small= will also simplify the
+automaton).  Interpreting the resulting Büchi automaton as a finite
+automaton is out of scope for Spot.
+
+#+begin_src sh
+ltlfilt --from-ltlf -f "(a U b) & Fc" |
+  ltl2tgba -B |
+  autfilt --remove-ap=alive -B --small
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HOA: v1
+States: 4
+Start: 1
+AP: 3 "b" "a" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: very-weak
+--BODY--
+State: 0
+[!2] 0
+[2] 3
+State: 1
+[0&!2] 0
+[!0&1&!2] 1
+[!0&1&2] 2
+[0&2] 3
+State: 2
+[!0&1] 2
+[0] 3
+State: 3 {0}
+[t] 3
+--END--
+#+end_example
+
+Use =-B -D= instead of =-B= if you want to ensure that a deterministic
+automaton is output.
+
+* Python version
+
+In Python, we use the =from_ltlf()= function to convert from LTLf to
+LTL and translate the result into a Büchi automaton using
+=translate()= [[file:tut10.org][as usual]]. Then we need to use the =remove_ap()= object,
+which we must first setup with some atomic propositions to remove.
+Finally we call the =postprocess()= function for automata
+simplifications.  (Note that =postprocess()= is already called by
+=translate()=, but in this case removing the atomic proposition allows
+more simplification opportunities.)
+
+#+begin_src python
+import spot
+# Translate LTLf to Büchi.
+aut = spot.from_ltlf('(a U b) & Fc').translate('ba')
+# Remove "alive" atomic proposition
+rem = spot.remove_ap()
+rem.add_ap('alive')
+aut = rem.strip(aut)
+# Simplify result and print it.  Use postprocess('ba', 'det')
+# if you always want a deterministic automaton.
+aut = spot.postprocess(aut, 'ba')
+print(aut.to_str('hoa'))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HOA: v1
+States: 4
+Start: 1
+AP: 3 "b" "a" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: very-weak
+--BODY--
+State: 0
+[!2] 0
+[2] 3
+State: 1
+[0&!2] 0
+[!0&1&!2] 1
+[!0&1&2] 2
+[0&2] 3
+State: 2
+[!0&1] 2
+[0] 3
+State: 3 {0}
+[t] 3
+--END--
+#+end_example
+
+If you need to print the automaton in a custom format (some finite
+automaton format probably), you should check our example of [[file:tut21.org][custom
+print of an automaton]].
+
+* C++ version
+
+The C++ version is straightforward adaptation of the Python version.
+The Python functions =translate()= and =postprocess()= are convenient
+wrappers around the =spot::translator= and =spot::postprocessor=
+objects that we need to use here.
+
+#+begin_src C++
+#include <iostream>
+#include <spot/tl/parse.hh>
+#include <spot/tl/ltlf.hh>
+#include <spot/twaalgos/translate.hh>
+#include <spot/twaalgos/hoa.hh>
+#include <spot/twaalgos/remprop.hh>
+
+int main()
+{
+  spot::parsed_formula pf = spot::parse_infix_psl("(a U b) & Fc");
+  if (pf.format_errors(std::cerr))
+    return 1;
+
+  spot::translator trans;
+  trans.set_type(spot::postprocessor::BA);
+  trans.set_pref(spot::postprocessor::Small);
+  spot::twa_graph_ptr aut = trans.run(spot::from_ltlf(pf.f));
+
+  spot::remove_ap rem;
+  rem.add_ap("alive");
+  aut = rem.strip(aut);
+
+  spot::postprocessor post;
+  post.set_type(spot::postprocessor::BA);
+  post.set_pref(spot::postprocessor::Small); // or ::Deterministic
+  aut = post.run(aut);
+
+  print_hoa(std::cout, aut) << '\n';
+  return 0;
+}
+#+end_src
+
+#+RESULTS:
+#+begin_example
+HOA: v1
+States: 4
+Start: 1
+AP: 3 "b" "a" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: very-weak
+--BODY--
+State: 0
+[!2] 0
+[2] 3
+State: 1
+[0&!2] 0
+[!0&1&!2] 1
+[!0&1&2] 2
+[0&2] 3
+State: 2
+[!0&1] 2
+[0] 3
+State: 3 {0}
+[t] 3
+--END--
+#+end_example
+
+Again, please check our example of [[file:tut21.org][custom print of an automaton]] if you
+need to print in some format for NFA/DFA.
+
+* Final notes
+
+Spot only deals with infinite behaviors, so if you plan to use Spot to
+perform some LTLf model checking, you should stop at step 3.  Keep the
+=alive= proposition in your property automaton, and also add it to the
+Kripke structure representing your system.
+
+Alternatively, if your Kripke structure is already equipped with some
+=dead= property (as introduced by default in our [[https://spot.lrde.epita.fr/ipynb/ltsmin-dve.html][=ltsmin= interface]]),
+you could replace =alive= by =!dead= by using ~ltlfilt
+--from-ltl="!dead"~ (from the command-line), a running
+=from_ltlf(f, "!dead")= in Python or C++.
+
+When working with LTLf, there are two different semantics for the next
+operator:
+- The weak next: =X a= is true if =a= hold in the next step or if
+  there are no next step.  In particular, =X(0)= is true iff there are
+  no successor.  (By the way, you cannot write =X0= because that as an
+  atomic proposition: use =X(0)= or =X 0=.)
+- The strong next: =X[!] a= is true if =a= hold in the next step *and*
+  there must be a next step.  In particular =X[!]1= asserts that
+  there is a successor.
+
+#  LocalWords:  utf LTLf html args ltlf src ltlfilt Fc tgba svg txt
+#  LocalWords:  ap De Giacomo Vardi IJCAI Dutta Memocode acc Buchi ba
+#  LocalWords:  postprocess aut det str NFA DFA ltsmin iff

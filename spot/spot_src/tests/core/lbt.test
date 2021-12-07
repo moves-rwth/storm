@@ -1,0 +1,117 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2016, 2017, 2019, 2020 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# Some example formulas taken from Ruediger Ehlers's dbaminimizer
+#   http://react.cs.uni-saarland.de/tools/dbaminimizer
+# which are expected to be processed by ltl2dstar.
+cat >formulas <<'EOF'
+& G F a G F b
+X X a
+G F e a X X b
+G F e a X X X b
+G i a X X X b
+G F i a X X X b
+& G i a F b G i b F c
+G i a F b
+& G i a F b G c
+& & G ! c G i a F b G i b F c
+& G i a F b G i c F d
+& i G a F b i G ! a F ! b
+& G i a F b G i ! a F ! b
+U p & q X U r s
+U p & q X & r F & s X F & u X F & v X F w
+F & p X & q X F r
+F & q X U p r
+G i p U q r
+F & p X F & q X F & r X F s
+& & & & G F p G F q G F r G F s G F u
+| | U p U q r U q U r p U r U p q
+| | G F a G F b G F c
+G F a
+U a U b U c d
+G U a U b U ! a ! b
+EOF
+
+# More examples taken from scheck's test suite.
+#   http://tcs.legacy.ics.tkk.fi/users/tlatvala/scheck/
+cat >>formulas <<EOF
+| F X p1 F X p2
+ | | X p7 F p6 & | | t p3 p7 U | f p3 p3
+F p99
+X p3
+X ! p3
+X t
+X X X p3
+F X X X t
+! G p5
+| X p0 F p5
+| F p2 F p9
+! | G p0 & G p1 F p3
+& U & X p0 X p4 F p1 X X U X F p5 U p0 X X p3
+| p3 p5
+& p1 p6
+| p1 | p2 p1
+| & p1 p3 p3
+p6
+U p1 ! p2
+| p5 U p2 p2
+& p5 U p2 p2
+U F p5 ! p1
+U p0 & | p0 p5 p1
+EOF
+
+# More examples randomly generated
+randltl -l -n 100 a p1 "X" "U" "U12" >> formulas
+
+# Some examples from scalables formulas
+genltl --rv-counter=1..10 --go-theta=1..10 -l >> formulas
+
+count=`wc -l < formulas`
+
+test $count -eq 168
+
+run 0 ltlfilt --lbt-input formulas > formulas.2
+run 0 ltlfilt -l formulas.2 > formulas.3
+run 0 ltlfilt -l --lbt-input formulas > formulas.4
+test `wc -l < formulas.2` -eq 168
+test `wc -l < formulas.3` -eq 168
+test `wc -l < formulas.4` -eq 168
+
+# Add some carriage returns to simulate MS-DOS files and
+# make sure our parser does not mind.
+$PERL -pe 's/$/\r/' formulas.2 > formulas.2ms
+# The --csv-escape option is now obsolete and replaced by double
+# quotes in the format string.  So eventually the first two lines
+# should disappear.
+run 0 ltlfilt formulas.2ms --csv-escape --format='%L,%f' > formulas.5
+run 0 ltlfilt formulas.5/2 --csv-escape --format='%L,%f' > formulas.6
+run 0 ltlfilt formulas.2 --format='%L,"%f"' > formulas.5a
+run 0 ltlfilt formulas.5/2 --format='%L,"%f"' > formulas.6a
+cmp formulas.5 formulas.6
+cmp formulas.5 formulas.5a
+cmp formulas.5a formulas.6a
+
+# Make sure ltl2dstar-style litterals always get quoted.
+test "`ltlfilt -l --lbt-input -f 'G F a'`" = 'G F "a"'
+# Original lbt-style litterals are unquoted.
+test "`ltlfilt -l --lbt-input -f 'G F p42'`" = 'G F p42'

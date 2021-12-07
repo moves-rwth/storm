@@ -1,0 +1,100 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2011, 2014, 2015, 2016 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+cat >input <<EOF
+GFa
+FGa
+<>p1->p0
+<>p1->(p0 U p1)
+[](p0-><>p3)
+a U b
+GFa&&FGa
+[] ((p2 && ! p1) -> (p0 U (p1 || [] p0)))
+[] (p2 -> ((! p0 && ! p1) U (p1 || ((p0 && ! p1) U (p1 || ((! p0 && ! p1) \
+ U (p1 || ((p0 && ! p1) U ((p1 || (! p0 U (p1 || [] ! p0))) || [] p0)))))))))
+EOF
+
+ltlcross -F input 'ltl2tgba --generic -D' --csv=out.csv
+
+# Make sure all the automata produced where deterministic
+cut -d, -f12 < out.csv > det.csv
+cat >expected <<EOF
+"nondet_aut"
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+EOF
+
+diff det.csv expected
+
+# The following test-case was supplied by Martin Dieguez Lodeiro to
+# demonstrate a bug in our first Safra implementation.  It has now
+# been adapted to our new determinization function, just in case.
+cat >x.hoa <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "p"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete
+--BODY--
+State: 0
+[t] 0
+[0] 1
+State: 1
+[t] 1
+[0] 2 {0}
+State: 2
+[t] 1
+[0] 2 {0}
+--END--
+EOF
+
+run 0 autfilt -D x.hoa > x2.hoa
+# x.hoa accepts some run
+run 0 autfilt -q -v --is-empty x.hoa
+run 0 autfilt -q -v --is-empty x2.hoa
+# so does its complement
+run 0 autfilt -q -v --is-empty --complement x2.hoa > x3.hoa
+# however the intersection of both should not
+# accept any run.
+run 1 autfilt -q --intersect x2.hoa x3.hoa
+
+:

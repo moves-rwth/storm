@@ -1,0 +1,55 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2015 Laboratoire de Recherche de
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2004  Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Emptiness check on randomly generated state spaces.
+
+. ./defs
+
+set -e
+
+# With no acceptance condition, everyone should agree and find a run.
+# Do not spend to much time checking this.
+run 0 ../randtgba -e 10 -s 0 -r -m
+# Test some statistic output
+run 0 ../randtgba -z -e 10 -s 0 -r -m
+run 0 ../randtgba -1 -e 10 -s 0 -r -m
+
+# One acceptance condition
+run 0 ../randtgba -e 100 -s   0 -r -m -a 1 0.1 -d 0.01
+run 0 ../randtgba -e 100 -s  50 -r -m -a 1 0.1 -d 0.02
+run 0 ../randtgba -e 100 -s 100 -r -m -a 1 0.1 -d 0.04
+run 0 ../randtgba -e 100 -s 150 -r -m -a 1 0.1 -d 0.08
+
+# Four acceptance conditions
+run 0 ../randtgba -e 100 -s 200 -r -m -a 4 0.1 -d 0.01
+run 0 ../randtgba -e 100 -s 250 -r -m -a 4 0.1 -d 0.02
+run 0 ../randtgba -e 100 -s 300 -r -m -a 4 0.1 -d 0.04
+run 0 ../randtgba -e 100 -s 350 -r -m -a 4 0.1 -d 0.08
+run 0 ../randtgba -e 100 -s 400 -r -m -a 4 0.2 -d 0.01
+run 0 ../randtgba -e 100 -s 450 -r -m -a 4 0.2 -d 0.02
+run 0 ../randtgba -e 100 -s 500 -r -m -a 4 0.2 -d 0.04
+run 0 ../randtgba -e 100 -s 550 -r -m -a 4 0.2 -d 0.08
+
+# Bigger automata.  With valgrind this is slow, so we do less.
+run 0 ../randtgba -e 10 -s 0 -n 500 -r -m -a 1 0.0003 -d 0.01
+run 0 ../randtgba -e 10 -s 0 -n 500 -r -m -a 4 0.0011 -D -d 0.01

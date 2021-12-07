@@ -1,0 +1,333 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018-2020 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Syntactic sugar X[n] F[n:m] G[n:m]  ##n ##[i..j]
+. ./defs || exit 1
+
+set -e
+
+cat >ok.in <<\EOF
+X[4]a
+X[3!]a
+G[2:4]a
+G[4:2]a
+F[2:4]a
+F[4:2]a
+F[2:$]a
+F[2..]a
+F[2:$!]a
+F[2:3!]a
+X [4]a | b
+G [2:4] a | b
+G [4:2] a | b
+G [2:] a | b
+G [2..] a | b
+G [2..!] a | b
+G [2..3!] a | b
+F [2:4] a |  b
+F [4:2]a | F[2:2]b
+F[]a|G[]b|X[]c
+{a ##0 b ##1 c ##2 d}|->e
+{a* ##0 b* ##1 c* ##2 d*}|->e
+{(##2 a)[*] ##1 b}|->e
+{a ##[0:3] b}|->e
+{a* ##[0:3] b}|->e
+{a ##[0:3] b*}|->e
+{a* ##[0:3] b*}|->e
+{a ##[1..] b}|->e
+{a ##[:] b}|->e
+{a ##[:1] b}|->e
+{##[..3] b}|->e
+{##[0..2] b*}|->e
+{##[1..2] b*}|->e
+{a ##[+] b}|->e
+{##[*] b}|->e
+EOF
+
+ltlfilt -F ok.in > ok.out
+
+cat >expect <<\EOF
+XXXXa
+X[!]X[!]X[!]a
+XX(a & X(a & Xa))
+XX(a & X(a & Xa))
+XX(a | X(a | Xa))
+XX(a | X(a | Xa))
+XXFa
+XXFa
+X[!]X[!]Fa
+X[!]X[!](a | X[!]a)
+b | XXXXa
+b | XX(a & X(a & Xa))
+b | XX(a & X(a & Xa))
+b | XXGa
+b | XXGa
+b | X[!]X[!]Ga
+b | X[!]X[!](a & X[!]a)
+b | XX(a | X(a | Xa))
+XX(a | X(a | Xa)) | XXb
+FGa | Gb | XGc
+{{a && b};c;1;d}[]-> e
+{{a[*]:b[*]};c[*];1;d[*]}[]-> e
+{{[*2];a}[*];b}[]-> e
+{a:{[*0..3];b}}[]-> e
+{{a[*];[*0..3]}:b}[]-> e
+{a:{[*0..3];b[*]}}[]-> e
+{{a[*]:b[*]} | {a[*];[*0..2];b[*]}}[]-> e
+{a;[*];b}[]-> e
+{a:{[*];b}}[]-> e
+{a:{[*0..1];b}}[]-> e
+{[*0..3];b}[]-> e
+{[*0..2];b[*]}[]-> e
+{[*1..2];b[*]}[]-> e
+{a;[*];b}[]-> e
+{[*];b}[]-> e
+EOF
+diff ok.out expect
+
+
+
+cat >err.in <<EOF
+F[
+F[3:1]
+F[3:1][2:1]
+F[2]a
+F[2!]a
+F[a
+G[2:4]
+G[2:.]a
+G[4]a
+G[4!]a
+G[a
+X[2
+X[2]
+X[2:3]
+X[2:4]a
+X[2:4!]a
+X[a
+{a ## b}
+{a ##7}
+{a ##[::] b}
+{a ##[2:1] b}
+{a ##[1:2]}
+{##[1:2]}
+EOF
+
+# Work around our 80col restriction.
+num="number for square bracket operator"
+numoreof="$num or end of formula"
+sep="separator for square bracket operator"
+undefined='invalid token'
+closingbkt='square bracket operator, expecting closing bracket'
+eclosingbkt='expecting closing bracket or closing !]'
+
+ltlfilt -F err.in 2>err && exit 1
+sed 's/[$]undefined/invalid token/' err >err2
+cat >expect2 <<EOF
+ltlfilt:err.in:1: parse error:
+>>> F[
+    ^^
+missing closing bracket for F[.]
+
+ltlfilt:err.in:2: parse error:
+>>> F[3:1]
+          ^
+syntax error, unexpected end of formula
+
+>>> F[3:1]
+    ^^^^^^
+missing right operand for "F[.] operator"
+
+ltlfilt:err.in:3: parse error:
+>>> F[3:1][2:1]
+          ^
+syntax error, unexpected $undefined
+
+>>> F[3:1][2:1]
+    ^^^^^^
+missing right operand for "F[.] operator"
+
+>>> F[3:1][2:1]
+          ^^^^^
+ignoring trailing garbage
+
+ltlfilt:err.in:4: parse error:
+>>> F[2]a
+    ^^^^
+F[n:m] expects two parameters
+
+ltlfilt:err.in:5: parse error:
+>>> F[2!]a
+    ^^^^^
+F[n:m!] expects two parameters
+
+ltlfilt:err.in:6: parse error:
+>>> F[a
+      ^
+syntax error, unexpected $undefined, expecting $numoreof
+
+>>> F[a
+    ^^^
+missing closing bracket for F[.]
+
+ltlfilt:err.in:7: parse error:
+>>> G[2:4]
+          ^
+syntax error, unexpected end of formula
+
+>>> G[2:4]
+    ^^^^^^
+missing right operand for "G[.] operator"
+
+ltlfilt:err.in:8: parse error:
+>>> G[2:.]a
+        ^
+syntax error, unexpected $undefined, $eclosingbkt
+
+>>> G[2:.]a
+    ^^^^^^
+treating this G[.] as a simple G
+
+ltlfilt:err.in:9: parse error:
+>>> G[4]a
+    ^^^^
+G[n:m] expects two parameters
+
+ltlfilt:err.in:10: parse error:
+>>> G[4!]a
+    ^^^^^
+G[n:m!] expects two parameters
+
+ltlfilt:err.in:11: parse error:
+>>> G[a
+      ^
+syntax error, unexpected $undefined, expecting $numoreof
+
+>>> G[a
+    ^^^
+missing closing bracket for G[.]
+
+ltlfilt:err.in:12: parse error:
+>>> X[2
+       ^
+syntax error, unexpected end of formula, $eclosingbkt
+
+>>> X[2
+    ^^^
+missing closing bracket for X[.]
+
+ltlfilt:err.in:13: parse error:
+>>> X[2]
+        ^
+syntax error, unexpected end of formula
+
+>>> X[2]
+    ^^^^
+missing right operand for "X[.] operator"
+
+ltlfilt:err.in:14: parse error:
+>>> X[2:3]
+       ^
+syntax error, unexpected separator for square bracket operator, $eclosingbkt
+
+>>> X[2:3]
+    ^^^^^^
+missing closing bracket for X[.]
+
+ltlfilt:err.in:15: parse error:
+>>> X[2:4]a
+       ^
+syntax error, unexpected $sep, $eclosingbkt
+
+>>> X[2:4]a
+    ^^^^^^^
+treating this X[.] as a simple X
+
+ltlfilt:err.in:16: parse error:
+>>> X[2:4!]a
+       ^
+syntax error, unexpected separator for square bracket operator, $eclosingbkt
+
+>>> X[2:4!]a
+    ^^^^^^^^
+treating this X[.!] as a simple X[!]
+
+ltlfilt:err.in:17: parse error:
+>>> X[a
+      ^
+syntax error, unexpected $undefined, expecting closing !] or $numoreof
+
+>>> X[a
+    ^^^
+missing closing bracket for X[.]
+
+ltlfilt:err.in:18: parse error:
+>>> {a ## b}
+       ^
+syntax error, unexpected $undefined
+
+>>> {a ## b}
+       ^^^^
+ignoring this
+
+ltlfilt:err.in:19: parse error:
+>>> {a ##7}
+          ^
+syntax error, unexpected closing brace
+
+>>> {a ##7}
+       ^^^
+missing right operand for "SVA delay operator"
+
+ltlfilt:err.in:20: parse error:
+>>> {a ##[::] b}
+           ^
+syntax error, unexpected separator for $closingbkt
+
+>>> {a ##[::] b}
+       ^^^^^^
+treating this delay block as ##1
+
+ltlfilt:err.in:21: parse error:
+>>> {a ##[2:1] b}
+     ^
+reversed range
+
+ltlfilt:err.in:22: parse error:
+>>> {a ##[1:2]}
+              ^
+syntax error, unexpected closing brace
+
+>>> {a ##[1:2]}
+       ^^^^^^^
+missing right operand for "SVA delay operator"
+
+ltlfilt:err.in:23: parse error:
+>>> {##[1:2]}
+            ^
+syntax error, unexpected closing brace
+
+>>> {##[1:2]}
+     ^^^^^^^
+missing right operand for "SVA delay operator"
+
+EOF
+diff -u err2 expect2

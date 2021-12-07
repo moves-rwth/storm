@@ -1,0 +1,271 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016-2020 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# Make sure the name of each pattern is correctly output by %F.
+opts=`genltl --help | sed -n '/=RANGE/{
+s/^ *//
+s/=RANGE\[,RANGE.*/=1,1/p
+s/=RANGE,RANGE.*/=1,1/p
+s/\[=RANGE.*/=1/p
+s/=RANGE.*/=1/p
+}'`
+res=`genltl $opts --format="--%F=%L"`
+test "$opts" = "$res"
+
+run 0 genltl --dac=1..5 --eh=1..5 --sejk-p --pos --neg \
+             --format="%F:%L %f" >output
+cat >expected <<EOF
+dac-patterns:1 G!p0
+!dac-patterns:1 !G!p0
+dac-patterns:2 Fp0 -> (!p1 U p0)
+!dac-patterns:2 !(Fp0 -> (!p1 U p0))
+dac-patterns:3 G(p0 -> G!p1)
+!dac-patterns:3 !G(p0 -> G!p1)
+dac-patterns:4 G((p0 & !p1 & Fp1) -> (!p2 U p1))
+!dac-patterns:4 !G((p0 & !p1 & Fp1) -> (!p2 U p1))
+dac-patterns:5 G((p0 & !p1) -> (!p2 W p1))
+!dac-patterns:5 !G((p0 & !p1) -> (!p2 W p1))
+eh-patterns:1 p0 U (p1 & Gp2)
+!eh-patterns:1 !(p0 U (p1 & Gp2))
+eh-patterns:2 p0 U (p1 & X(p2 U p3))
+!eh-patterns:2 !(p0 U (p1 & X(p2 U p3)))
+eh-patterns:3 p0 U (p1 & X(p2 & F(p3 & XF(p4 & XF(p5 & XFp6)))))
+!eh-patterns:3 !(p0 U (p1 & X(p2 & F(p3 & XF(p4 & XF(p5 & XFp6))))))
+eh-patterns:4 F(p0 & XGp1)
+!eh-patterns:4 !F(p0 & XGp1)
+eh-patterns:5 F(p0 & X(p1 & XFp2))
+!eh-patterns:5 !F(p0 & X(p1 & XFp2))
+sejk-patterns:1 GF(Fp0 | Gp1 | FG(p0 | Xp1))
+!sejk-patterns:1 !GF(Fp0 | Gp1 | FG(p0 | Xp1))
+sejk-patterns:2 FG(Gp0 | F!p1 | GF(p0 & Xp1))
+!sejk-patterns:2 !FG(Gp0 | F!p1 | GF(p0 & Xp1))
+sejk-patterns:3 GF(Fp0 | GXp1 | FG(p0 | XXp1))
+!sejk-patterns:3 !GF(Fp0 | GXp1 | FG(p0 | XXp1))
+EOF
+diff expected output
+
+genltl --dac=1..5 --eh=1..5 --neg --format="%L %f" >output
+cat >expected <<EOF
+1 !G!p0
+2 !(Fp0 -> (!p1 U p0))
+3 !G(p0 -> G!p1)
+4 !G((p0 & !p1 & Fp1) -> (!p2 U p1))
+5 !G((p0 & !p1) -> (!p2 W p1))
+1 !(p0 U (p1 & Gp2))
+2 !(p0 U (p1 & X(p2 U p3)))
+3 !(p0 U (p1 & X(p2 & F(p3 & XF(p4 & XF(p5 & XFp6))))))
+4 !F(p0 & XGp1)
+5 !F(p0 & X(p1 & XFp2))
+EOF
+diff expected output
+
+genltl --dac=1..5 --eh=1..5 --pos --format="%f" >output
+cat >expected <<EOF
+G!p0
+Fp0 -> (!p1 U p0)
+G(p0 -> G!p1)
+G((p0 & !p1 & Fp1) -> (!p2 U p1))
+G((p0 & !p1) -> (!p2 W p1))
+p0 U (p1 & Gp2)
+p0 U (p1 & X(p2 U p3))
+p0 U (p1 & X(p2 & F(p3 & XF(p4 & XF(p5 & XFp6)))))
+F(p0 & XGp1)
+F(p0 & X(p1 & XFp2))
+EOF
+diff expected output
+
+genltl --dac=1..5 --eh=1..5 >output2
+diff output output2
+
+genltl --tv-f1=1:3 --tv-f2=1:3 --tv-g1=1:3 --tv-g2=1:3 --tv-uu=1:3 \
+       --sejk-f='0:2,0:3' --format='%F,"%L",%f' >output
+cat >expected <<EOF
+tv-f1,"1",G(p -> q)
+tv-f1,"2",G(p -> (q | Xq))
+tv-f1,"3",G(p -> (q | Xq | XXq))
+tv-f2,"1",G(p -> q)
+tv-f2,"2",G(p -> (q | Xq))
+tv-f2,"3",G(p -> (q | X(q | Xq)))
+tv-g1,"1",G(p -> q)
+tv-g1,"2",G(p -> (q & Xq))
+tv-g1,"3",G(p -> (q & Xq & XXq))
+tv-g2,"1",G(p -> q)
+tv-g2,"2",G(p -> (q & Xq))
+tv-g2,"3",G(p -> (q & X(q & Xq)))
+tv-uu,"1",G(p1 -> (p1 U p2))
+tv-uu,"2",G(p1 -> (p1 U (p2 & (p2 U p3))))
+tv-uu,"3",G(p1 -> (p1 U (p2 & (p2 U (p3 & (p3 U p4))))))
+sejk-f,"0,0",GFa0 U b
+sejk-f,"0,1",GFa0 U Xb
+sejk-f,"0,2",GFa0 U XXb
+sejk-f,"0,3",GFa0 U XXXb
+sejk-f,"1,0",GFa1 U G(GFa0 U b)
+sejk-f,"1,1",GFa1 U G(GFa0 U Xb)
+sejk-f,"1,2",GFa1 U G(GFa0 U XXb)
+sejk-f,"1,3",GFa1 U G(GFa0 U XXXb)
+sejk-f,"2,0",GFa2 U G(GFa1 U G(GFa0 U b))
+sejk-f,"2,1",GFa2 U G(GFa1 U G(GFa0 U Xb))
+sejk-f,"2,2",GFa2 U G(GFa1 U G(GFa0 U XXb))
+sejk-f,"2,3",GFa2 U G(GFa1 U G(GFa0 U XXXb))
+EOF
+diff output expected
+
+genltl --kr-n2=1..2 --kr-nlogn=1..2 --kr-n=1..2 --gxf-and=0..3 --fxg-or=0..3 \
+       --pps-arbiter-standard=2..3 --pps-arbiter-strict=2..3 --format=%F=%L,%f |
+    ltl2tgba --low --det -F-/2 --stats='%<,%s' > out
+cat >exp<<EOF
+kv-psi=1,10
+kv-psi=2,24
+kr-nlogn=1,16
+kr-nlogn=2,44
+kr-n=1,10
+kr-n=2,25
+gxf-and=0,1
+gxf-and=1,1
+gxf-and=2,1
+gxf-and=3,1
+fxg-or=0,2
+fxg-or=1,3
+fxg-or=2,4
+fxg-or=3,5
+pps-arbiter-standard=2,15
+pps-arbiter-standard=3,23
+pps-arbiter-strict=2,37
+pps-arbiter-strict=3,82
+EOF
+diff out exp
+
+test $(genltl --kr-n2=4 | ltl2tgba --low --stats=%s) -ge 16
+test $(genltl --kr-nlogn=4 | ltl2tgba --low --stats=%s) -ge 16
+test $(genltl --kr-n=4 | ltl2tgba --low --stats=%s) -ge 16
+
+genltl --ms-example=0..4 --ms-phi-r=0..2 --ms-phi-s=0..2 --ms-phi-h=0..4 \
+       --gf-equiv=0..5 --gf-implies=0..5 --gf-equiv-xn=1..3 --gf-implies-xn=3 \
+       --format='"%F=%L",%f' |
+    ltl2tgba -G -D -F-/2 --stats='%f,%<,%s' |
+    ltl2tgba -P -D -F-/1 --stats='%>,%s' > out
+cat >exp<<EOF
+"ms-example=0,0",1,1
+"ms-example=0,1",2,2
+"ms-example=0,2",3,3
+"ms-example=0,3",4,4
+"ms-example=0,4",5,5
+"ms-example=1,0",1,1
+"ms-example=1,1",2,2
+"ms-example=1,2",3,3
+"ms-example=1,3",4,4
+"ms-example=1,4",5,5
+"ms-example=2,0",2,2
+"ms-example=2,1",3,3
+"ms-example=2,2",4,4
+"ms-example=2,3",5,5
+"ms-example=2,4",6,6
+"ms-example=3,0",4,4
+"ms-example=3,1",5,5
+"ms-example=3,2",6,6
+"ms-example=3,3",7,7
+"ms-example=3,4",8,8
+"ms-example=4,0",8,8
+"ms-example=4,1",9,9
+"ms-example=4,2",10,10
+"ms-example=4,3",11,11
+"ms-example=4,4",12,12
+"ms-phi-r=0",1,2
+"ms-phi-r=1",1,12
+"ms-phi-r=2",1,28
+"ms-phi-s=0",1,3
+"ms-phi-s=1",1,7
+"ms-phi-s=2",1,375
+"ms-phi-h=0",1,1
+"ms-phi-h=1",2,3
+"ms-phi-h=2",4,7
+"ms-phi-h=3",8,15
+"ms-phi-h=4",16,31
+"gf-equiv=0",1,1
+"gf-equiv=1",1,3
+"gf-equiv=2",1,7
+"gf-equiv=3",1,20
+"gf-equiv=4",1,80
+"gf-equiv=5",1,430
+"gf-implies=0",1,1
+"gf-implies=1",1,4
+"gf-implies=2",1,11
+"gf-implies=3",1,33
+"gf-implies=4",1,131
+"gf-implies=5",1,653
+"gf-equiv-xn=1",2,2
+"gf-equiv-xn=2",4,4
+"gf-equiv-xn=3",8,8
+"gf-implies-xn=3",1,1
+EOF
+diff out exp
+
+# Running ltl2tgba on one formula at a time should give the same results
+genltl --ms-example=0..4 --ms-phi-r=0..2 --ms-phi-s=0..2 --ms-phi-h=0..4 \
+       --gf-equiv=0..5 --gf-implies=0..5 --gf-equiv-xn=1..3 --gf-implies-xn=3 \
+       --format='"%F=%L",%f' |
+    ltldo 'ltl2tgba -DG' -F-/2 --stats='%f,%<,%s' |
+    ltldo 'ltl2tgba -DP' -F-/1 --stats='%>,%s' > out
+diff out exp
+
+# Test out-of-range conditions
+genltl --dac-patterns=0 2> err && exit 1
+test $? = 2
+test "`cat err`" = "genltl: no pattern dac-patterns=0, supported range is 1..55"
+
+genltl --eh-patterns=0 2> err && exit 1
+test $? = 2
+test "`cat err`" = "genltl: no pattern eh-patterns=0, supported range is 1..12"
+
+genltl --hkrss-patterns=0 2> err && exit 1
+test $? = 2
+test "`cat err`" = \
+  "genltl: no pattern hkrss-patterns=0, supported range is 1..55"
+
+genltl --kr-n=0 2> err && exit 1
+test $? = 2
+test "`cat err`" = "genltl: no pattern kr-n=0, supported range is 1.."
+
+genltl --kr-nlogn=0 2> err && exit 1
+test $? = 2
+test "`cat err`" = "genltl: no pattern kr-nlogn=0, supported range is 1.."
+
+genltl --p-patterns=0 2> err && exit 1
+test $? = 2
+test "`cat err`" = "genltl: no pattern p-patterns=0, supported range is 1..20"
+
+genltl --sb-patterns=0 2> err && exit 1
+test $? = 2
+test "`cat err`" = "genltl: no pattern sb-patterns=0, supported range is 1..27"
+
+genltl --sejk-patterns=0 2> err && exit 1
+test $? = 2
+test "`cat err`" = "genltl: no pattern sejk-patterns=0, supported range is 1..3"
+
+# Tests for ltlfilt -N/--nth
+genltl --sb-patterns=1..20 | ltlfilt -N 5..10 > range1.ltl
+genltl --sb-patterns=5..10 > range2.ltl
+diff range1.ltl range2.ltl
+genltl --sb-patterns=1..20 | ltlfilt -v --nth 10..20 > range1.ltl
+genltl --sb-patterns=1..9 > range2.ltl
+diff range1.ltl range2.ltl

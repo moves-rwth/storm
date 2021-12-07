@@ -1,0 +1,119 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2016, 2020 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check for the constant_term visitor
+
+. ./defs || exit 1
+
+set -e
+
+t()
+{
+   cat > tmp.$$
+   run 0 ../ltlrel "`head -n 1 tmp.$$`" > out.$$
+   sed 1d tmp.$$ > exp.$$
+   diff out.$$ exp.$$
+}
+
+t <<EOF
+a & Xb & c
+p0 & Xp1
+  p0   ->   a & c
+  p1   ->   b
+EOF
+
+t <<EOF
+a & b & GF(a | c) & FG(a | c)
+p0 & p1 & GF(p0 | p2) & FG(p0 | p2)
+  p0   ->   a
+  p1   ->   b
+  p2   ->   c
+EOF
+
+t <<EOF
+b & GF(a | c) & FG(a | c)
+p0 & GFp1 & FGp1
+  p0   ->   b
+  p1   ->   a | c
+EOF
+
+t <<EOF
+G(d & e) | FG(Xf| !c) | h | i
+p0 | Gp1 | FG(p2 | Xp3)
+  p0   ->   h | i
+  p1   ->   d & e
+  p2   ->   !c
+  p3   ->   f
+EOF
+
+t <<EOF
+a <-> b
+p0
+  p0   ->   a <-> b
+EOF
+
+t <<EOF
+(a <-> b) & X(b -> c)
+(p0 <-> p1) & X(p1 -> p2)
+  p0   ->   a
+  p1   ->   b
+  p2   ->   c
+EOF
+
+# This one used to stack overflow due to an infinite recursion
+# in the relabeling function.  Reported by František Blahoudek.
+t <<EOF
+<>p1 -> ((p0 -> (!p1 U (!p1 && p3 && !p5 && X((!p1 && !p5) U p4)))) U p1)
+Fp0 -> ((p1 -> (!p0 U (!p0 & p2 & p3 & X((!p0 & p3) U p4)))) U p0)
+  p0   ->   p1
+  p1   ->   p0
+  p2   ->   p3
+  p3   ->   !p5
+  p4   ->   p4
+EOF
+
+# Variant to check that p3 & p6 can be gathered.
+t <<EOF
+<>p1 -> ((p0 -> (!p1 U (!p1 && p3 && !p5 && X((!p1 && !p5) U p4) & p6))) U p1)
+Fp0 -> ((p1 -> (!p0 U (!p0 & p2 & p3 & X((!p0 & p3) U p4)))) U p0)
+  p0   ->   p1
+  p1   ->   p0
+  p2   ->   p3 & p6
+  p3   ->   !p5
+  p4   ->   p4
+EOF
+
+# The next two formulas come from a report by Jens Kreber.
+t <<EOF
+!b & e U (a & b & c)
+!p0 & (p1 U (p0 & p2))
+  p0   ->   b
+  p1   ->   e
+  p2   ->   a & c
+EOF
+t <<EOF
+X!c & X(b & c & d & a U e)
+X!p0 & X(p0 & p1 & (p2 U p3))
+  p0   ->   c
+  p1   ->   b & d
+  p2   ->   a
+  p3   ->   e
+EOF

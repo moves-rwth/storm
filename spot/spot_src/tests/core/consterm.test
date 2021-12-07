@@ -1,0 +1,54 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010, 2015 Laboratoire de Recherche et Devéloppement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check for the constant_term visitor
+
+. ./defs || exit 1
+
+set -e
+
+cat >input2 <<EOF
+1,0
+0,0
+[*0],1
+a*,1
+0*,1
+a[*0],1
+a[*0..],1
+a[*0..3],1
+a[*1..3],0
+a[*3],0
+a[*..4][*3],1
+a[*1..4][*3],0
+a[*1..4][*0..3],1
+((a ; b) + c),0
+((a ; b) + [*0]),1
+((a ; b) + [*0]) & e,0
+((a ; b) + [*0]) & [*0],1
+((a ; b) + [*0]) & (a* + b),1
+# test braces
+{{a ; b} + {[*0]}} & {a* + b},1
+(a + [*0]);(b + [*0]);(c + [*0]),1
+(a + [*0]);(b + e);(c + [*0]),0
+(a + [*0]);(b + e)*;(c + [*0]),1
+EOF
+
+run 0 ../consterm input2

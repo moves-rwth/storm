@@ -1,0 +1,11 @@
+#+OPTIONS: H:2 num:nil toc:t html-postamble:nil ^:nil
+#+EMAIL: spot@lrde.epita.fr
+#+HTML_LINK_HOME: index.html
+#+MACRO: SPOTVERSION 2.9.6
+#+MACRO: LASTRELEASE 2.9.6
+#+MACRO: LASTTARBALL [[http://www.lrde.epita.fr/dload/spot/spot-2.9.6.tar.gz][=spot-2.9.6.tar.gz=]]
+#+MACRO: LASTNEWS [[https://gitlab.lrde.epita.fr/spot/spot/blob/spot-2-9-6/NEWS][summary of the changes]]
+#+MACRO: LASTDATE 2020-11-19
+
+#+ATTR_HTML: :id spotlogo
+[[file:spot2.svg]]

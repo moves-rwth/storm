@@ -1,0 +1,1146 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2012, 2014-2020 Laboratoire de
+# Recherche et Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004 Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+cat >input <<\EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 3 "a" "b" "F\\G"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0 {0 1}
+[0&!1] 1
+State: 1 {0}
+[2] 2
+State: 2
+[t] 0
+--END--
+EOF
+
+run 0 autfilt --hoa input > stdout
+diff stdout input
+
+test `autfilt -c --is-weak input` = 0
+
+autfilt -H1.1 -v --is-weak input | grep properties: | tee props
+cat >expected.props <<EOF
+properties: trans-labels explicit-labels state-acc !complete
+properties: deterministic !weak
+EOF
+diff expected.props props
+
+
+# Transition merging
+cat >input <<\EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0&1] 1 {0}
+[!1] 1
+[0&!1] 1 {0}
+State: 1
+[!1] 0
+[1&0] 0 {0}
+[0&!1] 0 {0}
+--END--
+EOF
+
+cat >expected <<\EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[!1] 1
+[0] 1 {0}
+State: 1
+[!1] 0
+[0] 0 {0}
+--END--
+EOF
+
+run 0 autfilt --merge-transitions --hoa input > stdout
+cat stdout
+run 0 autfilt -F stdout --isomorph expected
+
+# Likewise, with a randomly generated TGBA.
+run 0 randaut -Q 20 a b -e 0.2 -a 0.2 -A 2 --hoa | tee input
+
+# the first read-write can renumber the states
+run 0 autfilt --hoa --merge-transitions input > stdout
+run 0 autfilt -F input --isomorph stdout
+
+# But this second output should be the same as the first
+run 0 autfilt --hoa stdout > stdout2
+diff stdout stdout2
+
+# Find formula that can be translated into a 3-state automaton, and
+# exercise both %M and %m.  The nonexistant file should never be
+# open, because the input stream is infinite and autfilt should
+# stop after 10 automata.
+randltl -n -1 a b | ltl2tgba |
+    autfilt -F - -F nonexistant --states=3 --edges=..10 --acc-sets=1.. \
+	     --name='%M, %S states' --stats='<%m>, %e, %a' -n 10 > output
+cat >expected <<EOF
+<F(b | Ga), 3 states>, 5, 1
+<F(!b & G(!b | G!a)), 3 states>, 5, 1
+<XF!b, 3 states>, 4, 1
+<G!b | Gb, 3 states>, 4, 1
+<XFb, 3 states>, 4, 1
+<F(b W a), 3 states>, 6, 1
+<(a & !b & (b | (!b M F!a))) | (!a & (b | (!b & (b W Ga)))), 3 states>, 5, 1
+<(a & (a U !b)) | (!a & (!a R b)), 3 states>, 5, 1
+<a | G((a & GFa) | (!a & FG!a)), 3 states>, 4, 1
+<XXG(!a & (Fa W Gb)), 3 states>, 3, 1
+EOF
+diff output expected
+
+
+cat >input <<EOF
+HOA: v1
+States: 10
+Start: 0
+AP: 1 "a"
+acc-name: generalized-Buchi 3
+Acceptance: 3 Inf(0)&Inf(1)&Inf(2)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[t] 0 {0}
+[!0] 1 {0}
+[!0] 2 {0}
+[0] 3 {0}
+[0] 3 {0 2}
+[!0] 2 {0 2}
+[!0] 4 {1}
+[!0] 5 {1}
+[!0] 6 {1}
+[!0] 6 {1 2}
+[!0] 7 {1}
+[!0] 8 {1}
+[!0] 9 {1}
+[!0] 9 {1 2}
+[!0] 4 {0 1}
+[!0] 5 {0 1}
+[!0] 6 {0 1}
+[!0] 6 {0 1 2}
+[!0] 7 {0 1}
+[!0] 8 {0 1}
+[!0] 9 {0 1}
+[!0] 9 {0 1 2}
+State: 1
+[0] 3 {0 2}
+State: 2
+[!0] 2 {0 2}
+[!0] 6 {1 2}
+[!0] 9 {1 2}
+[!0] 6 {0 1 2}
+[!0] 9 {0 1 2}
+State: 3
+[!0] 1 {0 2}
+[!0] 2 {0}
+[0] 3 {0 2}
+[!0] 2 {0 2}
+[!0] 5 {1 2}
+[!0] 6 {1}
+[!0] 6 {1 2}
+[!0] 8 {1 2}
+[!0] 9 {1}
+[!0] 9 {1 2}
+[!0] 5 {0 1 2}
+[!0] 6 {0 1}
+[!0] 6 {0 1 2}
+[!0] 8 {0 1 2}
+[!0] 9 {0 1}
+[!0] 9 {0 1 2}
+State: 4
+[!0] 4 {1}
+[!0] 5 {1}
+[!0] 6 {1}
+[!0] 6 {1 2}
+[!0] 7
+[!0] 8
+[!0] 9
+[!0] 9 {2}
+[!0] 7 {1}
+[!0] 8 {1}
+[!0] 9 {1}
+[!0] 9 {1 2}
+State: 5
+State: 6
+[!0] 6 {1 2}
+[!0] 9 {2}
+[!0] 9 {1 2}
+State: 7
+[0] 0 {0}
+[0] 3 {0}
+[0] 3 {0 2}
+State: 8
+[0] 3 {0 2}
+State: 9
+--END--
+EOF
+
+cat >expected <<EOF
+HOA: v1
+name: "63->32 edges, 64->33 transitions"
+States: 10
+Start: 0
+AP: 1 "a"
+acc-name: generalized-Buchi 3
+Acceptance: 3 Inf(0)&Inf(1)&Inf(2)
+properties: trans-labels explicit-labels
+--BODY--
+State: 0
+[t] 0 {0}
+[!0] 1 {0}
+[!0] 2 {0 2}
+[0] 3 {0 2}
+[!0] 4 {0 1}
+[!0] 5 {0 1}
+[!0] 6 {0 1 2}
+[!0] 7 {0 1}
+[!0] 8 {0 1}
+[!0] 9 {0 1 2}
+State: 1 {0 2}
+[0] 3
+State: 2
+[!0] 2 {0 2}
+[!0] 6 {0 1 2}
+[!0] 9 {0 1 2}
+State: 3
+[!0] 1 {0 2}
+[!0] 2 {0 2}
+[0] 3 {0 2}
+[!0] 5 {0 1 2}
+[!0] 6 {0 1 2}
+[!0] 8 {0 1 2}
+[!0] 9 {0 1 2}
+State: 4
+[!0] 4 {1}
+[!0] 5 {1}
+[!0] 6 {1 2}
+[!0] 7 {1}
+[!0] 8 {1}
+[!0] 9 {1 2}
+State: 5
+State: 6 {1 2}
+[!0] 6
+[!0] 9
+State: 7
+[0] 0 {0}
+[0] 3 {0 2}
+State: 8 {0 2}
+[0] 3
+State: 9
+--END--
+EOF
+
+autfilt --merge -Hm input --name="%E->%e edges, %T->%t transitions" > output
+diff output expected
+
+
+ltl2tgba -x degen-lskip=1 --ba > tmp.hoa <<EOF
+a U b
+false
+!b && Xb && GFa
+EOF
+autfilt <tmp.hoa --stats='"%M","%w"' > output
+cat >expected <<EOF
+"a U b","cycle{b}"
+"0",""
+"!b & X(b & GFa)","!b; cycle{a & b}"
+EOF
+diff output expected
+
+
+cat >input <<EOF
+HOA: v1
+States: 4
+Start: 2
+Start: 3
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0 "s0" {0}
+[1] 0
+State: 1 "s1" {0}
+[0] 1
+State: 2 "s2"
+[1] 0
+State: 3 "s3"
+[0] 1
+--END--
+EOF
+
+autfilt -H input |
+    SPOT_DEFAULT_FORMAT=dot \
+    SPOT_DOTDEFAULT=vcsnaA \
+    SPOT_DOTEXTRA='/* hello world */' \
+    autfilt >output
+
+cat >expected <<EOF
+digraph "" {
+  node [shape="circle"]
+  /* hello world */
+  I [label="", style=invis, height=0]
+  I -> 3
+  subgraph cluster_0 {
+  color=green
+  1 [label="s1", peripheries=2]
+  }
+  subgraph cluster_1 {
+  color=green
+  0 [label="s0", peripheries=2]
+  }
+  subgraph cluster_2 {
+  color=black
+  3 [label="s3"]
+  }
+  0 -> 0 [label="b"]
+  1 -> 1 [label="a"]
+  2 [label="s2"]
+  2 -> 0 [label="b"]
+  3 -> 1 [label="a"]
+  3 -> 0 [label="b"]
+}
+EOF
+
+diff output expected
+
+test 1 = `autfilt -H input --complete | autfilt --is-complete --count`
+
+
+# The SPOT_DEFAULT_FORMAT envvar should be ignored if --dot is given.
+# --dot=k should be ignored when not applicable.
+SPOT_DEFAULT_FORMAT=hoa ltl2tgba --dot=ak 'GFa & GFb' >output
+cat output
+cat >expected <<EOF
+digraph "G(Fa & Fb)" {
+  rankdir=LR
+  label="Inf(0)&Inf(1)\n[gen. Büchi 2]"
+  labelloc="t"
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label="0"]
+  0 -> 0 [label="!a & !b"]
+  0 -> 0 [label="!a & b\n{1}"]
+  0 -> 0 [label="a & !b\n{0}"]
+  0 -> 0 [label="a & b\n{0,1}"]
+}
+EOF
+diff output expected
+
+ltl2tgba -dban 'GFa & GFb' >output
+cat output
+cat >expected <<EOF
+digraph "G(Fa & Fb)" {
+  rankdir=LR
+  label="G(Fa & Fb)\nInf(⓿)&Inf(❶)\n[gen. Büchi 2]"
+  labelloc="t"
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label="0"]
+  0 -> 0 [label="!a & !b"]
+  0 -> 0 [label="!a & b\n❶"]
+  0 -> 0 [label="a & !b\n⓿"]
+  0 -> 0 [label="a & b\n⓿❶"]
+}
+EOF
+diff output expected
+
+ltl2tgba -dbang 'GFa & GFb' >output
+cat output
+cat >expected <<EOF
+digraph "G(Fa & Fb)" {
+  rankdir=LR
+  label="G(Fa & Fb)\nInf(⓿)&Inf(❶)\n[gen. Büchi 2]"
+  labelloc="t"
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label="0"]
+  0 -> 0 [label=""]
+  0 -> 0 [label="❶"]
+  0 -> 0 [label="⓿"]
+  0 -> 0 [label="⓿❶"]
+}
+EOF
+diff output expected
+
+
+SPOT_DOTDEFAULT=bra ltl2tgba --dot='Ae.f(Lato)' 'GFa & GFb' >output
+cat output
+
+zero='<font color="#1F78B4">⓿</font>'
+one='<font color="#FF4DA0">❶</font>'
+cat >expected <<EOF
+digraph "G(Fa & Fb)" {
+  rankdir=LR
+  label=<Inf($zero)&amp;Inf($one)<br/>[gen. Büchi 2]>
+  labelloc="t"
+  node [shape="ellipse",width="0.5",height="0.5"]
+  fontname="Lato"
+  node [fontname="Lato"]
+  edge [fontname="Lato"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label=<0>]
+  0 -> 0 [label=<!a &amp; !b>]
+  0 -> 0 [label=<!a &amp; b<br/>$one>]
+  0 -> 0 [label=<a &amp; !b<br/>$zero>]
+  0 -> 0 [label=<a &amp; b<br/>$zero$one>]
+}
+EOF
+diff output expected
+
+
+cat >in <<EOF
+HOA: v1
+States: 10
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 Fin(0) | (Fin(1) & Inf(2)) | Fin(3)
+--BODY--
+State: 0
+[!0&!1] 1
+[0&!1] 2
+[!0&1] 3
+[0&1] 4
+State: 1 "test me" {0 3}
+[!0&!1] 1
+[0&!1] 2
+[!0&1] 6
+[0&1] 7
+State: 2 {0 2 3}
+[!0&!1] 1
+[0&!1] 2
+[!0&1] 6
+[0&1] 7
+State: 3 {3}
+[t] 5
+State: 4 "hihi" {2 3}
+[t] 5
+State: 5 {1 3}
+[t] 5
+State: 6 {0}
+[!0&!1] 8
+[!0&1] 6
+[0&!1] 9
+[0&1] 7
+State: 7 {0 2}
+[!0&!1] 8
+[!0&1] 6
+[0&!1] 9
+[0&1] 7
+State: 8 {0 3}
+[!0&!1] 8
+[!0&1] 6
+[0&!1] 9
+[0&1] 7
+State: 9 {0 2 3}
+[!0&!1] 8
+[!0&1] 6
+[0&!1] 9
+[0&1] 7
+--END--
+EOF
+
+cat >expected <<EOF
+digraph "" {
+  rankdir=LR
+  label="(Fin(⓿)|Fin(❸)) | (Fin(❶) & Inf(❷))\n[gen. Rabin 3]"
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label="0"]
+  0 -> 1 [label="!a & !b", taillabel="0"]
+  0 -> 2 [label="a & !b", taillabel="1"]
+  0 -> 3 [label="!a & b", taillabel="2"]
+  0 -> 4 [label="a & b", taillabel="3"]
+  1 [label="test me\n⓿❸"]
+  1 -> 1 [label="!a & !b", taillabel="0"]
+  1 -> 2 [label="a & !b", taillabel="1"]
+  1 -> 6 [label="!a & b", taillabel="2"]
+  1 -> 7 [label="a & b", taillabel="3"]
+  2 [label="2\n⓿❷❸"]
+  2 -> 1 [label="!a & !b", taillabel="0"]
+  2 -> 2 [label="a & !b", taillabel="1"]
+  2 -> 6 [label="!a & b", taillabel="2"]
+  2 -> 7 [label="a & b", taillabel="3"]
+  3 [label="3\n❸"]
+  3 -> 5 [label="1", taillabel="0"]
+  4 [label="hihi\n❷❸"]
+  4 -> 5 [label="1", taillabel="0"]
+  5 [label="5\n❶❸"]
+  5 -> 5 [label="1", taillabel="0"]
+  6 [label="6\n⓿"]
+  6 -> 8 [label="!a & !b", taillabel="0"]
+  6 -> 6 [label="!a & b", taillabel="1"]
+  6 -> 9 [label="a & !b", taillabel="2"]
+  6 -> 7 [label="a & b", taillabel="3"]
+  7 [label="7\n⓿❷"]
+  7 -> 8 [label="!a & !b", taillabel="0"]
+  7 -> 6 [label="!a & b", taillabel="1"]
+  7 -> 9 [label="a & !b", taillabel="2"]
+  7 -> 7 [label="a & b", taillabel="3"]
+  8 [label="8\n⓿❸"]
+  8 -> 8 [label="!a & !b", taillabel="0"]
+  8 -> 6 [label="!a & b", taillabel="1"]
+  8 -> 9 [label="a & !b", taillabel="2"]
+  8 -> 7 [label="a & b", taillabel="3"]
+  9 [label="9\n⓿❷❸"]
+  9 -> 8 [label="!a & !b", taillabel="0"]
+  9 -> 6 [label="!a & b", taillabel="1"]
+  9 -> 9 [label="a & !b", taillabel="2"]
+  9 -> 7 [label="a & b", taillabel="3"]
+}
+EOF
+
+autfilt --dot=bao in >out
+diff out expected
+
+cat >expected2 <<EOF
+digraph "" {
+  rankdir=LR
+  label="(Fin(⓿)|Fin(❸)) | (Fin(❶) & Inf(❷))\n[gen. Rabin 3]"
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  I [label="", style=invis, width=0]
+  0 [label="0"]
+  1 [label="1\n⓿❸", tooltip="test me"]
+  2 [label="2\n⓿❷❸"]
+  3 [label="3\n❸"]
+  4 [label="4\n❷❸", tooltip="hihi"]
+  5 [label="5\n❶❸"]
+  6 [label="6\n⓿"]
+  7 [label="7\n⓿❷"]
+  8 [label="8\n⓿❸"]
+  9 [label="9\n⓿❷❸"]
+}
+EOF
+
+# This should remove the state names, and automatically use circled
+# states.
+autfilt --dot=bao1 in | grep -v '>' >out
+diff out expected2
+
+cat >expected3 <<EOF
+digraph "" {
+  rankdir=LR
+  node [shape="ellipse",width="0.5",height="0.5"]
+  I [label="", style=invis, width=0]
+  0 [label="6", peripheries=2]
+  u0 [label="...", shape=none, width=0, height=0, tooltip="hidden successors"]
+  1 [label="0", peripheries=2]
+  2 [label="1", peripheries=2]
+  3 [label="2", peripheries=2]
+  4 [label="3", peripheries=2]
+}
+EOF
+
+# States should be circled even if <5 causes all states to be named,
+# because the names are smaller then 2 characters anyway.
+ltl2tgba --det 'Ga | Gb | Gc' -d'A<5' | grep -v '>' >out
+diff out expected3
+
+# Let's pretend that this is some used supplied input, as discussed in
+# the comments of https://github.com/adl/hoaf/issues/39
+
+cat >input <<EOF
+HOA: v1
+States: 7
+Start: 1
+AP: 2 "p0" "p1"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 1
+[!0&1] 0
+[!0&!1] 4
+State: 3
+[!0&!1] 2
+State: 4
+[0&1] 6
+[0&1] 5
+[0&1] 2
+[!0&1] 3
+State: 6
+[!0&!1] 1
+[!0&!1] 3
+[0&1] 7
+--END--
+EOF
+
+# autfilt should complain about the input (we only check the exit
+# status here, because the actual error messages are tested in
+# parseaut.test) and produce a valid output with the number of states
+# fixed, and the missing state definitions.
+autfilt -H input >output1 && exit 1
+
+cat >expect1 <<EOF
+HOA: v1
+States: 8
+Start: 1
+AP: 2 "p0" "p1"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+State: 1
+[!0&1] 0
+[!0&!1] 4
+State: 2
+State: 3
+[!0&!1] 2
+State: 4
+[0&1] 6
+[0&1] 5
+[0&1] 2
+[!0&1] 3
+State: 5
+State: 6
+[!0&!1] 1
+[!0&!1] 3
+[0&1] 7
+State: 7
+--END--
+EOF
+
+diff output1 expect1
+# Make sure the output is valid.
+autfilt -H output1 > output1b
+diff output1 output1b
+
+# Here is the scenario where the undefined states are actually states
+# we wanted to remove.  So we tell autfilt to fix the automaton using
+# --remove-dead-states
+SPOT_DEFAULT_FORMAT=hoa autfilt --remove-dead input >output2 && exit 1
+
+cat >expect2 <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[!0&!1] 1
+State: 1
+[0&1] 2
+State: 2
+[!0&!1] 0
+--END--
+EOF
+
+diff output2 expect2
+
+SPOT_DEFAULT_FORMAT=hoa=k autfilt expect2 >output2b
+
+cat >expect2b <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: all
+Acceptance: 0 t
+properties: state-labels explicit-labels state-acc deterministic
+--BODY--
+State: [!0&!1] 0
+1
+State: [0&1] 1
+2
+State: [!0&!1] 2
+0
+--END--
+EOF
+
+diff output2b expect2b
+
+# Check the difference between --remove-unreach and --remove-dead
+cat >input <<EOF
+HOA: v1
+States: 6
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: all
+Acceptance: 0 t
+--BODY--
+State: 0
+[!0&!1] 1
+State: 1
+[0&1] 2
+State: 2
+[!0&!1] 0
+[t] 5
+State: 3
+[t] 4
+State: 4
+[t] 3
+State: 5
+--END--
+EOF
+
+autfilt -H --remove-unreach input >output3
+autfilt -H --remove-dead input >>output3
+
+cat >expect3 <<EOF
+HOA: v1
+States: 4
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[!0&!1] 1
+State: 1
+[0&1] 2
+State: 2
+[!0&!1] 0
+[t] 3
+State: 3
+--END--
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[!0&!1] 1
+State: 1
+[0&1] 2
+State: 2
+[!0&!1] 0
+--END--
+EOF
+
+diff output3 expect3
+
+
+autfilt -Hz input 2>stderr && exit 1
+grep 'print_hoa.*z' stderr
+
+cat >input4 <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 2 Inf(0) & Inf(1)
+--BODY--
+State: 0 {0}   [0] 1
+State: 1 {1}   [1] 2
+State: 2 {0 1} [0] 2
+--END--
+EOF
+
+test `autfilt --is-weak -c input4` = 1
+test `autfilt --is-inherently-weak -c input4` = 1
+test `autfilt --is-terminal -c input4` = 0
+
+autfilt -H --small --high input4 >output4
+autfilt -H --small input4 >output4b
+autfilt -H --high input4 >output4c
+cat output4
+
+cat >expect4<<EOF
+HOA: v1
+States: 3
+Start: 1
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: very-weak
+--BODY--
+State: 0
+[1] 2
+State: 1
+[0] 0
+State: 2 {0}
+[0] 2
+--END--
+EOF
+
+diff output4 expect4
+diff output4b expect4
+diff output4c expect4
+
+autfilt -Hv --small input4 >output5
+test `autfilt --is-weak -c output4` = 1
+test `autfilt --is-terminal -c output4` = 0
+
+sed 's/\[0\]/[t]/g' expect4 > output4d
+test `autfilt --is-terminal -c output4d` = 1
+
+
+cat >expect5<<EOF
+HOA: v1
+States: 3
+Start: 1
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: no-univ-branch unambiguous semi-deterministic very-weak
+properties: weak inherently-weak
+--BODY--
+State: 0
+[1] 2
+State: 1
+[0] 0
+State: 2 {0}
+[0] 2
+--END--
+EOF
+diff output5 expect5
+
+cat >input6 <<EOF
+HOA: v1
+States: 3
+Start: 1
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: no-univ-branch trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[1] 2
+[1] 1
+[1] 1
+State: 1
+[0] 0
+[0] 1
+State: 2 {0}
+[0] 2
+[0] 0
+[0] 1
+--END--
+EOF
+
+run 0 autfilt -Hk input6 >output6
+cat >expect6 <<EOF
+HOA: v1
+States: 3
+Start: 1
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: state-labels explicit-labels state-acc
+--BODY--
+State: [1] 0
+2 1 1
+State: [0] 1
+0 1
+State: [0] 2 {0}
+2 0 1
+--END--
+EOF
+
+diff output6 expect6
+
+run 0 autfilt -dAk input6 >output6d
+cat >expect6d <<EOF
+digraph "" {
+  rankdir=LR
+  node [shape="box",style="rounded",width="0.5"]
+  I [label="", style=invis, width=0]
+  I -> 1
+  0 [label="0\nb"]
+  0 -> 2 [label=""]
+  0 -> 1 [label=""]
+  0 -> 1 [label=""]
+  1 [label="1\na"]
+  1 -> 0 [label=""]
+  1 -> 1 [label=""]
+  2 [label="2\na", peripheries=2]
+  2 -> 2 [label=""]
+  2 -> 0 [label=""]
+  2 -> 1 [label=""]
+}
+EOF
+diff output6d expect6d
+
+run 0 autfilt -dbark input6 >output6d2
+cat >expect6d2 <<EOF
+digraph "" {
+  rankdir=LR
+  label=<Inf(<font color="#1F78B4">⓿</font>)<br/>[Büchi]>
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  I [label="", style=invis, width=0]
+  I -> 1
+  0 [label=<0<br/>b>]
+  0 -> 2 [label=<>]
+  0 -> 1 [label=<>]
+  0 -> 1 [label=<>]
+  1 [label=<1<br/>a>]
+  1 -> 0 [label=<>]
+  1 -> 1 [label=<>]
+  2 [label=<2<br/><font color="#1F78B4">⓿</font><br/>a>]
+  2 -> 2 [label=<>]
+  2 -> 0 [label=<>]
+  2 -> 1 [label=<>]
+}
+EOF
+diff output6d2 expect6d2
+
+cat >input7 <<EOF
+HOA: v1
+States: 3
+Start: 1
+AP: 0
+acc-name: Buchi
+Acceptance: 2 Inf(0) & Inf(1)
+--BODY--
+State: 0
+[t] 1 {0}
+[t] 0 {0 1}
+State: 1
+[t] 0 {1}
+[t] 1 {0 1}
+--END--
+EOF
+test `autfilt -c --is-inherently-weak input7` = 1
+test `autfilt -c --is-weak input7` = 0
+test `autfilt -c --is-stutter-invariant input7` = 1
+autfilt --check input7 -H >output7
+cat >expected7 <<EOF
+HOA: v1
+States: 3
+Start: 1
+AP: 0
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc stutter-invariant
+properties: inherently-weak
+--BODY--
+State: 0
+[t] 1 {0}
+[t] 0 {0 1}
+State: 1
+[t] 0 {1}
+[t] 1 {0 1}
+State: 2
+--END--
+EOF
+diff output7 expected7
+
+cat >input8 <<EOF
+HOA: v1
+States: 3
+Start: 1
+AP: 0
+acc-name: Buchi
+Acceptance: 2 Inf(0) & Inf(1)
+--BODY--
+State: 0
+[t] 1 {0}
+[t] 0 {0 1}
+State: 1
+[t] 0 {1}
+[t] 1 {0}
+--END--
+EOF
+test `autfilt -c --is-inherently-weak input8` = 0
+test `autfilt -c --is-weak input8` = 0
+
+autfilt input8 -Hl >oneline.hoa
+autfilt input8 --stats='%h' >oneline2.hoa
+autfilt input8 --stats='%H' >oneline3.hoa
+autfilt input8 --randomize --stats='%h' >oneline4.hoa
+autfilt input8 --randomize --stats='%H' >oneline5.hoa
+diff oneline.hoa oneline2.hoa
+diff oneline.hoa oneline3.hoa
+diff oneline.hoa oneline4.hoa && exit 1
+diff oneline.hoa oneline5.hoa
+
+
+cat >input9 <<EOF
+HOA: v1
+name: "a U (b U c)"
+States: 3
+Start: 2
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: stutter-invariant terminal
+spot.highlight.edges: 3 0 1 1 4 3 2 2
+spot.highlight.states: 0 0 2 3
+--BODY--
+State: 1  /* Defined before State 0 on purpose */
+[2] 0     /* because it affects the edge numbering */
+[1&!2] 1  /* used in spot.highlight.edges */
+State: 0 {0}
+[t] 0
+State: 2 "new
+line"
+[2] 0
+[!0&1&!2] 1
+[0&!2] 2
+--END--
+EOF
+autfilt -dA input9 > output9
+cat >expected9 <<EOF
+digraph "a U (b U c)" {
+  rankdir=LR
+  node [shape="box",style="rounded",width="0.5"]
+  I [label="", style=invis, width=0]
+  I -> 2
+  0 [label="0", peripheries=2, style="bold,rounded", color="#1F78B4"]
+  0 -> 0 [label="1", style=bold, color="#1F78B4"]
+  1 [label="1"]
+  1 -> 0 [label="c", style=bold, color="#FF4DA0"]
+  1 -> 1 [label="b & !c", style=bold, color="#FF7F00"]
+  2 [label="new\nline", style="bold,rounded", color="#6A3D9A"]
+  2 -> 0 [label="c", style=bold, color="#6A3D9A"]
+  2 -> 1 [label="!a & b & !c"]
+  2 -> 2 [label="a & !c"]
+}
+EOF
+diff output9 expected9
+autfilt -dbar input9 > output9a
+style=', style="bold,rounded", color="#1F78B4"'
+cat >expected9a <<EOF
+digraph "a U (b U c)" {
+  rankdir=LR
+  label=<Inf(<font color="#1F78B4">⓿</font>)<br/>[Büchi]>
+  labelloc="t"
+  node [shape="box",style="rounded",width="0.5"]
+  I [label="", style=invis, width=0]
+  I -> 2
+  0 [label=<0<br/><font color="#1F78B4">⓿</font>>$style]
+  0 -> 0 [label=<1>, style=bold, color="#1F78B4"]
+  1 [label=<1>]
+  1 -> 0 [label=<c>, style=bold, color="#FF4DA0"]
+  1 -> 1 [label=<b &amp; !c>, style=bold, color="#FF7F00"]
+  2 [label=<new<br/>line>, style="bold,rounded", color="#6A3D9A"]
+  2 -> 0 [label=<c>, style=bold, color="#6A3D9A"]
+  2 -> 1 [label=<!a &amp; b &amp; !c>]
+  2 -> 2 [label=<a &amp; !c>]
+}
+EOF
+diff output9a expected9a
+
+# spot.hightlight.edges and spot.hightlight.states are not valid HOA
+# v1 output, so they should only but output for HOA 1.1
+autfilt input9 -H1 | autfilt -H1  | grep highlight && exit 1
+autfilt input9 -H1 | autfilt -H1.1 | grep highlight && exit 1
+autfilt -H1.1 input9 | autfilt -H1.1 | grep highlight
+autfilt -H1.1 input9 | autfilt -dA > output9b
+diff output9 output9b
+
+test 2 = `ltl2tgba 'GFa' 'a U b' 'a U b U c'| autfilt --ap=2..3 --count`
+
+# reading CSV with embedded automata
+test 2 = `genltl --dac=1..3 | ltl2tgba --stats='%e,"%h",%s' |
+          dstar2tgba -F-/2 --stats='%<,%>,"%h"' |
+          autfilt --states=2..3 -F-/3 --stats='%<,"%h"' | wc -l`
+
+# --dot=d
+ltl2tgba 'GF(a <-> Fb)' | autfilt -B --dot=dA | grep ' (' >out
+cat >expected <<EOF
+  0 [label="0 (0)", peripheries=2]
+  1 [label="1 (0)"]
+  2 [label="2 (1)"]
+  3 [label="3 (2)", peripheries=2]
+  4 [label="4 (2)"]
+EOF
+diff out expected
+# --dot=d should also not use circles
+ltl2tgba 'a U b' | autfilt --remove-ap=b=0 --name=%M --dot=dA >out
+cat >expected <<EOF
+digraph "a U b" {
+  rankdir=LR
+  node [shape="box",style="rounded",width="0.5"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label="0 (1)"]
+  0 -> 0 [label="a"]
+}
+EOF
+diff out expected
+
+# Issue #392.
+test 2 = `genltl --rv-counter-carry-linear=7|ltl2tgba -d'<10' |grep -c hidden`
+
+f="{{!a;!b}:{{c <-> d} && {e xor f} && {m | {l && {k | {j <-> {i xor {g && h}"
+f="$f}}}}} && {{n && o} | {!n && p}} && {q -> {r <-> s}}}:{[*0..1];t}}[]-> u"
+ltl2tgba -f "$f" --dot=bar > out.dot
+grep 'label too long' out.dot
+
+
+# genltl --and-fg=32 | ltlfilt --relabel=abc | ltldo ltl3ba produces a
+# few edges equivalent to a lot of transitions.  The code used to
+# count those transitions used to be very inefficient.
+cat >andfg32.hoa <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 32 "a" "ab" "b" "bb" "c" "cb" "d" "db" "e" "eb" "f" "fb" "g" "h"
+"i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[t] 0
+[0&1&2&3&4&5&6&7&8&9&10&11&12&13&14&15&16&17
+&18&19&20&21&22&23&24&25&26&27&28&29&30&31] 1
+State: 1 {0}
+[0&1&2&3&4&5&6&7&8&9&10&11&12&13&14&15&16&17
+&18&19&20&21&22&23&24&25&26&27&28&29&30&31] 1
+--END--
+EOF
+test `autfilt andfg32.hoa --stats=%t` = 4294967298 # 2^32 + 2

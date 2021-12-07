@@ -1,0 +1,803 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Mon Jan 18 11:47:54 2021 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>DSTAR2TGBA</title>
+
+ <LINK REL="stylesheet" TYPE="text/css" HREF="../spot.css">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body class="man"><div id="org-div-home-and-up"><a accesskey="h" href="../tools.html"> UP </a>| <a accesskey="H" href="../index.html"> HOME </a></div>
+
+<h1 align="center">DSTAR2TGBA</h1>
+
+<div id="table-of-contents"><h2>Table of Contents</h2><div id="text-table-of-contents"><ul>
+<li><a href="#NAME">NAME</a></li>
+<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+<li><a href="#HISTORY">HISTORY</a></li>
+<li><a href="#BIBLIOGRAPHY">BIBLIOGRAPHY</a></li>
+<li><a href="#REPORTING BUGS">REPORTING BUGS</a></li>
+<li><a href="#COPYRIGHT">COPYRIGHT</a></li>
+<li><a href="#SEE ALSO">SEE ALSO</a></li>
+</ul></div></div>
+
+
+<div class="outline-2"><h2>NAME
+<a name="NAME"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">dstar2tgba -
+convert automata into B&uuml;chi automata</p>
+
+<div class="outline-2"><h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>dstar2tgba</b>
+[<i>OPTION</i>...] [<i>FILENAME</i>[<i>/COL</i>]...]</p>
+
+<div class="outline-2"><h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Convert
+automata with any acceptance condition into variants of
+B&uuml;chi automata.</p>
+
+<p style="margin-left:11%; margin-top: 1em">This reads
+automata into any supported format (HOA, LBTT, ltl2dstar,
+never claim) and outputs a Transition-based Generalized
+B&uuml;chi Automata in GraphViz&rsquo;s format by default.
+Each supplied file may contain multiple automata.</p>
+
+<h3 style="margin-left:11%">Input:</h3><p style="margin-left:11%"><b>
+-F</b>, <b>--file</b>=<i>FILENAME</i></p>
+
+<p style="margin-left:22%;">process the automaton in
+FILENAME</p>
+
+
+<p style="margin-left:11%;"><b>--trust-hoa</b>=<i>BOOL</i></p>
+
+<p style="margin-left:22%;">If false, properties listed in
+HOA files are ignored, unless they can be easily verified.
+If true (the default) any supported property is trusted.</p>
+
+<h3 style="margin-left:11%">Output
+automaton type:</h3><p style="margin-left:11%"><b>
+-B</b>, <b>--ba</b></p>
+
+<p style="margin-left:22%;">B&uuml;chi Automaton (implies
+<b>-S</b>)</p>
+
+<p style="margin-left:11%;"><b>--cobuchi</b>,
+<b>--coBuchi</b></p>
+
+<p style="margin-left:22%;">automaton with co-B&uuml;chi
+acceptance (will recognize a superset of the input language
+if not co-B&uuml;chi realizable)</p>
+
+<p style="margin-left:11%;"><b>-C</b>,
+<b>--complete</b></p>
+
+<p style="margin-left:22%;">output a complete automaton</p>
+
+<p style="margin-left:11%;"><b>-G</b>, <b>--generic</b></p>
+
+<p style="margin-left:22%;">any acceptance condition is
+allowed</p>
+
+<p style="margin-left:11%;"><b>-M</b>, <b>--monitor</b></p>
+
+<p style="margin-left:22%;">Monitor (accepts all finite
+prefixes of the given property)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="89%">
+
+
+<p style="margin-top: 1em"><b>-p</b>,
+<b>--colored-parity</b>[=<i>any</i>|<i>min</i>|<i>max</i>|<i>odd</i>|<i>even</i>|<i>min</i>
+odd|min even|max odd|max</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="89%">
+
+
+<p style="margin-top: 1em">even]</p></td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">colored
+automaton with parity acceptance</p>
+
+<p style="margin-left:11%;"><b>-P</b>,
+<b>--parity</b>[=<i>any</i>|<i>min</i>|<i>max</i>|<i>odd</i>|<i>even</i>|<i>min</i>
+odd|min even|max odd|max even]</p>
+
+<p style="margin-left:22%;">automaton with parity
+acceptance</p>
+
+<p style="margin-left:11%;"><b>-S</b>,
+<b>--state-based-acceptance</b>, <b>--sbacc</b></p>
+
+<p style="margin-left:22%;">define the acceptance using
+states</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--tgba</b></p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>Transition-based Generalized B&uuml;chi Automaton
+(default)</p> </td></tr>
+</table>
+
+<h3 style="margin-left:11%">Output
+format:</h3><p style="margin-left:11%"><b>
+-8</b>, <b>--utf8</b></p>
+
+<p style="margin-left:22%;">enable UTF-8 characters in
+output (ignored with <b>--lbtt</b> or <b>--spin</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--check</b>[=<i>PROP</i>]</p>
+
+<p style="margin-left:22%;">test for the additional
+property PROP and output the result in the HOA format
+(implies <b>-H</b>). PROP may be some prefix of
+&rsquo;all&rsquo; (default), &rsquo;unambiguous&rsquo;,
+&rsquo;stutter-invariant&rsquo;,
+&rsquo;stutter-sensitive-example&rsquo;,
+&rsquo;semi-determinism&rsquo;, or
+&rsquo;strength&rsquo;.</p>
+
+<p style="margin-left:11%;"><b>-d</b>,
+<b>--dot</b>[=<i>1</i>|<i>a</i>|<i>A</i>|<i>b</i>|<i>B</i>|<i>c</i>|<i>C(COLOR)</i>|<i>e</i>|<i>E</i>|<i>f(FONT)</i>|<i>h</i>|<i>k</i>|<i>K</i>|<i>n</i>|<i>N</i>|<i>o</i>|<i>r</i>|<i>R</i>|<i>s</i>|<i>t</i>|<i>u</i>|<i>v</i>|<i>y</i>|
+<i><br>
++INT</i>|<i>&lt;INT</i>|<i>#</i>]</p>
+
+<p style="margin-left:22%;">GraphViz&rsquo;s format. Add
+letters for (1) force numbered states, (a) show acceptance
+condition (default), (A) hide acceptance condition, (b)
+acceptance sets as bullets, (B) bullets except for
+B&uuml;chi/co-B&uuml;chi automata, (c) force circular nodes,
+(C) color nodes with COLOR, (d) show origins when known, (e)
+force elliptic nodes, (E) force rEctangular nodes, (f(FONT))
+use FONT, (g) hide edge labels, (h) horizontal layout, (k)
+use state labels when possible, (K) use transition labels
+(default), (n) show name, (N) hide name, (o) ordered
+transitions, (r) rainbow colors for acceptance sets, (R)
+color acceptance sets by Inf/Fin, (s) with SCCs, (t) force
+transition-based acceptance, (u) hide true states, (v)
+vertical layout, (y) split universal edges by color, (+INT)
+add INT to all set numbers, (&lt;INT) display at most INT
+states, (#) show internal edge numbers</p>
+
+<p style="margin-left:11%;"><b>-H</b>,
+<b>--hoaf</b>[=<i>1.1</i>|<i>i</i>|<i>k</i>|<i>l</i>|<i>m</i>|<i>s</i>|<i>t</i>|<i>v</i>]</p>
+
+<p style="margin-left:22%;">Output the automaton in HOA
+format (default). Add letters to select (1.1) version 1.1 of
+the format, (i) use implicit labels for complete
+deterministic automata, (s) prefer state-based acceptance
+when possible [default], (t) force transition-based
+acceptance, (m) mix state and transition-based acceptance,
+(k) use state labels when possible, (l) single-line output,
+(v) verbose properties</p>
+
+<p style="margin-left:11%;"><b>--lbtt</b>[=<i>t</i>]</p>
+
+<p style="margin-left:22%;">LBTT&rsquo;s format (add =t to
+force transition-based acceptance even on B&uuml;chi
+automata)</p>
+
+
+<p style="margin-left:11%;"><b>--name</b>=<i>FORMAT</i></p>
+
+<p style="margin-left:22%;">set the name of the output
+automaton</p>
+
+<p style="margin-left:11%;"><b>-o</b>,
+<b>--output</b>=<i>FORMAT</i></p>
+
+<p style="margin-left:22%;">send output to a file named
+FORMAT instead of standard output. The first automaton sent
+to a file truncates it unless FORMAT starts with
+&rsquo;&gt;&gt;&rsquo;.</p>
+
+<p style="margin-left:11%;"><b>-q</b>, <b>--quiet</b></p>
+
+<p style="margin-left:22%;">suppress all normal output</p>
+
+<p style="margin-left:11%;"><b>-s</b>,
+<b>--spin</b>[=<i>6</i>|<i>c</i>]</p>
+
+<p style="margin-left:22%;">Spin neverclaim (implies
+<b>--ba</b>). Add letters to select (6) Spin&rsquo;s 6.2.4
+style, (c) comments on states</p>
+
+<p style="margin-left:11%;"><b>--stats</b>=<i>FORMAT</i>,
+<b>--format</b>=<i>FORMAT</i></p>
+
+<p style="margin-left:22%;">output statistics about the
+automaton</p>
+
+<p style="margin-left:11%; margin-top: 1em">Any FORMAT
+string may use the following interpreted sequences (capitals
+for input, minuscules for output):</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%%</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>a single %</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%&lt;</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>the part of the line before the automaton if it comes
+from a column extracted from a CSV file</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%&gt;</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>the part of the line after the automaton if it comes
+from a column extracted from a CSV file</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%A, %a</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>number of acceptance sets</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">%C, %c, %[LETTERS]C,
+%[LETTERS]c</p>
+
+<p style="margin-left:22%;">number of SCCs; you may filter
+the SCCs to count using the following LETTERS, possibly
+concatenated: (a) accepting, (r) rejecting, (c) complete,
+(v) trivial, (t) terminal, (w) weak, (iw) inherently weak.
+Use uppercase letters to negate them.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%D, %d</p></td>
+<td width="2%"></td>
+<td width="73%">
+
+
+<p>1 if the automaton is deterministic, 0 otherwise</p></td>
+<td width="5%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%E, %e</p></td>
+<td width="2%"></td>
+<td width="73%">
+
+
+<p>number of reachable edges</p></td>
+<td width="5%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%F</p></td>
+<td width="2%"></td>
+<td width="73%">
+
+
+<p>name of the input file</p></td>
+<td width="5%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">%G, %g, %[LETTERS]G,
+%[LETTERS]g</p>
+
+<p style="margin-left:22%;">acceptance condition (in HOA
+syntax); add brackets to print an acceptance name instead
+and LETTERS to tweak the format: (0) no parameters, (a)
+accentuated, (b) abbreviated, (d) style used in dot output,
+(g) no generalized parameter, (l) recognize Street-like and
+Rabin-like, (m) no main parameter, (p) no parity parameter,
+(o) name unknown acceptance as &rsquo;other&rsquo;, (s)
+shorthand for &rsquo;lo0&rsquo;.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%H, %h</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>the automaton in HOA format on a single line (use
+%[opt]H or %[opt]h to specify additional options as in
+<b>--hoa</b>=<i>opt)</i></p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%L</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>location in the input file</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%M, %m</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>name of the automaton</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%N, %n</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>number of nondeterministic states</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%P, %p</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>1 if the automaton is complete, 0 otherwise</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%r</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>wall-clock time elapsed in seconds (excluding
+parsing)</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;">%R, %[LETTERS]R</p>
+
+<p style="margin-left:22%;">CPU time (excluding parsing),
+in seconds; Add LETTERS to restrict to(u) user time, (s)
+system time, (p) parent process, or (c) children
+processes.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%S, %s</p></td>
+<td width="2%"></td>
+<td width="47%">
+
+
+<p>number of reachable states</p></td>
+<td width="31%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%T, %t</p></td>
+<td width="2%"></td>
+<td width="47%">
+
+
+<p>number of reachable transitions</p></td>
+<td width="31%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">%U, %u, %[LETTER]U,
+%[LETTER]u</p>
+
+<p style="margin-left:22%;">1 if the automaton contains
+some universal</p>
+
+<p style="margin-left:11%;">branching (or a number of
+[s]tates or [e]dges with</p>
+
+<p style="margin-left:22%;">universal branching)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%W, %w</p></td>
+<td width="2%"></td>
+<td width="52%">
+
+
+<p>one word accepted by the automaton</p></td>
+<td width="26%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">%X, %x, %[LETTERS]X,
+%[LETTERS]x</p>
+
+<p style="margin-left:22%;">number of atomic propositions
+declared in the automaton; add LETTERS to list atomic
+propositions with (n) no quoting, (s) occasional
+double-quotes with C-style escape, (d) double-quotes with
+C-style escape, (c) double-quotes with CSV-style escape, (p)
+between parentheses, any extra non-alphanumeric character
+will be used to separate propositions</p>
+
+
+<h3 style="margin-left:11%">Simplification
+goal:</h3><p style="margin-left:11%"><b>
+-a</b>, <b>--any</b></p>
+
+<p style="margin-left:22%;">no preference, do not bother
+making it small or deterministic</p>
+
+<p style="margin-left:11%;"><b>-D</b>,
+<b>--deterministic</b></p>
+
+<p style="margin-left:22%;">prefer deterministic automata
+(combine with <b>--generic</b> to be sure to obtain a
+deterministic automaton)</p>
+
+<p style="margin-left:11%;"><b>--small</b></p>
+
+<p style="margin-left:22%;">prefer small automata
+(default)</p>
+
+
+<h3 style="margin-left:11%">Simplification
+level:</h3>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--high</b></p></td>
+<td width="2%"></td>
+<td width="66%">
+
+
+<p>all available optimizations (slow, default)</p></td>
+<td width="12%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--low</b></p></td>
+<td width="2%"></td>
+<td width="66%">
+
+
+<p>minimal optimizations (fast)</p></td>
+<td width="12%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--medium</b></p>
+
+<p style="margin-left:22%;">moderate optimizations</p>
+
+
+<h3 style="margin-left:11%">Miscellaneous
+options:</h3><p style="margin-left:11%"><b>
+-x</b>, <b>--extra-options</b>=<i>OPTS</i></p>
+
+<p style="margin-left:22%;">fine-tuning options (see spot-x
+(7))</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--help</b></p></td>
+<td width="2%"></td>
+<td width="23%">
+
+
+<p>print this help</p></td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--version</b></p>
+
+<p style="margin-left:22%;">print program version</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory or
+optional arguments to long options are also mandatory or
+optional for any corresponding short options.</p>
+
+<div class="outline-2"><h2>HISTORY
+<a name="HISTORY"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>dstar2tgba</b>
+was introduced in Spot 1.2 as a command that reads automata
+in <b>ltl2dstar</b>&rsquo;s format, and converts them into
+TGBA. At this time it was the only command-line tool being
+able to read automata.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In Spot 1.99.1
+the <b>autfilt</b> command was introduced, but could only
+read automata in the HOA format, or in <b>lbtt</b>&rsquo;s
+format, or as never claims. So <b>dstar2tgba</b> was still
+the only way to process automata in <b>ltl2dstar</b>&rsquo;s
+format.</p>
+
+<p style="margin-left:11%; margin-top: 1em">In Spot 1.99.4
+the parser for <b>ltl2dstar</b>&rsquo;s format was finally
+merged with the parser used by <b>autfilt</b> for reading
+the other format. This implies not only that <b>autfilt</b>
+can now read <b>ltl2dstar&rsquo;s</b> format, but also that
+<b>dstar2tgba</b> can read the other formats as well.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Nowadays, the
+command</p>
+
+<pre style="margin-left:17%; margin-top: 1em">% dstar2tgba some files</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">can be used as
+a shorthand for</p>
+
+<pre style="margin-left:17%; margin-top: 1em">% autfilt --tgba --high --small some files</pre>
+
+
+<p style="margin-left:11%; margin-top: 1em">The name
+<b>dstar2tgba</b> is kept for backward compatibility and
+because it is used in at least one published paper, but
+naming this tool <b>aut2tgba</b> would make more sense.</p>
+
+<div class="outline-2"><h2>BIBLIOGRAPHY
+<a name="BIBLIOGRAPHY"></a>
+</h2></div>
+
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">1.</p></td>
+<td width="8%"></td>
+<td width="30%">
+
+
+
+<p style="margin-top: 1em"><a href="http://www.ltl2dstar.de/docs/ltl2dstar.html">The
+<b>ltl2dstar</b>manual</a>.</p> </td>
+<td width="48%">
+</td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Documents the
+output format of <b>ltl2dstar</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">2.</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Chistof L&ouml;ding: Mehods for
+the Transformation of &omega;-Automata: Complexity and
+Connection to Second Order Logic. Diploma Thesis. University
+of Kiel. 1998.</p></td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Describes
+various tranformations from non-deterministic Rabin and
+Streett automata to B&uuml;chi automata. Slightly optimized
+variants of these transformations are used by dstar2tgba for
+the general cases.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">3.</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Sriram C. Krishnan, Anuj Puri,
+and Robert K. Brayton: Deterministic &omega;-automata
+vis-a-vis Deterministic B&uuml;chi Automata.
+ISAAC&rsquo;94.</p> </td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Explains how to
+preserve the determinism of Rabin and Streett automata when
+the property can be repreted by a Deterministic automaton.
+dstar2tgba implements this for the Rabin case only. In other
+words, translating a deterministic Rabin automaton with
+dstar2tgba will produce a deterministic TGBA or BA if such a
+automaton exists.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">4.</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Souheib Baarir and Alexandre
+Duret-Lutz: Mechanizing the minimization of deterministic
+generalized B&uuml;chi automata. Proceedings of
+FORTE&rsquo;14. LNCS 8461.</p></td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Explains the
+SAT-based minimization techniques that can be used (on
+request only) by dstar2tgba to minimize deterministic
+B&uuml;chi automata.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p style="margin-top: 1em">5.</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p style="margin-top: 1em">Souheib Baarir and Alexandre
+Duret-Lutz: SAT-based minimization of deterministic
+&omega;-automata. Proceedings of LPAR&rsquo;15 (a.k.a
+LPAR-20). LNCS 9450.</p></td></tr>
+</table>
+
+<p style="margin-left:22%; margin-top: 1em">Extends the
+previous paper by allowing arbitrary acceptance
+conditions.</p>
+
+<div class="outline-2"><h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs to
+&lt;<a href="mailto:spot@lrde.epita.fr">spot@lrde.epita.fr</a>&gt;.</p>
+
+<div class="outline-2"><h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 2021 Laboratoire de Recherche et D&eacute;veloppement
+de l&rsquo;Epita. License GPLv3+: <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 3 or later</a>. <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<div class="outline-2"><h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><a href="spot-x.7.html"><b>spot-x</b></a>(7),
+<a href="autfilt.1.html"><b>autfilt</b></a>(1)</p>
+</body>
+</html>

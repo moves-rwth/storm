@@ -1,0 +1,158 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Installing Spot
+#+DESCRIPTION: Different ways to install the Spot package
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: index.html
+
+* Installing from a tarball
+   :PROPERTIES:
+   :CUSTOM_ID: tar
+   :END:
+
+The latest release of Spot is version {{{LASTRELEASE}}}:
+
+- {{{LASTTARBALL}}} (see also the {{{LASTNEWS}}})
+
+Past releases can be found [[https://www.lrde.epita.fr/dload/spot/][in the same directory]].  If you are
+interested in /future/ releases, you can always peek at the [[https://gitlab.lrde.epita.fr/spot/spot/-/jobs/artifacts/next/browse?job=debian-stable-gcc][last
+successful development build]].
+
+** Requirements
+
+Spot requires a C++14-compliant compiler.  =g++= 5.0 or later, as well
+as =clang++= 3.5 or later should work.
+
+Spot expects a complete installation of Python (version 3.3 or later).
+Especially, Python's headers files should be installed (the package to
+install has a name like =python-dev= or =libpython3-dev= in most
+distributions).  If you don't have Python installed, and do NOT want
+to install it, you should run =./configure= with the
+=--disable-python= option.
+
+** Installation
+
+The installation follows the usual =./configure=, =make=, =make install= steps.
+
+Please *do* install Spot somewhere: while skipping =make install= and
+running the command-line tools directly from the build directory
+should work, it will be slower than if you run =make install= and run
+the installed binaries.
+
+By default, =make install= will install everything under
+=/usr/local/=, so unless you have write access to this directory you
+will either have to run =sudo make install=, or choose another
+installation prefix.
+
+For instance to install Spot in =~/usr= (i.e., in your home
+directory), use
+
+#+BEGIN_SRC sh
+./configure --prefix ~/usr
+make
+make install
+#+END_SRC
+
+Files =INSTALL= and =README= included in the tarball contains more
+explanations about the various options you can use during this
+process.  Also note that =README= has a section about troubleshooting
+installations.
+
+* Installing the Debian packages
+   :PROPERTIES:
+   :CUSTOM_ID: Debian
+   :END:
+
+We build Debian packages for amd64 and i386, for both releases and the
+development versions.  Packages for releases are built for Debian
+Buster (a.k.a. Debian stable) while packages for development are built
+for Sid (a.k.a. Debian unstable).
+
+Here is how to install the stable packages:
+
+#+BEGIN_SRC sh
+wget -q -O - https://www.lrde.epita.fr/repo/debian.gpg | apt-key add -
+echo 'deb http://www.lrde.epita.fr/repo/debian/ stable/' >> /etc/apt/sources.list
+apt-get update
+apt-get install spot libspot-dev spot-doc python3-spot # Or a subset of those
+#+END_SRC
+
+Here is how to install the unstable packages:
+
+#+BEGIN_SRC sh
+wget -O /etc/apt/trusted.gpg.d/lrde.gpg https://www.lrde.epita.fr/repo/debian.gpg
+echo 'deb http://www.lrde.epita.fr/repo/debian/ unstable/' >> /etc/apt/sources.list
+apt-get update
+apt-get install spot libspot-dev spot-doc python3-spot # Or a subset of those
+#+END_SRC
+
+Note that our Debian repository is signed since that is the new Debian
+policy, and both of the above command blocks start with a download of
+our [[https://www.lrde.epita.fr/repo/debian.gpg][GPG key]].  Its fingerprint is =209B 7362 CFD6 FECF B41D 717F 03D9
+9E74 44F2 A84A=, if you want to verify it.
+
+The package =spot= contains the [[file:tools.org][command-line tools]]. =libspot-dev=
+contains the header files if you plan to use Spot in a C++14
+program. =spot-doc= contains some html (including these pages) and pdf
+documentation. Finally =python3-spot= contains some Python bindings
+(this package also installs some ipython notebooks that you can use as
+examples).  The packages containing the libraries (=libspot0=,
+=libbddx0=, =libspotltsmin0=) are automatically installed as
+dependencies of the previous packages.
+
+* Installing the Fedora packages
+   :PROPERTIES:
+   :CUSTOM_ID: Fedora
+   :END:
+
+We build Fedora packages for amd64, for both releases and the
+development versions.  Both builds are currently made for Fedora 28.
+
+Our `stable` repository contains RPM for released versions of Spot, add it with:
+#+BEGIN_SRC sh
+sudo dnf config-manager --add-repo https://www.lrde.epita.fr/repo/fedora/lrde.repo
+#+END_SRC
+
+Our `unstable` repository contains RPM for the development versions of Spot,
+you can opt to use that instead:
+
+#+BEGIN_SRC sh
+sudo dnf config-manager --add-repo https://www.lrde.epita.fr/repo/fedora/lrde.repo
+sudo dnf config-manager --set-enabled lrde-unstable
+sudo dnf config-manager --set-disabled lrde-stable
+#+END_SRC
+
+Once the repository is set up, you can simply install Spot with:
+#+BEGIN_SRC sh
+sudo dnf install spot python3-spot spot-devel spot-doc
+#+END_SRC
+or a subset of those packages.  The package =spot= contains the
+command-line tools, =python3-spot= contains the Python bindings,
+=spot-devel= contains the C++ header files, and =spot-doc= the
+documentation that you can also find online.  Those packages depends
+on =libspot= that contains the shared libraries.
+
+* Installing from git
+   :PROPERTIES:
+   :CUSTOM_ID: git
+   :END:
+
+The =master= branch of the git repository contains the code for the
+latest released version, possibly with a few yet-to-be-released
+bug fixes.  The =next= branch is the main development branch, and contains
+the (working) code that should be part of the next major release.
+
+To clone the git repository, use
+
+#+BEGIN_SRC sh
+git clone https://gitlab.lrde.epita.fr/spot/spot.git
+#+END_SRC
+
+This should put you on the =next= branch by default.  From there, read
+the [[https://gitlab.lrde.epita.fr/spot/spot/blob/next/HACKING][HACKING]] file that should be at the top of your cloned repository:
+it lists all the tools you should install before attempting to compile
+the source tree.
+
+#  LocalWords:  utf html LASTRELEASE LASTTARBALL LASTNEWS dev sudo
+#  LocalWords:  libpython usr SRC README amd wget libspot GPG CFD pdf
+#  LocalWords:  FECF ipython libbddx libspotltsmin dnf config repo
+#  LocalWords:  lrde devel

@@ -1,0 +1,48 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2011, 2012, 2013 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# While running some benchmark, Tomáš Babiak found that Spot took too
+# much time (i.e. >1h) to translate those six formulae.  It turns out
+# that the WDBA minimization was performed after the degeneralization
+# algorithm, while this is not necessary (WDBA will produce a BA, so
+# we may as well skip degeneralization).  Translating these formulae
+# in the test-suite ensure that they don't take too much time (the
+# buildfarm will timeout if it does).
+
+. ./defs
+
+set -e
+
+cat >formulae <<EOF
+(p6 V X(G(F(F(X X(F X(F((G X F p1)|((F p5)U p1))))U((F p4)&(!p2|(G p0))))))))
+(F((G 1)&(!p6 V X!p2)))V((F((G X(!p1 V!p3))V F!p2))U(X((G p3)U(p6 U p7))V X p5))
+(((F p0)V((F p3)&!p4))V((((!p0|!p5)V X!p5)V p6)U(p5|(!p3 U(G(p1 U p2))))))
+(G(((F((p3 &!p3)|(G((G!p2)V!p5))))|(p1 V!p4))U((X(G((F!p0)U!p6))U X!p2)|!p7)))
+X((X(!p1 V F!p6)V F!p4)U p2)&(F(G((0 U(F p6))U((p1 U(G(p4 U F p0)))U X p7))))
+(G(G(((F p5)U((((F!p1)V(p2 &!p4))|!p2)|((X!p7 U!p4)V(F(F((G p2)&p5))))))U p6)))
+EOF
+
+ltl2tgba=../ikwiad
+
+ltlcross <formulae \
+  "$ltl2tgba -t %f >%T" \
+  "$ltl2tgba -N -r4 -R3f %f >%N" \
+  "$ltl2tgba -N -r7 -R3 -x -Rm %f >%N" \
+  "$ltl2tgba -t -r7 -R3 -f -x -DS -Rm %f >%T"

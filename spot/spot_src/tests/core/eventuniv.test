@@ -1,0 +1,69 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012, 2013, 2014, 2017 Laboratoire de Recherche et
+# Developpement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs || exit 1
+set -e
+
+cat >reduceu.txt <<EOF
+Xa | GFb, Xa | GFb
+X(a | GXFb), Xa | GFb
+Xa & GFb, Xa & GFb
+X(a & GXFb), Xa & GFb
+
+F(a & b & GFc & FGd), F(a & b) & G(Fc & FGd)
+Fa | Fb | GFc | GFd, F(a|b) | GF(c | d)
+Fa | Fb | GFc | GFd | FGe, F(a|b) | F(G(e) | GF(c | d))
+Ga | Gb | GFd | FGe | FGf, Ga | Gb | F(GFd | Ge | Gf)
+
+G(Ga & Fb & c & GFd), G(a&c) & G(Fb & Fd)
+G(Ga & GFb & c & GFd), G(a&c) & G(Fb & Fd)
+G(a & GFb & c & GFd), G(a&c) & G(Fb & Fd)
+G(Ga & Fb & c & GFd & FGe), G(a & c) & G(Fb & Fd & FGe)
+G(Ga & XFGb & c & FGd & FGe), FG(b & d & e) & G(a & c)
+G(Ga & GXFb & c & FGd & FGe & Fc), G(Fb & FG(d & e)) & G(a & c)
+Ga & Gb & GFd & FGe & FGf, G(Fd & FG(e & f)) & G(a & b)
+G(Ga & Gb & GFd & FGe) & FGf, G(Fd & FG(e & f)) & G(a & b)
+
+G(a & XFb), Ga & GFb
+G(a & XF(b & XFc & Fd)), Ga & G(Fb & Fc & Fd)
+F(a | XGb), Fa | FGb
+F(a | XG(b | XGc | Gd)), Fa | F(Gb | Gc | Gd)
+
+a U (b | Fc), (a U b) | Fc
+a W (b | Fc), (a W b) | Fc
+a U (b & GFc), (a U b) & GFc
+# Unchanged
+a W (b & GFc), a W (b & GFc)
+# Unchanged
+(a | Gc) W g, (a | Gc) W g
+# Unchanged
+(a | Gc) U g, (a | Gc) U g
+(a & GFc) M b, (a M b) & GFc
+# Unchanged
+(a | GFc) M b, (a | GFc) M b
+# Unchanged
+(a & GFc) R b, (a & GFc) R b
+# Unchanged
+(a | GFc) R b, (a | GFc) R b
+a R (b & Gc), (a R b) & Gc
+a M (b & Gc), (a M b) & Gc
+EOF
+
+run 0 ../reduceu reduceu.txt

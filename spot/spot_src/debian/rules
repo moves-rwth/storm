@@ -1,0 +1,114 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+DH_VERBOSE = 1
+
+# see EXAMPLES in dpkg-buildflags(1) and read /usr/share/dpkg/*
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+
+# see FEATURE AREAS in dpkg-buildflags(1)
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# see ENVIRONMENT in dpkg-buildflags(1)
+# package maintainers to append CFLAGS
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+# package maintainers to append LDFLAGS
+#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+# main packaging script
+%:
+	dh $@ --with=python3
+
+# Find the LTO plugin, which we need to pass to ar, nm, and ranlib.
+LTOPLUG := $(shell gcc -v 2>&1 | \
+  sed -n 's:COLLECT_LTO_WRAPPER=\(/.*/\)[^/]*:\1:p')liblto_plugin.so
+
+# ARFLAGS is for Automake
+# AR_FLAGS is for Libtool
+# These activate the LTO pluggin, but also remove the 'u' option
+# from ar, since its now ignored with Debian's default to 'D'.
+LTOSETUP =					    \
+  LDFLAGS='-fuse-linker-plugin'			    \
+  NM='nm --plugin $(LTOPLUG)'			    \
+  ARFLAGS='cr --plugin $(LTOPLUG)'		    \
+  AR_FLAGS='cr --plugin $(LTOPLUG)'		    \
+  RANLIB='ranlib --plugin $(LTOPLUG)'		    \
+  VALGRIND=false
+GCDADIR := $(shell pwd)/gcda
+
+FLTO = -flto=jobserver -Wno-error=coverage-mismatch
+PRO1SETUP = \
+  CFLAGS="$(FLTO) -fprofile-generate=$(GCDADIR)" \
+  CXXFLAGS="$(FLTO) -fprofile-generate=$(GCDADIR)"
+PRO2SETUP = \
+  CFLAGS="$(FLTO) -fprofile-use=$(GCDADIR) -fprofile-correction" \
+  CXXFLAGS="$(FLTO) -fprofile-use=$(GCDADIR) -fprofile-correction"
+PYDEFAULT=$(shell py3versions --default)
+PYOTHERS=$(filter-out $(PYDEFAULT), $(shell py3versions --supported))
+# This hack causes + to appear in front of the link step, so that
+# LTO can be done using GNU Make's job server.
+MAKEOVERRIDES += AM_V_CXXLD=+ AM_V_CCLD=+
+
+# We want to build Spot twice: once to get profile data, and a second
+# time to use it.
+override_dh_auto_configure:
+	mkdir -p $(GCDADIR)
+	dh_auto_configure -- $(PRO1SETUP) $(LTOSETUP)	\
+	  --disable-devel --enable-optimizations	\
+	  --disable-static PYTHON=/usr/bin/$(PYDEFAULT)
+	dh_auto_build
+	dh_auto_test
+	$(MAKE) clean
+	dh_auto_configure -- $(PRO2SETUP) $(LTOSETUP)	\
+	  --disable-devel --enable-optimizations	\
+	  --disable-static PYTHON=/usr/bin/$(PYDEFAULT)
+override_dh_auto_install: fix-js
+	dh_auto_install --destdir=$(CURDIR)/debian/tmp
+# Reconfigure for every other supported Python3 version,
+# and build/install only the python code.
+	for pyv in $(PYOTHERS); do			\
+	  dh_auto_configure -- $(LTOSETUP)		\
+	  --disable-devel --enable-optimizations	\
+	  --disable-static PYTHON=/usr/bin/$$pyv;	\
+	  dh_auto_build -- -C python clean;		\
+	  dh_auto_build -- -C python all;		\
+	  dh_auto_install -- -C python;			\
+	done
+# Reconfigure to build static libraries.  We can't build them
+# alongside dynamic libraries, otherwise they will be stuffed with
+# LTO stuff that is just two big to distribute.  And we cannot use
+# the profile generated with LTO on, so we simply build without it.
+#
+# Since this is a last rebuild, we also construct the Doxygen doc.
+	dh_auto_configure --  \
+	  --disable-devel --enable-optimizations \
+	  --disable-shared --enable-static --disable-python \
+	  --enable-doxygen
+	dh_auto_build -- clean
+	dh_auto_build -- all
+	dh_auto_install -- -C buddy
+	dh_auto_install -- -C spot
+# Just remove the Libtool libraries until someone asks for them.
+	find debian/tmp -name '*.la' -exec rm -rv {} ';'
+override_dh_python3:
+	dh_python3 -p python3-spot
+override_dh_auto_build:
+	dh_auto_build
+	$(MAKE) -C tests nb-html
+
+# BuDDy has its own changelog
+override_dh_installchangelogs:
+	dh_installchangelogs -plibbddx0 -plibbddx-dev buddy/ChangeLog
+	dh_installchangelogs -Nlibbddx0 -Nlibbddx-dev ChangeLog
+
+# https://mail.scipy.org/pipermail/ipython-user/2015-August/014016.html
+override_dh_compress:
+	dh_compress -X.ipynb
+
+fix-js:
+	perl -pi -e 's|http://orgmode.org/mathjax/MathJax.js|file:///usr/share/javascript/mathjax/MathJax.js|' doc/userdoc/*.html
+	perl -pi -e 's|https://cdnjs.cloudflare.com/ajax/libs/require.js/.*/require.min.js|file:///usr/share/javascript/requirejs/require.min.js|' tests/python/*.html
+	perl -pi -e 's|https://cdn.mathjax.org/mathjax/.*/MathJax.js|file:///usr/share/javascript/mathjax/MathJax.js|' tests/python/*.html doc/userdoc/*.html
+	perl -pi -e 's,https://cdnjs.cloudflare.com/ajax/libs/mathjax/.*/(?:MathJax|latest).js,file:///usr/share/javascript/mathjax/MathJax.js,' tests/python/*.html doc/userdoc/*.html
+	perl -pi -e 's|https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js|file:///usr/share/javascript/jquery/jquery.min.js|' tests/python/*.html

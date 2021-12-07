@@ -1,0 +1,65 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2015 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# Skip this test if we don't find a sufficiently complete LaTeX
+# installation
+
+(latexmk --version) || exit 77
+(pdflatex --version) || exit 77
+(kpsewhich txfonts.sty) || exit 77
+(kpsewhich amsmath.sty) || exit 77
+
+cat >input <<\EOF
+XGFa <-> FGX(!b & !c) | (b ^ a)
+a U b W c R (d & e) M f
+{a;b[=2];((c:d*) && f*);e[*2..]}<>-> {((a | [*0])*;b[+]) & (c1[->2])}[]-> h
+{a;b;c} []=> {d*;e} <>=> !f
+!{a;b*;c}! -> d
+{a*;(b;c)[:*3..4];(c;d)[:+];d}!
+G(uglyname->Fuglierlongname42)
+"#foo/$bar$" U "baz~yes^no"
+EOF
+
+(
+cat <<\EOF
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{spotltl}
+\begin{document}
+\begin{tabular}{ll}
+EOF
+( ltlfilt --latex input --format='\texttt{%F:%L} & $%f$ \\';
+  genltl --go-theta=1..3 --latex \
+                   --format='\texttt{--%F:%L} & $%f$ \\')
+cat <<\EOF
+\end{tabular}
+\end{document}
+EOF
+) > output.tex
+
+TEXINPUTS=$top_srcdir/doc/tl: \
+latexmk -f -silent -pdf -ps- -dvi- -pvc- output.tex
+
+# latexmk will have a non-zero exit status on failure, so we will
+# detect that.  However the file output.pdf really ought to be
+# controled by eye...

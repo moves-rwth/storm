@@ -1,0 +1,834 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:50 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Constructing and transforming formulas</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Code example for constructing and transforming formulas in Spot"
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tut.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title">Constructing and transforming formulas</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org10fe5c2">Constructing formulas</a>
+<ul>
+<li><a href="#org7ebe181">C++</a></li>
+<li><a href="#orgac28638">Python</a></li>
+</ul>
+</li>
+<li><a href="#org76c2cf9">Transforming formulas</a>
+<ul>
+<li><a href="#org8b859db">C++</a></li>
+<li><a href="#org0f60d71">Python</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+This page explains how to build formulas and how to iterate over their
+syntax trees.
+</p>
+
+<p>
+We will first describe how to build a formula from scratch, by using
+the constructors associated to each operators, and show the basic
+accessor methods for formulas.  We will do that for C++ first, and
+then Python.  Once these basics are covered, we will show examples for
+traversing and transforming formulas (again in C++ then Python).
+</p>
+
+<div id="outline-container-org10fe5c2" class="outline-2">
+<h2 id="org10fe5c2">Constructing formulas</h2>
+<div class="outline-text-2" id="text-org10fe5c2">
+</div>
+<div id="outline-container-org7ebe181" class="outline-3">
+<h3 id="org7ebe181">C++</h3>
+<div class="outline-text-3" id="text-org7ebe181">
+<p>
+The <code>spot::formula</code> class contains static methods that act as
+constructors for each supported operator.
+</p>
+
+<p>
+The Boolean constants true and false are returned by <code>formula::tt()</code>
+and <code>formula:ff()</code>.  Atomic propositions can be built with
+<code>formula::ap("name")</code>.  Unary and binary operators use a
+straightforward syntax like <code>formula::F(arg)</code> or <code>formula::U(first,
+second)</code>, while n-ary operators take an initializer list as argument
+as in <code>formula::And({arg1, arg2, arg3})</code>.
+</p>
+
+<p>
+Here is the list of supported operators:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-comment-delimiter">// </span><span class="org-comment">atomic proposition</span>
+<span class="org-constant">formula</span>::ap(<span class="org-type">string</span>)
+<span class="org-comment-delimiter">// </span><span class="org-comment">constants</span>
+<span class="org-constant">formula</span>::ff();
+<span class="org-constant">formula</span>::tt();
+<span class="org-constant">formula</span>::eword();               <span class="org-comment-delimiter">// </span><span class="org-comment">empty word (for regular expressions)</span>
+<span class="org-comment-delimiter">// </span><span class="org-comment">unary operators</span>
+<span class="org-constant">formula</span>::Not(arg);
+<span class="org-constant">formula</span>::X(arg);
+<span class="org-constant">formula</span>::X(arg, min, max);     <span class="org-comment-delimiter">// </span><span class="org-comment">X[min..max] arg</span>
+<span class="org-constant">formula</span>::F(arg);
+<span class="org-constant">formula</span>::F(arg, min, max);     <span class="org-comment-delimiter">// </span><span class="org-comment">F[min..max] arg</span>
+<span class="org-constant">formula</span>::G(arg);
+<span class="org-constant">formula</span>::G(arg, min, max);     <span class="org-comment-delimiter">// </span><span class="org-comment">G[min..max] arg</span>
+<span class="org-constant">formula</span>::Closure(arg);
+<span class="org-constant">formula</span>::NegClosure(arg);
+<span class="org-constant">formula</span>::first_match(arg);      <span class="org-comment-delimiter">// </span><span class="org-comment">SVA's first match operator</span>
+<span class="org-comment-delimiter">// </span><span class="org-comment">binary operators</span>
+<span class="org-constant">formula</span>::Xor(left, right);
+<span class="org-constant">formula</span>::Implies(left, right);
+<span class="org-constant">formula</span>::Equiv(left, right);
+<span class="org-constant">formula</span>::U(left, right);        <span class="org-comment-delimiter">// </span><span class="org-comment">(strong) until</span>
+<span class="org-constant">formula</span>::R(left, right);        <span class="org-comment-delimiter">// </span><span class="org-comment">(weak) release</span>
+<span class="org-constant">formula</span>::W(left, right);        <span class="org-comment-delimiter">// </span><span class="org-comment">weak until</span>
+<span class="org-constant">formula</span>::M(left, right);        <span class="org-comment-delimiter">// </span><span class="org-comment">strong release</span>
+<span class="org-constant">formula</span>::EConcat(left, right);  <span class="org-comment-delimiter">// </span><span class="org-comment">Seq</span>
+<span class="org-constant">formula</span>::UConcat(left, right);  <span class="org-comment-delimiter">// </span><span class="org-comment">Triggers</span>
+<span class="org-comment-delimiter">// </span><span class="org-comment">n-ary operators</span>
+<span class="org-constant">formula</span>::Or({args,...});        <span class="org-comment-delimiter">// </span><span class="org-comment">omega-rational Or</span>
+<span class="org-constant">formula</span>::OrRat({args,...});     <span class="org-comment-delimiter">// </span><span class="org-comment">rational Or (for regular expressions)</span>
+<span class="org-constant">formula</span>::And({args,...});       <span class="org-comment-delimiter">// </span><span class="org-comment">omega-rational And</span>
+<span class="org-constant">formula</span>::AndRat({args,...});    <span class="org-comment-delimiter">// </span><span class="org-comment">rational And (for regular expressions)</span>
+<span class="org-constant">formula</span>::AndNLM({args,...});    <span class="org-comment-delimiter">// </span><span class="org-comment">non-length-matching rational And (for r.e.)</span>
+<span class="org-constant">formula</span>::Concat({args,...});    <span class="org-comment-delimiter">// </span><span class="org-comment">concatenation (for regular expressions)</span>
+<span class="org-constant">formula</span>::Fusion({args,...});    <span class="org-comment-delimiter">// </span><span class="org-comment">concatenation (for regular expressions)</span>
+<span class="org-comment-delimiter">// </span><span class="org-comment">star-like operators</span>
+<span class="org-constant">formula</span>::Star(arg, min, max);   <span class="org-comment-delimiter">// </span><span class="org-comment">Star (for a Kleene star, set min=0 and omit max)</span>
+<span class="org-constant">formula</span>::FStar(arg, min, max);  <span class="org-comment-delimiter">// </span><span class="org-comment">Fusion Star</span>
+<span class="org-comment-delimiter">// </span><span class="org-comment">syntactic sugar built on top of previous operators</span>
+<span class="org-constant">formula</span>::sugar_goto(arg, min, max); <span class="org-comment-delimiter">// </span><span class="org-comment">arg[-&gt;min..max]</span>
+<span class="org-constant">formula</span>::sugar_equal(arg, min, max); <span class="org-comment-delimiter">// </span><span class="org-comment">arg[=min..max]</span>
+<span class="org-constant">formula</span>::sugar_delay(left, right, min, max); <span class="org-comment-delimiter">// </span><span class="org-comment">left ##[min..max] right</span>
+</pre>
+</div>
+
+<p>
+These functions implement some very limited type of automatic
+simplifications called <i>trivial identities</i>.  For instance
+<code>formula::F(formula::X(formula::tt()))</code> will return the same formula
+as <code>formula::tt()</code>.  These simplifications are those that involve the
+true and false constants, impotence (<code>F(F(e))=F(e)</code>), involutions
+(<code>Not(Not(e)=e</code>), associativity
+(<code>And({And({e1,e2},e3})=And({e1,e2,e3})</code>).  See <a href="https://spot.lrde.epita.fr/tl.pdf">tl.pdf</a> for a list of
+these <i>trivial identities</i>.
+</p>
+
+<p>
+In addition, the arguments of commutative operators
+(e.g. <code>Xor(e1,e2)=Xor(e2,e1)</code>) are always reordered.  The order used
+always put the Boolean subformulas before the temporal subformulas,
+sorts the atomic propositions in alphabetic order, and otherwise order
+subformulas by their unique identifier (a constant incremented each
+time a new subformula is created).  This reordering is useful to favor
+sharing of subformulas, but also helps algorithms that perform
+memoization.
+</p>
+
+<p>
+Building a formula using these operators is quite straightforward.
+The second part of the following example shows how to print some
+detail of the top-level operator in the formula.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/formula.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-comment-delimiter">// </span><span class="org-comment">Build FGa -&gt; (GFb &amp; GFc)</span>
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">fga</span> = <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::F(<span class="org-constant">spot</span>::<span class="org-constant">formula</span>::G(<span class="org-constant">spot</span>::<span class="org-constant">formula</span>::ap(<span class="org-string">"a"</span>)));
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">gfb</span> = <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::G(<span class="org-constant">spot</span>::<span class="org-constant">formula</span>::F(<span class="org-constant">spot</span>::<span class="org-constant">formula</span>::ap(<span class="org-string">"b"</span>)));
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">gfc</span> = <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::G(<span class="org-constant">spot</span>::<span class="org-constant">formula</span>::F(<span class="org-constant">spot</span>::<span class="org-constant">formula</span>::ap(<span class="org-string">"c"</span>)));
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::Implies(fga, <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::And({gfb, gfc}));
+
+  <span class="org-constant">std</span>::cout &lt;&lt; f &lt;&lt; <span class="org-string">'\n'</span>;
+
+  <span class="org-comment-delimiter">// </span><span class="org-comment">kindstar() prints the name of the operator</span>
+  <span class="org-comment-delimiter">// </span><span class="org-comment">size() return the number of operands of the operators</span>
+  <span class="org-constant">std</span>::cout &lt;&lt; f.kindstr() &lt;&lt; <span class="org-string">", "</span> &lt;&lt; f.size() &lt;&lt; <span class="org-string">" children\n"</span>;
+  <span class="org-comment-delimiter">// </span><span class="org-comment">operator[] accesses each operand</span>
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"left: "</span> &lt;&lt; f[0] &lt;&lt; <span class="org-string">", right: "</span> &lt;&lt; f[1] &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-comment-delimiter">// </span><span class="org-comment">you can also iterate over all operands using a for loop</span>
+  <span class="org-keyword">for</span> (<span class="org-keyword">auto</span> <span class="org-variable-name">child</span>: f)
+    <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"  * "</span> &lt;&lt; child &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-comment-delimiter">// </span><span class="org-comment">the type of the operator can be accessed with kind(), which</span>
+  <span class="org-comment-delimiter">// </span><span class="org-comment">return an element of the spot::op enum.</span>
+  <span class="org-constant">std</span>::cout &lt;&lt; f[1][0]
+            &lt;&lt; (f[1][0].kind() == <span class="org-constant">spot</span>::<span class="org-constant">op</span>::F ? <span class="org-string">" is F\n"</span> : <span class="org-string">" is not F\n"</span>);
+  <span class="org-comment-delimiter">// </span><span class="org-comment">however because writing f.kind() == spot::op::XXX is quite common, there</span>
+  <span class="org-comment-delimiter">// </span><span class="org-comment">is also a is() shortcut:</span>
+  <span class="org-constant">std</span>::cout &lt;&lt; f[1][1]
+            &lt;&lt; (f[1][1].is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::G) ? <span class="org-string">" is G\n"</span> : <span class="org-string">" is not G\n"</span>);
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+FGa -&gt; (GFb &amp; GFc)
+Implies, 2 children
+left: FGa, right: GFb &amp; GFc
+  * FGa
+  * GFb &amp; GFc
+GFb is not F
+GFc is G
+
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgac28638" class="outline-3">
+<h3 id="orgac28638">Python</h3>
+<div class="outline-text-3" id="text-orgac28638">
+<p>
+The Python equivalent is similar:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">Build FGa -&gt; (GFb &amp; GFc)</span>
+<span class="org-variable-name">fga</span> = spot.formula.F(spot.formula.G(spot.formula.ap(<span class="org-string">"a"</span>)))
+<span class="org-variable-name">gfb</span> = spot.formula.G(spot.formula.F(spot.formula.ap(<span class="org-string">"b"</span>)));
+<span class="org-variable-name">gfc</span> = spot.formula.G(spot.formula.F(spot.formula.ap(<span class="org-string">"c"</span>)));
+<span class="org-variable-name">f</span> = spot.formula.Implies(fga, spot.formula.And([gfb, gfc]));
+
+<span class="org-keyword">print</span>(f)
+
+<span class="org-comment-delimiter"># </span><span class="org-comment">kindstar() prints the name of the operator</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">size() return the number of operands of the operators</span>
+<span class="org-keyword">print</span>(<span class="org-string">"{}, {} children"</span>.<span class="org-builtin">format</span>(f.kindstr(), f.size()))
+<span class="org-comment-delimiter"># </span><span class="org-comment">[] accesses each operand</span>
+<span class="org-keyword">print</span>(<span class="org-string">"left: {f[0]}, right: {f[1]}"</span>.<span class="org-builtin">format</span>(f=f))
+<span class="org-comment-delimiter"># </span><span class="org-comment">you can also iterate over all operands using a for loop</span>
+<span class="org-keyword">for</span> child <span class="org-keyword">in</span> f:
+   <span class="org-keyword">print</span>(<span class="org-string">"  *"</span>, child)
+<span class="org-comment-delimiter"># </span><span class="org-comment">the type of the operator can be accessed with kind(), which returns</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">an op_XXX constant (corresponding the the spot::op enum of C++)</span>
+<span class="org-keyword">print</span>(f[1][0], <span class="org-string">"is F"</span> <span class="org-keyword">if</span> f[1][0].kind() == spot.op_F <span class="org-keyword">else</span> <span class="org-string">"is not F"</span>)
+<span class="org-comment-delimiter"># </span><span class="org-comment">"is" is keyword in Python, the so shortcut is called _is:</span>
+<span class="org-keyword">print</span>(f[1][1], <span class="org-string">"is G"</span> <span class="org-keyword">if</span> f[1][1]._is(spot.op_G) <span class="org-keyword">else</span> <span class="org-string">"is not G"</span>)
+</pre>
+</div>
+
+<pre class="example">
+FGa -&gt; (GFb &amp; GFc)
+Implies, 2 children
+left: FGa, right: GFb &amp; GFc
+  * FGa
+  * GFb &amp; GFc
+GFb is not F
+GFc is G
+
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org76c2cf9" class="outline-2">
+<h2 id="org76c2cf9">Transforming formulas</h2>
+<div class="outline-text-2" id="text-org76c2cf9">
+</div>
+<div id="outline-container-org8b859db" class="outline-3">
+<h3 id="org8b859db">C++</h3>
+<div class="outline-text-3" id="text-org8b859db">
+<p>
+In Spot, Formula objects are immutable: this allows identical subtrees
+to be shared among multiple formulas.  Algorithms that "transform"
+formulas (for instance the <a href="tut02.html">relabeling function</a>) actually recursively
+traverse the input formula to construct the output formula.
+</p>
+
+<p>
+Using the operators described in the previous section is enough to
+write algorithms on formulas.  However there are two special methods
+that makes it a lot easier: <code>traverse</code> and <code>map</code>.
+</p>
+
+<p>
+<code>traverse</code> takes a function <code>fun</code>, and applies it to each subformulas
+of a given formula, including that starting formula itself.  The
+formula is explored in a DFS fashion (without skipping subformula that
+appear twice).  The children of a formula are explored only if <code>fun</code>
+returns <code>false</code>.  If <code>fun</code> returns <code>true</code>, that indicates to stop the
+recursion.
+</p>
+
+<p>
+In the following we use a lambda function to count the number of <code>G</code>
+in the formula.  We also print each subformula to show the recursion,
+and stop the recursion as soon as we encounter a subformula without
+sugar (the <code>is_sugar_free_ltl()</code> method is a constant-time operation
+that tells whether a formula contains a <code>F</code> or <code>G</code> operator) to save
+time time by not exploring further.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++" id="org9fadc45"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/formula.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = <span class="org-constant">spot</span>::parse_formula(<span class="org-string">"FGa -&gt; (GFb &amp; GF(c &amp; b &amp; d))"</span>);
+
+  <span class="org-type">int</span> <span class="org-variable-name">gcount</span> = 0;
+  f.traverse([&amp;<span class="org-variable-name">gcount</span>](<span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span>)
+             {
+               <span class="org-constant">std</span>::cout &lt;&lt; f &lt;&lt; <span class="org-string">'\n'</span>;
+               <span class="org-keyword">if</span> (f.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::G))
+                 ++gcount;
+               <span class="org-keyword">return</span> f.is_sugar_free_ltl();
+             });
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"=== "</span> &lt;&lt; gcount &lt;&lt; <span class="org-string">" G seen ===\n"</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+FGa -&gt; (GFb &amp; GF(b &amp; c &amp; d))
+FGa
+Ga
+a
+GFb &amp; GF(b &amp; c &amp; d)
+GFb
+Fb
+b
+GF(b &amp; c &amp; d)
+F(b &amp; c &amp; d)
+b &amp; c &amp; d
+=== 3 G seen ===
+</pre>
+
+<p>
+The other useful operation is <code>map</code>.  This also takes a functional
+argument, but that function should input a formula and output a
+replacement formula.  <code>f.map(fun)</code> applies <code>fun</code> to all children of
+<code>f</code>, and assemble the result under the same top-level operator as <code>f</code>.
+</p>
+
+<p>
+Here is a demonstration of how to exchange all <code>F</code> and <code>G</code> operators
+in a formula:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++" id="orgdc637e1"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/formula.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+
+<span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-function-name">xchg_fg</span>(<span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">in</span>)
+{
+   <span class="org-keyword">if</span> (in.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::F))
+     <span class="org-keyword">return</span> <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::G(xchg_fg(in[0]));
+   <span class="org-keyword">if</span> (in.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::G))
+     <span class="org-keyword">return</span> <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::F(xchg_fg(in[0]));
+   <span class="org-comment-delimiter">// </span><span class="org-comment">No need to transform subformulas without F or G</span>
+   <span class="org-keyword">if</span> (in.is_sugar_free_ltl())
+     <span class="org-keyword">return</span> in;
+   <span class="org-comment-delimiter">// </span><span class="org-comment">Apply xchg_fg recursively on any other operator's children</span>
+   <span class="org-keyword">return</span> in.map(xchg_fg);
+}
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = <span class="org-constant">spot</span>::parse_formula(<span class="org-string">"FGa -&gt; (GFb &amp; GF(c &amp; b &amp; d))"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"before: "</span> &lt;&lt; f &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"after:  "</span> &lt;&lt; xchg_fg(f) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+before: FGa -&gt; (GFb &amp; GF(b &amp; c &amp; d))
+after:  GFa -&gt; (FGb &amp; FG(b &amp; c &amp; d))
+
+</pre>
+</div>
+
+
+<ul class="org-ul">
+<li><a id="org40317e0"></a>Additional tricks about <code>map</code> and <code>traverse</code> in C++<br />
+<div class="outline-text-4" id="text-org40317e0">
+<p>
+As seen above, the first argument of <code>map()</code> and <code>traverse()</code> is a
+function <code>fun()</code> (or actually any object that as an <code>operator()</code>) that
+will be applied to subformulas.  If additional arguments are passed to
+<code>map()</code> or <code>traverse()</code>, those will be passed on to <code>fun()</code> after the
+formula.
+</p>
+
+<p>
+For instance instead of having a lambda capturing the <a href="#org9fadc45"><code>gcount</code>
+variable in the first example</a>, we could pass a reference to this
+variable:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/formula.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = <span class="org-constant">spot</span>::parse_formula(<span class="org-string">"FGa -&gt; (GFb &amp; GF(c &amp; b &amp; d))"</span>);
+
+  <span class="org-type">int</span> <span class="org-variable-name">gcount</span> = 0;
+  f.traverse([](<span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span>, <span class="org-type">int</span>&amp; <span class="org-variable-name">count</span>)
+             {
+               <span class="org-keyword">if</span> (f.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::G))
+                 ++count;
+               <span class="org-keyword">return</span> f.is_sugar_free_ltl();
+             }, gcount);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"=== "</span> &lt;&lt; gcount &lt;&lt; <span class="org-string">" G seen ===\n"</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+=== 3 G seen ===
+
+</pre>
+
+<p>
+(Here we have removed the print statement inside the lambda to focus
+more on how <code>gcount</code> get passed as the <code>&amp;count</code> reference.  Here there
+is no real advantage to passing such reference by argument instead of
+capturing them in the lambda.
+</p>
+
+<p>
+The possibility to pass additional arguments is however more useful in
+the case of <code>map</code>.  Let's write a variant of our <a href="#orgdc637e1"><code>xchg_fg()</code> example</a>
+that counts the number of exchanges performed.  First, we do it
+without lambda:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/formula.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+
+<span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-function-name">xchg_fg</span>(<span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">in</span>, <span class="org-type">int</span>&amp; <span class="org-variable-name">count</span>)
+{
+   <span class="org-keyword">if</span> (in.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::F, <span class="org-constant">spot</span>::<span class="org-constant">op</span>::G))
+     ++count;
+   <span class="org-keyword">if</span> (in.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::F))
+     <span class="org-keyword">return</span> <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::G(xchg_fg(in[0], count));
+   <span class="org-keyword">if</span> (in.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::G))
+     <span class="org-keyword">return</span> <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::F(xchg_fg(in[0], count));
+   <span class="org-comment-delimiter">// </span><span class="org-comment">No need to transform subformulas without F or G</span>
+   <span class="org-keyword">if</span> (in.is_sugar_free_ltl())
+     <span class="org-keyword">return</span> in;
+   <span class="org-comment-delimiter">// </span><span class="org-comment">Apply xchg_fg recursively on any other operator's children</span>
+   <span class="org-keyword">return</span> in.map(xchg_fg, count);
+}
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = <span class="org-constant">spot</span>::parse_formula(<span class="org-string">"FGa -&gt; (GFb &amp; GF(c &amp; b &amp; d))"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"before: "</span> &lt;&lt; f &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-type">int</span> <span class="org-variable-name">count</span> = 0;
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"after:  "</span> &lt;&lt; xchg_fg(f, count) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"exchanges:  "</span> &lt;&lt; count &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+before: FGa -&gt; (GFb &amp; GF(b &amp; c &amp; d))
+after:  GFa -&gt; (FGb &amp; FG(b &amp; c &amp; d))
+exchanges:  6
+
+</pre>
+
+<p>
+Now let's pretend that we want to define <code>xchg_fg</code> as a lambda, and
+<code>count</code> to by captured by reference.  In order to call pass the lambda
+recursively to <code>map</code>, the lambda needs to know its address.
+Unfortunately, if the lambda is stored with type <code>auto</code>, it cannot
+capture itself.  A solution is to use <code>std::function</code> but that has a
+large penalty cost.  We can work around that by assuming that that
+address will be passed as an argument (<code>self</code>) to the lambda:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/formula.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = <span class="org-constant">spot</span>::parse_formula(<span class="org-string">"FGa -&gt; (GFb &amp; GF(c &amp; b &amp; d))"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"before: "</span> &lt;&lt; f &lt;&lt; <span class="org-string">'\n'</span>;
+
+  <span class="org-type">int</span> <span class="org-variable-name">count</span> = 0;
+  <span class="org-keyword">auto</span> <span class="org-variable-name">xchg_fg</span> = [&amp;<span class="org-variable-name">count</span>](<span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">in</span>, <span class="org-keyword">auto</span>&amp;&amp; <span class="org-variable-name">self</span>) -&gt; <span class="org-constant">spot</span>::formula
+  {
+    <span class="org-keyword">if</span> (in.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::F, <span class="org-constant">spot</span>::<span class="org-constant">op</span>::G))
+      ++count;
+    <span class="org-keyword">if</span> (in.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::F))
+      <span class="org-keyword">return</span> <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::G(self(in[0], self));
+    <span class="org-keyword">if</span> (in.is(<span class="org-constant">spot</span>::<span class="org-constant">op</span>::G))
+      <span class="org-keyword">return</span> <span class="org-constant">spot</span>::<span class="org-constant">formula</span>::F(self(in[0], self));
+    <span class="org-comment-delimiter">// </span><span class="org-comment">No need to transform subformulas without F or G</span>
+    <span class="org-keyword">if</span> (in.is_sugar_free_ltl())
+      <span class="org-keyword">return</span> in;
+    <span class="org-comment-delimiter">// </span><span class="org-comment">Apply xchg_fg recursively on any other operator's children</span>
+    <span class="org-keyword">return</span> in.map(self, self);
+  };
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"after:  "</span> &lt;&lt; xchg_fg(f, xchg_fg) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"exchanges:  "</span> &lt;&lt; count &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+before: FGa -&gt; (GFb &amp; GF(b &amp; c &amp; d))
+after:  GFa -&gt; (FGb &amp; FG(b &amp; c &amp; d))
+exchanges:  6
+
+</pre>
+</div>
+</li>
+</ul>
+</div>
+
+
+<div id="outline-container-org0f60d71" class="outline-3">
+<h3 id="org0f60d71">Python</h3>
+<div class="outline-text-3" id="text-org0f60d71">
+<p>
+The Python version of the above two examples uses a very similar
+syntax.  Python only supports a very limited form of lambda
+expressions, so we have to write a standard function instead:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+
+<span class="org-variable-name">gcount</span> = 0
+<span class="org-keyword">def</span> <span class="org-function-name">countg</span>(f):
+    <span class="org-keyword">global</span> gcount
+    <span class="org-keyword">print</span>(f)
+    <span class="org-keyword">if</span> f._is(spot.op_G):
+        <span class="org-variable-name">gcount</span> += 1
+    <span class="org-keyword">return</span> f.is_sugar_free_ltl()
+
+<span class="org-variable-name">f</span> = spot.formula(<span class="org-string">"FGa -&gt; (GFb &amp; GF(c &amp; b &amp; d))"</span>)
+f.traverse(countg)
+<span class="org-keyword">print</span>(<span class="org-string">"==="</span>, gcount, <span class="org-string">"G seen ==="</span>)
+</pre>
+</div>
+
+<pre class="example">
+FGa -&gt; (GFb &amp; GF(b &amp; c &amp; d))
+FGa
+Ga
+a
+GFb &amp; GF(b &amp; c &amp; d)
+GFb
+Fb
+b
+GF(b &amp; c &amp; d)
+F(b &amp; c &amp; d)
+b &amp; c &amp; d
+=== 3 G seen ===
+</pre>
+
+<p>
+Here is the <code>F</code> and <code>G</code> exchange:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+
+<span class="org-keyword">def</span> <span class="org-function-name">xchg_fg</span>(i):
+   <span class="org-keyword">if</span> i._is(spot.op_F):
+      <span class="org-keyword">return</span> spot.formula.G(xchg_fg(i[0]));
+   <span class="org-keyword">if</span> i._is(spot.op_G):
+      <span class="org-keyword">return</span> spot.formula.F(xchg_fg(i[0]));
+   <span class="org-comment-delimiter"># </span><span class="org-comment">No need to transform subformulas without F or G</span>
+   <span class="org-keyword">if</span> i.is_sugar_free_ltl():
+      <span class="org-keyword">return</span> i;
+   <span class="org-comment-delimiter"># </span><span class="org-comment">Apply xchg_fg recursively on any other operator's children</span>
+   <span class="org-keyword">return</span> i.<span class="org-builtin">map</span>(xchg_fg);
+
+<span class="org-variable-name">f</span> = spot.formula(<span class="org-string">"FGa -&gt; (GFb &amp; GF(c &amp; b &amp; d))"</span>)
+<span class="org-keyword">print</span>(<span class="org-string">"before:"</span>, f)
+<span class="org-keyword">print</span>(<span class="org-string">"after: "</span>, xchg_fg(f))
+</pre>
+</div>
+
+<pre class="example">
+before: FGa -&gt; (GFb &amp; GF(b &amp; c &amp; d))
+after:  GFa -&gt; (FGb &amp; FG(b &amp; c &amp; d))
+
+</pre>
+
+<p>
+Like in C++, extra arguments to <code>map</code> and <code>traverse</code> are passed as
+additional to the function given in the first argument.
+</p>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

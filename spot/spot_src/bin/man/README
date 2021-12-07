@@ -1,0 +1,14 @@
+To help with keeping man pages in sync with the binaries, the man page
+for PROGRAM is automatically generated from two sources:
+  1. the --help output of bin/PROGRAM,
+  2. the bin/man/PROGRAM.x file
+
+The tool help2man is responsible for doing this conversion.
+
+The PROGRAM.x file has [sections] headers to indicate sections.  The
+rest of the file uses groff macros for man pages.  For detail on this
+syntax, run "man groff_man".
+
+Note that some of the standard sections will be forced to the top or
+bottom of the manpage by help2man, the rest will appear as ordered in
+PROGRAM.x.

@@ -1,0 +1,1855 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:52 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Concepts</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Informal explanation of various concepts used in Spot."
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="index.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title">Concepts</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#ap">Atomic proposition (AP)</a></li>
+<li><a href="#boolean">Boolean formula</a></li>
+<li><a href="#bdd">Binary Decision Diagrams (BDD)</a></li>
+<li><a href="#word">ω-word</a></li>
+<li><a href="#automaton">ω-Automaton</a></li>
+<li><a href="#buchi">Büchi automaton</a></li>
+<li><a href="#trans-edge">Transitions vs. Edges</a></li>
+<li><a href="#acceptance-set">Acceptance sets &amp; generalized Büchi acceptance</a></li>
+<li><a href="#trans-acc">Transition-based, vs. State-based acceptance</a></li>
+<li><a href="#acceptance-condition">Acceptance condition</a></li>
+<li><a href="#automaton-generalized">ω-Automaton with generalized acceptance</a></li>
+<li><a href="#org555b16c">Alternating ω-automata</a></li>
+<li><a href="#neverclaim">Never claims</a></li>
+<li><a href="#lbtt">LBTT's format</a></li>
+<li><a href="#dstar">DSTAR format</a></li>
+<li><a href="#hoa">Hanoi Omega-Automaton format (HOA)</a></li>
+<li><a href="#ltl">Linear-time Temporal Logic (LTL)</a></li>
+<li><a href="#psl">Property Specification Language (PSL)</a></li>
+<li><a href="#ltl2tgba">Translation of temporal logic to automata</a></li>
+<li><a href="#architecture">Architecture of Spot</a></li>
+<li><a href="#property-flags">Automaton property flags</a></li>
+<li><a href="#named-properties">Named properties for automata</a></li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+This page documents some of the concepts used in Spot, and whose
+knowledge is usually assumed throughout the documentation.  The
+presentation is informal on purpose.
+</p>
+
+<div id="outline-container-org115802a" class="outline-2">
+<h2 id="ap"><a id="org115802a"></a>Atomic proposition (AP)</h2>
+<div class="outline-text-2" id="text-ap">
+<p>
+An <i>atomic proposition</i> is a named Boolean variable that represents a
+simple property that must be true or false.  It usually represents
+some property of a system.  For instance <code>light_on</code> and <code>door_open</code>
+could be the names of two atomic propositions that are respectively
+true if the light is on and the door open, and false otherwise.
+</p>
+
+<p>
+Atomic propositions are used to construct temporal logic formulas (see
+below) to specify properties of the system: for instance we might want
+to state that <i>whenever the door is open, the light should be on</i>.
+We could write that as the <a href="#ltl">LTL formula</a> <code>G(door_open -&gt; light_on)</code> in
+which <code>G</code> is a temporal operator that means <i>always</i>.
+</p>
+
+<p>
+Atomic propositions are also used to form the <a href="#boolean">Boolean formulas</a> that
+label the edges of automata.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org681bbcb" class="outline-2">
+<h2 id="boolean"><a id="org681bbcb"></a>Boolean formula</h2>
+<div class="outline-text-2" id="text-boolean">
+<p>
+A <i>Boolean formula</i> is formed from <a href="#ap">atomic propositions</a>, the Boolean
+constants true and false, and standard Boolean operators like <i>and</i>,
+<i>or</i>, <i>implies</i>, <i>xor</i>, etc.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf1bdeb9" class="outline-2">
+<h2 id="bdd"><a id="orgf1bdeb9"></a>Binary Decision Diagrams (BDD)</h2>
+<div class="outline-text-2" id="text-bdd">
+<p>
+A Binary Decision Diagram is a data structure for efficient
+manipulation of <a href="#boolean">Boolean formulas</a>.
+</p>
+
+<p>
+BDDs correspond to a kind of <i>if-then-else normal form</i> for Boolean
+formulas.  If we fix the order in which the atomic propositions will
+be tested, that normal form is unique.  BDDs are stored as directed
+acyclic graphs with sharing of subformulas.
+</p>
+
+<p>
+For further information about BDDs, read for instance <a href="http://configit.com/configit_wordpress/wp-content/uploads/2013/07/bdd-eap.pdf">Henrik Reif
+Andersen's lecture notes</a>.
+</p>
+
+<p>
+In Spot, BDDs are one way to represent Boolean formulas, and in
+particular, they are used to labels the edges of <a href="#buchi">automata</a>. Spot uses a
+customized version of <a href="https://sourceforge.net/projects/buddy/">the BuDDy library</a> for manipulating BDDs.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org34a674c" class="outline-2">
+<h2 id="word"><a id="org34a674c"></a>ω-word</h2>
+<div class="outline-text-2" id="text-word">
+<p>
+An ω-word (omega-word) is a word of infinite length.  In our context,
+each letter is used to describe the state of a system at a given time,
+and the sequence of letters shows the evolution of the system as the
+(discrete) time is incremented.
+</p>
+
+<p>
+If the set \(AP\) of <a href="#ap">atomic propositions</a> is fixed, an ω-word over \(AP\)
+is an infinite sequence of subsets of \(AP\). In other words, there are
+\(2^{|AP|}\) possible letters to choose from, and these letters denote
+the set of atomic propositions that are true at a given instant.
+</p>
+
+<p>
+For instance if \(AP=\{a,b,c\}\), the infinite sequence
+\[\{a,b\};\{a\};\{a,b\};\{a\};\{a,b\};\{a\};\ldots\] is an example of
+ω-word over \(AP\).  This particular ω-word can be interpreted as the
+following scenario: atomic proposition \(a\) is always true, \(b\) is true
+at each other instant, and \(c\) is always false.
+</p>
+
+<p>
+Note that instead of using sets of atomic propositions, it is equivalent
+to write that word using <a href="https://en.wikipedia.org/wiki/Canonical_normal_form#Minterms">minterms</a> over \(AP\):
+\[(a\land b\land \bar c);(a\land \bar b\land \bar c);
+  (a\land b\land \bar c);(a\land \bar b\land \bar c);
+  (a\land b\land \bar c);(a\land \bar b\land \bar c);\ldots\]
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge74a07c" class="outline-2">
+<h2 id="automaton"><a id="orge74a07c"></a>ω-Automaton</h2>
+<div class="outline-text-2" id="text-automaton">
+<p>
+An ω-automaton is used to represent sets of ω-word.
+</p>
+
+<p>
+Those look like the classical <a href="https://en.wikipedia.org/wiki/Nondeterministic_finite_automaton">Nondeterministic Finite Automata</a> in the
+sense that they also have states and transitions.  However ω-automata
+recognize <a href="#word">ω-words</a> instead of finite words.  In this context, the
+notion of <i>final state</i> makes no sense, and is replaced by the notion
+of <a href="#acceptance-condition">acceptance condition</a>: a run of the automaton (i.e., an infinite
+sequence alternating states and edges in a way that is compatible with
+the structure of the automaton) is <i>accepting</i> if it satisfies the
+constraint given by the acceptance condition.
+</p>
+
+<p>
+In Spot, ω-automata have their edges labeled by <a href="#boolean">Boolean formulas</a>
+represented using <a href="#bdd">BDDs</a>.  An ω-word is accepted by an ω-automaton if
+there exists an accepting run whose labels (those Boolean formulas)
+are compatible with the minterms used as letters in the word.
+</p>
+
+<p>
+The <i>language</i> of an ω-automaton is the set of ω-words it accepts.
+</p>
+
+<p>
+There are many kinds of ω-Automata and they mostly differ by their
+<a href="#acceptance-condition">acceptance condition</a>.  The different types of acceptance condition,
+and whether the automata are deterministic or not can affect their
+expressive power.
+</p>
+
+<p>
+One of the simplest and most common type of ω-Automata is the <a href="#buchi">Büchi
+automaton</a> described next.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8ee607e" class="outline-2">
+<h2 id="buchi"><a id="org8ee607e"></a>Büchi automaton</h2>
+<div class="outline-text-2" id="text-buchi">
+<p>
+A Büchi automaton is a simple kind of <a href="#automaton">ω-Automaton</a> in which a run is
+accepting iff it visits some <i>accepting state</i> infinitely often.
+Those accepting states are often denoted using a double circle.
+</p>
+
+<p>
+For instance here is a Büchi automaton that accepts only words in
+which \(a\) is always true, and \(b\) is true infinitely often.
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-buchi1.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+The above automaton would accept the <a href="#word">ω-word we used previously as an
+example</a>.
+</p>
+
+
+<p>
+As a more concrete example, here is a (complete) Büchi automaton for
+the <a href="#ltl">LTL formula</a> <code>G(door_open -&gt; light_on)</code> that specifies that
+<code>light_on</code> should be true whenever <code>door_open</code> is true.
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-buchi2.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+The <code>1</code> displayed on the edge that loops on state <code>1</code> should be
+read as <i>true</i>, i.e., the Boolean formula that accepts
+any valuation of the atomic propositions.
+</p>
+
+<p>
+The above automaton is complete: any possible ω-word over
+\(AP=\{\mathit{door\_open}, \mathit{light\_on}\}\) is recognized by some
+run.  But not all those runs are accepting.  In fact, there is only one
+run that is accepting: the one that loops continuously on state 0.
+</p>
+
+<p>
+All the remaining runs eventually reach state 1 and stay there.  Those
+runs recognize scenarios where at some point the door is open and the
+light is off.  There is an infinite number of those runs: they differ
+by the number of times they loop on state 0.  But since those runs
+reach state 1, it means they visited state 0 only a finite number of
+times, so they do not validate the acceptance condition.
+</p>
+
+
+<p>
+There can be multiple accepting states, but it is enough to visit one
+infinitely often.  For instance the following Büchi automaton accept
+all runs in which at all point \(a\) is true iff \(b\) is true at the next
+instant.
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-buchi3.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org3fa5d8c" class="outline-2">
+<h2 id="trans-edge"><a id="org3fa5d8c"></a>Transitions vs. Edges</h2>
+<div class="outline-text-2" id="text-trans-edge">
+<p>
+Since automata are labeled by Boolean formulas instead of letters it
+is sometimes useful to think of the formula-labeled <b>edges</b> of an
+automaton as a way to aggregate several letter-labeled <b>transitions</b>.
+</p>
+
+<p>
+Whenever the distinction is important, for instance when giving the
+size of an automaton, we use the terms <b>edge</b> and <b>transition</b> to
+distinguish whether we are looking at the automaton as a graph, or
+whether we are actually considering all possible letters that may
+have been aggregated in an edge.
+</p>
+
+<p>
+Here is a simple example:
+</p>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-te1.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+The above automaton has edges and
+transitions.
+</p>
+
+<p>
+This is because those formula-labeled edges actually simplify the
+following transition structure:
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-te2.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+The above is actually a different automaton from the point of view of
+Spot: it is an automaton with edges
+and as many transitions.
+</p>
+
+<p>
+Spot has some function to merge those "parallel transitions" into
+larger edges.  Limiting the number of edges helps most of the
+algorithms that have to explore automata, since they have less
+successors to consider.
+</p>
+
+<p>
+The distinction between <b>edge</b> and <b>transition</b> is something we try
+maintain in the various interfaces of Spot.  For instance the
+<a href="oaut.html#stats"><code>--stats</code> option</a> has <code>%e</code> or <code>%t</code> to count either edges or
+transitions.  The method used to add new edge into an automaton is
+called <code>new_edge(...)</code>, not <code>new_transition(...)</code>, because it takes a
+<a href="#bdd">BDD</a> (representing a Boolean formula) as label.  However that naming
+convention is recent in the history of Spot.  Spot versions up to
+1.2.6 used to call everything <i>transition</i> (and what we now call
+<i>transition</i> was sometime called <i>sub-transition</i>), and traces of this
+history may still be present: do not hesitate to file bug reports if
+you uncover some confusing use of these terms.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4fd025b" class="outline-2">
+<h2 id="acceptance-set"><a id="org4fd025b"></a>Acceptance sets &amp; generalized Büchi acceptance</h2>
+<div class="outline-text-2" id="text-acceptance-set">
+<p>
+As a rather straightforward generalization of the Büchi acceptance,
+let us consider that instead of one set of accepting states, we might
+have multiple sets of states.  We call these sets <i>acceptance sets</i>.
+The <i>generalized Büchi</i> acceptance condition states that a run is
+accepting iff it visits at least one state of each acceptance set.
+</p>
+
+<p>
+The Büchi convention of representing accepting states using a
+double circle is not going to work in the generalized Büchi case.  So
+instead we label each state with the numbers of each acceptance set it
+belongs to.
+</p>
+
+<p>
+In the automaton below, there are two acceptance sets denoted with ⓿
+and ❶: all states labeled with ⓿ belong to acceptance set 0, and all
+states labeled with ❶ belong to set 1.  Here each acceptance set
+contains a single state.
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-gba1.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+The accepting runs are only those that visit infinitely often both
+states, so that means this automaton accepts all words in which \(a\)
+and \(b\) are infinitely often true (not necessarily at the same time).
+</p>
+
+<p>
+A state can of course belong to multiple acceptance sets, and an
+acceptance set may contain multiple states.  For instance the
+following automaton has the same language as the previous one (despite
+its more complex look).
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-gba2.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+Speaking of size&#x2026; Let us note that using a generalized Büchi
+acceptance condition makes it possible to build smaller automata than
+what we can do with Büchi acceptance.  We have seen that the above
+language (infinitely often \(a\) and infinitely often \(b\)) can be built
+with a 2-state generalized-Büchi automaton, but the smallest
+equivalent Büchi automaton has three state:
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-gba-vs-ba.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+Finally, let us point the obvious fact that a Büchi automaton is a
+particular case of generalized-Büchi acceptance with a single
+acceptance set.  Depending on the context, it might be useful to
+represent Büchi automaton using double circles (as above), or numbered
+acceptance sets (as below).  Spot's output routines have options for
+both.
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-gba-vs-ba2.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org68b15e5" class="outline-2">
+<h2 id="trans-acc"><a id="org68b15e5"></a>Transition-based, vs. State-based acceptance</h2>
+<div class="outline-text-2" id="text-trans-acc">
+<p>
+So far we have discussed examples of <i>state-based acceptance</i>:
+acceptance sets are sets of states, runs are accepting if these visit
+infinitely often some state in each acceptance set, etc.
+</p>
+
+<p>
+When <i>transition-based acceptance</i> is used, acceptance sets are now
+sets of <i>edges</i> (or set of <i>transitions</i> if you prefer), and runs are
+accepting if the edges they visit satisfy the acceptance condition.
+</p>
+
+<p>
+Here is an example of Transition-based Generalized Büchi Automaton
+(TGBA).
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-tgba1.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+This automaton accept all ω-words that infinitely often match the
+pattern \(a^+;b\) (that is: a positive number of letters where \(a\) is
+true are followed by one letter where \(b\) is true).
+</p>
+
+<p>
+Using transition-based acceptance allows for more compact automata.
+The typical example is the LTL formula <code>GFa</code> (infinitely often \(a\))
+that can be represented using a one-state transition-based Büchi
+automaton:
+</p>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-tgba2.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+While the same property require a 2-state Büchi automaton using
+state-based acceptance:
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-tba-vs-ba.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<div class="implem">
+<p>
+Internally, instead of representing <i>acceptance sets</i> as actual sets
+of edges, Spot labels each edge of the automaton by a bit-vector that
+lists the acceptance sets an edge belongs to.
+</p>
+
+<p>
+There is <a href="#property-flags">a flag</a> inside each automaton that tells Spot if an automaton
+uses state-based or transition-based acceptance.  However, regardless
+of the value of this flag, membership to acceptance sets is always
+stored on transitions.  In the case of an automaton with state-based
+acceptance, the convention is that all transition leaving a state will
+carry the acceptance-set membership of that state.  Doing so allows us
+to interpret an automaton state-based acceptance as if it was an
+automaton with transition-based acceptance whenever needed.
+</p>
+
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgf4fde54" class="outline-2">
+<h2 id="acceptance-condition"><a id="orgf4fde54"></a>Acceptance condition</h2>
+<div class="outline-text-2" id="text-acceptance-condition">
+<p>
+Older versions of Spot (up to 1.2.6), used to support only
+Transition-based Generalized Büchi Automata (TGBA).  This of course
+included support for non-generalized or state-based Büchi.
+</p>
+
+<p>
+Today, Spot can work with more general forms of acceptance condition.
+An acceptance condition actually consists of two pieces: some
+acceptance sets, and a formula that tells how to use these acceptance
+sets.
+</p>
+
+<p>
+Acceptance formulas are positive Boolean formula over atoms of the
+form <code>t</code>, <code>f</code>, <code>Inf(n)</code>, or <code>Fin(n)</code>, where <code>n</code> is a non-negative
+integer denoting an acceptance set.
+</p>
+
+<ul class="org-ul">
+<li><code>t</code> denotes the true acceptance condition: any run is accepting</li>
+<li><code>f</code> denotes the false acceptance condition: no run is accepting</li>
+<li><code>Inf(n)</code> means that a run is accepting if it visits infinitely
+often the acceptance set <code>n</code></li>
+<li><code>Fin(n)</code> means that a run is accepting if it visits finitely
+often the acceptance set <code>n</code></li>
+</ul>
+
+<p>
+The above atoms can be combined using only the operator <code>&amp;</code> and <code>|</code>
+(with obvious semantics), and parentheses for grouping.  Note that
+there is no negation, but an acceptance condition can be negated
+swapping <code>t</code> and <code>f</code>, <code>&amp;</code> and <code>|</code>, and <code>Fin(n)</code> and <code>Inf(n)</code>.
+</p>
+
+<p>
+For instance the formula <code>Inf(0)&amp;Inf(1)</code> specifies that accepting runs
+should visit infinitely often the acceptance 0, and infinitely often
+the acceptance set 1.  This corresponds the generalized Büchi
+acceptance with two sets.
+</p>
+
+<p>
+The opposite acceptance condition <code>Fin(0)|Fin(1)</code> is known as
+<i>generalized co-Büchi acceptance</i> (with two sets).  Accepting runs
+have to visit finitely often set 0 <i>or</i> finitely often set 1.
+</p>
+
+
+<p>
+A <i>Rabin acceptance condition</i> with 3 pairs corresponds to the
+following formula: <code>(Fin(0)&amp;Inf(1)) | (Fin(2)&amp;Inf(3)) |
+(Fin(4)&amp;Inf(5))</code>
+</p>
+
+<p>
+The following table gives an overview of how some classical acceptance
+condition are encoded.  The first column gives a name that is more
+human readable (those names are defined in the <a href="#hoa">HOA</a> format and are also
+recognized by Spot).  The second column give the encoding as a
+formula.  Everything here is case-sensitive.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">none</td>
+<td class="org-left"><code>f</code></td>
+</tr>
+
+<tr>
+<td class="org-left">all</td>
+<td class="org-left"><code>t</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Buchi</td>
+<td class="org-left"><code>Inf(0)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">generalized-Buchi 2</td>
+<td class="org-left"><code>Inf(0)&amp;Inf(1)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">generalized-Buchi 3</td>
+<td class="org-left"><code>Inf(0)&amp;Inf(1)&amp;Inf(2)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">co-Buchi</td>
+<td class="org-left"><code>Fin(0)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">generalized-co-Buchi 2</td>
+<td class="org-left"><code>Fin(0)</code> &vert; <code>Fin(1)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">generalized-co-Buchi 3</td>
+<td class="org-left"><code>Fin(0)</code> &vert; <code>Fin(1)</code> &vert; <code>Fin(2)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Rabin 1</td>
+<td class="org-left"><code>Fin(0) &amp; Inf(1)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Rabin 2</td>
+<td class="org-left"><code>(Fin(0) &amp; Inf(1))</code> &vert; <code>(Fin(2) &amp; Inf(3))</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Rabin 3</td>
+<td class="org-left"><code>(Fin(0) &amp; Inf(1))</code> &vert; <code>(Fin(2) &amp; Inf(3))</code> &vert; <code>(Fin(4) &amp; Inf(5))</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Streett 1</td>
+<td class="org-left"><code>Fin(0)</code> &vert; <code>Inf(1)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Streett 2</td>
+<td class="org-left"><code>(Fin(0)</code> &vert; <code>Inf(1)) &amp; (Fin(2)</code> &vert; <code>Inf(3))</code></td>
+</tr>
+
+<tr>
+<td class="org-left">Streett 3</td>
+<td class="org-left"><code>(Fin(0)</code> &vert; <code>Inf(1)) &amp; (Fin(2)</code> &vert; <code>Inf(3)) &amp; (Fin(4)</code> &vert; <code>Inf(5))</code></td>
+</tr>
+
+<tr>
+<td class="org-left">generalized-Rabin 3 1 0 2</td>
+<td class="org-left"><code>(Fin(0) &amp; Inf(1))</code> &vert; <code>Fin(2)</code> &vert; <code>(Fin(3) &amp; (Inf(4)&amp;Inf(5)))</code></td>
+</tr>
+
+<tr>
+<td class="org-left">parity min odd 5</td>
+<td class="org-left"><code>Fin(0) &amp; (Inf(1)</code> &vert; <code>(Fin(2) &amp; (Inf(3)</code> &vert; <code>Fin(4))))</code></td>
+</tr>
+
+<tr>
+<td class="org-left">parity max even 5</td>
+<td class="org-left"><code>Inf(4)</code> &vert; <code>(Fin(3) &amp; (Inf(2)</code> &vert; <code>(Fin(1) &amp; Inf(0))))</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-org8bce579" class="outline-2">
+<h2 id="automaton-generalized"><a id="org8bce579"></a>ω-Automaton with generalized acceptance</h2>
+<div class="outline-text-2" id="text-automaton-generalized">
+<p>
+Spot's automata support arbitrary acceptance conditions as discussed
+above.  When displaying automata, it is convenient to display the
+acceptance condition as well.  For instance here is a Rabin automaton
+produced by <code>ltl2dstar</code> for the LTL formula <code>GFa | FGb</code>, but displayed
+by Spot:
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-twa1.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org555b16c" class="outline-2">
+<h2 id="org555b16c">Alternating ω-automata</h2>
+<div class="outline-text-2" id="text-org555b16c">
+<p>
+Alternating ω-automata are ω-automata in which the destination of an
+edge can be a group of states.  If an edge has more than one
+destination, it is called a <i>universal edge</i>, and its destinations are
+referred to as its <i>universal destinations</i>.
+</p>
+
+<p>
+When an alternating automaton evaluates a word, following a universal
+edge will have the same effect as forking the automaton to evaluate
+the rest of the word simultaneously from each universal destination.
+A run of an alternating automaton can therefore be pictured as a tree.
+The tree is accepting if all its branches satisfy the acceptance condition.
+(See the <a href="http://adl.github.io/hoaf/">Hanoi Omega-Automata format</a> for more precise semantics.)
+</p>
+
+<p>
+For instance the following alternating co-Büchi ω-automaton was
+generated by <a href="https://sourceforge.net/projects/ltl3ba/"><code>ltl3ba 1.1.3</code></a> for the LTL formula <code>GF(a &lt;-&gt; Xb)</code>.
+</p>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concepts-alt.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+In this picture, the universal edges appear as arrows with a white
+tip going to a small dot, from which additional arrows connect to the
+universal destinations.  Here the three universal edges all leave the
+initial state, and connect to two universal destinations.  Note that
+non-determinism is allowed between universal edges, for instance upon
+reading a word starting with "<code>a</code>", this automaton should
+non-deterministically decide to read the rest of the word from states
+<code>GF(a&lt;-&gt;Xb)</code> and <code>F(a&lt;-&gt;Xb)</code> (when taking the universal transition
+labeled by <code>1</code>) or from states <code>GF(a&lt;-&gt;Xb)</code> and <code>b</code> (when taking the
+universal transition labeled by <code>a</code>).
+</p>
+
+<p>
+Alternation support in Spot is currently experimental, please report
+any issue.  The only supported file format able to represent
+alternating automata is the <a href="#hoa">HOA format, introduced below</a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org779d680" class="outline-2">
+<h2 id="neverclaim"><a id="org779d680"></a>Never claims</h2>
+<div class="outline-text-2" id="text-neverclaim">
+<p>
+Never claims are used by <a href="http://spinroot.com/">Spin</a> to represent Büchi automata; they are
+part of the Promela language.
+</p>
+
+<p>
+Here are two never claims using different syntaxes to represent a
+Büchi automaton for the LTL formula <code>p0 | GFp1</code> (that is: \(p_0\) or
+infinitely often \(p_1\)).  The graphical representation of that
+automaton follows.
+</p>
+
+<pre class="example">
+never { /* p0 | GFp1 */			never { /* p0 | GFp1 */
+T0_init:				T0_init:
+  if					  do
+  :: (p0) -&gt; goto accept_all		  :: atomic { (p0) -&gt; assert(!(p0)) }
+  :: (!(p0)) -&gt; goto accept_S2		  :: (!(p0)) -&gt; goto accept_S2
+  fi;					  od;
+accept_S2:				accept_S2:
+  if					  do
+  :: (p1) -&gt; goto accept_S2		  :: (p1) -&gt; goto accept_S2
+  :: (!(p1)) -&gt; goto T0_S3		  :: (!(p1)) -&gt; goto T0_S3
+  fi;					  od;
+T0_S3:					T0_S3:
+  if					  do
+  :: (p1) -&gt; goto accept_S2		  :: (p1) -&gt; goto accept_S2
+  :: (!(p1)) -&gt; goto T0_S3		  :: (!(p1)) -&gt; goto T0_S3
+  fi;					  od;
+accept_all:				accept_all:
+  skip					  skip
+}					}
+</pre>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-never1.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+The two different types of never claims differ only in a few syntactic
+elements: <code>do..od</code> instead of <code>if..fi</code>, <code>assert</code> instead of <code>goto
+accept_all</code>, etc.  Older Spin releases used to output the first one, while
+newer Spin releases (starting with Spin 6.2.4) use the second syntax
+as they help Spin to produce more precise counterexamples.
+</p>
+
+<p>
+Spot can read and write never claims in both syntaxes, but it cannot
+parse never claims that use other features (such as variables) of the
+Promela language.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org0033c54" class="outline-2">
+<h2 id="lbtt"><a id="org0033c54"></a>LBTT's format</h2>
+<div class="outline-text-2" id="text-lbtt">
+<p>
+This format was originally introduced by <a href="http://www.tcs.hut.fi/Software/maria/tools/lbt/">LBT</a>, a tool for translating
+LTL to (state-based) generalized Büchi automata, and then used by
+<a href="http://www.tcs.hut.fi/Software/lbtt/">LBTT</a>, a tool for testing LTL-to-Büchi translators.
+</p>
+
+<p>
+For instance the Büchi automaton we used as an example for never
+claims can be encoded as follows:
+</p>
+
+<pre class="example">
+4 1
+0 1 -1
+1 p0
+2 ! p0
+-1
+1 0 0 -1
+1 t
+-1
+2 0 0 -1
+2 p1
+3 ! p1
+-1
+3 0 -1
+2 p1
+3 ! p1
+-1
+</pre>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-never1.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+The format has been extended in two ways.  First, LBTT extended it to
+support transition-based acceptance.  This is indicated by a <code>t</code> on
+the first line:
+</p>
+
+<pre class="example">
+3 1t
+0 1
+1 -1 p0
+2 -1 ! p0
+-1
+1 0
+1 0 -1 t
+-1
+2 0
+2 -1 ! p1
+2 0 -1 p1
+-1
+</pre>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-lbtt2.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+We call this format the LBTT format because of this extension.
+</p>
+
+<p>
+A second, but independent extension, was done in <a href="http://ltl2dstar.de/"><code>ltl2dstar</code></a>, allowing
+atomic propositions that are different from <code>p0</code>, <code>p1</code>, <code>p2</code>, etc.
+</p>
+
+<p>
+Both extensions are supported by Spot.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8274bb9" class="outline-2">
+<h2 id="dstar"><a id="org8274bb9"></a>DSTAR format</h2>
+<div class="outline-text-2" id="text-dstar">
+<p>
+The DSTAR format is the native format of <a href="http://ltl2dstar.de/"><code>ltl2dstar</code></a>.  It allows
+representing Deterministic Streett And Rabin automata, hence the
+name.
+</p>
+
+<p>
+Spot can read the DSTAR format, but it does not output it.  Adding
+output for this format would not be difficult, but it would also not
+be very useful: for all intents and purposes, the <a href="#hoa">HOA</a> format should be
+preferred.  <code>ltl2dstar</code> can now also output HOA directly.
+</p>
+
+<p>
+Here is one Rabin automaton in the DSTAR format:
+</p>
+
+<pre class="example">
+DRA v2 explicit
+Comment: "Union{Safra[NBA=2],Safra[NBA=2]}"
+States: 4
+Acceptance-Pairs: 2
+Start: 0
+AP: 2 "p0" "p1"
+---
+State: 0
+Acc-Sig: -0
+0
+1
+2
+3
+State: 1
+Acc-Sig: +0
+0
+1
+2
+3
+State: 2
+Acc-Sig: -0 +1
+0
+1
+2
+3
+State: 3
+Acc-Sig: +0 +1
+0
+1
+2
+3
+</pre>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-dstar.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org80d37ad" class="outline-2">
+<h2 id="hoa"><a id="org80d37ad"></a>Hanoi Omega-Automaton format (HOA)</h2>
+<div class="outline-text-2" id="text-hoa">
+<p>
+The <a href="http://adl.github.io/hoaf/">HOA format</a> inherits several features from the <a href="#dstar">DSTAR format</a>, but
+extends it in many ways, including support for non-deterministic
+automata, alternating automata, and for arbitrary acceptance conditions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-hoa"><span class="org-hoa-header-uppercase">HOA:</span> v1
+<span class="org-hoa-header-lowercase">name:</span> <span class="org-string">"FGp0 | GFp1"</span>
+<span class="org-hoa-header-uppercase">States:</span> 4
+<span class="org-hoa-header-uppercase">Start:</span> 0
+<span class="org-hoa-header-uppercase">AP:</span> 2 <span class="org-string">"p0"</span> <span class="org-string">"p1"</span>
+<span class="org-hoa-header-lowercase">acc-name:</span> Rabin 2
+<span class="org-hoa-header-uppercase">Acceptance:</span> 4 (<span class="org-hoa-builtin">Fin</span>(<span class="org-hoa-acceptance-set">0</span>) &amp; <span class="org-hoa-builtin">Inf</span>(<span class="org-hoa-acceptance-set">1</span>)) | (<span class="org-hoa-builtin">Fin</span>(<span class="org-hoa-acceptance-set">2</span>) &amp; <span class="org-hoa-builtin">Inf</span>(<span class="org-hoa-acceptance-set">3</span>))
+<span class="org-hoa-header-lowercase">properties:</span> trans-labels explicit-labels state-acc complete
+<span class="org-hoa-header-lowercase">properties:</span> deterministic
+<span class="org-hoa-keyword">--BODY--</span>
+<span class="org-hoa-header-uppercase">State:</span> 0 {<span class="org-hoa-acceptance-set">0</span>}
+[!<span class="org-hoa-ap-number">0</span>&amp;!<span class="org-hoa-ap-number">1</span>] 0
+[<span class="org-hoa-ap-number">0</span>&amp;!<span class="org-hoa-ap-number">1</span>] 1
+[!<span class="org-hoa-ap-number">0</span>&amp;<span class="org-hoa-ap-number">1</span>] 2
+[<span class="org-hoa-ap-number">0</span>&amp;<span class="org-hoa-ap-number">1</span>] 3
+<span class="org-hoa-header-uppercase">State:</span> 1 {<span class="org-hoa-acceptance-set">1</span>}
+[!<span class="org-hoa-ap-number">0</span>&amp;!<span class="org-hoa-ap-number">1</span>] 0
+[<span class="org-hoa-ap-number">0</span>&amp;!<span class="org-hoa-ap-number">1</span>] 1
+[!<span class="org-hoa-ap-number">0</span>&amp;<span class="org-hoa-ap-number">1</span>] 2
+[<span class="org-hoa-ap-number">0</span>&amp;<span class="org-hoa-ap-number">1</span>] 3
+<span class="org-hoa-header-uppercase">State:</span> 2 {<span class="org-hoa-acceptance-set">0 3</span>}
+[!<span class="org-hoa-ap-number">0</span>&amp;!<span class="org-hoa-ap-number">1</span>] 0
+[<span class="org-hoa-ap-number">0</span>&amp;!<span class="org-hoa-ap-number">1</span>] 1
+[!<span class="org-hoa-ap-number">0</span>&amp;<span class="org-hoa-ap-number">1</span>] 2
+[<span class="org-hoa-ap-number">0</span>&amp;<span class="org-hoa-ap-number">1</span>] 3
+<span class="org-hoa-header-uppercase">State:</span> 3 {<span class="org-hoa-acceptance-set">1 3</span>}
+[!<span class="org-hoa-ap-number">0</span>&amp;!<span class="org-hoa-ap-number">1</span>] 0
+[<span class="org-hoa-ap-number">0</span>&amp;!<span class="org-hoa-ap-number">1</span>] 1
+[!<span class="org-hoa-ap-number">0</span>&amp;<span class="org-hoa-ap-number">1</span>] 2
+[<span class="org-hoa-ap-number">0</span>&amp;<span class="org-hoa-ap-number">1</span>] 3
+<span class="org-hoa-keyword">--END--</span>
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-hoa.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+Since this file format is the only one able to represent the range of
+ω-automata supported by Spot, and it its default output format.
+</p>
+
+<p>
+However note that Spot does not support all automata that can be
+expressed using the HOA format.  The present support for the HOA
+format in Spot, is discussed on <a href="hoa.html">a separate page</a>, with a section
+dedicated to the <a href="hoa.html#restrictions">restrictions</a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3251e92" class="outline-2">
+<h2 id="ltl"><a id="org3251e92"></a>Linear-time Temporal Logic (LTL)</h2>
+<div class="outline-text-2" id="text-ltl">
+<p>
+The Linear-time Temporal Logic (LTL) extends propositional logic with
+operators that refer to the future.  Some definitions of LTL also
+include past operators, but Spot only supports future operators.  The
+view of the time is discrete: a scenario can be seen as a succession
+of steps in which each <a href="#ap">atomic proposition</a> can have a different value.
+</p>
+
+<p>
+The following basic operators are supported:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><div><span>LTL formula</span></div></th>
+<th scope="col" class="org-left"><div><span>meaning</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>f</code></td>
+<td class="org-left">the formula <code>f</code> is true immediately</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>X f</code></td>
+<td class="org-left"><code>f</code> will be true in the next step</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>F f</code></td>
+<td class="org-left"><code>f</code> will become true eventually (it could be true immediately, or on the future)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>G f</code></td>
+<td class="org-left"><code>f</code> is always true from now on</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>f U g</code></td>
+<td class="org-left"><code>f</code> has to be true until <code>g</code> becomes true (and <code>g</code> <i>will</i> become true)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>f W g</code></td>
+<td class="org-left"><code>f</code> has to be true until <code>g</code> becomes true (<code>f</code> should stay true if <code>g</code> never becomes true)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>f R g</code></td>
+<td class="org-left"><code>g</code> has to be true until <code>f&amp;g</code> becomes true (<code>g</code> should stay true if <code>f&amp;g</code> never becomes true)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>f M g</code></td>
+<td class="org-left"><code>g</code> has to be true until <code>f&amp;g</code> becomes true (and <code>f&amp;g</code> <i>will</i> become true)</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+For instance the LTL formula <code>G(request -&gt; F(response))</code> specifies that
+whenever <code>request</code> atomic proposition is true, there exists a later
+instant (possibly the same) where <code>response</code> is true.
+</p>
+
+<p>
+Spot supports <a href="ioltl.html">several syntaxes for writing LTL formulas</a>.  For example
+some people prefer to write <code>&lt;&gt;</code> and <code>[]</code> instead of <code>F</code> and <code>G</code>, <code>R</code>
+is written <code>V</code> in some tools, etc.
+</p>
+
+<p>
+For more discussion about the temporal operators and their semantics,
+see the <a href="https://spot.lrde.epita.fr/tl.pdf">tl.pdf</a> document.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfaed2e6" class="outline-2">
+<h2 id="psl"><a id="orgfaed2e6"></a>Property Specification Language (PSL)</h2>
+<div class="outline-text-2" id="text-psl">
+<p>
+Spot supports the linear fragment of PSL, this basically extends LTL
+with semi-extended regular expressions.  Those regular expressions can
+express finite languages and PSL introduces operators to use these
+finite languages as a prefix of a PSL formula.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><div><span>PSL formula</span></div></th>
+<th scope="col" class="org-left"><div><span>meaning</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>{e}&lt;&gt;-&gt;f</code></td>
+<td class="org-left"><code>f</code> should hold on the last instant of some one prefix that matches <code>e</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>{e}[]-&gt;f</code></td>
+<td class="org-left"><code>f</code> should hold on the last instant of all prefixes that match <code>e</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+In the above table <code>e</code> is a semi-extended expression, and <code>f</code> is a PSL (or LTL) formula.
+</p>
+
+<p>
+Semi-extended regular expressions can be formed using Boolean
+expressions over <a href="#ap">atomic propositions</a> and the following
+operators:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><div><span>SERE</span></div></th>
+<th scope="col" class="org-left"><div><span>meaning</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>e1;e2</code></td>
+<td class="org-left"><code>e1</code> followed by <code>e2</code> (concatenation)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>e1:e2</code></td>
+<td class="org-left"><code>e1</code> fused with <code>e2</code>: <code>e2</code> has to start matching on the last letter matching <code>e1</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>e1</code> &vert;&vert; <code>e2</code></td>
+<td class="org-left"><code>e1</code> or <code>e2</code> have to match (union)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>e1 &amp;&amp; e2</code></td>
+<td class="org-left"><code>e1</code> and <code>e2</code> have to match (intersection)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>e1 &amp; e2</code></td>
+<td class="org-left"><code>e2</code> should match a prefix of what <code>e1</code> matches, or vice-versa</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>e[*]</code></td>
+<td class="org-left"><code>e</code> should be matched a finite number of times (Kleene star)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>e[*2..3]</code></td>
+<td class="org-left">same as <code>(e;e)</code> &vert;&vert; <code>(e;e;e)</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>e[+]</code></td>
+<td class="org-left"><code>e</code> should be matched a finite number of times, and at least once</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>
+For example the formula <code>{(1;1)[*]}[]-&gt;a</code> can be interpreted as follows:
+</p>
+<ul class="org-ul">
+<li>the SERE <code>(1;1)[*]</code> matches all prefixes of even length (here <code>1</code>
+stands for the true formula, so it matches anything)</li>
+<li>the part <code>...[]-&gt;a</code> requests that <code>a</code> should be true at the end of each
+matched prefix.</li>
+</ul>
+
+<p>
+Therefore this formula ensures that <code>a</code> is true at every even instant
+(if we consider the first instant to be odd).  This is the canonical
+example of formula that can be expressed in PSL but not in LTL.
+</p>
+
+<p>
+A few other operators and syntactic sugar are supported.  For more
+discussion about the temporal operators and their semantics, see the
+<a href="https://spot.lrde.epita.fr/tl.pdf">tl.pdf</a> document.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge56e9b9" class="outline-2">
+<h2 id="ltl2tgba"><a id="orge56e9b9"></a>Translation of temporal logic to automata</h2>
+<div class="outline-text-2" id="text-ltl2tgba">
+<p>
+Spot can translate any LTL or PSL formula into Büchi automata, or generalized Büchi automata.
+</p>
+
+<p>
+Internally the translator produces <a href="#trans-acc">Transition-based Generalized Büchi Automata (TGBA)</a> but that
+automaton can then be simplified using several algorithms depending on what options were given.
+</p>
+
+<p>
+Here is for instance a translation of <code>{(1;1)[*]}[]-&gt;a</code> discussed <a href="#psl">above</a>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org1dc4e51">ltl2tgba <span class="org-string">'{(1;1)[*]}[]-&gt;a'</span> -d
+</pre>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="concept-ltl2tgba.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+<a href="tut10.html">Another page shows how to translate an LTL formula into a never claim</a>
+from the command-line, Python, or C++.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5709150" class="outline-2">
+<h2 id="architecture"><a id="org5709150"></a>Architecture of Spot</h2>
+<div class="outline-text-2" id="text-architecture">
+
+<div class="figure">
+<p><object type="image/svg+xml" data="arch.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+<p>
+The Spot project can be broken down into several parts, as shown
+above.  Orange boxes are C/C++ libraries.  Red boxes are command-line
+programs.  Blue boxes are Python-related.  The gray outline shows the
+components that are distributed and installed by the Spot tarball.
+Green boxes represent online services that build upon the Python
+layers.
+</p>
+
+<ul class="org-ul">
+<li><code>libbddx</code> is a customized version of <a href="https://sourceforge.net/projects/buddy/">the BuDDy library</a>, for
+manipulating <a href="#bdd">BDDs</a>.</li>
+<li><code>libspot</code> is the main library, containing a C++14 implementation of all the
+data structures and algorithms.  This depends on <code>libddx</code>.</li>
+<li><code>libspotgen</code> is an auxiliary library that contains functions to
+generate families of automata, useful for benchmarking and testing</li>
+<li>all the supplied <a href="tools.html">command-line tools</a> distributed with Spot are
+built upon the <code>libspot</code> or <code>libspotgen</code> libraries</li>
+<li><code>libspotltsmin</code> is a library that helps interfacing Spot with
+dynamic libraries that <a href="http://fmt.cs.utwente.nl/tools/ltsmin/">LTSmin</a> uses to represent state-spaces.  It
+currently supports libraries generated from Promela models using
+SpinS or a patched version of DiVinE, but you have to install
+those third-party tools first.  See <a href="https://gitlab.lrde.epita.fr/spot/spot/blob/next/tests/ltsmin/README"><code>tests/ltsmin/README</code></a>
+for details.</li>
+<li>In addition to the C++14 API, we also provide Python bindings for
+<code>libspotgen</code>, <code>libspotltsmin</code>, <code>libbddx</code>, and most of <code>libspot</code>.
+These are available by importing <code>spot.gen</code>, <code>spot.ltsmin</code>, <code>bdd</code>,
+and <code>spot</code>.  Those Python bindings also includes some additional
+code to make them more usable in interactive environments such as
+the <a href="http://jupyter.org">IPython/Jupyter</a> notebook.</li>
+<li>While the online services described pictured in green are not
+distributed with the rest of Spot, their source-code is publicly
+available (in case you want to contribute or run a local version).
+The <a href="https://spot-sandbox.lrde.epita.fr/"><code>spot-sandbox</code></a> website runs from a Docker container whose
+configuration can be found in <a href="https://gitlab.lrde.epita.fr/spot/sandbox/tree/master=">this repository</a>.  The client and
+server parts of the <a href="https://spot.lrde.epita.fr/app/">online LTL translator</a> can be found in <a href="https://gitlab.lrde.epita.fr/spot/spot-web-app/">this
+repository</a>.</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgab69df5" class="outline-2">
+<h2 id="property-flags"><a id="orgab69df5"></a>Automaton property flags</h2>
+<div class="outline-text-2" id="text-property-flags">
+<p>
+The automaton class used by Spot to represent ω-Automata is called
+<code>twa</code> (because we use TωA as a short for Transition-based
+ω-Automaton).  As its names implies, the <code>twa</code> class supports only
+transition-based acceptance, but as <a href="#trans-acc">discussed previously</a> we can
+emulate state-based acceptance using transition-based acceptance by
+ensuring that all transitions leaving a state have the same acceptance
+set membership.  In addition, there is a bit in the <code>twa</code> class that
+we can set to indicate that the automaton is meant to be considered
+with state-based acceptance: this allows some algorithms to make
+better choices.
+</p>
+
+<p>
+There are actually several property flags that are stored into each
+automaton, and that can be queried or set by algorithms:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><div><span>flag name</span></div></th>
+<th scope="col" class="org-left"><div><span>meaning when <code>true</code></span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>state_acc</code></td>
+<td class="org-left">automaton should be considered as having state-based acceptance</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>inherently_weak</code></td>
+<td class="org-left">accepting and rejecting cycles cannot be mixed in the same SCC</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>weak</code></td>
+<td class="org-left">transitions of an SCC all belong to the same acceptance sets</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>very_weak</code></td>
+<td class="org-left">weak automaton where all SCCs have size 1</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>terminal</code></td>
+<td class="org-left">automaton is weak, accepting SCCs are complete, accepting edges may not go to rejecting SCCs</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>complete</code></td>
+<td class="org-left">for any letter ℓ, each state has is at least one outgoing transition compatible with ℓ</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>deterministic</code></td>
+<td class="org-left">there is at most one run <b>recognizing</b> a word, but not necessarily accepting it</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>semi_deterministic</code></td>
+<td class="org-left">any nondeterminism occurs before entering an accepting SCC</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>unambiguous</code></td>
+<td class="org-left">there is at most one run <b>accepting</b> a word (but it might be recognized several time)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>stutter_invariant</code></td>
+<td class="org-left">the property recognized by the automaton is <a href="https://www.lrde.epita.fr/~adl/dl/adl/michaud.15.spin.pdf">stutter-invariant</a></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+For each flag <code>flagname</code>, the <code>twa</code> class has a method
+<code>prop_flagname()</code> that returns the value of the flag as an instance of
+<code>trival</code>, and there is a method <code>prop_flagname(trival newval)</code> that
+sets that value.
+</p>
+
+<p>
+<code>trival</code> instances can take three values: <code>false</code>, <code>true</code>, or
+<code>trival::maybe</code>.  The idea is that algorithms should update flags as a
+side effect of their execution, but only if that does not induce some
+extra cost.  For instance when translating an LTL formula into an
+automaton, we can set the <code>stutter_invariant</code> properties to <code>true</code> if
+the input formula does not use the <code>X</code> operator, but we would leave
+the flag to <code>trival::maybe</code> if <code>X</code> is used: the presence of such an
+operator <code>X</code> does not prevent the formula from being
+stutter-invariant, but it would require additional work to check.
+</p>
+
+<p>
+As another example, if you write an algorithm that must check whether
+an automaton is universal, do not call the <code>twa::prop_universal()</code>
+method, because that might return <code>trival::maybe</code>.  Instead, call
+<code>spot::is_universal(...)</code>: that will respond in constant time if the
+<code>universal</code> property flag was either <code>true</code> or <code>false</code>, otherwise it
+will actually explore the automaton to decide its determinism.  Note
+that there is also a <code>spot::is_deterministic(...)</code> function, which is
+equivalent to testing that the automaton is both universal and
+existential.
+</p>
+
+<p>
+These automata properties are encoded into the <a href="hoa.html#property-bits">HOA format</a>, so they can
+be preserved when building a processing pipeline using the shell.
+However the HOA format has support for more properties that do not
+correspond to any <code>twa</code> flag.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgae6ef38" class="outline-2">
+<h2 id="named-properties"><a id="orgae6ef38"></a>Named properties for automata</h2>
+<div class="outline-text-2" id="text-named-properties">
+<p>
+In addition to <a href="#property-flags">property flags</a>, automata in Spot can be tied to an
+arbitrary number of objects via a system of named properties that is
+implemented mostly as an <code>std::map</code> between <code>std::string</code> and <code>void*</code>.
+</p>
+
+<p>
+A property can be used to store additional information about the
+automaton, that is not usually available via the automaton interface.
+The property can be set via the <code>twa::set_named_prop(key, value)</code>
+method, and queried with the <code>twa::get_named_prop&lt;type&gt;(key)</code> template
+method.
+</p>
+
+<p>
+Here is a list of named properties currently used inside Spot:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><div><span>key name</span></div></th>
+<th scope="col" class="org-left"><div><span>(pointed) value type</span></div></th>
+<th scope="col" class="org-left"><div><span>description</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>accepted-word</code></td>
+<td class="org-left"><code>std::string</code></td>
+<td class="org-left">a word accepted by the automaton</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>automaton-name</code></td>
+<td class="org-left"><code>std::string</code></td>
+<td class="org-left">name for the automaton, for instance to display in the HOA format</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>degen-levels</code></td>
+<td class="org-left"><code>std::vector&lt;unsigned&gt;</code></td>
+<td class="org-left">level associated to each state by the degeneralization algorithm</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>highlight-edges</code></td>
+<td class="org-left"><code>std::map&lt;unsigned, unsigned&gt;</code></td>
+<td class="org-left">map of (edge number, color number) for highlighting the output</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>highlight-states</code></td>
+<td class="org-left"><code>std::map&lt;unsigned, unsigned&gt;</code></td>
+<td class="org-left">map of (state number, color number) for highlighting the output</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>incomplete-states</code></td>
+<td class="org-left"><code>std::set&lt;unsigned&gt;</code></td>
+<td class="org-left">set of states numbers that should be displayed as incomplete  (used internally by <code>print_dot()</code> when truncating large automata)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>original-clauses</code></td>
+<td class="org-left"><code>std::vector&lt;unsigned&gt;</code></td>
+<td class="org-left">original DNF clause associated to each state in automata created by <code>dnf_to_streett()</code></td>
+</tr>
+
+<tr>
+<td class="org-left"><code>original-states</code></td>
+<td class="org-left"><code>std::vector&lt;unsigned&gt;</code></td>
+<td class="org-left">original state number before transformation (used by some algorithms like <code>degeneralize()</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>product-states</code></td>
+<td class="org-left"><code>const spot::product_states</code></td>
+<td class="org-left">vector of pairs of states giving the left and right operands of each state in a product automaton</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>rejected-word</code></td>
+<td class="org-left"><code>std::string</code></td>
+<td class="org-left">a word rejected by the automaton</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>simulated-states</code></td>
+<td class="org-left"><code>std::vector&lt;unsigned&gt;</code></td>
+<td class="org-left">map states of the original automaton to states if the current automaton in the result of simulation-based reductions</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>state-names</code></td>
+<td class="org-left"><code>std::vector&lt;std::string&gt;</code></td>
+<td class="org-left">vector naming each state of the automaton, for display purpose</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>synthesis-outputs</code></td>
+<td class="org-left"><code>bdd</code></td>
+<td class="org-left">conjunction of controllable atomic propositions (used by <code>print_aiger()</code> to determine which propositions should be encoded as outputs of the circuit)</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Objects referenced via named properties are automatically destroyed
+when the automaton is destroyed, but this can be altered by passing a
+custom destructor as a third parameter to <code>twa::set_named_prop()</code>.
+</p>
+
+<p>
+These properties should be considered short-lived.  They are usually
+not propagated to new automata that are created via transformation,
+unless the algorithm has been explicitly implemented to preserve that
+property.  Algorithms that update the automaton in place should
+probably call <code>release_named_properties()</code> to ensure they do not
+inadvertently keep a stale property.
+</p>
+
+<p>
+Most of the above properties are related to the graphical display of
+automata, or to their output in the <a href="hoa.html#named-properties">HOA format</a>.  So they are usually
+set right before the automaton is output.  The notable exception is
+<code>product-states</code>, which is a property present in automata returned by
+<code>spot::product()</code> function in case it is necessary to know the origins
+of each state.
+</p>
+</div>
+</div>
+</div>
+</body>
+</html>

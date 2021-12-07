@@ -1,0 +1,167 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014-2020 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs || exit 1
+
+set -e
+
+ltl2tgba '!FG(a | Xa | G!a)' -H | autfilt -H --destut > pos.hoa
+ltl2tgba 'FG(a | Xa | G!a)' -H | autfilt -H --destut > neg.hoa
+autfilt pos.hoa --product neg.hoa -H > prod.hoa
+autfilt --is-empty prod.hoa -q && exit 1
+autfilt --states=5 prod.hoa -q
+
+ltl2tgba '!FG(a | Xa | G!a)' -H | autfilt -H --instut > pos.hoa
+ltl2tgba 'FG(a | Xa | G!a)' -H | autfilt -H --instut > neg.hoa
+autfilt pos.hoa --product neg.hoa -H > prod.hoa
+autfilt --is-empty prod.hoa -q && exit 1
+autfilt --states=6 prod.hoa -q
+
+
+# Check for issue #7.
+#
+# We just run those without checking the output, it is enough to
+# trigger assertions in the HOA output routines.
+ltl2tgba -H 'X(a U b)' > det.hoa
+run 0 autfilt --destut det.hoa -H
+run 0 autfilt --instut=1 det.hoa -H
+run 0 autfilt --instut=2 det.hoa -H
+
+ltl2tgba -H 'a & Fb' | autfilt --destut -H > output
+
+cat >expected <<EOF
+HOA: v1
+name: "a & Fb"
+States: 3
+Start: 2
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+--BODY--
+State: 0
+[t] 0 {0}
+State: 1
+[1] 0 {0}
+[!1] 1
+State: 2
+[0&1] 0 {0}
+[0&!1] 1
+--END--
+EOF
+
+diff output expected
+
+ltl2tgba -H 'F(a & X(!a & b))' > input
+grep ' stutter-invariant' input && exit 1
+run 0 ltl2tgba --check=stutter 'F(a & X(!a & b))' > input.2
+grep ' stutter-invariant' input.2
+run 0 autfilt --check=stutter input > input.2
+grep ' stutter-invariant' input.2
+
+ltl2tgba 'F(a & X(a & b))' > input
+grep stutter-invariant input && exit 1
+# HOA v1.1 calls it "!stutter-invariant"
+run 0 ltl2tgba -H1.1 --check=stutter 'F(a & X(a & b))' > input.2
+grep '!stutter-invariant' input.2
+# HOA v1 has no name, so we use "stutter-sensitive"
+run 0 autfilt --check=stutter input > input.2
+test `autfilt -c -v --is-stutter-invariant input` = 1
+grep stutter-sensitive input.2
+
+ltl2tgba 'F(a & X(!a & Gb))' > input
+grep stutter-invariant input && exit 1
+grep deterministic input && exit 1
+# This will involve a complementation
+run 0 autfilt --check=stutter input > input.2
+test `autfilt -c --is-stutter-invariant input` = 1
+grep ' stutter-invariant' input.2
+
+ltl2tgba 'F(a & X(a & Gb))' > input
+grep stutter input && exit 1
+grep deterministic input && exit 1
+# This will involve a complementation
+run 0 autfilt -H1.1 --check=stutter input > input.2
+test `autfilt -c --is-stutter-invariant input` = 0
+grep '!deterministic' input.2
+grep '!stutter-invariant' input.2
+
+# From an email by František Blahoudek and Mikuláš Klokočka
+ltl2tgba 'X(a & GF(a | Gb))' > input
+grep stutter input && exit 1
+grep deterministic input && exit 1
+# This will involve a complementation
+run 0 autfilt -H1.1 --check=stutter input > input.2
+test `autfilt -c --is-stutter-invariant input` = 0
+grep '!deterministic' input.2
+grep '!stutter-invariant' input.2
+
+
+# From an email by Anton Pirogov
+cat >pirogov <<EOF
+HOA: v1
+name: "Evil(1)"
+States: 2
+Start: 0
+AP: 1 "p"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[t] 0
+[0] 1
+State: 1 {0}
+[0] 0
+--END--
+EOF
+
+for i in 1 2 3 4 5 6 7 8; do
+    test 0 = `SPOT_STUTTER_CHECK=$i \
+              autfilt pirogov --is-stutter-invariant -c` || exit 1
+done
+
+
+ltl2tgba Xa --check=stutter-sensitive-example > out
+grep ' stutter-sensitive' out
+grep '^spot-accepted-word: "' out
+grep '^spot-rejected-word: "' out
+
+ltl2tgba 'X"a b"' --check=stutter-sensitive-example -H1.1 > out
+grep ' !stutter-invariant' out
+grep '^spot\.accepted-word: ".*\\\"' out
+grep '^spot\.rejected-word: ".*\\\"' out
+# Make sur we can parse it ok.
+autfilt -q out
+
+ltl2tgba Ga --check=stutter-sensitive-example > out
+grep ' stutter-invariant' out
+grep -q '^spot.accepted-word: "' out && exit 1
+grep -q '^spot.rejected-word: "' out && exit 1
+
+
+ltl2tgba 'G({x} |-> ({x[+]} <>-> ({Y1[+]} <>=> Y2)))' \
+         --check=stutter-sensitive-example > out
+grep ' stutter-sensitive' out
+grep -F 'spot-accepted-word: "cycle{!Y1 & !Y2 & x; Y1 & Y2 & x;' out
+grep -F 'spot-rejected-word: "cycle{!Y1 & !Y2 & x; Y1 & Y2 & x}' out
+
+
+:

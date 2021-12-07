@@ -1,0 +1,183 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015-2020 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+run 0 ltldo -f a -f 'a&b' -f 'a -> b' -t 'echo %f,%s,%[ei]w' >output
+cat >expected <<EOF
+a,a,a=1
+(a) & (b),(a) && (b),(a=1) * (b=1)
+(a) -> (b),(a) -> (b),(a=0) + (b=1)
+EOF
+diff output expected
+
+# Renaming
+run 0 ltldo -f a -f 'a&_b' -t 'echo %f,%s' >output
+cat >expected <<EOF
+a,a
+(p0) & (p1),(p0) && (p1)
+EOF
+diff output expected
+
+
+# Test timeouts.  Each of these runs should take 2*2 seconds.
+genltl --or-g=1..2 |
+run 0 ltldo -t 'sleep 10; echo %f' -T1 -t 'sleep 10; echo %f' \
+	     >output 2>stderr
+test -z "`cat output`"
+test 4 = `grep -c ltldo: stderr`
+grep -q 'failed to' stderr && exit 1
+
+genltl --or-g=1..2 |
+run 0 ltldo -t 'sleep 10; echo %f' -T1 -t 'sleep 10; echo %f' \
+	     --fail-on-timeout --error=warn >output 2>stderr
+test -z "`cat output`"
+test 8 = `grep -c ltldo: stderr`
+test 4 = `grep -c ltldo:-: stderr`
+grep -q 'failed to' stderr
+
+genltl --or-g=1..2 |
+run 2 ltldo -t 'sleep 10; echo %f' -T1 -t 'sleep 10; echo %f' \
+	     --fail-on-timeout >output 2>stderr
+test -z "`cat output`"
+test 2 = `grep -c ltldo: stderr`
+grep -q 'failed to' stderr
+
+test "`echo 1,a,3,4 | ltldo -F-/2 ltl2tgba --stats='%<,%s,%>'`" = '1,2,3,4'
+
+genltl --and-gf=1..3 |
+run 0 ltldo "{tgba}ltl2tgba %f -H >%H" "{ba}ltl2tgba >%N %f -s" \
+	     --stats="%T,%#,%f,%s,%t,%e" >output
+cat output
+cat >expected <<EOF
+tgba,1,GFp1,1,2,2
+ba,1,GFp1,2,4,4
+tgba,2,GFp1 & GFp2,1,4,4
+ba,2,GFp1 & GFp2,3,12,8
+tgba,3,GFp1 & GFp2 & GFp3,1,8,8
+ba,3,GFp1 & GFp2 & GFp3,4,32,13
+EOF
+diff output expected
+
+# Renaming
+run 0 ltldo "ltl2tgba -H %s>%H" -f GF_foo_ -H >output
+cat output
+# The HOA output uses _foo_ as atomic proposition, but the name shows
+# that GFp0 was actually given to ltl2tgba.
+cat >expected <<EOF
+HOA: v1
+name: "GFp0"
+States: 1
+Start: 0
+AP: 1 "_foo_"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic stutter-invariant
+--BODY--
+State: 0
+[!0] 0
+[0] 0 {0}
+--END--
+EOF
+diff output expected
+
+# But we can force the name in the output:
+run 0 ltldo "ltl2tgba -H %s>%H" -f GF_foo_ -H --name=%f >output
+cat output
+cat >expected <<EOF
+HOA: v1
+name: "GF_foo_"
+States: 1
+Start: 0
+AP: 1 "_foo_"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic stutter-invariant
+--BODY--
+State: 0
+[!0] 0
+[0] 0 {0}
+--END--
+EOF
+diff output expected
+
+# Not trusting properties
+run 0 ltldo "ltl2tgba -H %s>%H" -f GF_foo_ -H --trust-hoa=no >output
+cat output
+cat >expected <<EOF
+HOA: v1
+name: "GFp0"
+States: 1
+Start: 0
+AP: 1 "_foo_"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0] 0
+[0] 0 {0}
+--END--
+EOF
+diff output expected
+
+ltldo ': %s; true>%O' -f GFa 2>stderr && exit 1
+test $? = 2
+grep ':.*empty input' stderr
+grep 'ltldo: failed to run' stderr
+
+ltldo ': %s; true>%O' --errors=ignore -f GFa 2>stderr
+test $? = 0
+test -z "`cat stderr`"
+
+ltldo ': %s; true>%O' --errors=warn -f GFa 2>stderr
+test $? = 0
+grep ':.*empty input' stderr
+
+
+ltldo '{name} foo/bar/ltl2baextended' -f GFa 2>stderr && exit 1
+grep 'ltldo:.*foo/bar/ltl2baextended' stderr
+
+
+test 2 = `genltl --and-gf=1..4 | ltldo ltl2tgba -n2 | autfilt -c`
+test 3 = `genltl --and-gf=1..2 | ltldo ltl2tgba 'ltl2tgba -s' -n3 | autfilt -c`
+
+ltldo ltl2tgba -n2a 2>err && exit 1
+grep "ltldo: failed to parse '2a'.*-n" err
+
+genltl --rv-counter=9 | ltldo ltl2tgba --stats='
+print("%[up]R + %[uc]R + %[sp]R + %[sc]R - %R\n");
+die if abs(%[up]R + %[uc]R + %[sp]R + %[sc]R - %R) > 0.02;' > code.pl
+$PERL code.pl
+
+# ltldo should not leave temporary files behind itself on errors
+ltldo -f a 'ltl2dstar --ltl2nba=spin:ltl2tgba@-DS' && exit 2
+for i in lcr-*; do
+    case $i in
+        'lcr-*');;
+        *)
+           echo $i should not be here;
+           exit 2;;
+    esac
+done

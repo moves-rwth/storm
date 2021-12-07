@@ -1,0 +1,72 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012, 2013, 2015, 2016, 2019 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Make sure
+
+. ./defs || exit 1
+set -e
+
+cat >input <<EOF
+□◯a
+□◯"αβγ"
+□)◯a
+"αβγ"X
+EOF
+
+run 1 ../ltl2text input >output
+
+cat >expected <<EOF
+G(@5 #0 [X(@4 #0 [ap(@3 #0 "a")])])
+G(@8 #0 [X(@7 #0 [ap(@6 #0 "αβγ")])])
+>>> □)◯a
+     ^
+syntax error, unexpected closing parenthesis
+
+>>> □)◯a
+    ^
+missing right operand for "always operator"
+
+>>> □)◯a
+     ^^^
+ignoring trailing garbage
+
+ff(@0 #0)
+>>> "αβγ"X
+         ^
+syntax error, unexpected next operator
+
+>>> "αβγ"X
+         ^
+ignoring trailing garbage
+
+ap(@9 #0 "αβγ")
+EOF
+
+diff expected output
+
+randltl --psl -8 --seed 0 --tree-size 16 a b c -n 100 > formulae
+../reduc -f -h 0 formulae
+
+echo 'Ⓧa' >in
+ltlfilt -8 -f 'X[!]a' >out
+diff in out
+ltlfilt -8 -F in >out
+diff in out

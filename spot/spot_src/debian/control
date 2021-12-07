@@ -1,0 +1,85 @@
+Source: spot
+Section: science
+Priority: optional
+Maintainer: Alexandre Duret-Lutz <adl@lrde.epita.fr>
+Build-Depends: debhelper (>= 12), python3-all-dev, ipython3-notebook | python3-ipykernel, ipython3-notebook | python3-nbconvert, libltdl-dev, dh-python
+Standards-Version: 4.5.1
+Homepage: http://spot.lrde.epita.fr/
+
+Package: spot
+Architecture: any
+Section: science
+Recommends: graphviz
+Suggests: libspot-dev, spot-doc, python3-spot
+Depends: ${shlibs:Depends}, ${misc:Depends}, libspot0 (>= ${source:Version}), libspot0 (<< ${source:Version}.1~), libspotgen0 (>= ${source:Version}), libspotgen0 (<< ${source:Version}.1~)
+Description: model checking and omega-automata manipulation library
+ Tools to manipulate omega-automata as well as
+ linear-time temporal logic (LTL & PSL).
+
+Package: libspot0
+Architecture: any
+Section: science
+Recommends: graphviz
+Suggests: libspot-dev, spot-doc, python3-spot
+Depends: ${shlibs:Depends}, ${misc:Depends}, libbddx0 (>= ${source:Version}), libbddx0 (<< ${source:Version}.1~)
+Description: model checking and omega-automata manipulation library
+ Library to manipulate omega-automata as well as
+ linear-time temporal logic (LTL & PSL).
+
+Package: libspot-dev
+Architecture: any
+Section: libdevel
+Suggests: spot-doc
+Depends: libspot0 (>= ${source:Version}), libspot0 (<< ${source:Version}.1~), libspotltsmin0 (>= ${source:Version}), libspotltsmin0 (<< ${source:Version}.1~), ${misc:Depends}, libbddx-dev
+Description: headers for the Spot model checking library
+ C++ headers for the Spot library.
+
+Package: libbddx0
+Architecture: any
+Section: science
+Recommends: graphviz
+Suggests: libbddx-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: alternate version of BuDDy
+ An alternate version of BuDDy with slightly different
+ data structures and additional functions.
+
+Package: libbddx-dev
+Architecture: any
+Section: libdevel
+Depends: libbddx0 (>= ${source:Version}), libbddx0 (<< ${source:Version}.1~), ${misc:Depends}
+Description: headers for the BuDDy library
+ C++ headers for the Buddy library.
+
+Package: libspotltsmin0
+Architecture: any
+Section: science
+Suggests: libspot-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, libspot0 (>= ${source:Version}), libspot0 (<< ${source:Version}.1~)
+Description: interface between Spot and LTSmin models
+ Library for loading LTSmin models as Spot automata.
+
+Package: libspotgen0
+Architecture: any
+Section: science
+Suggests: libspot-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, libspot0 (>= ${source:Version}), libspot0 (<< ${source:Version}.1~)
+Description: functions for generating formulas and automata in Spot
+ Library for generating families of formulas and automata
+ taken from the literature.
+
+Package: spot-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}, libjs-mathjax, libjs-jquery, libjs-requirejs
+Description: documentation for Spot
+ HTML and PDF documentation for Spot.
+
+Package: python3-spot
+Architecture: any
+Section: python
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}, libspot0 (>= ${source:Version}), libspot0 (<< ${source:Version}.1~), libspotltsmin0 (>= ${source:Version}), libspotltsmin0 (<< ${source:Version}.1~)
+Suggests: ipython3
+Description: python3 binding for spot
+ Spot allows manipulation of omega-automata as well
+ as linear-time temporal logic (LTL & PSL).

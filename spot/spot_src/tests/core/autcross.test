@@ -1,0 +1,48 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017, 2018 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# Skip this test if ltl2dstar is not installed.
+(ltl2dstar --version) || exit 77
+
+# The {autfilt {complement}} name makes sure we can nest braces.
+randaut -n10 2 |
+    autcross 'ltl2dstar --complement-input=yes' \
+             '{autfilt {complement}} autfilt --complement' \
+  --csv=out.csv 2>stderr
+
+# 5 lines per input automaton, and 1 "No problem detected" line.
+test 51 = `wc -l < stderr`
+grep -q 'sanity check' stderr
+
+# --no-check still allows to build a CSV.  Exercise %S.
+randaut -n10 2 |
+    autcross 'ltl2dstar --complement-input=yes' \
+             '{autfilt {complement}} autfilt --complement %S>%O' \
+  --csv=out2.csv --no-check 2>stderr
+test 51 = `wc -l < stderr`
+grep -q 'sanity check' stderr && exit 1
+
+for f in out.csv out2.csv; do
+  sed 's/,[0-9]*\.[0-9]*,/,TIME,/' $f > _$f
+done
+diff _out.csv _out2.csv

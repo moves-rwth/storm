@@ -1,0 +1,383 @@
+2014-01-06  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Enable C++11 and add a move constructor/assignment operator.
+
+	* configure.ac: Enable C++11 mode.
+	* src/bdd.hh: Use noexport, and add a move constructor and
+	move assignment operator.  The move version of these method
+	do not have to increment the reference counter, saving time.
+	On a small test run, this change saved 24% of the calls to
+	bdd_addref_nc().
+
+2013-06-23  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Restrict the number of exported symbols.
+
+	* src/bdd.hh, src/bvec.hh, src/fdd.hh: Declare all exported
+	symbols using BUDDY_API, a new macro that sets visibility=default.
+	* src/Makefile.am: Compile with -fvisibility=hidden by default,
+	and compile the C++ part with -fvisibility-inlines-hidden as well.
+
+2012-06-20  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Fix the recent Automake workaround for VPATH builds.
+
+	* examples/bddcalc/Makefile.am (ACLOCAL_AMFLAGS): Add -I. for
+	parse.c.  Reported by Pierre Parutto.
+
+2012-06-13  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Add a function bdd_implies to decide implications between BDDs.
+
+	* src/bdd.h (bdd_implies): New function.
+	* src/bddop.c (bdd_implies): Implement it.
+	(CACHEID_IMPLIES, IMPLIES_HASH): New helper macros.
+
+2012-06-08  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Reduce the size of bddNode to improve cache efficiency.
+
+	The unicity table was mixed with the bddNode table for now
+	apparent reason.  After the hash of some node is computed,
+	bddnodes[hash] did only contain some random node (not the one
+	looked for) whose .hash member would point to the actual node with
+	this hash.  So that's a two step lookup.  With this patch, we sill
+	have a two step lookup, but the .hash member have been moved to a
+	separate array.  A consequence is that bddNode is now 16-byte long
+	(instead of 20) so it will never span across two cache lines.
+
+	* src/kernel.hh (bddNode): Remove the hash member, and move it...
+	(bddhash): ... as this new separate table.
+	* src/kernel.cc, src/reorder.cc: Adjust all code.
+
+2012-06-19  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Adjust parser construction to support Automake 1.11 and 1.12.
+
+	* examples/bddcalc/parser.yxx: Rename as ...
+	* examples/bddcalc/parser.y: ... this.
+	* examples/bddcalc/parser_.cxx: New file that includes parser.c.
+	* examples/bddcalc/Makefile.am: Adjust.
+	* examples/bddcalc/parser.hxx: Delete this unused file.
+
+2011-11-12  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* src/kernel.h (PAIR, TRIPLE): Redefine these hash functions using
+	something that is simpler to compute.
+
+2011-08-28  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* examples/adder/adder.cxx (test_vector): Add parentheses to
+	remove a clang++-2.9 warning.
+
+2011-08-27  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* src/bddop.c (bdd_support): Speedup using a cache.
+
+2011-06-10  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* src/bddop.c (apply_rec, appquant_rec): Improve caching by
+	reordering operands of commutative operators.
+
+2011-06-09  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Remove some valgrind warnings about uninitialized memory when
+	BddCache_lookup return an entry from a Not operation.
+
+	* src/bddop.c (apply_rec, simplify_rec): When checking the cache
+	entry, always check entry->a and entry->c before checking
+	entry->b, because the "not_rec()" function does not initialize
+	the latter.
+
+2011-06-07  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* examples/cmilner/cmilner.c (A, transitions, initial_state)
+	(reachable_states, has_deadlocks): Declare as static functions,
+	to suppress a GCC warning.
+
+2011-04-30  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Inline the "is bdd constant" check performed in copies/constructors.
+
+	This avoids a library call to bdd_addref or bdd_delref.
+
+	* src/kernel.c (bdd_delref_nc, bdd_addref_nc): New function,
+	that work only on BDD that are not constant.
+	* src/cpext.cxx (bdd::operator=): Move...
+	* src/bdd.hh (bdd::operator=): ... here.
+	(bdd::bdd, bdd::~bdd, bdd::operator=): Inline the "is bdd constant"
+	check and call bdd_delref_nc/bdd_addref_nc only otherwise.
+
+2011-04-30  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Hint gcc about likely/unlikely branches.
+
+	* src/bdd.h (__likely, __unlikely): Introduce these two macros.
+	* src/bddop.c, src/kerner.c: Use them in many situations.
+
+2011-04-30  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* src/pairs.c (bdd_pairalloc): Fix prototype.
+
+2011-04-10  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Fix some warnings reported by gcc.
+
+	* buddy/src/kernel.c (errorstrings): Mark these as const.
+	* buddy/src/reorder.c (reorder_gbc): Fix prototype.
+	(siftTestCmp): Add missing const in cast.
+	(bdd_reorder_auto): Actually call bdd_reorder_ready().
+
+2011-04-10  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Add support for --enable-devel and similar macros.
+
+	* m4/debug.m4: Rename to ...
+	* m4/bdebug.m4: ... this.
+	* m4/debug.m4, m4/devel.m4, m4/gccoptim.m4, m4/ndebug.m4: New file.
+	* m4/gccwarns.m4: Fix usage of cache variable.  Fix shell
+	syntax.  Do not check for -Waggregate-return.  Update CFLAGS.
+	* configure.ac: Adjust to handle --enable-devel and similar macros
+	in the same way as Spot.
+
+2011-04-04  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Tag functions with attributes pure, const, or noreturn.
+
+	* src/bdd.h (__purefn, __constfn, __noreturnfn): Define
+	new macros.
+	* src/bdd.h, src/bddio.c, src/bvec.h, src/imatrix.h: Use them
+	to tag many functions as suggested by -Wsuggest-attribute=pure,
+	-Wsuggest-attribute=const, -Wsuggest-attribute=noreturn.
+
+2011-04-04  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Remove more sanity checks when NDEBUG is set.
+
+	* src/kernel.h (CHECKnc): New macro.
+	* src/kernel.c (bdd_var, bdd_low, bdd_high, bdd_ithvar,
+	bdd_nithvar): Use it.
+
+2011-04-03  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* src/kernel.h (CHECK, CHECKa, CHECKn): Disable if NDEBUG is set.
+
+2011-04-03  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Fix declaration of bddproduced.
+
+	* src/reorder.c (bddproduced): Declare a longint, to match
+	the definition in kerner.c.
+
+2011-04-03  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* buddy/src/kernel.c (bdd_addref, bdd_delref): Disable sanity
+	checks when compiled with NDEBUG.
+
+2011-02-27  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* examples/cmilner/Makefile.am (cmilner_LDADD): Link with -lm, to
+	find the pow() function.
+
+2010-11-07  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* src/bddop.c (bdd_setxor): New function.
+	* src/bdd.h (bdd_setxor): New function.
+
+2010-01-22  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Get rid of some "deprecated conversion from string constant to
+	`char*'" warnings.
+
+	* examples/bddcalc/parser_.h (yyerror): Declare the format
+	as a "const char*".
+	* examples/bddcalc/parser.yxx (yyerror): Likewise.
+
+2010-01-21  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* src/bddio.c (bdd_load): Check the return value of fscanf() to
+	kill a warning.
+
+2009-11-23  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Introduce bdd_satprefix, to speedup spot::minato().
+
+	* src/bdd.h (bdd_satprefix): New function.
+	* src/bddop.c (bdd_satprefix, bdd_sat_prefixrec): New functions.
+
+2009-10-01  Alexandre Duret-Lutz  <adl@lrde.epita.net>
+
+	Fix the previous patch in reorder.c: I missread the
+	function name in the Clang report...
+
+	* src/reorder.c (reorder_win3): Do initialize THIS.
+	(reorder_win3ite): Do not initialize THIS, its
+	initial value is never read.
+
+2009-09-07  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	Fix some issues reported by LLVM/Clang's static analyser.
+
+	* src/bddop.c (bdd_operator_varresize): Do not write into
+	quantvarset if it could not be allocated.
+	* src/reorder.c (reorder_win3): Do not initialize THIS, its
+	initial value is never read.
+
+2009-08-28  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* configure.ac: Switch from Libtool 1.5.x to Libtool 2.x, and
+	add an AC_CONFIG_MACRO_DIR call.
+
+2009-06-12  Guillaume Sadegh  <sadegh@lrde.epita.fr>
+
+	Adjust to support the Intel compiler (icc).
+
+	* configure.ac: Adjust to call...
+	* m4/intel.m4: ...this new macro.
+
+2008-03-13  Alexandre Duret-Lutz  <adl@lrde.epita.fr>
+
+	* src/bddtest.cxx: Include <cstdlib> to compile with g++-4.3.
+
+2007-09-19  Alexandre Duret-Lutz  <adl@gnu.org>
+
+	* src/kernel.c (bdd_default_gbchandler): Log garbage collection to
+	stderr, not stdout.  Reported by Kristin Yvonne Rozier
+	<kyrozier@cs.rice.edu>.
+
+2004-07-23  Alexandre Duret-Lutz  <adl@src.lip6.fr>
+
+	* configure.ac: Call AC_LIBTOOL_WIN32_DLL
+	* src/Makefile.am (libbdd_la_LDFLAGS): Add -no-undefined.
+
+2004-07-12  Alexandre Duret-Lutz  <adl@src.lip6.fr>
+
+	* examples/bddcalc/parser.yxx (actionSeq, varlist): Rewrite as
+	left-recursive rules.
+
+2004-06-28  Alexandre Duret-Lutz  <adl@src.lip6.fr>
+
+	Merge BuDDy 2.3.
+	* examples/calculator/, examples/internal/: Were renamed as ...
+	* examples/bddcalc/, examples/bddtest/: ... these.
+	* configure.ac: Adjust version and output Makefiles.
+	* examples/Makefile.am (SUBDIRS): Adjust subdir renaming.
+	* examples/cmilner/milner.c, examples/fdd/statespace.cxx: Were
+	renamed as ...
+	* examples/cmilner/cmilner.c, examples/fdd/fdd.cxx: ... these.
+	* examples/cmilner/Makefile.am, examples/fdd/Makefile.am: Adjust
+	accordingly.
+	* src/Makefile.am (AM_CPPFLAGS): Define VERSION.
+
+2004-01-07  Alexandre Duret-Lutz  <adl@src.lip6.fr>
+
+	* src/bddop.c (bdd_support): Free supportSet if it needs to be
+	reallocated.  This fixes a memory leak reported by
+	Souheib.Baarir@lip6.fr.
+
+2003-11-14  Alexandre Duret-Lutz  <adl@src.lip6.fr>
+
+	* examples/Makefile.def (AM_CPPFLAGS): Add -I$(srcdir).
+
+2003-08-06  Alexandre Duret-Lutz  <aduret@src.lip6.fr>
+
+	* doc/Makefile.am (EXTRA_DIST): Replace buddy.ps by buddy.pdf
+	(the latter has been rebuilt and on Jørn's request it explicitly
+	mentions the differences with the 2.2 manual).
+
+	* src/bddop.c (bdd_forallcomp, bdd_uniquecomp): Fix documentation.
+
+2003-07-17  Alexandre Duret-Lutz  <aduret@src.lip6.fr>
+
+	* src/bdd.h (bdd_existcomp, bdd_forallcomp,
+	bdd_uniquecomp, bdd_appexcomp, bdd_appallcomp,
+	bdd_appunicomp): Declare for C and C++.
+	* src/bddop.c (CACHEID_EXISTC, CACHEID_FORALLC,
+	CACHEID_UNIQUEC, CACHEID_APPEXC, CACHEID_APPALC,
+	CACHEID_APPUNCC): New macros.
+	(quatvarsetcomp): New variables.
+	(varset2vartable): Take a second argument to indicate negation,
+	set quatvarsetcomp.
+	(INVARSET): Honor quatvarsetcomp.
+	(quantify): New function, extracted from bdd_exist, bdd_forall,
+	and bdd_appunicomp.
+	(bdd_exist, bdd_forall, bdd_appunicomp): Use quantify.
+	(bdd_existcomp, bdd_forallcomp, bdd_appunicompcomp): New functions.
+	(appquantify): New function, extracted from bdd_appex, bdd_appall,
+	and bdd_appuni.
+	(bdd_appex, bdd_appall, bdd_appuni): Use appquantify.
+	(bdd_appexcomp, bdd_appallcomp, bdd_appunicomp): New functions.
+
+	* src/bddop.c (bdd_support): Return bddtrue when the support
+	is empty, because variable sets are conjunctions.
+
+2003-05-22  Alexandre Duret-Lutz  <aduret@src.lip6.fr>
+
+	* src/pairs.c (bdd_mergepairs): New function.
+	(bdd_copypair): Revert 2003-05-20's change.  Use bdd_addref
+	to copy result variables.
+	* src/bdd.h (BDD_INVMERGE): New error code.
+	(bdd_mergepairs): Declare.
+	* src/kernel.c (errorstrings): Add string of BDDINV.
+
+	* src/bddop.c (bdd_simplify): Typo in doc, s/domaine/domain/.
+
+2003-05-20  Alexandre Duret-Lutz  <aduret@src.lip6.fr>
+
+	* src/pairs.c (bdd_copypair): Use memcpy to copy from->result,
+	and correctly copy p->last from from->last.
+
+	* src/pairs.c (bdd_setbddpair): Fix prototype in documentation.
+
+2003-05-19  Alexandre Duret-Lutz  <aduret@src.lip6.fr>
+
+	* src/bdd.h: Declare bdd_copypair().
+	* src/pairs.c (bdd_copypair, bdd_pairalloc): New functions.
+	(bdd_newpair): Use bdd_pairalloc.
+
+2003-05-12  Alexandre Duret-Lutz  <aduret@src.lip6.fr>
+
+	* src/kernel.c (bdd_default_errhandler): Call abort(), not exit(1).
+
+2003-05-07  Alexandre Duret-Lutz  <aduret@src.lip6.fr>
+
+	* src/bddop.c (bdd_allsat): Fix description.
+
+2003-05-05  Alexandre Duret-Lutz  <aduret@src.lip6.fr>
+
+	* configure.ac: Output config.h.
+	* src/kernel.h: Include it.
+	* src/Makefile.am (AM_CPPFLAGS): New variable.
+
+	* configure.ac, Makefile.am, src/Makefile.am, doc/Makefile.am,
+	examples/Makefile.am, examples/Makefile.def,
+	examples/adder/Makefile.am, examples/calculator/Makefile.am,
+	examples/cmilner/Makefile.am, examples/fdd/Makefile.am,
+	examples/internal/Makefile.am, examples/milner/Makefile.am,
+	examples/money/Makefile.am, examples/queen/Makefile.am,
+	examples/solitar/Makefile.am, m4/debug.m4, m4/gccwarns.m4,
+	ChangeLog, INSTALL: New files.
+	* config, makefile, src/makefile, doc/makefile,
+	examples/adder/makefile, examples/calculator/makefile
+	examples/cmilner/makefile, examples/fdd/makefile,
+	examples/internal/makefile, examples/milner/makefile,
+	examples/money/makefile, examples/queen/makefile,
+	examples/solitare/makefile : Delete.
+	* examples/adder/adder.cxx, examples/fdd/statespace.cxx,
+	examples/internal/bddtest.cxx, examples/milner/milner.cxx,
+	examples/money/money.cxx, examples/queen/queen.cxx,
+	examples/solitare/solitare.cxx: Include iostream.
+	* examples/calculator/parser.y: Rename as ...
+	* examples/calculator/parser.yxx: ... this.  Remove spurious
+	comas in %token, %right, and %left arguments.
+	* examples/calculator/parser.h: Rename as ...
+	* examples/calculator/parser_.h: ... this, because the bison
+	rule with output parser.h (not tokens.h) from parser.y.
+	* examples/calculator/lexer.l: Rename as ...
+	* examples/calculator/lexer.lxx: ... this.  Include parser.h
+	instead of tokens.h.
+	* examples/calculator/slist.h
+	(voidSList::voisSListElem, SList::ite): Fix friend usage.
+	* src/kernel.h (DEFAULT_CLOCK): Default to 60 if not already
+	defined.
+	* README: Update build instruction, and file listing.

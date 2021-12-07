@@ -1,0 +1,139 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010, 2011, 2014, 2015, 2017 Laboratoire de Recherche
+# et Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set +x
+set -e
+
+cat >formulas.txt <<EOF
+SA G(!p)
+SA Fr->(!p U r)
+SA G(q->G(!p))
+SA G((q&!r&Fr)->(!p U r))
+SA G(q&!r->((!p U r)|G!p ))
+SA (!r U (p&!r))|(G!r)
+SA G(q&!r->((!r U (p&!r))|G!r))
+SA (!p U ((p U ((!p U ((p U G!p)|Gp))|G!p))|Gp))|G!p
+SA Fr->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|(!p U r)))))))))
+SA Fq->(!q U (q&((!p U ((p U ((!p U ((p U G!p)|Gp))|G!p))|Gp))|G!p)))
+SA G((q&Fr)->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|(!p U r))))))))))
+SA G(q->((!p&!r)U(r|((p&!r)U(r|((!p&!r)U(r|((p&!r)U(r|((!p U r)|G!p)|Gp)))))))))
+SA G(p)
+SA Fr->(p U r)
+SA G(q->G(p))
+SA G((p&!r&Fr)->(p U r))
+SA G(q&!r->((p U r)|Gp))
+SA Fr->(!p U (s|r))
+SA G((q&!r&Fr)->(!p U (s|r)))
+SA G(q&!r->((!p U (s|r))|G!p))
+SA Fr->(p->(!r U (s&!r))) U r
+SA G((q&!r&Fr)->(p->(!r U (s&!r))) U r)
+SA Fp->(!p U (s&!p&X(!p U t)))
+SA Fr->(!p U (r|(s&!p&X(!p U t))))
+SA (G!q)|(!q U (q&Fp->(!p U (s&!p&X(!p U t)))))
+SA G((q&Fr)->(!p U (r|(s&!p&X(!p U t)))))
+SA G(q->(Fp->(!p U (r|(s&!p&X(!p U t))))))
+SA (F(s&XFt))->((!s) U p)
+SA Fr->((!(s&(!r)&X(!r U (t&!r))))U(r|p))
+SA (G!q)|((!q)U(q&((F(s&XFt))->((!s) U p))))
+SA G((q&Fr)->((!(s&(!r)&X(!r U (t&!r))))U(r|p)))
+SA Fr->(p->(!r U (s&!r&X(!r U t)))) U r
+SA G((q&Fr)->(p->(!r U (s&!r&X(!r U t)))) U r)
+SA Fr->(p->(!r U (s&!r&!z&X((!r&!z) U t)))) U r
+SA G((q&Fr)->(p->(!r U (s&!r&!z&X((!r&!z) U t)))) U r)
+GU Fp
+OB G(!q)|F(q&Fp)
+OB (!p U s)|Gp
+SA G(q->(!(s&(!r)&X(!r U (t&!r)))U(r|p)|G(!(s&XFt))))
+OB Fr->(s&X(!r U t)->X(!r U (t&Fp))) U r
+NO G(q&!r->(!r U (p&!r)))
+NO G!q|F(q&((!p U s)|G!p))
+NO G(p->Fs)
+NO G(q->G(p->Fs))
+NO G(q&!r->(((p->(!r U (s&!r))) U r)|G(p->(!r U (s&!r)))))
+NO G(s&XFt->X(F(t&Fp)))
+NO G(q->G(s&XFt->X(!t U (t&Fp))))
+NO G((q&Fr)->(s&X(!r U t)->X(!r U (t&Fp))) U r)
+NO G(q->(s&X(!r U t)->X(!r U (t&Fp)))U(r|G(s&X(!r U t)->X(!r U (t&Fp)))))
+NO G(p->F(s&XFt))
+NO G(q->G(p->(s&XFt)))
+NO G(q->(p->(!r U (s&!r&X(!r U t))))U(r|G(p->(s&XFt))))
+NO G(p->F(s&!z&X(!z U t)))
+NO G(q->G(p->(s&!z&X(!z U t))))
+NO G(q->(p->(!r U (s&!r&!z&X((!r&!z) U t))))U(r|G(p->(s&!z&X(!z U t)))))
+GS p
+GS q&Xp
+GS G(Ga&F!a)
+EOF
+
+grok()
+{
+  case $1 in
+  "this is a safety property"*)          echo SA;;
+  "this is a guarantee property"*)       echo GU;;
+  "this is a guarantee and a safety"*)   echo GS;;
+  "this is an obligation property"*)     echo OB;;
+  "this is not an obligation property"*) echo NO;;
+  *)                                     echo XX;;
+  esac
+}
+
+success=:
+while read exp f; do
+  x=`../ikwiad -O "$f"`
+  y=`../ikwiad -O "!($f)"`
+  resx=`grok "$x"`
+  resy=`grok "$y"`
+  echo "$resx   $f"
+  if test "$resx" != "$exp"; then
+      echo "Expected $exp, got $resx"; exit 1
+  fi
+  echo "$resy !($f)"
+  case $resx,$resy in
+      SA,GU);;
+      GU,SA);;
+      GS,GS);;
+      OB,OB);;
+      NO,NO);;
+      *) echo "Incompatible results: $resx,$resy"; exit 1;;
+  esac
+done < formulas.txt
+
+set -x
+
+cut -c 4- formulas.txt | ltlfilt --obligation > o0
+for i in 1 2 3; do
+  cut -c 4- formulas.txt | SPOT_O_CHECK=$i ltlfilt --obligation > o$i
+done
+# make sure SPOT_O_CHECK is actually read
+cut -c 4- formulas.txt | SPOT_O_CHECK=x ltlfilt --obligation 2>err && exit 1
+cut -c 4- formulas.txt | SPOT_O_CHECK=9 ltlfilt --obligation 2>err && exit 1
+grep SPOT_O_CHECK err
+diff o0 o2
+diff o1 o2
+diff o2 o3
+cut -c 4- formulas.txt | ltlfilt -o %h.ltl
+cat O.ltl G.ltl S.ltl B.ltl | sort > ogsb.ltl
+sort o3 > o4
+diff o4 ogsb.ltl
+
+
+exit 0

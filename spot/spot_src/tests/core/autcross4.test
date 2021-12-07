@@ -1,0 +1,93 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018, 2019 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+ltl2tgba -f FGa '"a = b"U!c' |
+    autcross 'autfilt' 'ltl2tgba -B %M >%O' --csv=out.csv
+test 2 = `grep -c '"FGa"' out.csv`
+test 2 = `grep -c '"""a = b"" U !c"' out.csv`
+
+ltl2tgba -f FGa '"a = b"U!c' |
+    autcross -q 'autfilt' 'ltl2tgba -B %M >%O' 2>out
+test 0 -eq `wc -l <out`
+
+
+cat >in <<EOF
+HOA: v1
+name: "yes"
+States: 1
+Start: 0
+AP: 0
+Acceptance: 0 t
+--BODY--
+State: 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 0
+Acceptance: 0 t
+--BODY--
+State: 0
+--END--
+EOF
+
+autcross --verbose \
+         -Fin 'ltl2tgba %[no]M>%O' 'ltl2tgba %M>%O' --csv=out.csv && exit 1
+test 3 = `grep -c '"ok"' out.csv`
+
+sed 's/AP: 0/AP: 0 "a"/g' in |
+    autcross --language-preserved autfilt 2>err && exit 1
+grep 'autcross: failed to read automaton from -' err
+
+autcross -T3 --verbose --language-preserved --ignore-execution-failures \
+         --csv=out.csv --omit-missing --low --medium --high --stop-on-error \
+         'sleep 10; autfilt %H>%O' 'false %H %O' 2>err -Fin
+cat err
+grep 'some error was detected' err && exit 1
+grep 'No major problem' err
+grep '2 timeouts occurred' err
+grep '2 non-zero exit statuses were ignored' err
+test 1 = `wc -l < out.csv`
+
+autcross -T3 --verbose --language-preserved --ignore-execution-failures \
+         --csv=out.csv --omit-missing --low --medium --high --stop-on-error \
+         --fail-on-timeout \
+         'sleep 10; autfilt %H>%O' 'false %H %O' 2>err -Fin && exit 1
+cat err
+grep 'No major problem' err && exit 1
+grep 'some error was detected ' err
+grep '1 non-zero exit status was ignored' err
+test 1 = `wc -l < out.csv`
+
+# Same with -q
+autcross -T3 -q --language-preserved --ignore-execution-failures \
+         --csv=out.csv --omit-missing --low --medium --high --stop-on-error \
+         --fail-on-timeout \
+         'sleep 10; autfilt %H>%O' 'false %H %O' 2>err -Fin && exit 1
+cat err
+test 4 = `wc -l <err`
+test 1 = `wc -l < out.csv`
+
+autcross - 2> err && exit 1
+cat err
+grep 'autcross: No tool to run' err

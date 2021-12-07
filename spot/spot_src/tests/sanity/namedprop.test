@@ -1,0 +1,53 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# We used to loop over more directories before the source tree was
+# rearranged.  So there is only one left today, but we keep the loop
+# in case we want to add more in the future.
+
+set +x
+
+DOC=doc/org/concepts.org
+
+rm -f namedprop.log
+
+TOP=${srcdir-.}/../..
+for dir in "$TOP/spot" "$TOP/bin" "$TOP/tests"; do
+  find "$dir" \(    -name "${1-*}.hh" \
+                 -o -name "${1-*}.hxx" \
+                 -o -name "${1-*}.cc" \
+                 -o -name "${1-*}.test" \) \
+                 -a -not -path '*.dir/*' \
+                 -a -type f -a -print
+done |
+xargs sed -n 's/.*get_named_prop<.*>("\([^"]*\)").*/\1/p
+s/.*set_named_prop("\([^"]*\)",.*/\1/p' |
+sort | uniq |
+while read prop; do
+   if ! grep -q "$prop" "$TOP/$DOC"; then
+     echo "* $prop" >>namedprop.log
+   fi
+done
+if test -f namedprop.log; then
+  echo "The following named properties are not documented in $DOC:"
+  cat namedprop.log
+  exit 1
+fi

@@ -1,0 +1,427 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Mon Jan 18 11:47:55 2021 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>LTLGRIND</title>
+
+ <LINK REL="stylesheet" TYPE="text/css" HREF="../spot.css">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body class="man"><div id="org-div-home-and-up"><a accesskey="h" href="../tools.html"> UP </a>| <a accesskey="H" href="../index.html"> HOME </a></div>
+
+<h1 align="center">LTLGRIND</h1>
+
+<div id="table-of-contents"><h2>Table of Contents</h2><div id="text-table-of-contents"><ul>
+<li><a href="#NAME">NAME</a></li>
+<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+<li><a href="#REPORTING BUGS">REPORTING BUGS</a></li>
+<li><a href="#COPYRIGHT">COPYRIGHT</a></li>
+<li><a href="#SEE ALSO">SEE ALSO</a></li>
+</ul></div></div>
+
+
+<div class="outline-2"><h2>NAME
+<a name="NAME"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">ltlgrind - list
+mutations of a formula.</p>
+
+<div class="outline-2"><h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>ltlgrind</b>
+[<i>OPTION</i>...] [<i>FILENAME</i>[<i>/COL</i>]...]</p>
+
+<div class="outline-2"><h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">List formulas
+that are similar to but simpler than a given formula.</p>
+
+<h3 style="margin-left:11%">Input
+options:</h3><p style="margin-left:11%"><b>
+-f</b>, <b>--formula</b>=<i>STRING</i></p>
+
+<p style="margin-left:22%;">process the formula STRING</p>
+
+<p style="margin-left:11%;"><b>-F</b>,
+<b>--file</b>=<i>FILENAME</i>[<i>/COL</i>]</p>
+
+<p style="margin-left:22%;">process each line of FILENAME
+as a formula; if COL is a positive integer, assume a CSV
+file and read column COL; use a negative COL to drop the
+first line of the CSV file</p>
+
+<p style="margin-left:11%;"><b>--lbt-input</b></p>
+
+<p style="margin-left:22%;">read all formulas using
+LBT&rsquo;s prefix syntax</p>
+
+<p style="margin-left:11%;"><b>--lenient</b></p>
+
+<p style="margin-left:22%;">parenthesized blocks that
+cannot be parsed as subformulas are considered as atomic
+properties</p>
+
+<h3 style="margin-left:11%">Mutation
+rules (all enabled unless those options are used):</h3><p style="margin-left:11%"><b>
+--ap-to-const</b></p>
+
+<p style="margin-left:22%;">atomic propositions are
+replaced with true/false</p>
+
+
+<p style="margin-left:11%;"><b>--remove-multop-operands</b></p>
+
+<p style="margin-left:22%;">remove one operand from
+multops</p>
+
+<p style="margin-left:11%;"><b>--remove-one-ap</b></p>
+
+<p style="margin-left:22%;">all occurrences of an atomic
+proposition are replaced with another atomic proposition
+used in the formula</p>
+
+<p style="margin-left:11%;"><b>--remove-ops</b></p>
+
+<p style="margin-left:22%;">replace unary/binary operators
+with one of their operands</p>
+
+<p style="margin-left:11%;"><b>--rewrite-ops</b></p>
+
+<p style="margin-left:22%;">rewrite operators that have a
+semantically simpler form: a U b becomes a W b, etc.</p>
+
+<p style="margin-left:11%;"><b>--simplify-bounds</b></p>
+
+<p style="margin-left:22%;">on a bounded unary operator,
+decrement one of the bounds, or set min to 0 or max to
+unbounded</p>
+
+<p style="margin-left:11%;"><b>--split-ops</b></p>
+
+<p style="margin-left:22%;">when an operator can be
+expressed as a conjunction/disjunction using simpler
+operators, each term of the conjunction/disjunction is a
+mutation. e.g. a &lt;-&gt; b can be written as ((a &amp; b)
+| (!a &amp; !b)) or as ((a -&gt; b) &amp; (b -&gt; a)) so
+those four terms can be a mutation of a &lt;-&gt; b</p>
+
+<h3 style="margin-left:11%">Output
+options:</h3><p style="margin-left:11%"><b>
+-0</b>, <b>--zero-terminated-output</b></p>
+
+<p style="margin-left:22%;">separate output formulas with
+\0 instead of \n (for use with xargs <b>-0</b>)</p>
+
+<p style="margin-left:11%;"><b>-8</b>, <b>--utf8</b></p>
+
+<p style="margin-left:22%;">output using UTF-8
+characters</p>
+
+<p style="margin-left:11%;"><b>--format</b>=<i>FORMAT</i>,
+<b>--stats</b>=<i>FORMAT</i></p>
+
+<p style="margin-left:22%;">specify how each line should be
+output (default: &quot;%f&quot;)</p>
+
+<p style="margin-left:11%;"><b>-l</b>, <b>--lbt</b></p>
+
+<p style="margin-left:22%;">output in LBT&rsquo;s
+syntax</p>
+
+<p style="margin-left:11%;"><b>--latex</b></p>
+
+<p style="margin-left:22%;">output using LaTeX macros</p>
+
+<p style="margin-left:11%;"><b>-m</b>,
+<b>--mutations</b>=<i>NUM</i></p>
+
+<p style="margin-left:22%;">number of mutations to apply to
+the formulae (default: 1)</p>
+
+<p style="margin-left:11%;"><b>-n</b>,
+<b>--max-count</b>=<i>NUM</i></p>
+
+<p style="margin-left:22%;">maximum number of mutations to
+output</p>
+
+<p style="margin-left:11%;"><b>-o</b>,
+<b>--output</b>=<i>FORMAT</i></p>
+
+<p style="margin-left:22%;">send output to a file named
+FORMAT instead of standard output. The first formula sent to
+a file truncates it unless FORMAT starts with
+&rsquo;&gt;&gt;&rsquo;.</p>
+
+<p style="margin-left:11%;"><b>-p</b>,
+<b>--full-parentheses</b></p>
+
+<p style="margin-left:22%;">output fully-parenthesized
+formulas</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--sort</b></p></td>
+<td width="2%"></td>
+<td width="47%">
+
+
+<p>sort the result by formula size</p></td>
+<td width="31%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>-s</b>, <b>--spin</b></p>
+
+<p style="margin-left:22%;">output in Spin&rsquo;s
+syntax</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--spot</b></p></td>
+<td width="2%"></td>
+<td width="50%">
+
+
+<p>output in Spot&rsquo;s syntax (default)</p></td>
+<td width="28%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--wring</b></p>
+
+<p style="margin-left:22%;">output in Wring&rsquo;s
+syntax</p>
+
+<p style="margin-left:11%; margin-top: 1em">The FORMAT
+string passed to <b>--format</b> may use the following
+interpreted sequences:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>%&lt;</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>the part of the line before the formula if it comes from
+a column extracted from a CSV file</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>%&gt;</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>the part of the line after the formula if it comes from
+a column extracted from a CSV file</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>%%</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>a single %</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>%b</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>the Boolean-length of the formula (i.e., all Boolean
+subformulas count as 1)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>%f</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>the formula (in the selected syntax)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>%F</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>the name of the input file</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">%h, %[vw]h</p>
+
+<p style="margin-left:22%;">the class of the formula is the
+Manna-Pnueli hierarchy ([v] replaces abbreviations by class
+names, [w] for all compatible classes)</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%L</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>the original line number in the input file</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%[OP]n</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>the nesting depth of operator OP. OP should be a single
+letter denoting the operator to count, or multiple letters
+to fuse several operators during depth evaluation. Add
+&rsquo;~&rsquo; to rewrite the formula in negative normal
+form before counting.</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p>%s</p></td>
+<td width="2%"></td>
+<td width="78%">
+
+
+<p>the length (or size) of the formula</p></td></tr>
+</table>
+
+<p style="margin-left:11%;">%x, %[LETTERS]X,
+%[LETTERS]x</p>
+
+<p style="margin-left:22%;">number of atomic propositions
+used in the</p>
+
+<p style="margin-left:11%;">formula;</p>
+
+<p style="margin-left:22%;">add LETTERS to list atomic
+propositions</p>
+
+<p style="margin-left:11%;">with (n) no quoting, (s)
+occasional double-quotes</p>
+
+<p style="margin-left:22%;">with C-style escape, (d)
+double-quotes with C-style escape, (c) double-quotes with
+CSV-style escape, (p) between parentheses, any extra
+non-alphanumeric character will be used to separate
+propositions</p>
+
+
+<h3 style="margin-left:11%">Miscellaneous
+options:</h3>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--help</b></p></td>
+<td width="2%"></td>
+<td width="23%">
+
+
+<p>print this help</p></td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--version</b></p>
+
+<p style="margin-left:22%;">print program version</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory or
+optional arguments to long options are also mandatory or
+optional for any corresponding short options.</p>
+
+<div class="outline-2"><h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs to
+&lt;<a href="mailto:spot@lrde.epita.fr">spot@lrde.epita.fr</a>&gt;.</p>
+
+<div class="outline-2"><h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 2021 Laboratoire de Recherche et D&eacute;veloppement
+de l&rsquo;Epita. License GPLv3+: <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 3 or later</a>. <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<div class="outline-2"><h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><a href="ltlcross.1.html"><b>ltlcross</b></a>(1)</p>
+</body>
+</html>

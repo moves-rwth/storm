@@ -1,0 +1,246 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Iterating over alternating automata
+#+DESCRIPTION: Code example for iterating of alternating ω-automata in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :noweb strip-export
+
+Alternating automata can be explored in a very similar way as
+non-alternating automata.  Most of the code from our [[file:tut21.org][custom automaton
+printer]] will still work; the only problem is with universal edges.
+
+We will use the following example automaton as input (it is just a
+slight variation over an [[file:tut23.org][alternating automaton created previously]] to
+demonstrate a universal initial state).
+
+#+NAME: tut24in
+#+BEGIN_SRC hoa
+HOA: v1
+States: 3
+Start: 0&1
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+--BODY--
+State: 0
+[0] 0
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+--END--
+#+END_SRC
+
+#+NAME: tut24dot
+#+BEGIN_SRC sh :results verbatim :exports none :noweb strip-export
+cat >tut24.hoa <<EOF
+<<tut24in>>
+EOF
+autfilt --dot tut24.hoa
+#+END_SRC
+
+#+BEGIN_SRC dot :file tut24in.svg :var txt=tut24dot :exports results
+  $txt
+#+END_SRC
+
+#+RESULTS:
+[[file:tut24in.svg]]
+
+* C++
+
+Let us assume that this automaton has been loaded in variable =aut=,
+and that we run the following code, similar to what we did in the
+[[file:tut21.org][custom automaton printer]].
+
+#+NAME: nonalt-body
+#+BEGIN_SRC C++ :export code
+std::cout << "Initial state: " << aut->get_init_state_number() << '\n';
+
+const spot::bdd_dict_ptr& dict = aut->get_dict();
+unsigned n = aut->num_states();
+for (unsigned s = 0; s < n; ++s)
+  {
+    std::cout << "State " << s << ":\n";
+    for (auto& t: aut->out(s))
+      {
+        std::cout << "  edge(" << t.src << " -> " << t.dst << ")\n    label = ";
+        spot::bdd_print_formula(std::cout, dict, t.cond);
+        std::cout << "\n    acc sets = " << t.acc << '\n';
+      }
+  }
+#+END_SRC
+
+#+NAME: nonalt-main
+#+BEGIN_SRC C++ :exports none
+  #include <string>
+  #include <iostream>
+  #include <spot/parseaut/public.hh>
+  #include <spot/twaalgos/hoa.hh>
+  #include <spot/twa/bddprint.hh>
+
+  void custom_print(spot::twa_graph_ptr& aut);
+
+  int main()
+  {
+    spot::parsed_aut_ptr pa = parse_aut("tut24.hoa", spot::make_bdd_dict());
+    if (pa->format_errors(std::cerr))
+      return 1;
+    // This cannot occur when reading a never claim, but
+    // it could while reading a HOA file.
+    if (pa->aborted)
+      {
+        std::cerr << "--ABORT-- read\n";
+        return 1;
+      }
+    custom_print(pa->aut);
+  }
+#+END_SRC
+
+#+NAME: nonalt-one
+#+BEGIN_SRC C++ :exports none
+  <<nonalt-main>>
+  void custom_print(spot::twa_graph_ptr& aut)
+  {
+    <<nonalt-body>>
+  }
+#+END_SRC
+
+# temporary fix for an issue in Org 9.2, see
+# http://lists.gnu.org/archive/html/emacs-orgmode/2019-01/msg00226.html
+#+BEGIN_SRC text :noweb yes
+<<nonalt-one()>>
+#+END_SRC
+
+This output seems correct only for non-universal edges.  The reason is
+that Spot always store all edges as a tuple (src,dst,label,acc sets),
+but universal edges are indicated by setting the most significant bit
+of the destination (or of the initial state).
+
+The "universality" of an edge can be tested using the
+=twa_graph::is_univ_dest()= method: it takes a destination state as
+input, as in =aut->is_univ_dest(t.dst)= or
+=aut->is_univ_dest(aut->get_init_state_number())=.  For convenience
+this method can also be called on a edge, as in =aut->is_univ_dest(t)=.
+
+The set of destination states of a universal edge can be iterated over
+via the =twa_graph::univ_dests()= method.  This takes either a
+destination state (=twa_graph::univ_dests(t.dst)=) or more simply an
+edge (=twa_graph::univ_dests(t)=).  The =univ_dests()= method will
+also work on non-universal edges, but in this case it will simply
+iterate on the given state.
+
+Therefor in order to print the universal destinations of any universal
+edge in an alternating automaton, we can use =univ_dests()=
+unconditionally.  In this example, we simply call =is_univ_dest()= to
+decide whether to enclose the destinations in braces.
+
+#+NAME: nonalt-body2
+#+BEGIN_SRC C++ :export code
+  unsigned init = aut->get_init_state_number();
+  std::cout << "Initial state:";
+  if (aut->is_univ_dest(init))
+    std::cout << " {";
+  for (unsigned i: aut->univ_dests(init))
+    std::cout << ' ' << i;
+  if (aut->is_univ_dest(init))
+    std::cout << " }";
+  std::cout << '\n';
+
+  const spot::bdd_dict_ptr& dict = aut->get_dict();
+  unsigned n = aut->num_states();
+  for (unsigned s = 0; s < n; ++s)
+    {
+      std::cout << "State " << s << ":\n";
+      for (auto& t: aut->out(s))
+        {
+          std::cout << "  edge(" << t.src << " ->";
+          if (aut->is_univ_dest(t))
+            std::cout << " {";
+          for (unsigned dst: aut->univ_dests(t))
+            std::cout << ' ' << dst;
+          if (aut->is_univ_dest(t))
+            std::cout << " }";
+          std::cout << ")\n    label = ";
+          spot::bdd_print_formula(std::cout, dict, t.cond);
+          std::cout << "\n    acc sets = " << t.acc << '\n';
+        }
+    }
+#+END_SRC
+
+#+NAME: nonalt-two
+#+BEGIN_SRC C++ :exports none
+  <<nonalt-main>>
+  void custom_print(spot::twa_graph_ptr& aut)
+  {
+    <<nonalt-body2>>
+  }
+#+END_SRC
+
+# temporary fix for an issue in Org 9.2, see
+# http://lists.gnu.org/archive/html/emacs-orgmode/2019-01/msg00226.html
+#+BEGIN_SRC text :noweb yes
+<<nonalt-two()>>
+#+END_SRC
+
+* Python
+
+Here is the Python version of this code:
+
+#+BEGIN_SRC python
+   import spot
+
+   aut = spot.automaton("tut24.hoa")
+
+   bdict = aut.get_dict()
+   init = aut.get_init_state_number()
+   ui = aut.is_univ_dest(init)
+   print("Initial states: {}{}{}".format("{ " if ui else "",
+                                         " ".join(map(str, aut.univ_dests(init))),
+                                         " }" if ui else ""))
+   for s in range(0, aut.num_states()):
+       print("State {}:".format(s))
+       for t in aut.out(s):
+           ud = aut.is_univ_dest(t)
+           print("  edge({} -> {}{}{})".format(t.src,
+                                               "{ " if ud else "",
+                                               " ".join(map(str, aut.univ_dests(t))),
+                                               " }" if ud else ""))
+           print("    label =", spot.bdd_format_formula(bdict, t.cond))
+           print("    acc sets =", t.acc)
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Initial states: { 0 1 }
+State 0:
+  edge(0 -> 0)
+    label = a
+    acc sets = {}
+  edge(0 -> { 0 1 })
+    label = !a
+    acc sets = {}
+State 1:
+  edge(1 -> 1)
+    label = !a
+    acc sets = {0}
+  edge(1 -> 2)
+    label = a
+    acc sets = {}
+State 2:
+  edge(2 -> 2)
+    label = 1
+    acc sets = {}
+#+end_example
+
+
+#+BEGIN_SRC sh :results silent :exports results
+rm -f tut24.hoa
+#+END_SRC
+
+#  LocalWords:  utf html args noweb SRC acc Buchi EOF svg txt aut num
+#  LocalWords:  nonalt init const src dst cond dest aut init dst SRC
+#  LocalWords:  dests nonalt num src cond acc noweb bdict ui str ud
+#  LocalWords:  bdd

@@ -1,0 +1,106 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2016, 2019, 2020 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# The following "fake" script behaves as
+# version 1.5.9 of modella, when run as
+# 'modella -r12 -g -e %L %T' on
+# 'G(F(p0) & F(G(!p1))) | (F(G(!p0)) & G(F(p1)))'
+# or its negation.  The translation is bogus
+# because the automata generated for this formula
+# and its negation both include the language of G(!p0).
+cat >fake <<\EOF
+#!/bin/sh
+case $1 in
+"| G & F p0 F G ! p1 & F G ! p0 G F p1")
+cat <<\END
+7 1 0 1 -1 1 t
+2 | & ! p0 ! p1 & ! p0 p1
+3 t
+4 | & ! p0 ! p1 & p0 ! p1
+-1 1 0 -1 1 t
+5 | & ! p0 ! p1 & ! p0 p1
+-1 2 0 -1 5 | & ! p0 ! p1 & ! p0 p1
+-1 3 0 1 -1 3 t
+-1 4 0 1 -1 4 | & ! p0 ! p1 & p0 ! p1
+-1 5 0 -1 5 & ! p0 ! p1
+6 & ! p0 p1
+-1 6 0 1 -1 2 | & ! p0 ! p1 & ! p0 p1
+-1
+END
+;;
+"! | G & F p0 F G ! p1 & F G ! p0 G F p1")
+cat <<\END
+12 1 0 1 -1 1 t
+2 | & ! p0 ! p1 & p0 ! p1
+3 t
+4 t
+5 | & ! p0 ! p1 & ! p0 p1
+6 & ! p0 ! p1
+-1 1 0 -1 1 t
+2 | & ! p0 ! p1 & p0 ! p1
+8 | & ! p0 ! p1 & ! p0 p1
+6 & ! p0 ! p1
+-1 2 0 -1 2 | & ! p0 ! p1 & p0 ! p1
+6 & ! p0 ! p1
+-1 3 0 -1 3 t
+7 t
+-1 4 0 -1 7 t
+-1 5 0 -1 8 | & ! p0 ! p1 & ! p0 p1
+6 & ! p0 ! p1
+-1 6 0 1 -1 6 & ! p0 ! p1
+-1 7 0 -1 7 | & ! p0 ! p1 & ! p0 p1
+9 | & p0 ! p1 & p0 p1
+-1 8 0 -1 10 | & ! p0 ! p1 & ! p0 p1
+6 & ! p0 ! p1
+-1 9 0 -1 11 t
+-1 10 0 -1 10 | & ! p0 ! p1 & ! p0 p1
+6 & ! p0 ! p1
+-1 11 0 1 -1 4 t
+-1
+END
+;;
+esac
+EOF
+chmod +x fake
+
+run 1 ltlcross -f 'G(F(p0) & F(G(!p1))) | (F(G(!p0)) & G(F(p1)))' \
+  "ltl2tgba --lbtt %f >%T" "./fake %l >%T" 2> errors
+cat errors
+grep 'error: P0\*N1 is nonempty' errors
+grep 'error: P1\*N0 is nonempty' errors
+grep 'error: P1\*N1 is nonempty' errors
+test `grep cycle errors | wc -l` = 3
+test `grep '^error:' errors | wc -l` = 4
+
+run 1 ltlcross --verbose -D -f 'G(F(p0) & F(G(!p1))) | (F(G(!p0)) & G(F(p1)))' \
+  "ltl2tgba --lbtt %f >%T" "./fake %l >%T" 2> errors
+cat errors
+grep 'error: P0\*N1 is nonempty' errors
+grep 'error: P1\*N0 is nonempty' errors
+grep 'error: P1\*N1 is nonempty' errors
+test `grep cycle errors | wc -l` = 3
+test `grep '^error:' errors | wc -l` = 4
+
+ltlcross -q -f 'G(F(p0) & F(G(!p1))) | (F(G(!p0)) & G(F(p1)))' \
+    "ltl2tgba --lbtt %f >%T" "./fake %l >%T" 2> errors && exit 1
+test 8 -eq `wc -l <errors`

@@ -1,0 +1,732 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Exploring the temporal hierarchy of Manna & Pnueli
+#+DESCRIPTION: Spot command-line tools for exploring the temporal hierarchy of Manna & Pnueli
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+/A hierarchy of temporal properties/ was defined by Manna & Pnueli in
+their [[ftp://www-cs.stanford.edu/cs/theory/amir/hierarchy.ps][PODC'90 paper]].
+
+This hierarchy relates "properties" (i.e., omega-regular languages) to
+structural properties of the automata that can recognize them.
+
+* Description of the classes
+
+The hierarchy is built from the classes pictured in the following
+diagram, where each class includes everything below it. For instance,
+the /recurrence/ class includes the /obligation/ class which also
+includes the /safety/ and /guarantee/ classes, as well as the unnamed
+intersection of /safety/ and /guarantee/ (=B= in the picture).
+
+[[file:hierarchy.svg]]
+
+Forget about the LTL properties and about the red letters displayed in
+this picture for a moment.
+
+- The /reactivity/ class represents all possible omega-regular
+  languages, i.e., all languages that can be recognized by a
+  non-deterministic Büchi automaton.
+
+- The /recurrence/ subclass contains all properties that can be
+  recognized by a deterministic Büchi automaton.
+
+- The dual class, /persistence/ properties, are those that can be
+  recognized by a weak Büchi automaton (i.e., in each SCC either all
+  states are accepting, or all states are rejecting).
+
+- The intersection of /recurrence/ and /persistence/ classes form the
+  /obligation/ properties: any of those can be recognized by a weak
+  and deterministic Büchi automaton.
+
+- /Guarantee/ properties are a subclass of /obligation/ properties
+  that can be recognized by terminal Büchi automata (i.e., upon
+  reaching an accepting state, any suffix will be accepted).
+
+- /Safety/ properties are the dual of /Guarantee/ properties: they can
+  be recognized by ω-automata that accept all their runs (i.e., the
+  acceptance condition is "true").  Note that since these automata are
+  not necessary complete, it is still possible for some words not to
+  be accepted.  If we interpret the ω-automata with "true" acceptance
+  as finite automata with all states marked as final, we obtain
+  monitors, i.e., finite automata that recognize all finite prefixes
+  that can be extended into valid ω-words.
+
+- Finally, at the very bottom is an unnamed class that contains
+  /Safety/ properties that are also /Guarantee/ properties: those are
+  properties that can be represented by monitors in which the only
+  cycles are self-loops labeled by true.
+
+The "LTL normal forms" displayed in the above figure help to visualize
+the type of LTL formulas contained in each of these class.  But note
+that (1) this hierarchy applies to all omega-regular properties, not
+just LTL-defined properties, and (2) the LTL expression displayed in
+the figure are actually normal forms in the sense that if an
+LTL-defined property belongs to the given class, then there exists an
+equivalent LTL property under the stated form, were $p$, $q$, $p_i$
+and $q_i$ are subexpressions that may use only Boolean operators, the
+next operator ($\mathsf{X}$), and past-LTL operators (which are not
+supported by Spot).  The combination of these allowed operators only
+makes it possible to express constraints on finite prefixes.
+
+/Obligations/ can be thought of as Boolean combinations of /safety/
+and /guarantee/ properties, while /reactivity/ properties are Boolean
+combinations of /recurrence/ and /persistence/ properties.  The
+negation of a /safety/ property is a /guarantee/ property (and
+vice-versa), and the same duality hold for /persistence/ and
+/recurrence/ properties.
+
+The red letters in each of these seven classes are keys used in
+Spot to denote the classes.
+
+* Deciding class membership
+
+The =--format=%h= option can be used to display the "class key" of the
+most precise class to which a formula belongs.
+
+#+BEGIN_SRC sh
+ltlfilt -f 'a U b' --format=%h
+#+END_SRC
+#+RESULTS:
+: G
+
+If you find hard to remember the class name corresponding to the class
+keys, you can request verbose output with =%[v]h=:
+
+#+BEGIN_SRC sh
+ltlfilt -f 'a U b' --format='%[v]h'
+#+END_SRC
+#+RESULTS:
+: guarantee
+
+But actually any /guarantee/ property is also an /obligation/, a
+/recurrence/, a /persistence/, and a /reactivity/ property.  You can
+get the complete list of classes using =%[w]h= or =%[vw]h=:
+
+#+BEGIN_SRC sh
+ltlfilt -f 'a U b' --format='%[w]h = %[vw]h'
+#+END_SRC
+#+RESULTS:
+: GOPRT = guarantee obligation persistence recurrence reactivity
+
+This =--format= option is also supported by =randltl=, =genltl=, and
+=ltlgrind=.  So for instance if you want to classify the 55 LTL
+patterns of [[http://patterns.projects.cs.ksu.edu/documentation/patterns/ltl.shtml][Dwyers et al. (FMSP'98)]] using this hierarchy, try:
+
+#+BEGIN_SRC sh
+genltl --dac-patterns --format='%[v]h' | sort | uniq -c
+#+END_SRC
+
+#+RESULTS:
+:       1 guarantee
+:       2 obligation
+:       1 persistence
+:       2 reactivity
+:      12 recurrence
+:      37 safety
+
+In this output, the most precise class is given for each formula, and
+the count of formulas for each subclass is given.  We have to remember
+that the recurrence class also includes obligation, safety, and
+guarantee properties.  In this list, there are no formulas that belong
+to the intersection of the /guarantee/ and /safety/ classes (it would
+have been listed as =guarantee safety=).
+
+From this list, only 3 formulas are not recurrence properties (i.e.,
+not recognized by deterministic Büchi automata): one of them is a
+persistence formula, the other two cannot be classified better than in
+the /reactivity/ class.  Let's pretend we are interested in those
+three non-recurrence formulas, we can use =ltlfilt -v --recurrence= to
+remove all recurrence properties from the =genltl --dac-pattern=
+output:
+
+#+BEGIN_SRC sh
+genltl --dac-patterns |
+  ltlfilt -v --recurrence --format='%[v]h, %f'
+#+END_SRC
+
+#+RESULTS:
+: persistence, G!p0 | F(p0 & (!p1 W p2))
+: reactivity, G(p0 -> ((p1 -> (!p2 U (!p2 & p3 & X(!p2 U p4)))) U (p2 | G(p1 -> (p3 & XFp4)))))
+: reactivity, G(p0 -> ((p1 -> (!p2 U (!p2 & p3 & !p4 & X((!p2 & !p4) U p5)))) U (p2 | G(p1 -> (p3 & !p4 & X(!p4 U p5))))))
+
+Similar filtering options exist for other classes.  Since these tests
+are automata-based, they work with PSL formulas as well. For instance,
+here is how to generate 10 random recurrence PSL formulas that are
+not LTL formulas, and that are not obligations:
+
+#+BEGIN_SRC sh
+randltl --psl -n -1 a b |
+   ltlfilt -v --ltl |
+   ltlfilt -v --obligation |
+   ltlfilt --recurrence -n10
+#+END_SRC
+#+RESULTS:
+#+begin_example
+((Fb W 0) | (1 U !a)) W ({b[*]}[]-> 0)
+GF({[*]}<>-> !a)
+{[*]}[]-> X(b M F!Gb)
+G!({a[*2]}<>-> (b & F(0 R a)))
+FX({[*]} -> GFb)
+G({b[*][:*1]} xor (Fb U Fa)) W b
+(b R a) & (({1 | [*0]} -> (1 U a)) W 0)
+G({[*]}[]-> Fa)
+{[*]}[]-> F(1 U b)
+0 R !({!a | a[*]}[]-> GXa)
+#+end_example
+
+Note that the order of the =ltlfilt= filters could be changed provided
+the =-n10= stays at the end.  For instance we could first keep all
+recurrence before removing obligations and then removing LTL formulas.
+The order given above actually starts with the easier checks first and
+keep the most complex tests at the end of the pipeline so they are
+applied to fewer formulas.  Testing whether a formula is an LTL
+formula is very cheap, testing if a formula is an obligation is harder
+(it may involves a translation to automata and a powerset
+construction), and testing whether a formula is a recurrence is the
+most costly procedure (it involves a translation as well, plus
+conversion to deterministic Rabin automata, and an attempt to convert
+the automaton back to deterministic Büchi).  As a rule of thumb,
+testing classes that are lower in the hierarchy is cheaper.
+
+Since option =-o= (for specifying output file) also honors =%=-escape
+sequences, we can use it with =%h= to split a list of formulas in 7
+possible files.  Here is a generation of 200 random LTL formulas
+binned into aptly named files:
+
+#+BEGIN_SRC sh
+randltl -n 200 a b -o random-%h.ltl
+wc -l random-?.ltl
+#+END_SRC
+
+#+RESULTS:
+:   45 random-B.ltl
+:   49 random-G.ltl
+:   12 random-O.ltl
+:   21 random-P.ltl
+:   18 random-R.ltl
+:   46 random-S.ltl
+:    9 random-T.ltl
+:  200 total
+
+#+BEGIN_SRC sh :results silent :exports results
+rm -f random-?.ltl
+#+END_SRC
+#+RESULTS:
+
+* Deciding classes membership syntactically
+
+LTL formulas can also be classified into related classes which we
+shall call /syntactic-safety/, /syntactic-guarantee/, etc.  See [[https://spot.lrde.epita.fr/tl.pdf][tl.pdf]]
+for the grammar of each syntactic class.  Any LTL-definable property
+of class C can be defined by an LTL formulas in class syntactic-C, but
+an LTL formula can describe a property of class C even if that formula
+is not in class syntactic-C (we just know that some equivalent formula
+is in class syntactic-C).
+
+=ltlfilt= has options like =--syntactic-guarantee=,
+=--syntactic-persistence=, etc. to match formulas from this classes.
+
+Here is how to generate 10 random LTL formulas that describe safety
+properties but that are not in the syntactic-safety class:
+
+#+BEGIN_SRC sh
+randltl -n-1 a b |
+  ltlfilt -v --syntactic-safety |
+  ltlfilt --safety -n10
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+F!(!b <-> FGb)
+!Fb xor G((b xor (Xa M b)) U b)
+a W F(a -> b)
+((0 R Xa) R a) -> Fa
+X(Xb & (!Ga R Ga))
+(1 U b) | F(Fb W (a <-> FXa))
+(a M 1) | (!a W a)
+(G!a W ((b M 1) -> Fa)) -> !a
+!a -> ((a xor !GFa) W 0)
+b M Gb
+#+end_example
+
+Since all those formulas describe safety properties, an exercise would
+be to suggest equivalent formulas that are in the syntactic-safety
+fragment.  For instance =b M Gb= can be rewritten as just =Gb=, which
+belongs to this fragment.  In this particular case, =ltlfilt
+--simplify= recognizes this:
+
+#+BEGIN_SRC sh
+ltlfilt --simplify -f 'b M Gb'
+#+END_SRC
+#+RESULTS:
+: Gb
+
+However in the general case Spot is not able to provide the equivalent
+formula from the appropriate syntactic class.
+
+* What to do with each class?
+
+** Obligation
+
+Spot implements algorithms from Löding ([[http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.24.6718][/Efficient minimization of
+deterministic weak ω-automata/, IPL 2001]]) and Dax et al. ([[http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.83.2081][/Mechanizing
+the powerset constructions for restricted classes of ω-automata/,
+ATVA'07]]) in order to detect obligation properties, and produce minimal
+weak deterministic automata for them.
+
+When running =ltl2tgba -D= on a formula that represents an
+obligation property, you are guaranteed to obtain a minimal (in the
+number of states) deterministic weak Büchi automaton that recognizes
+it.  Note that since the /obligation/ class includes the /safety/ and
+/guarantee/ classes, minimal deterministic automata will also be
+produced for those classes.  Dax et al.'s determinization of obligation
+properties combined with Löding's minimization renders obsolete
+older algorithms (and tools) that produced minimal deterministic
+automata but only for the subclasses of /safety/ or /guarantee/.
+
+If =ltl2tgba= is run without =-D= (but still with the default =--high=
+optimization level), the minimal weak deterministic automaton will
+only be output if it is smaller than the non-deterministic automaton
+the translator could produce before determinization and minimization.
+
+For instance =Fa R b= is an obligation:
+
+#+BEGIN_SRC sh
+ltlfilt -f 'Fa R b' --format='%[v]h'
+#+END_SRC
+
+#+RESULTS:
+: obligation
+
+If we translate it without =-D= we get a 3-state non-deterministic
+automaton (here we use =autfilt --highlight-nondet= to show where the
+non-determinism occurs):
+
+#+NAME: hier-oblig-1
+#+BEGIN_SRC sh :exports code
+ltl2tgba 'Fa R b' | autfilt --highlight-nondet -d
+#+END_SRC
+
+#+BEGIN_SRC dot :file hier-oblig-1.svg :var txt=hier-oblig-1 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-oblig-1.svg]]
+
+Note that the default translation used by =ltl2tgba= will turn any
+syntactic persistence formulas (this includes obligations formulas)
+into a weak automaton.  In a weak automaton, the acceptance condition
+could be defined in term of SCCs, i.e., the cycles of some SCCs are
+either all accepting, or all rejecting.  As a consequence, it there is
+no incentive to use transition-based acceptance; instead, state-based
+acceptance is output by default.
+
+With =ltl2tgba -D= we get a (minimal) deterministic weak Büchi
+automaton instead.
+
+#+NAME: hier-oblig-2
+#+BEGIN_SRC sh :results verbatim :exports code
+  ltl2tgba -D 'Fa R b' -d
+#+END_SRC
+
+#+BEGIN_SRC dot :file hier-oblig-2.svg :var txt=hier-oblig-2 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-oblig-2.svg]]
+
+
+When we called =ltl2tgba=, without the option =-D=, the two automata
+(non-deterministic and deterministic) were constructed, but the
+deterministic one was discarded because it was bigger.  Using =-D=
+forces the deterministic automaton to be used regardless of its size.
+
+The detection and minimization of obligation properties is also used
+by =autfilt= when simplifying deterministic automata (they need to be
+deterministic so that =autfilt= can easily compute their complement).
+
+For instance, let us use =ltl2dstar= to construct a Streett automaton
+for the obligation property =Ga | XFb=.
+
+#+NAME: hier-oblig-3
+#+BEGIN_SRC sh :exports code
+ltldo 'ltl2dstar --automata=streett' -f 'Ga | XFb' -d
+#+END_SRC
+
+#+BEGIN_SRC dot :file hier-oblig-3.svg :var txt=hier-oblig-3 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-oblig-3.svg]]
+
+We can now minimize this automaton with:
+
+#+NAME: hier-oblig-4
+#+BEGIN_SRC sh :exports code
+ltldo 'ltl2dstar --automata=streett' -f 'Ga | XFb' | autfilt -D -C -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-oblig-4.svg :var txt=hier-oblig-4 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:hier-oblig-4.svg]]
+
+Here we have used option =-C= to keep the automaton complete, so that
+the comparison with =ltl2dstar= is fair, since =ltl2dstar= always
+output complete automata.
+
+** Guarantee
+
+/Guarantee/ properties can be translated into terminal automata.
+There is nothing particular in Spot about /guarantee/ properties, they
+are all handled like /obligations/.
+
+Again, using =-D= will always produce (minimal) deterministic Büchi
+automata, even if they are larger than the non-deterministic version.
+The output should be a terminal automaton in either case,
+
+An example is =a U Xb=:
+
+#+BEGIN_SRC sh
+ltlfilt -f 'a U Xb' --format='%[v]h'
+#+END_SRC
+
+#+RESULTS:
+: guarantee
+
+
+#+NAME: hier-guarantee-1
+#+BEGIN_SRC sh :exports code
+ltl2tgba 'a U Xb' | autfilt --highlight-nondet -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-guarantee-1.svg :var txt=hier-guarantee-1 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-guarantee-1.svg]]
+
+#+NAME: hier-guarantee-2
+#+BEGIN_SRC sh :exports code
+ltl2tgba -D 'a U Xb' -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-guarantee-2.svg :var txt=hier-guarantee-2 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-guarantee-2.svg]]
+
+** Safety
+   :PROPERTIES:
+   :CUSTOM_ID: safety
+   :END:
+
+/Safety/ properties also form a subclass of /obligation/ properties,
+and again there is no code specific to them in the translation.
+However, the /safety/ class corresponds to what can be represented
+faithfully by monitors, i.e., automata that accept all their infinite
+runs.
+
+For most safety formulas, the acceptance output by =ltl2tgba= will
+already be =t= (meaning that all runs are accepting).  However since
+the translator does not do anything particular about safety formulas,
+it is possible to find some pathological formulas for which the
+translator outputs a non-deterministic Büchi automaton where not all
+run are accepting.
+
+Here is an example:
+
+#+BEGIN_SRC sh
+ltlfilt -f '(a W Gb) M b' --format='%[v]h'
+#+END_SRC
+
+#+RESULTS:
+: safety
+
+
+#+NAME: hier-safety-1
+#+BEGIN_SRC sh :exports code
+ltl2tgba '(a W Gb) M b' | autfilt --highlight-nondet -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-safety-1.svg :var txt=hier-safety-1 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-safety-1.svg]]
+
+Actually, marking all states of this automaton as accepting would not
+be wrong, the translator simply does not know it.
+
+Using =-D= will fix that: it then produces a deterministic automaton
+that is guaranteed to be minimal, and where all runs are accepting.
+
+#+NAME: hier-safety-2
+#+BEGIN_SRC sh :exports code
+ltl2tgba -D '(a W Gb) M b' -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-safety-2.svg :var txt=hier-safety-2 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-safety-2.svg]]
+
+
+If you are working with safety formula, and know you want to work with
+monitors, you can use the =-M= option of =ltl2tgba=.  In this case
+this will output the same automaton, but using the universal
+acceptance (i.e. =t=).  You can interpret this output as a monitor
+(i.e., a finite automaton that accepts all prefixes that can be
+extended into valid ω-words).
+
+#+NAME: hier-safety-1m
+#+BEGIN_SRC sh :exports code
+ltl2tgba -M '(a W Gb) M b' | autfilt --highlight-nondet -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-safety-1m.svg :var txt=hier-safety-1m :exports results
+  $txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-safety-1m.svg]]
+
+#+NAME: hier-safety-2m
+#+BEGIN_SRC sh :exports code
+ltl2tgba -M -D '(a W Gb) M b' -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-safety-2m.svg :var txt=hier-safety-2m :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-safety-2m.svg]]
+
+
+Note that the =-M= option can be used with formulas that are not
+safety properties.  In this case, the output monitor will recognize a
+language larger than that of the property.
+
+** Recurrence
+
+/Recurrence/ properties can be represented by deterministic Büchi
+automata.
+
+For the subclass of /obligation/ properties, using =-D= is a sure way
+to obtain a deterministic automaton (and even a minimal one), but for
+the /recurrence/ properties that are not /obligations/ the translator
+does not make /too much/ effort to produce deterministic automata,
+even with =-D= (this might change in the future).
+
+All properties that are not in the /persistence/ class (this includes
+the /recurrence/ properties that are not /obligations/) can benefit
+from transition-based acceptance.  In other words using
+transition-based acceptance will often produce shorter automata.
+
+The typical example is =GFa=, which can be translated into a 1-state
+transition-based Büchi automaton:
+
+#+BEGIN_SRC sh
+ltlfilt -f 'GFa' --format='%[v]h'
+#+END_SRC
+
+#+RESULTS:
+: recurrence
+
+#+NAME: hier-recurrence-1
+#+BEGIN_SRC sh :exports code
+ltl2tgba 'GFa' -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-recurrence-1.svg :var txt=hier-recurrence-1 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-recurrence-1.svg]]
+
+Using state-based acceptance, at least two states are required.  For instance:
+
+#+NAME: hier-recurrence-2
+#+BEGIN_SRC sh :exports code
+ltl2tgba -S 'GFa' -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-recurrence-2.svg :var txt=hier-recurrence-2 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-recurrence-2.svg]]
+
+
+Here is an example of a formula for which =ltl2tgba= does not produce a
+deterministic automaton, even with =-D=.
+
+#+BEGIN_SRC sh
+ltlfilt -f 'G(Gb | Fa)' --format='%[v]h'
+#+END_SRC
+
+#+RESULTS:
+: recurrence
+
+#+NAME: hier-recurrence-3
+#+BEGIN_SRC sh :exports code
+ltl2tgba -D 'G(Gb | Fa)' | autfilt --highlight-nondet -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-recurrence-3.svg :var txt=hier-recurrence-3 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-recurrence-3.svg]]
+
+One way to obtain a deterministic Büchi automaton (it has to exist, since this is
+a /recurrence/ property), is to request a deterministic automaton with parity
+acceptance using =-P=.  The number of color output with =-P= is always reduced
+to the minimal number possible, so for a /recurrence/ property the output
+automaton can only have one of three possible acceptance: =Inf(0)=, =t=, or =f=.
+
+#+NAME: hier-recurrence-4
+#+BEGIN_SRC sh :exports code
+ltl2tgba -P -D 'G(Gb | Fa)' -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-recurrence-4.svg :var txt=hier-recurrence-4 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:hier-recurrence-4.svg]]
+
+Note that if the acceptance is =t=, the property is a monitor, and if
+its =f=, the property is =false=.  In any way, if you would like to
+obtain a DBA for any recurrent property, a sure way to avoid these
+difference is to pipe the result through =autfilt -B=
+
+#+NAME: hier-recurrence-5
+#+BEGIN_SRC sh :exports code
+ltl2tgba -P -D 'G(Gb | Fa)' | autfilt -B -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-recurrence-5.svg :var txt=hier-recurrence-5 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:hier-recurrence-5.svg]]
+
+
+It is likely that =ltl2tgba -B -D= will implement these steps in the
+future, but so originally =-D= was only expressing a preference not a
+requirement.
+
+** Persistence
+
+Since /persistence/ properties are outside of the /recurrence/ class,
+they cannot be represented by deterministic Büchi automata.  The typical
+persistence formula is =FGa=, and using =-D= on this is hopeless.
+
+#+NAME: hier-persistence-1
+#+BEGIN_SRC sh :exports code
+ltl2tgba -D FGa -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-persistence-1.svg :var txt=hier-persistence-1 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-persistence-1.svg]]
+
+
+However since the *negation* of =FGa= is a /recurrence/, this negation
+can be represented by a deterministic Büchi automaton, which means
+that =FGa= could be represented by a deterministic co-Büchi automaton.
+=ltl2tgba= does not generate co-Büchi acceptance, but we can do the
+complementation ourselves:
+
+#+NAME: hier-persistence-2
+#+BEGIN_SRC sh :exports code
+ltl2tgba --negate -D FGa | autfilt --complement -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-persistence-2.svg :var txt=hier-persistence-2 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-persistence-2.svg]]
+
+Note that in this example, we know that =GFa= is trivial enough that
+=ltl2tgba -D GFa= will generate a deterministic automaton.  In the
+general case we might have to determinize the automaton using =-P -D= as
+we did in the previous section.  For persistence properties, =-P -D= should
+return an automaton whose acceptance is one of =Fin(0)=, =t=, or =f=.
+
+/Persistence/ properties can be represented by weak Büchi automata.
+The translator is aware of that, so when it detects that the input
+formula is a syntactic-persistence, it simplifies its translation
+slightly to ensure that the output will use at most one acceptance
+set.  (It is possible to define a persistence properties using an LTL
+formula that is not a syntactic-persistence, in that case this
+optimization is simply not applied.)
+
+If the input is a weak property that is not syntactically weak, the
+output will not necessarily be weak.  One costly way to obtain a weak
+automaton for a formula $\varphi$ would be to first compute a
+deterministic co-Büchi automaton $\varphi$ then transform that into a
+Büchi automaton.
+
+Let's do that on the persistence formula =F(G!a | G(b U a))=, just for
+the fun of it.
+
+#+BEGIN_SRC sh
+ltlfilt -f 'F(G!a | G(b U a))' --format='%[v]h'
+#+END_SRC
+#+RESULTS:
+: persistence
+
+Unfortunately the default output of the translation is not weak:
+
+#+NAME: hier-persistence-3
+#+BEGIN_SRC sh :exports code
+ltl2tgba 'F(G!a | G(b U a))' -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-persistence-3.svg :var txt=hier-persistence-3 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-persistence-3.svg]]
+
+So let's determinize using parity acceptance:
+
+#+NAME: hier-persistence-4
+#+BEGIN_SRC sh :exports code
+ltl2tgba -P -D 'F(G!a | G(b U a))' -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-persistence-4.svg :var txt=hier-persistence-4 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:hier-persistence-4.svg]]
+
+And finally we convert the result back to Büchi with =autfilt -B=.
+
+#+NAME: hier-persistence-7
+#+BEGIN_SRC sh :exports code
+ltl2tgba -P -D 'F(G!a | G(b U a))' | autfilt -B --highlight-nondet --small -d
+#+END_SRC
+#+BEGIN_SRC dot :file hier-persistence-7.svg :var txt=hier-persistence-7 :exports results
+$txt
+#+END_SRC
+#+RESULTS:
+[[file:hier-persistence-7.svg]]
+
+That is indeed, a weak non-deterministic automaton.
+
+#  LocalWords:  utf Pnueli html args PODC SCC subexpressions mathsf
+#  LocalWords:  SRC ltlfilt vw GOPRT randltl genltl ltlgrind Dwyers
+#  LocalWords:  et al FMSP dac uniq XFp psl Fb GF Gb FX GFb GXa wc tl
+#  LocalWords:  powerset pdf FGb Xa Xb FXa GFa Löding IPL Dax ATVA
+#  LocalWords:  tgba Löding's nondet hier oblig svg txt SCCs dstar
+#  LocalWords:  XFb ltldo streett DBA FGa varphi

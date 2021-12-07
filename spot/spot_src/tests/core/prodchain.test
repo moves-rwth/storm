@@ -1,0 +1,49 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2018 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+set x
+shift
+for i in `seq 1 42`; do
+  ltl2tgba "{a[*$i]}[]->GFb" > $i.hoa
+done
+for i in *.hoa; do
+  set x "$@" --product $i
+  shift
+done
+shift
+autfilt "$@" 2> error && exit 1
+grep 'Too many acceptance sets used' error
+autfilt -B "$@" > result
+test "127,253,508,1" = `autfilt --stats=%s,%e,%t,%a result`
+
+set x
+shift
+for i in *.hoa; do
+  set x "$@" --product-or $i
+  shift
+done
+shift
+autfilt "$@" 2> error && exit 1
+grep 'Too many acceptance sets used' error
+autfilt -B "$@" > result
+test "45,89,180,1" = `autfilt --stats=%s,%e,%t,%a result`

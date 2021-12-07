@@ -1,0 +1,24 @@
+In the following paper by Rozier & Vardi, a class of LTL formula
+describing counters was used to stress many translators.
+
+@InProceedings{	  rozier.07.spin,
+  author	= {Kristin Y. Rozier and Moshe Y. Vardi},
+  title		= {LTL Satisfiability Checking},
+  booktitle	= {Proc. the 12th International SPIN Workshop on
+		  Model Checking of Software (SPIN'07)},
+  pages		= {149--167},
+  year		= {2007},
+  volume	= {4595},
+  series	= {LNCS},
+  publisher	= {Springer-Verlag}
+}
+
+For a description of these formulae, you may also see
+http://ti.arc.nasa.gov/m/profile/kyrozier/benchmarking_scripts/node5.html
+
+This benchmark used this family of formulae to plot the performance
+of the ltl2tgba_fm algorithm.  Studying the behaviour of ltl2tgba_fm
+on this class of formulae helped us to improve the translation.
+
+Execute "./run" to compute the raw numbers, then execute
+"gnuplot plot.gnu" to plot the figures.

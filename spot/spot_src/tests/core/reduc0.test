@@ -1,0 +1,40 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2014, 2015, 2016 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs || exit 1
+set -e
+
+# These two reductions used to cause a memory leak.
+run 0 ../reduc 0 'XFa & FXa' 'XFa'
+run 0 ../reduc 0 '(Xf W 0) | X(f W 0)' 'XGf'
+
+# Two incorrect reductions.  Those used
+# to reduce respectively to a W (b && !b) and !a M (b || !b).
+# But both are wrong.  The reduction  {a*;r} = a W r  seems only
+# valid if r has a non-empty language.
+run 0 ../reduc 0 '{a[*];{b && !b}}'
+run 0 ../reduc 0 '!{a[*];{b && !b}}'
+
+# Triggered an assert  before
+run 0 ../reduc 0 '(a | (Xa M a))'
+run 0 ../reduc 0 '(b xor (Xb U b)) <-> e'
+
+
+run 0 ../reduc 3 '1 U (a | Fb)' 'F(a | b)'

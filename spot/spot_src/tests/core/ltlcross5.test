@@ -1,0 +1,65 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2019 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+unset TMPDIR
+unset SPOT_TMPDIR
+
+mkdir foo
+chmod a-w foo
+cd foo
+err=0
+if touch bar; then
+    # We are likely running as root, so we cannot detect permission
+    # issues.
+    cd ..
+    rm -rf foo
+    exit 77
+fi
+
+ltlcross ltl2tgba -f GFa 2>../err && err=1
+cd ..
+cat err
+grep 'failed to create temporary file' err || err=1
+grep 'executing this from a writable' err || err=1
+grep 'SPOT_TMPDIR' err || err=1
+
+SPOT_TMPDIR=foo ltlcross ltl2tgba -f GFa 2>err && err=2
+cat err
+grep 'failed to create temporary file' err || err=2
+grep 'executing this from a writable' err && err=2
+grep 'SPOT_TMPDIR' err
+
+chmod a+w foo
+rmdir foo
+
+SPOT_TMPDIR=bar ltlcross ltl2tgba -f GFa 2>err && err=3
+cat err
+grep 'failed to create temporary file' err
+grep 'Note that the directory.*SPOT_TMPDIR ' err
+
+TMPDIR=bar ltlcross ltl2tgba -f GFa 2>err && err=4
+cat err
+grep 'failed to create temporary file' err
+grep 'Note that the directory.* TMPDIR ' err
+
+exit $err

@@ -1,0 +1,47 @@
+# -*- mode: shell-script; coding: utf-8 -*-
+# Copyright (C) 2012, 2013, 2016, 2018 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2005  Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Ensure we are running from the right directory.
+test -f ./defs || {
+   echo "defs: not found in current directory" 1>&2
+   exit 1
+}
+
+srcdir='@srcdir@'
+
+# Ensure $srcdir is set correctly.
+test -f "$srcdir/defs.in" || {
+   echo "$srcdir/defs.in not found, check \$srcdir" 1>&2
+   exit 1
+}
+
+top_builddir="@top_builddir@"
+LTLCROSS="$top_builddir/bin/ltlcross@EXEEXT@"
+LTLFILT="$top_builddir/bin/ltlfilt@EXEEXT@"
+RANDLTL="$top_builddir/bin/randltl@EXEEXT@"
+GENLTL="$top_builddir/bin/genltl@EXEEXT@"
+LTL2BA="@LTL2BA@"
+LTL3BA="@LTL3BA@"
+LTL2TGBA="@top_builddir@/bin/ltl2tgba@EXEEXT@"
+SPIN="@SPIN@"
+
+. ${TOOLS-$srcdir/tools}

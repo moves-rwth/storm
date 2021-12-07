@@ -1,0 +1,161 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015, 2018, 2019 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+cat >input <<EOF
+HOA: v1
+States: 7
+Start: 0
+AP: 2 "b" "a"
+acc-name: Rabin 2
+Acceptance: 4 (Fin(0) & Inf(1)) | (Fin(2) & Inf(3))
+properties: implicit-labels state-acc complete deterministic
+--BODY--
+State: 0 {0}
+1 5 3 6
+State: 1 {1 3}
+2 5 4 6
+State: 2 {1}
+2 5 4 6
+State: 3 {0 3}
+2 5 4 6
+State: 4 {0}
+2 5 4 6
+State: 5 {1 3}
+2 5 4 6
+State: 6 {0 3}
+2 5 4 6
+--END--
+EOF
+
+test "`autfilt --small input --stats=%S,%s`" = 7,1
+
+autfilt -S --high --small input -H > out
+cat >expected <<EOF
+HOA: v1
+States: 5
+Start: 0
+AP: 2 "b" "a"
+acc-name: Streett 1
+Acceptance: 2 Fin(0) | Inf(1)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!1] 1
+[1] 3
+State: 1 {1}
+[0&!1] 1
+[!0&!1] 2
+[0&1] 3
+[!0&1] 4
+State: 2
+[0&!1] 1
+[!0&!1] 2
+[0&1] 3
+[!0&1] 4
+State: 3 {0 1}
+[0&!1] 1
+[!0&!1] 2
+[0&1] 3
+[!0&1] 4
+State: 4 {0}
+[0&!1] 1
+[!0&!1] 2
+[0&1] 3
+[!0&1] 4
+--END--
+EOF
+diff out expected
+
+# This is a case where the "pull-mark in simulation" optimization
+# introduced by 8959eabad caused the output automaton to be declared
+# weak although it was only inherently weak.
+cat >input <<EOF
+HOA: v1
+States: 8
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc weak
+--BODY--
+State: 0
+[0&1] 1
+State: 1
+[1] 2
+[!0&1] 3
+State: 2
+[!0&1] 5
+[0&1] 7
+State: 3
+[0&1] 4
+[1] 5
+State: 4 {0}
+[0&1] 4
+[1] 5
+[!0&!1] 6
+State: 5 {0}
+[0&1] 4
+[1] 5
+State: 6 {0}
+[!0&!1] 6
+State: 7
+[!0&1] 5
+[!0&!1] 6
+[0&1] 7
+--END--
+EOF
+cat >expect <<EOF
+HOA: v1
+States: 7
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic weak
+--BODY--
+State: 0
+[0&1] 1
+State: 1
+[0&1] 2
+[!0&1] 3
+State: 2
+[!0&1] 3
+[0&1] 6
+State: 3 {0}
+[!0&1] 3
+[0&1] 4
+State: 4 {0}
+[!0&1] 3
+[0&1] 4
+[!0&!1] 5
+State: 5 {0}
+[!0&!1] 5
+State: 6
+[!0&1] 3
+[!0&!1] 5
+[0&1] 6
+--END--
+EOF
+autfilt --small --low input > output
+diff expect output

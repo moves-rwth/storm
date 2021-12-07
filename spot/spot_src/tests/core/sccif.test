@@ -1,0 +1,87 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017, 2020 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# While running some benchmark, Tomáš Babiak found that Spot took too
+# much time (i.e. >1h) to translate those six formulae.  It turns out
+# that the WDBA minimization was performed after the degeneralization
+# algorithm, while this is not necessary (WDBA will produce a BA, so
+# we may as well skip degeneralization).  Translating these formulae
+# in the test-suite ensure that they don't take too much time (the
+# buildfarm will timeout if it does).
+
+. ./defs
+
+set -e
+
+run 0 ../sccif > stdout
+
+cat >expected <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "p1" "p2"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[f] 0
+[0] 1
+[1] 2 {1}
+State: 1
+[0&1] 2 {0}
+State: 2
+[0 | 1] 0 {0 1}
+[!0 | 1] 1
+[t] 2 {0 1}
+--END--
+** default
+SCC#0
+  states: 0 1 2
+  edges: 0->0 0->1 0->2 1->2 2->0 2->1 2->2
+  succs:
+
+** ignore edges to 2
+SCC#0
+  states: 1
+  edges:
+  succs:
+SCC#1
+  states: 0
+  edges: 0->0
+  succs: 0
+
+** cut edges to 2
+SCC#0
+  states: 1
+  edges:
+  succs:
+SCC#1
+  states: 0
+  edges: 0->0
+  succs: 0
+SCC#2
+  states: 2
+  edges:
+  succs: 0 1
+
+EOF
+
+diff expected stdout

@@ -1,0 +1,452 @@
+# -*- coding: utf-8 -*-
+#+TITLE: The bdd_dict interface (advanced topic)
+#+DESCRIPTION: Description of the bdd_dict interface.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+#+PROPERTY: header-args:python :results output :exports both
+
+Spot uses BDD for multiple purposes.
+
+The most common one is for labeling edges of automata: each edge
+stores a BDD representing its guard (i.e., a Boolean function over
+atomic propositions).  Note that the automaton is still represented as
+a graph (with a [[https://spot.lrde.epita.fr/ipynb/twagraph-internals.html][vector of states and a vector of edges]]) and the BDD is
+only used for the guard.  This differs from symbolic representations
+where the entire transition structure is represented as one large BDD.
+
+There are other algorithms where BDDs are used from different tasks.
+For instance, our simulation-based reduction function computes a
+*signature* of each state as a BDD that is essentially the disjunction
+of all outgoing edges, represented by their guard, their acceptance
+sets, and their destination *classes*.  Also the translation of LTL
+formulas to transition-based generalized Büchi automata is using an
+intermediate representation of states that is similar to the
+aforementioned signatures, excepts that classes are replaced by
+subformulas.
+
+From the point of view of the BDD library, BDDs are just DAGs with
+nodes labeled by BDD variables (numbered from 0).  From the point of
+view of Spot's algorithm, these BDD variables have a meaning.  For
+instance if we want to synchronize two automata that have guards over
+the atomic propositions $a$ and $b$, we need to make sure that both
+automata agree on the BDD variables used to represent $a$ and $b$.
+
+* The purpose of =bdd_dict=
+
+The =spot::bdd_dict= object is in charge of allocating BDD variables,
+and ensuring that multiple users reuse the same variables for similar
+purpose.  When a =twa_graph= automaton is constructed, it takes a
+=bdd_dict= as argument.  Every time an atomic proposition is
+registered through the =twa::register_ap()= method, the =bdd_dict=
+is queried.
+
+As an example, the following two automata share their =bdd_dict=, and
+although they do not declare their atomic propositions in the same
+order, they get compatible variable numbers.
+
+#+BEGIN_SRC C++
+  #include <spot/twa/twagraph.hh>
+
+  int main()
+  {
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+    spot::twa_graph_ptr aut1 = spot::make_twa_graph(dict);
+    int ap1a = aut1->register_ap("a");
+    int ap1b = aut1->register_ap("b");
+    std::cout << "aut1: a=" << ap1a << " b=" << ap1b << '\n';
+
+    spot::twa_graph_ptr aut2 = spot::make_twa_graph(dict);
+    int ap2c = aut2->register_ap("c");
+    int ap2b = aut2->register_ap("b");
+    int ap2a = aut2->register_ap("a");
+    std::cout << "aut2: a=" << ap2a << " b=" << ap2b << " c=" << ap2c << '\n';
+  }
+#+END_SRC
+
+#+RESULTS:
+: aut1: a=0 b=1
+: aut2: a=0 b=1 b=2
+
+Contrast the above result with the following example, where the two
+automata use different =bdd_dict=:
+
+
+#+BEGIN_SRC C++
+  #include <spot/twa/twagraph.hh>
+
+  int main()
+  {
+    spot::bdd_dict_ptr dict1 = spot::make_bdd_dict();
+    spot::twa_graph_ptr aut1 = spot::make_twa_graph(dict1);
+    int ap1a = aut1->register_ap("a");
+    int ap1b = aut1->register_ap("b");
+    std::cout << "aut1: a=" << ap1a << " b=" << ap1b << '\n';
+
+    spot::bdd_dict_ptr dict2 = spot::make_bdd_dict();
+    spot::twa_graph_ptr aut2 = spot::make_twa_graph(dict2);
+    int ap2c = aut2->register_ap("c");
+    int ap2b = aut2->register_ap("b");
+    int ap2a = aut2->register_ap("a");
+    std::cout << "aut2: a=" << ap2a << " b=" << ap2b << " c=" << ap2c << '\n';
+  }
+#+END_SRC
+
+#+RESULTS:
+: aut1: a=0 b=1
+: aut2: a=2 b=1 c=0
+
+For this reason, operations like ~spot::product(aut1, aut2)~ will
+require that ~aut1->get_dict() == aut2->get_dict()~.
+
+
+In Python, many functions that would take an explicit =bdd_dict= in C++ will
+default to some global =bdd_dict= instead.  So we can do:
+
+#+BEGIN_SRC python
+import spot
+aut1 = spot.make_twa_graph()
+ap1a = aut1.register_ap("a")
+ap1b = aut1.register_ap("b")
+print("aut1: a={} b={}".format(ap1a, ap1b))
+aut2 = spot.make_twa_graph()
+ap2c = aut2.register_ap("c")
+ap2b = aut2.register_ap("b")
+ap2a = aut2.register_ap("a")
+print("aut1: a={} b={} c={}".format(ap2a, ap2b, ap2c))
+#+END_SRC
+
+#+RESULTS:
+: aut1: a=0 b=1
+: aut1: a=0 b=1 c=2
+
+In that case we did not mention any =bdd_dict=, but there is one that
+is implicitly used in both cases.  Similarly, when we call
+=spot.translate()= the same global =bdd_dict= is used by default.
+
+What really confuses people, is that the association between an atomic
+proposition (=a=, =b=, ...) and a BDD variable (=0=, =1=, ...)  will
+only be held by the =bdd_dict= for the lifetime of the objects (here the
+automata) that registered this association to the =bdd_dict=.
+
+Here is a new C++ example where we use the =bdd_dict::dump()= method
+to display the contents of the =bdd_dict= (this method is only meant
+for debugging, please do not rely on its output).
+
+#+BEGIN_SRC C++
+  #include <spot/twa/twagraph.hh>
+
+  int main()
+  {
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+
+    spot::twa_graph_ptr aut1 = spot::make_twa_graph(dict);
+    int ap1a = aut1->register_ap("a");
+    int ap1b = aut1->register_ap("b");
+    std::cout << "aut1@" << aut1 << ": a=" << ap1a << " b=" << ap1b << '\n';
+    dict->dump(std::cout) << "---\n";
+
+    spot::twa_graph_ptr aut2 = spot::make_twa_graph(dict);
+    int ap2c = aut2->register_ap("c");
+    int ap2b = aut2->register_ap("b");
+    std::cout << "aut2@" << aut2 << ": b=" << ap2b << " c=" << ap2c << '\n';
+    dict->dump(std::cout) << "---\n";
+
+    aut1 = nullptr;
+    std::cout << "aut1 destroyed\n";
+    dict->dump(std::cout) << "---\n";
+
+    aut2 = nullptr;
+    std::cout << "aut2 destroyed\n";
+    dict->dump(std::cout);
+  }
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+aut1@0x55bff3d24340: a=0 b=1
+Variable Map:
+ 0 Var[a] x1 { 0x55bff3d24340 }
+ 1 Var[b] x1 { 0x55bff3d24340 }
+Anonymous lists:
+  [0]
+Free list:
+
+---
+aut2@0x55bff3d258d0: b=1 c=2
+Variable Map:
+ 0 Var[a] x1 { 0x55bff3d24340 }
+ 1 Var[b] x2 { 0x55bff3d24340 0x55bff3d258d0 }
+ 2 Var[c] x1 { 0x55bff3d258d0 }
+Anonymous lists:
+  [0]
+Free list:
+
+---
+aut1 destroyed
+Variable Map:
+ 0 Free
+ 1 Var[b] x1 { 0x55bff3d258d0 }
+ 2 Var[c] x1 { 0x55bff3d258d0 }
+Anonymous lists:
+  [0]
+Free list:
+  (0, 1)
+---
+aut2 destroyed
+Variable Map:
+ 0 Free
+ 1 Free
+ 2 Free
+Anonymous lists:
+  [0]
+Free list:
+  (0, 3)
+#+end_example
+
+For each BDD variable registered to the =bdd_dict=, we have one line
+that gives: the variable number, its meaning (e.g. =Var[b]=), its
+registration count (=x2=), and a list of pointers to the objects that
+registered the association.
+
+Every time =twa::register_ap()= is called, it calls a similar function
+in the =bdd_dict= to check for an existing association or register a
+new one.  When =aut1= is deleted, it unregisters all its variables,
+causing variable =0= to become free.  The free list is actually a list
+of pairs representing ranges of free variables that can be reassigned
+by the BDD dict when needed.  (The *anonymous list* serves when
+[[#anonymous][*anonymous BDD variables*]] are used.)
+
+Such a low-level registration is usually handled by the following
+interface:
+
+#+BEGIN_SRC C++ :exports code
+  // return a BDD variable number for f
+  int bdd_dict::register_proposition(formula f, const void* for_me);
+  // release the BDD variable
+  void bdd_dict::unregister_variable(int var, const void* me);
+  // release all BDD variables registered by me
+  void bdd_dict::unregister_all_my_variables(const void* me);
+  // register the same variables as another object
+  void bdd_dict::register_all_variables_of(const void* from_other,
+                                           const void* for_me);
+#+END_SRC
+
+The last function may be bit tricky to use, because we need to be sure
+that another object has registered some variables.  You can rely on
+the fact that each =twa= automaton register its variables this way.
+
+Now, in most cases, there is no need to worry about the =bdd_dict=.
+Automata will register and unregister variables as needed.  Other
+objects like =spot::twa_word= will do the same.
+
+There are at least two situations where one may need to deal with the
+=bdd_dict=:
+1. One case is when [[#ap][creating a derived object that store some BDD
+   representing a formula over atomic proposition]] (but without
+   reference to their original automaton).
+2. Another case is when [[#anonymous][more BDD variables (maybe
+   unrelated to atomic propositions) are needed]].
+
+These two cases are discussed in the next sections.
+
+* Prolonging the association between a BDD variable and an atomic proposition
+  :PROPERTIES:
+  :CUSTOM_ID: ap
+  :END:
+
+Let us implement an object representing a set of transitions of the
+form $(src, guard, dest)$.  This can for instance be used to store
+all transition that belong to a certain acceptance set.
+
+#+NAME: trans_set
+#+begin_src python :export code
+  import spot
+
+  class trans_set:
+      def __init__(self, dict):
+          self.set = set()
+          self.dict = dict
+      def add_trans(self, src, guard, dst):
+          self.set.add((src, guard, dst))
+      def str_trans(self, src, guard, dst):
+          f = spot.bdd_format_formula(self.dict, guard)
+          return "({},{},{})".format(src, f, dst)
+      def __str__(self):
+          return '{' + ",".join([ self.str_trans(*t) for t in self.set ]) + '}'
+
+  def accepting_set(aut, num):
+      ts = trans_set(aut.get_dict())
+      for e in aut.edges():
+          if e.acc.has(num):
+              ts.add_trans(e.src, e.cond, e.dst)
+      return ts
+#+end_src
+
+The above code has two definitions.
+1. The =trans_set= class is a set of transitions that can be printed.
+   It stores a =bdd_dict= so that it can print the guard of the
+   transition.
+2. The =accepting_set= function iterates over an automaton, and saves
+   all transitions that belong to a given acceptance set number.
+
+For instance we can now translate an automaton, compute its acceptance
+set 0, and print it as follows:
+
+#+begin_src python :noweb strip-export
+  <<trans_set>>
+  aut = spot.translate('GF(a <-> XXa)')
+  ts = accepting_set(aut, 0)
+  print(ts)
+#+end_src
+#+RESULTS:
+: {(0,a,3),(1,a,1),(2,!a,2),(3,!a,0)}
+
+The code of =trans_set= is in fact bogus.  The problem is that it
+assumes the association between the atomic propositions and the BDD
+variable is still available when the =str_trans= method is called.
+However, that might not be the case.
+
+The following call sequence demonstrates the problem:
+
+#+begin_src python :noweb strip-export
+  <<trans_set>>
+  try:
+    ts = accepting_set(spot.translate('GF(a <-> XXa)'), 0)
+    print(ts)
+  except RuntimeError as e:
+    print("ERROR:", e)
+#+end_src
+
+#+RESULTS:
+: ERROR: bdd_to_formula() was passed a bdd with a variable that is not in the dictionary
+
+In this case, the temporary automaton constructed by
+=spot.translate()= and passed to the =accepting_set()= function is
+destroyed right after the =ts= object has been constructed.  When the
+automaton is destroyed, it removes all its associations from the
+=bdd_dict=.  This means that before the =print(ts)= the dictionary
+that was used by the automaton, and that is still stored in the =ts=
+objects is now empty: calling =bdd_format_formula()= raises an
+exception.
+
+This can be fixed in a couple of ways.  The easy way is to store the
+automaton inside the =trans_set= object, to ensure that it will live
+at least as long as the =trans_set= object.  But maybe the automaton
+is too big and we really want to get rid of it?  In this case
+=trans_set= should tell the =bdd_dict= that it want to retain the
+associations.  The easiest way in this case is to call the
+=register_all_variables_of()= method, because we know that each
+automaton registers its variables.
+
+#+begin_src python
+  import spot
+
+  class trans_set:
+      def __init__(self, aut):
+          self.set = set()
+          self.dict = aut.get_dict()
+          self.dict.register_all_variables_of(aut, self)
+      def __del__(self):
+          self.dict.unregister_all_my_variables(self)
+      def add_trans(self, src, guard, dest):
+          self.set.add((src, guard, dest))
+      def str_trans(self, src, guard, dest):
+          f = spot.bdd_format_formula(self.dict, guard)
+          return "({},{},{})".format(src, f, dest)
+      def __str__(self):
+          return '{' + ",".join([ self.str_trans(*t) for t in self.set ]) + '}'
+
+  def accepting_set(aut, num):
+      ts = trans_set(aut)
+      for e in aut.edges():
+          if e.acc.has(num):
+              ts.add_trans(e.src, e.cond, e.dst)
+      return ts
+
+  try:
+    ts = accepting_set(spot.translate('GF(a <-> XXa)'), 0)
+    print(ts)
+  except RuntimeError as e:
+    print("ERROR:", e)
+#+end_src
+
+#+RESULTS:
+: {(0,a,3),(1,a,1),(2,!a,2),(3,!a,0)}
+
+Notice that we have also added a destructor to =trans_set= to
+unregister all the variables.
+
+
+* Anonymous BDD variables
+  :PROPERTIES:
+  :CUSTOM_ID: anonymous
+  :END:
+
+Another scenario where working with a =bdd_dict= is needed is when one
+needs to allocate *anonymous BDD variables*.  These are variables that
+are not attached to any atomic proposition, and that can be used by
+one algorithm privately.  If multiple algorithms (or objects) register
+anonymous variables, the =bdd_dict= will reuse anonymous variables
+allocated to other algorithms.  One can allocate multiple anonymous
+variables with the following =bdd_dict= method:
+
+#+begin_src c++ :export code
+int bdd_dict::register_anonymous_variables(int n, const void* for_me);
+#+end_src
+
+A range of =n= variables will be allocated starting at the returned
+index.
+
+For instance, let's say the our =trans_set= should now store a
+symbolic representation of a transition relation.  For simplicity we
+assume we just want to store set of pairs =(src,dst)=: each pair will
+be a conjunction $v_{src}\land v'_{dst}$ between two BDD variables
+taken from two ranges ($v_i$ representing a source state $i$ and $v'i$
+representing a destination state $i$), and the entire set will be a
+disjunction of all these pairs.  If the automaton has $n$ states, we
+want to allocate $2n$ BDD variables for this purpose.  We call these
+variables *anonymous* because their meaning is unknown the the
+=bdd_dict=.
+
+#+begin_src python
+  import spot
+  from buddy import *
+
+  class trans_set:
+      def __init__(self, aut):
+          self.dict = d = aut.get_dict()
+          self.num_states = n = aut.num_states()
+          self.anonbase = b = d.register_anonymous_variables(2*n, self)
+          s = bddfalse
+          for e in aut.edges():
+            s |= self.src(e.src) & self.dst(e.dst)
+          self.rel = s
+      def src(self, n):
+          return bdd_ithvar(self.anonbase + n)
+      def dst(self, n):
+          return bdd_ithvar(self.anonbase + n + self.num_states)
+      def __del__(self):
+          self.dict.unregister_all_my_variables(self)
+      def __str__(self):
+          isop = spot.minato_isop(self.rel)
+          i = isop.next()
+          res = []
+          while i != bddfalse:
+            s = bdd_var(i) - self.anonbase
+            d = bdd_var(bdd_high(i)) - self.anonbase - self.num_states
+            res.append((s, d))
+            i = isop.next()
+          return str(res)
+
+  ts = trans_set(spot.translate('GF(a <-> XXa)'))
+  print(ts)
+#+end_src
+
+#+RESULTS:
+: [(0, 2), (0, 3), (1, 0), (1, 1), (2, 2), (2, 3), (3, 0), (3, 1)]
+
+#  LocalWords:  utf bdd html args BDDs DAGs twa  SRC aut ap bff src
+#  LocalWords:  unregisters unregister dest init dst str num cond GF
+#  LocalWords:  noweb XXa RuntimeError del v'i anonbase bddfalse isop
+#  LocalWords:  ithvar

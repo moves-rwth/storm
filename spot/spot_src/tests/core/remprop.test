@@ -1,0 +1,139 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015-2017 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs || exit 1
+
+set -e
+
+cat >automaton <<EOF
+HOA: v1
+States: 4
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[0] 1
+State: 1
+[1] 2
+[2] 2
+State: 2 {0}
+[1] 2
+[0&1] 1
+[1&2] 3
+State: 3
+[t] 3
+--END--
+EOF
+
+cat >expected <<EOF
+HOA: v1
+name: "3->1"
+States: 4
+Start: 0
+AP: 1 "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0
+[t] 1
+State: 1
+[t] 2
+[0] 2
+State: 2 {0}
+[t] 2
+[t] 1
+[0] 3
+State: 3
+[t] 3
+--END--
+EOF
+
+run 0 autfilt -H --remove-ap=a,b --name='%X->%x' automaton >out
+cat out
+diff out expected
+
+cat >expected <<EOF
+HOA: v1
+name: "\"a\", \"b\", \"c\"->(c)"
+States: 3
+Start: 0
+AP: 1 "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[t] 1
+State: 1
+[0] 2
+State: 2
+--END--
+EOF
+
+run 0 autfilt -H --remove-ap=a=1,b=0 --name='%[d, ]X->%[p]x' automaton >out
+cat out
+diff out expected
+
+autfilt -H --remove-ap=a==1 automaton 2>stderr && exit 1
+grep "autfilt: unexpected '=' at position 2 in 'a==1'" stderr
+
+
+cat >automaton <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc colored
+properties: deterministic
+--BODY--
+State: 0 {0}
+[1] 0
+--END--
+EOF
+
+autfilt automaton --used-ap=1 --unused-ap=2 > output
+diff automaton output
+
+cat >expect <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc colored
+properties: deterministic
+--BODY--
+State: 0 {0}
+[0] 0
+--END--
+EOF
+
+autfilt --remove-unused-ap automaton > output
+diff output expect
+
+autfilt output --used-ap=0..1 --unused-ap=0 > output2
+diff output output2

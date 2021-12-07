@@ -1,0 +1,54 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012, 2014, 2015 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+randaut a b -Q5 --hoa > aut1
+randaut a b c -Q10 --hoa > aut2
+autfilt --randomize aut1 --hoa > rand11
+autfilt --randomize --seed=1 aut1 --hoa > rand12
+autfilt --randomize --seed=2 aut1 --hoa > rand13
+autfilt --randomize aut2 --hoa > rand21
+autfilt --randomize --seed=1 aut2 --hoa > rand22
+autfilt --randomize --seed=2 aut2 --hoa > rand23
+
+cat aut1 aut2 > aut
+cat aut1 aut2 rand11 rand12 rand13 rand21 rand22 rand23 > all
+autfilt all --uniq --hoa > out
+diff aut out
+
+
+run 0 randaut -Hl -u -n 4 -Q1 a b | LC_ALL=C sort |
+      autfilt -H | grep '&' > out
+cat >expected <<EOF
+[!0&!1] 0
+[!0&1] 0
+[0&!1] 0
+[0&1] 0
+EOF
+diff out expected
+
+# This should fail: the random automaton generator can only generate 4
+# different one-state automaton with two atomic propositions.
+randaut -Hl -u -n 5 -Q1 a b >out 2>stderr && exit 1
+test $? = 2
+grep 'failed to generate a new unique automaton' stderr
+test 4 = `wc -l < out`

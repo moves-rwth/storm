@@ -1,0 +1,49 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{spotltl}[2013/08/28 Temporal Logic Operators for LTL and PSL]
+% NOTE: if you use amsmath.sty, make sure you include it before spotltl.sty
+% otherwise it will try to redefine some symbols from txfonts.
+\RequirePackage{txfonts}
+
+\newcommand{\ttrue}{\top}
+\newcommand{\ffalse}{\bot}
+\newcommand{\eword}{\varepsilon}  % empty word, denoted by [*0] in PSL
+
+% These three are not declared as operators
+\newcommand{\F}{\mathsf{F}} % eventually
+\newcommand{\G}{\mathsf{G}} % always
+\newcommand{\X}{\mathsf{X}} % next
+% The \mathbin tells TeX to adjust spacing for binary operators
+\newcommand{\M}{\mathbin{\mathsf{M}}} % strong release
+\newcommand{\R}{\mathbin{\mathsf{R}}} % release
+\newcommand{\U}{\mathbin{\mathsf{U}}} % until
+\newcommand{\W}{\mathbin{\mathsf{W}}} % weak until
+
+% additional logical operators to complete \land, \lor, and \lnot.
+\newcommand{\limplies}{\rightarrow}
+\newcommand{\liff}{\leftrightarrow}
+\newcommand{\lxor}{\oplus}
+
+% Star-like PSL operators
+\newcommand{\SereStar}[1]{^{\star#1}}
+\newcommand{\SereFStar}[1]{^{\mathsf{:}\star#1}}
+\newcommand{\SereEqual}[1]{^{=#1}}
+\newcommand{\SereGoto}[1]{^{\to#1}}
+\newcommand{\SerePlus}{^+}
+\newcommand{\SereFPlus}{^{\mathsf{:}+}}
+\newcommand{\SereFusion}{\mathbin{\mathsf{:}}}
+\newcommand{\SereConcat}{\mathbin{\mathsf{;}}}
+\newcommand{\SereOr}{\cup}
+\newcommand{\SereAnd}{\cap}
+\newcommand{\SereAndNLM}{\mathbin{\mathsf{\&}}}
+
+% Triggers and Seq operators, with their variant.  The *M variants of
+% these ope are internal "Marked" operators for Spot that should
+% normally not be output unless the formula is used to label a state
+% in an automaton (but we do not use LaTeX there).
+
+\newcommand{\seq}{\Diamondright}
+%\newcommand{\seqM}{\seq}
+\newcommand{\seqX}{\DiamondRight}
+%\newcommand{\seqXM}{\seqX}
+\newcommand{\triggers}{\boxright}
+\newcommand{\triggersX}{\boxRight}

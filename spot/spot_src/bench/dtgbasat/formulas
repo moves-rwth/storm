@@ -1,0 +1,131 @@
+# Formulas from Gasier et al., "Rabinizer: Small deterministic
+# automata for LTL(F,G)" (ATVA'12)
+G(a | Fb)
+FGa | FGb | GFc
+F(a | b)
+GF(a | b)
+G(a | Fa)
+G(a | b | c)
+G(a | F(b | c))
+Fa | Gb
+G(a | F(b & c))
+FGa | GFb
+GF(a | b) & GF(b | c)
+
+FF(a & G!a) | (GG!a & Fa)
+GFa & FGb
+(GFa & FGb) | (FG!a & GF!b)
+FGa & GFa
+G(Fa & Fb)
+Fa & F!a
+G(b | GFa) & G(c | GF!a) | Gb | Gc
+G(b | FGa) & G(c | FG!a) | Gb | Gc
+F(b & FGa) | F(c & FG!a) & Fb & Fc
+F(b & GFa) | F(c & GF!a) & Fb & Fc
+
+GFa -> GFb
+(GFa -> GFb) & (GFc -> GFd)
+
+GF(Fa | GFb | FG(a | b))
+FG(Fa | GFb | FG(a | b))
+FG(Fa | GFb | FG(a | b) | FGb)
+
+# formulas from DBA minimizer
+XXa
+GF(a -> XXXb)
+F(p & XF(q & XF(r & XFs)))
+F(q & X(p U r))
+F(p & X(q & XFr))
+p U (q & X(r U s))
+G(a -> Fb) & G(c -> Fd)
+GFa & GFb
+GFa | GFb | GFc
+GFa
+a U b U c U d
+G(a -> Fb) & Gc
+(Ga -> Fb) & (G!a -> F!b)
+p U (q & X(r & F(s & XF(u & XF(v & XFw)))))
+G(a -> Fb) & G(b -> Fc)
+G(a -> Fb) & G(!a -> F!b)
+GFp && GFq && GF r && GF u
+GF(a <-> XXXb)
+G(p -> q U r)
+GF(a <-> XXb)
+G!c & G(a -> Fb) & G(b -> Fc)
+G(a -> XXXb)
+G(a -> Fb)
+G(a U b U !a U !b)
+(p U q U r) || (q U r U p) || (r U p U q)
+
+# Some random formulas that are determinizable with tba-det
+X((a M F((!c & !b) | (c & b))) W (G!c U b))
+X(((a & b) R (!a U !c)) R b)
+XXG(Fa U Xb)
+(!a M !b) W F!c
+(b & Fa & GFc) R a
+(a R (b W a)) W G(!a M (c | b))
+(Fa W b) R (Fc | !a)
+X(G(!a M !b) | G(a | G!a))
+Fa W Gb
+Ga | GFb
+a M G(F!b | X!a)
+G!a R XFb
+XF(!a | GFb)
+G(F!a U !a) U Xa
+(a | G(a M !b)) W Fc
+Fa W Xb
+X(a R ((!b & F!c) M X!a))
+XG!a R Fb
+GFc | (a & Fb)
+X(a R (Fb R F!b))
+G(Xa M Fa)
+X(Gb | GFa)
+X(Gc | XG((b & Ga) | (!b & F!a)))
+Ga R Fb
+G(a U (b | X((!c & !a) | (a & c))))
+XG((G!a & F!b) | (Fa & (a | Gb)))
+(a U X!a) | XG(!b & XFc)
+X(G!a | GFa)
+G(G!a | F!c | G!b)
+
+# Some random formulas that should only be determinizable via dstar2tgba
+# Generated with
+# randltl -n -1 a b c |
+# ltlfilt --remove-wm -r -u --size-min=3 --size-max=15 --syntactic-recurrence |
+# ltlfilt -v --obligation | ltl2tgba -F - -x tba-det -D --stats='%d,%f' |
+# grep 0, | head -n 30
+
+X(Fc W b) R Fa
+!b & ((Fa U b) W Xc)
+G(F!c | (Fb U a))
+(c R (b R Fa)) W XGb
+X((Fb & XFa) R XFc)
+(Ga R (F!c U b)) W b
+X(!b | G(b & !a)) R F(c & Fa)
+G(Fc | Ga | XXF!b)
+G(F(!a & Fa) U (b U Xc))
+G(F!c U X(Xb & F!b))
+G(XXFa U (b | a | Fc))
+G(c | F!a | (b U Xb))
+G(a U X(a | (F!b U Xc)))
+XF!a R F(b | (!a & F!c))
+(c & Xc) R ((!b | XFc) U a)
+G(Gb | (b & c) | F(!a & XXa))
+G(X(Fc & Xa) M Fb)
+X(!c & Fc) R (c M Fa)
+G(Ga | X(Fc U (b | X!b)))
+G(XXFb U (c | (!c & F!a)))
+((Fc U b) R Fa) W X!a
+G(a | X(a R (GFb | (Fc U a))))
+(F!c R F!b) W G!a
+(Fb & !b) R (!a R XFc)
+F(Fb & c) W Xa
+G(G!c | ((Fb U a) U c))
+(Fa & XXb) R Fc
+Gc R (F!a & (b U a))
+(c R Fa) U X!b
+GF(b & XXXFc)
+
+# Extra ones
+G(F(a & F(b & Fc)))
+(GFa & GFb) | (GFc & GFd)

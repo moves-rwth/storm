@@ -1,0 +1,143 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010-2012, 2015, 2017, 2019 Laboratoire de Recherche
+# et Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check for the constant_term visitor
+
+. ./defs || exit 1
+
+set -e
+
+cat >input<<EOF
+a,B&!xfLPSFsgopra
+a<->b,BxfLPSFsgopra
+!a,B&!xfLPSFsgopra
+!(a|b),B&xfLPSFsgopra
+F(a),&!xLPegopra
+G(a),&!xLPusopra
+a U b,&!xfLPgopra
+a U Fb,&!xLPegopra
+Ga U b,&!xLPopra
+1 U a,&!xfLPegopra
+a W b,&!xfLPsopra
+a W 0,&!xfLPusopra
+a M b,&!xfLPgopra
+a M 1,&!xfLPegopra
+a R b,&!xfLPsopra
+0 R b,&!xfLPusopra
+a R (b R (c R d)),&!xfLPsopra
+a U (b U (c U d)),&!xfLPgopra
+a W (b W (c W d)),&!xfLPsopra
+a M (b M (c M d)),&!xfLPgopra
+Fa -> Fb,xLPopra
+Ga -> Fb,xLPgopra
+Fa -> Gb,xLPsopra
+(Ga|Fc) -> Fb,xLPopra
+(Ga|Fa) -> Gb,xLPopra
+{a;c*;b}|->!Xb,&fPsopra
+{a;c*;b}|->X!b,&!fPsopra
+{a;c*;b}|->!Fb,&Psopra
+{a;c*;b}|->G!b,&!Psopra
+{a;c*;b}|->!Gb,&Pra
+{a;c*;b}|->F!b,&!Pra
+{a;c*;b}|->GFa,&!Pra
+{a;c*;b}|->FGa,&!Pa
+{a[+];c[+];b*}|->!Fb,&Psopra
+{a*;c[+];b*}|->!Fb,&xPsopra
+{a[+];c*;b[+]}|->G!b,&!Psopra
+{a*;c[+];b[+]}|->!Gb,&Pra
+{a[+];c*;b[+]}|->F!b,&!Pra
+{a[+];c[+];b*}|->GFa,&!Pra
+{a*;c[+];b[+]}|->FGa,&!Pa
+{a;c;b|(d;e)}|->!Xb,&fPFsgopra
+{a;c;b|(d;e)}|->X!b,&!fPFsgopra
+{a;c;b|(d;e)}|->!Fb,&Psopra
+{a;c;b|(d;e)}|->G!b,&!Psopra
+{a;c;b|(d;e)}|->!Gb,&Pgopra
+{a;c;b|(d;e)}|->F!b,&!Pgopra
+{a;c;b|(d;e)}|->GFa,&!Pra
+{a;c;b|(d;e)}|->FGa,&!Ppa
+{a[+] && c[+]}|->!Xb,&fPsopra
+{a[+] && c[+]}|->X!b,&!fPsopra
+{a[+] && c[+]}|->!Fb,&xPsopra
+{a[+] && c[+]}|->G!b,&!xPsopra
+{a[+] && c[+]}|->!Gb,&xPra
+{a[+] && c[+]}|->F!b,&!xPra
+{a[+] && c[+]}|->GFa,&!xPra
+{a[+] && c[+]}|->FGa,&!xPa
+{a;c*;b}<>->!Gb,&Pgopra
+{a;c*;b}<>->F!b,&!Pgopra
+{a;c*;b}<>->FGb,&!Ppa
+{a;c*;b}<>->!GFb,&Ppa
+{a;c*;b}<>->GFb,&!Pa
+{a;c*;b}<>->!FGb,&Pa
+{a*;c[+];b[+]}<>->!FGb,&Pa
+{a;c|d;b}<>->!Gb,&Pgopra
+{a;c|d;b}<>->G!b,&!Psopra
+{a;c|d;b}<>->FGb,&!Ppa
+{a;c|d;b}<>->!GFb,&Ppa
+{a;c|d;b}<>->GFb,&!Pra
+{a;c|d;_b}<>->!FGb,&Pr
+# Equivalent to a&b&c&d
+{a:b:c:d}!,B&!xfLPSFsgopra
+a&b&c&d,B&!xfLPSFsgopra
+(Xa <-> XXXc) U (b & Fe),LPgopra
+(!X(a|X(!b))&(FX(g xor h)))U(!G(a|b)),LPegopra
+(!X(a|X(!b))&(GX(g xor h)))R(!F(a|b)),LPusopra
+(!X(a|X(!b))&(GX(g xor h)))U(!G(a|b)),LPeopra
+(!X(a|X(!b))&(FX(g xor h)))R(!F(a|b)),LPuopra
+(!X(a|X(!b))&(GX(g xor h)))U(!F(a|b)),LPpa
+(!X(a|X(!b))&(FX(g xor h)))R(!G(a|b)),LPra
+(!X(a|GXF(!b))&(FGX(g xor h)))U(!F(a|b)),LPpa
+(!X(a|GXF(!b))&(FGX(g xor h)))R(!F(a|b)),LPupa
+(!X(a|FXG(!b))&(GFX(g xor h)))R(!G(a|b)),LPra
+(!X(a|FXG(!b))&(GFX(g xor h)))U(!G(a|b)),LPera
+(!X(a|GXF(!b))&(FGX(g xor h)))U(!G(a|Fb)),LPepa
+(!X(a|GXF(!b))&(FGX(g xor h)))U(!F(a|Gb)),LPa
+(!X(a|FXG(!b))&(GFX(g xor h)))R(!F(a|Gb)),LPura
+(!X(a|FXG(!b))&(GFX(g xor h)))R(!G(a|Fb)),LPa
+GFa M GFb,&!xLPeua
+FGa M FGb,&!xLPeupa
+Fa  M GFb,&!xLPera
+GFa W GFb,&!xLPeura
+FGa W FGb,&!xLPeua
+Ga  W FGb,&!xLPupa
+Ga  W b,&!xLPsopra
+Fa  M b,&!xLPgopra
+{a;b*;c},&!fPsopra
+{a;b*;c}!,&!fPgopra
+# The negative normal form is {a;b*;c}[]->1
+!{a;b*;c}!,&fPsopra
+{a;b*;p112}[]->0,&!fPsopra
+!{a;b*;c.2},&!fPgopr
+!{a[+];b*;c[+]},&!fPgopra
+!{a[+];b*;c*},&!xfPgopra
+{a[+];b*;c[+]},&!fPsopra
+{a[+] && b || c[+]},&!fPsopra
+{a[+] && b[+] || c[+]},&!xfPsopra
+{p[+]:p[+]},&!xfPsoprla
+(!p W Gp) | ({(!p[*];(p[+]:(p[*];!p[+])))[:*4][:+]}<>-> (!p W Gp)),&!xPpla
+{b[+][:*0..3]},&!fPsopra
+{a->c[*]},xfPsopra
+{(a[+];b*);c*}<>->d,&!xfPgopra
+{first_match(a[+];b*);c*}<>->d,&!fPgopra
+EOF
+
+run 0 ../kind input

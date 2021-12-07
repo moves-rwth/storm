@@ -1,0 +1,308 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Playing with explicit Kripke structures
+#+DESCRIPTION: Kripke structures that are fully stored in memory, as explicit graphs.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+
+Kripke structures, can be defined as ω-automata in which labels are on
+states, and where all runs are accepting (i.e., the acceptance
+condition is =t=).  They are typically used by model checkers to
+represent the state space of the model to verify.
+
+On [[file:tut51.org][another page]] we have described how to implement a Kripke structure
+that can be explored on the fly, by implementing a function that take
+the current state, and produce its successor states.  While
+implementing an on-the-fly Kripke structure is good for large example,
+it requires some implementation effort we are not always willing to
+put for a toy example.
+
+This document shows how to create a Kripke structure that is stored as
+an explicit graph.  The class for those is =spot::kripke_graph= and
+works in a similar way as the class =spot::twa_graph= used for
+automata.  The main difference between those two classes is that
+Kripke structures labels the states instead of the transitions.  Using
+=spot::kripke_graph= instead of =spot::twa_graph= saves a bit of
+memory.
+
+Our Kripke structure represent a model whose states consist of pairs
+of modulo-3 integers $(x,y)$. At any state the possible actions
+will be to increment any one of the two integers (nondeterministically).
+That increment is obviously done modulo 3.  For instance state $(1,2)$
+has two possible successors:
+  - $(2,2)$ if =x= was incremented, or
+  - $(1,0)$ if =y= was incremented.
+Initially both variables will be 0.  The complete state space has
+9 states, that we will store explicitly as a graph.
+
+In addition, we would like to label each state by atomic propositions
+=odd_x= and =odd_y= that are true only when the corresponding
+variables are odd.  Using such variables, we could try to verify
+whether if =odd_x= infinitely often holds, then =odd_y= infinitely
+often holds as well.
+
+
+* C++ implementation
+** Building the state space
+
+Here is how we could create the Kripke structure:
+
+#+NAME: create-kripke
+#+BEGIN_SRC C++
+  #include <spot/kripke/kripkegraph.hh>
+
+  spot::kripke_graph_ptr create_kripke(spot::bdd_dict_ptr dict,
+                                       bool named_states = false)
+  {
+    spot::kripke_graph_ptr k = spot::make_kripke_graph(dict);
+
+    bdd odd_x = bdd_ithvar(k->register_ap("odd_x"));
+    bdd odd_y = bdd_ithvar(k->register_ap("odd_y"));
+
+    unsigned x0y0 = k->new_state((!odd_x) & !odd_y);
+    unsigned x0y1 = k->new_state((!odd_x) & odd_y);
+    unsigned x0y2 = k->new_state((!odd_x) & !odd_y);
+    unsigned x1y0 = k->new_state(odd_x & !odd_y);
+    unsigned x1y1 = k->new_state(odd_x & odd_y);
+    unsigned x1y2 = k->new_state(odd_x & !odd_y);
+    unsigned x2y0 = k->new_state((!odd_x) & !odd_y);
+    unsigned x2y1 = k->new_state((!odd_x) & odd_y);
+    unsigned x2y2 = k->new_state((!odd_x) & !odd_y);
+
+    k->set_init_state(x0y0);
+
+    k->new_edge(x0y0, x0y1); k->new_edge(x0y0, x1y0);
+    k->new_edge(x0y1, x0y2); k->new_edge(x0y1, x1y1);
+    k->new_edge(x0y2, x0y0); k->new_edge(x0y2, x1y2);
+    k->new_edge(x1y0, x1y1); k->new_edge(x1y0, x2y0);
+    k->new_edge(x1y1, x1y2); k->new_edge(x1y1, x2y1);
+    k->new_edge(x1y2, x1y0); k->new_edge(x1y2, x2y2);
+    k->new_edge(x2y0, x2y1); k->new_edge(x2y0, x0y0);
+    k->new_edge(x2y1, x2y2); k->new_edge(x2y1, x0y1);
+    k->new_edge(x2y2, x2y0); k->new_edge(x2y2, x0y2);
+
+    if (named_states)
+      {
+        auto names = new std::vector<std::string>
+          { "x0y0", "x0y1", "x0y2",
+            "x1y0", "x1y1", "x1y2",
+            "x2y0", "x2y1", "x2y2" };
+        k->set_named_prop("state-names", names);
+      }
+    return k;
+  }
+#+END_SRC
+
+To display this Kripke structure, we can call the =print_dot()=
+function:
+
+#+NAME: print-dot
+#+BEGIN_SRC C++ :noweb strip-export :results verbatim :export code
+  #include <spot/twaalgos/dot.hh>
+  <<create-kripke>>
+  int main()
+  {
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+    spot::print_dot(std::cout, create_kripke(dict));
+  }
+#+END_SRC
+
+=print_dot()= will output the graph in [[https://graphviz.gitlab.io/][GraphViz's syntax]], and you just
+have to pass it to GraphViz's =dot= command to render it:
+
+#+BEGIN_SRC dot :file kripke-52.svg :cmd circo :var txt=print-dot :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:kripke-52.svg]]
+
+By default, states are just numbered.  If you want to name them, for
+instance for debugging, you should define the ="state-names"=
+properties to a vector of names.  Our =create_kripke()= function does
+that when passed a true argument.
+
+#+NAME: print-dot-2
+#+BEGIN_SRC C++ :noweb strip-export :results verbatim :export code
+  #include <spot/twaalgos/dot.hh>
+  <<create-kripke>>
+  int main()
+  {
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+    spot::print_dot(std::cout, create_kripke(dict, true));
+  }
+#+END_SRC
+
+#+BEGIN_SRC dot :file kripke-52b.svg :cmd circo :var txt=print-dot-2 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:kripke-52b.svg]]
+
+** Checking a property on this state space
+
+Let us pretend that we want to verify the following property: if
+=odd_x= infinitely often holds, then =odd_y= infinitely often holds.
+
+In LTL, that would be =GF(odd_x) -> GF(odd_y)=.
+
+To check this formula, we translate its negation into an automaton,
+build the product of this automaton with our Kripke structure, and
+check whether the output is empty.  If it is not, that means we have
+found a counterexample.  Here is some code that would show this
+counterexample:
+
+#+NAME: demo-2
+#+BEGIN_SRC C++ -r :exports code :noweb strip-export :results verbatim
+#include <spot/tl/parse.hh>
+#include <spot/twaalgos/translate.hh>
+#include <spot/twaalgos/emptiness.hh>
+<<create-kripke>>
+int main()
+{
+   auto d = spot::make_bdd_dict();
+
+   // Parse the input formula.
+   spot::parsed_formula pf = spot::parse_infix_psl("GF(odd_x) -> GF(odd_y)");
+   if (pf.format_errors(std::cerr))
+     return 1;
+
+   // Translate its negation.
+   spot::formula f = spot::formula::Not(pf.f);
+   spot::twa_graph_ptr af = spot::translator(d).run(f);
+
+   // Find a run of our Kripke structure that intersects af.
+   auto k = create_kripke(d, true);            (ref:ck)
+   if (auto run = k->intersecting_run(af))
+     std::cout << "formula is violated by the following run:\n" << *run;
+   else
+     std::cout << "formula is verified\n";
+}
+#+END_SRC
+
+# temporary fix for an issue in Org 9.2, see
+# http://lists.gnu.org/archive/html/emacs-orgmode/2019-01/msg00226.html
+#+BEGIN_SRC text :noweb yes
+<<demo-2()>>
+#+END_SRC
+
+Note that this main function is similar to the main function we used
+for [[file:tut51.org::#check-prop][the on-the-fly version]] except for [[(ck)][the line that creates the Kripke
+structure]].  You can modify it to display the counterexample in a
+similar way.
+
+* Python implementation
+** Building the state space
+
+#+NAME: create-kripke-py
+#+BEGIN_SRC python -r
+  import spot
+  from buddy import bdd_ithvar
+
+  def create_kripke(bdddict, name_states=False):
+    k = spot.make_kripke_graph(bdddict)
+    odd_x = bdd_ithvar(k.register_ap("odd_x"))
+    odd_y = bdd_ithvar(k.register_ap("odd_y"))
+
+    x0y0 = k.new_state(-odd_x & -odd_y);
+    x0y1 = k.new_state(-odd_x & odd_y);
+    x0y2 = k.new_state(-odd_x & -odd_y);
+    x1y0 = k.new_state(odd_x & -odd_y);
+    x1y1 = k.new_state(odd_x & odd_y);
+    x1y2 = k.new_state(odd_x & -odd_y);
+    x2y0 = k.new_state(-odd_x & -odd_y);
+    x2y1 = k.new_state(-odd_x & odd_y);
+    x2y2 = k.new_state(-odd_x & -odd_y);
+
+    k.set_init_state(x0y0);
+
+    k.new_edge(x0y0, x0y1); k.new_edge(x0y0, x1y0);
+    k.new_edge(x0y1, x0y2); k.new_edge(x0y1, x1y1);
+    k.new_edge(x0y2, x0y0); k.new_edge(x0y2, x1y2);
+    k.new_edge(x1y0, x1y1); k.new_edge(x1y0, x2y0);
+    k.new_edge(x1y1, x1y2); k.new_edge(x1y1, x2y1);
+    k.new_edge(x1y2, x1y0); k.new_edge(x1y2, x2y2);
+    k.new_edge(x2y0, x2y1); k.new_edge(x2y0, x0y0);
+    k.new_edge(x2y1, x2y2); k.new_edge(x2y1, x0y1);
+    k.new_edge(x2y2, x2y0); k.new_edge(x2y2, x0y2);
+
+    if name_states:
+      k.set_state_names(["x0y0", "x0y1", "x0y2",   (ref:ns)
+                         "x1y0", "x1y1", "x1y2",
+                         "x2y0", "x2y1", "x2y2"])
+    return k;
+#+END_SRC
+
+To display this structure, we would just call =to_str('dot')= (and
+convert the resulting textual output into graphical form using the
+=dot= command).
+
+#+NAME: print-dot-py
+#+BEGIN_SRC python :noweb strip-export :results output :export code
+<<create-kripke-py>>
+k = create_kripke(spot.make_bdd_dict())
+print(k.to_str('dot'))
+#+END_SRC
+
+=print_dot()= will output the graph in [[https://graphviz.gitlab.io/][GraphViz's syntax]], and you just
+have to pass it to GraphViz's =dot= command to render it:
+
+#+BEGIN_SRC dot :file kripke-52c.svg :cmd circo :var txt=print-dot-py :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:kripke-52c.svg]]
+
+Again, states may be named if that can help.  This is done by passing
+a vector of names (indexed by state numbers) to the =set_name_states()= method,
+[[(ns)][as done conditionally in our =create_kripke()= function]].
+
+
+#+NAME: print-dot-py-2
+#+BEGIN_SRC python :noweb strip-export :results output :export code
+<<create-kripke-py>>
+k = create_kripke(spot.make_bdd_dict(), True)
+print(k.to_str('dot'))
+#+END_SRC
+
+#+BEGIN_SRC dot :file kripke-52d.svg :cmd circo :var txt=print-dot-py-2 :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:kripke-52d.svg]]
+
+
+** Checking a property on this state space
+
+Here is the Python code equivalent to our C++ check.  Please
+read the C++ description for details.
+
+#+NAME: demo-2py
+#+BEGIN_SRC python -r :exports code :noweb strip-export :results output
+  <<create-kripke-py>>
+
+  d = spot.make_bdd_dict()
+
+  # Translate the negation of the formula
+  f = spot.formula.Not("GF(odd_x) -> GF(odd_y)")
+  af = spot.translate(f, dict=d)
+
+  # Find a run of our Kripke structure that intersects af.
+  k = create_kripke(d, True)
+  run = k.intersecting_run(af)
+  if run:
+    print("formula is violated by the following run:\n", run)
+  else:
+    print("formula is verified")
+#+END_SRC
+
+# temporary fix for an issue in Org 9.2, see
+# http://lists.gnu.org/archive/html/emacs-orgmode/2019-01/msg00226.html
+#+BEGIN_SRC text :noweb yes
+<<demo-2py()>>
+#+END_SRC
+
+#  LocalWords:  utf html kripke SRC bool bdd ithvar ap init noweb svg
+#  LocalWords:  GraphViz's cmd circo txt GF af py bdddict ns str

@@ -1,0 +1,2918 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:49 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><code>ltlcross</code></title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Spot command-line tool for cross-comparing the output of LTL translators."
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tools.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title"><code>ltlcross</code></h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orgdc4cdf8">Formula selection</a></li>
+<li><a href="#org908ec3b">Configuring translators</a>
+<ul>
+<li><a href="#org0110fb2">Translator specifications</a></li>
+<li><a href="#org5b7d12d">Trusted and untrusted translators</a></li>
+</ul>
+</li>
+<li><a href="#checks">Detecting problems</a></li>
+<li><a href="#org1fccd6e">Getting statistics</a>
+<ul>
+<li><a href="#orgebb98c6">CSV or JSON output (or both!)</a></li>
+<li><a href="#org62f99b7">Description of the columns</a></li>
+<li><a href="#org8d3d007">Changing the name of the translators</a></li>
+<li><a href="#org6501f0d">Working with these CSV files in R</a></li>
+</ul>
+</li>
+<li><a href="#org4d71aa6">Miscellaneous options</a>
+<ul>
+<li><a href="#orgbc0ecee"><code>--stop-on-error</code></a></li>
+<li><a href="#orgd1ec759"><code>--save-bogus=FILENAME</code></a></li>
+<li><a href="#org4bae0c4"><code>--grind=FILENAME</code></a></li>
+<li><a href="#org2de621c"><code>--no-check</code></a></li>
+<li><a href="#verbose"><code>--verbose</code></a></li>
+</ul>
+</li>
+<li><a href="#parallel">Running <code>ltlcross</code> in parallel</a></li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+<code>ltlcross</code> is a tool for cross-comparing the output of LTL-to-automata
+translators.  It is actually a Spot-based clone of <a href="http://www.tcs.hut.fi/Software/lbtt/">LBTT</a>, the
+<i>LTL-to-Büchi Translator Testbench</i>, that essentially performs the
+same sanity checks.
+</p>
+
+<p>
+The main differences with LBTT are:
+</p>
+<ul class="org-ul">
+<li><b>support for PSL formulas in addition to LTL</b></li>
+<li>support for (non-alternating) automata with <b>any type of acceptance condition</b>,</li>
+<li>support for <b>weak alternating automata</b>,</li>
+<li>additional intersection <b>checks with the complement</b> allowing to
+check equivalence of automata more precisely,</li>
+<li><b>more statistics</b>, especially:
+<ul class="org-ul">
+<li>the number of logical transitions represented by each physical edge,</li>
+<li>the number of deterministic states and automata</li>
+<li>the number of SCCs with their various strengths (nonaccepting, terminal, weak, strong)</li>
+<li>the number of terminal, weak, and strong automata</li>
+</ul></li>
+<li>an option to <b>reduce counterexamples</b> by attempting to mutate and
+shorten troublesome formulas (option <code>--grind</code>),</li>
+<li>statistics output in <b>CSV</b> for easier post-processing,</li>
+<li><b>more precise time measurement</b> (LBTT was only precise to
+1/100 of a second, reporting most times as "0.00s").</li>
+</ul>
+
+<p>
+Although <code>ltlcross</code> performs similar sanity checks as LBTT, it does
+not implement any of the interactive features of LBTT.  In our almost
+10-year usage of LBTT, we never had to use its interactive features to
+understand bugs in our translation.  Therefore <code>ltlcross</code> will report
+problems, maybe with a counterexample, but you will be on your own to
+investigate and fix them (the <code>--grind</code> option may help you reduce the
+problem to a shorter formula).
+</p>
+
+<p>
+The core of <code>ltlcross</code> is a loop that does the following steps:
+</p>
+<ul class="org-ul">
+<li>Input a formula</li>
+<li>Translate the formula and its negation using each configured translator.
+If there are 3 translators, the positive and negative translations
+will be denoted <code>P0</code>, <code>N0</code>, <code>P1</code>, <code>N1</code>, <code>P2</code>, <code>N2</code>.</li>
+<li>Optionally build complemented automata denoted <code>Comp(P0)</code>, <code>Comp(N0)</code>, etc.
+(By default, this is done only for small automata, but see options <code>-D</code>,
+<code>--determinize-max-states</code> and <code>--determinize-max-edges</code>.)</li>
+<li>Perform sanity checks between all these automata to detect any problem.</li>
+<li>Optionally build the products of these automata with a random state-space (the same
+state-space for all translations).  (If the <code>--products=N</code> option is given,
+<code>N</code> products are performed instead.)</li>
+<li>Gather statistics if requested.</li>
+</ul>
+
+<div id="outline-container-orgdc4cdf8" class="outline-2">
+<h2 id="orgdc4cdf8">Formula selection</h2>
+<div class="outline-text-2" id="text-orgdc4cdf8">
+<p>
+Formulas to translate should be specified using the <a href="ioltl.html">common input
+options</a>.  Standard input is read if it is not connected to a terminal,
+and no <code>-f</code> or <code>-F</code> options are given.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org908ec3b" class="outline-2">
+<h2 id="org908ec3b">Configuring translators</h2>
+<div class="outline-text-2" id="text-org908ec3b">
+</div>
+<div id="outline-container-org0110fb2" class="outline-3">
+<h3 id="org0110fb2">Translator specifications</h3>
+<div class="outline-text-3" id="text-org0110fb2">
+<p>
+Each translator should be specified as a string that use some of the
+following character sequences:
+</p>
+
+<pre class="example">
+%%                         a single %
+%f,%s,%l,%w                the formula as a (quoted) string in Spot, Spin,
+                           LBT, or Wring's syntax
+%F,%S,%L,%W                the formula as a file in Spot, Spin, LBT, or
+                           Wring's syntax
+%O                         the automaton output in HOA, never claim, LBTT, or
+                           ltl2dstar's format
+
+</pre>
+
+<p>
+For instance here is how we could cross-compare the never claims
+output by <code>spin</code> and <code>ltl2tgba</code> for the formulas <code>GFa</code> and <code>X(a U b)</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlcross -f <span class="org-string">'GFa'</span> -f <span class="org-string">'X(a U b)'</span> <span class="org-string">'ltl2tgba -s %s &gt;%O'</span> <span class="org-string">'spin -f %s &gt;%O'</span>
+</pre>
+</div>
+
+<p>
+When <code>ltlcross</code> executes these commands, <code>%s</code> will be replaced
+by the formula in Spin's syntax, and <code>%O</code> will be replaced by a
+temporary file into which the output of the translator is redirected
+before it is read back by <code>ltlcross</code>.
+</p>
+
+<p>
+To handle tools that do not support some LTL operators, the character
+sequences <code>%f</code>, <code>%s</code>, <code>%l</code>, <code>%w</code>, <code>%F</code>, <code>%S</code>, <code>%L</code>, and <code>%W</code> can be
+"infixed" by a bracketed list of operators to rewrite away.  For
+instance if a tool reads LTL formulas from a file in LBT's syntax, but
+does not support operators <code>M</code> (strong until) and <code>W</code> (weak until),
+use <code>%[WM]L</code> instead of just <code>%L</code>; this way operators <code>W</code> and <code>M</code> will
+be rewritten using the other supported operators.
+</p>
+
+<p>
+<code>ltlcross</code> can only read four kinds of output:
+</p>
+<ul class="org-ul">
+<li>Never claims (only if they are restricted to representing an
+automaton using <code>if</code>, <code>goto</code>, and <code>skip</code> statements) such as those
+output by <a href="http://spinroot.com/"><code>spin</code></a>, <a href="http://www.lsv.ens-cachan.fr/~gastin/ltl2ba/"><code>ltl2ba</code></a>, <a href="https://sourceforge.net/projects/ltl3ba/"><code>ltl3ba</code></a>, or <code>ltl2tgba --spin</code>.  The
+newer syntax introduced by Spin 6.24, using <code>do</code> instead of <code>if</code>,
+is also supported.</li>
+<li><a href="http://www.tcs.hut.fi/Software/lbtt/doc/html/Format-for-automata.html">LBTT's format</a>, which supports generalized Büchi automata with
+either state-based acceptance or transition-based acceptance.
+This output is used for instance by <a href="http://www.tcs.hut.fi/Software/maria/tools/lbt/"><code>lbt</code></a>, <a href="http://web.archive.org/web/20080607170403/http://www.science.unitn.it/~stonetta/modella.html"><code>modella</code></a>, or <code>ltl2tgba
+    --lbtt</code>.</li>
+<li>Non-alternating automata in <a href="http://adl.github.io/hoaf/">the HOA format</a> with any acceptance
+condition.</li>
+<li><a href="concepts.html#property-flags">Weak</a> alternating automata in <a href="http://adl.github.io/hoaf/">the HOA format</a>.</li>
+<li><a href="http://www.ltl2dstar.de/docs/ltl2dstar.html"><code>ltl2dstar</code>'s format</a>, which supports deterministic Rabin or Streett
+automata.</li>
+</ul>
+
+<p>
+Files in any of these format should be indicated with <code>%O</code>.  (Past
+versions of <code>ltlcross</code> used different letters for each format, but the
+four parsers have been merged into a single one.)
+</p>
+
+<p>
+Of course all configured tools need not use the same <code>%</code> sequences.
+The following list shows some typical configurations for some existing
+tools:
+</p>
+
+<ul class="org-ul">
+<li>'<code>spin -f %s &gt;%O</code>'</li>
+<li>'<code>ltl2ba -f %s &gt;%O</code>'</li>
+<li>'<code>ltl3ba -M0 -f %s &gt;%O</code>' (less deterministic output, can be smaller)</li>
+<li>'<code>ltl3ba -M1 -f %s &gt;%O</code>' (more deterministic output)</li>
+<li>'<code>modella -r12 -g -e %[MWei^]L %O</code>'</li>
+<li>'<code>/path/to/script4lbtt.py %L %O</code>' (script supplied by <a href="http://web.archive.org/web/20070214050826/http://estragon.ti.informatik.uni-kiel.de/~fritz/">ltl2nba</a> for
+its interface with LBTT)</li>
+<li>'<code>ltl2tgba -s %f &gt;%O</code>' (smaller output, Büchi automaton)</li>
+<li>'<code>ltl2tgba -s -D %f &gt;%O</code>' (more deterministic output, Büchi automaton)</li>
+<li>'<code>ltl2tgba -H %f &gt;%O</code>' (smaller output, TGBA)</li>
+<li>'<code>ltl2tgba -H -D %f &gt;%O</code>' (more deterministic output, TGBA)</li>
+<li>'<code>lbt &lt;%L &gt;%O</code>'</li>
+<li>'<code>ltl2dstar --ltl2nba=spin:path/to/ltl2tgba@-sD
+    --output-format=hoa %[MW]L %O</code>' deterministic Rabin output in HOA, as
+supported since version 0.5.2 of <code>ltl2dstar</code>.</li>
+<li>'<code>ltl2dstar --ltl2nba=spin:path/to/ltl2tgba@-sD --automata=streett
+    --output-format=hoa %[MW]L %O</code>' deterministic Streett output in HOA,
+as supported since version 0.5.2 of <code>ltl2dstar</code>.</li>
+<li>'<code>ltl2dstar --ltl2nba=spin:path/to/ltl2tgba@-sD %[MW]L %O</code>' (Rabin
+output in DSTAR format, as supported in older versions of
+<code>ltl2dstar</code>.</li>
+<li>'<code>ltl2dstar --ltl2nba=spin:path/to/ltl2tgba@-sD %L - | dstar2tgba
+    -s &gt;%O</code>' (external conversion from Rabin to Büchi done by
+<code>dstar2tgba</code> for more reduction of the Büchi automaton than what
+<code>ltlcross</code> would provide)</li>
+<li>'<code>java -jar Rabinizer.jar -ltl2dstar %[MW]F %O; mv %O.dst %O</code>' (Rabinizer
+uses the last <code>%O</code> argument as a prefix to which it always append <code>.dst</code>,
+so we have to rename <code>%O.dst</code> as <code>%O</code> so that <code>ltlcross</code> can find the file)</li>
+<li>'<code>java -jar rabinizer3.1.jar -in=formula -silent -out=std -format=hoa -auto=tr %[MWRei^]f &gt;%O</code>'
+(rabinizer 3.1 can output automata in the HOA format)</li>
+<li>'<code>ltl3dra -f %s &gt;%O</code>' (The HOA format is the default for <code>ltl3dra</code>.)</li>
+<li>'<code>ltl3tela -f %s &gt;%O</code>' (The HOA format is the default for <code>ltl3tela</code>.)</li>
+</ul>
+
+<p>
+To simplify the use of some of the above tools, a set of predefined
+shorthands are available.  Those can be listed with the
+<code>--list-shorthands</code> option.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlcross --list-shorthands
+</pre>
+</div>
+<pre class="example">
+If a COMMANDFMT does not use any %-sequence, and starts with one of
+the following words, then the string on the right is appended.
+
+  delag        %f&gt;%O
+  lbt          &lt;%L&gt;%O
+  ltl2ba       -f %s&gt;%O
+  ltl2da       %f&gt;%O
+  ltl2dgra     %f&gt;%O
+  ltl2dpa      %f&gt;%O
+  ltl2dra      %f&gt;%O
+  ltl2dstar    --output-format=hoa %[MW]L %O
+  ltl2ldba     %f&gt;%O
+  ltl2na       %f&gt;%O
+  ltl2nba      %f&gt;%O
+  ltl2ngba     %f&gt;%O
+  ltl2tgba     -H %f&gt;%O
+  ltl3ba       -f %s&gt;%O
+  ltl3dra      -f %s&gt;%O
+  ltl3hoa      -f %f&gt;%O
+  ltl3tela     -f %f&gt;%O
+  modella      %[MWei^]L %O
+  spin         -f %s&gt;%O
+
+Any {name} and directory component is skipped for the purpose of
+matching those prefixes.  So for instance
+  '{DRA} ~/mytools/ltl2dstar-0.5.2'
+will be changed into
+  '{DRA} ~/mytools/ltl2dstar-0.5.2 --output-format=hoa %[MW]L %O'
+</pre>
+
+<p>
+What this implies is that running <code>ltlcross ltl2ba ltl3ba ...</code> is
+the same as running <code>ltlcross 'ltl2ba -f %s&gt;%O' 'ltl3ba -f %s&gt;%O' ...</code>
+</p>
+
+<p>
+Because only the prefix of the actual command is checked, you can
+still specify some options.  For instance <code>ltlcross 'ltl2tgba -D' ...</code>
+is short for <code>ltlcross 'ltl2tgba -D -H %F&gt;%O' ...</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5b7d12d" class="outline-3">
+<h3 id="org5b7d12d">Trusted and untrusted translators</h3>
+<div class="outline-text-3" id="text-org5b7d12d">
+<p>
+By default, all translators specified are not trusted.  This means
+that <code>ltlcross</code> will cross-compare the output of all translators,
+possibly yielding a quadratic number of tests.
+</p>
+
+<p>
+It is possible to declare that certain translators should be trusted
+by specifying them with the <code>--reference=COMMANDFMT</code> option.  This has
+a few implications:
+</p>
+<ul class="org-ul">
+<li>the automata output by reference translators are not tested</li>
+<li>a pair of positive and negative reference automata are selected
+from the reference translators (the smallest automata, in case
+multiple references are available), and all other translators will
+only be compared to these reference automata.</li>
+</ul>
+
+<p>
+Consequently, the number of test performed is now linear in the number
+of untrusted references.  The easiest way to observe the effect of
+<code>--reference</code> is to run the <code>ltlcross</code> with the <a href="#verbose"><code>--verbose</code> option</a>,
+with and without some <code>--reference</code> translators.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9c98963" class="outline-2">
+<h2 id="checks"><a id="org9c98963"></a>Detecting problems</h2>
+<div class="outline-text-2" id="text-checks">
+<p>
+If a translator exits with a non-zero status code, or fails to output
+an automaton <code>ltlcross</code> can read, and error will be displayed and the
+result of the translation will be discarded.
+</p>
+
+<p>
+Otherwise <code>ltlcross</code> performs the following checks on all translated
+formulas (\(P_i\) and \(N_i\) designate respectively the translation of
+positive and negative formulas by the ith translator).
+</p>
+
+<ul class="org-ul">
+<li><p>
+Intersection check: \(P_i\otimes N_j\) must be empty for all
+pairs of \((i,j)\).
+</p>
+
+<p>
+A single failing translator might generate a lot of lines of
+the form:
+</p>
+
+<pre class="example">
+error: P0*N1 is nonempty; both automata accept the infinite word:
+       cycle{p0 &amp; !p1}
+error: P1*N0 is nonempty; both automata accept the infinite word:
+       p0; !p1; cycle{p0 &amp; p1}
+error: P1*N1 is nonempty; both automata accept the infinite word:
+       p0; cycle{!p1 &amp; !p0}
+error: P1*N2 is nonempty; both automata accept the infinite word:
+       p0; !p1; cycle{p0 &amp; p1}
+error: P1*N3 is nonempty; both automata accept the infinite word:
+       p0; !p1; cycle{p0 &amp; p1}
+error: P1*N4 is nonempty; both automata accept the infinite word:
+       p0; cycle{!p1 &amp; !p0}
+error: P2*N1 is nonempty; both automata accept the infinite word:
+       p0; !p1; !p0; cycle{!p1 &amp; !p0; p0 &amp; !p1; !p1; !p1; p0 &amp; !p1}
+error: P3*N1 is nonempty; both automata accept the infinite word:
+       p0; !p1; !p1 &amp; !p0; cycle{p0 &amp; !p1}
+error: P4*N1 is nonempty; both automata accept the infinite word:
+       p0; !p1; !p1 &amp; !p0; cycle{p0 &amp; !p1}
+
+</pre>
+
+<p>
+In this example, translator number <code>1</code> looks clearly faulty
+(at least the other 4 translators do not contradict each other).
+</p>
+
+<p>
+Examples of infinite words that are accepted by both automata
+always have the form of a lasso: a (possibly empty) finite prefix
+followed by a cycle that should be repeated infinitely often.
+The cycle part is denoted by <code>cycle{...}</code>.
+</p></li>
+
+<li><p>
+Complemented intersection check.  If \(P_i\) and \(N_i\) are
+deterministic or if they are small enough, <code>ltlcross</code> attempts to
+build their complements, \(Comp(P_i)\) and \(Comp(N_i)\).
+</p>
+
+<p>
+Complementation is not always attempted, especially when it
+requires a determinization-based construction.  The conditions
+specifying when the complement automata are constructed can be
+modified with the <code>--determinize-max-states=N</code> and
+<code>--determinize-max-edges=M</code> options, which abort the
+complementation if it would produce an automaton with more than
+<code>N</code> states (500 by default) or more than <code>M</code> edges (5000 by
+default).  Alternatively, use <code>--determinize</code> (a.k.a. <code>-D</code>) to
+force the complementation of all automata.
+</p>
+
+<p>
+If both complement automata could be computed, <code>ltlcross</code> ensures that
+\(Comp(P_i)\otimes Comp(N_i)\) is empty.
+</p>
+
+<p>
+If only one automaton has been complemented, for instance \(P_i\),
+<code>ltlcross</code> checks that \(P_j\otimes Comp(P_i)\) for all \(j \ne i\);
+likewise if it's \(N_i\) that is deterministic.
+</p>
+
+<p>
+When validating a translator with <code>ltlcross</code> without using the
+<code>--determinize</code> option we highly recommend to include a translator
+with good deterministic output to augment test coverage.  Using
+'<code>ltl2tgba -D %f &gt;%O</code>' will produce deterministic automata for all
+obligation properties and many recurrence properties.  Using
+'<code>ltl2tgba -PD %f &gt;%O</code>' will systematically produce a
+deterministic Parity automaton (that <code>ltlcross</code> can complement
+easily).
+</p></li>
+
+<li><p>
+Cross-comparison checks: for some state-space \(S\),
+all \(P_i\otimes S\) are either all empty, or all non-empty.
+Similarly all \(N_i\otimes S\) are either all empty, or all non-empty.
+</p>
+
+<p>
+A cross-comparison failure could be displayed as:
+</p>
+
+<pre class="example">
+error: {P0,P2} disagree with {P1} when evaluating the state-space
+       the following word(s) are not accepted by {P1}:
+ P0 accepts: p0 &amp; !p1 &amp; !p2 &amp; p3; p0 &amp; p1 &amp; !p2 &amp; p3; p0 &amp; p1 &amp; p2 &amp; p3; cycle{p0 &amp; p1 &amp; p2 &amp; p3; p0 &amp; p1 &amp; !p2 &amp; !p3; p0 &amp; p1 &amp; p2 &amp; !p3; p0 &amp; p1 &amp; !p2 &amp; !p3}
+ P2 accepts: p0 &amp; !p1 &amp; !p2 &amp; p3; cycle{p0 &amp; p1 &amp; !p2 &amp; !p3; p0 &amp; p1 &amp; p2 &amp; p3; p0 &amp; p1 &amp; !p2 &amp; p3}
+
+</pre>
+
+<p>
+If <code>--products=N</code> is used with <code>N</code> greater than one, the number of
+the state-space is also printed.  This number is of no use by
+itself, except to explain why you may get multiple disagreement
+between the same sets of automata.
+</p>
+
+<p>
+These products tests may sometime catch errors that were not
+captured by the first two tests if one non-deterministic automaton
+recognize less words than what it should.  If the input automata
+are all deterministic or the <code>--determinize</code> option is used, this test
+is redundant and can be disabled.  (In fact, the <code>--determinize</code>
+option implies option <code>--product=0</code> to do so.)
+</p></li>
+
+<li><p>
+Consistency check:
+</p>
+
+<p>
+For each \(i\), the products \(P_i\otimes S\) and \(N_i\otimes S\)
+actually cover all states of \(S\).  Because \(S\) does not have any
+deadlock, any of its infinite path must be accepted by \(P_i\) or
+\(N_i\) (or both).
+</p>
+
+<p>
+An error in that case is displayed as
+</p>
+
+<pre class="example">
+error: inconsistency between P1 and N1
+
+</pre>
+
+<p>
+If <code>--products=N</code> is used with <code>N</code> greater than one, the number of
+the state-space in which the inconsistency was detected is also
+printed.
+</p>
+
+<p>
+This test may catch errors that were not captured by the first two
+tests if one non-deterministic automaton recognize less words than
+what it should.  If the input automata are deterministic or the
+<code>--determinize</code> option is used, this test is redundant and can be
+disabled.  (In fact, the <code>--determinize</code> option implies option
+<code>--product=0</code> to do so.)
+</p></li>
+</ul>
+
+<p>
+The above checks are similar to those that are performed by <a href="http://www.tcs.hut.fi/Software/lbtt/">LBTT</a>,
+except for the complemented intersection check, which is only done in
+<code>ltlcross</code>.
+</p>
+
+<p>
+If any problem was reported during the translation of one of the
+formulas, <code>ltlcheck</code> will exit with an exit status of <code>1</code>.  Statistics
+(if requested) are output nonetheless, and include any faulty
+automaton as well.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1fccd6e" class="outline-2">
+<h2 id="org1fccd6e">Getting statistics</h2>
+<div class="outline-text-2" id="text-org1fccd6e">
+<p>
+Detailed statistics about the result of each translation, and the
+product of that resulting automaton with the random state-space, can
+be obtained using the <code>--csv=FILE</code> or <code>--json=FILE</code> option.
+</p>
+</div>
+
+<div id="outline-container-orgebb98c6" class="outline-3">
+<h3 id="orgebb98c6">CSV or JSON output (or both!)</h3>
+<div class="outline-text-3" id="text-orgebb98c6">
+<p>
+The following compare <code>ltl2tgba</code>, <code>spin</code>, and <code>lbt</code> on three random
+formulas (where <code>W</code> and <code>M</code> operators have been rewritten away because
+they are not supported by <code>spin</code> and <code>lbt</code>).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">randltl -n 3 --seed=5 a b |
+ltlfilt --remove-wm |
+ltlcross --csv=results.csv <span class="org-sh-escaped-newline">\</span>
+         <span class="org-string">'ltl2tgba -s %f &gt;%O'</span> <span class="org-sh-escaped-newline">\</span>
+         <span class="org-string">'spin -f %s &gt;%O'</span> <span class="org-sh-escaped-newline">\</span>
+         <span class="org-string">'lbt &lt; %L &gt;%O'</span>
+</pre>
+</div>
+
+<p>
+After this execution, the file <code>results.csv</code> contains the following:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides" class="csv-table">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><div><span>formula</span></div></th>
+<th scope="col" class="org-left"><div><span>tool</span></div></th>
+<th scope="col" class="org-left"><div><span>exit_status</span></div></th>
+<th scope="col" class="org-right"><div><span>exit_code</span></div></th>
+<th scope="col" class="org-right"><div><span>time</span></div></th>
+<th scope="col" class="org-right"><div><span>states</span></div></th>
+<th scope="col" class="org-right"><div><span>edges</span></div></th>
+<th scope="col" class="org-right"><div><span>transitions</span></div></th>
+<th scope="col" class="org-right"><div><span>acc</span></div></th>
+<th scope="col" class="org-right"><div><span>scc</span></div></th>
+<th scope="col" class="org-right"><div><span>nondet_states</span></div></th>
+<th scope="col" class="org-right"><div><span>nondet_aut</span></div></th>
+<th scope="col" class="org-right"><div><span>complete_aut</span></div></th>
+<th scope="col" class="org-right"><div><span>product_states</span></div></th>
+<th scope="col" class="org-right"><div><span>product_transitions</span></div></th>
+<th scope="col" class="org-right"><div><span>product_scc</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">G(!((!(p0)) &amp; ((X(p0)) &vert; (F((p1) R (X(p0)))))))</td>
+<td class="org-left">ltl2tgba -s %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0397761</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">400</td>
+<td class="org-right">6276</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">G(!((!(p0)) &amp; ((X(p0)) &vert; (F((p1) R (X(p0)))))))</td>
+<td class="org-left">spin -f %s &gt;%O</td>
+<td class="org-left">exit code</td>
+<td class="org-right">1</td>
+<td class="org-right">0.00227527</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">G(!((!(p0)) &amp; ((X(p0)) &vert; (F((p1) R (X(p0)))))))</td>
+<td class="org-left">lbt &lt; %L &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.00338658</td>
+<td class="org-right">6</td>
+<td class="org-right">14</td>
+<td class="org-right">28</td>
+<td class="org-right">1</td>
+<td class="org-right">5</td>
+<td class="org-right">6</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">1000</td>
+<td class="org-right">20970</td>
+<td class="org-right">403</td>
+</tr>
+
+<tr>
+<td class="org-left">!(G(!((!(p0)) &amp; ((X(p0)) &vert; (F((p1) R (X(p0))))))))</td>
+<td class="org-left">ltl2tgba -s %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0408236</td>
+<td class="org-right">3</td>
+<td class="org-right">5</td>
+<td class="org-right">6</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">600</td>
+<td class="org-right">12633</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left">!(G(!((!(p0)) &amp; ((X(p0)) &vert; (F((p1) R (X(p0))))))))</td>
+<td class="org-left">spin -f %s &gt;%O</td>
+<td class="org-left">exit code</td>
+<td class="org-right">1</td>
+<td class="org-right">0.00226842</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">!(G(!((!(p0)) &amp; ((X(p0)) &vert; (F((p1) R (X(p0))))))))</td>
+<td class="org-left">lbt &lt; %L &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.00350085</td>
+<td class="org-right">13</td>
+<td class="org-right">28</td>
+<td class="org-right">67</td>
+<td class="org-right">2</td>
+<td class="org-right">13</td>
+<td class="org-right">7</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">2400</td>
+<td class="org-right">59006</td>
+<td class="org-right">1604</td>
+</tr>
+
+<tr>
+<td class="org-left">F(p0)</td>
+<td class="org-left">ltl2tgba -s %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0380572</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">400</td>
+<td class="org-right">8264</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">F(p0)</td>
+<td class="org-left">spin -f %s &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.00245813</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">5</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">400</td>
+<td class="org-right">10323</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">F(p0)</td>
+<td class="org-left">lbt &lt; %L &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.00342104</td>
+<td class="org-right">4</td>
+<td class="org-right">6</td>
+<td class="org-right">10</td>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">2</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">601</td>
+<td class="org-right">14487</td>
+<td class="org-right">203</td>
+</tr>
+
+<tr>
+<td class="org-left">!(F(p0))</td>
+<td class="org-left">ltl2tgba -s %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0373553</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">200</td>
+<td class="org-right">2073</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left">!(F(p0))</td>
+<td class="org-left">spin -f %s &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.00243008</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">200</td>
+<td class="org-right">2073</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left">!(F(p0))</td>
+<td class="org-left">lbt &lt; %L &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.00330783</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">201</td>
+<td class="org-right">2081</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">(X(p0)) U ((!(p0)) &amp; (X(p0)))</td>
+<td class="org-left">ltl2tgba -s %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0384952</td>
+<td class="org-right">3</td>
+<td class="org-right">3</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">208</td>
+<td class="org-right">4118</td>
+<td class="org-right">9</td>
+</tr>
+
+<tr>
+<td class="org-left">(X(p0)) U ((!(p0)) &amp; (X(p0)))</td>
+<td class="org-left">spin -f %s &gt;%O</td>
+<td class="org-left">exit code</td>
+<td class="org-right">1</td>
+<td class="org-right">0.00230169</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">(X(p0)) U ((!(p0)) &amp; (X(p0)))</td>
+<td class="org-left">lbt &lt; %L &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.00326364</td>
+<td class="org-right">6</td>
+<td class="org-right">7</td>
+<td class="org-right">10</td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">484</td>
+<td class="org-right">7467</td>
+<td class="org-right">86</td>
+</tr>
+
+<tr>
+<td class="org-left">!((X(p0)) U ((!(p0)) &amp; (X(p0))))</td>
+<td class="org-left">ltl2tgba -s %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0384996</td>
+<td class="org-right">3</td>
+<td class="org-right">4</td>
+<td class="org-right">5</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">208</td>
+<td class="org-right">4128</td>
+<td class="org-right">9</td>
+</tr>
+
+<tr>
+<td class="org-left">!((X(p0)) U ((!(p0)) &amp; (X(p0))))</td>
+<td class="org-left">spin -f %s &gt;%O</td>
+<td class="org-left">exit code</td>
+<td class="org-right">1</td>
+<td class="org-right">0.00231413</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+<td class="org-right">&#xa0;</td>
+</tr>
+
+<tr>
+<td class="org-left">!((X(p0)) U ((!(p0)) &amp; (X(p0))))</td>
+<td class="org-left">lbt &lt; %L &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.00339721</td>
+<td class="org-right">9</td>
+<td class="org-right">17</td>
+<td class="org-right">23</td>
+<td class="org-right">0</td>
+<td class="org-right">9</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">1601</td>
+<td class="org-right">34445</td>
+<td class="org-right">1004</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+This file can be loaded in any spreadsheet or statistical application.
+</p>
+
+<p>
+Although we only supplied 2 random generated formulas, the output
+contains 4 formulas because <code>ltlcross</code> had to translate the positive
+and negative version of each.
+</p>
+
+<p>
+If we had used the option <code>--json=results.json</code> instead of (or in
+addition to) <code>--cvs=results.csv</code>, the file <code>results.json</code> would have
+contained the following <a href="http://www.json.org/">JSON</a> output.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-json">{
+  "tool": [
+    "ltl2tgba -s %f &gt;%O",
+    "spin -f %s &gt;%O",
+    "lbt &lt; %L &gt;%O"
+  ],
+  "formula": [
+    "G(!((!(p0)) &amp; ((X(p0)) | (F((p1) R (X(p0)))))))",
+    "!(G(!((!(p0)) &amp; ((X(p0)) | (F((p1) R (X(p0))))))))",
+    "F(p0)",
+    "!(F(p0))",
+    "(X(p0)) U ((!(p0)) &amp; (X(p0)))",
+    "!((X(p0)) U ((!(p0)) &amp; (X(p0))))"
+  ],
+  "fields":  [
+  "formula","tool","exit_status","exit_code","time","states","edges","transitions","acc","scc","nondet_states","nondet_aut","complete_aut","product_states","product_transitions","product_scc"
+  ],
+  "inputs":  [ 0, 1 ],
+  "results": [
+    [ 0,0,"ok",0,0.0397761,2,3,3,1,2,0,0,0,400,6276,2 ],
+    [ 0,1,"exit code",1,0.00227527,null,null,null,null,null,null,null,null,null,null,null ],
+    [ 0,2,"ok",0,0.00338658,6,14,28,1,5,6,1,0,1000,20970,403 ],
+    [ 1,0,"ok",0,0.0408236,3,5,6,1,3,0,0,1,600,12633,3 ],
+    [ 1,1,"exit code",1,0.00226842,null,null,null,null,null,null,null,null,null,null,null ],
+    [ 1,2,"ok",0,0.00350085,13,28,67,2,13,7,1,0,2400,59006,1604 ],
+    [ 2,0,"ok",0,0.0380572,2,3,4,1,2,0,0,1,400,8264,2 ],
+    [ 2,1,"ok",0,0.00245813,2,3,5,1,2,1,1,1,400,10323,2 ],
+    [ 2,2,"ok",0,0.00342104,4,6,10,1,4,2,1,1,601,14487,203 ],
+    [ 3,0,"ok",0,0.0373553,1,1,1,1,1,0,0,0,200,2073,1 ],
+    [ 3,1,"ok",0,0.00243008,1,1,1,1,1,0,0,0,200,2073,1 ],
+    [ 3,2,"ok",0,0.00330783,2,2,2,0,2,0,0,0,201,2081,2 ],
+    [ 4,0,"ok",0,0.0384952,3,3,4,1,3,0,0,0,208,4118,9 ],
+    [ 4,1,"exit code",1,0.00230169,null,null,null,null,null,null,null,null,null,null,null ],
+    [ 4,2,"ok",0,0.00326364,6,7,10,1,6,1,1,0,484,7467,86 ],
+    [ 5,0,"ok",0,0.0384996,3,4,5,1,3,0,0,0,208,4128,9 ],
+    [ 5,1,"exit code",1,0.00231413,null,null,null,null,null,null,null,null,null,null,null ],
+    [ 5,2,"ok",0,0.00339721,9,17,23,0,9,4,1,0,1601,34445,1004 ]
+  ]
+}
+</pre>
+</div>
+
+<p>
+Here the <code>fields</code> table describes the columns of the <code>results</code> table.
+The <code>inputs</code> tables lists the columns that are considered as inputs
+for the experiments.  The values in the columns corresponding to the
+fields <code>formula</code> and <code>tool</code> contains indices relative to the <code>formula</code>
+and <code>tool</code> tables.  This format is more compact when dealing with lots
+of translators and formulas, because they don't have to be repeated on
+each line as in the CSV version.
+</p>
+
+<p>
+JSON data can be easily processed in any language.  For instance the
+following Python3 script averages each column (except the first four)
+for each tool, and presents the results in a form that can almost be
+copied into a LaTeX table (the <code>%</code> in the tool names have to be taken
+care of).  Note that for simplicity we assume that the first two
+columns are inputs, instead of reading the <code>inputs</code> field.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-comment-delimiter">#</span><span class="org-comment">!/usr/bin/python3</span>
+<span class="org-keyword">import</span> json
+<span class="org-variable-name">data</span> = json.load(<span class="org-builtin">open</span>(<span class="org-string">'results.json'</span>))
+<span class="org-variable-name">datacols</span> = <span class="org-builtin">range</span>(4, <span class="org-builtin">len</span>(data[<span class="org-string">"fields"</span>]))
+<span class="org-comment-delimiter"># </span><span class="org-comment">Index results by tool</span>
+<span class="org-variable-name">results</span> = { t:[] <span class="org-keyword">for</span> t <span class="org-keyword">in</span> <span class="org-builtin">range</span>(0, <span class="org-builtin">len</span>(data[<span class="org-string">"tool"</span>])) }
+<span class="org-keyword">for</span> l <span class="org-keyword">in</span> data[<span class="org-string">"results"</span>]:
+  results[l[1]].append(l)
+<span class="org-comment-delimiter"># </span><span class="org-comment">Average columns for each tool, and display them as a table</span>
+<span class="org-keyword">print</span>(<span class="org-string">"%-18s &amp; count &amp; %s \\\\"</span> % (<span class="org-string">"tool"</span>, <span class="org-string">" &amp; "</span>.join(data[<span class="org-string">"fields"</span>][4:])))
+<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(0, <span class="org-builtin">len</span>(data[<span class="org-string">"tool"</span>])):
+  <span class="org-variable-name">c</span> = <span class="org-builtin">len</span>(results[i])
+  <span class="org-variable-name">sums</span> = [<span class="org-string">"%6.1f"</span> % (<span class="org-builtin">sum</span>([x[j] <span class="org-keyword">for</span> x <span class="org-keyword">in</span> results[i]])/c)
+          <span class="org-keyword">for</span> j <span class="org-keyword">in</span> datacols]
+  <span class="org-keyword">print</span>(<span class="org-string">"%-18s &amp; %3d &amp; %s \\\\"</span> % (data[<span class="org-string">"tool"</span>][i], c,
+        <span class="org-string">" &amp; "</span>.join(sums)))
+</pre>
+</div>
+<p>
+The script <code>bench/ltl2tgba/sum.py</code> is a more evolved version of the
+above script that generates two kinds of LaTeX tables.
+</p>
+
+<p>
+When computing such statistics, you should be aware that inputs for
+which a tool failed to generate an automaton (e.g. it crashed, or it
+was killed if you used <code>ltlcross</code>'s <code>--timeout</code> option to limit run
+time) will appear as mostly empty lines in the CSV or JSON files,
+since most statistics cannot be computed without an automaton&#x2026;
+Those lines with missing data can be omitted with the <code>--omit-missing</code>
+option (this used to be the default up to Spot 1.2).
+</p>
+
+<p>
+However data for bogus automata are still included: as shown below
+<code>ltlcross</code> will report inconsistencies between automata as errors, but
+it does not try to guess who is incorrect.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org62f99b7" class="outline-3">
+<h3 id="org62f99b7">Description of the columns</h3>
+<div class="outline-text-3" id="text-org62f99b7">
+<p>
+The number of column output in the CSV or JSON outputs depend on the
+options passed to <code>ltlcross</code>. Additional columns will be output if
+<code>--strength</code>, <code>--ambiguous</code>, <code>--automata</code>, or <code>--product=+N</code> are used.
+</p>
+
+<p>
+Columns <code>formula</code> and <code>tool</code> contain the formula translated and the
+command run to translate it.  In the CSV, these columns contain the
+actual text.  In the JSON output, these column contains an index into
+the <code>formula</code> and <code>tool</code> table declared separately.
+</p>
+
+<p>
+<code>exit_status</code> and <code>exit_code</code> are used to indicate if the translator
+successfully produced an automaton, or if it failed.  On successful
+translation, <code>exit_status</code> is equal to "<code>ok</code>" and <code>exit_code</code> is 0.
+If the translation took more time than allowed with the <code>--timeout</code>
+option, <code>exit_status</code> will contain "<code>timeout</code>" and <code>exit_code</code> will be
+set to -1.  Other values are used to diagnose various issues: please
+check the man-page for <code>ltlcross</code> for a list of them.
+</p>
+
+<p>
+<code>time</code> obviously contains the time used by the translation.  Time is
+measured with some high-resolution clock when available (that's
+nanosecond accuracy under Linux), but because translator commands are
+executed through a shell, it also includes the time to start a shell.
+(This extra cost apply identically to all translators, so it is not unfair.)
+</p>
+
+
+<p>
+All the values that follow will be missing if <code>exit_status</code> is not
+equal to "<code>ok</code>".  (You may instruct <code>ltlcross</code> not to output lines with
+such missing data with the option <code>--omit-missing</code>.)
+</p>
+
+<p>
+<code>states</code>, <code>edges</code>, <code>transitions</code>, <code>acc</code> are size measures for the
+automaton that was translated.  <code>acc</code> counts the number of acceptance
+sets.  When building (degeneralized) Büchi automata, it will always be
+<code>1</code>, so its value is meaningful only when evaluating translations to
+generalized Büchi automata.  <code>edges</code> counts the actual number of edges
+in the graph supporting the automaton; an edge (labeled by a Boolean
+formula) <a href="concepts.html#trans-edge">might actually represent several transitions</a> (each labeled by
+assignment of all atomic propositions).  For instance in an automaton
+where the atomic proposition are \(a\) and \(b\), one edge labeled by
+\(a\lor b\) actually represents three transitions \(a b\), \(a\bar b\), and
+\(\bar a b\).
+</p>
+
+<p>
+<code>scc</code> counts the number of strongly-connected components in the
+automaton.
+</p>
+
+<p>
+If option <code>--strength</code> is passed to <code>ltlcross</code>, these SCCs are
+also partitioned on four sets based on their strengths:
+</p>
+<ul class="org-ul">
+<li><code>nonacc_scc</code> for non-accepting SCCs (such as states A1 and A2 in the
+previous picture).</li>
+<li><code>terminal_scc</code> for accepting SCCs where all states or edges belong
+to the same acceptance sets, and that are complete (i.e., any state
+in a terminal SCC accepts the universal language).  States
+B1 and B2 in the previous picture are two terminal SCCs.</li>
+<li><code>weak_scc</code> for accepting SCCs where all states or edges belong
+to the same acceptance sets, but that are not complete.</li>
+<li><code>strong_scc</code> for accepting SCCs that are not weak.</li>
+</ul>
+
+<p>
+These SCC strengths can be used to compute the strength of the
+automaton as a whole:
+</p>
+<ul class="org-ul">
+<li>an automaton is terminal if it contains only non-accepting or
+terminal SCCs,</li>
+<li>an automaton is weak if it it contains only non-accepting,
+terminal, or weak SCCs,</li>
+<li>an automaton is strong if it contains at least one strong SCC.</li>
+</ul>
+
+<p>
+This classification is used to fill the <code>terminal_aut</code>, <code>weak_aut</code>,
+<code>strong_aut</code> columns with Boolean values (still only if option
+<code>--strength</code> is passed).  Only one of these should contain <code>1</code>.  We
+usually prefer terminal automata over weak automata, and weak automata
+over strong automata, because the emptiness check of terminal (and
+weak) automata is easier.  When working with alternating automata, all
+those strength-related columns will be empty, because the routines
+used to compute those statistic do not yet support universal edges.
+</p>
+
+<p>
+<code>nondetstates</code> counts the number of non-deterministic states in the
+automaton.  <code>nondeterministic</code> is a Boolean value indicating if the
+automaton is not deterministic.  For instance in the previous picture
+showing two automata for <code>a U b</code>, the first automaton is deterministic
+(these two fields will contain 0), while the second automaton contain
+a nondeterministic state (state A2 has two possible successors for the
+assignment \(ab\)) and is therefore not deterministic.
+</p>
+
+<p>
+If option <code>--ambiguous</code> was passed to <code>ltlcross</code>, the column
+<code>ambiguous_aut</code> holds a Boolean indicating whether the automaton is
+ambiguous, i.e., if there exists a word that can be accepted by at
+least two different runs.  (This information is not yet available for
+alternating automata.)
+</p>
+
+<p>
+<code>complete_aut</code> is a Boolean indicating whether the automaton is
+complete.
+</p>
+
+<p>
+Columns <code>product_states</code>, <code>product_transitions</code>, and <code>product_scc</code>
+count the number of state, transitions and strongly-connect components
+in the product that has been built between the translated automaton
+and a random model.  For a given formula, the same random model is of
+course used against the automata translated by all tools.  Comparing
+the size of these product might give another indication of the
+"conciseness" of a translated automaton.
+</p>
+
+<p>
+There is of course a certain "luck factor" in the size of the product.
+Maybe some translator built a very dumb automaton, with many useless
+states, in which just a very tiny part is translated concisely.  By
+luck, the random model generated might synchronize with this tiny part
+only, and ignore the part with all the useless states.  A way to
+lessen this luck factor is to increase the number of products
+performed against the translated automaton.  If option <code>--products=N</code>
+is used, <code>N</code> products are builds instead of one, and the fields
+<code>product_states</code>, <code>product_transitions</code>, and <code>product_scc</code> contain
+average values.
+</p>
+
+<p>
+If the option <code>--products=+N</code> is used (with a <code>+</code> in front of the
+number), then no average value is computed.  Instead, three columns
+<code>product_states</code>, <code>product_transitions</code>, and <code>product_scc</code> are output
+for each individual product (i.e., \(3\times N\) columns are output).
+This might be useful if you want to compute different kind of
+statistic (e.g., a median instead of a mean) or if you want to build
+scatter plots of all these products.
+</p>
+
+<p>
+Finally, if the <code>--automata</code> option was passed to <code>ltlcross</code>, the CSV
+or JSON output will contain a column named <code>automaton</code> encoding each
+produced automaton in the HOA format.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8d3d007" class="outline-3">
+<h3 id="org8d3d007">Changing the name of the translators</h3>
+<div class="outline-text-3" id="text-org8d3d007">
+<p>
+By default, the names used in the CSV and JSON output to designate the
+translators are the command specified on the command line.
+</p>
+
+<p>
+For instance in the following, <code>ltl2tgba</code> is run in two
+configurations, and the strings <code>ltl2tgba -s --small %f &gt;%O</code> and
+<code>ltl2tgba -s --deter %f &gt;%O</code> appear verbatim in the output:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="orgf41a099">ltlcross -f a -f Ga <span class="org-string">'ltl2tgba -s --small %f &gt;%O'</span> <span class="org-string">'ltl2tgba -s --deter %f &gt;%O'</span> --csv
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides" class="csv-table">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><div><span>formula</span></div></th>
+<th scope="col" class="org-left"><div><span>tool</span></div></th>
+<th scope="col" class="org-left"><div><span>exit_status</span></div></th>
+<th scope="col" class="org-right"><div><span>exit_code</span></div></th>
+<th scope="col" class="org-right"><div><span>time</span></div></th>
+<th scope="col" class="org-right"><div><span>states</span></div></th>
+<th scope="col" class="org-right"><div><span>edges</span></div></th>
+<th scope="col" class="org-right"><div><span>transitions</span></div></th>
+<th scope="col" class="org-right"><div><span>acc</span></div></th>
+<th scope="col" class="org-right"><div><span>scc</span></div></th>
+<th scope="col" class="org-right"><div><span>nondet_states</span></div></th>
+<th scope="col" class="org-right"><div><span>nondet_aut</span></div></th>
+<th scope="col" class="org-right"><div><span>complete_aut</span></div></th>
+<th scope="col" class="org-right"><div><span>product_states</span></div></th>
+<th scope="col" class="org-right"><div><span>product_transitions</span></div></th>
+<th scope="col" class="org-right"><div><span>product_scc</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">a</td>
+<td class="org-left">ltl2tgba -s --small %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0456715</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">201</td>
+<td class="org-right">4144</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">a</td>
+<td class="org-left">ltl2tgba -s --deter %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0465305</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">201</td>
+<td class="org-right">4144</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">!(a)</td>
+<td class="org-left">ltl2tgba -s --small %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0435385</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">201</td>
+<td class="org-right">4149</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">!(a)</td>
+<td class="org-left">ltl2tgba -s --deter %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0410826</td>
+<td class="org-right">2</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">201</td>
+<td class="org-right">4149</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">G(a)</td>
+<td class="org-left">ltl2tgba -s --small %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0417994</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">200</td>
+<td class="org-right">2059</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left">G(a)</td>
+<td class="org-left">ltl2tgba -s --deter %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0416306</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">200</td>
+<td class="org-right">2059</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left">!(G(a))</td>
+<td class="org-left">ltl2tgba -s --small %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0417114</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">400</td>
+<td class="org-right">8264</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">!(G(a))</td>
+<td class="org-left">ltl2tgba -s --deter %f &gt;%O</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0418115</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">400</td>
+<td class="org-right">8264</td>
+<td class="org-right">2</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+To present these results graphically, or even when analyzing these
+data, it might be convenient to give each configured tool a shorter
+name.  <code>ltlcross</code> supports the specification of such short names by
+looking whether the command specification for a translator has the
+form "<code>{short name}actual command</code>".
+</p>
+
+<p>
+For instance:
+</p>
+<div class="org-src-container">
+<pre class="src src-sh">genltl --and-f=1..5 |
+ltlcross <span class="org-string">'{small} ltl2tgba -s --small %f &gt;%O'</span> <span class="org-sh-escaped-newline">\</span>
+         <span class="org-string">'{deter} ltl2tgba -s --deter %f &gt;%O'</span> --csv=ltlcross.csv
+</pre>
+</div>
+
+<pre class="example">
+-:1: F(p1)
+Running [P0: small]: ltl2tgba -s --small 'F(p1)' &gt;'lcr-o0-DfOnB7'
+Running [P1: deter]: ltl2tgba -s --deter 'F(p1)' &gt;'lcr-o1-aOsQ2C'
+Running [N0: small]: ltl2tgba -s --small '!(F(p1))' &gt;'lcr-o0-nKM4z8'
+Running [N1: deter]: ltl2tgba -s --deter '!(F(p1))' &gt;'lcr-o1-YlINdE'
+Performing sanity checks and gathering statistics...
+
+-:2: (F(p1)) &amp; (F(p2))
+Running [P0: small]: ltl2tgba -s --small '(F(p1)) &amp; (F(p2))' &gt;'lcr-o0-Lm2YY9'
+Running [P1: deter]: ltl2tgba -s --deter '(F(p1)) &amp; (F(p2))' &gt;'lcr-o1-GfRaQF'
+Running [N0: small]: ltl2tgba -s --small '!((F(p1)) &amp; (F(p2)))' &gt;'lcr-o0-B6IpNb'
+Running [N1: deter]: ltl2tgba -s --deter '!((F(p1)) &amp; (F(p2)))' &gt;'lcr-o1-SMxQRH'
+Performing sanity checks and gathering statistics...
+
+-:3: (F(p1)) &amp; (F(p2)) &amp; (F(p3))
+Running [P0: small]: ltl2tgba -s --small '(F(p1)) &amp; (F(p2)) &amp; (F(p3))' &gt;'lcr-o0-xxSa6d'
+Running [P1: deter]: ltl2tgba -s --deter '(F(p1)) &amp; (F(p2)) &amp; (F(p3))' &gt;'lcr-o1-K57hsK'
+Running [N0: small]: ltl2tgba -s --small '!((F(p1)) &amp; (F(p2)) &amp; (F(p3)))' &gt;'lcr-o0-zNXXUg'
+Running [N1: deter]: ltl2tgba -s --deter '!((F(p1)) &amp; (F(p2)) &amp; (F(p3)))' &gt;'lcr-o1-UfbltN'
+Performing sanity checks and gathering statistics...
+
+-:4: (F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4))
+Running [P0: small]: ltl2tgba -s --small '(F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4))' &gt;'lcr-o0-zPC2ek'
+Running [P1: deter]: ltl2tgba -s --deter '(F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4))' &gt;'lcr-o1-MFL97Q'
+Running [N0: small]: ltl2tgba -s --small '!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)))' &gt;'lcr-o0-fwOX8n'
+Running [N1: deter]: ltl2tgba -s --deter '!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)))' &gt;'lcr-o1-Ktl3fV'
+Performing sanity checks and gathering statistics...
+
+-:5: (F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5))
+Running [P0: small]: ltl2tgba -s --small '(F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5))' &gt;'lcr-o0-NVW4Is'
+Running [P1: deter]: ltl2tgba -s --deter '(F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5))' &gt;'lcr-o1-6QH9k0'
+Running [N0: small]: ltl2tgba -s --small '!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5)))' &gt;'lcr-o0-Vfke6x'
+Running [N1: deter]: ltl2tgba -s --deter '!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5)))' &gt;'lcr-o1-EaDoY5'
+Performing sanity checks and gathering statistics...
+
+No problem detected.
+</pre>
+
+<p>
+When <code>ltlcross</code> is running, the short name is now displayed on stderr
+before the command.  Furthermore, the file <code>ltlcross.csv</code> now use the
+short name in the <code>tool</code> column:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides" class="csv-table">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><div><span>formula</span></div></th>
+<th scope="col" class="org-left"><div><span>tool</span></div></th>
+<th scope="col" class="org-left"><div><span>exit_status</span></div></th>
+<th scope="col" class="org-right"><div><span>exit_code</span></div></th>
+<th scope="col" class="org-right"><div><span>time</span></div></th>
+<th scope="col" class="org-right"><div><span>states</span></div></th>
+<th scope="col" class="org-right"><div><span>edges</span></div></th>
+<th scope="col" class="org-right"><div><span>transitions</span></div></th>
+<th scope="col" class="org-right"><div><span>acc</span></div></th>
+<th scope="col" class="org-right"><div><span>scc</span></div></th>
+<th scope="col" class="org-right"><div><span>nondet_states</span></div></th>
+<th scope="col" class="org-right"><div><span>nondet_aut</span></div></th>
+<th scope="col" class="org-right"><div><span>complete_aut</span></div></th>
+<th scope="col" class="org-right"><div><span>product_states</span></div></th>
+<th scope="col" class="org-right"><div><span>product_transitions</span></div></th>
+<th scope="col" class="org-right"><div><span>product_scc</span></div></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">F(p1)</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0372428</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">400</td>
+<td class="org-right">8272</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left">F(p1)</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0370599</td>
+<td class="org-right">2</td>
+<td class="org-right">3</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+<td class="org-right">2</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">400</td>
+<td class="org-right">8272</td>
+<td class="org-right">3</td>
+</tr>
+
+<tr>
+<td class="org-left">!(F(p1))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0473497</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">200</td>
+<td class="org-right">2055</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">!(F(p1))</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.043689</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">200</td>
+<td class="org-right">2055</td>
+<td class="org-right">2</td>
+</tr>
+
+<tr>
+<td class="org-left">(F(p1)) &amp; (F(p2))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0435459</td>
+<td class="org-right">4</td>
+<td class="org-right">9</td>
+<td class="org-right">16</td>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">798</td>
+<td class="org-right">16533</td>
+<td class="org-right">5</td>
+</tr>
+
+<tr>
+<td class="org-left">(F(p1)) &amp; (F(p2))</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0439581</td>
+<td class="org-right">4</td>
+<td class="org-right">9</td>
+<td class="org-right">16</td>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">798</td>
+<td class="org-right">16533</td>
+<td class="org-right">5</td>
+</tr>
+
+<tr>
+<td class="org-left">!((F(p1)) &amp; (F(p2)))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0495842</td>
+<td class="org-right">3</td>
+<td class="org-right">5</td>
+<td class="org-right">7</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">598</td>
+<td class="org-right">7367</td>
+<td class="org-right">4</td>
+</tr>
+
+<tr>
+<td class="org-left">!((F(p1)) &amp; (F(p2)))</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0461614</td>
+<td class="org-right">3</td>
+<td class="org-right">5</td>
+<td class="org-right">7</td>
+<td class="org-right">1</td>
+<td class="org-right">3</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">598</td>
+<td class="org-right">7367</td>
+<td class="org-right">4</td>
+</tr>
+
+<tr>
+<td class="org-left">(F(p1)) &amp; (F(p2)) &amp; (F(p3))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0559572</td>
+<td class="org-right">8</td>
+<td class="org-right">27</td>
+<td class="org-right">64</td>
+<td class="org-right">1</td>
+<td class="org-right">8</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">1587</td>
+<td class="org-right">33068</td>
+<td class="org-right">34</td>
+</tr>
+
+<tr>
+<td class="org-left">(F(p1)) &amp; (F(p2)) &amp; (F(p3))</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.046567</td>
+<td class="org-right">8</td>
+<td class="org-right">27</td>
+<td class="org-right">64</td>
+<td class="org-right">1</td>
+<td class="org-right">8</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">1587</td>
+<td class="org-right">33068</td>
+<td class="org-right">34</td>
+</tr>
+
+<tr>
+<td class="org-left">!((F(p1)) &amp; (F(p2)) &amp; (F(p3)))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0413897</td>
+<td class="org-right">4</td>
+<td class="org-right">6</td>
+<td class="org-right">24</td>
+<td class="org-right">1</td>
+<td class="org-right">4</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">601</td>
+<td class="org-right">6171</td>
+<td class="org-right">4</td>
+</tr>
+
+<tr>
+<td class="org-left">!((F(p1)) &amp; (F(p2)) &amp; (F(p3)))</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.043722</td>
+<td class="org-right">7</td>
+<td class="org-right">19</td>
+<td class="org-right">37</td>
+<td class="org-right">1</td>
+<td class="org-right">7</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1387</td>
+<td class="org-right">18792</td>
+<td class="org-right">33</td>
+</tr>
+
+<tr>
+<td class="org-left">(F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0509699</td>
+<td class="org-right">16</td>
+<td class="org-right">81</td>
+<td class="org-right">256</td>
+<td class="org-right">1</td>
+<td class="org-right">16</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">2727</td>
+<td class="org-right">57786</td>
+<td class="org-right">74</td>
+</tr>
+
+<tr>
+<td class="org-left">(F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4))</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0533523</td>
+<td class="org-right">16</td>
+<td class="org-right">81</td>
+<td class="org-right">256</td>
+<td class="org-right">1</td>
+<td class="org-right">16</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">2727</td>
+<td class="org-right">57786</td>
+<td class="org-right">74</td>
+</tr>
+
+<tr>
+<td class="org-left">!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0455407</td>
+<td class="org-right">5</td>
+<td class="org-right">8</td>
+<td class="org-right">64</td>
+<td class="org-right">1</td>
+<td class="org-right">5</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">801</td>
+<td class="org-right">8468</td>
+<td class="org-right">5</td>
+</tr>
+
+<tr>
+<td class="org-left">!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)))</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.049304</td>
+<td class="org-right">15</td>
+<td class="org-right">65</td>
+<td class="org-right">175</td>
+<td class="org-right">1</td>
+<td class="org-right">15</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">2527</td>
+<td class="org-right">37226</td>
+<td class="org-right">73</td>
+</tr>
+
+<tr>
+<td class="org-left">(F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0556567</td>
+<td class="org-right">32</td>
+<td class="org-right">243</td>
+<td class="org-right">1024</td>
+<td class="org-right">1</td>
+<td class="org-right">32</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">5330</td>
+<td class="org-right">114068</td>
+<td class="org-right">350</td>
+</tr>
+
+<tr>
+<td class="org-left">(F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5))</td>
+<td class="org-left">deter</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.0557284</td>
+<td class="org-right">32</td>
+<td class="org-right">243</td>
+<td class="org-right">1024</td>
+<td class="org-right">1</td>
+<td class="org-right">32</td>
+<td class="org-right">0</td>
+<td class="org-right">0</td>
+<td class="org-right">1</td>
+<td class="org-right">5330</td>
+<td class="org-right">114068</td>
+<td class="org-right">350</td>
+</tr>
+
+<tr>
+<td class="org-left">!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5)))</td>
+<td class="org-left">small</td>
+<td class="org-left">ok</td>
+<td class="org-right">0</td>
+<td class="org-right">0.051615</td>
+<td class="org-right">6</td>
+<td class="org-right">10</td>
+<td class="org-right">160</td>
+<td class="org-right">1</td>
+<td class="org-right">6</td>
+<td class="org-right">1</td>
+<td class="org-right">1</td>
+<td class="org-right">0</td>
+<td class="org-right">1000</td>
+<td class="org-right">10707</td>
+<td class="org-right">6</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+In this last example, we saved the CSV output to <code>ltlcross.csv</code> so we
+can play with it in the next section.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org6501f0d" class="outline-3">
+<h3 id="org6501f0d">Working with these CSV files in R</h3>
+<div class="outline-text-3" id="text-org6501f0d">
+<p>
+The produced CSV should be directly readable by R's CSV input functions like
+<code>read.csv()</code>, <code>readr::read_csv()</code>, or <code>data.table::fread()</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span class="org-ess-modifiers">library</span>(data.table)
+dt <span class="org-ess-assignment">&lt;-</span> fread(<span class="org-string">'ltlcross.csv'</span>)
+str(dt)
+</pre>
+</div>
+<pre class="example">
+data.table 1.12.0  Latest news: r-datatable.com
+Classes ‘data.table’ and 'data.frame':	20 obs. of  16 variables:
+ $ formula            : chr  "F(p1)" "F(p1)" "!(F(p1))" "!(F(p1))" ...
+ $ tool               : chr  "small" "deter" "small" "deter" ...
+ $ exit_status        : chr  "ok" "ok" "ok" "ok" ...
+ $ exit_code          : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ time               : num  0.0372 0.0371 0.0473 0.0437 0.0435 ...
+ $ states             : int  2 2 1 1 4 4 3 3 8 8 ...
+ $ edges              : int  3 3 1 1 9 9 5 5 27 27 ...
+ $ transitions        : int  4 4 1 1 16 16 7 7 64 64 ...
+ $ acc                : int  1 1 1 1 1 1 1 1 1 1 ...
+ $ scc                : int  2 2 1 1 4 4 3 3 8 8 ...
+ $ nondet_states      : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ nondet_aut         : int  0 0 0 0 0 0 0 0 0 0 ...
+ $ complete_aut       : int  1 1 0 0 1 1 0 0 1 1 ...
+ $ product_states     : int  400 400 200 200 798 798 598 598 1587 1587 ...
+ $ product_transitions: int  8272 8272 2055 2055 16533 16533 7367 7367 33068 33068 ...
+ $ product_scc        : int  3 3 2 2 5 5 4 4 34 34 ...
+ - attr(*, ".internal.selfref")=&lt;
+</pre>
+
+<p>
+Currently the data frame shows one line per couple (formula, tool).
+This makes comparing tools quite difficult, as their results are on
+different lines.
+</p>
+
+<p>
+A common transformation is to group the results of all tools on the
+same line: using exactly one line per formula.  This is easily
+achieved using <code>dcast()</code> from the <code>data.table</code> library.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">dt2 <span class="org-ess-assignment">&lt;-</span> dcast(dt, formula ~ tool, value.var=names(dt)[-(1:2)], sep=<span class="org-string">"."</span>)
+str(dt2)
+</pre>
+</div>
+
+<pre class="example">
+Classes ‘data.table’ and 'data.frame':	10 obs. of  29 variables:
+ $ formula                  : chr  "!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)) &amp; (F(p5)))" "!((F(p1)) &amp; (F(p2)) &amp; (F(p3)) &amp; (F(p4)))" "!((F(p1)) &amp; (F(p2)) &amp; (F(p3)))" "!((F(p1)) &amp; (F(p2)))" ...
+ $ exit_status.deter        : chr  "ok" "ok" "ok" "ok" ...
+ $ exit_status.small        : chr  "ok" "ok" "ok" "ok" ...
+ $ exit_code.deter          : int  0 0 0 0 0 0 0 0 0 0
+ $ exit_code.small          : int  0 0 0 0 0 0 0 0 0 0
+ $ time.deter               : num  0.0562 0.0493 0.0437 0.0462 0.0437 ...
+ $ time.small               : num  0.0516 0.0455 0.0414 0.0496 0.0473 ...
+ $ states.deter             : int  31 15 7 3 1 4 8 16 32 2
+ $ states.small             : int  6 5 4 3 1 4 8 16 32 2
+ $ edges.deter              : int  211 65 19 5 1 9 27 81 243 3
+ $ edges.small              : int  10 8 6 5 1 9 27 81 243 3
+ $ transitions.deter        : int  781 175 37 7 1 16 64 256 1024 4
+ $ transitions.small        : int  160 64 24 7 1 16 64 256 1024 4
+ $ acc.deter                : int  1 1 1 1 1 1 1 1 1 1
+ $ acc.small                : int  1 1 1 1 1 1 1 1 1 1
+ $ scc.deter                : int  31 15 7 3 1 4 8 16 32 2
+ $ scc.small                : int  6 5 4 3 1 4 8 16 32 2
+ $ nondet_states.deter      : int  0 0 0 0 0 0 0 0 0 0
+ $ nondet_states.small      : int  1 1 1 0 0 0 0 0 0 0
+ $ nondet_aut.deter         : int  0 0 0 0 0 0 0 0 0 0
+ $ nondet_aut.small         : int  1 1 1 0 0 0 0 0 0 0
+ $ complete_aut.deter       : int  0 0 0 0 0 1 1 1 1 1
+ $ complete_aut.small       : int  0 0 0 0 0 1 1 1 1 1
+ $ product_states.deter     : int  5130 2527 1387 598 200 798 1587 2727 5330 400
+ $ product_states.small     : int  1000 801 601 598 200 798 1587 2727 5330 400
+ $ product_transitions.deter: int  82897 37226 18792 7367 2055 16533 33068 57786 114068 8272
+ $ product_transitions.small: int  10707 8468 6171 7367 2055 16533 33068 57786 114068 8272
+ $ product_scc.deter        : int  349 73 33 4 2 5 34 74 350 3
+ $ product_scc.small        : int  6 5 4 4 2 5 34 74 350 3
+ - attr(*, ".internal.selfref")=&lt;
+
+ - attr(*, "sorted")= chr "formula"
+</pre>
+
+<p>
+Using the above form, it is easy to compare two tools on some given
+measurement, as we just need to plot two columns.  For example to
+compare the number of states produced by the two configurations of
+<code>ltl2tgba</code> for each formula, we just need to plot column
+<code>dt2$state.small</code> against <code>dt2$state.deter</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span class="org-ess-modifiers">library</span>(ggplot2)
+ggplot(dt2, aes(x=states.small, y=states.deter)) +
+   geom_abline(colour=<span class="org-string">'white'</span>) + geom_point()
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="ltlcross-r.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+
+
+<p>
+We should probably print the formulas for the cases where the two
+sizes differ.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">ggplot(dt2, aes(x=states.small, y=states.deter)) +
+   geom_abline(colour=<span class="org-string">'white'</span>) + geom_point() +
+   geom_text(data=subset(dt2, states.small != states.deter),
+             aes(label=formula), hjust=0, nudge_x=.5)
+</pre>
+</div>
+
+
+<div class="figure">
+<p><object type="image/svg+xml" data="ltlcross-r2.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4d71aa6" class="outline-2">
+<h2 id="org4d71aa6">Miscellaneous options</h2>
+<div class="outline-text-2" id="text-org4d71aa6">
+</div>
+<div id="outline-container-orgbc0ecee" class="outline-3">
+<h3 id="orgbc0ecee"><code>--stop-on-error</code></h3>
+<div class="outline-text-3" id="text-orgbc0ecee">
+<p>
+The <code>--stop-on-error</code> option will cause <code>ltlcross</code> to abort on the
+first detected error.  This include failure to start some translator,
+read its output, or failure to passe the sanity checks.  Timeouts are
+allowed unless <code>--fail-on-time</code> is also given.
+</p>
+
+<p>
+One use for this option is when <code>ltlcross</code> is used in combination with
+<code>randltl</code> to check translators on an infinite stream of formulas.
+</p>
+
+<p>
+For instance the following will cross-compare <code>ltl2tgba</code> against
+<code>ltl3ba</code> until it finds an error, or your interrupt the command, or it
+runs out of memory (the hash tables used by <code>randltl</code> and <code>ltlcross</code>
+to remove duplicate formulas will keep growing).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">randltl -n -1 --tree-size 10..25 a b c | ltlcross --stop-on-error <span class="org-string">'ltl2tgba --lbtt %f &gt;%O'</span> <span class="org-string">'ltl3ba -f %s &gt;%O'</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgd1ec759" class="outline-3">
+<h3 id="orgd1ec759"><code>--save-bogus=FILENAME</code></h3>
+<div class="outline-text-3" id="text-orgd1ec759">
+<p>
+The <code>--save-bogus=FILENAME</code> will save any formula for which an error
+was detected (either some translation failed, or some problem was
+detected using the resulting automata) in <code>FILENAME</code>.  Again, timeouts
+are not considered to be errors and therefore not reported in this
+file, unless <code>--fail-on-timeout</code> is given.
+</p>
+
+<p>
+The main use for this feature is in conjunction with <code>randltl</code>'s
+generation of random formulas.  For instance the following command
+will run the translators on an infinite number of formulas, saving
+any problematic formula in <code>bugs.ltl</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">randltl -n -1 --tree-size 10..25 a b c | ltlcross --save-bogus=bugs.ltl <span class="org-string">'ltl2tgba --lbtt %f &gt;%O'</span> <span class="org-string">'ltl3ba -f %s &gt;%O'</span>
+</pre>
+</div>
+
+<p>
+You can periodically check the contents of <code>bugs.ltl</code>, and then run
+<code>ltlcross</code> only on those formulas to look at the problems:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlcross -F bugs.ltl <span class="org-string">'ltl2tgba --lbtt %f &gt;%O'</span> <span class="org-string">'ltl3ba -f %s &gt;%O'</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4bae0c4" class="outline-3">
+<h3 id="org4bae0c4"><code>--grind=FILENAME</code></h3>
+<div class="outline-text-3" id="text-org4bae0c4">
+<p>
+This option tells <code>ltlcross</code> that, when a problem is detected, it
+should try to find a smaller formula that still exhibits the
+problem.
+</p>
+
+<p>
+Here is the procedure used:
+</p>
+<ul class="org-ul">
+<li>internally list the mutations of the bogus formula and sort
+them by length (as <a href="ltlgrind.html"><code>ltlgrind --sort</code></a> would do)</li>
+<li>process every mutation until one is found that exhibit the bug</li>
+<li>repeat the process with this new formula, and again until a formula
+is found for which no mutation exhibit the bug</li>
+<li>output that last formula in <code>FILENAME</code></li>
+</ul>
+
+<p>
+If <code>--save-bogus=OTHERFILENAME</code> is provided, every bogus formula found
+during the process will be saved in <code>OTHERFILENAME</code>.
+</p>
+
+<p>
+Example:
+</p>
+<div class="org-src-container">
+<pre class="src src-sh">ltlcross -f <span class="org-string">'(G!b &amp; (!c | F!a)) | (c &amp; Ga &amp; Fb)'</span> <span class="org-string">"modella %L %O"</span> <span class="org-sh-escaped-newline">\</span>
+  --save-bogus=bogus <span class="org-sh-escaped-newline">\</span>
+  --grind=bogus-grind
+</pre>
+</div>
+<pre class="example">
+| &amp; G ! p0 | ! p1 F ! p2 &amp; &amp; p1 G p2 F p0
+Running [P0]: modella 'lcr-i0-Q1cpnZ' 'lcr-o0-83gv2I'
+Running [N0]: modella 'lcr-i0-4j0uIs' 'lcr-o0-sR3voc'
+Performing sanity checks and gathering statistics...
+error: P0*N0 is nonempty; both automata accept the infinite word:
+       cycle{!p0 &amp; !p1}
+
+Trying to find a bogus mutation of (G!b &amp; (!c | F!a)) | (c &amp; Ga &amp; Fb)...
+Mutation 1/22: &amp; &amp; p0 G p1 F p2
+Running [P0]: modella 'lcr-i1-84g05V' 'lcr-o0-UIsvNF'
+Running [N0]: modella 'lcr-i1-6PVnvp' 'lcr-o0-ERkhd9'
+Performing sanity checks and gathering statistics...
+
+Mutation 2/22: &amp; G ! p0 | ! p1 F ! p2
+Running [P0]: modella 'lcr-i2-iTqCVS' 'lcr-o0-ktBYDC'
+Running [N0]: modella 'lcr-i2-47nGmm' 'lcr-o0-oJ3o55'
+Performing sanity checks and gathering statistics...
+
+Mutation 3/22: | G ! p0 &amp; &amp; p1 G p2 F p0
+Running [P0]: modella 'lcr-i3-uXSzOP' 'lcr-o0-2mKLxz'
+Running [N0]: modella 'lcr-i3-k1enhj' 'lcr-o0-ojBZ02'
+Performing sanity checks and gathering statistics...
+error: P0*N0 is nonempty; both automata accept the infinite word:
+       cycle{!p0 &amp; !p1}
+
+Trying to find a bogus mutation of G!b | (c &amp; Ga &amp; Fb)...
+Mutation 1/16: t
+Running [P0]: modella 'lcr-i4-Sw3hLM' 'lcr-o0-mPBBvw'
+Running [N0]: modella 'lcr-i4-sXAcgg' 'lcr-o0-8yLO0Z'
+Performing sanity checks and gathering statistics...
+
+Mutation 2/16: G ! p0
+Running [P0]: modella 'lcr-i5-MAiJLJ' 'lcr-o0-cDXEwt'
+Running [N0]: modella 'lcr-i5-45TRhd' 'lcr-o0-kT352W'
+Performing sanity checks and gathering statistics...
+
+Mutation 3/16: &amp; &amp; p0 G p1 F p2
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 4/16: | G ! p0 &amp; p1 F p0
+Running [P0]: modella 'lcr-i6-w1GEOG' 'lcr-o0-ghceAq'
+Running [N0]: modella 'lcr-i6-KL68la' 'lcr-o0-a6T47T'
+Performing sanity checks and gathering statistics...
+error: P0*N0 is nonempty; both automata accept the infinite word:
+       cycle{!p0 &amp; !p1}
+
+Trying to find a bogus mutation of G!b | (c &amp; Fb)...
+Mutation 1/10: t
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 2/10: G ! p0
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 3/10: &amp; p0 F p1
+Running [P0]: modella 'lcr-i7-2dMrUD' 'lcr-o0-MeJPGn'
+Running [N0]: modella 'lcr-i7-OzEwt7' 'lcr-o0-4hKegR'
+Performing sanity checks and gathering statistics...
+
+Mutation 4/10: | p0 G ! p1
+Running [P0]: modella 'lcr-i8-2LRg3A' 'lcr-o0-k43jQk'
+Running [N0]: modella 'lcr-i8-OOiFD4' 'lcr-o0-gYH1qO'
+Performing sanity checks and gathering statistics...
+
+Mutation 5/10: | G ! p0 F p0
+Running [P0]: modella 'lcr-i9-eeZIey' 'lcr-o0-Klpr2h'
+Running [N0]: modella 'lcr-i9-QzPqQ1' 'lcr-o0-u2brEL'
+Performing sanity checks and gathering statistics...
+
+Mutation 6/10: | ! p0 &amp; p1 F p0
+Running [P0]: modella 'lcr-i10-gQpKsv' 'lcr-o0-qqU4gf'
+Running [N0]: modella 'lcr-i10-47HI7Y' 'lcr-o0-8TXnYI'
+Performing sanity checks and gathering statistics...
+
+Mutation 7/10: | &amp; p1 F p0 G p0
+Running [P0]: modella 'lcr-i11-A58pPs' 'lcr-o0-cHptGc'
+Running [N0]: modella 'lcr-i11-YBtSxW' 'lcr-o0-wFqipG'
+Performing sanity checks and gathering statistics...
+
+Mutation 8/10: | &amp; p0 p1 G ! p0
+Running [P0]: modella 'lcr-i12-iP84gq' 'lcr-o0-UxIS89'
+Running [N0]: modella 'lcr-i12-60HY0T' 'lcr-o0-gXU5SD'
+Performing sanity checks and gathering statistics...
+
+Mutation 9/10: | G ! p0 &amp; p0 F p0
+Running [P0]: modella 'lcr-i13-exsyLn' 'lcr-o0-gu91D7'
+Running [N0]: modella 'lcr-i13-QTROwR' 'lcr-o0-GrtCpB'
+Performing sanity checks and gathering statistics...
+error: P0*N0 is nonempty; both automata accept the infinite word:
+       cycle{!p0}
+
+Trying to find a bogus mutation of G!c | (c &amp; Fc)...
+Mutation 1/7: t
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 2/7: G ! p0
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 3/7: &amp; p0 F p0
+Running [P0]: modella 'lcr-i14-0UPOil' 'lcr-o0-4bJ2b5'
+Running [N0]: modella 'lcr-i14-wh9y5O' 'lcr-o0-ELv6Yy'
+Performing sanity checks and gathering statistics...
+
+Mutation 4/7: | p0 G ! p0
+Running [P0]: modella 'lcr-i15-0LuXSi' 'lcr-o0-EBNPM2'
+Running [N0]: modella 'lcr-i15-Mfd1GM' 'lcr-o0-wDNdBw'
+Performing sanity checks and gathering statistics...
+
+Mutation 5/7: | G ! p0 F p0
+warning: This formula or its negation has already been checked.
+         Use --allow-dups if it should not be ignored.
+
+Mutation 6/7: | ! p0 &amp; p0 F p0
+Running [P0]: modella 'lcr-i16-CR1Kvg' 'lcr-o0-eSVjq0'
+Running [N0]: modella 'lcr-i16-wC1alK' 'lcr-o0-wL02fu'
+Performing sanity checks and gathering statistics...
+
+Mutation 7/7: | G p0 &amp; p0 F p0
+Running [P0]: modella 'lcr-i17-6Vofbe' 'lcr-o0-Mhlt6X'
+Running [N0]: modella 'lcr-i17-erZZ1H' 'lcr-o0-84OxXr'
+Performing sanity checks and gathering statistics...
+
+Smallest bogus mutation found for (G!b &amp; (!c | F!a)) | (c &amp; Ga &amp; Fb) is G!c | (c &amp; Fc).
+
+error: some error was detected during the above runs.
+       Check file bogus for problematic formulas.
+</pre>
+
+<div class="org-src-container">
+<pre class="src src-sh">cat bogus
+</pre>
+</div>
+
+<pre class="example">
+(G!b &amp; (!c | F!a)) | (c &amp; Ga &amp; Fb)
+G!b | (c &amp; Ga &amp; Fb)
+G!b | (c &amp; Fb)
+G!c | (c &amp; Fc)
+
+</pre>
+
+<div class="org-src-container">
+<pre class="src src-sh">cat bogus-grind
+</pre>
+</div>
+
+<pre class="example">
+G!c | (c &amp; Fc)
+
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org2de621c" class="outline-3">
+<h3 id="org2de621c"><code>--no-check</code></h3>
+<div class="outline-text-3" id="text-org2de621c">
+<p>
+The <code>--no-check</code> option disables all sanity checks, and only use the supplied
+formulas in their positive form.
+</p>
+
+<p>
+When checks are enabled, the negated formulas are intermixed with the
+positives ones in the results.  Therefore the <code>--no-check</code> option can
+be used to gather statistics about a specific set of formulas.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8b230e1" class="outline-3">
+<h3 id="verbose"><a id="org8b230e1"></a><code>--verbose</code></h3>
+<div class="outline-text-3" id="text-verbose">
+<p>
+The verbose option can be useful to troubleshoot problems or simply
+follow the list of transformations and tests performed by <code>ltlcross</code>.
+</p>
+
+<p>
+For instance here is what happens if we try to cross check <code>ltl2tgba</code>
+and <code>ltl3ba -H1</code> on the formula <code>FGa</code>.  Note that <code>ltl2tgba</code> will
+produce transition-based generalized Büchi automata, while <code>ltl3ba
+-H1</code> produces co-Büchi alternating automata.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlcross -f <span class="org-string">'FGa'</span> ltl2tgba <span class="org-string">'ltl3ba -H1'</span> --verbose
+</pre>
+</div>
+
+<pre class="example">
+F(G(a))
+Running [P0]: ltl2tgba -H 'F(G(a))'&gt;'lcr-o0-xGKAk6'
+Running [P1]: ltl3ba -H1 -f '&lt;&gt;([](a))'&gt;'lcr-o1-lVCuGQ'
+Running [N0]: ltl2tgba -H '!(F(G(a)))'&gt;'lcr-o0-DqxK3A'
+Running [N1]: ltl3ba -H1 -f '!(&lt;&gt;([](a)))'&gt;'lcr-o1-lCejwl'
+info: collected automata:
+info:   P0	(2 st.,3 ed.,1 sets)
+info:   N0	(1 st.,2 ed.,1 sets) deterministic complete
+info:   P1	(2 st.,3 ed.,1 sets)
+info:   N1	(3 st.,5 ed.,1 sets) univ-edges complete
+Performing sanity checks and gathering statistics...
+info: getting rid of universal edges...
+info:   N1	(3 st.,5 ed.,1 sets) -&gt; (2 st.,4 ed.,1 sets)
+info: complementing automata...
+info:   P0	(2 st.,3 ed.,1 sets) -&gt; (2 st.,4 ed.,1 sets)	Comp(P0)
+info:   N0	(1 st.,2 ed.,1 sets) -&gt; (1 st.,2 ed.,1 sets)	Comp(N0)
+info:   P1	(2 st.,3 ed.,1 sets) -&gt; (2 st.,4 ed.,1 sets)	Comp(P1)
+info:   N1	(2 st.,4 ed.,1 sets) -&gt; (2 st.,4 ed.,1 sets)	Comp(N1)
+info: check_empty P0*N0
+info: check_empty Comp(N0)*Comp(P0)
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+info: cross_checks and consistency_checks unnecessary
+
+No problem detected.
+</pre>
+
+<p>
+First <code>FGa</code> and its negations <code>!FGa</code> are translated with the two
+tools, resulting in four automata: two positive automata <code>P0</code> and <code>P1</code>
+for <code>FGa</code>, and two negative automata <code>N0</code> and <code>N1</code>.
+</p>
+
+<p>
+Some basic information about the collected automata are displayed.
+For instance we can see that although <code>ltl3ba -H1</code> outputs co-Büchi
+alternating automata, only automaton <code>N1</code> uses universal edges: the
+automaton <code>P1</code> can be used like a non-alternating co-Büchi automaton.
+</p>
+
+<p>
+<code>ltlcross</code> then proceeds to transform alternating automata (only weak
+alternating automata are supported) into non-alternating automata.
+Here only <code>N1</code> needs this transformation.
+</p>
+
+<p>
+Then <code>ltlcross</code> computes the complement of these four
+automata.
+</p>
+
+<p>
+Now that <code>ltlcross</code> has four complemented automata, it has to make
+sure they use only <code>Inf</code> acceptance because that is what our emptiness
+check procedure can handle.  So there is a new pass over all automata,
+rewriting them to get rid of any <code>Fin</code> acceptance.
+</p>
+
+<p>
+After this preparatory work, it is time to actually compare these
+automata.  Together, the tests <code>P0*N0</code> and <code>Comp(N0)*Comp(P0)</code> ensure
+that the automaton <code>N0</code> is really the complement of <code>P0</code>.  Similarly
+<code>P1*N1</code> and <code>Comp(N1)*Comp(P1)</code> ensure that <code>N1</code> is the complement of
+<code>P1</code>.  Finally <code>P0*N1</code> and <code>P1*N0</code> ensure that <code>P1</code> is equivalent to
+<code>P0</code> and <code>N1</code> is equivalent to <code>N0</code>.
+</p>
+
+<p>
+Note that if we reduce <code>ltlcross</code>'s ability to determinize
+automata for complementation, the procedure
+can look slightly more complex:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlcross -f <span class="org-string">'FGa'</span> ltl2tgba <span class="org-string">'ltl3ba -H1'</span> --determinize-max-states=1 --verbose
+</pre>
+</div>
+
+<pre class="example">
+F(G(a))
+Running [P0]: ltl2tgba -H 'F(G(a))'&gt;'lcr-o0-Fny2Pl'
+Running [P1]: ltl3ba -H1 -f '&lt;&gt;([](a))'&gt;'lcr-o1-H2g0z6'
+Running [N0]: ltl2tgba -H '!(F(G(a)))'&gt;'lcr-o0-vBQjlR'
+Running [N1]: ltl3ba -H1 -f '!(&lt;&gt;([](a)))'&gt;'lcr-o1-HehHdC'
+info: collected automata:
+info:   P0	(2 st.,3 ed.,1 sets)
+info:   N0	(1 st.,2 ed.,1 sets) deterministic complete
+info:   P1	(2 st.,3 ed.,1 sets)
+info:   N1	(3 st.,5 ed.,1 sets) univ-edges complete
+Performing sanity checks and gathering statistics...
+info: getting rid of universal edges...
+info:   N1	(3 st.,5 ed.,1 sets) -&gt; (2 st.,4 ed.,1 sets)
+info: complementing automata...
+info:   P0info:   N0	(1 st.,2 ed.,1 sets) -&gt; (1 st.,2 ed.,1 sets)	Comp(N0)
+info:   P1info:   N1	(2 st.,4 ed.,1 sets) -&gt; (2 st.,4 ed.,1 sets)	Comp(N1)
+info: check_empty P0*N0
+info: check_empty P0*N1
+info: check_empty Comp(N0)*N1
+info: check_empty P1*N0
+info: check_empty Comp(N1)*N0
+info: check_empty P1*N1
+info: complements not computed for some automata
+info: continuing with cross_checks and consistency_checks
+info: building state-space #1/1 of 200 states with seed 0
+info: state-space has 4136 edges
+info: building product between state-space and P0 (2 st., 3 ed.)
+info:   product has 400 st., 8298 ed.
+info:               2 SCCs
+info: building product between state-space and P1 (2 st., 3 ed.)
+info:   product has 400 st., 8298 ed.
+info:               2 SCCs
+info: building product between state-space and N0 (1 st., 2 ed.)
+info:   product has 200 st., 4136 ed.
+info:               1 SCCs
+info: building product between state-space and N1 (2 st., 4 ed.)
+info:   product has 400 st., 8272 ed.
+info:               1 SCCs
+info: cross_check {P0,P1}, state-space #0/1
+info: cross_check {N0,N1}, state-space #0/1
+info: consistency_check (P0,N0), state-space #0/1
+info: consistency_check (P1,N1), state-space #0/1
+
+No problem detected.
+</pre>
+
+<p>
+In this case, <code>ltlcross</code> does not have any complement automaton for
+<code>P0</code> and <code>P1</code>, so it cannot make sure that <code>P0</code> and <code>P1</code> are
+equivalent.  If we imagine for instance that <code>P0</code> has an empty
+language, we can see that the six <code>check_empty</code> tests would still
+succeed.
+</p>
+
+<p>
+So <code>ltlcross</code> builds a random state-space of 200 states, synchronize
+it with the four automata, and then performs additional checks
+(<code>cross_check</code> and <code>consistency_check</code>) on these products as described
+<a href="#checks">earlier</a>.  While these additional checks do not make a proof that <code>P0</code>
+and <code>P1</code> are equivalent, they can catch some problems, and would
+easily catch the case of an automaton with an empty language by
+mistake.
+</p>
+
+<p>
+Here is the same example, if we declare that <code>ltl3ba</code> is a reference
+implementation that should not be checked, and we just want to check
+the output of <code>ltl2tgba</code> against this reference.  See how the number
+of tests performed has been reduced.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlcross -f <span class="org-string">'FGa'</span> ltl2tgba --reference <span class="org-string">'ltl3ba -H1'</span> --verbose
+</pre>
+</div>
+
+<pre class="example">
+F(G(a))
+Running [P0]: ltl3ba -H1 -f '&lt;&gt;([](a))'&gt;'lcr-o0-pxxagD'
+Running [P1]: ltl2tgba -H 'F(G(a))'&gt;'lcr-o1-5bLopo'
+Running [N0]: ltl3ba -H1 -f '!(&lt;&gt;([](a)))'&gt;'lcr-o0-VqBnE9'
+Running [N1]: ltl2tgba -H '!(F(G(a)))'&gt;'lcr-o1-vDgIUU'
+info: collected automata:
+info:   P0	(2 st.,3 ed.,1 sets)
+info:   N0	(3 st.,5 ed.,1 sets) univ-edges complete
+info:   P1	(2 st.,3 ed.,1 sets)
+info:   N1	(1 st.,2 ed.,1 sets) deterministic complete
+Performing sanity checks and gathering statistics...
+info: getting rid of universal edges...
+info:   N0	(3 st.,5 ed.,1 sets) -&gt; (2 st.,4 ed.,1 sets)
+info: complementing automata...
+info:   P1	(2 st.,3 ed.,1 sets) -&gt; (2 st.,4 ed.,1 sets)	Comp(P1)
+info:   N1	(1 st.,2 ed.,1 sets) -&gt; (1 st.,2 ed.,1 sets)	Comp(N1)
+info: P0 and N0 assumed correct and used as references
+info: check_empty P0*N1
+info: check_empty P1*N0
+info: check_empty P1*N1
+info: check_empty Comp(N1)*Comp(P1)
+info: cross_checks and consistency_checks unnecessary
+
+No problem detected.
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org57db32c" class="outline-2">
+<h2 id="parallel"><a id="org57db32c"></a>Running <code>ltlcross</code> in parallel</h2>
+<div class="outline-text-2" id="text-parallel">
+<p>
+The <code>ltlcross</code> command itself has no built-in support for
+parallelization (patches welcome).  However its interface makes it
+rather easy to parallelize <code>ltlcross</code> runs with third-party tools
+such as:
+</p>
+
+<ul class="org-ul">
+<li><p>
+<code>xargs</code> from <a href="https://www.gnu.org/software/findutils/">GNU findutils</a>.  The <a href="https://www.gnu.org/software/findutils/manual/html_node/find_html/Controlling-Parallelism.html#Controlling-Parallelism"><code>-P n</code> option</a> is a GNU extension
+to specify that n commands should be run in parallel.
+</p>
+
+<p>
+For instance the following command tests <code>ltl2tgba</code> and <code>ltl3ba</code>
+against 1000 formulas, running 8 formulas in parallel.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">randltl -n-1 3 | ltlfilt --relabel=pnn --unique -n1000 |
+    xargs -P8 -I<span class="org-string">'{}'</span> ltlcross -q --save-bogus=<span class="org-string">'&gt;&gt;bugs.ltl'</span> ltl2tgba ltl3ba -f <span class="org-string">'{}'</span>
+</pre>
+</div>
+
+<p>
+The above pipeline uses <code>randltl</code> to generate an infinite number
+of LTL formulas (<code>-n-1</code>) over three atomic propositions.  Those
+formules are then relabeled with <code>ltlfilt</code> (so that <code>a U b</code> and <code>b
+    U a</code> both get mapped to the same <code>p0 U p1</code>) and filtered for
+duplicates (<code>--unique</code>).  This first 1000 formulas (<code>-n1000</code>) are
+then passed on to <code>xargs</code>. The command <code>xargs -I'{}' ltlcross...</code>
+takes each line of input, and executes the command <code>ltlcross...</code>
+with <code>{}</code> replaced by the input line.  The option <code>-P8</code> does this
+with 8 processes in parallel.  Here <code>ltlcross</code> is called with
+option <code>-q</code> to silence most its regular output as the 8 instances
+of <code>ltlcross</code> would be otherwise writing to the same terminal.
+With <code>-q</code>, only errors are displayed.  Additionally <code>--save-bogus</code>
+is used to keep track of all formulas causing errors.  The <code>&gt;&gt;bugs.ltl</code>
+syntax means to open <code>bugs.ltl</code> in append mode, so that <code>bugs.ltl</code> does
+not get overwritten each time a new <code>ltlcross</code> instance finds a bug.
+</p></li>
+
+<li><a href="https://www.gnu.org/software/parallel/">GNU parallel</a> or <a href="https://joeyh.name/code/moreutils/">moreutils's parallel</a> can also be used similarly.</li>
+
+<li><p>
+<code>make -j n</code> is another option: first convert the list of formulas
+into a <code>Makefile</code> that calls <code>ltlcross</code> for each of them.
+</p>
+
+<p>
+For instance here is how to build a makefile called <code>ltlcross.mk</code>
+testing <code>ltl2tgba</code> and <code>ltl3ba</code> against all formulas produced by
+<code>genltl --eh</code>, and gathering statistics from all runs in <code>all.csv</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh" id="org0a95cb8"><span class="org-builtin">echo</span> <span class="org-string">'LTLCROSS=ltlcross -q ltl2tgba ltl3ba'</span> &gt; ltlcross.mk
+<span class="org-builtin">echo</span> <span class="org-string">"ALL= $(echo $(genltl --eh --format="%F%L.csv"))"</span> &gt;&gt; ltlcross.mk
+<span class="org-builtin">echo</span> <span class="org-string">"all.csv: \$(ALL); cat \$(ALL) | sed -e 1n -e '/^\"formula\"/d' &gt; \$@"</span> &gt;&gt;ltlcross.mk
+genltl --eh --format=<span class="org-string">"%F%L.csv:; \$(LTLCROSS) --csv=\$@ -f '%f'"</span> &gt;&gt;ltlcross.mk
+</pre>
+</div>
+
+<p>
+This creates <code>ltlcross.mk</code>:
+</p>
+<div class="org-src-container">
+<pre class="src src-makefile"><span class="org-variable-name">LTLCROSS</span>=ltlcross -q ltl2tgba ltl3ba
+<span class="org-variable-name">ALL</span>= eh-patterns1.csv eh-patterns2.csv eh-patterns3.csv eh-patterns4.csv eh-patterns5.csv eh-patterns6.csv eh-patterns7.csv eh-patterns8.csv eh-patterns9.csv eh-patterns10.csv eh-patterns11.csv eh-patterns12.csv
+<span class="org-makefile-targets">all.csv</span>: $(<span class="org-variable-name">ALL</span>); <span class="org-makefile-shell">cat $(</span><span class="org-variable-name"><span class="org-makefile-shell">ALL</span></span><span class="org-makefile-shell">) | sed -e 1n -e </span><span class="org-string"><span class="org-makefile-shell">'/^"formula"/d'</span></span><span class="org-makefile-shell"> &gt; </span><span class="org-makefile-targets"><span class="org-makefile-shell">$</span></span><span class="org-makefile-targets"><span class="org-constant"><span class="org-makefile-shell">@</span></span></span>
+<span class="org-makefile-targets">eh-patterns1.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'p0 U (p1 &amp; Gp2)'</span>
+<span class="org-makefile-targets">eh-patterns2.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'p0 U (p1 &amp; X(p2 U p3))'</span>
+<span class="org-makefile-targets">eh-patterns3.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'p0 U (p1 &amp; X(p2 &amp; F(p3 &amp; XF(p4 &amp; XF(p5 &amp; XFp6)))))'</span>
+<span class="org-makefile-targets">eh-patterns4.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'F(p0 &amp; XGp1)'</span>
+<span class="org-makefile-targets">eh-patterns5.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'F(p0 &amp; X(p1 &amp; XFp2))'</span>
+<span class="org-makefile-targets">eh-patterns6.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'F(p0 &amp; X(p1 U p2))'</span>
+<span class="org-makefile-targets">eh-patterns7.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'FGp0 | GFp1'</span>
+<span class="org-makefile-targets">eh-patterns8.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'G(p0 -&gt; (p1 U p2))'</span>
+<span class="org-makefile-targets">eh-patterns9.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'G(p0 &amp; XF(p1 &amp; XF(p2 &amp; XFp3)))'</span>
+<span class="org-makefile-targets">eh-patterns10.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'GFp0 &amp; GFp1 &amp; GFp2 &amp; GFp3 &amp; GFp4'</span>
+<span class="org-makefile-targets">eh-patterns11.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'(p0 U (p1 U p2)) | (p1 U (p2 U p0)) | (p2 U (p0 U p1))'</span>
+<span class="org-makefile-targets">eh-patterns12.csv</span>:; $(<span class="org-variable-name">LTLCROSS</span>) --csv=<span class="org-makefile-targets">$</span><span class="org-makefile-targets"><span class="org-constant">@</span></span> -f <span class="org-string">'G(p0 -&gt; (p1 U (Gp2 | Gp3)))'</span>
+</pre>
+</div>
+
+<p>
+This makefile could be executed for instance with <code>make -f
+    ltlcross.mk -j 4</code>, where <code>-j 4</code> specifies that 4 processes can be
+executed in parallel.  Using different <code>csv</code> files for each
+process avoids potential race conditions that could occur if each
+instance of <code>ltlcross</code> was appending to the same file.  The <code>sed</code>
+command used while merging all <code>csv</code> files keeps the first header
+line (<code>1n</code>) while removing all subsequent ones (<code>/"formula"/d</code>).
+</p></li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

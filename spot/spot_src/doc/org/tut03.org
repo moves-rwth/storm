@@ -1,0 +1,492 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Constructing and transforming formulas
+#+DESCRIPTION: Code example for constructing and transforming formulas in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+This page explains how to build formulas and how to iterate over their
+syntax trees.
+
+We will first describe how to build a formula from scratch, by using
+the constructors associated to each operators, and show the basic
+accessor methods for formulas.  We will do that for C++ first, and
+then Python.  Once these basics are covered, we will show examples for
+traversing and transforming formulas (again in C++ then Python).
+
+* Constructing formulas
+
+** C++
+
+The =spot::formula= class contains static methods that act as
+constructors for each supported operator.
+
+The Boolean constants true and false are returned by =formula::tt()=
+and =formula:ff()=.  Atomic propositions can be built with
+=formula::ap("name")=.  Unary and binary operators use a
+straightforward syntax like =formula::F(arg)= or =formula::U(first,
+second)=, while n-ary operators take an initializer list as argument
+as in =formula::And({arg1, arg2, arg3})=.
+
+Here is the list of supported operators:
+
+#+BEGIN_SRC C++ :exports code
+  // atomic proposition
+  formula::ap(string)
+  // constants
+  formula::ff();
+  formula::tt();
+  formula::eword();               // empty word (for regular expressions)
+  // unary operators
+  formula::Not(arg);
+  formula::X(arg);
+  formula::X(arg, min, max);     // X[min..max] arg
+  formula::F(arg);
+  formula::F(arg, min, max);     // F[min..max] arg
+  formula::G(arg);
+  formula::G(arg, min, max);     // G[min..max] arg
+  formula::Closure(arg);
+  formula::NegClosure(arg);
+  formula::first_match(arg);      // SVA's first match operator
+  // binary operators
+  formula::Xor(left, right);
+  formula::Implies(left, right);
+  formula::Equiv(left, right);
+  formula::U(left, right);        // (strong) until
+  formula::R(left, right);        // (weak) release
+  formula::W(left, right);        // weak until
+  formula::M(left, right);        // strong release
+  formula::EConcat(left, right);  // Seq
+  formula::UConcat(left, right);  // Triggers
+  // n-ary operators
+  formula::Or({args,...});        // omega-rational Or
+  formula::OrRat({args,...});     // rational Or (for regular expressions)
+  formula::And({args,...});       // omega-rational And
+  formula::AndRat({args,...});    // rational And (for regular expressions)
+  formula::AndNLM({args,...});    // non-length-matching rational And (for r.e.)
+  formula::Concat({args,...});    // concatenation (for regular expressions)
+  formula::Fusion({args,...});    // concatenation (for regular expressions)
+  // star-like operators
+  formula::Star(arg, min, max);   // Star (for a Kleene star, set min=0 and omit max)
+  formula::FStar(arg, min, max);  // Fusion Star
+  // syntactic sugar built on top of previous operators
+  formula::sugar_goto(arg, min, max); // arg[->min..max]
+  formula::sugar_equal(arg, min, max); // arg[=min..max]
+  formula::sugar_delay(left, right, min, max); // left ##[min..max] right
+#+END_SRC
+
+These functions implement some very limited type of automatic
+simplifications called /trivial identities/.  For instance
+=formula::F(formula::X(formula::tt()))= will return the same formula
+as =formula::tt()=.  These simplifications are those that involve the
+true and false constants, impotence (=F(F(e))=F(e)=), involutions
+(=Not(Not(e)=e=), associativity
+(=And({And({e1,e2},e3})=And({e1,e2,e3})=).  See [[https://spot.lrde.epita.fr/tl.pdf][tl.pdf]] for a list of
+these /trivial identities/.
+
+In addition, the arguments of commutative operators
+(e.g. =Xor(e1,e2)=Xor(e2,e1)=) are always reordered.  The order used
+always put the Boolean subformulas before the temporal subformulas,
+sorts the atomic propositions in alphabetic order, and otherwise order
+subformulas by their unique identifier (a constant incremented each
+time a new subformula is created).  This reordering is useful to favor
+sharing of subformulas, but also helps algorithms that perform
+memoization.
+
+Building a formula using these operators is quite straightforward.
+The second part of the following example shows how to print some
+detail of the top-level operator in the formula.
+
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/tl/formula.hh>
+  #include <spot/tl/print.hh>
+
+  int main()
+  {
+    // Build FGa -> (GFb & GFc)
+    spot::formula fga = spot::formula::F(spot::formula::G(spot::formula::ap("a")));
+    spot::formula gfb = spot::formula::G(spot::formula::F(spot::formula::ap("b")));
+    spot::formula gfc = spot::formula::G(spot::formula::F(spot::formula::ap("c")));
+    spot::formula f = spot::formula::Implies(fga, spot::formula::And({gfb, gfc}));
+
+    std::cout << f << '\n';
+
+    // kindstar() prints the name of the operator
+    // size() return the number of operands of the operators
+    std::cout << f.kindstr() << ", " << f.size() << " children\n";
+    // operator[] accesses each operand
+    std::cout << "left: " << f[0] << ", right: " << f[1] << '\n';
+    // you can also iterate over all operands using a for loop
+    for (auto child: f)
+      std::cout << "  * " << child << '\n';
+    // the type of the operator can be accessed with kind(), which
+    // return an element of the spot::op enum.
+    std::cout << f[1][0]
+              << (f[1][0].kind() == spot::op::F ? " is F\n" : " is not F\n");
+    // however because writing f.kind() == spot::op::XXX is quite common, there
+    // is also a is() shortcut:
+    std::cout << f[1][1]
+              << (f[1][1].is(spot::op::G) ? " is G\n" : " is not G\n");
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: FGa -> (GFb & GFc)
+: Implies, 2 children
+: left: FGa, right: GFb & GFc
+:   * FGa
+:   * GFb & GFc
+: GFb is not F
+: GFc is G
+
+** Python
+
+The Python equivalent is similar:
+
+#+BEGIN_SRC python
+  import spot
+
+  # Build FGa -> (GFb & GFc)
+  fga = spot.formula.F(spot.formula.G(spot.formula.ap("a")))
+  gfb = spot.formula.G(spot.formula.F(spot.formula.ap("b")));
+  gfc = spot.formula.G(spot.formula.F(spot.formula.ap("c")));
+  f = spot.formula.Implies(fga, spot.formula.And([gfb, gfc]));
+
+  print(f)
+
+  # kindstar() prints the name of the operator
+  # size() return the number of operands of the operators
+  print("{}, {} children".format(f.kindstr(), f.size()))
+  # [] accesses each operand
+  print("left: {f[0]}, right: {f[1]}".format(f=f))
+  # you can also iterate over all operands using a for loop
+  for child in f:
+     print("  *", child)
+  # the type of the operator can be accessed with kind(), which returns
+  # an op_XXX constant (corresponding the the spot::op enum of C++)
+  print(f[1][0], "is F" if f[1][0].kind() == spot.op_F else "is not F")
+  # "is" is keyword in Python, the so shortcut is called _is:
+  print(f[1][1], "is G" if f[1][1]._is(spot.op_G) else "is not G")
+#+END_SRC
+
+#+RESULTS:
+: FGa -> (GFb & GFc)
+: Implies, 2 children
+: left: FGa, right: GFb & GFc
+:   * FGa
+:   * GFb & GFc
+: GFb is not F
+: GFc is G
+
+* Transforming formulas
+
+** C++
+
+In Spot, Formula objects are immutable: this allows identical subtrees
+to be shared among multiple formulas.  Algorithms that "transform"
+formulas (for instance the [[file:tut02.org][relabeling function]]) actually recursively
+traverse the input formula to construct the output formula.
+
+Using the operators described in the previous section is enough to
+write algorithms on formulas.  However there are two special methods
+that makes it a lot easier: =traverse= and =map=.
+
+=traverse= takes a function =fun=, and applies it to each subformulas
+of a given formula, including that starting formula itself.  The
+formula is explored in a DFS fashion (without skipping subformula that
+appear twice).  The children of a formula are explored only if =fun=
+returns =false=.  If =fun= returns =true=, that indicates to stop the
+recursion.
+
+In the following we use a lambda function to count the number of =G=
+in the formula.  We also print each subformula to show the recursion,
+and stop the recursion as soon as we encounter a subformula without
+sugar (the =is_sugar_free_ltl()= method is a constant-time operation
+that tells whether a formula contains a =F= or =G= operator) to save
+time time by not exploring further.
+
+#+NAME: gcount_cpp
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/tl/formula.hh>
+  #include <spot/tl/print.hh>
+  #include <spot/tl/parse.hh>
+
+  int main()
+  {
+    spot::formula f = spot::parse_formula("FGa -> (GFb & GF(c & b & d))");
+
+    int gcount = 0;
+    f.traverse([&gcount](spot::formula f)
+               {
+                 std::cout << f << '\n';
+                 if (f.is(spot::op::G))
+                   ++gcount;
+                 return f.is_sugar_free_ltl();
+               });
+    std::cout << "=== " << gcount << " G seen ===\n";
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS: gcount_cpp
+#+begin_example
+FGa -> (GFb & GF(b & c & d))
+FGa
+Ga
+a
+GFb & GF(b & c & d)
+GFb
+Fb
+b
+GF(b & c & d)
+F(b & c & d)
+b & c & d
+=== 3 G seen ===
+#+end_example
+
+The other useful operation is =map=.  This also takes a functional
+argument, but that function should input a formula and output a
+replacement formula.  =f.map(fun)= applies =fun= to all children of
+=f=, and assemble the result under the same top-level operator as =f=.
+
+Here is a demonstration of how to exchange all =F= and =G= operators
+in a formula:
+
+#+NAME: xchg_fg_cpp
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/tl/formula.hh>
+  #include <spot/tl/print.hh>
+  #include <spot/tl/parse.hh>
+
+  spot::formula xchg_fg(spot::formula in)
+  {
+     if (in.is(spot::op::F))
+       return spot::formula::G(xchg_fg(in[0]));
+     if (in.is(spot::op::G))
+       return spot::formula::F(xchg_fg(in[0]));
+     // No need to transform subformulas without F or G
+     if (in.is_sugar_free_ltl())
+       return in;
+     // Apply xchg_fg recursively on any other operator's children
+     return in.map(xchg_fg);
+  }
+
+  int main()
+  {
+    spot::formula f = spot::parse_formula("FGa -> (GFb & GF(c & b & d))");
+    std::cout << "before: " << f << '\n';
+    std::cout << "after:  " << xchg_fg(f) << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS: xchg_fg_cpp
+: before: FGa -> (GFb & GF(b & c & d))
+: after:  GFa -> (FGb & FG(b & c & d))
+
+
+*** Additional tricks about =map= and =traverse= in C++
+
+As seen above, the first argument of =map()= and =traverse()= is a
+function =fun()= (or actually any object that as an =operator()=) that
+will be applied to subformulas.  If additional arguments are passed to
+=map()= or =traverse()=, those will be passed on to =fun()= after the
+formula.
+
+For instance instead of having a lambda capturing the [[gcount_cpp][=gcount=
+variable in the first example]], we could pass a reference to this
+variable:
+
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/tl/formula.hh>
+  #include <spot/tl/print.hh>
+  #include <spot/tl/parse.hh>
+
+  int main()
+  {
+    spot::formula f = spot::parse_formula("FGa -> (GFb & GF(c & b & d))");
+
+    int gcount = 0;
+    f.traverse([](spot::formula f, int& count)
+               {
+                 if (f.is(spot::op::G))
+                   ++count;
+                 return f.is_sugar_free_ltl();
+               }, gcount);
+    std::cout << "=== " << gcount << " G seen ===\n";
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: === 3 G seen ===
+
+(Here we have removed the print statement inside the lambda to focus
+more on how =gcount= get passed as the =&count= reference.  Here there
+is no real advantage to passing such reference by argument instead of
+capturing them in the lambda.
+
+The possibility to pass additional arguments is however more useful in
+the case of =map=.  Let's write a variant of our [[xchg_fg_cpp][=xchg_fg()= example]]
+that counts the number of exchanges performed.  First, we do it
+without lambda:
+
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/tl/formula.hh>
+  #include <spot/tl/print.hh>
+  #include <spot/tl/parse.hh>
+
+  spot::formula xchg_fg(spot::formula in, int& count)
+  {
+     if (in.is(spot::op::F, spot::op::G))
+       ++count;
+     if (in.is(spot::op::F))
+       return spot::formula::G(xchg_fg(in[0], count));
+     if (in.is(spot::op::G))
+       return spot::formula::F(xchg_fg(in[0], count));
+     // No need to transform subformulas without F or G
+     if (in.is_sugar_free_ltl())
+       return in;
+     // Apply xchg_fg recursively on any other operator's children
+     return in.map(xchg_fg, count);
+  }
+
+  int main()
+  {
+    spot::formula f = spot::parse_formula("FGa -> (GFb & GF(c & b & d))");
+    std::cout << "before: " << f << '\n';
+    int count = 0;
+    std::cout << "after:  " << xchg_fg(f, count) << '\n';
+    std::cout << "exchanges:  " << count << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: before: FGa -> (GFb & GF(b & c & d))
+: after:  GFa -> (FGb & FG(b & c & d))
+: exchanges:  6
+
+Now let's pretend that we want to define =xchg_fg= as a lambda, and
+=count= to by captured by reference.  In order to call pass the lambda
+recursively to =map=, the lambda needs to know its address.
+Unfortunately, if the lambda is stored with type =auto=, it cannot
+capture itself.  A solution is to use =std::function= but that has a
+large penalty cost.  We can work around that by assuming that that
+address will be passed as an argument (=self=) to the lambda:
+
+#+BEGIN_SRC C++
+  #include <iostream>
+  #include <spot/tl/formula.hh>
+  #include <spot/tl/print.hh>
+  #include <spot/tl/parse.hh>
+
+  int main()
+  {
+    spot::formula f = spot::parse_formula("FGa -> (GFb & GF(c & b & d))");
+    std::cout << "before: " << f << '\n';
+
+    int count = 0;
+    auto xchg_fg = [&count](spot::formula in, auto&& self) -> spot::formula
+    {
+      if (in.is(spot::op::F, spot::op::G))
+        ++count;
+      if (in.is(spot::op::F))
+        return spot::formula::G(self(in[0], self));
+      if (in.is(spot::op::G))
+        return spot::formula::F(self(in[0], self));
+      // No need to transform subformulas without F or G
+      if (in.is_sugar_free_ltl())
+        return in;
+      // Apply xchg_fg recursively on any other operator's children
+      return in.map(self, self);
+    };
+    std::cout << "after:  " << xchg_fg(f, xchg_fg) << '\n';
+    std::cout << "exchanges:  " << count << '\n';
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS:
+: before: FGa -> (GFb & GF(b & c & d))
+: after:  GFa -> (FGb & FG(b & c & d))
+: exchanges:  6
+
+
+** Python
+
+The Python version of the above two examples uses a very similar
+syntax.  Python only supports a very limited form of lambda
+expressions, so we have to write a standard function instead:
+
+#+BEGIN_SRC python
+  import spot
+
+  gcount = 0
+  def countg(f):
+      global gcount
+      print(f)
+      if f._is(spot.op_G):
+          gcount += 1
+      return f.is_sugar_free_ltl()
+
+  f = spot.formula("FGa -> (GFb & GF(c & b & d))")
+  f.traverse(countg)
+  print("===", gcount, "G seen ===")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+FGa -> (GFb & GF(b & c & d))
+FGa
+Ga
+a
+GFb & GF(b & c & d)
+GFb
+Fb
+b
+GF(b & c & d)
+F(b & c & d)
+b & c & d
+=== 3 G seen ===
+#+end_example
+
+Here is the =F= and =G= exchange:
+
+#+BEGIN_SRC python
+  import spot
+
+  def xchg_fg(i):
+     if i._is(spot.op_F):
+        return spot.formula.G(xchg_fg(i[0]));
+     if i._is(spot.op_G):
+        return spot.formula.F(xchg_fg(i[0]));
+     # No need to transform subformulas without F or G
+     if i.is_sugar_free_ltl():
+        return i;
+     # Apply xchg_fg recursively on any other operator's children
+     return i.map(xchg_fg);
+
+  f = spot.formula("FGa -> (GFb & GF(c & b & d))")
+  print("before:", f)
+  print("after: ", xchg_fg(f))
+#+END_SRC
+
+#+RESULTS:
+: before: FGa -> (GFb & GF(b & c & d))
+: after:  GFa -> (FGb & FG(b & c & d))
+
+Like in C++, extra arguments to =map= and =traverse= are passed as
+additional to the function given in the first argument.
+
+#  LocalWords:  utf html args accessor Unary arg ary initializer SRC
+#  LocalWords:  unary SVA's tl pdf subformulas subformula memoization
+#  LocalWords:  iostream FGa GFb GFc fga gfb gfc kindstar kindstr DFS
+#  LocalWords:  enum subtrees gcount cpp GF Fb xchg fg GFa FGb countg

@@ -1,0 +1,232 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014-2018, 2020 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+randaut -e foo 2>err && exit 1
+grep "randaut: failed to parse 'foo' as a float (in argument of -e" err
+randaut -e 3.14 2>err && exit 1
+grep "randaut: 3.1.*is not between 0 and 1 (in argument of -e" err
+randaut -n1a 3 2>err && exit 1
+grep "randaut: failed to parse '1a' as an integer.* -n/--automata)" err
+
+randaut --spin -Q4 a b | ../ikwiad -H -XN - >out
+grep 'States: 4' out
+grep 'AP: 2' out
+grep 'state-acc' out
+grep 'Acceptance: 1' out
+
+randaut -n 3 --hoa -Q5..9 -A1..3 3 >out
+test `grep -c 'States: [5-9]$' out` = 3
+test `grep -c 'Acceptance: [1-3] ' out` = 3
+test `grep -c 'AP: 3 ' out` = 3
+
+
+randaut --spin -A2 3 2>stderr && exit 1
+grep 'spin.*incompatible' stderr
+
+randaut --spin -A0 3  # should work
+
+randaut --ba -A2 3 2>stderr && exit 1
+grep 'ba.*incompatible' stderr
+
+randaut --ba -A0 3 2>stderr && exit 1
+grep 'ba.*incompatible' stderr
+
+randaut --states 10..20 2 -n 100 -H > aut.hoa
+a=`autfilt --states=..14 -c <aut.hoa`
+b=`autfilt aut.hoa --states=15.. -c`
+test `expr $a + $b` = 100
+
+# The count of SCCs and edges might change if the
+# algorithm or its default values are changed.  Do
+# not hesitate to adjust the expected values below.
+randaut -n 5 --name='%F-%L-%s-%c-%e' -H a | grep '^name' >out
+cat >expected<<EOF
+name: "0-0-10-1-30"
+name: "0-1-10-1-29"
+name: "0-2-10-3-22"
+name: "0-3-10-1-30"
+name: "0-4-10-1-27"
+EOF
+diff out expected
+
+randaut -n 5 --stats='name: "%F-%L-%s-%c-%e"' a >out2
+diff out2 expected
+
+randaut -n 5 --dot=@ a 2>stderr && exit 1
+grep 'randaut: unknown option.*@' stderr
+
+randaut -n -1 -Q2 2 -H | autfilt -H --is-deterministic -n 3 -o out.hoa
+randaut -n -1 -Q2 2 -H | autfilt -H -v --is-deterministic -n 4 -o '>>out.hoa'
+autfilt -H out.hoa -o 'out-det%d.hoa'
+autfilt -H out.hoa -o '>>out-det%d.hoa'
+test 8 = `autfilt -c out-det0.hoa`
+test 6 = `autfilt -c out-det1.hoa`
+
+autfilt -H out.hoa -o foo -c 2>stderr && exit 1
+grep 'autfilt: options --output and --count are incompatible' stderr
+
+(
+    randaut -n 2 -Q5 -A4 -H 2
+    randaut -A 'random 4' -n 2 -Q5 -H 2
+    randaut -A 'parity rand rand 2..4' -n3 -Q5 -H 2
+    randaut -A 'generalized-Rabin 3 1..2 2..3 0' -n3 -Q5 -H 2
+) | tee input | grep -E '(acc-name:|Acceptance:)' > output
+cat output
+
+a=Acceptance
+cat >expected <<EOF
+acc-name: generalized-Buchi 4
+$a: 4 Inf(0)&Inf(1)&Inf(2)&Inf(3)
+acc-name: generalized-Buchi 4
+$a: 4 Inf(0)&Inf(1)&Inf(2)&Inf(3)
+$a: 4 Fin(1) | (Fin(2) & Fin(3) & Fin(0))
+$a: 4 (Fin(0) & Fin(3)) | (Fin(2) & Inf(1))
+acc-name: parity min even 4
+$a: 4 Inf(0) | (Fin(1) & (Inf(2) | Fin(3)))
+acc-name: parity max even 2
+$a: 2 Fin(1) & Inf(0)
+acc-name: parity max odd 4
+$a: 4 Inf(3) | (Fin(2) & (Inf(1) | Fin(0)))
+acc-name: generalized-Rabin 3 2 3 0
+$a: 8 (Fin(0) & (Inf(1)&Inf(2))) | (Fin(3) & (Inf(4)&Inf(5)&Inf(6))) | Fin(7)
+acc-name: generalized-Rabin 3 2 2 0
+$a: 7 (Fin(0) & (Inf(1)&Inf(2))) | (Fin(3) & (Inf(4)&Inf(5))) | Fin(6)
+acc-name: generalized-Rabin 3 2 3 0
+$a: 8 (Fin(0) & (Inf(1)&Inf(2))) | (Fin(3) & (Inf(4)&Inf(5)&Inf(6))) | Fin(7)
+EOF
+diff output expected
+
+autfilt --acceptance-is=generalized-Buchi --stats='%g,%[s]g' >stdout <input
+cat >expected <<EOF
+Inf(0)&Inf(1)&Inf(2)&Inf(3),generalized-Buchi
+Inf(0)&Inf(1)&Inf(2)&Inf(3),generalized-Buchi
+EOF
+diff stdout expected
+autfilt --acceptance-is=Fin-less --stats='%g,%[s]g' >stdout <input
+diff stdout expected
+
+autfilt --acceptance-is=generalized-Rabin --stats='%[sb]g' >stdout <input
+cat >expected <<EOF
+gen. Rabin
+gen. Rabin
+gen. Rabin
+EOF
+diff stdout expected
+
+autfilt --acceptance-is=parity --stats='%g,%[sb]g' >stdout <input
+cat >expected <<EOF
+Inf(0) | (Fin(1) & (Inf(2) | Fin(3))),parity
+Fin(1) & Inf(0),parity
+Inf(3) | (Fin(2) & (Inf(1) | Fin(0))),parity
+EOF
+diff stdout expected
+
+autfilt --acceptance-is=parity-odd --stats='%g,%[m]g' >stdout <input
+cat >expected <<EOF
+Inf(3) | (Fin(2) & (Inf(1) | Fin(0))),parity max odd
+EOF
+diff stdout expected
+
+autfilt --acceptance-is=parity-min --stats='%g,%[m]g' >stdout <input
+cat >expected <<EOF
+Inf(0) | (Fin(1) & (Inf(2) | Fin(3))),parity min even
+EOF
+diff stdout expected
+
+autfilt --acceptance-is=parity-max-even --stats='%g,%[m]g' >stdout <input
+cat >expected <<EOF
+Fin(1) & Inf(0),parity max even
+EOF
+diff stdout expected
+
+autfilt --acceptance-is=Streett <input && exit 1
+
+autfilt --acceptance-is='Fin(1)|Fin(2)&Fin(3)&Fin(0)' --stats='%g,%[s]g' \
+        >stdout <input
+cat >expected <<EOF
+Fin(1) | (Fin(2) & Fin(3) & Fin(0)),other
+EOF
+diff stdout expected
+
+autfilt --acceptance-is='Fin(1)|' <input 2>err && exit 1
+grep acceptance-is err
+grep 'syntax error at end of acceptance' err
+grep " - 'generalized-Streett'" err
+
+randaut --spin -A 'random 2' 2 2>stderr && exit 1
+grep 'randaut: --spin.*--acceptance' stderr
+randaut --ba --acceptance='random 2' 2 2>stderr && exit 1
+grep 'randaut: --acceptance.*--ba' stderr
+
+randaut -n 10 2..4 -H | grep AP: > output
+cat output
+cat >expected <<EOF
+AP: 3 "p0" "p1" "p2"
+AP: 4 "p0" "p1" "p2" "p3"
+AP: 3 "p0" "p1" "p2"
+AP: 4 "p0" "p1" "p2" "p3"
+AP: 3 "p0" "p1" "p2"
+AP: 4 "p0" "p1" "p2" "p3"
+AP: 2 "p0" "p1"
+AP: 3 "p0" "p1" "p2"
+AP: 2 "p0" "p1"
+AP: 3 "p0" "p1" "p2"
+EOF
+diff output expected
+
+randaut -A3 --colored 2 -H | grep 'properties:.*colored'
+randaut -S -A'parity min even 3' --colored 2 -H | grep 'properties:.*colored'
+
+randaut --colored 2 2>stderr && exit 1
+grep 'randaut: --colored requires' stderr
+randaut -A0..2 --colored 2 2>stderr && exit 1
+grep 'randaut: --colored requires' stderr
+randaut -S -A'parity min even 0..3' -q -n10 --colored 2 2>stderr && exit 1
+grep 'randaut: --colored requires' stderr
+
+randaut -A'parity foo' 2 -q 2>stderr && exit 1
+grep 'randaut:.*foo.*min.*max.*rand' stderr
+randaut -A'parity ' 2 -q 2>stderr && exit 1
+grep 'randaut:.*end of acceptance.*min.*max.*rand' stderr
+randaut -A'parity min foo' 2 -q 2>stderr && exit 1
+grep 'randaut:.*foo.*odd.*even.*rand' stderr
+randaut -A'parity min' 2 -q 2>stderr && exit 1
+grep 'randaut:.*end of acceptance.*odd.*even.*rand' stderr
+randaut -A'parity min rand foo' 2 -q 2>stderr && exit 1
+grep 'randaut:.*foo.*invalid range' stderr
+randaut -A'parity min rand  ' 2 -q 2>stderr && exit 1
+grep 'randaut:.*end of acceptance.*invalid range' stderr
+
+randaut -Q0 1 2>stderr && exit 1
+grep '0 states' stderr
+
+# This catch a bug where 'Fin(1) & Inf(2) & Fin(0)' was
+# incorrectly detected a generalized-Rabin and output a
+# 'Fin(0) | Fin(1) & Inf(2)'.
+randaut -Q1 -A 'Fin(1) & Inf(2) & Fin(0)' 2 > out.hoa
+grep 'Acceptance:' out.hoa > out.acc
+echo 'Acceptance: 3 Fin(1) & Inf(2) & Fin(0)' > out.exp
+diff out.acc out.exp
+
+:

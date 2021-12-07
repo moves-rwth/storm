@@ -1,0 +1,76 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016, 2017, 2018 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Do some quick translations to make sure the neverclaims produced by
+# spot actually look correct!  We do that by parsing them via ltlcross.
+# ltl2neverclaim-lbtt.test does the same with LBTT if it is installed.
+
+. ./defs
+set -e
+
+# Skip this test if ltl3dra is not installed.
+(ltl3ba -v) || exit 77
+
+# The -H1 option will output alternating automata, so this tests
+# ltlcross's support in this area.  However ltl3ba 1.1.3 incorrectly
+# output "univ-branch" for all automata produced by -H1, causing
+# error messages from Spot's parser unless SPOT_HOA_TOLERANT is set.
+SPOT_HOA_TOLERANT=1
+export SPOT_HOA_TOLERANT
+# Using '_x' as first formula makes sure that ltlcross automatically
+# relabels the input formula when the atomic propositions are not
+# compatible with Spin's syntax.
+(
+    echo _x
+# Some formula used by Spot's GF(guarantee) translation.
+    cat <<EOF
+GF((a & XXa) | (!a & XX!a))
+GF((a & XXXa) | (!a & XXX!a))
+GF(((a & Xb) | XXc) & Xd)
+GF((b | Fa) & (b R Xb))
+EOF
+    randltl -n 30 2
+) | ltlcross -D 'ltl3ba -H1' 'ltl3ba -H2' 'ltl3ba -H3' ltl2tgba \
+             --ambiguous --strength --csv=output.csv
+
+grep _x output.csv && exit 1
+
+# Make sure all lines in output.csv have the same number of comas
+sed 's/[^,]//g' <output.csv |
+( read first
+while read l; do
+  test "x$first" = "x$l" || exit 1
+done)
+
+# The name of the HOA is preserved
+case `ltldo 'ltl3ba -H' -f xxx --stats=%m` in
+    *xxx*);;
+    *) exit 1;;
+esac
+# The relabeling of atomic proposition can be forced.  This
+# will impact the name of the automaton set by ltldo...
+case `ltldo --relabel 'ltl3ba -H' -f xxx --stats=%m` in
+    *xxx*) exit 1;;
+    *p0*);;
+    *) exit 1;;
+esac
+# ... but the atomic propositions are still using xxx
+# because ltldo should relabel them back.
+ltldo --relabel 'ltl3ba -H' -f xxx | grep 'AP:.*"xxx"'

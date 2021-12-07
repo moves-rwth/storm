@@ -1,0 +1,21 @@
+This benchmark plots the performance of the ltl2tgba_fm algorithm
+for translating some classes of LTL formula.
+
+Execute "./run" to compute the raw numbers, then execute
+"gnuplot plot.gnu" to plot the figures.
+
+The authors of the following paper defined 5 classes of LTL formulae
+to stress the LTL-to-Büchi translators.
+
+@InProceedings{cichon.09.depcos,
+  author = 	 {Jacek Cicho{\'n} and Adam Czubak and Andrzej Jasi{\'n}ski},
+  title = 	 {Minimal {B\"uchi} Automata for Certain Classes
+                  of {LTL} Formulas},
+  booktitle =	 {Proceedings of the Fourth International
+                  Conference on Dependability of Computer Systems},
+  pages =	 {17--24},
+  year =	 {2009},
+  publisher =	 {IEEE Computer Society},
+}
+
+

@@ -1,0 +1,292 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Reading and writing CSV files
+#+DESCRIPTION: Examples showing how to read and write CSV files using Spot's command-line tools.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+This page discusses features available in Spot's command-line
+tools to produce an consume CSV files.
+
+* Producing CSV files
+
+All the tools that normally produce formulas (like [[file:genltl.org][=genltl=]],
+[[file:randltl.org][=randltl=]], and [[file:ltlfilt.org][=ltlfilt=]]) have a [[file:ioltl.org][=--format= option]] that can be used to
+customize the way output is formatted.
+
+For instance here is how we could use =genltl= to generate a CSV file
+with three columns: the family name of the formula, its parameter, and
+the formula itself.
+
+#+BEGIN_SRC sh
+genltl --and-gf=1..5 --u-left=1..5 --format='%F,%L,%f' > gen.csv
+cat gen.csv
+#+END_SRC
+#+RESULTS:
+#+begin_example
+and-gf,1,GFp1
+and-gf,2,GFp1 & GFp2
+and-gf,3,GFp1 & GFp2 & GFp3
+and-gf,4,GFp1 & GFp2 & GFp3 & GFp4
+and-gf,5,GFp1 & GFp2 & GFp3 & GFp4 & GFp5
+u-left,1,p1
+u-left,2,p1 U p2
+u-left,3,(p1 U p2) U p3
+u-left,4,((p1 U p2) U p3) U p4
+u-left,5,(((p1 U p2) U p3) U p4) U p5
+#+end_example
+
+Tools that produce automata (like [[file:ltl2tgba.org][=ltl2tgba=]], [[file:dstar2tgba.org][=dstar2tgba=]], [[file:autfilt.org][=autfilt=]],
+or [[file:randaut.org][=randaut=]]) have a =--stats= option that can be used to output
+various statistics about the constructed automaton (these statistics
+are shown *instead* of printing the automaton, but one of those
+allows printing the automaton as a one-liner in the HOA format).
+
+For instance, the following command will translate all the previous
+formulas, and show the resulting number of states (=%s=) and edges
+(=%e=) of the automaton constructed for each formula.
+
+#+BEGIN_SRC sh
+genltl --and-gf=1..5 --u-left=1..5 | ltl2tgba --stats '%f,%s,%e'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+GFp1,1,2
+G(Fp1 & Fp2),1,4
+G(Fp1 & Fp2 & Fp3),1,8
+G(Fp1 & Fp2 & Fp3 & Fp4),1,16
+G(Fp1 & Fp2 & Fp3 & Fp4 & Fp5),1,32
+p1,2,2
+p1 U p2,2,3
+(p1 U p2) U p3,4,10
+((p1 U p2) U p3) U p4,8,34
+(((p1 U p2) U p3) U p4) U p5,16,116
+#+end_example
+
+If the translated formulas may contain commas, or double quotes, this
+simple output may prove difficult to process by other tools.  For
+instance consider the translation of the following two formulas:
+
+#+BEGIN_SRC sh
+ltl2tgba -f Xa -f 'G("switch == on" -> F"tab[3,5] < 12")' --stats '%f,%s,%e'
+#+END_SRC
+#+RESULTS:
+: Xa,3,3
+: G(!"switch == on" | F"tab[3,5] < 12"),2,4
+
+The second line of this input does no conform to [[https://www.rfc-editor.org/rfc/rfc4180.txt][RFC 4180]] because
+non-escaped fields are not allowed to contain comma or double quotes.
+To fix this, simply double-quote the =%f= in the argument to =--stats=:
+
+#+BEGIN_SRC sh
+ltl2tgba -f Xa -f 'G("switch == on" -> F"tab[3,5] < 12")' --stats '"%f",%s,%e'
+#+END_SRC
+
+#+RESULTS:
+: "Xa",3,3
+: "G(!""switch == on"" | F""tab[3,5] < 12"")",2,4
+
+The formater will detect your double quotes and automatically double
+any double quote output between them, as per [[https://www.rfc-editor.org/rfc/rfc4180.txt][RFC 4180]].
+
+The tool [[file:ltlcross.org][=ltlcross=]] has its own =--csv=FILENAME= option to format the
+statistics it gathers in a CSV file, but you have very little control
+hover how this CSV file is formatted (it can only be changed
+via option such as =--products= or =--omit-missing=).
+
+* Reading CSV files
+
+All the tools that read formulas from files extend the filename syntax
+to support the specification of a CSV column.  The notation
+=filename/COL= denotes the column =COL= of that file.
+
+For instance let's consider the file =gen.csv= built with the first command of
+this page.  It contains:
+
+#+BEGIN_SRC sh :exports results
+cat gen.csv
+#+END_SRC
+#+RESULTS:
+#+begin_example
+and-gf,1,GFp1
+and-gf,2,GFp1 & GFp2
+and-gf,3,GFp1 & GFp2 & GFp3
+and-gf,4,GFp1 & GFp2 & GFp3 & GFp4
+and-gf,5,GFp1 & GFp2 & GFp3 & GFp4 & GFp5
+u-left,1,p1
+u-left,2,p1 U p2
+u-left,3,(p1 U p2) U p3
+u-left,4,((p1 U p2) U p3) U p4
+u-left,5,(((p1 U p2) U p3) U p4) U p5
+#+end_example
+
+We can run =ltl2tgba= on the third column to produce
+the same output as in a previous example:
+
+#+BEGIN_SRC sh
+ltl2tgba -F gen.csv/3 --stats '%f,%s,%e'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+GFp1,1,2
+G(Fp1 & Fp2),1,4
+G(Fp1 & Fp2 & Fp3),1,8
+G(Fp1 & Fp2 & Fp3 & Fp4),1,16
+G(Fp1 & Fp2 & Fp3 & Fp4 & Fp5),1,32
+p1,2,2
+p1 U p2,2,3
+(p1 U p2) U p3,4,10
+((p1 U p2) U p3) U p4,8,34
+(((p1 U p2) U p3) U p4) U p5,16,116
+#+end_example
+
+When =ltlfilt= is used on a CSV file, it will preserve the
+text before and after the matched formula in the CSV file.
+For instance:
+
+#+BEGIN_SRC sh
+ltlfilt -F gen.csv/3 --size-min=8 --relabel=abc
+#+END_SRC
+#+RESULTS:
+: and-gf,3,GFa & GFb & GFc
+: and-gf,4,GFa & GFb & GFc & GFd
+: and-gf,5,GFa & GFb & GFc & GFd & GFe
+: u-left,5,(((a U b) U c) U d) U e
+
+The preservation in the output of the text before and after the
+selected column can be altered using the =--format= option.  The =%<=
+escape sequence represent the (comma-separated) data of all the
+columns before the selected column, and =%>= is the same for the
+trailing data.  Note that the comma that separate formulas' column
+from the other column are excluded and should be added in the format
+string.
+
+For instance this moves the first two columns after the formulas.
+
+#+BEGIN_SRC sh
+ltlfilt -F gen.csv/3 --size-min=8 --format='"%f",%<'
+#+END_SRC
+#+RESULTS:
+: "GFp1 & GFp2 & GFp3",and-gf,3
+: "GFp1 & GFp2 & GFp3 & GFp4",and-gf,4
+: "GFp1 & GFp2 & GFp3 & GFp4 & GFp5",and-gf,5
+: "(((p1 U p2) U p3) U p4) U p5",u-left,5
+
+Note that if the =--format= option is not specified, the default
+format is one of: =%f=, =%<,%f=, =%f,%>=, or =%<,%f,%>= depending on
+whether the input CSV had column before and after the selected one.
+Furthermore, the formula field is automatically double-quoted if the
+formula actually use double quotes, and the input CSV file had more
+than one column.
+
+Typical uses of =ltlfilt= on CSV file include:
+- Filtering lines based on an LTL criterion, as above.
+- Changing the syntax of LTL formulas.  For instance =ltl2tgba='s
+  =--stats= option, and =ltlcross='s =--csv= option always output
+  formulas in Spot's format.  If that is inappropriate, simply use
+  =ltlfilt= to rewrite the relevant column in your preferred syntax.
+
+* Dealing with header lines
+
+Some CSV files contain a header lines that should not be processed.
+For instance the CSV files produced by =ltlcross= have such a line:
+
+#+BEGIN_SRC sh
+randltl -n 2 a b | ltlfilt --remove-wm |
+  ltlcross --csv=results.csv 'ltl2tgba -s %f >%N' 'ltl3ba -f %s >%N'
+cat results.csv
+#+END_SRC
+#+RESULTS:
+: "formula","tool","exit_status","exit_code","time","states","edges","transitions","acc","scc","nondet_states","nondet_aut","complete_aut","product_states","product_transitions","product_scc"
+: "0","ltl2tgba -s %f >%N","ok",0,0.0447891,1,1,0,1,1,0,0,0,1,0,1
+: "0","ltl3ba -f %s >%N","ok",0,0.010318,1,0,0,1,1,0,0,0,1,0,1
+: "1","ltl2tgba -s %f >%N","ok",0,0.0448043,1,1,1,1,1,0,0,1,200,4199,1
+: "1","ltl3ba -f %s >%N","ok",0,0.0101865,1,1,1,1,1,0,0,1,200,4199,1
+: "!(F(!(b)))","ltl2tgba -s %f >%N","ok",0,0.0432052,1,1,1,1,1,0,0,0,200,2059,1
+: "!(F(!(b)))","ltl3ba -f %s >%N","ok",0,0.0103946,1,1,1,1,1,0,0,0,200,2059,1
+: "F(!(b))","ltl2tgba -s %f >%N","ok",0,0.043252,2,3,4,1,2,0,0,1,400,8264,2
+: "F(!(b))","ltl3ba -f %s >%N","ok",0,0.009877,2,3,4,1,2,0,0,1,400,8264,2
+
+If we run =ltlfilt= on the first column, it will process the =formula=
+header as if it was an LTL formula.
+
+#+BEGIN_SRC sh
+ltlfilt -F results.csv/1 --format='%f' --unique
+#+END_SRC
+
+#+RESULTS:
+: formula
+: 1
+: 0
+: !G(Fb | F!(b | Gb))
+: G(Fb | F!(b | Gb))
+
+In such case, the syntax =FILENAME/-COL= (with a minus sign before the
+column number) can be used to discard the first line of a CSV file.
+
+#+BEGIN_SRC sh
+ltlfilt -F results.csv/-1 --format='%f' --unique
+#+END_SRC
+
+#+RESULTS:
+: 1
+: 0
+: !G(Fb | F!(b | Gb))
+: G(Fb | F!(b | Gb))
+
+* CSV files containing automata
+
+The =--stats= option of tools that generate automata can be used to
+generate CSV files that embed automata.  For instance
+
+#+BEGIN_SRC sh
+genltl --dac=1..3 | ltl2tgba --stats='"%f","%e edges","%h"' > csv-aut.csv
+cat csv-aut.csv
+#+END_SRC
+
+#+RESULTS:
+: "G!p0","1 edges","HOA: v1 name: ""G!p0"" States: 1 Start: 0 AP: 1 ""p0"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc colored deterministic stutter-invariant weak --BODY-- State: 0 {0} [!0] 0 --END--"
+: "G!p0 | (!p1 U p0)","5 edges","HOA: v1 name: ""G!p0 | (!p1 U p0)"" States: 3 Start: 2 AP: 2 ""p0"" ""p1"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc colored deterministic stutter-invariant weak --BODY-- State: 0 {0} [!0] 0 State: 1 {0} [t] 1 State: 2 {0} [!0&1] 0 [0] 1 [!0&!1] 2 --END--"
+: "G(!p0 | G!p1)","3 edges","HOA: v1 name: ""G(!p0 | G!p1)"" States: 2 Start: 1 AP: 2 ""p0"" ""p1"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc colored deterministic stutter-invariant weak --BODY-- State: 0 {0} [!1] 0 State: 1 {0} [0&!1] 0 [!0] 1 --END--"
+
+Note that when producing CSV files, it is important to surround =%h=
+with double quotes to indicate that double quotes from the HOA format
+(output by =%h=) should be escaped.  Otherwise the result would not be
+a valid CSV file.
+
+[[file:autfilt.org][=autfilt=]] can process a column of such a CSV file using the same
+syntax we used previously, but by default it will just output the
+automata.  If you want to preserve the entire line, you should use
+=%<= and =%>= in the =--stats= format.
+
+#+BEGIN_SRC sh
+autfilt csv-aut.csv/3 --states=2..3 --stats='%<,"%h"'
+#+END_SRC
+
+#+RESULTS:
+: "G!p0 | (!p1 U p0)","5 edges","HOA: v1 States: 3 Start: 2 AP: 2 ""p0"" ""p1"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc colored deterministic stutter-invariant weak --BODY-- State: 0 {0} [!0] 0 State: 1 {0} [t] 1 State: 2 {0} [!0&1] 0 [0] 1 [!0&!1] 2 --END--"
+: "G(!p0 | G!p1)","3 edges","HOA: v1 States: 2 Start: 1 AP: 2 ""p0"" ""p1"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc colored deterministic stutter-invariant weak --BODY-- State: 0 {0} [!1] 0 State: 1 {0} [0&!1] 0 [!0] 1 --END--"
+
+
+Another source of automata in CSV format is =ltlcross=.  Using options
+=--automata= it will record the automata produced by each tool into
+the CSV file:
+
+#+BEGIN_SRC sh
+genltl --dac=1..3 | ltlcross --csv=result.csv --automata ltl2tgba
+cat result.csv
+#+END_SRC
+
+#+RESULTS:
+: "formula","tool","exit_status","exit_code","time","states","edges","transitions","acc","scc","nonacc_scc","terminal_scc","weak_scc","strong_scc","nondet_states","nondet_aut","terminal_aut","weak_aut","strong_aut","ambiguous_aut","complete_aut","product_states","product_transitions","product_scc","automaton"
+: "G(!(p0))","ltl2tgba","ok",0,0.0243614,1,1,1,1,1,0,0,1,0,0,0,0,1,0,0,0,200,2055,2,"HOA: v1 name: ""G!p0"" States: 1 Start: 0 AP: 1 ""p0"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc colored deterministic stutter-invariant weak --BODY-- State: 0 {0} [!0] 0 --END--"
+: "!(G(!(p0)))","ltl2tgba","ok",0,0.0240194,2,3,4,1,2,1,1,0,0,0,0,1,0,0,0,1,400,8272,3,"HOA: v1 name: ""Fp0"" States: 2 Start: 1 AP: 1 ""p0"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc complete deterministic stutter-invariant terminal --BODY-- State: 0 {0} [t] 0 State: 1 [0] 0 [!0] 1 --END--"
+: "(F(p0)) -> ((!(p1)) U (p0))","ltl2tgba","ok",0,0.0248105,3,5,10,1,3,0,1,2,0,0,0,0,1,0,0,0,598,10379,4,"HOA: v1 name: ""(!p1 U p0) | G!p0"" States: 3 Start: 2 AP: 2 ""p1"" ""p0"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc colored deterministic stutter-invariant weak --BODY-- State: 0 {0} [!1] 0 State: 1 {0} [t] 1 State: 2 {0} [0&!1] 0 [1] 1 [!0&!1] 2 --END--"
+: "!((F(p0)) -> ((!(p1)) U (p0)))","ltl2tgba","ok",0,0.0243147,3,5,10,1,3,2,1,0,0,0,0,1,0,0,0,0,598,10398,4,"HOA: v1 name: ""Fp0 & (p1 R !p0)"" States: 3 Start: 1 AP: 2 ""p1"" ""p0"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc deterministic stutter-invariant weak --BODY-- State: 0 {0} [t] 0 State: 1 [!0&!1] 1 [0&!1] 2 State: 2 [1] 0 [!1] 2 --END--"
+: "G((p0) -> (G(!(p1))))","ltl2tgba","ok",0,0.0201896,2,3,5,1,2,0,0,2,0,0,0,0,1,0,0,0,400,5025,2,"HOA: v1 name: ""G(!p0 | G!p1)"" States: 2 Start: 1 AP: 2 ""p0"" ""p1"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc colored deterministic stutter-invariant weak --BODY-- State: 0 {0} [!1] 0 State: 1 {0} [0&!1] 0 [!0] 1 --END--"
+: "!(G((p0) -> (G(!(p1)))))","ltl2tgba","ok",0,0.0194598,3,6,12,1,3,2,1,0,0,0,0,1,0,0,0,1,600,12354,3,"HOA: v1 name: ""F(p0 & Fp1)"" States: 3 Start: 1 AP: 2 ""p0"" ""p1"" acc-name: Buchi Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc complete deterministic stutter-invariant terminal --BODY-- State: 0 [!1] 0 [1] 2 State: 1 [0&!1] 0 [!0] 1 [0&1] 2 State: 2 {0} [t] 2 --END--"
+
+#  LocalWords:  utf CSV html args genltl randltl ltlfilt SRC gf csv
+#  LocalWords:  GFp tgba dstar autfilt randaut Fp Xa ltlcross abc GFa
+#  LocalWords:  GFb GFc GFd GFe wm ba acc scc nondet aut ok Fb Gb dac
+#  LocalWords:  Buchi nonacc

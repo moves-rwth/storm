@@ -1,0 +1,393 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017, 2018 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+cat >formulas <<'EOF'
+0
+F!(!b <-> FGb)
+1
+a W F(a -> b)
+((0 R Xa) R a) -> Fa
+!Xa & (Gb R (Xa W 0))
+(1 U b) | F(Fb W (a <-> FXa))
+(a M 1) | (!a W a)
+(G!a W ((b M 1) -> Fa)) -> !a
+!a xor (a <-> b)
+b & (a <-> b)
+b
+(a | b | (a -> b)) R b
+Xa
+!b
+!Fb | !Xb
+!(b | Gb)
+XXX(b | Gb)
+(a & F(a | FG(a W b))) U a
+FGXb M (!b M b)
+a
+((a & !b) W Ga) W a
+(b <-> FGb) M 1
+X!b
+FX!(a xor !a)
+Fb R (a & (a <-> b))
+XXb | (b W 0)
+1 U (b xor !b)
+G!(b M 1) W (1 U b)
+!(Fa M Xa)
+
+
+(!b U b) U X(!a -> Fb)
+(b | (Fa R (b W a))) M 1
+1 U (a xor b)
+XF!b
+X(!(!b | (a M b)) -> XXa)
+(FXXF(a R Fa) R Xb) U XFb
+!Gb
+F(Xb xor XXb)
+F(XF!a & (Fb U !a))
+!b M 1
+b M Fb
+!(a xor (b xor ((b W Ga) -> b)))
+!(a -> (a & !a)) xor !(a U !b)
+!(0 R !b)
+Fa M FXb
+Fa & (Fa | (!a -> Gb))
+Xb M X!a
+Gb xor (b W !b)
+F!(a | (b W a))
+F(1 U b)
+F(!a M 1)
+XF((b <-> (a <-> b)) | Fb)
+F(a U !b)
+(!a | b) U (1 U F(a M !b))
+!(Xb -> (b W a))
+!(0 R !X(Fb U a))
+X((a -> b) M 1)
+Fb M F(a W b)
+FXF(a <-> (Xb -> b))
+Xa | !((b W 0) & (a | Fb))
+
+
+!(F!b M 1)
+X(!a W Xb)
+!Fb xor G((b xor (Xa M b)) U b)
+(0 R b) R (a R Xa)
+Gb
+a W X(b | Xb)
+a W b
+X(Xb & (!Ga R Ga))
+!Fb
+a & GXa
+XX(X(a xor b) W 0)
+!a -> ((a xor !GFa) W 0)
+b M Gb
+Xa R XXG(!a & (Fa W Gb))
+G!b W b
+G(b | G!a)
+a xor ((!Xb M 1) & (b M a))
+
+G(b xor (a <-> !a))
+!((a | (XXa & (a M Gb))) U b)
+!(!b -> b) W a
+b | !(b M 1)
+G((Fa W !a) xor !(0 R b))
+0 R ((Ga xor Xb) -> (0 R a))
+G!Xa
+!(X!b M a)
+!(!b M a) W !a
+G(a & X!Xb)
+Xb -> Gb
+(b | X!b) W a
+b W (!b xor (!a M FXb))
+
+((b M 1) M 1) xor (a xor Ga)
+b <-> (a M 1)
+a xor F(!X!Fa xor (b U Xa))
+G!(!b R (Xb W b))
+(Fa & Xb) | G(b U Ga)
+!(a R Gb) R !a
+!(Gb U a)
+(FXb & XGa) xor F(Xa M 1)
+Gb <-> !((1 U a) -> b)
+(a U b) & ((b U a) R FX!Ga)
+Xb <-> F!a
+!(a xor F(1 U Fb))
+Fa <-> G(a R b)
+a | (Fb <-> XXFa)
+(a U b) & (b <-> FX!b)
+X!a -> (((b -> a) xor (a W 0)) M Gb)
+XX!(b U (X(0 R b) R a))
+XX(Ga <-> (Xa | !(b U Xa)))
+b xor Fa
+(Fb M a) xor X(Fa U Fb)
+b xor (Fb | (a W Gb))
+!a & X(Ga -> G(a xor b))
+(a xor XF!a) | X((a | (b R a)) -> b)
+((a U XFb) W Fb) -> FX!a
+X(a U Fb) -> !G!a
+Fa R X(b & X(X(b R a) -> b))
+a M (G!b R Xb)
+(!a R a) | (Fa xor XFb)
+XF(b | Gb) M ((b R a) R !a)
+!a xor (0 R ((b -> a) -> Gb))
+b & X(b U (F(!b | X(!b M !a)) W a))
+G(Fb & ((Gb & (a R F!a)) | (F!b & (!a U Ga))))
+G((G!b & (G(!a & b) | (F!b & Fa))) | (Fb&((F!b&G!a) | (Fa&Gb))))
+GF(a | b | (!a & XFb))
+GF((a & (!b | X(!b R XX!a))) | (!a & b & X(b U XXa)))
+F!b | G(a M Fb)
+G(a | (!b M (G!a | GFa)))
+Ga | (!a & G(b | X(b M Fa)))
+GF(Fa R (a | F!b))
+G(((b & Fa) | (!b & G!a)) M Fa)
+XG!a | G(a M Fb)
+G(b | X(b M Fa))
+G(b | G(((!a & FG!b) | (a & GFb)) U !a))
+G(!a | F((!a & (a W b)) | (a & (!a M !b))))
+G((Fa & ((b & Ga) | (!b & F!a))) | (G!a & ((b & F!a) | (!b & Ga))))
+G(b | G(!a & !b) | F(!a & Fa))
+(b | Ga) & G(Fa & F(!a & b))
+G(F!a & Fa)
+G(b M Fa)
+G(G(a & b) | (F!b & F!a))
+Ga R XF((Xa & (!a | Fb)) | (a & G!b & X!a))
+G(Fb & ((G!a & XXGb) | (Fa & XXF!b)))
+G((b & G(!a | Ga)) | (!b & F(a & F!a)))
+G(b & (X!a M Fa))
+G(Fa & (X((!a & G!b) | (a & Fb)) M Fb))
+G(Fa | G(!b M F!a))
+G((Ga & F(!a W b)) | (F!a & G(a M !b)))
+G(Fb U a)
+G(F!b & Fb)
+F(b & F!b) R (!a M Fa)
+
+(Ga | Fb) M 1
+!G(F(b & Fa) W b)
+F!b -> (1 U (b W a))
+((0 R b) M 1) U XXa
+1 U (b & Ga)
+a & F(!b W Gb)
+!((a <-> Gb) R (Fa -> Fb))
+!G(!a M 1)
+FG(b & Ga)
+(Xa W 0) M 1
+a xor !(Fb W Fa)
+1 U (a & Ga)
+a W ((a M G(0 R Fb)) -> a)
+F((b -> F(a W 0)) W 0)
+G(1 U Ga)
+!(Fb W 0)
+F(!XFXb M Xa)
+b | (Gb M F(a & Fa))
+a R !(0 R G(b & Fa))
+b W F(b R a)
+((a <-> b) W G!a) U !(!b M 1)
+F(Fb xor !Xa)
+!FX(G(1 U b) R (1 U Xa))
+X(F!Fb M Xa)
+FGa
+FGXb
+Fa -> XXG(1 U Gb)
+XXFa U Ga
+a & F!X(a | XFa)
+F(a | Gb)
+F((XXb&G(!a|(Gb&XG!a)|(F!b&XFa)))|(XX!b&F(a&((Gb&XFa)|(XG!a&F!b)))))
+F((!a & F(a W (a R b))) | (a & G(!a M (!a U !b))))
+XFb R F((b & F!a) | (!b & Ga))
+F((G!b & XX!a) | (Fb & XXa)) W (!a | Ga)
+F((a & FG(Ga M b)) | (!a & GF(F!a W !b)))
+XF(!a | GF(!b W F!a))
+(b & X(b W a)) M (Xb R (Fb & Fa))
+F(b | (G!b & FGa) | G(Fb & F!a))
+FG(((a & !b) | (!a & b)) & F((F!a & Xb) | (Ga & X!b)))
+X(!b | XF((a & F((F!b & G!a) | (Gb & Fa))) | (!a & G(G(!a & b) | (F!b & Fa)))))
+F((a & !b & G((b | Fa) U b)) | ((!a | b) & F((!b & G!a) R !b)))
+XF(b | GF((b & Fa) | (!b & G!a)))
+(FGa R (!b M F!a)) R (!b | FGb)
+F(!b | (FGa & F(Gb & X!a)) | G(F!a & (F!b | Xa)))
+Xb R (F!b U ((b & XF!a) | (!b & XGa)))
+(Fa U ((b & Ga) | (!b & F!a))) W X((a & F!b) | (!a & Gb))
+X!a R F(Fb R !a)
+Ga | F((a & b & G((!a | F!b) U !a)) | ((!a | !b) & F((a & Gb) R a)))
+F(a W Fb) W ((!a & G!b) | (a & Fb))
+F((b&G(F((a&b)|(!a&!b))|(G!b U!a)))|(!b&F(G((a&!b)|(!a&b))&(Fb R a))))
+F((Fa & G(a | b)) | (G!a & F(!a & !b))) W G!a
+F(Fa & G(a | b)) W G!a
+F(!b | GF((!b & Fa) | (b & G!a)))
+Fa R XF(Xb | (!b M G!a))
+F((b & G(F!b & Fa)) | (!b & F(Gb | G!a)))
+XX(FGb R (b U ((a & F!b) | (!a & Gb))))
+F((a & F(!a W G!b)) | (!a & G(a M Fb)))
+Fa R (((a & F!b) | (!a & Gb)) R F(Xb W Fa))
+F((b & F(G!b | G!a)) | (!b & G(Fb & Fa)))
+F((Fb & G!a) | (G!b & Fa)) W (a | Xb)
+EOF
+
+ltlcross --grind=bugs -F formulas \
+  --timeout=60 \
+  '{1} ltl2tgba %f >%T' \
+  '{2} case `ltlfilt -f %f --format=%%[w]h` in *P*) ltl2tgba -B %f | autfilt\
+    -D --cobuchi ;; *) ltl2tgba -B %f;; esac >%O' \
+  '{3} case `ltlfilt -f %f --format=%%[w]h` in *P*) ltl2tgba --cobuchi %f;; \
+    *) ltl2tgba -B %f;; esac >%O'
+
+for i in 4 5 6 7 8 9 10
+do
+  for acc in "min even" "min odd" "max even" "max odd";
+  do
+    randaut -A "parity $acc $i" a b c > input.hoa
+    autfilt -D --cobuchi input.hoa > res.hoa
+    autfilt -q input.hoa --included-in=res.hoa
+    autfilt -q --deterministic --acceptance-is=coBuchi res.hoa
+  done
+done
+
+ltlcross -F formulas \
+  --timeout=60 \
+  '{1} ltl2tgba %f | autfilt --gra >%T' \
+  '{2} case `ltlfilt -f %f --format=%%[w]h` in *P*) ltl2tgba -B %f | autfilt\
+    --gra | autfilt --cobuchi;; *) ltl2tgba -B %f;; esac >%O' \
+  '{3} case `ltlfilt -f %f --format=%%[w]h` in *P*) ltl2tgba -B %f | autfilt\
+    --gra | autfilt --cobuchi -D;; *) ltl2tgba -B %f;; esac >%O'
+
+
+testeq()
+{
+    cat >test.hoa
+    autfilt test.hoa --coBuchi -D > res.hoa
+    autfilt -q res.hoa --is-det --acceptance-is=coBuchi --equivalent-to=test.hoa
+    autfilt test.hoa --coBuchi > res.hoa
+    autfilt -q res.hoa --acceptance-is=coBuchi --equivalent-to=test.hoa
+}
+
+testeq << EOF
+HOA: v1 States: 29 Start: 7 AP: 3 "a" "b" "c" Acceptance: 5 Fin(0)
+& (Inf(1) | Fin(2)) & (Inf(3) | Fin(4)) properties: trans-labels
+explicit-labels state-acc complete properties: deterministic --BODY--
+State: 0 {3} [0&!1&!2] 0 [0&1&!2] 1 [0&!1&2] 4 [!0&1&2] 13 [!0&!1&2] 15
+[!0&1&!2] 20 [!0&!1&!2] 21 [0&1&2] 22 State: 1 {3} [0&!1&!2] 0 [0&1&!2]
+1 [!0&2] 13 [!0&1&!2] 20 [!0&!1&!2] 21 [0&2] 22 State: 2 {3} [0&!1&2]
+2 [0&!1&!2] 3 [0&1&!2] 12 [!0&1] 13 [0&1&2] 14 [!0&!1] 15 State: 3 {3}
+[0&!1&2] 2 [0&!1&!2] 3 [0&1&!2] 12 [!0&1&2] 13 [0&1&2] 14 [!0&!1&2] 15
+[!0&!1&!2] 16 [!0&1&!2] 20 State: 4 {3} [0&!1&!2] 3 [0&!1&2] 4 [0&1&!2]
+12 [!0&1] 13 [!0&!1] 15 [0&1&2] 22 State: 5 {3} [0&!1&2] 5 [0&1&!2] 12
+[!0&1] 13 [0&1&2] 14 [!0&!1] 15 [0&!1&!2] 17 State: 6 {3} [0&!1&2] 5
+[0&!1&!2] 6 [!0&1&2] 13 [0&1&2] 14 [!0&!1&2] 15 [0&1&!2] 18 [!0&1&!2]
+20 [!0&!1&!2] 28 State: 7 {1 3} [!0 | 2] 13 [0&1&!2] 18 [0&!1&!2] 19
+State: 8 {1 3} [0&1&!2] 1 [0&!1&2] 8 [0&!1&!2] 9 [!0&1] 13 [0&1&2] 22
+[!0&!1] 23 State: 9 {1 3} [0&1&!2] 1 [0&!1&2] 8 [0&!1&!2] 9 [!0&1&2]
+13 [!0&1&!2] 20 [0&1&2] 22 [!0&!1&2] 23 [!0&!1&!2] 24 State: 10 {1 3}
+[0&1&!2] 10 [0&!1&!2] 11 [!0&2] 13 [0&2] 22 [!0&1&!2] 25 [!0&!1&!2] 26
+State: 11 {1 3} [0&!1&2] 8 [0&1&!2] 10 [0&!1&!2] 11 [!0&1&2] 13 [0&1&2]
+22 [!0&!1&2] 23 [!0&1&!2] 25 [!0&!1&!2] 26 State: 12 {0 1 3} [0&!1&!2] 0
+[0&1&!2] 1 [!0&2] 13 [!0&1&!2] 20 [!0&!1&!2] 21 [0&2] 22 State: 13 {0 1 3}
+[0&1&!2] 10 [0&!1&!2] 11 [!0 | 2] 13 State: 14 {0 1 3} [!0] 13 [0&1&!2]
+18 [0&!1&!2] 19 [0&2] 22 State: 15 {0 1 3} [0&!1&!2] 6 [!0&1 | 1&2]
+13 [0&1&!2] 18 [!0&!1 | !1&2] 23 State: 16 {0 1 3} [0&!1&!2] 6 [1&2]
+13 [0&1&!2] 18 [!0&1&!2] 20 [!1&2] 23 [!0&!1&!2] 24 State: 17 {0 1 3}
+[0&1&!2] 1 [0&!1&2] 8 [0&!1&!2] 9 [!0&1&2] 13 [!0&1&!2] 20 [0&1&2] 22
+[!0&!1&2] 23 [!0&!1&!2] 24 State: 18 {0 1 3} [0&1&!2] 10 [0&!1&!2]
+11 [!0&2] 13 [0&2] 22 [!0&1&!2] 25 [!0&!1&!2] 26 State: 19 {0 1 3}
+[0&!1&2] 8 [0&1&!2] 10 [0&!1&!2] 11 [!0&1&2] 13 [0&1&2] 22 [!0&!1&2] 23
+[!0&1&!2] 25 [!0&!1&!2] 26 State: 20 {0 1 3} [2] 13 [0&1&!2] 18 [0&!1&!2]
+19 [!0&1&!2] 25 [!0&!1&!2] 26 State: 21 {0 1 3} [1&2] 13 [0&1&!2] 18
+[0&!1&!2] 19 [!1&2] 23 [!0&1&!2] 25 [!0&!1&!2] 26 State: 22 {2 3} [!0]
+13 [0&1&!2] 18 [0&!1&!2] 19 [0&2] 22 State: 23 {2 3} [0&!1&!2] 6 [!0&1 |
+1&2] 13 [0&1&!2] 18 [!0&!1 | !1&2] 23 State: 24 {2 3} [0&!1&!2] 6 [1&2]
+13 [0&1&!2] 18 [!0&1&!2] 20 [!1&2] 23 [!0&!1&!2] 24 State: 25 {2 3} [2]
+13 [0&1&!2] 18 [0&!1&!2] 19 [!0&1&!2] 25 [!0&!1&!2] 26 State: 26 {2 3}
+[1&2] 13 [0&1&!2] 18 [0&!1&!2] 19 [!1&2] 23 [!0&1&!2] 25 [!0&!1&!2] 26
+State: 27 {2 3} [0&!1&2] 5 [0&!1&!2] 6 [!0&1&2] 13 [0&1&2] 14 [!0&!1&2]
+15 [0&1&!2] 18 [!0&1&!2] 20 [!0&!1&!2] 28 State: 28 {4} [1&2] 13 [!1&2]
+15 [0&1&!2] 18 [!0&1&!2] 20 [0&!1&!2] 27 [!0&!1&!2] 28 --END--
+EOF
+
+testeq <<EOF
+HOA: v1 States: 10 Start: 0 AP: 2 "a" "b" acc-name: Rabin 3 Acceptance:
+6 (Fin(0) & Inf(1)) | (Fin(2) & Inf(3)) | (Fin(4) & Inf(5)) properties:
+trans-labels explicit-labels trans-acc --BODY-- State: 0 [0&!1] 8 {0}
+[!0&!1] 6 {0 1} State: 1 [!0&1] 4 {2} [0&1] 8 {2} State: 2 [0&1] 6 {1 4}
+[!0&!1] 3 {1 4} State: 3 [!0&!1] 8 {2 4} [0&1] 4 State: 4 [!0&!1] 8 {4}
+[!0&!1] 7 State: 5 [!0&!1] 2 {0 5} [!0&!1] 8 {0 4} [!0&!1] 9 {4} State:
+6 [!0&1] 1 {2 3 4} State: 7 [0&!1] 5 {0} [0&!1] 7 State: 8 [!0&1] 4 {0 2}
+State: 9 [0&1] 3 {4} [!0&1] 5 {4} --END--
+EOF
+
+testeq<<EOF
+HOA: v1 States: 11 Start: 0 AP: 3 "a" "b" "c" Acceptance: 5 (Fin(0)
+| Inf(1)) & (Fin(2) | Inf(3)) & Fin(4) properties: trans-labels
+explicit-labels trans-acc --BODY-- State: 0 [0&!1&!2] 1 {1} [0&!1&!2]
+2 {1} [!0&!2] 3 {1} [0&1&!2] 4 {1} [0&1&!2] 5 {1} [0&!1&2] 6 {1} [!0&2 |
+1&2] 7 {1} State: 1 [0&!1&!2] 1 {0 2} [!0&!2] 3 {0 2} [0&1&!2] 4 {0 2}
+State: 2 [0&!1&!2] 2 {0 2} [!0&!2] 8 {0 2 4} [0&1&!2] 5 {0 2 4} [0&!1&2]
+6 {0 2} [!0&2 | 1&2] 7 {0 2 4} State: 3 [0&!1] 9 {1 2} [!0 | 1] 3 {1 2}
+State: 4 [0&!1&!2] 1 {1 2} [!0&!2] 3 {1 2} [0&1&!2] 4 {1 2} State: 5
+[0&!1&!2] 2 {1 2} [!0&!2] 8 {1 2 4} [0&1&!2] 5 {1 2 4} [0&!1&2] 6 {1 2}
+[!0&2 | 1&2] 7 {1 2 4} State: 6 [0&!1] 6 {0 3} [!0 | 1] 7 {0 3 4} State:
+7 [0&!1] 6 {1 3} [!0 | 1] 7 {1 3 4} State: 8 [0&!1] 10 {1 2} [!0 | 1]
+8 {1 2 4} State: 9 [0&!1] 9 {0 2} [!0 | 1] 3 {0 2} State: 10 [0&!1]
+10 {0 2} [!0 | 1] 8 {0 2 4} --END--
+EOF
+
+testeq<<EOF
+HOA: v1 States: 10 Start: 0 AP: 2 "a" "b" acc-name: Streett 3 Acceptance:
+6 (Fin(0) | Inf(1)) & (Fin(2) | Inf(3)) & (Fin(4) | Inf(5)) properties:
+trans-labels explicit-labels trans-acc deterministic --BODY-- State: 0
+[0&1] 1 [0&!1] 9 {0 5} State: 1 [0&!1] 5 State: 2 [!0&!1] 4 {1} State: 3
+[!0&!1] 8 {0} State: 4 [0&1] 6 {0 3} State: 5 [!0&!1] 7 State: 6 [!0&1]
+4 State: 7 [!0&!1] 3 {2 5} State: 8 [0&!1] 1 {2} [!0&!1] 2 {2} State:
+9 [!0&1] 6 {2 4} --END--
+EOF
+
+# Maximilien's automaton from issue #317
+testeq<<EOF
+HOA: v1 States: 11 Start: 0 AP: 2 "b" "c" Acceptance: 4 (Fin(0)|Fin(2))
+| Inf(1) | Inf(3) properties: trans-labels explicit-labels trans-acc
+complete --BODY-- State: 0 [!0&!1] 1 [!0&!1] 2 [!0&1] 3 [!0&1] 4 [0] 5
+State: 1 [!1] 1 {0 2} [!0&!1] 2 [1] 3 [!0&1] 4 State: 2 [!0&!1] 2 {0 3}
+[!0&1] 4 [0&1] 7 [0&!1] 10 State: 3 [1] 3 {0 2} [!0] 4 [!1] 9 {0 2} State:
+4 [!0&1] 4 {0 3} [!0&!1] 6 {0 3} [0] 7 State: 5 [t] 5 {2} State: 6 [!0&1]
+4 {3} [!0&!1] 6 {3} [0] 7 State: 7 [1] 7 {0 2} [!1] 8 {0 2} State: 8
+[1] 7 {2} [!1] 8 {2} State: 9 [1] 3 {2} [!0] 4 [!1] 9 {2} State: 10 [1]
+7 [!1] 10 {0 2} --END--
+EOF
+
+cat >in.hoa <<EOF
+HOA: v1
+name: "FGa"
+States: 1
+Start: 0
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic stutter-invariant
+--BODY--
+State: 0
+[0] 0
+[!0] 0 {0}
+--END--
+EOF
+# We had a problem that to_nca()/to_dca() would call sbacc()
+# even if the input was already of the good shape.  Make sure
+# this is not the case anymore.
+test '1,co-Buchi' = "`autfilt --cobuchi --small --stats='%s,%[]g' in.hoa`"
+test '1,co-Buchi' = "`autfilt --cobuchi --det --stats='%s,%[]g' in.hoa`"

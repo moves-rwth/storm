@@ -1,0 +1,69 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2008, 2011-2012, 2016, 2018-2019 Laboratoire de
+# Recherche et Développement de l'Epita (LRDE).
+# Copyright (C) 2004, 2005 Laboratoire d'Informatique de Paris 6
+# (LIP6), département Systèmes Répartis Coopératifs (SRC), Université
+# Pierre et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check that each header is self contained and generates no warning.
+
+set -e
+set +x
+
+rm -f failures.inc
+
+INCDIR=${srcdir-.}/../../spot
+
+for file in `find "$INCDIR" \( -name "${1-*}.hh" \
+                               -o -name "${1-*}.hxx" \) \
+                  -a -type f -a -print | sed "s,$INCDIR/,,g"`; do
+
+   if head -n 100 "$INCDIR/$file" | grep -q "[	 ]*#.*pragma.* once\$"; then
+     :
+   elif grep -q 'made by GNU Bison' "$INCDIR/$file"; then
+     # Those are not public headers, so we do not care
+     continue
+   elif grep -q '/robin-hood-hashing' "$INCDIR/$file"; then
+     # Those are not public headers, so we do not care
+     continue
+   else
+     echo "FAIL: $file (missing #pragma once)"
+     echo "  $file (missing #pragma once)" >> failures.inc
+     continue
+   fi
+
+   echo "#include <spot/$file>" >incltest.cc
+   if $CXX $CPPFLAGS -DSKIP_DEPRECATED_WARNING $CXXFLAGS \
+           -I$top_builddir -I$top_srcdir -I$top_srcdir/buddy/src \
+           -c incltest.cc; then
+      echo "PASS: $file"
+   else
+      echo "FAIL: $file (not self-contained)"
+      echo "  $file (not self-contained)" >> failures.inc
+   fi
+done
+
+rm -f incltest.cc incltest.o
+
+if test -f failures.inc; then
+   echo "Failed files:"
+   cat failures.inc
+   rm failures.inc
+   exit 1;
+fi

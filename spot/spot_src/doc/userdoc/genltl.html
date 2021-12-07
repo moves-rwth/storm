@@ -1,0 +1,624 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:52 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title><code>genltl</code></title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Spot command-line tool that generates LTL formulas from known patterns"
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tools.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title"><code>genltl</code></h1>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+This tool outputs LTL formulas that either comes from named lists of
+formulas, or from scalable patterns.
+</p>
+
+<p>
+These patterns are usually taken from the literature (see the
+<a href="./man/genltl.1.html"><code>genltl</code></a>(1) man page for references).  Sometimes the same pattern is
+given different names in different papers, so we alias different
+option names to the same pattern.
+</p>
+
+<pre class="example">
+--and-f=RANGE, --gh-e=RANGE
+                       F(p1)&amp;F(p2)&amp;...&amp;F(pn)
+--and-fg=RANGE         FG(p1)&amp;FG(p2)&amp;...&amp;FG(pn)
+--and-gf=RANGE, --ccj-phi=RANGE, --gh-c2=RANGE
+                       GF(p1)&amp;GF(p2)&amp;...&amp;GF(pn)
+--ccj-alpha=RANGE      F(p1&amp;F(p2&amp;F(p3&amp;...F(pn)))) &amp;
+                       F(q1&amp;F(q2&amp;F(q3&amp;...F(qn))))
+--ccj-beta=RANGE       F(p&amp;X(p&amp;X(p&amp;...X(p)))) &amp; F(q&amp;X(q&amp;X(q&amp;...X(q))))
+--ccj-beta-prime=RANGE F(p&amp;(Xp)&amp;(XXp)&amp;...(X...X(p))) &amp;
+                       F(q&amp;(Xq)&amp;(XXq)&amp;...(X...X(q)))
+--dac-patterns[=RANGE], --spec-patterns[=RANGE]
+                       Dwyer et al. [FMSP'98] Spec. Patterns for LTL
+                       (range should be included in 1..55)
+--eh-patterns[=RANGE]  Etessami and Holzmann [Concur'00] patterns (range
+                       should be included in 1..12)
+--fxg-or=RANGE         F(p0 | XG(p1 | XG(p2 | ... XG(pn))))
+--gf-equiv=RANGE       (GFa1 &amp; GFa2 &amp; ... &amp; GFan) &lt;-&gt; GFz
+--gf-equiv-xn=RANGE    GF(a &lt;-&gt; X^n(a))
+--gf-implies=RANGE     (GFa1 &amp; GFa2 &amp; ... &amp; GFan) -&gt; GFz
+--gf-implies-xn=RANGE  GF(a -&gt; X^n(a))
+--gh-q=RANGE           (F(p1)|G(p2))&amp;(F(p2)|G(p3))&amp;...&amp;(F(pn)|G(p{n+1}))
+--gh-r=RANGE           (GF(p1)|FG(p2))&amp;(GF(p2)|FG(p3))&amp;...
+                       &amp;(GF(pn)|FG(p{n+1}))
+--go-theta=RANGE       !((GF(p1)&amp;GF(p2)&amp;...&amp;GF(pn)) -&gt; G(q-&gt;F(r)))
+--gxf-and=RANGE        G(p0 &amp; XF(p1 &amp; XF(p2 &amp; ... XF(pn))))
+--hkrss-patterns[=RANGE], --liberouter-patterns[=RANGE]
+                       Holeček et al. patterns from the Liberouter
+                       project (range should be included in 1..55)
+--kr-n=RANGE           linear formula with doubly exponential DBA
+--kr-nlogn=RANGE       quasilinear formula with doubly exponential DBA
+--kv-psi=RANGE, --kr-n2=RANGE
+                       quadratic formula with doubly exponential DBA
+--ms-example=RANGE[,RANGE]
+                       GF(a1&amp;X(a2&amp;X(a3&amp;...Xan)))&amp;F(b1&amp;F(b2&amp;F(b3&amp;...&amp;Xbm)))
+--ms-phi-h=RANGE       FG(a|b)|FG(!a|Xb)|FG(a|XXb)|FG(!a|XXXb)|...
+--ms-phi-r=RANGE       (FGa{n}&amp;GFb{n})|((FGa{n-1}|GFb{n-1})&amp;(...))
+--ms-phi-s=RANGE       (FGa{n}|GFb{n})&amp;((FGa{n-1}&amp;GFb{n-1})|(...))
+--or-fg=RANGE, --ccj-xi=RANGE
+                       FG(p1)|FG(p2)|...|FG(pn)
+--or-g=RANGE, --gh-s=RANGE   G(p1)|G(p2)|...|G(pn)
+--or-gf=RANGE, --gh-c1=RANGE
+                       GF(p1)|GF(p2)|...|GF(pn)
+--p-patterns[=RANGE], --beem-patterns[=RANGE], --p[=RANGE]
+                       Pelánek [Spin'07] patterns from BEEM (range
+                       should be included in 1..20)
+--pps-arbiter-standard=RANGE
+                       Arbiter with n clients that sent requests (ri) and
+                       receive grants (gi).  Standard semantics.
+--pps-arbiter-strict=RANGE   Arbiter with n clients that sent requests
+                       (ri) and receive grants (gi).  Strict semantics.
+--r-left=RANGE         (((p1 R p2) R p3) ... R pn)
+--r-right=RANGE        (p1 R (p2 R (... R pn)))
+--rv-counter=RANGE     n-bit counter
+--rv-counter-carry=RANGE   n-bit counter w/ carry
+--rv-counter-carry-linear=RANGE
+                       n-bit counter w/ carry (linear size)
+--rv-counter-linear=RANGE   n-bit counter (linear size)
+--sb-patterns[=RANGE]  Somenzi and Bloem [CAV'00] patterns (range should
+                       be included in 1..27)
+--sejk-f=RANGE[,RANGE] f(0,j)=(GFa0 U X^j(b)), f(i,j)=(GFai U
+                       G(f(i-1,j)))
+--sejk-j=RANGE         (GFa1&amp;...&amp;GFan) -&gt; (GFb1&amp;...&amp;GFbn)
+--sejk-k=RANGE         (GFa1|FGb1)&amp;...&amp;(GFan|FGbn)
+--sejk-patterns[=RANGE]   φ₁,φ₂,φ₃ from Sikert et al's [CAV'16]
+                       paper (range should be included in 1..3)
+--tv-f1=RANGE          G(p -&gt; (q | Xq | ... | XX...Xq)
+--tv-f2=RANGE          G(p -&gt; (q | X(q | X(... | Xq)))
+--tv-g1=RANGE          G(p -&gt; (q &amp; Xq &amp; ... &amp; XX...Xq)
+--tv-g2=RANGE          G(p -&gt; (q &amp; X(q &amp; X(... &amp; Xq)))
+--tv-uu=RANGE          G(p1 -&gt; (p1 U (p2 &amp; (p2 U (p3 &amp; (p3 U ...))))))
+--u-left=RANGE, --gh-u=RANGE
+                       (((p1 U p2) U p3) ... U pn)
+--u-right=RANGE, --gh-u2=RANGE, --go-phi=RANGE
+                       (p1 U (p2 U (... U pn)))
+</pre>
+
+<p>
+An example is probably all it takes to understand how this tool works:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">genltl --and-gf=1..5 --u-left=1..5
+</pre>
+</div>
+<pre class="example">
+GFp1
+GFp1 &amp; GFp2
+GFp1 &amp; GFp2 &amp; GFp3
+GFp1 &amp; GFp2 &amp; GFp3 &amp; GFp4
+GFp1 &amp; GFp2 &amp; GFp3 &amp; GFp4 &amp; GFp5
+p1
+p1 U p2
+(p1 U p2) U p3
+((p1 U p2) U p3) U p4
+(((p1 U p2) U p3) U p4) U p5
+</pre>
+
+<p>
+<code>genltl</code> supports the <a href="ioltl.html">common option for output of LTL formulas</a>, so you
+may output these pattern for various tools.
+</p>
+
+<p>
+For instance here is the same formulas, but formatted in a way that is
+suitable for being included in a LaTeX table.
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-sh">genltl --and-gf=1..5 --u-left=1..5 --latex --format=<span class="org-string">'%F &amp; %L &amp; $%f$ \\'</span>
+</pre>
+</div>
+<pre class="example">
+and-gf &amp; 1 &amp; $\G \F p_{1}$ \\
+and-gf &amp; 2 &amp; $\G \F p_{1} \land \G \F p_{2}$ \\
+and-gf &amp; 3 &amp; $\G \F p_{1} \land \G \F p_{2} \land \G \F p_{3}$ \\
+and-gf &amp; 4 &amp; $\G \F p_{1} \land \G \F p_{2} \land \G \F p_{3} \land \G \F p_{4}$ \\
+and-gf &amp; 5 &amp; $\G \F p_{1} \land \G \F p_{2} \land \G \F p_{3} \land \G \F p_{4} \land \G \F p_{5}$ \\
+u-left &amp; 1 &amp; $p_{1}$ \\
+u-left &amp; 2 &amp; $p_{1} \U p_{2}$ \\
+u-left &amp; 3 &amp; $(p_{1} \U p_{2}) \U p_{3}$ \\
+u-left &amp; 4 &amp; $((p_{1} \U p_{2}) \U p_{3}) \U p_{4}$ \\
+u-left &amp; 5 &amp; $(((p_{1} \U p_{2}) \U p_{3}) \U p_{4}) \U p_{5}$ \\
+</pre>
+
+<p>
+Note that for the <code>--lbt</code> syntax, each formula is relabeled using
+<code>p0</code>, <code>p1</code>, &#x2026;  before it is output, when the pattern (like
+<code>--ccj-alpha</code>) use different names.  Compare:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">genltl --ccj-alpha=3
+</pre>
+</div>
+<pre class="example">
+F(p1 &amp; F(p2 &amp; Fp3)) &amp; F(q1 &amp; F(q2 &amp; Fq3))
+
+</pre>
+
+<p>
+with
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">genltl --ccj-alpha=3 --lbt
+</pre>
+</div>
+<pre class="example">
+&amp; F &amp; p0 F &amp; p1 F p2 F &amp; p3 F &amp; p4 F p5
+
+</pre>
+
+<p>
+This is because most tools using <code>lbt</code>'s syntax require atomic
+propositions to have the form <code>pNN</code>.
+</p>
+
+
+<p>
+Five options provide lists of unrelated LTL formulas, taken from the
+literature (see the <a href="./man/genltl.1.html"><code>genltl</code></a>(1) man page for references):
+<code>--dac-patterns</code>, <code>--eh-patterns</code>, <code>--hkrss-patterns</code>, <code>--p-patterns</code>,
+and <code>--sb-patterns</code>.  With these options, the range is used to select
+a subset of the list of formulas.  Without range, all formulas are
+used.  Here is the complete list:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">genltl --dac --eh --hkrss --p --sb --format=<span class="org-string">'%F=%L,%f'</span>
+</pre>
+</div>
+
+<pre class="example">
+dac-patterns=1,G!p0
+dac-patterns=2,Fp0 -&gt; (!p1 U p0)
+dac-patterns=3,G(p0 -&gt; G!p1)
+dac-patterns=4,G((p0 &amp; !p1 &amp; Fp1) -&gt; (!p2 U p1))
+dac-patterns=5,G((p0 &amp; !p1) -&gt; (!p2 W p1))
+dac-patterns=6,Fp0
+dac-patterns=7,!p0 W (!p0 &amp; p1)
+dac-patterns=8,G!p0 | F(p0 &amp; Fp1)
+dac-patterns=9,G((p0 &amp; !p1) -&gt; (!p1 W (!p1 &amp; p2)))
+dac-patterns=10,G((p0 &amp; !p1) -&gt; (!p1 U (!p1 &amp; p2)))
+dac-patterns=11,!p0 W (p0 W (!p0 W (p0 W G!p0)))
+dac-patterns=12,Fp0 -&gt; ((!p0 &amp; !p1) U (p0 | ((!p0 &amp; p1) U (p0 | ((!p0 &amp; !p1) U (p0 | ((!p0 &amp; p1) U (p0 | (!p1 U p0)))))))))
+dac-patterns=13,Fp0 -&gt; (!p0 U (p0 &amp; (!p1 W (p1 W (!p1 W (p1 W G!p1))))))
+dac-patterns=14,G((p0 &amp; Fp1) -&gt; ((!p1 &amp; !p2) U (p1 | ((!p1 &amp; p2) U (p1 | ((!p1 &amp; !p2) U (p1 | ((!p1 &amp; p2) U (p1 | (!p2 U p1))))))))))
+dac-patterns=15,G(p0 -&gt; ((!p1 &amp; !p2) U (p2 | ((p1 &amp; !p2) U (p2 | ((!p1 &amp; !p2) U (p2 | ((p1 &amp; !p2) U (p2 | (!p1 W p2) | Gp1)))))))))
+dac-patterns=16,Gp0
+dac-patterns=17,Fp0 -&gt; (p1 U p0)
+dac-patterns=18,G(p0 -&gt; Gp1)
+dac-patterns=19,G((p0 &amp; !p1 &amp; Fp1) -&gt; (p2 U p1))
+dac-patterns=20,G((p0 &amp; !p1) -&gt; (p2 W p1))
+dac-patterns=21,!p0 W p1
+dac-patterns=22,Fp0 -&gt; (!p1 U (p0 | p2))
+dac-patterns=23,G!p0 | F(p0 &amp; (!p1 W p2))
+dac-patterns=24,G((p0 &amp; !p1 &amp; Fp1) -&gt; (!p2 U (p1 | p3)))
+dac-patterns=25,G((p0 &amp; !p1) -&gt; (!p2 W (p1 | p3)))
+dac-patterns=26,G(p0 -&gt; Fp1)
+dac-patterns=27,Fp0 -&gt; ((p1 -&gt; (!p0 U (!p0 &amp; p2))) U p0)
+dac-patterns=28,G(p0 -&gt; G(p1 -&gt; Fp2))
+dac-patterns=29,G((p0 &amp; !p1 &amp; Fp1) -&gt; ((p2 -&gt; (!p1 U (!p1 &amp; p3))) U p1))
+dac-patterns=30,G((p0 &amp; !p1) -&gt; ((p2 -&gt; (!p1 U (!p1 &amp; p3))) W p1))
+dac-patterns=31,Fp0 -&gt; (!p0 U (!p0 &amp; p1 &amp; X(!p0 U p2)))
+dac-patterns=32,Fp0 -&gt; (!p1 U (p0 | (!p1 &amp; p2 &amp; X(!p1 U p3))))
+dac-patterns=33,G!p0 | (!p0 U ((p0 &amp; Fp1) -&gt; (!p1 U (!p1 &amp; p2 &amp; X(!p1 U p3)))))
+dac-patterns=34,G((p0 &amp; Fp1) -&gt; (!p2 U (p1 | (!p2 &amp; p3 &amp; X(!p2 U p4)))))
+dac-patterns=35,G(p0 -&gt; (Fp1 -&gt; (!p1 U (p2 | (!p1 &amp; p3 &amp; X(!p1 U p4))))))
+dac-patterns=36,F(p0 &amp; XFp1) -&gt; (!p0 U p2)
+dac-patterns=37,Fp0 -&gt; (!(!p0 &amp; p1 &amp; X(!p0 U (!p0 &amp; p2))) U (p0 | p3))
+dac-patterns=38,G!p0 | (!p0 U (p0 &amp; (F(p1 &amp; XFp2) -&gt; (!p1 U p3))))
+dac-patterns=39,G((p0 &amp; Fp1) -&gt; (!(!p1 &amp; p2 &amp; X(!p1 U (!p1 &amp; p3))) U (p1 | p4)))
+dac-patterns=40,G(p0 -&gt; ((!(!p1 &amp; p2 &amp; X(!p1 U (!p1 &amp; p3))) U (p1 | p4)) | G!(p2 &amp; XFp3)))
+dac-patterns=41,G((p0 &amp; XFp1) -&gt; XF(p1 &amp; Fp2))
+dac-patterns=42,Fp0 -&gt; (((p1 &amp; X(!p0 U p2)) -&gt; X(!p0 U (p2 &amp; Fp3))) U p0)
+dac-patterns=43,G(p0 -&gt; G((p1 &amp; XFp2) -&gt; X(!p2 U (p2 &amp; Fp3))))
+dac-patterns=44,G((p0 &amp; Fp1) -&gt; (((p2 &amp; X(!p1 U p3)) -&gt; X(!p1 U (p3 &amp; Fp4))) U p1))
+dac-patterns=45,G(p0 -&gt; (((p1 &amp; X(!p2 U p3)) -&gt; X(!p2 U (p3 &amp; Fp4))) U (p2 | G((p1 &amp; X(!p2 U p3)) -&gt; X(!p2 U (p3 &amp; Fp4))))))
+dac-patterns=46,G(p0 -&gt; F(p1 &amp; XFp2))
+dac-patterns=47,Fp0 -&gt; ((p1 -&gt; (!p0 U (!p0 &amp; p2 &amp; X(!p0 U p3)))) U p0)
+dac-patterns=48,G(p0 -&gt; G(p1 -&gt; (p2 &amp; XFp3)))
+dac-patterns=49,G((p0 &amp; Fp1) -&gt; ((p2 -&gt; (!p1 U (!p1 &amp; p3 &amp; X(!p1 U p4)))) U p1))
+dac-patterns=50,G(p0 -&gt; ((p1 -&gt; (!p2 U (!p2 &amp; p3 &amp; X(!p2 U p4)))) U (p2 | G(p1 -&gt; (p3 &amp; XFp4)))))
+dac-patterns=51,G(p0 -&gt; F(p1 &amp; !p2 &amp; X(!p2 U p3)))
+dac-patterns=52,Fp0 -&gt; ((p1 -&gt; (!p0 U (!p0 &amp; p2 &amp; !p3 &amp; X((!p0 &amp; !p3) U p4)))) U p0)
+dac-patterns=53,G(p0 -&gt; G(p1 -&gt; (p2 &amp; !p3 &amp; X(!p3 U p4))))
+dac-patterns=54,G((p0 &amp; Fp1) -&gt; ((p2 -&gt; (!p1 U (!p1 &amp; p3 &amp; !p4 &amp; X((!p1 &amp; !p4) U p5)))) U p1))
+dac-patterns=55,G(p0 -&gt; ((p1 -&gt; (!p2 U (!p2 &amp; p3 &amp; !p4 &amp; X((!p2 &amp; !p4) U p5)))) U (p2 | G(p1 -&gt; (p3 &amp; !p4 &amp; X(!p4 U p5))))))
+eh-patterns=1,p0 U (p1 &amp; Gp2)
+eh-patterns=2,p0 U (p1 &amp; X(p2 U p3))
+eh-patterns=3,p0 U (p1 &amp; X(p2 &amp; F(p3 &amp; XF(p4 &amp; XF(p5 &amp; XFp6)))))
+eh-patterns=4,F(p0 &amp; XGp1)
+eh-patterns=5,F(p0 &amp; X(p1 &amp; XFp2))
+eh-patterns=6,F(p0 &amp; X(p1 U p2))
+eh-patterns=7,FGp0 | GFp1
+eh-patterns=8,G(p0 -&gt; (p1 U p2))
+eh-patterns=9,G(p0 &amp; XF(p1 &amp; XF(p2 &amp; XFp3)))
+eh-patterns=10,GFp0 &amp; GFp1 &amp; GFp2 &amp; GFp3 &amp; GFp4
+eh-patterns=11,(p0 U (p1 U p2)) | (p1 U (p2 U p0)) | (p2 U (p0 U p1))
+eh-patterns=12,G(p0 -&gt; (p1 U (Gp2 | Gp3)))
+hkrss-patterns=1,G(Fp0 &amp; F!p0)
+hkrss-patterns=2,GFp0 &amp; GF!p0
+hkrss-patterns=3,GF(!(p1 &lt;-&gt; Xp1) | !(p0 &lt;-&gt; Xp0))
+hkrss-patterns=4,GF(!(p1 &lt;-&gt; Xp1) | !(p0 &lt;-&gt; Xp0) | !(p2 &lt;-&gt; Xp2) | !(p3 &lt;-&gt; Xp3))
+hkrss-patterns=5,G!p0
+hkrss-patterns=6,G((p0 -&gt; F!p0) &amp; (!p0 -&gt; Fp0))
+hkrss-patterns=7,G(p0 -&gt; F(p0 &amp; p1))
+hkrss-patterns=8,G(p0 -&gt; F((!p0 &amp; p1 &amp; p2 &amp; p3) -&gt; Fp4))
+hkrss-patterns=9,G(p0 -&gt; F!p1)
+hkrss-patterns=10,G(p0 -&gt; Fp1)
+hkrss-patterns=11,G(p0 -&gt; F(p1 -&gt; Fp2))
+hkrss-patterns=12,G(p0 -&gt; F((p1 &amp; p2) -&gt; Fp3))
+hkrss-patterns=13,G((p0 -&gt; Fp1) &amp; (p2 -&gt; Fp3) &amp; (p4 -&gt; Fp5) &amp; (p6 -&gt; Fp7))
+hkrss-patterns=14,G(!p0 &amp; !p1)
+hkrss-patterns=15,G!(p0 &amp; p1)
+hkrss-patterns=16,G(p0 -&gt; p1)
+hkrss-patterns=17,G((p0 -&gt; !p1) &amp; (p1 -&gt; !p0))
+hkrss-patterns=18,G(!p0 -&gt; (p1 &lt;-&gt; !p2))
+hkrss-patterns=19,G((!p0 &amp; (p1 | p2 | p3)) -&gt; p4)
+hkrss-patterns=20,G((p0 &amp; p1) -&gt; (p2 | !(p3 &amp; p4)))
+hkrss-patterns=21,G((!p0 &amp; p1 &amp; !p2 &amp; !p3 &amp; !p4) -&gt; F(!p5 &amp; !p6 &amp; !p7 &amp; !p8))
+hkrss-patterns=22,G((p0 &amp; p1 &amp; !p2 &amp; !p3 &amp; !p4) -&gt; F(p5 &amp; !p6 &amp; !p7 &amp; !p8))
+hkrss-patterns=23,G(!p0 -&gt; !(p1 &amp; p2 &amp; p3 &amp; p4 &amp; p5))
+hkrss-patterns=24,G(!p0 -&gt; ((p1 &amp; p2 &amp; p3 &amp; p4) -&gt; !p5))
+hkrss-patterns=25,G((p0 &amp; p1) -&gt; (p2 | p3 | !(p4 &amp; p5)))
+hkrss-patterns=26,G((!p0 &amp; (p1 | p2 | p3 | p4)) -&gt; (!p5 &lt;-&gt; p6))
+hkrss-patterns=27,G((p0 &amp; p1) -&gt; (p2 | p3 | p4 | !(p5 &amp; p6)))
+hkrss-patterns=28,G((p0 &amp; p1) -&gt; (p2 | p3 | p4 | p5 | !(p6 &amp; p7)))
+hkrss-patterns=29,G((p0 &amp; p1 &amp; !p2 &amp; Xp2) -&gt; X(p3 | X(!p1 | p3)))
+hkrss-patterns=30,G((p0 &amp; p1 &amp; !p2 &amp; Xp2) -&gt; X(X!p1 | (p2 U (!p2 U (p2 U (!p1 | p3))))))
+hkrss-patterns=31,G(p0 &amp; p1 &amp; !p2 &amp; Xp2) -&gt; X(X!p1 | (p2 U (!p2 U (p2 U (!p1 | p3)))))
+hkrss-patterns=32,G(p0 -&gt; (p1 U (!p1 U (!p2 | p3))))
+hkrss-patterns=33,G(p0 -&gt; (p1 U (!p1 U (p2 | p3))))
+hkrss-patterns=34,G((!p0 &amp; p1) -&gt; Xp2)
+hkrss-patterns=35,G(p0 -&gt; X(p0 | p1))
+hkrss-patterns=36,G((!(p1 &lt;-&gt; Xp1) | !(p0 &lt;-&gt; Xp0) | !(p2 &lt;-&gt; Xp2) | !(p3 &lt;-&gt; Xp3)) -&gt; (X!p4 &amp; X(!(!(p1 &lt;-&gt; Xp1) | !(p0 &lt;-&gt; Xp0) | !(p2 &lt;-&gt; Xp2) | !(p3 &lt;-&gt; Xp3)) U p4)))
+hkrss-patterns=37,G((p0 &amp; !p1 &amp; Xp1 &amp; Xp0) -&gt; (p2 -&gt; Xp3))
+hkrss-patterns=38,G(p0 -&gt; X(!p0 U p1))
+hkrss-patterns=39,G((!p0 &amp; Xp0) -&gt; X((p0 U p1) | Gp0))
+hkrss-patterns=40,G((!p0 &amp; Xp0) -&gt; X(p0 U (p0 &amp; !p1 &amp; X(p0 &amp; p1))))
+hkrss-patterns=41,G((!p0 &amp; Xp0) -&gt; X(p0 U (p0 &amp; !p1 &amp; X(p0 &amp; p1 &amp; (p0 U (p0 &amp; !p1 &amp; X(p0 &amp; p1)))))))
+hkrss-patterns=42,G((p0 &amp; X!p0) -&gt; X(!p0 U (!p0 &amp; !p1 &amp; X(!p0 &amp; p1 &amp; (!p0 U (!p0 &amp; !p1 &amp; X(!p0 &amp; p1)))))))
+hkrss-patterns=43,G((p0 &amp; X!p0) -&gt; X(!p0 U (!p0 &amp; !p1 &amp; X(!p0 &amp; p1 &amp; (!p0 U (!p0 &amp; !p1 &amp; X(!p0 &amp; p1 &amp; (!p0 U (!p0 &amp; !p1 &amp; X(!p0 &amp; p1))))))))))
+hkrss-patterns=44,G((!p0 &amp; Xp0) -&gt; X(!(!p0 &amp; Xp0) U (!p1 &amp; Xp1)))
+hkrss-patterns=45,G(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X(!p0 | X!p0)))))))))))
+hkrss-patterns=46,G((Xp0 -&gt; p0) -&gt; (p1 &lt;-&gt; Xp1))
+hkrss-patterns=47,G((Xp0 -&gt; p0) -&gt; ((p1 -&gt; Xp1) &amp; (!p1 -&gt; X!p1)))
+hkrss-patterns=48,!p0 U G!((p1 &amp; p2) | (p3 &amp; p4) | (p2 &amp; p3) | (p2 &amp; p4) | (p1 &amp; p4) | (p1 &amp; p3))
+hkrss-patterns=49,!p0 U p1
+hkrss-patterns=50,(p0 U p1) | Gp0
+hkrss-patterns=51,p0 &amp; XG!p0
+hkrss-patterns=52,XG(p0 -&gt; (G!p1 | (!Xp1 U p2)))
+hkrss-patterns=53,XG((p0 &amp; !p1) -&gt; (G!p1 | (!p1 U p2)))
+hkrss-patterns=54,XG((p0 &amp; p1) -&gt; ((p1 U p2) | Gp1))
+hkrss-patterns=55,Xp0 &amp; G((!p0 &amp; Xp0) -&gt; XXp0)
+p-patterns=1,G(p0 -&gt; Fp1)
+p-patterns=2,(GFp1 &amp; GFp0) -&gt; GFp2
+p-patterns=3,G(p0 -&gt; (p1 &amp; (p2 U p3)))
+p-patterns=4,F(p0 | p1)
+p-patterns=5,GF(p0 | p1)
+p-patterns=6,(p0 U p1) -&gt; ((p2 U p3) | Gp2)
+p-patterns=7,G(p0 -&gt; (!p1 U (p1 U (!p1 &amp; (p2 R !p1)))))
+p-patterns=8,G(p0 -&gt; (p1 R !p2))
+p-patterns=9,G(!p0 -&gt; Fp0)
+p-patterns=10,G(p0 -&gt; F(p1 | p2))
+p-patterns=11,!(!(p0 | p1) U p2) &amp; G(p3 -&gt; !(!(p0 | p1) U p2))
+p-patterns=12,G!p0 -&gt; G!p1
+p-patterns=13,G(p0 -&gt; (G!p1 | (!p2 U p1)))
+p-patterns=14,G(p0 -&gt; (p1 R (p1 | !p2)))
+p-patterns=15,G((p0 &amp; p1) -&gt; (!p1 R (p0 | !p1)))
+p-patterns=16,G(p0 -&gt; F(p1 &amp; p2))
+p-patterns=17,G(p0 -&gt; (!p1 U (p1 U (p1 &amp; p2))))
+p-patterns=18,G(p0 -&gt; (!p1 U (p1 U (!p1 U (p1 U (p1 &amp; p2))))))
+p-patterns=19,GFp0 -&gt; GFp1
+p-patterns=20,GF(p0 | p1) &amp; GF(p1 | p2)
+sb-patterns=1,p0 U p1
+sb-patterns=2,p0 U (p1 U p2)
+sb-patterns=3,!(p0 U (p1 U p2))
+sb-patterns=4,GFp0 -&gt; GFp1
+sb-patterns=5,Fp0 U Gp1
+sb-patterns=6,Gp0 U p1
+sb-patterns=7,!(Fp0 &lt;-&gt; Fp1)
+sb-patterns=8,!(GFp0 -&gt; GFp1)
+sb-patterns=9,!(GFp0 &lt;-&gt; GFp1)
+sb-patterns=10,p0 R (p0 | p1)
+sb-patterns=11,(Xp0 U Xp1) | !X(p0 U p1)
+sb-patterns=12,(Xp0 U p1) | !X(p0 U (p0 &amp; p1))
+sb-patterns=13,G(p0 -&gt; Fp1) &amp; ((Xp0 U p1) | !X(p0 U (p0 &amp; p1)))
+sb-patterns=14,G(p0 -&gt; Fp1) &amp; ((Xp0 U Xp1) | !X(p0 U p1))
+sb-patterns=15,G(p0 -&gt; Fp1)
+sb-patterns=16,!G(p0 -&gt; X(p1 R p2))
+sb-patterns=17,!(FGp0 | FGp1)
+sb-patterns=18,G(Fp0 &amp; Fp1)
+sb-patterns=19,Fp0 &amp; F!p0
+sb-patterns=20,(p0 &amp; Xp1) R X(((p2 U p3) R p0) U (p2 R p0))
+sb-patterns=21,Gp2 | (G(p0 | GFp1) &amp; G(p2 | GF!p1)) | Gp0
+sb-patterns=22,Gp0 | Gp2 | (G(p0 | FGp1) &amp; G(p2 | FG!p1))
+sb-patterns=23,!(Gp2 | (G(p0 | GFp1) &amp; G(p2 | GF!p1)) | Gp0)
+sb-patterns=24,!(Gp0 | Gp2 | (G(p0 | FGp1) &amp; G(p2 | FG!p1)))
+sb-patterns=25,G(p0 | XGp1) &amp; G(p2 | XG!p1)
+sb-patterns=26,G(p0 | (Xp1 &amp; X!p1))
+sb-patterns=27,p0 | (p1 U p0)
+</pre>
+
+<p>
+Note that <code>--sb-patterns=2 --sb-patterns=4 --sb-patterns=21..22</code> also
+have their complement formulas listed as <code>--sb-patterns=3
+--sb-patterns=8 --sb-patterns=23..24</code>.  So if you build the set of
+formulas output by <code>genltl --sb-patterns</code> plus their negations, it will
+contain only 46 formulas, not 54.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">genltl --sb | ltlfilt --uniq --count
+genltl --sb --pos --neg | ltlfilt --uniq --count
+</pre>
+</div>
+<pre class="example">
+27
+46
+
+</pre>
+</div>
+</body>
+</html>

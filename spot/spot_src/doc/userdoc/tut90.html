@@ -1,0 +1,809 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:50 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The bdd_dict interface (advanced topic)</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Description of the bdd_dict interface."
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tut.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title">The bdd_dict interface (advanced topic)</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org5772485">The purpose of <code>bdd_dict</code></a></li>
+<li><a href="#ap">Prolonging the association between a BDD variable and an atomic proposition</a></li>
+<li><a href="#anonymous">Anonymous BDD variables</a></li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+Spot uses BDD for multiple purposes.
+</p>
+
+<p>
+The most common one is for labeling edges of automata: each edge
+stores a BDD representing its guard (i.e., a Boolean function over
+atomic propositions).  Note that the automaton is still represented as
+a graph (with a <a href="https://spot.lrde.epita.fr/ipynb/twagraph-internals.html">vector of states and a vector of edges</a>) and the BDD is
+only used for the guard.  This differs from symbolic representations
+where the entire transition structure is represented as one large BDD.
+</p>
+
+<p>
+There are other algorithms where BDDs are used from different tasks.
+For instance, our simulation-based reduction function computes a
+<b>signature</b> of each state as a BDD that is essentially the disjunction
+of all outgoing edges, represented by their guard, their acceptance
+sets, and their destination <b>classes</b>.  Also the translation of LTL
+formulas to transition-based generalized Büchi automata is using an
+intermediate representation of states that is similar to the
+aforementioned signatures, excepts that classes are replaced by
+subformulas.
+</p>
+
+<p>
+From the point of view of the BDD library, BDDs are just DAGs with
+nodes labeled by BDD variables (numbered from 0).  From the point of
+view of Spot's algorithm, these BDD variables have a meaning.  For
+instance if we want to synchronize two automata that have guards over
+the atomic propositions \(a\) and \(b\), we need to make sure that both
+automata agree on the BDD variables used to represent \(a\) and \(b\).
+</p>
+
+<div id="outline-container-org5772485" class="outline-2">
+<h2 id="org5772485">The purpose of <code>bdd_dict</code></h2>
+<div class="outline-text-2" id="text-org5772485">
+<p>
+The <code>spot::bdd_dict</code> object is in charge of allocating BDD variables,
+and ensuring that multiple users reuse the same variables for similar
+purpose.  When a <code>twa_graph</code> automaton is constructed, it takes a
+<code>bdd_dict</code> as argument.  Every time an atomic proposition is
+registered through the <code>twa::register_ap()</code> method, the <code>bdd_dict</code>
+is queried.
+</p>
+
+<p>
+As an example, the following two automata share their <code>bdd_dict</code>, and
+although they do not declare their atomic propositions in the same
+order, they get compatible variable numbers.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twa/twagraph.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">bdd_dict_ptr</span> <span class="org-variable-name">dict</span> = <span class="org-constant">spot</span>::make_bdd_dict();
+  <span class="org-constant">spot</span>::<span class="org-type">twa_graph_ptr</span> <span class="org-variable-name">aut1</span> = <span class="org-constant">spot</span>::make_twa_graph(dict);
+  <span class="org-type">int</span> <span class="org-variable-name">ap1a</span> = aut1-&gt;register_ap(<span class="org-string">"a"</span>);
+  <span class="org-type">int</span> <span class="org-variable-name">ap1b</span> = aut1-&gt;register_ap(<span class="org-string">"b"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"aut1: a="</span> &lt;&lt; ap1a &lt;&lt; <span class="org-string">" b="</span> &lt;&lt; ap1b &lt;&lt; <span class="org-string">'\n'</span>;
+
+  <span class="org-constant">spot</span>::<span class="org-type">twa_graph_ptr</span> <span class="org-variable-name">aut2</span> = <span class="org-constant">spot</span>::make_twa_graph(dict);
+  <span class="org-type">int</span> <span class="org-variable-name">ap2c</span> = aut2-&gt;register_ap(<span class="org-string">"c"</span>);
+  <span class="org-type">int</span> <span class="org-variable-name">ap2b</span> = aut2-&gt;register_ap(<span class="org-string">"b"</span>);
+  <span class="org-type">int</span> <span class="org-variable-name">ap2a</span> = aut2-&gt;register_ap(<span class="org-string">"a"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"aut2: a="</span> &lt;&lt; ap2a &lt;&lt; <span class="org-string">" b="</span> &lt;&lt; ap2b &lt;&lt; <span class="org-string">" c="</span> &lt;&lt; ap2c &lt;&lt; <span class="org-string">'\n'</span>;
+}
+</pre>
+</div>
+
+<pre class="example">
+aut1: a=0 b=1
+aut2: a=0 b=1 c=2
+
+</pre>
+
+<p>
+Contrast the above result with the following example, where the two
+automata use different <code>bdd_dict</code>:
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twa/twagraph.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">bdd_dict_ptr</span> <span class="org-variable-name">dict1</span> = <span class="org-constant">spot</span>::make_bdd_dict();
+  <span class="org-constant">spot</span>::<span class="org-type">twa_graph_ptr</span> <span class="org-variable-name">aut1</span> = <span class="org-constant">spot</span>::make_twa_graph(dict1);
+  <span class="org-type">int</span> <span class="org-variable-name">ap1a</span> = aut1-&gt;register_ap(<span class="org-string">"a"</span>);
+  <span class="org-type">int</span> <span class="org-variable-name">ap1b</span> = aut1-&gt;register_ap(<span class="org-string">"b"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"aut1: a="</span> &lt;&lt; ap1a &lt;&lt; <span class="org-string">" b="</span> &lt;&lt; ap1b &lt;&lt; <span class="org-string">'\n'</span>;
+
+  <span class="org-constant">spot</span>::<span class="org-type">bdd_dict_ptr</span> <span class="org-variable-name">dict2</span> = <span class="org-constant">spot</span>::make_bdd_dict();
+  <span class="org-constant">spot</span>::<span class="org-type">twa_graph_ptr</span> <span class="org-variable-name">aut2</span> = <span class="org-constant">spot</span>::make_twa_graph(dict2);
+  <span class="org-type">int</span> <span class="org-variable-name">ap2c</span> = aut2-&gt;register_ap(<span class="org-string">"c"</span>);
+  <span class="org-type">int</span> <span class="org-variable-name">ap2b</span> = aut2-&gt;register_ap(<span class="org-string">"b"</span>);
+  <span class="org-type">int</span> <span class="org-variable-name">ap2a</span> = aut2-&gt;register_ap(<span class="org-string">"a"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"aut2: a="</span> &lt;&lt; ap2a &lt;&lt; <span class="org-string">" b="</span> &lt;&lt; ap2b &lt;&lt; <span class="org-string">" c="</span> &lt;&lt; ap2c &lt;&lt; <span class="org-string">'\n'</span>;
+}
+</pre>
+</div>
+
+<pre class="example">
+aut1: a=0 b=1
+aut2: a=2 b=1 c=0
+
+</pre>
+
+<p>
+For this reason, operations like <code>spot::product(aut1, aut2)</code> will
+require that <code>aut1-&gt;get_dict() == aut2-&gt;get_dict()</code>.
+</p>
+
+
+<p>
+In Python, many functions that would take an explicit <code>bdd_dict</code> in C++ will
+default to some global <code>bdd_dict</code> instead.  So we can do:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+<span class="org-variable-name">aut1</span> = spot.make_twa_graph()
+<span class="org-variable-name">ap1a</span> = aut1.register_ap(<span class="org-string">"a"</span>)
+<span class="org-variable-name">ap1b</span> = aut1.register_ap(<span class="org-string">"b"</span>)
+<span class="org-keyword">print</span>(<span class="org-string">"aut1: a={} b={}"</span>.<span class="org-builtin">format</span>(ap1a, ap1b))
+<span class="org-variable-name">aut2</span> = spot.make_twa_graph()
+<span class="org-variable-name">ap2c</span> = aut2.register_ap(<span class="org-string">"c"</span>)
+<span class="org-variable-name">ap2b</span> = aut2.register_ap(<span class="org-string">"b"</span>)
+<span class="org-variable-name">ap2a</span> = aut2.register_ap(<span class="org-string">"a"</span>)
+<span class="org-keyword">print</span>(<span class="org-string">"aut1: a={} b={} c={}"</span>.<span class="org-builtin">format</span>(ap2a, ap2b, ap2c))
+</pre>
+</div>
+
+<pre class="example">
+aut1: a=0 b=1
+aut1: a=0 b=1 c=2
+
+</pre>
+
+<p>
+In that case we did not mention any <code>bdd_dict</code>, but there is one that
+is implicitly used in both cases.  Similarly, when we call
+<code>spot.translate()</code> the same global <code>bdd_dict</code> is used by default.
+</p>
+
+<p>
+What really confuses people, is that the association between an atomic
+proposition (<code>a</code>, <code>b</code>, &#x2026;) and a BDD variable (<code>0</code>, <code>1</code>, &#x2026;)  will
+only be held by the <code>bdd_dict</code> for the lifetime of the objects (here the
+automata) that registered this association to the <code>bdd_dict</code>.
+</p>
+
+<p>
+Here is a new C++ example where we use the <code>bdd_dict::dump()</code> method
+to display the contents of the <code>bdd_dict</code> (this method is only meant
+for debugging, please do not rely on its output).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twa/twagraph.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">bdd_dict_ptr</span> <span class="org-variable-name">dict</span> = <span class="org-constant">spot</span>::make_bdd_dict();
+
+  <span class="org-constant">spot</span>::<span class="org-type">twa_graph_ptr</span> <span class="org-variable-name">aut1</span> = <span class="org-constant">spot</span>::make_twa_graph(dict);
+  <span class="org-type">int</span> <span class="org-variable-name">ap1a</span> = aut1-&gt;register_ap(<span class="org-string">"a"</span>);
+  <span class="org-type">int</span> <span class="org-variable-name">ap1b</span> = aut1-&gt;register_ap(<span class="org-string">"b"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"aut1@"</span> &lt;&lt; aut1 &lt;&lt; <span class="org-string">": a="</span> &lt;&lt; ap1a &lt;&lt; <span class="org-string">" b="</span> &lt;&lt; ap1b &lt;&lt; <span class="org-string">'\n'</span>;
+  dict-&gt;dump(<span class="org-constant">std</span>::cout) &lt;&lt; <span class="org-string">"---\n"</span>;
+
+  <span class="org-constant">spot</span>::<span class="org-type">twa_graph_ptr</span> <span class="org-variable-name">aut2</span> = <span class="org-constant">spot</span>::make_twa_graph(dict);
+  <span class="org-type">int</span> <span class="org-variable-name">ap2c</span> = aut2-&gt;register_ap(<span class="org-string">"c"</span>);
+  <span class="org-type">int</span> <span class="org-variable-name">ap2b</span> = aut2-&gt;register_ap(<span class="org-string">"b"</span>);
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"aut2@"</span> &lt;&lt; aut2 &lt;&lt; <span class="org-string">": b="</span> &lt;&lt; ap2b &lt;&lt; <span class="org-string">" c="</span> &lt;&lt; ap2c &lt;&lt; <span class="org-string">'\n'</span>;
+  dict-&gt;dump(<span class="org-constant">std</span>::cout) &lt;&lt; <span class="org-string">"---\n"</span>;
+
+  aut1 = <span class="org-constant">nullptr</span>;
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"aut1 destroyed\n"</span>;
+  dict-&gt;dump(<span class="org-constant">std</span>::cout) &lt;&lt; <span class="org-string">"---\n"</span>;
+
+  aut2 = <span class="org-constant">nullptr</span>;
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"aut2 destroyed\n"</span>;
+  dict-&gt;dump(<span class="org-constant">std</span>::cout);
+}
+</pre>
+</div>
+
+<pre class="example">
+aut1@0x55c56d23d340: a=0 b=1
+Variable Map:
+ 0 Var[a] x1 { 0x55c56d23d340 }
+ 1 Var[b] x1 { 0x55c56d23d340 }
+Anonymous lists:
+  [0] 
+Free list:
+
+---
+aut2@0x55c56d23e8d0: b=1 c=2
+Variable Map:
+ 0 Var[a] x1 { 0x55c56d23d340 }
+ 1 Var[b] x2 { 0x55c56d23d340 0x55c56d23e8d0 }
+ 2 Var[c] x1 { 0x55c56d23e8d0 }
+Anonymous lists:
+  [0] 
+Free list:
+
+---
+aut1 destroyed
+Variable Map:
+ 0 Free
+ 1 Var[b] x1 { 0x55c56d23e8d0 }
+ 2 Var[c] x1 { 0x55c56d23e8d0 }
+Anonymous lists:
+  [0] 
+Free list:
+  (0, 1)
+---
+aut2 destroyed
+Variable Map:
+ 0 Free
+ 1 Free
+ 2 Free
+Anonymous lists:
+  [0] 
+Free list:
+  (0, 3)
+</pre>
+
+<p>
+For each BDD variable registered to the <code>bdd_dict</code>, we have one line
+that gives: the variable number, its meaning (e.g. <code>Var[b]</code>), its
+registration count (<code>x2</code>), and a list of pointers to the objects that
+registered the association.
+</p>
+
+<p>
+Every time <code>twa::register_ap()</code> is called, it calls a similar function
+in the <code>bdd_dict</code> to check for an existing association or register a
+new one.  When <code>aut1</code> is deleted, it unregisters all its variables,
+causing variable <code>0</code> to become free.  The free list is actually a list
+of pairs representing ranges of free variables that can be reassigned
+by the BDD dict when needed.  (The <b>anonymous list</b> serves when
+<a href="#anonymous"><b>anonymous BDD variables</b></a> are used.)
+</p>
+
+<p>
+Such a low-level registration is usually handled by the following
+interface:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-comment-delimiter">// </span><span class="org-comment">return a BDD variable number for f</span>
+<span class="org-type">int</span> <span class="org-constant">bdd_dict</span>::<span class="org-function-name">register_proposition</span>(<span class="org-type">formula</span> <span class="org-variable-name">f</span>, <span class="org-keyword">const</span> <span class="org-type">void</span>* <span class="org-variable-name">for_me</span>);
+<span class="org-comment-delimiter">// </span><span class="org-comment">release the BDD variable</span>
+<span class="org-type">void</span> <span class="org-constant">bdd_dict</span>::<span class="org-function-name">unregister_variable</span>(<span class="org-type">int</span> <span class="org-variable-name">var</span>, <span class="org-keyword">const</span> <span class="org-type">void</span>* <span class="org-variable-name">me</span>);
+<span class="org-comment-delimiter">// </span><span class="org-comment">release all BDD variables registered by me</span>
+<span class="org-type">void</span> <span class="org-constant">bdd_dict</span>::<span class="org-function-name">unregister_all_my_variables</span>(<span class="org-keyword">const</span> <span class="org-type">void</span>* <span class="org-variable-name">me</span>);
+<span class="org-comment-delimiter">// </span><span class="org-comment">register the same variables as another object</span>
+<span class="org-type">void</span> <span class="org-constant">bdd_dict</span>::<span class="org-function-name">register_all_variables_of</span>(<span class="org-keyword">const</span> <span class="org-type">void</span>* <span class="org-variable-name">from_other</span>,
+                                         <span class="org-keyword">const</span> <span class="org-type">void</span>* <span class="org-variable-name">for_me</span>);
+</pre>
+</div>
+
+<p>
+The last function may be bit tricky to use, because we need to be sure
+that another object has registered some variables.  You can rely on
+the fact that each <code>twa</code> automaton register its variables this way.
+</p>
+
+<p>
+Now, in most cases, there is no need to worry about the <code>bdd_dict</code>.
+Automata will register and unregister variables as needed.  Other
+objects like <code>spot::twa_word</code> will do the same.
+</p>
+
+<p>
+There are at least two situations where one may need to deal with the
+<code>bdd_dict</code>:
+</p>
+<ol class="org-ol">
+<li>One case is when <a href="#ap">creating a derived object that store some BDD
+representing a formula over atomic proposition</a> (but without
+reference to their original automaton).</li>
+<li>Another case is when <a href="#anonymous">more BDD variables (maybe
+unrelated to atomic propositions) are needed</a>.</li>
+</ol>
+
+<p>
+These two cases are discussed in the next sections.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfa78b05" class="outline-2">
+<h2 id="ap"><a id="orgfa78b05"></a>Prolonging the association between a BDD variable and an atomic proposition</h2>
+<div class="outline-text-2" id="text-ap">
+<p>
+Let us implement an object representing a set of transitions of the
+form \((src, guard, dest)\).  This can for instance be used to store
+all transition that belong to a certain acceptance set.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python" id="orgd79f545"><span class="org-keyword">import</span> spot
+
+<span class="org-keyword">class</span> <span class="org-type">trans_set</span>:
+    <span class="org-keyword">def</span> <span class="org-function-name">__init__</span>(<span class="org-keyword">self</span>, <span class="org-builtin">dict</span>):
+        <span class="org-keyword">self</span>.<span class="org-builtin">set</span> = <span class="org-builtin">set</span>()
+        <span class="org-keyword">self</span>.<span class="org-builtin">dict</span> = <span class="org-builtin">dict</span>
+    <span class="org-keyword">def</span> <span class="org-function-name">add_trans</span>(<span class="org-keyword">self</span>, src, guard, dst):
+        <span class="org-keyword">self</span>.<span class="org-builtin">set</span>.add((src, guard, dst))
+    <span class="org-keyword">def</span> <span class="org-function-name">str_trans</span>(<span class="org-keyword">self</span>, src, guard, dst):
+        <span class="org-variable-name">f</span> = spot.bdd_format_formula(<span class="org-keyword">self</span>.<span class="org-builtin">dict</span>, guard)
+        <span class="org-keyword">return</span> <span class="org-string">"({},{},{})"</span>.<span class="org-builtin">format</span>(src, f, dst)
+    <span class="org-keyword">def</span> <span class="org-function-name">__str__</span>(<span class="org-keyword">self</span>):
+        <span class="org-keyword">return</span> <span class="org-string">'{'</span> + <span class="org-string">","</span>.join([ <span class="org-keyword">self</span>.str_trans(*t) <span class="org-keyword">for</span> t <span class="org-keyword">in</span> <span class="org-keyword">self</span>.<span class="org-builtin">set</span> ]) + <span class="org-string">'}'</span>
+
+<span class="org-keyword">def</span> <span class="org-function-name">accepting_set</span>(aut, num):
+    <span class="org-variable-name">ts</span> = trans_set(aut.get_dict())
+    <span class="org-keyword">for</span> e <span class="org-keyword">in</span> aut.edges():
+        <span class="org-keyword">if</span> e.acc.has(num):
+            ts.add_trans(e.src, e.cond, e.dst)
+    <span class="org-keyword">return</span> ts
+</pre>
+</div>
+
+<p>
+The above code has two definitions.
+</p>
+<ol class="org-ol">
+<li>The <code>trans_set</code> class is a set of transitions that can be printed.
+It stores a <code>bdd_dict</code> so that it can print the guard of the
+transition.</li>
+<li>The <code>accepting_set</code> function iterates over an automaton, and saves
+all transitions that belong to a given acceptance set number.</li>
+</ol>
+
+<p>
+For instance we can now translate an automaton, compute its acceptance
+set 0, and print it as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python">
+<span class="org-variable-name">aut</span> = spot.translate(<span class="org-string">'GF(a &lt;-&gt; XXa)'</span>)
+<span class="org-variable-name">ts</span> = accepting_set(aut, 0)
+<span class="org-keyword">print</span>(ts)
+</pre>
+</div>
+<pre class="example">
+{(0,a,3),(1,a,1),(2,!a,2),(3,!a,0)}
+
+</pre>
+
+<p>
+The code of <code>trans_set</code> is in fact bogus.  The problem is that it
+assumes the association between the atomic propositions and the BDD
+variable is still available when the <code>str_trans</code> method is called.
+However, that might not be the case.
+</p>
+
+<p>
+The following call sequence demonstrates the problem:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python">
+<span class="org-keyword">try</span>:
+  <span class="org-variable-name">ts</span> = accepting_set(spot.translate(<span class="org-string">'GF(a &lt;-&gt; XXa)'</span>), 0)
+  <span class="org-keyword">print</span>(ts)
+<span class="org-keyword">except</span> <span class="org-type">RuntimeError</span> <span class="org-keyword">as</span> e:
+  <span class="org-keyword">print</span>(<span class="org-string">"ERROR:"</span>, e)
+</pre>
+</div>
+
+<pre class="example">
+ERROR: bdd_to_formula() was passed a bdd with a variable that is not in the dictionary
+
+</pre>
+
+<p>
+In this case, the temporary automaton constructed by
+<code>spot.translate()</code> and passed to the <code>accepting_set()</code> function is
+destroyed right after the <code>ts</code> object has been constructed.  When the
+automaton is destroyed, it removes all its associations from the
+<code>bdd_dict</code>.  This means that before the <code>print(ts)</code> the dictionary
+that was used by the automaton, and that is still stored in the <code>ts</code>
+objects is now empty: calling <code>bdd_format_formula()</code> raises an
+exception.
+</p>
+
+<p>
+This can be fixed in a couple of ways.  The easy way is to store the
+automaton inside the <code>trans_set</code> object, to ensure that it will live
+at least as long as the <code>trans_set</code> object.  But maybe the automaton
+is too big and we really want to get rid of it?  In this case
+<code>trans_set</code> should tell the <code>bdd_dict</code> that it want to retain the
+associations.  The easiest way in this case is to call the
+<code>register_all_variables_of()</code> method, because we know that each
+automaton registers its variables.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+
+<span class="org-keyword">class</span> <span class="org-type">trans_set</span>:
+    <span class="org-keyword">def</span> <span class="org-function-name">__init__</span>(<span class="org-keyword">self</span>, aut):
+        <span class="org-keyword">self</span>.<span class="org-builtin">set</span> = <span class="org-builtin">set</span>()
+        <span class="org-keyword">self</span>.<span class="org-builtin">dict</span> = aut.get_dict()
+        <span class="org-keyword">self</span>.<span class="org-builtin">dict</span>.register_all_variables_of(aut, <span class="org-keyword">self</span>)
+    <span class="org-keyword">def</span> <span class="org-function-name">__del__</span>(<span class="org-keyword">self</span>):
+        <span class="org-keyword">self</span>.<span class="org-builtin">dict</span>.unregister_all_my_variables(<span class="org-keyword">self</span>)
+    <span class="org-keyword">def</span> <span class="org-function-name">add_trans</span>(<span class="org-keyword">self</span>, src, guard, dest):
+        <span class="org-keyword">self</span>.<span class="org-builtin">set</span>.add((src, guard, dest))
+    <span class="org-keyword">def</span> <span class="org-function-name">str_trans</span>(<span class="org-keyword">self</span>, src, guard, dest):
+        <span class="org-variable-name">f</span> = spot.bdd_format_formula(<span class="org-keyword">self</span>.<span class="org-builtin">dict</span>, guard)
+        <span class="org-keyword">return</span> <span class="org-string">"({},{},{})"</span>.<span class="org-builtin">format</span>(src, f, dest)
+    <span class="org-keyword">def</span> <span class="org-function-name">__str__</span>(<span class="org-keyword">self</span>):
+        <span class="org-keyword">return</span> <span class="org-string">'{'</span> + <span class="org-string">","</span>.join([ <span class="org-keyword">self</span>.str_trans(*t) <span class="org-keyword">for</span> t <span class="org-keyword">in</span> <span class="org-keyword">self</span>.<span class="org-builtin">set</span> ]) + <span class="org-string">'}'</span>
+
+<span class="org-keyword">def</span> <span class="org-function-name">accepting_set</span>(aut, num):
+    <span class="org-variable-name">ts</span> = trans_set(aut)
+    <span class="org-keyword">for</span> e <span class="org-keyword">in</span> aut.edges():
+        <span class="org-keyword">if</span> e.acc.has(num):
+            ts.add_trans(e.src, e.cond, e.dst)
+    <span class="org-keyword">return</span> ts
+
+<span class="org-keyword">try</span>:
+  <span class="org-variable-name">ts</span> = accepting_set(spot.translate(<span class="org-string">'GF(a &lt;-&gt; XXa)'</span>), 0)
+  <span class="org-keyword">print</span>(ts)
+<span class="org-keyword">except</span> <span class="org-type">RuntimeError</span> <span class="org-keyword">as</span> e:
+  <span class="org-keyword">print</span>(<span class="org-string">"ERROR:"</span>, e)
+</pre>
+</div>
+
+<pre class="example">
+{(0,a,3),(1,a,1),(2,!a,2),(3,!a,0)}
+
+</pre>
+
+<p>
+Notice that we have also added a destructor to <code>trans_set</code> to
+unregister all the variables.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-orgfd8bd0c" class="outline-2">
+<h2 id="anonymous"><a id="orgfd8bd0c"></a>Anonymous BDD variables</h2>
+<div class="outline-text-2" id="text-anonymous">
+<p>
+Another scenario where working with a <code>bdd_dict</code> is needed is when one
+needs to allocate <b>anonymous BDD variables</b>.  These are variables that
+are not attached to any atomic proposition, and that can be used by
+one algorithm privately.  If multiple algorithms (or objects) register
+anonymous variables, the <code>bdd_dict</code> will reuse anonymous variables
+allocated to other algorithms.  One can allocate multiple anonymous
+variables with the following <code>bdd_dict</code> method:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++"><span class="org-type">int</span> <span class="org-constant">bdd_dict</span>::<span class="org-function-name">register_anonymous_variables</span>(<span class="org-type">int</span> <span class="org-variable-name">n</span>, <span class="org-keyword">const</span> <span class="org-type">void</span>* <span class="org-variable-name">for_me</span>);
+</pre>
+</div>
+
+<p>
+A range of <code>n</code> variables will be allocated starting at the returned
+index.
+</p>
+
+<p>
+For instance, let's say the our <code>trans_set</code> should now store a
+symbolic representation of a transition relation.  For simplicity we
+assume we just want to store set of pairs <code>(src,dst)</code>: each pair will
+be a conjunction \(v_{src}\land v'_{dst}\) between two BDD variables
+taken from two ranges (\(v_i\) representing a source state \(i\) and \(v'i\)
+representing a destination state \(i\)), and the entire set will be a
+disjunction of all these pairs.  If the automaton has \(n\) states, we
+want to allocate \(2n\) BDD variables for this purpose.  We call these
+variables <b>anonymous</b> because their meaning is unknown the the
+<code>bdd_dict</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+<span class="org-keyword">from</span> buddy <span class="org-keyword">import</span> *
+
+<span class="org-keyword">class</span> <span class="org-type">trans_set</span>:
+    <span class="org-keyword">def</span> <span class="org-function-name">__init__</span>(<span class="org-keyword">self</span>, aut):
+        <span class="org-keyword">self</span>.<span class="org-builtin">dict</span> = <span class="org-variable-name">d</span> = aut.get_dict()
+        <span class="org-keyword">self</span>.num_states = <span class="org-variable-name">n</span> = aut.num_states()
+        <span class="org-keyword">self</span>.anonbase = <span class="org-variable-name">b</span> = d.register_anonymous_variables(2*n, <span class="org-keyword">self</span>)
+        <span class="org-variable-name">s</span> = bddfalse
+        <span class="org-keyword">for</span> e <span class="org-keyword">in</span> aut.edges():
+          <span class="org-variable-name">s</span> |= <span class="org-keyword">self</span>.src(e.src) &amp; <span class="org-keyword">self</span>.dst(e.dst)
+        <span class="org-keyword">self</span>.rel = s
+    <span class="org-keyword">def</span> <span class="org-function-name">src</span>(<span class="org-keyword">self</span>, n):
+        <span class="org-keyword">return</span> bdd_ithvar(<span class="org-keyword">self</span>.anonbase + n)
+    <span class="org-keyword">def</span> <span class="org-function-name">dst</span>(<span class="org-keyword">self</span>, n):
+        <span class="org-keyword">return</span> bdd_ithvar(<span class="org-keyword">self</span>.anonbase + n + <span class="org-keyword">self</span>.num_states)
+    <span class="org-keyword">def</span> <span class="org-function-name">__del__</span>(<span class="org-keyword">self</span>):
+        <span class="org-keyword">self</span>.<span class="org-builtin">dict</span>.unregister_all_my_variables(<span class="org-keyword">self</span>)
+    <span class="org-keyword">def</span> <span class="org-function-name">__str__</span>(<span class="org-keyword">self</span>):
+        <span class="org-variable-name">isop</span> = spot.minato_isop(<span class="org-keyword">self</span>.rel)
+        <span class="org-variable-name">i</span> = isop.<span class="org-builtin">next</span>()
+        <span class="org-variable-name">res</span> = []
+        <span class="org-keyword">while</span> i != bddfalse:
+          <span class="org-variable-name">s</span> = bdd_var(i) - <span class="org-keyword">self</span>.anonbase
+          <span class="org-variable-name">d</span> = bdd_var(bdd_high(i)) - <span class="org-keyword">self</span>.anonbase - <span class="org-keyword">self</span>.num_states
+          res.append((s, d))
+          <span class="org-variable-name">i</span> = isop.<span class="org-builtin">next</span>()
+        <span class="org-keyword">return</span> <span class="org-builtin">str</span>(res)
+
+<span class="org-variable-name">ts</span> = trans_set(spot.translate(<span class="org-string">'GF(a &lt;-&gt; XXa)'</span>))
+<span class="org-keyword">print</span>(ts)
+</pre>
+</div>
+
+<pre class="example">
+[(0, 2), (0, 3), (1, 0), (1, 1), (2, 2), (2, 3), (3, 0), (3, 1)]
+
+</pre>
+</div>
+</div>
+</div>
+</body>
+</html>

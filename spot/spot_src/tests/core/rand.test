@@ -1,0 +1,151 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014, 2015, 2017, 2018, 2019 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+run 0 randltl -S -n 20 a b c --tree-size=10 \
+    --sere-priorities=and=0,andNLM=0 \
+    --boolean-priorities=equiv=0,implies=0,xor=0,and=0,not=0 \
+    --dump-priorities > stdout
+
+cat >expected <<EOF
+Use --sere-priorities to set the following SERE priorities:
+eword	1
+boolform	1
+star	1
+star_b	1
+fstar	1
+fstar_b	1
+first_match	1
+and	0
+andNLM	0
+or	1
+concat	1
+fusion	1
+Use --boolean-priorities to set the following Boolean formula priorities:
+ap	3
+false	1
+true	1
+not	0
+equiv	0
+implies	0
+xor	0
+and	0
+or	1
+EOF
+diff stdout expected
+
+
+sere='eword=0,and=0,andNLM=0,fusion=0,star=0,star_b=0'
+sere="$sere,or=0,concat=0,fstar=0,fstar_b=0,first_match=0"
+
+run 0 randltl -S -n 10000 a b c --tree-size=10..20 \
+   --sere-p=$sere \
+   --boolean-p=equiv=0,implies=0,xor=0,and=0,not=0,false=0,true=0,or=0 \
+   --dump-pr > stdout
+
+cat >expected <<EOF
+Use --sere-priorities to set the following SERE priorities:
+eword	0
+boolform	1
+star	0
+star_b	0
+fstar	0
+fstar_b	0
+first_match	0
+and	0
+andNLM	0
+or	0
+concat	0
+fusion	0
+Use --boolean-priorities to set the following Boolean formula priorities:
+ap	3
+false	0
+true	0
+not	0
+equiv	0
+implies	0
+xor	0
+and	0
+or	0
+EOF
+diff stdout expected
+
+
+
+# Disabling all operators will prevent more formulas to be generated.
+randltl -S -n 10000 a b c --tree-size=10..20 \
+ --sere-p=$sere \
+ --boolean-p=equiv=0,implies=0,xor=0,and=0,not=0,false=0,true=0,or=0 > out &&
+  exit 1
+sort out > out2
+cat >expected <<EOF
+a
+b
+c
+EOF
+
+diff expected out2
+
+
+# atomic proposition can be implicitly specified using a number
+randltl -n 1000 3 --tree-size=10..20 > out
+grep -q p0 out
+grep -q p1 out
+grep -q p2 out
+grep p3 out && exit 1
+
+
+# We should be able to generate exactly three formulas with 0 atomic
+# propositions and at most 2 nodes.
+run 0 randltl -n3 --tree-size=..2 0 > out
+sort <out >out2
+cat >expected <<EOF
+0
+1
+X(0)
+EOF
+diff out2 expected
+
+# requesting more formulas should fail
+run 2 randltl -n4 --tree-size=..2 0
+
+# If more numbers are given, there are interpreted as atomic propositions
+run 0 randltl -n1000 0 1 > out
+grep -q '"0"' out
+grep -q '"1"' out
+
+
+run 0 randltl -n5 2 -o test-all.ltl
+run 0 randltl -n5 2 -o test-%L.ltl
+cat test-1.ltl test-2.ltl test-3.ltl test-4.ltl test-5.ltl > test-cmp.ltl
+diff test-cmp.ltl test-all.ltl
+
+
+randltl 2 --ltl-prio=X 2>stderr && exit 1
+grep 'failed to parse LTL priorities near X' stderr
+
+randltl -L --allow-dups -n2 1 > out
+cat >expected <<EOF
+0
+0
+EOF
+diff out expected

@@ -1,0 +1,108 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Command-line tools installed by Spot {{{SPOTVERSION}}}
+#+DESCRIPTION: List of all the command-line tools installed by Spot {{{SPOTVERSION}}}
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: index.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+This document introduces command-line tools that are installed with
+the Spot library.  We give some examples to highlight possible
+use-cases but shall not attempt to cover all features exhaustively
+(please check the man pages for further inspiration).
+
+* Conventions
+
+For technical reasons related to the way we generate these pages, we
+use the following convention when rendering shell commands.  The
+commands issued to the shell are formatted like this with a cyan line
+on the left:
+
+#+NAME: helloworld
+#+BEGIN_SRC sh
+echo Hello World
+#+END_SRC
+
+And the output of such a command is formatted as follows, with a
+magenta line on the left:
+
+#+RESULTS: helloworld
+: Hello World
+
+Parts of these documents (e.g., lists of options) are actually the
+results of shell commands and will be presented as above, even if the
+corresponding commands are hidden.
+
+* Documentation common to multiple tools
+
+- [[file:ioltl.org][common input and output options for LTL/PSL formulas]]
+- [[file:oaut.org][common output options for automata]]
+- [[file:hoa.org][input and output support for the HOA format]]
+
+* Command-line tools
+
+- [[file:randltl.org][=randltl=]] Generate random LTL/PSL formulas.
+- [[file:ltlfilt.org][=ltlfilt=]] Filter, convert, and transform LTL/PSL formulas.
+- [[file:genltl.org][=genltl=]] Generate LTL formulas from scalable patterns.
+- [[file:ltl2tgba.org][=ltl2tgba=]] Translate LTL/PSL formulas into various types of automata.
+- [[file:ltl2tgta.org][=ltl2tgta=]] Translate LTL/PSL formulas into testing automata.
+- [[file:ltlcross.org][=ltlcross=]] Cross-compare LTL/PSL-to-automata translators.
+- [[file:ltlgrind.org][=ltlgrind=]] List formulas similar to but simpler than a given LTL/PSL
+  formula.
+- [[file:ltldo.org][=ltldo=]] Run LTL/PSL formulas through other tools using common [[file:ioltl.org][input]]
+  and [[file:oaut.org][output]] interfaces.
+- [[file:ltlsynt.org][=ltlsynt=]] Synthesize AIGER circuits from LTL/PSL specifications.
+- [[file:dstar2tgba.org][=dstar2tgba=]] Convert \omega-automata with any acceptance into
+  variants of Büchi automata.
+- [[file:randaut.org][=randaut=]] Generate random \omega-automata.
+- [[file:genaut.org][=genaut=]] Generate ω-automata from scalable patterns.
+- [[file:autfilt.org][=autfilt=]] Filter, convert, and transform \omega-automata.
+- [[file:autcross.org][=autcross=]] Cross-compare tools that process automata.
+
+* Man pages
+
+In addition to the above illustrated documentation, Spot also installs
+man pages for all these tools.  These man pages are mostly generated
+automatically from the =--help= output of each tool, and often
+completed with additional text (like examples or bibliography).  For
+convenience, you can browse their HTML versions:
+
+[[./man/autcross.1.html][=autcross=]](1),
+[[./man/autfilt.1.html][=autfilt=]](1),
+[[./man/dstar2tgba.1.html][=dstar2tgba=]](1),
+[[./man/genaut.1.html][=genaut=]](1),
+[[./man/genltl.1.html][=genltl=]](1),
+[[./man/ltl2tgba.1.html][=ltl2tgba=]](1),
+[[./man/ltl2tgta.1.html][=ltl2tgta=]](1),
+[[./man/ltlcross.1.html][=ltlcross=]](1),
+[[./man/ltldo.1.html][=ltldo=]](1),
+[[./man/ltlfilt.1.html][=ltlfilt=]](1),
+[[./man/ltlgrind.1.html][=ltlgrind=]](1),
+[[./man/ltlsynt.1.html][=ltlsynt=]](1),
+[[./man/randaut.1.html][=randaut=]](1),
+[[./man/randltl.1.html][=randltl=]](1),
+[[./man/spot-x.7.html][=spot-x=]](7),
+[[./man/spot.7.html][=spot=]](7).
+
+* Advanced use-cases
+
+- [[file:csv.org][Reading and writing CSV files]]
+- [[file:satmin.org][SAT-based minimization of Deterministic ω-Automata]]
+- [[file:hierarchy.org][Exploring the temporal hierarchy of Manna & Pnueli]]
+
+* Citing
+
+If some of these tools have played a significant role in a work that
+lead to some academic publication, please consider citing Spot.  Our
+[[file:citing.org][citing page]] has a list of papers you could cite.
+
+Additionally, the man pages of these tools also contains additional
+references about the algorithms or data sources used.
+
+If you did some benchmark comparison against Spot, or if you built a
+tool above features provided by Spot, please make it clear what
+version of Spot you are using.  Spot is improved regularly, and
+results might be different with another version.
+
+#  LocalWords:  num toc helloworld SRC LTL PSL randltl ltlfilt genltl
+#  LocalWords:  scalable ltl tgba Büchi automata tgta ltlcross eval
+#  LocalWords:  setenv concat getenv setq

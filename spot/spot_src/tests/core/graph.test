@@ -1,0 +1,96 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014, 2016 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# While running some benchmark, Tomáš Babiak found that Spot took too
+# much time (i.e. >1h) to translate those six formulae.  It turns out
+# that the WDBA minimization was performed after the degeneralization
+# algorithm, while this is not necessary (WDBA will produce a BA, so
+# we may as well skip degeneralization).  Translating these formulae
+# in the test-suite ensure that they don't take too much time (the
+# buildfarm will timeout if it does).
+
+. ./defs
+
+set -e
+
+run 0 ../graph > stdout
+
+cat >expected <<EOF
+digraph {
+ 0
+ 0 -> 1
+ 0 -> 2
+ 1
+ 1 -> 2
+ 2
+ 2 -> 0
+ 2 -> 1
+ 2 -> 2
+}
+digraph {
+ 0 [label="1"]
+ 0 -> 1
+ 0 -> 2
+ 1 [label="2"]
+ 1 -> 2
+ 2 [label="3"]
+ 2 -> 1
+}
+digraph {
+ 0
+ 0 -> 1 [label="1"]
+ 0 -> 2 [label="2"]
+ 1
+ 1 -> 2 [label="3"]
+ 2
+ 2 -> 1 [label="4"]
+}
+digraph {
+ 0 [label="2"]
+ 0 -> 1 [label="1"]
+ 0 -> 2 [label="2"]
+ 1 [label="3"]
+ 1 -> 2 [label="3"]
+ 2 [label="4"]
+ 2 -> 1 [label="4"]
+}
+t1: (s0, d0) t2
+t2: (s0, s2) t0
+t3: (s1, s2) t0
+t4: (s2, s1) t0
+s0: t1 t2
+s1: t3 t3
+s2: t4 t4
+d0: #2
+d1: s1
+d2: s2
+digraph {
+ 0 [label="(2,4)"]
+ 0 -> 1 [label="(1,3)"]
+ 0 -> 2 [label="(2,5)"]
+ 1 [label="(3,6)"]
+ 1 -> 2 [label="(3,7)"]
+ 2 [label="(4,8)"]
+ 2 -> 1 [label="(4,9)"]
+}
+1 1 1 1 1 1 1 1
+EOF
+
+diff stdout expected

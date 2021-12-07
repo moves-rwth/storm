@@ -1,0 +1,108 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015-2017 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+cat >fake <<\EOF
+#!/bin/sh
+case $1 in
+"U G e p0 F p1 p2")
+
+# echo 'U G e p0 F p1 p2' | ltl2dstar --output-format=hoa - - | fmt
+cat <<\END
+HOA: v1 States: 14 properties: implicit-labels trans-labels
+no-univ-branch deterministic complete acc-name: Rabin 3 Acceptance: 6
+(Fin(0)&Inf(1))|(Fin(2)&Inf(3))|(Fin(4)&Inf(5)) Start: 10 AP: 3 "p0"
+"p1" "p2" --BODY-- State: 0 {5} 0 3 5 5 0 3 5 5 State: 1 {3 4} 0 12 5
+1 0 12 5 1 State: 2 {3 4} 2 13 5 5 2 13 5 5 State: 3 {3 4} 13 13 5 5 13
+13 5 5 State: 4 {1 2 4} 4 4 4 4 4 4 4 4 State: 5 {0 2 4} 5 5 5 5 5 5 5
+5 State: 6 {2 4} 8 6 5 1 8 6 5 1 State: 7 {2 4} 7 8 5 5 2 8 5 5 State:
+8 {2 4} 8 8 5 5 8 8 5 5 State: 9 {2 4} 7 11 5 9 2 6 5 1 State: 10 {2 4}
+7 11 5 9 4 4 4 4 State: 11 {2 4} 8 11 5 9 8 6 5 1 State: 12 {4} 13 12
+5 1 13 12 5 1 State: 13 {4} 13 13 5 5 13 13 5 5 --END--
+END
+;;
+"! U G e p0 F p1 p2")
+# echo '! U G e p0 F p1 p2' | ltl2dstar --output-format=hoa - - | fmt |
+# sed '$s:8 13:13 8 /*<-bug*/:';
+cat <<\END
+HOA: v1 States: 14 properties: implicit-labels trans-labels
+no-univ-branch deterministic complete acc-name: Rabin 3 Acceptance: 6
+(Fin(0)&Inf(1))|(Fin(2)&Inf(3))|(Fin(4)&Inf(5)) Start: 11 AP: 3 "p0" "p1"
+"p2" --BODY-- State: 0 {5} 4 0 8 8 4 0 8 8 State: 1 {3 4} 1 1 8 8 1 1 8
+8 State: 2 {3 4} 1 2 8 13 1 2 8 13 State: 3 {3 4} 5 3 8 8 4 0 8 8 State:
+4 {1 2 4} 1 1 8 8 1 1 8 8 State: 5 {1 2 4} 5 3 8 8 1 1 8 8 State: 6 {1
+2 4} 6 3 8 8 12 1 8 8 State: 7 {1 2 4} 5 7 8 9 1 2 8 13 State: 8 {1 2 4}
+8 8 8 8 8 8 8 8 State: 9 {1 2 4} 6 7 8 9 12 2 8 13 State: 10 {0 2 4} 10
+10 10 10 10 10 10 10 State: 11 {2 4} 6 7 8 9 10 10 10 10 State: 12 {2 4}
+12 1 8 8 12 1 8 8 State: 13 {2 4} 12 2 13 8 /*<-bug*/ 12 2 8 13 --END--
+END
+;;
+esac
+EOF
+chmod +x fake
+
+run 1 ltlcross -f 'G(a <-> Fb) U c' \
+  "ltl2tgba --lbtt %f >%T" "./fake %l >%T" 2> errors
+cat errors
+grep 'error: P0\*N1 is nonempty' errors
+grep 'error: P1\*N1 is nonempty' errors
+grep 'error: Comp..1.\*Comp..1. is nonempty' errors
+test `grep cycle errors | wc -l` = 3
+test `grep '^error:' errors | wc -l` = 4
+
+
+cat >fake <<\EOF
+#!/bin/sh
+case $1 in
+"G((p0) & (X(F((p1) & (X(F((p2) & (X(F(p3))))))))))")
+
+# genltl --eh=9 | ltldo modella  -Hl | fmt
+cat <<\END
+HOA: v1 States: 1 Start: 0 AP: 0 acc-name: Buchi Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic --BODY--
+State: 0 --END--
+END
+;;
+"!(G((p0) & (X(F((p1) & (X(F((p2) & (X(F(p3)))))))))))")
+# genltl --neg --eh=9 | ltldo modella  -Hl | fmt
+cat <<\END
+HOA: v1 States: 10 Start: 0 AP: 4 "p0" "p1" "p2" "p3" acc-name: Buchi
+Acceptance: 1 Inf(0) properties: trans-labels explicit-labels state-acc
+--BODY-- State: 0 [!0] 1 [0] 2 [0] 3 State: 1 [t] 4 State: 2 [!0] 1 [0]
+2 [0] 3 State: 3 [!1] 5 [1] 6 State: 4 {0} [t] 4 State: 5 {0} [!1] 5 [1]
+6 State: 6 [!2] 7 [2] 8 State: 7 {0} [!2] 7 [2] 8 State: 8 [!3] 9 State:
+9 {0} [!3] 9 --END--
+END
+;;
+esac
+EOF
+chmod +x fake
+
+genltl --eh=9 |
+    ltlcross --determinize-max-states=5 'ltl2tgba' './fake %f >%O' 2>errors &&
+    exit 1
+cat errors
+grep 'error: P0\*Comp(P1) is nonempty' errors
+grep 'error: {P0} disagree with {P1}' errors
+grep 'P0 accepts' errors
+test `grep cycle errors | wc -l` = 2
+test `grep '^error:' errors | wc -l` = 3

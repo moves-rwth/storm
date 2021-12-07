@@ -1,0 +1,55 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2011, 2013, 2014, 2016 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+# Compile the model beforehand to avoid compiler's output interference.
+if ! gal2c $srcdir/finite.gal; then
+  echo "gal2c not functionnal."
+  exit 77
+fi
+
+set -e
+run 0 ../modelcheck -gm $srcdir/finite.gal '"P.a < 10"' > stdout
+test `grep ' -> ' stdout | wc -l` = 25
+test `grep 'P.a=' stdout | wc -l` = 15
+
+run 0 ../modelcheck -dtrue -gm $srcdir/finite.gal '"P.a < 10"' > stdout2
+cmp stdout stdout2
+
+run 0 ../modelcheck -dfalse -gm $srcdir/finite.gal '"P.a < 10"' > stdout
+test `grep ' -> ' stdout | wc -l` = 19
+test `grep 'P.a=' stdout | wc -l` = 15
+
+# the same with compressed states
+run 0 ../modelcheck -z -dfalse -gm $srcdir/finite.gal '"P.a < 10"' > stdout
+test `grep ' -> ' stdout | wc -l` = 19
+test `grep 'P.a=' stdout | wc -l` = 15
+
+run 0 ../modelcheck -ddead -E $srcdir/finite.gal \
+  '!(G(dead -> ("P.a==3" | "P.b==3")))'
+
+run 0 ../modelcheck -ddead -e $srcdir/finite.gal \
+  '!(G(dead -> ("P.a==2" | "P.b==3")))'
+
+# This used to segfault because of a bug in a
+# function that do not exist anymore.
+run 0 ../modelcheck -gp $srcdir/finite.gal true

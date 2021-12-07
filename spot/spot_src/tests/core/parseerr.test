@@ -1,0 +1,109 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009-2016, 2020 Laboratoire
+# de Recherche et Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004 Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check error recovery in parsing.  This also checks how the
+# resulting tree looks like.
+
+. ./defs || exit 1
+set -e
+
+cat >input <<EOF
+
++
+/2/3/4/5 a + b /6/7/8/
+a - b
+{a[*9999999999]}
+EOF
+
+run 1 ../ltl2text input | sed 's/[$]undefined/invalid token/g' > output
+
+sed 's/$$//' >expected<<\EOF
+>>> $
+    ^
+empty input
+
+>>> +
+    ^
+syntax error, unexpected or operator
+
+>>> +
+    ^
+ignoring trailing garbage
+
+>>> /2/3/4/5 a + b /6/7/8/
+    ^
+syntax error, unexpected invalid token
+
+>>> /2/3/4/5 a + b /6/7/8/
+    ^^^^^^^^^^^^^^^^^^^^^^
+ignoring trailing garbage
+
+>>> a - b
+      ^
+syntax error, unexpected invalid token
+
+>>> a - b
+      ^^^
+ignoring trailing garbage
+
+ap(@3 #0 "a")
+>>> {a[*9999999999]}
+        ^^^^^^^^^^
+value too large ignored
+
+Closure(@6 #0 [Star(@5 #0 0.. [ap(@4 #0 "a")])])
+EOF
+
+diff output expected
+
+
+cat >recover.txt <<EOF
+# leading and trailing garbage are skipped
+a U b c, a U b
+# (check multop merging while we are at it)
+a & b & c & d e, a & b & c & d
+a & (b | c) & d should work, a & (b | c) & d
+# Binop recovery
+a U, a
+a U b V c R, a U b V c
+a &&& b, a & b
+a &&| b, a | b
+
+# Recovery inside parentheses
+a U (b c) U e R (f g <=> h), a U b U e R f
+a U ((c) U e) R (<=> f g), a U ((c) U e) R (0)
+
+# Missing parentheses
+a & (a + b, a & (a + b)
+a & (a + b c, a & (a + b)
+a & (+, a & 0
+a & (, a & 0
+
+# Invalid ranges
+{a[*8..1];b}, {a[*1..8];b}
+{a[=8..1];b}, {a[=1..8];b}
+{a[->8..1];b}, {a[->1..8];b}
+{a[->..0];b}, {a[->0..1];b}
+EOF
+run 0 ../equals -E recover.txt

@@ -1,0 +1,104 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017, 2019 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+test 11 -eq `genltl --dac | ltlfilt --syntactic-safety -c`
+test 37 -eq `genltl --dac | ltlfilt --safety -c`
+test 'Fp0' = `genltl --dac | ltlfilt --syntactic-guarantee`
+test 'Fp0' = `genltl --dac | ltlfilt --guarantee`
+test 25 -eq `genltl --dac | ltlfilt --syntactic-obligation -c`
+test 40 -eq `genltl --dac | ltlfilt --obligation -c`
+test 47 -eq `genltl --dac | ltlfilt --syntactic-recurrence -c`
+test 52 -eq `genltl --dac | ltlfilt --recurrence -c`
+test 29 -eq `genltl --dac | ltlfilt --syntactic-persistence -c`
+test 41 -eq `genltl --dac | ltlfilt --persistence -c`
+test 'G!p0 | F(p0 & (!p1 W p2))' = "`genltl --dac |
+     ltlfilt -v --obligation | ltlfilt --persistence`"
+test 12 -eq `genltl --dac |
+     ltlfilt -v --obligation | ltlfilt --recurrence -c`
+
+# There are only 3 formula that are not recurrence in the DAC set.
+test 3 -eq `genltl --dac | ltlfilt --recurrence -v -c`
+
+# There are only 3 formula that we cannot convert to DBA.
+test 3 -eq `genltl --dac | ltl2tgba -G -D -S |
+     autfilt --generalized-rabin | dstar2tgba |
+     autfilt --is-deterministic -v -c`
+
+test "$(echo $(genltl --dac --format='%h') | sed 's/ //g')" = \
+     SSSSSGSOSRSSSSSSSSSSSSPSSRSRSRSSSSSSSSSSRORRRRSRSTRSRST
+
+
+# Implementations of uniq differ in the number of leading spaces, so
+# we remove them all.
+genltl --dac --format='%[vw]h' | sort | uniq -c |
+    sed 's/^ *\([0-9][0-9]*\)  */\1 /g' >out
+cat >expected <<EOF
+1 guarantee obligation persistence recurrence reactivity
+2 obligation persistence recurrence reactivity
+1 persistence reactivity
+2 reactivity
+12 recurrence reactivity
+37 safety obligation persistence recurrence reactivity
+EOF
+diff out expected
+
+
+test B = `ltlfilt --format=%h -f '(Gb R (b xor Gb)) W (a W Xa)'`
+ltlfilt -q --safety --guarantee -f '(Gb R (b xor Gb)) W (a W Xa)'
+
+# make sure SPOT_PR_CHECK is read.
+randltl -n -1 a b c | ltlfilt -v --syntactic-safety --syntactic-guarantee \
+  --syntactic-obligation --syntactic-recurrence --syntactic-persistence \
+  -n 500 > res
+SPOT_PR_CHECK=x ltlfilt res --recurrence 2>err && exit 1
+SPOT_PR_CHECK=9 ltlfilt res --recurrence 2>err && exit 1
+grep SPOT_PR_CHECK err
+
+# Testing Recurrence.
+ltlfilt res --recurrence > r0
+for i in 1 2 3; do
+    SPOT_PR_CHECK=$i ltlfilt res --recurrence > r$i
+done
+diff r0 r2
+diff r1 r2
+diff r2 r3
+ltlfilt res -o %h.ltl
+cat R.ltl O.ltl G.ltl S.ltl B.ltl | sort > rogsb.ltl
+sort r2 > r3
+diff r3 rogsb.ltl
+
+# Testing Persistence.
+ltlfilt res --persistence > p0
+for i in 1 2 3; do
+  SPOT_PR_CHECK=$i ltlfilt res --persistence > p$i
+done
+diff p0 p2
+diff p1 p2
+diff p2 p3
+ltlfilt res -o %h.ltl
+cat P.ltl O.ltl G.ltl S.ltl B.ltl | sort > pogsb.ltl
+sort p2 > p3
+diff p3 pogsb.ltl
+
+exit 0

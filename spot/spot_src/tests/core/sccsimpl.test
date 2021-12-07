@@ -1,0 +1,344 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2011, 2013, 2015, 2018, 2019 Laboratoire de Recherche
+# et Développement de l'Epita
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+# This file tests the logic for simplifying superfluous
+# acceptance conditions.  Especially those whose presence
+# are implied by others.  This simplification is done as
+# part of option -R3.
+
+
+# The following automaton was generated for
+# G((!p0 | !p2 | (!p1 W (!p1 & p3 & X(!p1 U p4)))) U p1)
+# The formula does not really matter (except to show how
+# such automata can occur).  The important point is that the
+# acceptance set "0" contains the acceptance set "1", so
+# "0" can be removed.
+cat <<EOF > aut.txt
+HOA: v1
+States: 4
+Start: 0
+AP: 5 "p1" "p0" "p2" "p3" "p4"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 0 {0 1}
+[!1 | !2] 0 {0}
+[3] 1 {0}
+[t] 2 {0}
+State: 1
+[0&4] 0 {0 1}
+[!1&4 | !2&4] 0 {0}
+[3&4] 1 {0}
+[!0&!1 | !0&!2 | !0&3] 1
+[4] 2 {0}
+[!0] 3
+State: 2
+[!0&3] 1 {0}
+[!0] 2 {0}
+State: 3
+[!0&3] 1
+[!0&3&4] 1 {0}
+[!0&4] 2 {0}
+[!0] 3
+--END--
+EOF
+
+run 0 ../ikwiad -XH -R3 -H aut.txt > out.txt
+grep '^Acceptance: 1 Inf(0)' out.txt
+
+
+# Here, acceptance sets 0 and 2 can both be removed.
+cat <<EOF > aut2.txt
+HOA: v1
+States: 1
+Start: 0
+AP: 4 "a" "b" "c" "d"
+acc-name: generalized-Buchi 4
+Acceptance: 4 Inf(0)&Inf(1)&Inf(2)&Inf(3)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 0 {0}
+[1] 0 {0 1}
+[2] 0 {0 1 2}
+[3] 0 {2 3}
+--END--
+EOF
+run 0 ../ikwiad -XH -R3 -H aut2.txt > out2.txt
+grep '^Acceptance: 2 ' out2.txt
+# only 3 transitions output, because [1] and [2] have been merged
+test `grep -c '\[.*\]' out2.txt` = 3
+
+
+# Here, acceptance sets 0 and 1 can both be removed.
+cat <<EOF > aut3.txt
+HOA: v1
+States: 1
+Start: 0
+AP: 4 "a" "b" "c" "d"
+acc-name: generalized-Buchi 4
+Acceptance: 4 Inf(0)&Inf(1)&Inf(2)&Inf(3)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 0 {0}
+[1] 0 {0 1}
+[2] 0 {0 1 2}
+[3] 0 {1 3}
+--END--
+EOF
+run 0 ../ikwiad -XH -R3 -H aut3.txt > out3.txt
+grep '^Acceptance: 2 ' out3.txt
+# only 3 transitions output, because [0] and [1] have been merged
+test `grep -c '\[.*\]' out3.txt` = 3
+
+
+# No simplification possible here
+cat <<EOF > aut4.txt
+HOA: v1
+States: 1
+Start: 0
+AP: 5 "a" "b" "c" "d" "e"
+acc-name: generalized-Buchi 4
+Acceptance: 4 Inf(0)&Inf(1)&Inf(2)&Inf(3)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 0 {0}
+[1] 0 {0 1}
+[2] 0 {0 1 2}
+[3] 0 {1 3}
+[4] 0 {2 3}
+--END--
+EOF
+run 0 ../ikwiad -XH -R3 -H aut4.txt > out4.txt
+grep '^Acceptance: 4 ' out4.txt
+test `grep -c '\[.*\]' out4.txt` = 5
+
+# Make sure nothing wrong (like an assert())
+# happens when no acceptance conditions are used.
+cat <<EOF > aut5.txt
+HOA: v1
+States: 1
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[0] 0
+[1 | 2] 0
+--END--
+EOF
+run 0 ../ikwiad -XH -R3 -H aut5.txt > out5.txt
+grep '^Acceptance: 0 t' out5.txt
+test `grep -c '\[.*\]' out5.txt` = 1
+
+
+# Here, one of 0,1 and one of 2,3 can be removed.
+cat <<EOF > aut6.txt
+HOA: v1
+States: 1
+Start: 0
+AP: 4 "a" "b" "c" "d"
+acc-name: generalized-Buchi 4
+Acceptance: 4 Inf(0)&Inf(1)&Inf(2)&Inf(3)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 0 {0 1}
+[1] 0 {0 1}
+[2] 0 {2 3}
+[3] 0 {2 3}
+--END--
+EOF
+run 0 ../ikwiad -XH -R3 -H aut6.txt > out6.txt
+grep '^Acceptance: 2 ' out6.txt
+test `grep -c '\[.*\]' out6.txt` = 2
+
+# This automaton comes from the formula
+# 1 U (p0 & (!p1 R ((1 U !p2) & (1 U !p3))))
+# and an early implementation of our simplification
+# missed the simplification.
+cat <<EOF > aut7.txt
+HOA: v1
+States: 6
+Start: 0
+AP: 4 "p0" "p1" "p2" "p3"
+acc-name: generalized-Buchi 3
+Acceptance: 3 Inf(0)&Inf(1)&Inf(2)
+properties: trans-labels explicit-labels trans-acc complete
+--BODY--
+State: 0
+[!0 | 1 | 2 | 3] 0 {1 2}
+[0&!1&!2&!3] 1 {0 1 2}
+[0&!1&2&!3] 2 {0 1}
+[0&!1&!2&3] 3 {0 2}
+[0&!1&2 | 0&!1&3] 4 {0}
+[0&1&!2&!3] 5 {0 1 2}
+[0&1&!3 | 0&2&!3] 5 {0 1}
+[0&1&!2 | 0&!2&3] 5 {0 2}
+[0&1 | 0&2 | 0&3] 5 {0}
+State: 1
+[t] 1 {0 1 2}
+State: 2
+[!2] 1 {0 1 2}
+[2] 2 {0 1}
+State: 3
+[!3] 1 {0 1 2}
+[3] 3 {0 2}
+State: 4
+[!2&!3] 1 {0 1 2}
+[2&!3] 2 {0 1}
+[!2&3] 3 {0 2}
+[2 | 3] 4 {0}
+State: 5
+[!1&!2&!3] 1 {0 1 2}
+[!1&2&!3] 2 {0 1}
+[!1&!2&3] 3 {0 2}
+[!1&2 | !1&3] 4 {0}
+[1 | 2 | 3] 5 {0}
+[1&!2&!3] 5 {0 1 2}
+[1&!3 | 2&!3] 5 {0 1}
+[1&!2 | !2&3] 5 {0 2}
+--END--
+EOF
+run 0 ../ikwiad -XH -R3 -H aut7.txt > out7.txt
+grep '^Acceptance: 2 ' out7.txt
+
+
+run 0 ../ikwiad -R3 -H '(GFa&GFb) | (GFc&GFd)' > out8.txt
+grep 'Acceptance: 2 ' out8.txt
+
+# This formula gives a 12-state automaton in which one acceptance
+# condition can be removed, and after what direct simulation should
+# simplify the automaton to 6 states.
+run 0 ../ikwiad -R3 -RDS -ks \
+  '(G(!((b) R (a)))) R (((c) R (!(d))) U (G((a) | (!(G(e))))))' > out9.txt
+grep 'states: 6$' out9.txt
+
+
+# Spot 1.99.1 used to incorrectly remove Fin sets from rejecting SCCs
+# in scc_filter().
+cat >input <<EOF
+HOA: v1
+States: 2
+Start: 1
+Acceptance: 1 Fin(0)
+AP: 1 "p0"
+--BODY--
+State: 0
+[t] 0
+State: 1
+[!0] 1 {0}
+[0] 0 {0}
+--END--
+HOA: v1
+States: 2
+Start: 1
+Acceptance: 2 Fin(0)&Inf(1)
+AP: 1 "p0"
+--BODY--
+State: 0 {1}
+[t] 0
+State: 1
+[!0] 1 {0 1}
+[0] 0
+--END--
+EOF
+
+run 0 autfilt -H --any --medium -x scc-filter=2 input >output
+cat >expected <<EOF
+HOA: v1
+States: 2
+Start: 1
+AP: 1 "p0"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[t] 0
+State: 1
+[0] 0
+[!0] 1 {0}
+--END--
+HOA: v1
+States: 2
+Start: 1
+AP: 1 "p0"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic
+--BODY--
+State: 0 {0}
+[t] 0
+State: 1
+[0] 0
+[!0] 1
+--END--
+EOF
+cat output
+diff output expected
+
+run 0 autfilt -C -H --det --high input >output
+cat >expected <<EOF
+HOA: v1
+States: 2
+Start: 1
+AP: 1 "p0"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic terminal
+--BODY--
+State: 0 {0}
+[t] 0
+State: 1
+[0] 0
+[!0] 1
+--END--
+HOA: v1
+States: 2
+Start: 1
+AP: 1 "p0"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic terminal
+--BODY--
+State: 0 {0}
+[t] 0
+State: 1
+[0] 0
+[!0] 1
+--END--
+EOF
+cat output
+diff output expected

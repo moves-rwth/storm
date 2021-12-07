@@ -1,0 +1,856 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:50 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Parsing and Printing LTL Formulas</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Code example for parsing and printing formulas in Spot"
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tut.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title">Parsing and Printing LTL Formulas</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org1cb585b">Shell command</a></li>
+<li><a href="#org2c43e43">Python bindings</a></li>
+<li><a href="#orgbb3073b">C++</a>
+<ul>
+<li><a href="#org895f19e">Simple wrapper for the two parsers</a></li>
+<li><a href="#org215ab2d">Calling the infix parser explicitly</a></li>
+<li><a href="#orgdd2d74b">Calling the prefix parser explicitly</a></li>
+</ul>
+</li>
+<li><a href="#org4b9eea0">Additional Comments</a>
+<ul>
+<li><a href="#orgf8fd0b6">PSL vs LTL</a></li>
+<li><a href="#orgb6b8335">Lenient parsing</a></li>
+<li><a href="#orgebf7889">Python formatting</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+Our first task is to read formulas and print them in another syntax.
+</p>
+
+<div id="outline-container-org1cb585b" class="outline-2">
+<h2 id="org1cb585b">Shell command</h2>
+<div class="outline-text-2" id="text-org1cb585b">
+<p>
+Using <code>ltlfilt</code>, you can easily read an LTL formula in one syntax, and
+output it in another syntax.  By default the parser will accept a
+formula in <a href="ioltl.html">any infix syntax</a>, but if the input is in the prefix syntax
+of LBT, you should use <a href="ioltl.html"><code>--lbt-input</code></a>.  The output syntax is controlled
+using different options such as (<code>--spin</code>, <code>--lbt</code>, <code>--latex</code>, etc.).
+Full parentheses can also be requested using <code>-p</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt -f <span class="org-string">'[]&lt;&gt;p0 || &lt;&gt;[]p1'</span>
+<span class="org-variable-name">formula</span>=<span class="org-string">'&amp; &amp; G p0 p1 p2'</span>
+ltlfilt --lbt-input -f <span class="org-string">"$formula"</span> --latex
+ltlfilt --lbt-input -f <span class="org-string">"$formula"</span> --lbt
+ltlfilt --lbt-input -f <span class="org-string">"$formula"</span> --spin -p
+</pre>
+</div>
+
+<pre class="example">
+GFp0 | FGp1
+p_{1} \land p_{2} \land \G p_{0}
+&amp; &amp; p1 p2 G p0
+(p1) &amp;&amp; (p2) &amp;&amp; ([](p0))
+
+</pre>
+
+<p>
+The reason the LBT parser has to be explicitly enabled is because of
+some corner cases that have different meanings in the two syntaxes.
+(For instance <code>t</code> and <code>f</code> are the true and false constants in LBT's
+syntax, but they are considered as atomic propositions in all the
+other syntaxes.)
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2c43e43" class="outline-2">
+<h2 id="org2c43e43">Python bindings</h2>
+<div class="outline-text-2" id="text-org2c43e43">
+<p>
+Here are the same operations in Python
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+<span class="org-keyword">print</span>(spot.formula(<span class="org-string">'[]&lt;&gt;p0 || &lt;&gt;[]p1'</span>))
+<span class="org-variable-name">f</span> = spot.formula(<span class="org-string">'&amp; &amp; G p0 p1 p2'</span>)
+<span class="org-keyword">print</span>(f.to_str(<span class="org-string">'latex'</span>))
+<span class="org-keyword">print</span>(f.to_str(<span class="org-string">'lbt'</span>))
+<span class="org-keyword">print</span>(f.to_str(<span class="org-string">'spin'</span>, parenth=<span class="org-constant">True</span>))
+</pre>
+</div>
+
+<pre class="example">
+GFp0 | FGp1
+p_{1} \land p_{2} \land \G p_{0}
+&amp; &amp; p1 p2 G p0
+(p1) &amp;&amp; (p2) &amp;&amp; ([](p0))
+
+</pre>
+
+<p>
+The <code>spot.formula</code> function wraps the calls to the two formula parsers
+of Spot.  It first tries to parse the formula using infix syntaxes,
+and if it fails, it tries to parse it with the prefix parser.  (So
+this might fail to correctly interpret <code>t</code> or <code>f</code> if you are
+processing a list of LBT formulas.)  Using <code>spot.formula</code>, parse
+errors are returned as an exception.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgbb3073b" class="outline-2">
+<h2 id="orgbb3073b">C++</h2>
+<div class="outline-text-2" id="text-orgbb3073b">
+</div>
+<div id="outline-container-org895f19e" class="outline-3">
+<h3 id="org895f19e">Simple wrapper for the two parsers</h3>
+<div class="outline-text-3" id="text-org895f19e">
+<p>
+We first start with the easy parser interface, similar to the one used
+above in the python bindings.  Here parse errors would be returned as
+exceptions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++" id="org9a0c18e"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-constant">spot</span>::parse_formula(<span class="org-string">"[]&lt;&gt;p0 || &lt;&gt;[]p1"</span>) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = <span class="org-constant">spot</span>::parse_formula(<span class="org-string">"&amp; &amp; G p0 p1 p2"</span>);
+  print_latex_psl(<span class="org-constant">std</span>::cout, f) &lt;&lt; <span class="org-string">'\n'</span>;
+  print_lbt_ltl(<span class="org-constant">std</span>::cout, f) &lt;&lt; <span class="org-string">'\n'</span>;
+  print_spin_ltl(<span class="org-constant">std</span>::cout, f, <span class="org-constant">true</span>) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<p>
+After <a href="compile.html">compiling and executing</a> we get:
+</p>
+
+<pre class="example">
+GFp0 | FGp1
+p_{1} \land p_{2} \land \G p_{0}
+&amp; &amp; p1 p2 G p0
+(p1) &amp;&amp; (p2) &amp;&amp; ([](p0))
+
+</pre>
+
+<p>
+Notice that, except for the <code>&lt;&lt;</code> operator, the different output
+routines specify in their name the syntax to use for output, and the
+type of formula they can output.  Here we are only using LTL formulas
+for demonstration, and PSL is a superset of LTL, so those three output
+functions are all OK with that.  The routine used by <code>&lt;&lt;</code> is
+<code>print_psl()</code>, the default syntax used by Spot.
+</p>
+
+<p>
+We do not recommend using the <code>parse_formula()</code> interface because of
+the potential formulas (like <code>f</code> or <code>t</code>) that have different meanings
+in the two parsers that are tried.
+</p>
+
+<p>
+Instead, depending on whether you want to parse formulas with infix
+syntax, or formulas with prefix syntax, you should call the appropriate
+parser.  Additionally, this give you control over how to print errors.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org215ab2d" class="outline-3">
+<h3 id="org215ab2d">Calling the infix parser explicitly</h3>
+<div class="outline-text-3" id="text-org215ab2d">
+<p>
+Here is how to call the infix parser explicitly:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;string&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">std</span>::<span class="org-type">string</span> <span class="org-variable-name">input</span> = <span class="org-string">"[]&lt;&gt;p0 || &lt;&gt;[]p1"</span>;
+  <span class="org-constant">spot</span>::<span class="org-type">parsed_formula</span> <span class="org-variable-name">pf</span> = <span class="org-constant">spot</span>::parse_infix_psl(input);
+  <span class="org-keyword">if</span> (pf.format_errors(<span class="org-constant">std</span>::cerr))
+    <span class="org-keyword">return</span> 1;
+  <span class="org-constant">std</span>::cout &lt;&lt; pf.f &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+GFp0 | FGp1
+
+</pre>
+
+<p>
+Note that as its name implies, this parser can read more than LTL
+formulas: the fragment of PSL we support is basically LTL extended
+with regular expressions.  (Refer to the <a href="https://spot.lrde.epita.fr/tl.pdf">temporal logic specifications</a>
+for the syntax and semantics.)
+</p>
+
+<p>
+The <code>parse_infix_psl()</code> function processes <code>input</code>, and returns a
+<code>spot::parsed_formula</code> object.  In addition to the <code>spot::formula</code> we
+desire (stored as the <code>spot::parsed_formula::f</code> attribute), the
+<code>spot::parsed_formula</code> also stores any diagnostic collected during the
+parsing.  Those diagnostics are stored in the
+<code>spot::parsed_formula::errors</code> attribute, but they can conveniently be
+printed by calling the <code>spot::parsed_formula::format_errors()</code> method:
+this method returns <code>true</code> if and only if a diagnostic was output, so
+this is usually used to abort the program with an error status as
+above.
+</p>
+
+
+<p>
+The parser usually tries to do some error recovery, so the <code>f</code>
+attribute can be non-null even if some parsing errors were returned.
+For instance if you have input <code>(a U b))</code> the parser will complain
+about the extra parenthesis, but it will still return a formula that
+is equivalent to <code>a U b</code>.  You could decide to continue with the
+"fixed" formula if you wish.  Here is an example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;string&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">std</span>::<span class="org-type">string</span> <span class="org-variable-name">input</span> = <span class="org-string">"(a U b))"</span>;
+  <span class="org-constant">spot</span>::<span class="org-type">parsed_formula</span> <span class="org-variable-name">pf</span> = <span class="org-constant">spot</span>::parse_infix_psl(input);
+  <span class="org-comment-delimiter">// </span><span class="org-comment">Use std::cout instead of std::cerr because we can only</span>
+  <span class="org-comment-delimiter">// </span><span class="org-comment">show the output of std::cout in this documentation.</span>
+  (<span class="org-type">void</span>) pf.format_errors(<span class="org-constant">std</span>::cout);
+  <span class="org-keyword">if</span> (pf.f == <span class="org-constant">nullptr</span>)
+    <span class="org-keyword">return</span> 1;
+  <span class="org-constant">std</span>::cout &lt;&lt; <span class="org-string">"Parsed formula: "</span> &lt;&lt; pf.f &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+&gt;&gt;&gt; (a U b))
+           ^
+syntax error, unexpected closing parenthesis
+
+&gt;&gt;&gt; (a U b))
+           ^
+ignoring trailing garbage
+
+Parsed formula: a U b
+
+</pre>
+
+
+<p>
+The formula <code>pf.f</code> would only be returned as null when the parser
+really cannot recover anything.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgdd2d74b" class="outline-3">
+<h3 id="orgdd2d74b">Calling the prefix parser explicitly</h3>
+<div class="outline-text-3" id="text-orgdd2d74b">
+<p>
+The only difference here is the call to <code>parse_prefix_ltl()</code> instead
+of <code>parse_infix_psl()</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;string&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">std</span>::<span class="org-type">string</span> <span class="org-variable-name">input</span> = <span class="org-string">"&amp; &amp; G p0 p1 p2"</span>;
+  <span class="org-constant">spot</span>::<span class="org-type">parsed_formula</span> <span class="org-variable-name">pf</span> = <span class="org-constant">spot</span>::parse_prefix_ltl(input);
+  <span class="org-keyword">if</span> (pf.format_errors(<span class="org-constant">std</span>::cerr))
+    <span class="org-keyword">return</span> 1;
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = pf.f;
+  print_latex_psl(<span class="org-constant">std</span>::cout, f) &lt;&lt; <span class="org-string">'\n'</span>;
+  print_lbt_ltl(<span class="org-constant">std</span>::cout, f) &lt;&lt; <span class="org-string">'\n'</span>;
+  print_spin_ltl(<span class="org-constant">std</span>::cout, f, <span class="org-constant">true</span>) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+p_{1} \land p_{2} \land \G p_{0}
+&amp; &amp; p1 p2 G p0
+(p1) &amp;&amp; (p2) &amp;&amp; ([](p0))
+
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org4b9eea0" class="outline-2">
+<h2 id="org4b9eea0">Additional Comments</h2>
+<div class="outline-text-2" id="text-org4b9eea0">
+</div>
+<div id="outline-container-orgf8fd0b6" class="outline-3">
+<h3 id="orgf8fd0b6">PSL vs LTL</h3>
+<div class="outline-text-3" id="text-orgf8fd0b6">
+<p>
+LTL is a subset of PSL as far as Spot is concerned, so you can parse
+an LTL formula with <code>parse_infix_psl()</code>, and later print it with for
+instance <code>print_spin_ltl()</code> (which, as its name implies, can only
+print LTL formulas).  There is no <code>parse_infix_ltl()</code> function because
+you can simply use <code>parse_infix_psl()</code> to parse LTL formulas.
+</p>
+
+<p>
+There is a potential problem if you design a tool that only works with
+LTL formulas, but call <code>parse_infix_psl()</code> to parse user input.  In
+that case, the user might input a PSL formula and cause problem
+down the line.
+</p>
+
+<p>
+For instance, let's see what happens if a PSL formulas is passed to
+<code>print_spin_ltl</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;string&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">std</span>::<span class="org-type">string</span> <span class="org-variable-name">input</span> = <span class="org-string">"{a*;b}&lt;&gt;-&gt;(a U (b &amp; GF c))"</span>;
+  <span class="org-constant">spot</span>::<span class="org-type">parsed_formula</span> <span class="org-variable-name">pf</span> = <span class="org-constant">spot</span>::parse_infix_psl(input);
+  <span class="org-keyword">if</span> (pf.format_errors(<span class="org-constant">std</span>::cerr))
+    <span class="org-keyword">return</span> 1;
+  print_spin_ltl(<span class="org-constant">std</span>::cout, pf.f) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+{a[*];b}&lt;&gt;-&gt; (a U (b &amp;&amp; []&lt;&gt;c))
+
+</pre>
+
+<p>
+The output is a 'best effort' output.  The LTL subformulas have been
+rewritten, but the PSL-specific part (the SERE and <code>&lt;&gt;-&gt;</code> operator)
+are output in the only syntax Spot knows, definitively not
+Spin-compatible.
+</p>
+
+<p>
+If that is unwanted, here are two possible solutions.
+</p>
+
+<p>
+The first is to simply diagnose non-LTL formulas.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;string&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">std</span>::<span class="org-type">string</span> <span class="org-variable-name">input</span> = <span class="org-string">"{a*;b}&lt;&gt;-&gt;(a U (b &amp; GF c))"</span>;
+  <span class="org-constant">spot</span>::<span class="org-type">parsed_formula</span> <span class="org-variable-name">pf</span> = <span class="org-constant">spot</span>::parse_infix_psl(input);
+  <span class="org-keyword">if</span> (pf.format_errors(<span class="org-constant">std</span>::cerr))
+    <span class="org-keyword">return</span> 1;
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = pf.f;
+  <span class="org-keyword">if</span> (<span class="org-negation-char">!</span>f.is_ltl_formula())
+    {
+      <span class="org-constant">std</span>::cerr &lt;&lt; <span class="org-string">"Only LTL formulas are supported.\n"</span>;
+      <span class="org-keyword">return</span> 1;
+    }
+  print_spin_ltl(<span class="org-constant">std</span>::cout, f) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<p>
+A second (but slightly weird) idea would be to try to simplify the PSL
+formula, and hope that the simplifier is able to come up with an
+equivalent LTL formula.  This does not always work, so you need to be
+prepared to reject the formula anyway.  In our example, we are lucky
+(maybe because it was carefully chosen&#x2026;):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;string&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/print.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/simplify.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">std</span>::<span class="org-type">string</span> <span class="org-variable-name">input</span> = <span class="org-string">"{a*;b}&lt;&gt;-&gt;(a U (b &amp; GF c))"</span>;
+  <span class="org-constant">spot</span>::<span class="org-type">parsed_formula</span> <span class="org-variable-name">pf</span> = <span class="org-constant">spot</span>::parse_infix_psl(input);
+  <span class="org-keyword">if</span> (pf.format_errors(<span class="org-constant">std</span>::cerr))
+    <span class="org-keyword">return</span> 1;
+  <span class="org-constant">spot</span>::<span class="org-type">formula</span> <span class="org-variable-name">f</span> = pf.f;
+  <span class="org-keyword">if</span> (<span class="org-negation-char">!</span>f.is_ltl_formula())
+    {
+      <span class="org-constant">spot</span>::<span class="org-type">tl_simplifier</span> <span class="org-variable-name">simp</span>;
+      f = simp.simplify(f);
+    }
+  <span class="org-keyword">if</span> (<span class="org-negation-char">!</span>f.is_ltl_formula())
+    {
+      <span class="org-constant">std</span>::cerr &lt;&lt; <span class="org-string">"Only LTL formulas are supported.\n"</span>;
+      <span class="org-keyword">return</span> 1;
+    }
+  print_spin_ltl(<span class="org-constant">std</span>::cout, f) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+a U (b &amp;&amp; (a U (b &amp;&amp; []&lt;&gt;c)))
+
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgb6b8335" class="outline-3">
+<h3 id="orgb6b8335">Lenient parsing</h3>
+<div class="outline-text-3" id="text-orgb6b8335">
+<p>
+In version 6, Spin extended its command-line LTL parser to accept
+arbitrary atomic propositions to be specified.  For instance <code>(a &gt; 4)
+U (b &lt; 5)</code> would be correct input, with <code>a &gt; 4</code> and <code>b &lt; 5</code> considered
+as two atomic propositions.  Of course the atomic proposition could be
+arbitrarily complex, and there is no way we can teach Spot about the
+syntax for atomic propositions supported by any tool.  The usual
+workaround in Spot is to double-quote any arbitrary atomic
+proposition:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh"><span class="org-builtin">echo</span> compare
+ltlfilt -f <span class="org-string">'"a &gt; 4" U "b &lt; 5"'</span>
+<span class="org-builtin">echo</span> and
+ltlfilt -f <span class="org-string">'"a &gt; 4" U "b &lt; 5"'</span> --spin
+</pre>
+</div>
+
+<pre class="example">
+compare
+"a &gt; 4" U "b &lt; 5"
+and
+(a &gt; 4) U (b &lt; 5)
+
+</pre>
+
+<p>
+When the Spin output is requested, these atomic propositions are
+atomically output in a way that Spin can parse.
+</p>
+
+<p>
+This Spin syntax is not accepted by default by the infix parser, but
+it has an option for that.  This is called <i>lenient parsing</i>: when the
+parser finds a parenthetical block it does not understand, it simply
+assume that this block represents an atomic proposition.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt --lenient -f <span class="org-string">'(a &gt; 4) U (b &lt; 5)'</span>
+</pre>
+</div>
+
+<pre class="example">
+"a &gt; 4" U "b &lt; 5"
+
+</pre>
+
+<p>
+Lenient parsing is risky, because any parenthesized sub-formula that
+is a syntax-error will be treated as an atomic proposition:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt --lenient -f <span class="org-string">'(a U ) U c'</span>
+</pre>
+</div>
+
+<pre class="example">
+"a U" U c
+
+</pre>
+
+<p>
+In C++ you can enable lenient using one of the Boolean arguments of
+<code>parse_infix_psl()</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-orgebf7889" class="outline-3">
+<h3 id="orgebf7889">Python formatting</h3>
+<div class="outline-text-3" id="text-orgebf7889">
+<p>
+Formulas have a custom format specification language that allows you
+to easily change the way a formula should be output when using the
+<code>format()</code> method of strings.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+<span class="org-variable-name">formula</span> = spot.formula(<span class="org-string">'a U b U "$strange[0]=name"'</span>)
+<span class="org-keyword">print</span>(<span class="org-string">"""\</span>
+<span class="org-string">Default output:    {f}</span>
+<span class="org-string">Spin syntax:       {f:s}</span>
+<span class="org-string">(Spin syntax):     {f:sp}</span>
+<span class="org-string">Default for shell: echo {f:q} | ...</span>
+<span class="org-string">LBT for shell:     echo {f:lq} | ...</span>
+<span class="org-string">Default for CSV:   ...,{f:c},...</span>
+<span class="org-string">Wring, centered:   {f:w:~^50}"""</span>.<span class="org-builtin">format</span>(f = formula))
+</pre>
+</div>
+
+<pre class="example">
+Default output:    a U (b U "$strange[0]=name")
+Spin syntax:       a U (b U ($strange[0]=name))
+(Spin syntax):     (a) U ((b) U ($strange[0]=name))
+Default for shell: echo 'a U (b U "$strange[0]=name")' | ...
+LBT for shell:     echo 'U "a" U "b" "$strange[0]=name"' | ...
+Default for CSV:   ...,"a U (b U ""$strange[0]=name"")",...
+Wring, centered:   ~~~~~(a=1) U ((b=1) U ("$strange[0]=name"=1))~~~~~
+
+</pre>
+
+<p>
+The specifiers after the first <code>:</code> are specific to formulas.  The
+specifiers after the second <code>:</code> (if any) are the usual <a href="https://docs.python.org/3/library/string.html#formatspec">format
+specifiers</a> (typically alignment choices) and are applied on the string
+produced from the formula.
+</p>
+
+<p>
+The complete list of specifier that apply to formulas can always be
+printed with <code>help(spot.formula.__format__)</code>:
+</p>
+
+<pre class="example">
+Help on function __format__ in module spot:
+
+__format__(self, spec)
+    Format the formula according to `spec`.
+    
+    Parameters
+    ----------
+    spec : str, optional
+        a list of letters that specify how the formula
+        should be formatted.
+    
+    Supported specifiers
+    --------------------
+    
+    - 'f': use Spot's syntax (default)
+    - '8': use Spot's syntax in UTF-8 mode
+    - 's': use Spin's syntax
+    - 'l': use LBT's syntax
+    - 'w': use Wring's syntax
+    - 'x': use LaTeX output
+    - 'X': use self-contained LaTeX output
+    - 'j': use self-contained LaTeX output, adjusted for MathJax
+    
+    Add some of those letters for additional options:
+    
+    - 'p': use full parentheses
+    - 'c': escape the formula for CSV output (this will
+           enclose the formula in double quotes, and escape
+           any included double quotes)
+    - 'h': escape the formula for HTML output
+    - 'd': escape double quotes and backslash,
+           for use in C-strings (the outermost double
+           quotes are *not* added)
+    - 'q': quote and escape for shell output, using single
+           quotes or double quotes depending on the contents.
+    - '[...]': rewrite away all the operators specified in brackets,
+           using spot.unabbreviate().
+    
+    - ':spec': pass the remaining specification to the
+               formating function for strings.
+
+</pre>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

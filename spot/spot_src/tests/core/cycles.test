@@ -1,0 +1,74 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012, 2014, 2015 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# Fig.1 from Johnson's SIAM J. Comput. 1975 paper.
+cat >johnson-fig1.hoa <<EOF
+HOA: v1
+States: 12
+Start: 0
+AP: 0
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0
+[t] 1
+[t] 3
+[t] 4
+State: 1
+[t] 2
+State: 2
+[t] 5
+[t] 6
+State: 3
+[t] 2
+State: 4
+[t] 2
+State: 5
+[t] 6
+[t] 7
+State: 6
+[t] 8
+[t] 10
+[t] 11
+State: 7
+[t] 0
+[t] 6
+State: 8
+[t] 2
+[t] 9
+State: 9
+[t] 6
+State: 10
+[t] 9
+State: 11
+[t] 9
+--END--
+EOF
+
+run 0 ../ikwiad -KC -XH johnson-fig1.hoa > out
+test `wc -l < out` -eq 10
+
+run 0 ../ikwiad -KW '(Ga -> Gb) W c' > out
+test `grep 'is weak' out | wc -l` -eq 4
+test `grep 'is not weak' out | wc -l` -eq 1

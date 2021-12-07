@@ -1,0 +1,99 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2011, 2012, 2013, 2016 Laboratoire de
+# Recherche et Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004 Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check that spot::parse succeed on valid input, and that
+# dump and dotty will work with the resulting trees.  Note that
+# this doesn't check that the tree is correct w.r.t. the formula.
+
+. ./defs || exit 1
+
+set -e
+
+cat >input <<EOF
+0
+1
+true
+false
+a
+p11011
+(p11011)
+a & b
+a * _b12
+a && .b.
+a + b
+a3214 | b
+a /\ b
+a || b
+a \/ b
+a | b
+_a_ U b
+a R b
+a <=> b
+a <-> b
+a ^ b
+a xor b
+a => b
+a -> b
+F b
+Gb
+G(b)
+!G(!b)
+!b
+[]b
+<>b
+X b
+()b
+X"X"
+X"F"
+X"G"
+X"U"
+X"W"
+X"R"
+X"M"
+long_atomic_proposition_1 U long_atomic_proposition_2
+  ab & ac | ad ^ af
+((b & a) + a) & d
+(ab & ac | ad ) <=> af
+a U b U c U d U e U f U g U h U i U j U k U l U m
+(ab & !Xad + ad U ab) & FG p12 /\ GF p13
+((([]<>()p12))   )
+a R ome V anille
+p=0Uq=1
+((p=1Rq=1)+p=0)UXq=0
+((p=1Rq=1)*p=0)UXq=0
+(Gq=1*Fp=0)UXq=0
+((p=1Mq=1)Wx+p=0)RXq=0
+((p=1Vq=1)Rx+p=0)WXq=0
+((X(p2=0))U(X(p2=0)))+((Xp1=0)UFALSE)
+EOF
+
+run 0 ../ltl2text input
+
+if test -n "$DOT"; then
+  run 0 ../ltl2dot "input" > parse.dot
+  $DOT -o /dev/null parse.dot
+fi
+
+# Make sure running the parser in debug mode does not crash
+run 0 ../ikwiad -d 'a U b'

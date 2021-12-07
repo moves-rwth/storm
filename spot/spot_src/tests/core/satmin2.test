@@ -1,0 +1,531 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2015, 2017, 2018 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# This is a counterexample for one of the optimization idea we had for
+# the SAT-based minimization.
+cat >input.hoa  <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete deterministic
+--BODY--
+State: 0
+[0] 1 {0}
+[!0] 2
+State: 1
+[!0] 0 {0}
+[0] 2
+State: 2
+[0] 2 {0}
+[!0] 2
+--END--
+EOF
+cat >expected <<EOF
+transitions: 2
+edges: 2
+states: 1
+nondeterministic states: 0
+EOF
+../ikwiad -RS1 -kt -XH input.hoa > output
+diff output expected
+
+
+# At some point, this formula was correctly minimized, but
+# the output was not marked as state-based.
+ltl2tgba -BD -x sat-minimize "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize,sat-langmap' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=2, sat-incr-steps=0' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=2, sat-incr-steps=1' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=2, sat-incr-steps=2' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=2, sat-incr-steps=50' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=3, sat-incr-steps=-1' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=3, sat-incr-steps=0' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=3, sat-incr-steps=1' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=3, sat-incr-steps=2' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x 'sat-minimize=3, sat-incr-steps=50' "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+ltl2tgba -BD -x sat-minimize=4 "GF(a <-> XXb)" -H >out
+grep 'properties:.*state-acc' out
+grep 'properties:.*deterministic' out
+
+
+# DRA produced by ltl2dstar for GFp0 -> GFp1
+cat >test.hoa <<EOF
+HOA: v1
+States: 4
+properties: implicit-labels trans-labels no-univ-branch deterministic complete
+acc-name: Rabin 2
+Acceptance: 4 (Fin(0)&Inf(1))|(Fin(2)&Inf(3))
+Start: 0
+AP: 2 "p0" "p1"
+--BODY--
+State: 0 {0}
+1
+0
+3
+2
+State: 1 {1}
+1
+0
+3
+2
+State: 2 {0 3}
+1
+0
+3
+2
+State: 3 {1 3}
+1
+0
+3
+2
+--END--
+EOF
+# Let's try to find a smaller transition-based Streett automaton We
+# easily really check the expected automaton, because different SAT
+# solver (even different versions of glucose) can return different
+# automata.
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"' test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='sat-langmap,acc="Fin(0)|Inf(1)"' test.hoa --stats=%s \
+  >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-incr=1,sat-incr-steps=0' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-incr=1,sat-incr-steps=1' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-incr=1,sat-incr-steps=2' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-incr=1,sat-incr-steps=50' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=-1' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=0' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=1' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=2' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=50' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='sat-naive,acc="Fin(0)|Inf(1)"' test.hoa \
+  --stats=%s >output
+test `cat output` = 1
+
+
+# How about a state-based DSA ?
+autfilt -S --sat-minimize='acc="Fin(0)|Inf(1)"' test.hoa \
+  --stats=%s > output
+test `cat output` = 3
+autfilt -S --sat-minimize='sat-langmap,acc="Fin(0)|Inf(1)"' test.hoa \
+  --stats=%s > output
+test `cat output` = 3
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-incr=1,sat-incr-steps=0' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-incr=1,sat-incr-steps=1' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-incr=1,sat-incr-steps=2' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-incr=1,sat-incr-steps=50' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=-1' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=0' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=1' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=2' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"sat-incr=2,sat-incr-steps=50' \
+  test.hoa --stats=%s >output
+test `cat output` = 1
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)",sat-naive' test.hoa \
+  --stats=%s >output
+test `cat output` = 1
+
+
+# How about a state-based DPA?
+autfilt -S --sat-minimize='acc="parity max even 3",colored' -H test.hoa |
+    autfilt --is-colored > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S --sat-minimize='acc="parity max even 3",colored,sat-langmap' -H \
+  test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=1,sat-incr-steps=0' \
+  -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=1,sat-incr-steps=1' \
+  -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=1,sat-incr-steps=2' \
+  -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=1,sat-incr-steps=50'\
+   -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=2,sat-incr-steps=-1'\
+   -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=2,sat-incr-steps=0' \
+  -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=2,sat-incr-steps=1' \
+  -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=2,sat-incr-steps=2' \
+  -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S \
+  --sat-minimize='acc="parity max even 3",colored,sat-incr=2,sat-incr-steps=50'\
+   -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+autfilt -S --sat-minimize='acc="parity max even 3",colored,sat-naive' \
+  -H test.hoa > output
+cat output
+grep 'properties:.*colored' output
+grep 'States: 3' output
+grep 'acc-name: parity max even 3' output
+grep 'Acceptance: 3 Inf(2) | (Fin(1) & Inf(0))' output
+test 3 = `grep -c 'State: [012] {[012]}' output`
+
+
+# I get headaches whenever I think about this acceptance condition, so
+# it should be a good test case.
+cat >special.hoa <<EOF
+HOA: v1
+States: 2
+Acceptance: 2 Inf(0)&Fin(1) | Fin(0)&Inf(1)
+Start: 0
+AP: 1 "a"
+--BODY--
+State: 0
+[0] 0 {0}
+[!0] 1 {1}
+State: 1
+[0] 0 {0}
+[!0] 1 {1}
+--END--
+EOF
+cat >expected <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+acc-name: generalized-co-Buchi 2
+Acceptance: 2 Fin(0)|Fin(1)
+properties: trans-labels explicit-labels trans-acc colored complete
+properties: deterministic
+--BODY--
+State: 0
+[0] 0 {0}
+[!0] 0 {1}
+--END--
+EOF
+autfilt -H --sat-minimize special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-langmap' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=1,sat-incr-steps=0' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=1,sat-incr-steps=1' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=1,sat-incr-steps=2' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=1,sat-incr-steps=50' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=2,sat-incr-steps=-1' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=2,sat-incr-steps=0' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=2,sat-incr-steps=1' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=2,sat-incr-steps=2' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-incr=2,sat-incr-steps=50' special.hoa > output
+diff output expected
+autfilt -H --sat-minimize='sat-naive' special.hoa > output
+diff output expected
+
+
+cat >foo.hoa <<EOF
+HOA: v1
+States: 1
+Start: 0
+Acceptance: 4 (Fin(0)&Inf(1)) | (Fin(2)&Inf(3))
+AP: 2 "b" "a"
+--BODY--
+State: 0
+ 0 {3}          /*{}*/
+ 0 {1 3}        /*{b}*/
+ 0 {2}          /*{a}*/
+ 0 {2 1}        /*{b, a}*/
+--END--
+EOF
+
+autfilt -q --is-colored foo.hoa && exit 1
+
+autfilt --sat-minimize='acc="Streett 1",max-states=2' foo.hoa \
+	 --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize='acc="Streett 1",max-states=2,sat-langmap' foo.hoa \
+	 --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=1,sat-incr-steps=0' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=1,sat-incr-steps=1' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=1,sat-incr-steps=2' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=1,sat-incr-steps=50' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=2,sat-incr-steps=-1' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=2,sat-incr-steps=0' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=2,sat-incr-steps=1' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=2,sat-incr-steps=2' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt \
+  --sat-minimize='acc="Streett 1",max-states=2,sat-incr=2,sat-incr-steps=50' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize='acc="Streett 1",max-states=2,sat-naive' foo.hoa \
+	 --stats=%s >out
+test "`cat out`" = 1
+
+
+autfilt --sat-minimize='acc="Rabin 1",max-states=4' foo.hoa \
+	 --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt --sat-minimize='acc="Rabin 1",max-states=4,sat-langmap' foo.hoa \
+	 --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4,sat-incr=1,sat-incr-steps=0' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4,sat-incr=1,sat-incr-steps=1' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4,sat-incr=1,sat-incr-steps=2' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4,sat-incr=1,sat-incr-steps=50' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4sat-incr=2,sat-incr-steps=-1' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4sat-incr=2,sat-incr-steps=0' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4sat-incr=2,sat-incr-steps=1' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4sat-incr=2,sat-incr-steps=2' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt \
+  --sat-minimize='acc="Rabin 1",max-states=4sat-incr=2,sat-incr-steps=50' \
+  foo.hoa --stats=%s >out && exit 1
+test -z "`cat out`"
+autfilt --sat-minimize='acc="Rabin 1",max-states=4,sat-naive' foo.hoa \
+	 --stats=%s >out && exit 1
+test -z "`cat out`"
+
+autfilt --sat-minimize='acc="Inf(0)&Fin(1)|Inf(2)",states=1' foo.hoa \
+	 --stats=%s >out
+test "`cat out`" = 1
+
+
+options='acc="Inf(0)&Fin(1)|Inf(2)",states=1'
+
+autfilt --sat-minimize=$options',sat-langmap' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=1,sat-incr-steps=0' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=1,sat-incr-steps=1' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=1,sat-incr-steps=2' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=1,sat-incr-steps=50' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=2,sat-incr-steps=-1' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=2,sat-incr-steps=0' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=2,sat-incr-steps=1' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=2,sat-incr-steps=2' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-incr=2,sat-incr-steps=50' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+autfilt --sat-minimize=$options',sat-naive' \
+  foo.hoa --stats=%s >out
+test "`cat out`" = 1
+
+# Make sure no extra state are added.  See issue #204
+test 2 = `ltl2tgba a | autfilt --sat-minimize --stats=%s`
+
+# Make sure -B implies -S even for --sat-minimize.  See issue #340.
+ltl2tgba -G -D -f 'GF(a <-> XXb)' > aut
+test 6 = "`autfilt -B --sat-minimize --stats=%s aut`"
+test 6 = "`autfilt -B -S --sat-minimize --stats=%s aut`"

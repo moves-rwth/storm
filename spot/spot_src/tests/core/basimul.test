@@ -1,0 +1,71 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2014, 2017 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+# This bug was found while working on the state-based acceptance
+# output for the LBTT format.  Using ba-simul=2 causes reverse
+# simulation to be applied to the BA automaton obtained after
+# degeneralization.  Unfortunately in Spot 1.1, reverse simulation is
+# only implemented on TGBA, and when applied to a TGBA that is a BA,
+# it may merge one state that is accepting with one state that is not
+# accepting, just because they have the same incoming transitions.
+# (Applying direct simulation on a TGBA that is a BA is not a problem,
+# since an accepting state will never have the same outgoing
+# transitions as a BA.)
+
+# In previous tests, we did not notice the bug because the --lbtt
+# output was always using transition-based acceptance (the equivalent
+# of --lbtt=t today), so the result of the reverse-simulation on the
+# BA was output as a TGBA with a single acceptance set, and some state
+# had both accepting and non-accepting transitions because of the
+# merge.  Unfortunately, this is not a Büchi automaton.  Using the
+# --spin output, or the new (state-based) --lbtt output highlights the
+# bug.
+
+# In the cases below, the following configurations used to fail
+# cross-comparison with the other "sane" configurations, at least
+# with the first formula.  (The other three formulas were added because
+# they also triggered related issues while debugging the first one.)
+#    --lbtt -x ba-simul=2
+#    --lbtt -x ba-simul=3
+#    --spin -x ba-simul=2
+#    --spin -x ba-simul=3
+
+ltlcross --seed=0 --products=5 --json=out.json \
+    -f 'X((F(Xa | b) W c) U (Xc W (a & d)))' \
+    -f '((<> p5 V ((p0 U p1) <-> (p5 \/ p1))) -> ((<> p4 V p2) M p2))' \
+    -f '!p2 & (Fp5 R (((p0 U p1) & (p5 | p1)) | (!p5 & (!p0 R !p1))))' \
+    -f '! ((p0 /\ p4) <-> ! ((! p0 U (p0 W p4)) /\ (X p5 -> ([] p3 /\ p5))))' \
+    -f '(X <> (<> X p0 /\ X (p5 <-> p0)) W (p3 W p0))' \
+    "ltl2tgba --ba --high --lbtt=t -x ba-simul=0 %f >%T" \
+    "ltl2tgba --ba --high --lbtt=t -x ba-simul=1 %f >%T" \
+    "ltl2tgba --ba --high --lbtt=t -x ba-simul=2 %f >%T" \
+    "ltl2tgba --ba --high --lbtt=t -x ba-simul=3 %f >%T" \
+    "ltl2tgba --ba --high --lbtt -x ba-simul=0 %f >%T" \
+    "ltl2tgba --ba --high --lbtt -x ba-simul=1 %f >%T" \
+    "ltl2tgba --ba --high --lbtt -x ba-simul=2 %f >%T" \
+    "ltl2tgba --ba --high --lbtt -x ba-simul=3 %f >%T" \
+    "ltl2tgba --ba --high --spin -x ba-simul=0 %f >%N" \
+    "ltl2tgba --ba --high --spin -x ba-simul=1 %f >%N" \
+    "ltl2tgba --ba --high --spin -x ba-simul=2 %f >%N" \
+    "ltl2tgba --ba --high --spin -x ba-simul=3 %f >%N"

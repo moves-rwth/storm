@@ -1,0 +1,43 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# This tests our support for LaTeX-embedded dot, for dot2tex.
+
+# Skip this test if we don't find all the tools we need.
+(latexmk --version) || exit 77
+(pdflatex --version) || exit 77
+(dot2tex --version) || exit 77
+(dot -V) || exit 77
+
+ltl2tgba 'a U b' --dot=scanx >out.dot
+dot2tex --autosize --nominsize out.dot >out.tex
+pdflatex out.tex
+
+ltl2tgba 'p0 U p1' --dot=tbarx >out2.dot
+# Check this in the dot file, because dot2tex 2.9.0 is broken and does
+# not output the labels when they fail to compute their size.
+grep -F 'p_{0}' out2.dot
+grep -F 'mathsf{Inf}' out2.dot
+dot2tex --autosize --nominsize out2.dot >out2.tex
+grep -F 'accset0' out2.tex
+pdflatex out2.tex

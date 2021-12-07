@@ -1,0 +1,197 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015, 2017, 2018 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+# Two empty automata
+cat >a1.hoa <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+Acceptance: 1 Fin(0)
+--BODY--
+State: 0
+--END--
+EOF
+cat >a2.hoa <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+Acceptance: 0 f
+--BODY--
+State: 0
+[t] 0
+--END--
+EOF
+
+# the OR product of two empty automata should be empty
+autfilt --product-or a1.hoa a2.hoa -H | autfilt --is-empty
+
+ltl2tgba -DH 'GFa' > gfa.hoa
+ltl2tgba -DH 'FGb' > fgb.hoa
+autfilt --product-or gfa.hoa fgb.hoa -H > por.hoa
+cat por.hoa
+
+cat >exp <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: stutter-invariant
+--BODY--
+State: 0
+[!0] 0
+[0] 0 {0}
+[!0&1] 1
+[0&1] 1 {0}
+State: 1
+[!0&1] 1 {0}
+[0&1] 1 {0}
+[!0&!1] 2 {0}
+[0&!1] 2 {0}
+State: 2
+[!0] 2
+[0] 2 {0}
+--END--
+EOF
+diff por.hoa exp
+
+test 2 = `autfilt -c --intersect por.hoa gfa.hoa fgb.hoa`
+
+autfilt --product-and gfa.hoa fgb.hoa -H > pand.hoa
+cat pand.hoa
+
+cat >exp <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc stutter-invariant
+--BODY--
+State: 0
+[!0] 0
+[0] 0
+[!0&1] 1
+[0&1] 1
+State: 1
+[!0&1] 1
+[0&1] 1 {0}
+--END--
+EOF
+diff pand.hoa exp
+
+test 2 = `autfilt -c --intersect pand.hoa gfa.hoa fgb.hoa`
+
+# Xb is weak, so the product will still be Büchi
+ltl2tgba -BDH 'GFa' > gfa.hoa
+ltl2tgba -BDH 'Xb' > xb.hoa
+autfilt --product-or gfa.hoa xb.hoa -H > por.hoa
+cat por.hoa
+
+cat >exp <<EOF
+HOA: v1
+States: 7
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic
+--BODY--
+State: 0 {0}
+[0] 1
+[!0] 2
+State: 1 {0}
+[0&1] 3
+[!0&1] 4
+[0&!1] 5
+[!0&!1] 6
+State: 2
+[0&1] 3
+[!0&1] 4
+[0&!1] 5
+[!0&!1] 6
+State: 3 {0}
+[0] 3
+[!0] 4
+State: 4 {0}
+[0] 3
+[!0] 4
+State: 5 {0}
+[0] 5
+[!0] 6
+State: 6
+[0] 5
+[!0] 6
+--END--
+EOF
+diff por.hoa exp
+
+ltl2tgba -BDH 'GFa' > gfa.hoa
+ltl2tgba -x '!wdba-minimize' -DH 'Xb' > xb.hoa
+autfilt --product-or gfa.hoa xb.hoa -H > por.hoa
+cat por.hoa
+
+cat >exp <<EOF
+HOA: v1
+States: 7
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic
+--BODY--
+State: 0 {0}
+[0] 1
+[!0] 2
+State: 1 {0}
+[0&1] 3
+[!0&1] 4
+[0&!1] 5
+[!0&!1] 6
+State: 2 {0}
+[0&1] 3
+[!0&1] 4
+[0&!1] 5
+[!0&!1] 6
+State: 3 {0}
+[0] 3
+[!0] 4
+State: 4 {0}
+[0] 3
+[!0] 4
+State: 5 {0}
+[0] 5
+[!0] 6
+State: 6
+[0] 5
+[!0] 6
+--END--
+EOF
+diff por.hoa exp

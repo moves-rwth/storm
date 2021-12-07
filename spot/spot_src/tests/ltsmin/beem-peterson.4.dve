@@ -1,0 +1,63 @@
+// peterson mutual exclusion protocol for N processes
+
+// Comes from http://anna.fi.muni.cz/models/cgi/model_info.cgi?name=peterson
+// Also distributed with DiVinE (using dual GPL and BSD licences)
+
+byte pos[4];
+byte step[4];
+
+process P_0 {
+byte j=0, k=0;
+state NCS, CS, wait ,q2,q3;
+init NCS;
+trans
+ NCS -> wait { effect j = 1; },
+ wait -> q2  { guard j < 4; effect pos[0] = j;},
+ q2 -> q3 { effect step[j-1] = 0, k = 0; },
+ q3 -> q3 { guard k < 4 && (k == 0 || pos[k] < j); effect k = k+1;},
+ q3 -> wait { guard step[j-1] != 0 || k == 4; effect j = j+1;},
+ wait -> CS { guard j == 4; },
+ CS -> NCS { effect pos[0] = 0;};
+}
+process P_1 {
+byte j=0, k=0;
+state NCS, CS, wait ,q2,q3;
+init NCS;
+trans
+ NCS -> wait { effect j = 1; },
+ wait -> q2  { guard j < 4; effect pos[1] = j;},
+ q2 -> q3 { effect step[j-1] = 1, k = 0; },
+ q3 -> q3 { guard k < 4 && (k == 1 || pos[k] < j); effect k = k+1;},
+ q3 -> wait { guard step[j-1] != 1 || k == 4; effect j = j+1;},
+ wait -> CS { guard j == 4; },
+ CS -> NCS { effect pos[1] = 0;};
+}
+process P_2 {
+byte j=0, k=0;
+state NCS, CS, wait ,q2,q3;
+init NCS;
+trans
+ NCS -> wait { effect j = 1; },
+ wait -> q2  { guard j < 4; effect pos[2] = j;},
+ q2 -> q3 { effect step[j-1] = 2, k = 0; },
+ q3 -> q3 { guard k < 4 && (k == 2 || pos[k] < j); effect k = k+1;},
+ q3 -> wait { guard step[j-1] != 2 || k == 4; effect j = j+1;},
+ wait -> CS { guard j == 4; },
+ CS -> NCS { effect pos[2] = 0;};
+}
+process P_3 {
+byte j=0, k=0;
+state NCS, CS, wait ,q2,q3;
+init NCS;
+trans
+ NCS -> wait { effect j = 1; },
+ wait -> q2  { guard j < 4; effect pos[3] = j;},
+ q2 -> q3 { effect step[j-1] = 3, k = 0; },
+ q3 -> q3 { guard k < 4 && (k == 3 || pos[k] < j); effect k = k+1;},
+ q3 -> wait { guard step[j-1] != 3 || k == 4; effect j = j+1;},
+ wait -> CS { guard j == 4; },
+ CS -> NCS { effect pos[3] = 0;};
+}
+
+
+system async;

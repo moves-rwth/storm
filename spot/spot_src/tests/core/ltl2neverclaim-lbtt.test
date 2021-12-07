@@ -1,0 +1,103 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010, 2012, 2013 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Do some quick translations to make sure the neverclaims produced by
+# spot actually look correct!
+
+# This test is separate from spotlbtt.test, because lbtt-translate
+# will refuse to pass M and W to a tool (spot) that masquerades as
+# Spin.
+
+. ./defs
+need_lbtt
+
+set -e
+
+cat > config <<EOF
+Algorithm
+{
+   Name = "Spot (Couvreur -- FM)"
+   Path = "${LBTT_TRANSLATE}"
+   Parameters = "--spot '../ikwiad -F -f -t'"
+   Enabled = yes
+}
+
+Algorithm
+{
+   Name = "Spot (Couvreur -- FM), with reductions"
+   Path = "${LBTT_TRANSLATE}"
+   Parameters = "--spot '../ikwiad -r4 -R3f -F -f -t'"
+   Enabled = no
+}
+
+Algorithm
+{
+   Name = "Spot (Couvreur -- FM), degeneralized via never claim"
+   Path = "${LBTT_TRANSLATE}"
+   Parameters = "--spin '../ikwiad -F -f -N'"
+   Enabled = yes
+}
+
+Algorithm
+{
+   Name = "Spot (Couvreur -- FM), reductions, degeneralized via never claim"
+   Path = "${LBTT_TRANSLATE}"
+   Parameters = "--spin '../ikwiad -F -f -r4 -R3 -N'"
+   Enabled = yes
+}
+
+GlobalOptions
+{
+   Rounds = 100
+   Interactive = Never
+#   Verbosity = 5
+#   ComparisonCheck = no
+#   ConsistencyCheck = no
+#   IntersectionCheck = no
+}
+
+FormulaOptions
+{
+  Size = 1...13
+  Propositions = 6
+
+  AbbreviatedOperators = Yes
+  GenerateMode = Normal
+  OutputMode = Normal
+  PropositionPriority = 50
+
+  TruePriority = 1
+  FalsePriority = 1
+
+  AndPriority = 10
+  OrPriority = 10
+  XorPriority = 0
+  # EquivalencePriority = 0
+
+  BeforePriority = 0
+  StrongReleasePriority = 0
+  WeakUntilPriority = 0
+
+  DefaultOperatorPriority = 5
+}
+EOF
+
+${LBTT}
+rm config

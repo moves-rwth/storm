@@ -1,0 +1,355 @@
+Overview
+========
+
+Spot is a model-checking toolkit comprising:
+  - a C++14 library with data-structures and algorithms for working
+    with linear-time temporal logical formulas and ω-automata with
+    any acceptance condition.
+  - a set of command-line tools for easy access to those algorithms,
+    with convenient interfaces to third-party tools also manipulating
+    similar concepts.
+  - Python bindings (including Jupyter interfaces) for the library,
+    making it easier to play with and discover those concepts.
+
+
+Documentation
+=============
+
+Some documentation can be found in the doc/ directory.
+
+- doc/userdoc/ is basically a local copy of the web-site at
+  https://spot.lrde.epita.fr/.  It contains several explanations and
+  illustrations of the core concepts and tools; it has installation
+  instructions; and also provide several code examples.
+
+- doc/spot.html/ contains documentation for the C++ library.  It is
+  generated automatically from the source code using Doxygen.
+
+- doc/tl/tl.pdf contains documentation about the various temporal
+  logic operators supported by Spot.  It provides semantics, syntax,
+  and gives an exhaustive list of all implemented rewritings.
+
+"make install" will also install man pages for command-line tools.
+(These man pages can also be found in the spot/bin/man/ subdirectory
+of the source tree.)  Additional documentation about these tools can
+also be found in doc/userdoc/.
+
+An important part of the documentation that is missing is the
+documentation of the Python bindings.  Currently all we have is a
+collection of examples, which are all collected at
+http://spot.lrde.epita.fr/tut.html (or doc/userdoc/tut.html in the
+source tree).  This is hardly ideal, but we do not have the resources
+to maintain such a manual for the Python binding by hand.  If you have
+an idea about how to generate a manual for the Python bindings
+automatically, please do contribute!
+
+
+Keeping in touch
+================
+
+If you have questions regarding Spot, or bug to report, please send
+them to <spot@lrde.epita.fr>.  This is a public mailing list which you
+may subscribe to at https://www.lrde.epita.fr/mailman/listinfo/spot
+but you should feel free to post without subscribing.
+
+We also run a low-traffic and read-only list for announcements of new
+releases of Spot.  You may subscribe to that list at
+https://www.lrde.epita.fr/mailman/listinfo/spot-announce
+
+
+History
+=======
+
+This project started in 2003 at LIP6 (www.lip6.fr).  The main author
+moved to LRDE (www.lrde.epita.fr) in 2007, and all regular
+contributors are now at LRDE.  The web site was moved from
+spot.lip6.fr to spot.lrde.epita.fr in 2015, so do not be surprised if
+you find links to the old site.
+
+
+Installation
+============
+
+Requirements
+------------
+
+Spot requires a C++14-compliant compiler.  G++ 5.x or later, as well
+as Clang++ 3.5 or later should work.
+
+Spot expects a complete installation of Python (version 3.3 or later).
+Especially, Python's headers files should be installed.  If you don't
+have Python installed, and do NOT want to install it, you should run
+configure with the --disable-python option (see below).
+
+
+Optional third-party dependencies
+----------------------------------
+
+Several tools and functions output automata as "dot files", to be
+rendered graphically by tools from the GraphViz package.  Installing
+GraphViz is therefore highly recommended if you plan to display
+automata.
+
+If the SAT-solver glucose is found on your system, it will be used by
+our test suite to test our SAT-based minimization algorithm.
+
+Spot used to distribute a modified version of LBTT (an LTL to Büchi
+test bench), mostly fixing errors reported by recent compilers.
+However Spot now distributes its own reimplementation of LBTT, called
+ltlcross, so the use of LBTT is completely optional.  The last
+modified version of LBTT we used to distribute can now be found at
+  http://www.lrde.epita.fr/dload/spot/lbtt-1.2.1a.tar.gz
+If some lbtt binary is found on your system, it will be used in the
+test suite in addition to ltlcross.
+
+
+Building and installing
+-----------------------
+
+Spot follows the traditional `./configure && make && make check &&
+make install' process.  People unfamiliar with the GNU Build System
+should read the file INSTALL for generic instructions.
+
+If you plan to use the Python binding, we recommend you use one
+of the following --prefix options when calling configure:
+
+  --prefix /usr
+  --prefix /usr/local  (the default)
+  --prefix ~/.local    (if you do not have root permissions)
+
+The reason is that all these locations are usually automatically
+searched by Python.  If you use a different prefix directory, you may
+have to tune the PYTHONPATH environment variable.
+
+In addition to its usual options, ./configure will accept some
+flags specific to Spot:
+
+  --disable-python
+    Turn off the compilation of Python bindings.  These bindings
+    offers a convenient interface when used in an IPython notebook,
+    and are also used to build the CGI script that translates LTL
+    formulas on-line.  You may safely disable these, especially if you
+    do not have a working Python 3.2+ installation or if you are
+    attempting some cross-compilation.
+
+  --enable-max-accsets=N
+    Compile Spot so that it supports up to N acceptance sets.  The
+    default is 32, so that the membership of each transition to
+    any of the 32 acceptance sets can be represented by an
+    "unsigned int" (interpreted as a bit-vector).  Using a larger
+    N (it still has to be a multiple of 32) will consume more
+    unsigned ints per transitions, costing both time and space.
+
+  --enable-doxygen
+    Generate the Doxygen documentation for the code as part of the
+    build.  This requires Doxygen to be installed.  Even if
+    --enable-doxygen has not been given, you can force the
+    documentation to be built by running "make doc" inside the doc/
+    directory.
+
+  --enable-devel
+    Enable debugging symbols, turn off aggressive optimizations, and
+    turn on assertions.  This option is effective by default in
+    development versions (version numbers ending with a letter).
+    It is equivalent to
+      --enable-debug
+      --enable-warnings
+      --enable-assert
+      --enable-optimizations=-O
+  --disable-devel
+    Disable development options.  This is the case by default in
+    releases (version numbers NOT ending with a letter).
+    It is equivalent to
+      --disable-debug
+      --disable-warnings
+      --disable-assert
+      --enable-optimizations
+
+   --enable-glibgxx-debug
+     Enable the debugging version libstdc++
+     https://gcc.gnu.org/onlinedocs/libstdc++/manual/debug_mode_semantics.html
+     Note that the debugging version of libstdc++ is incompatible with
+     the regular version.  So if Spot is compiled with this option, all
+     client code should be compiled with -D_GLIBCXX_DEBUG as well.  This
+     options should normally only be useful to run Spot's test-suite.
+
+   --enable-c++17
+     Build everything in C++17 mode.  We use that in our build farm to
+     ensure that Spot can be used in C++17 projects as well.
+
+Here are the meaning of the fine-tuning options, in case
+--enable/disable-devel is not enough.
+
+  --disable-assert
+  --enable-assert
+    Control assertion checking.
+
+  --disable-warnings
+  --enable-warnings
+    Whether warnings should be output.  Note that during development
+    we consider warnings to be errors.
+
+  --disable-debug
+  --enable-debug
+    Whether to compile extra debugging code.
+
+  --enable-optimizations
+  --enable-optimizations=FLAGS
+  --disable-optimizations
+    Whether the compilation should be optimized.  When FLAGS are
+    given, use these as optimization flags.  Otherwise, pick working
+    flags from a built-in list.
+
+
+Troubleshooting installations
+-----------------------------
+
+Spot installs five types of files, in different locations.  It the
+following, $prefix refers to the directory that was selected using
+the --prefix option of configure (the default is /usr/local/).
+
+1) command-line tools go into $prefix/bin/
+2) shared or static libraries (depending on configure options)
+   are installed into $prefix/lib/
+3) Python bindings (if not disabled with --disable-python) typically
+   go into a directory like $prefix/lib/pythonX.Y/site-packages/
+   where X.Y is the version of Python found during configure.
+4) man pages go into $prefix/man
+5) header files go into $prefix/include
+
+Depending on how you plan to use Spot, you may have to adjust some
+variables such that all these files can be found by the other programs
+that look for them.
+
+To test if command-line tools are correctly installed, try running
+
+  % ltl2tgba --version
+
+If your shell reports that ltl2tgba is not found, add $prefix/bin
+to you $PATH environment variable.
+
+If the dynamic linker reports that some library (usually libspot.so or
+libbddx.so) is not found, you probably have to instruct it to look into
+some new directory.  If you installed Spot as root into a classical
+system prefix such as /usr or /usr/local/ it may be the case that you
+simply have to refresh the cache.  In GNU/Linux this is done by
+running "ldconfig -v".  If you installed Spot into a non-standard
+directory, you may have to add $prefix/lib some some environment
+variable: that variable is called LD_LIBRARY_PATH in GNU/Linux, and
+its DYLD_LIBRARY_PATH in Darwin.
+
+To test the Python bindings, try running
+
+  % python3
+  >>> import spot
+  >>> print(spot.version())
+
+If you installed Spot with a prefix that is not one of those suggested
+in the "Building and installing" section, it is likely that the above
+import statement will fail to locate the spot package.  You can show
+the list of directories that are searched by Python using:
+
+  % python3
+  >>> import sys
+  >>> print(sys.path)
+
+And you can modify that list of searched directories using the
+PYTHONPATH environment variable.
+
+To test if man pages can be found, simply try:
+
+  % man spot
+
+If man reports a message like "No manual entry for spot", add
+$prefix/man to the MANPATH environment variable.
+
+Finally header files are needed if you write some C++ that uses Spot.
+In that case you may need to pass some -I option to the compiler to
+add some "include" directory.  At link time, you may also need to add
+some -L option if the libraries are not in some location that is
+already searched by the linker.  The file doc/userdoc/compile.html (or
+its on-line version at https://spot.lrde.epita.fr/compile.html)
+discusses this topic a bit more.
+
+
+Layout of the source tree
+=========================
+
+Core directories
+----------------
+
+spot/             Sources for libspot.
+   graph/         Graph representations.
+   ltsmin/        Interface with DiVinE2 and SpinS.  (Not part of libspot.)
+   kripke/        Kripke Structure interface.
+   tl/            Temporal Logic formulas and algorithms.
+   misc/          Miscellaneous support files.
+   parseaut/      Parser for automata in multiple formats.
+   parsetl/       Parser for LTL/PSL formulas.
+   priv/          Private algorithms, used internally but not exported.
+   ta/            TA objects and cousins (TGTA).
+   taalgos/       Algorithms on TA/TGTA.
+   twa/           TωA objects and cousins (Transition-based ω-Automata).
+   twaalgos/      Algorithms on TωA.
+      gtec/       Couvreur's Emptiness-Check (old version).
+   gen/           Sources for libspotgen.
+bin/              Command-line tools built on top of libspot.
+   man/           Man pages for the above tools.
+tests/            Test suite.
+   core/          Tests for libspot and the binaries.
+   ltsmin/	  Tests for the DiVinE2/SpinS interface.
+   python/        Tests for Python bindings.
+   sanity/        Tests for the coherence of the source base.
+doc/              Documentation for Spot.
+   org/           Source of userdoc/ as org-mode files.
+   tl/            Documentation of the Temporal Logic operators.
+   userdoc/       HTML documentation about command-line tools, and examples.
+   spot.html/     HTML doc for C++ API (not distributed, use --enable-doxygen).
+bench/            Benchmarks for ...
+   dtgbasat/      ... SAT-based minimization of DTGBA,
+   emptchk/       ... emptiness-check algorithms,
+   ltl2tgba/      ... LTL-to-Büchi translation algorithms,
+   ltlcounter/    ... translation of a class of LTL formulas,
+   ltlclasses/    ... translation of more classes of LTL formulas,
+   spin13/        ... compositional suspension and other improvements,
+   stutter/       ... stutter-invariance checking algorithms,
+   wdba/          ... WDBA minimization (for obligation properties).
+python/           Python bindings for Spot and BuDDy
+
+Third party software
+--------------------
+
+buddy/            A customized version of BuDDy 2.3 (a BDD library).
+ltdl/             Libtool's portable dlopen() wrapper library.
+lib/              Gnulib's portability modules.
+utf8/             Nemanja Trifunovic's utf-8 routines.
+elisp/		  Related emacs modes, used for building the documentation.
+picosat/          A distribution of PicoSAT 965 (a satsolver library).
+
+Build-system stuff
+------------------
+
+m4/      M4 macros used by configure.ac.
+tools/   Helper scripts used during the build.
+debian/  Configuration file to build Debian packages.
+
+-------------------------------------------------------------------------------
+Local Variables:
+mode: text
+coding: utf-8
+End:
+
+ LocalWords:  Python's BuDDy LBTT LTL Büchi lbtt gspn DIR GreatSPN Soheib Yann
+ LocalWords:  Baarir Thierry Mieg CVS Università di Torino devel src libspot ac
+ LocalWords:  ltlast ltlenv ltlparse ltlvisit  misc tgba TGBA tgbaalgos
+ LocalWords:  gtec Tarjan doc html PDF spotref pdf cgi ELTL LRDE tl
+ LocalWords:  CGI ltl iface BDD Couvreur's emptchk kripke Kripke saba vm
+ LocalWords:  eltlparse eltltest SABA sabaalgos sabatest ssp ltlcouter scc SCC
+LocalWords:  optimizations kripkeparse  Automata IPython subdirectory
+LocalWords:  neverparse ltlcounter ltlclasses parallelizing automata
+LocalWords:  wdba WDBA ajax dve DiVinE ltdl Libtool's dlopen userdoc
+LocalWords:  parseaut parsetl priv TGTA taalgos twa twaalgos dtgbasat
+LocalWords:  DTGBA compositional invariance ltsmin SpinS Gnulib's PSL
+LocalWords:  Jupyter Doxygen rewritings reimplementation ltlcross utf
+LocalWords:  glibgxx libstdc GLIBCXX Javascript Nemanja Trifunovic's
+LocalWords:  elisp emacs debian

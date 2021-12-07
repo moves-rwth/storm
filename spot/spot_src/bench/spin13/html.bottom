@@ -1,0 +1,634 @@
+;
+
+google.setOnLoadCallback(draw_charts);
+
+var fields = {};
+var distinct_values = [];
+var ninputs;
+var inputs_table;
+var ntools;
+var ifield;
+var tfield;
+  var nfields;
+  var nresults;
+  var results;
+  var hashres = {};
+  var linecmp;
+  var linecmp_options = {
+     hAxis: {title: 'input', viewWindow: {}, format: '#',
+             maxAlternation: 3, minTextSpacing: 5, maxTextLines: 3,
+             slantedText: false },
+     legend: {position: 'top', alignment: 'end'},
+     pointSize: 4,
+     chartArea: {width: '90%'}
+  }
+  var input_line;
+  var input_dashboard;
+
+  // Tool-indexed tables
+  var sumresults_table;
+  var tools_table;
+  var cross_table;
+  var cross_details;
+  function register_tool_indexed_table(table)
+  {
+     google.visualization.events.addListener(table, 'select',
+         function(){ select_tools(table.getSelection());
+     });
+  }
+
+  function select_tools(selection)
+  {
+    tools_table.setSelection(selection);
+    sumresults_table.setSelection(selection);
+    cross_table.setSelection(selection);
+    cross_details.setSelection(selection);
+  }
+
+  function select_input(t)
+  {
+    $('#single_input_select').val(t).trigger("change");
+    inputs_table.setSelection([{row: t}]);
+  }
+
+  function draw_input_line()
+  {
+    input_line.setOptions(linecmp_options)
+    //input_line.draw(linecmp);
+    input_dashboard.draw(linecmp);
+  }
+
+  function change_input_line()
+  {
+    // line graph data
+    linecmp = new google.visualization.DataTable();
+    var column = $('#input_select').val();
+    linecmp.addColumn('string', 'input');  // Discrete values for the LineChart
+    linecmp.addColumn('number', 'input_'); // Continuous values for the control
+    for (var t = 0; t < ntools; ++t)
+      linecmp.addColumn('number', 'tool ' + t);
+    for (var i = 0; i < ninputs; ++i)
+    {
+      var res = [i.toString(), i];
+      for (var t = 0; t < ntools; ++t)
+      {
+        var d = hashres[[t,i]];
+        if (d)
+          res.push(d[column]);
+        else
+          res.push(null);
+      }
+      linecmp.addRow(res);
+    }
+  }
+
+  function setup_input_line()
+  {
+    change_input_line();
+
+    var datacols = []
+    for (var t = 0; t < ntools; ++t)
+      datacols.push(t + 2);
+
+    var control = new google.visualization.ControlWrapper({
+     controlType: 'ChartRangeFilter',
+     containerId: 'input_control',
+     options: {
+      filterColumnIndex: 1,
+      ui: {
+       chartType: 'LineChart',
+       chartOptions: {
+        chartArea: {width: '90%'},
+        hAxis: {baselineColor: 'none'}
+       },
+       chartView: {
+        columns: [1].concat(datacols) // [1] == continuous values for the control
+       },
+       minRangeSize: 1
+      }
+     },
+     state: {range: {start: 0, end: ninputs}}
+    });
+
+    input_line = new google.visualization.ChartWrapper({
+       chartType: 'LineChart',
+       containerId: 'input_line',
+       options: linecmp_options,
+       dataTable: linecmp,
+       view: {columns: [0].concat(datacols)} // [0] == discrete values for the line chart
+    });
+   input_dashboard = new google.visualization.Dashboard(document.getElementById('input_dashboard'));
+   input_dashboard.bind(control, input_line);
+
+   draw_input_line();
+  }
+
+  function update_input_line()
+  {
+    change_input_line();
+    draw_input_line();
+  }
+
+  function update_cross_table()
+  {
+        var crossdata = new google.visualization.DataTable();
+        var crossdatadet = new google.visualization.DataTable();
+
+        var crosscol = $('#cross_select').val();
+        var crosscol2 = $('#cross_select2').val();
+        crossdata.addColumn('string', '↓ greater than →');
+        crossdatadet.addColumn('string', '↓ greater than →');
+        for (var t = 0; t < ntools; ++t)
+          {
+            crossdata.addColumn('number', 'tool&nbsp;' + t);
+            crossdatadet.addColumn('string', 'tool&nbsp;' + t);
+          }
+        for (var w = 0; w < ntools; ++w)
+          {
+            var r = [];
+            var d = [];
+            var wrap = function(i) { return '<a class="inputnum" href="javascript: select_input(' + i + ');">' + i + '</a>'; };
+            for (var b = 0; b < ntools; ++b)
+              {
+                var bres = 0;
+                var dres = [];
+                if (w != b)
+                  for (var i = 0; i < ninputs; ++i)
+                    {
+                      var wi = hashres[[w,i]];
+                      if (wi == undefined)
+                         continue;
+                      var bi = hashres[[b,i]];
+                      if (bi == undefined)
+                         continue;
+                      var wv = wi[crosscol];
+                      var bv = bi[crosscol];
+                      if (wv > bv)
+                         {
+                           ++bres;
+                           dres.push(wrap(i));
+                         }
+                      else if ((wv == bv) && crosscol2 >= 0)
+                         {
+                           var wv = wi[crosscol2];
+                           var bv = bi[crosscol2];
+                           if (wv > bv)
+                             {
+                               ++bres;
+                               dres.push(wrap(i));
+                             }
+                          }
+                    }
+                 else
+                   bres = null;
+                 r[b] = bres;
+                 d[b] = dres.join(' ');
+               }
+             crossdata.addRow(['tool&nbsp;' + w].concat(r));
+             crossdatadet.addRow(['tool&nbsp;' + w].concat(d));
+           }
+        for (var c = 1; c < ntools + 1; ++c)
+        {
+           var range = crossdata.getColumnRange(c);
+           var rangeformatter = new google.visualization.ColorFormat();
+           rangeformatter.addRange(range['min'], range['min'] + 1, 'green', null);
+           rangeformatter.addRange(range['max'], null, 'red', null);
+           rangeformatter.format(crossdata, c);
+        }
+        cross_table = new google.visualization.Table(document.getElementById('cross_table'));
+        register_tool_indexed_table(cross_table);
+        cross_table.draw(crossdata, {allowHtml: true});
+        cross_details = new google.visualization.Table(document.getElementById('cross_details'));
+        register_tool_indexed_table(cross_details);
+        cross_details.draw(crossdatadet, {allowHtml: true});
+  }
+
+
+  function update_scatter_table()
+  {
+     var tool1 = $('#tool1_select').val();
+     var tool2 = $('#tool2_select').val();
+     var f = $('#scatter_select').val();
+     var bycolor = parseInt($('#bycolor_select').val());
+     var fname = rawdata.fields[f];
+
+
+     var scatterdata = new google.visualization.DataTable();
+     scatterdata.addColumn({type: 'number', role: 'domain'});
+
+     var ndv = 1;
+     var dv = {};
+     if (bycolor >= 0)
+       {
+         // Give each value a column number.
+         var v = results.getDistinctValues(bycolor);
+         ndv = v.length;
+         for (var i = 0; i < ndv; ++i)
+           {
+             dv[v[i]] = i;
+  	     scatterdata.addColumn({type: 'number', role: 'data', label: rawdata.fields[bycolor] + '=' + v[i] });
+	     scatterdata.addColumn({type: 'string', role: 'tooltip'});
+	   }
+	 scatterdata.addColumn({type: 'number', role: 'data', label: 'disagreement' });
+	 scatterdata.addColumn({type: 'string', role: 'tooltip'});
+       }
+     else
+       {
+         scatterdata.addColumn({type: 'number', role: 'data'});
+         scatterdata.addColumn({type: 'string', role: 'tooltip'});
+       }
+     var max1;
+     for (var i = 0; i < ninputs; ++i)
+       {
+          var i1 = hashres[[tool1, i]];
+          var i2 = hashres[[tool2, i]];
+          if (i1 == undefined || i2 == undefined)
+            continue;
+          row = [i1[f]];
+          var col = 1;
+          if (bycolor >= 0)
+            {
+               for (col = 1; col < 2 * ndv + 3; ++col)
+		  row[col] = null;
+               var v = i1[bycolor];
+               col = dv[v] * 2 + 1;
+               if (v != i2[bycolor])
+                  col = ndv * 2 + 1;
+            }
+          var v2 = i2[f];
+          row[col] = v2;
+          row[col + 1] = 'input ' + i;
+          if (max1 == undefined || v2 > max1)
+             max1 = v2;
+          scatterdata.addRow(row);
+       }
+     var max = scatterdata.getColumnRange(0)['max'];
+     if (max1 > max)
+       max = max1;
+
+     var legend = (bycolor >= 0) ? { position: 'right', alignment: 'center' } : 'none';
+     scatter_table = new google.visualization.ScatterChart(document.getElementById('scatter_table'));
+     scatter_table.draw(scatterdata, {
+          hAxis: {title: fname + ' from tool ' + tool1, maxValue: max},
+          vAxis: {title: fname + ' from tool ' + tool2, maxValue: max},
+          legend: legend,
+          chartArea: { left:80, width:420, height:420 },
+          pointSize: 5
+     });
+     google.visualization.events.addListener(scatter_table, 'select',
+       function(){ var sel = scatter_table.getSelection();
+                   var row = sel[0]['row'];
+                   var col = sel[0]['column'];
+                   if ((row == undefined) || (col == undefined))
+                      return;
+                   // The row might not match the input number
+                   // if some results were missing.  Use the
+                   // tooltip instead.
+                   var t = scatterdata.getValue(row, col + 1).substr(6);
+                   select_input(t);
+                 });
+   }
+
+   function update_single_input_bars()
+   {
+        var i = parseInt($('#single_input_select').val());
+        var column_table = new google.visualization.DataTable();
+	column_table.addColumn({type: 'string', label: 'measurements', role: 'domain'})
+        for (var t = 0; t < ntools; ++t)
+          {
+            if (hashres[[t,i]] == undefined)
+              continue;
+            column_table.addColumn({type: 'number', label: 'tool ' + t, role: 'data'})
+          }
+
+        for (var m = 0; m < nfields; ++m)
+        {
+          if (!is_datacol(m))
+            continue;
+          var tmp = [];
+          for (var t = 0; t < ntools; ++t)
+           {
+             var rt = hashres[[t,i]];
+             if (rt == undefined)
+               continue;
+             tmp.push(rt[m]);
+           }
+          var max = Math.max.apply(Math, tmp);
+          var row = [rawdata.fields[m]];
+          for (var j = 0; j < tmp.length; ++j)
+            row.push({v: tmp[j] / max, f: tmp[j].toString()});
+          column_table.addRow(row);
+        }
+        single_input_bars = new google.visualization.ColumnChart(document.getElementById('single_input_bars'));
+        single_input_bars.draw(column_table, {
+          legend: {position: 'top', alignment: 'end'},
+          vAxis: { textPosition: 'none' },
+          chartArea: { width: '100%' },
+          bar: { groupWidth: '80%' },
+          allowHtml: true });
+   }
+
+      function draw_charts() {
+        var tools_table_data = new google.visualization.DataTable();
+	tools_table_data.addColumn('number', 'id', 'id');
+	tools_table_data.addColumn('string', 'command', 'command');
+        ntools = rawdata.tool.length;
+        for (var r = 0; r < ntools; ++r)
+        {
+          tools_table_data.addRow([r, rawdata.tool[r]]);
+        }
+
+        inputs_table_data = new google.visualization.DataTable();
+	inputs_table_data.addColumn('number', 'id', 'id');
+	inputs_table_data.addColumn('string', 'input', 'input');
+	ninputs = rawdata.formula.length;
+        for (var r = 0; r < ninputs; ++r)
+        {
+          inputs_table_data.addRow([r, rawdata.formula[r]]);
+        }
+
+        results = new google.visualization.DataTable();
+        nfields = rawdata.fields.length;
+        for (var c = 0; c < nfields; ++c)
+        {
+          var name = rawdata.fields[c];
+	  if (name == 'exit_status')
+            results.addColumn('string', name, name);
+	  else
+            results.addColumn('number', name, name);
+          fields[name] = c;
+        }
+	// FIXME: we should uses rawdata.inputs to set ifield and tfield
+        tfield = fields['tool'];
+        ifield = fields['formula'];
+	sfield = fields['states'];
+	esfield = fields['exit_status'];
+	ecfield = fields['exit_code'];
+
+	is_datacol = function(c) {
+           return (c != ifield && c != tfield && c != esfield && c != ecfield);
+        }
+
+        nresults = rawdata.results.length;
+	for (var r = 0; r < nresults; ++r)
+        {
+          var row = rawdata.results[r];
+	  if (row[sfield] == null)
+	    continue;
+	  results.addRow(row);
+          hashres[[row[tfield],row[ifield]]] = row;
+        }
+
+        var paging_options = { height: '20em' };
+
+        tools_table = new google.visualization.Table(document.getElementById('tools_table'));
+        register_tool_indexed_table(tools_table);
+        tools_table.draw(tools_table_data, paging_options);
+
+        inputs_table = new google.visualization.Table(document.getElementById('inputs_table'));
+        google.visualization.events.addListener(inputs_table, 'select',
+          function(){ var sel = inputs_table.getSelection();
+                      if (sel.length != 1)
+                        return;
+                      select_input(sel[0]['row']);
+                     });
+        inputs_table.draw(inputs_table_data, paging_options);
+
+
+        var results_table = new google.visualization.Table(document.getElementById('results_table'));
+        results_table.draw(results, paging_options);
+
+        // Do we have all any missing input for some tool?
+        var missing = [['', 'missing inputs']];
+        for (var t = 0; t < ntools; ++t)
+        {
+           var m = [];
+           for (var i = 0; i < ninputs; ++i)
+           {
+              if (hashres[[t,i]] == undefined)
+                {
+                   m.push('<a class="inputnum" href="javascript: select_input(' + i + ');">' + i + '</a>');
+                }
+           }
+           if (m.length)
+             missing.push(['tool ' + t, m.join(" ")]);
+        }
+        if (missing.length > 1)
+        {
+          var missing_table_data = google.visualization.arrayToDataTable(missing, false);
+          var missing_table = new google.visualization.Table(document.getElementById('missing_table'));
+          missing_table.draw(missing_table_data, {allowHtml: true});
+        }
+
+        var aggreg = [{column:ifield, aggregation: google.visualization.data.count, type: 'number'}]
+        var sumshow = [0, 1];
+        var col = 2;
+	for (var c = 0; c < nfields; ++c)
+        {
+           if (is_datacol(c))
+           {
+             aggreg.push({column:c, aggregation: google.visualization.data.sum, type: 'number'})
+             aggreg.push({column:c, aggregation: google.visualization.data.avg, type: 'number'})
+             aggreg.push({column:c, aggregation: google.visualization.data.min, type: 'number'})
+             aggreg.push({column:c, aggregation: google.visualization.data.max, type: 'number'})
+             sumshow.push(col);
+             col += 4;
+           }
+        }
+        var sumresults = new google.visualization.data.group(results, [tfield], aggreg);
+        var redformatter = new google.visualization.ColorFormat();
+        redformatter.addRange(0, ninputs, 'black', 'red');
+        sumresults.setColumnLabel(1, 'inputs');
+        redformatter.format(sumresults, 1);
+        // Compute highlight the min and max in each column.
+        for (var c = 2; c < sumshow.length; ++c)
+        {
+           var col = sumshow[c];
+           var range = sumresults.getColumnRange(col);
+           var rangeformatter = new google.visualization.ColorFormat();
+           rangeformatter.addRange(range['min'], range['min'] + 1, 'green', null);
+           rangeformatter.addRange(range['max'], null, 'red', null);
+           rangeformatter.format(sumresults, col);
+        }
+
+        var sumresults_view = new google.visualization.DataView(sumresults);
+        sumresults_view.setColumns(sumshow);
+
+        sumresults_table = new google.visualization.Table(document.getElementById('sumresults_table'));
+        google.visualization.events.addListener(sumresults_table, 'select',
+           function(){ select_tools(sumresults_table.getSelection());
+        });
+        sumresults_table.draw(sumresults_view, {allowHtml: true});
+
+        // Transpose the avg/min/max values that are in avgresults_view
+        // Instead of
+        //            | C1 | avg | min | max | C2 | avg | min | max
+        //        T1  | 10 |  11 |  12 |  13 | 14 |  15 |  16 | 17
+        //        T2  | 20 |  21 |  22 |  23 | 24 |  25 |  26 | 27
+        // We want
+        //            | T1 | min | max | T2 | min | max
+        //        C1  | 11 |  12 |  13 | 21 |  22 | 23
+        //        C2  | 15 |  16 |  17 | 25 |  26 | 27
+        // Additionally, we should normalize each cell.
+
+        var column_table = new google.visualization.DataTable();
+	column_table.addColumn({type: 'string', label: 'measurements', role: 'domain'})
+        for (var t = 0; t < ntools; ++t)
+        {
+          column_table.addColumn({type: 'number', label: 'tool ' + t, role: 'data'})
+          column_table.addColumn({type: 'number', role: 'interval'})
+          column_table.addColumn({type: 'number', role: 'interval'})
+        }
+        var pos = 3;
+        for (var m = 0; m < nfields; ++m)
+        {
+          if (is_datacol(m))
+          {
+            var row = [rawdata.fields[m]];
+            var max = sumresults.getColumnRange(pos + 2)['max'];
+            for (var t = 0; t < ntools; ++t)
+            {
+              row.push({v: sumresults.getValue(t, pos)/max, f: "avg " + sumresults.getValue(t, pos).toFixed(2)},
+                       {v: sumresults.getValue(t, pos + 1)/max, f: "min " + sumresults.getValue(t, pos + 1).toString()},
+                       {v: sumresults.getValue(t, pos + 2)/max, f: "max " + sumresults.getValue(t, pos + 2).toString()});
+            }
+            pos += 4;
+            column_table.addRow(row);
+          }
+        }
+        avgresults_bars = new google.visualization.ColumnChart(document.getElementById('avgresults_bars'));
+        avgresults_bars.draw(column_table, {
+          legend: {position: 'top', alignment: 'end'},
+          vAxis: { textPosition: 'none' },
+          chartArea: { width: '100%' },
+          bar: { groupWidth: '80%' },
+          allowHtml: true });
+
+        var sel = $('#input_select');
+        var sel2 = $('#scatter_select');
+        var sel3 = $('#bycolor_select');
+        var first = true;
+        sel3.append($("<option>").attr('value', -1).text('(nothing)'));
+	for (var c = 0; c < nfields; ++c)
+        {
+           if (is_datacol(c))
+           {
+             sel.append($("<option>").attr('value', c).text(rawdata.fields[c]));
+             sel2.append($("<option>").attr('value', c).text(rawdata.fields[c]));
+             if (first)
+             {
+               sel.val(c);
+               sel2.val(c);
+               first = false;
+             }
+             var dv = results.getDistinctValues(c).length;
+             distinct_values[c] = dv;
+             if (dv > 1 && dv <= 10)
+               sel3.append($("<option>").attr('value', c).text(rawdata.fields[c]));
+           }
+        }
+        $('#input_select').change(update_input_line);
+        setup_input_line()
+
+        // Cross chart.
+        var sel = $('#cross_select');
+        var sel2 = $('#cross_select2');
+        sel2.append($("<option>").attr('value', -1).text('(nothing)'));
+        sel2.val(-1);
+        var first = true;
+	for (var c = 0; c < nfields; ++c)
+        {
+           if (is_datacol(c))
+           {
+             sel.append($("<option>").attr('value', c).text(rawdata.fields[c]));
+             if (first)
+             {
+               sel.val(c);
+               first = false;
+             }
+             sel2.append($("<option>").attr('value', c).text(rawdata.fields[c]));
+           }
+        }
+        $('#cross_select').change(update_cross_table);
+        $('#cross_select2').change(update_cross_table);
+        update_cross_table()
+
+        var t1s = $('#tool1_select');
+        var t2s = $('#tool2_select');
+        var first = true;
+        var second = true;
+	for (var t = 0; t < ntools; ++t)
+        {
+          t1s.append($("<option>").attr('value', t).text('tool ' + t + ': ' + rawdata.tool[t]));
+          t2s.append($("<option>").attr('value', t).text('tool ' + t + ': ' + rawdata.tool[t]));
+          if (first)
+            {
+              t1s.val(t);
+              first = false;
+            }
+          else if (second)
+            {
+              t2s.val(t);
+              second = false;
+            }
+        }
+        t1s.change(update_scatter_table);
+        t2s.change(update_scatter_table);
+        $('#scatter_select').change(update_scatter_table);
+        $('#bycolor_select').change(update_scatter_table);
+        update_scatter_table();
+
+        var os = $('#single_input_select');
+        var first = true;
+        for (var i = 0; i < ninputs; ++i)
+        {
+          os.append($("<option>").attr('value', i).text(i + ': ' + rawdata.formula[i]));
+          if (first)
+            {
+              os.val(t);
+              first = false;
+            }
+        }
+        os.change(update_single_input_bars);
+        update_single_input_bars();
+      }
+    </script>
+  </head>
+  <body>
+    <div style="width: 25%; float: left;">
+      <h2>Tools</h2>
+      <div id="tools_table"></div>
+    </div>
+    <div style="width: 74%; float: right;">
+      <h2>Inputs</h2>
+      <div id="inputs_table"></div>
+    </div>
+    <h2 style="clear: both">Results</h2>
+    <div id="results_table"></div>
+    <h2>Missing results</h2>
+    <div id="missing_table">None</div>
+    <h1>Cumulative Summary</h1>
+    Each column shows a sum over all inputs processed by one tool.  The second column shows the count of inputs processed.
+    Green and red highlight minimum and maximum values per column.
+    <div id="sumresults_table"></div>
+    <h1>Average Summary</h1>
+    <div id="avgresults_bars" style="height: 250px; width: '100%';"></div>
+    <h1>Line-Comparison</h1>
+    <select id="input_select"></select>
+    <div id="input_dashboard">
+      <div id="input_line" style="height: 250px;"></div>
+      <div id="input_control" style="height: 50px;"></div>
+    </div>
+    <h1>Cross-Comparison</h1>
+      Compare <select id="cross_select"></select> and in case of equality <select id="cross_select2"></select>.
+      <div id="cross_table"></div>
+      <br/>Details of the inputs counted in the above table:<br/>
+      <div id="cross_details"></div>
+    <h1>Tool vs. Tool Scatter</h1>
+      Compare <select id="tool1_select"></select> against <select id="tool2_select"></select> on <select id="scatter_select"></select> and color by <select id="bycolor_select"></select>.
+      <div id="scatter_table" style="height: 500px; width:'100%';"></div>
+    <h1>Single-Input Comparison</h1>
+      Input <select id="single_input_select"></select>
+      <div id="single_input_bars" style="height: 250px; width: '100%';"></div>
+  </body>
+</html>

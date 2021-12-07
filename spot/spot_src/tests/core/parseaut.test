@@ -1,0 +1,2938 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014-2018, 2020 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+expecterr()
+{
+   cat >$1.exp
+   autfilt --hoa "$@" 2>$1.err-t >$1.out && exit 1
+   test $? = 2
+   # If autfilt is compiled statically, the '.../lt-' parse of
+   # its name is not stripped, and the error message show the
+   # full path.
+   # Also work around differences between Bison >=3.6 (invalid token)
+   # end Bison <3.6 ($undefined).
+   sed 's:^\.\./\.\./bin/::;s/[$]undefined/invalid token/' $1.err-t >$1.err
+   cat $1.err
+   diff $1.err $1.exp
+}
+
+expectok()
+{
+   cat >$1.exp
+   autfilt --hoa "$@" >$1.out
+   test $? = 0
+   cat $1.out
+   diff $1.out $1.exp
+}
+
+
+cat >input <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+States: 2
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[0] 1
+State: 1 {0}
+[t] 1
+--END--
+EOF
+
+expecterr input <<EOF
+input:5.1-9: redefinition of the number of states...
+input:2.1-9: ... previously defined here.
+EOF
+
+cat >input <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[0] 1
+State: 1 {0}
+[t] 1
+--END--
+2 1t
+2 1
+1 -1 "b"
+0 -1 & "a" ! "b"
+-1
+1 0
+2 0 -1 t
+-1
+/* Another automaton.  Here we make sure that guard must
+   be Boolean, even though we the LBT parser we use
+   would accept LTL. */
+2 1t
+0 1
+1 -1 G "b"
+0 -1 & "a" ! "b"
+-1
+1 0
+0 0 -1 t
+-1
+EOF
+
+diff='different state numbers have been used'
+expecterr input <<EOF
+input:8.5: state number is larger than state count...
+input:2.1-9: ... declared here.
+input:9.8: state number is larger than state count...
+input:2.1-9: ... declared here.
+input:10.5: state number is larger than state count...
+input:2.1-9: ... declared here.
+input:12.1-19.2: 2 states have been declared, but 3 $diff
+input:25.5-10: non-Boolean transition label (replaced by true)
+EOF
+
+cat >input <<EOF
+HOA: v1
+States: 1
+Start: 0
+AP: 1 "a"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[2] 0
+State: 0 {0}
+[t] 0
+--END--
+EOF
+
+expecterr input <<EOF
+input:8.2: AP number is larger than the number of APs...
+input:4.1-5: ... declared here
+input:9.1-8: redeclaration of state 0
+EOF
+
+cat >input <<EOF
+HOA: v1
+States: 0
+AP: 1 "a" "b"
+Acceptance: 0 t
+--BODY--
+--END--
+EOF
+
+expecterr input <<EOF
+input:3.1-13: found 2 atomic propositions instead of the 1 announced
+EOF
+
+cat >input <<EOF
+HOA: v1
+AP: 1 "a"
+States: 0
+AP: 2 "a" "b"
+Acceptance: 0 t
+--BODY--
+--END--
+HOA: v1
+name: "1"
+States: 1
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Foo(0)
+--BODY--
+State: 0 {0}
+[t] 0
+--END--
+EOF
+
+expecterr input <<EOF
+input:4.1-3: ignoring this redeclaration of APs...
+input:2.1-5: ... previously declared here.
+input:14.15-17: unknown acceptance 'Foo', expected Fin or Inf
+EOF
+
+cat >input <<EOF
+HOA: v1
+AP: 2 "a" "a"
+States: 0
+Start: 1
+--BODY--
+State: 0 {0 1}
+[0] 0 {0}
+--END--
+EOF
+
+expecterr input <<EOF
+input:2.11-13: duplicate atomic proposition "a"
+input:4.1-8: initial state number is larger than state count...
+input:3.1-9: ... declared here.
+input:1.1-4.8: missing 'Acceptance:' header
+input:6.8: state number is larger than state count...
+input:3.1-9: ... declared here.
+input:6.10-14: ignoring acceptance sets because of missing acceptance condition
+input:7.5: state number is larger than state count...
+input:3.1-9: ... declared here.
+input:4.1-8: initial state 1 has no definition
+EOF
+
+cat >input <<EOF
+HOA: v1
+AP: 1 "a"
+Start: 1
+States: 1
+--BODY--
+--END--
+EOF
+
+expecterr input <<EOF
+input:3.1-8: initial state number is larger than state count...
+input:4.1-9: ... declared here.
+input:1.1-4.9: missing 'Acceptance:' header
+input:3.1-8: initial state 1 has no definition
+EOF
+
+cat >input <<EOF
+HOA: v1
+Acceptance: 1 Inf(0)
+Start: 0
+States: 1
+Acceptance: 1 Inf(0)
+--BODY--
+--END--
+EOF
+
+expecterr input <<EOF
+input:5.1-13: ignoring this redefinition of the acceptance condition...
+input:2.1-13: ... previously defined here.
+input:3.1-8: initial state 0 has no definition
+EOF
+
+cat >input <<EOF
+HOA: v1
+Start: 0
+AP: 1 "a"
+States: 2
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[0] 1
+State: 1 {1}
+[t] 1
+--END--
+EOF
+
+expecterr input <<EOF
+input:9.11: number is larger than the count of acceptance sets...
+input:5.1-13: ... declared here.
+EOF
+
+# Let's have two broken automata in a row...
+cat >input <<EOF
+HOA: v1
+Start: 0
+AP: 1 "a"
+States: 2
+Acceptance: 1 Inf(2)
+--BODY--
+State: 0 {0}
+[0] 1
+State: 1 {0}
+[t] 1
+--END--
+HOA: v2
+--BODY--
+--END--
+HOA: w1
+--BODY--
+--END--
+HOA: v1.1
+--BODY--
+--END--
+EOF
+
+t='this might cause the following errors'
+expecterr input <<EOF
+input:5.19: number is larger than the count of acceptance sets...
+input:5.1-13: ... declared here.
+input:12.6-7: unsupported HOA version
+input:12.1-7: missing 'Acceptance:' header
+input:15.6-7: unknown HOA version
+input:15.1-7: missing 'Acceptance:' header
+input:18.6-9: we can read HOA v1 but this file uses v1.1; $t
+input:18.1-9: missing 'Acceptance:' header
+EOF
+
+cat >input<<EOF
+    HOA: v1a  /* version greater than 1, but assumed to be compatible */
+    States: 3
+    Start: 0
+    acc-name: generalized-Buchi 2
+    Acceptance: 2 (Inf(0) & Inf(1))
+    AP: 2 "a" "b"
+    --BODY--
+    State: 0 "foo" { 0 }
+      2  /* !a  & !b */
+      0  /*  a  & !b */
+      1  /* !a  &  b */
+      1  /*  a  &  b */
+    State: 1 { 1 }
+      1 1 1 1       /* four transitions on one line */
+    State: 2 "sink state" { 0 }
+      2 2 2 2
+    --END--
+EOF
+
+expectok input <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels state-acc colored complete
+properties: deterministic
+--BODY--
+State: 0 "foo" {0}
+[!0&!1] 2
+[0&!1] 0
+[!0&1] 1
+[0&1] 1
+State: 1 {1}
+[!0&!1] 1
+[0&!1] 1
+[!0&1] 1
+[0&1] 1
+State: 2 "sink state" {0}
+[!0&!1] 2
+[0&!1] 2
+[!0&1] 2
+[0&1] 2
+--END--
+EOF
+
+cat >input<<EOF
+    HOA: v1
+    States: 3
+    Start: 0
+    acc-name: generalized-Buchi 2
+    Acceptance: 2 (Inf(0) & Inf(1))
+    AP: 2 "a" "b"
+    properties: state-labels complete
+    --BODY--
+    State: 0 "foo" { 0 }
+      2  /* !a  & !b */
+      0  /*  a  & !b */
+      1  /* !a  &  b */
+      /* missing transition */
+    State: 1 { 1 }
+      1 1 1 1       /* four transitions on one line */
+    State: 2 "sink state" { 0 }
+      2 2 2 2
+    --END--
+HOA: v1
+States: 3
+Start: 0
+acc-name: generalized-Buchi 2
+Acceptance: 2 (Inf(0) & Inf(1))
+AP: 2 "a" "b"
+properties: implicit-labels complete
+--BODY--
+State: [t] 0 "foo" { 0 }
+  2  /* !a  & !b */
+  0  /*  a  & !b */
+  1  /* !a  &  b */
+  0  /*  a  &  b */
+State: 1 { 1 }
+  1 1 1 1       /* four transitions on one line */
+State: 2 "sink state" { 0 }
+  2 2 2 2
+--END--
+HOA: v1.1
+name: "GFa"
+States: 1
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc !complete
+properties: !deterministic stutter-invariant
+--BODY--
+State: 0
+[0] 0 {0}
+[!0] 0
+--END--
+EOF
+
+err1="this might cause the following errors"
+expecterr input <<EOF
+input:9.5-12.7: not enough transitions for this state
+input:10.7-12.7: these transitions have implicit labels but the automaton is...
+input:7.17-28: ... declared with 'properties: state-labels'
+input:9.5-12.7: automaton is not complete...
+input:7.30-37: ... despite 'properties: complete'
+input:27.8-10: state label used although the automaton was...
+input:25.13-27: ... declared with 'properties: implicit-labels' here
+input:37.6-9: we can read HOA v1 but this file uses v1.1; $err1
+input:46.9-49.6: automaton is complete...
+input:44.52-60: ... despite 'properties: !complete'
+input:46.9-49.6: automaton is deterministic...
+input:45.13-26: ... despite 'properties: !deterministic'
+EOF
+
+cat >input<<EOF
+    HOA: v1
+    tool: "test"
+    States: 3
+    Start: 0
+    acc-name: generalized-Buchi 2
+    Acceptance: 2 (Inf(0) & Inf(1))
+    properties: !foo implicit-labels explicit-labels /* ? */ complete
+    properties: trans-acc state-acc /* ? */ !complete foo
+    AP: 2 "a" "b"
+    --BODY--
+    State: 0 "foo" { 0 }
+      2  /* !a  & !b */
+      0  /*  a  & !b */
+      1  /* !a  &  b */
+      1  /*  a  &  b */
+      2  /*  extra transition ! */
+    State: 1 { 1 }
+      1 1 1 1       /* four transitions on one line */
+    State: 2 "sink state" { 0 }
+      2 2 2 2
+    --END--
+    HOA: v1
+    tool: "test"
+    States: 3
+    Start: 0
+    acc-name: generalized-Buchi 2
+    Acceptance: 2 (Inf(0) & Inf(1))
+    properties: implicit-labels state-labels /* ? */
+    AP: 2 "a" "b"
+    --BODY--
+    State: 0 "foo" { 0 }
+      2  /* !a  & !b */
+      0  /*  a  & !b */
+      1  /* !a  &  b */
+      1  /*  a  &  b */
+    State: 1 { 1 }
+      1 1 1 1       /* four transitions on one line */
+    State: 2 "sink state" { 0 }
+      2 2 2 2
+    --END--
+    HOA: v1
+    tool: "test"
+    States: 3
+    Start: 0
+    acc-name: generalized-Buchi 2
+    Acceptance: 2 (Inf(0) & Inf(1))
+    properties: implicit-labels trans-acc
+    properties: deterministic !unambiguous !semi-deterministic
+    AP: 2 "a" "b"
+    --BODY--
+    State: 0 "foo" { 0 }
+      2  /* !a  & !b */
+      0  /*  a  & !b */
+      1  /* !a  &  b */
+      1  /*  a  &  b */
+    State: 1 { 1 }
+      1 1 1 1       /* four transitions on one line */
+    State: 2 "sink state" { 0 }
+      [t] 2
+    --END--
+EOF
+
+expecterr input <<EOF
+input:8.45-53: 'properties: !complete' contradicts...
+input:7.62-69: ... 'properties: complete' previously given here.
+input:8.55-57: 'properties: foo' contradicts...
+input:7.17-20: ... 'properties: !foo' previously given here.
+input:7.22-36: 'properties: implicit-labels' is incompatible with...
+input:7.38-52: ... 'properties: explicit-labels'.
+input:8.17-25: 'properties: trans-acc' is incompatible with...
+input:8.27-35: ... 'properties: state-acc'.
+input:16.7: too many transitions for this state, ignoring this one
+input:28.33-44: 'properties: state-labels' is incompatible with...
+input:28.17-31: ... 'properties: implicit-labels'.
+input:48.17-29: 'properties: deterministic' contradicts...
+input:48.31-42: ... 'properties: !unambiguous' given here
+input:48.17-29: 'properties: deterministic' contradicts...
+input:48.44-62: ... 'properties: !semi-deterministic' given here
+input:51.20-24: state-based acceptance used despite...
+input:47.33-41: ... declaration of transition-based acceptance.
+input:59.7-9: transition label used although the automaton was...
+input:47.17-31: ... declared with 'properties: implicit-labels' here
+EOF
+
+
+cat >input <<EOF
+    HOA: v1
+    name: "GFa & GF(b & c)"
+    States: 1
+    Start: 0
+    acc-name: generalized-Buchi 2
+    Acceptance: 2 (Inf(0) & Inf(1))
+    AP: 3 "a" "b" "c"
+    Alias: @a 0
+    Alias: @a 1 & 2 /* should be @bc */
+    properties: state-labels /* this is bogus */
+                state-acc /* bogus as well */
+    --BODY--
+    State: 0
+    [!@a & !@bc] 0
+    [@a & !@bc]  0 {0}
+    [!@a & @bc]  0 {1}
+    [@a & @bc]   0 {0 1}
+    --END--
+  HOA: v1
+  name: "GFa & GF(b & c)"
+  States: 1
+  Start: 0
+  acc-name: generalized-Buchi 2
+  Acceptance: 2 (Inf(0) & Inf(1))
+  Alias: @a 0
+  Alias: @bc 1 & 2
+  --BODY--
+  State: 0
+  [!@a & !@bc] 0
+  [@a & !@bc]  0 {0}
+  [!@a & @bc]  0 {1}
+  [@a & @bc]   0 {0 1}
+  --END--
+HOA: v1
+name: "GFa & GF(b & c)"
+States: 1
+Start: 0
+acc-name: generalized-Buchi 2
+Acceptance: 2 (Inf(0) & Inf(1))
+Alias: @bc 1 & 2
+AP: 1 "a"
+Alias: @a 0
+--BODY--
+State: 0
+[!@a & !@bc] 0
+[@a & !@bc]  0 {0}
+[!@a & @bc]  0 {1}
+[@a & @bc]   0 {0 1}
+--END--
+EOF
+
+expecterr input <<EOF
+input:9.5-19: ignoring redefinition of alias @a
+input:14.13-15: unknown alias @bc
+input:14.5-16: transition label used although the automaton was...
+input:10.17-28: ... declared with 'properties: state-labels' here
+input:15.12-14: unknown alias @bc
+input:15.20-22: trans-based acceptance used despite...
+input:11.17-25: ... declaration of state-based acceptance.
+input:16.12-14: unknown alias @bc
+input:17.11-13: unknown alias @bc
+input:26.18: atomic proposition used in Alias without AP declaration
+input:40.16: AP number is larger than the number of APs...
+input:41.1-3: ... declared here
+EOF
+
+cat >input <<EOF
+    HOA: v1.1
+    name: "GFa & GF(b & c)"
+    States: 1
+    Start: 0
+    acc-name: who cares
+    Acceptance: 2 (Inf(0) & Inf(1))
+    AP: 3 "a" "b" "c"
+    Alias: @a 0
+    Alias: @b.c 1 & 2
+    --BODY--
+    State: 0
+    [!@a & !@b.c] 0
+    [@a & !@b.c]  0 {0}
+    [!@a & @b.c]  0 {1}
+    [@a & @b.c]   0 {0 1}
+    --END--
+  HOA: v1.1
+  Alias: @b.c 1 & 2
+  name: "GFa & GF(b & c)"
+  States: 1
+  Start: 0
+  acc-name: who cares
+  Acceptance: 2 (Inf(0) & Inf(1))
+  AP: 3 "a" "b" "c"
+  Alias: @a 0
+  --BODY--
+  State: 0
+  [!@a & !@b.c] 0
+  [@a & !@b.c]  0 {0}
+  [!@a & @b.c]  0 {1}
+  [@a & @b.c]   0 {0 1}
+  --END--
+/* Some comment */
+HOA: v1
+States: 2
+Start: 0
+Acceptance: 0 t
+AP: 1 "a"
+--BODY--
+State: [0] 0 1
+State: [0] 1 1
+--END--
+EOF
+
+expectok input <<EOF
+HOA: v1
+name: "GFa & GF(b & c)"
+States: 1
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1 | !0&!2] 0
+[0&!1 | 0&!2] 0 {0}
+[!0&1&2] 0 {1}
+[0&1&2] 0 {0 1}
+--END--
+HOA: v1
+name: "GFa & GF(b & c)"
+States: 1
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1 | !0&!2] 0
+[0&!1 | 0&!2] 0 {0}
+[!0&1&2] 0 {1}
+[0&1&2] 0 {0 1}
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0] 1
+State: 1
+[0] 1
+--END--
+EOF
+
+expectok input --stats='%F:%L' <<EOF
+input:1.5-16.11
+input:17.3-32.9
+input:34.1-42.7
+EOF
+
+cat >input <<EOF
+HOA: v1
+--ABORT--
+HOA: v1
+States: 2
+Start: 0
+Acceptance: 2 (Inf(0) & Inf(!0)) &
+     --ABORT----ABORT--
+HOA: v1
+States: 2
+Start: 0
+Acceptance: 2 (Inf(0) & Inf(!0)) & Inf(!1)
+AP: 1 "a"
+     --BODY-- State: 0 {0
+}
+[0] 1
+[!0--ABORT--
+HOA: v1
+States: 2
+name: "survivor"
+Start: 0
+Acceptance: 2 (Inf(0) & Inf(!0)) & Inf(!1)
+AP: 1 "a"
+--BODY--
+State: 0 {0}
+[0] 1
+[!0] 0 {1}
+State: 1
+[!0] 1
+[0] 0
+[f] 0
+--END--
+EOF
+
+expecterr input <<EOF
+input:1.1-2.9: aborted input automaton
+input:3.1-7.14: aborted input automaton
+input:7.15-23: aborted input automaton
+input:8.1-16.12: aborted input automaton
+EOF
+
+# DOS-style new lines should have the same output.
+$PERL -pi -e 's/$/\r/' input
+autfilt --hoa input 2>stderr && exit 1
+cat stderr
+diff stderr input.exp
+
+cat >expected <<EOF
+HOA: v1
+name: "survivor"
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: generalized-Buchi 3
+Acceptance: 3 Inf(0)&Inf(1)&Inf(2)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[0] 1 {0 1}
+[!0] 0 {0}
+State: 1
+[!0] 1 {1 2}
+[0] 0 {1 2}
+--END--
+EOF
+
+diff expected input.out
+
+cat >input <<EOF
+HOA: v1
+States: 2
+Start: 0
+Start: 1
+AP: 2 "a" "\"b\""
+Acceptance: 1 Inf(0)
+properties: deterministic
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1
+[0] 0
+--END--
+HOA: v1
+States: 0
+AP: 0
+Acceptance: 1 Inf(0)
+properties: complete
+--BODY--
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "\"b\""
+Acceptance: 1 Inf(0)
+properties: deterministic
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1
+[!0] 0
+--END--
+HOA: v1
+States: 2
+Start: 0
+Start: 1
+AP: 2 "a" "\"b\""
+Acceptance: 1 Inf(0)
+properties: !exist-branch univ-branch
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1
+[!0] 0
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "\"b\""
+Acceptance: 1 Inf(0)
+properties: !exist-branch univ-branch
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1
+[!0] 0
+--END--
+HOA: v1
+States: 2
+Start: 0&1
+AP: 2 "a" "\"b\""
+Acceptance: 1 Inf(0)
+properties: exist-branch !univ-branch
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1
+[!0] 0
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "\"b\""
+Acceptance: 1 Inf(0)
+properties: exist-branch !univ-branch
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1&0
+--END--
+HOA: v1
+States: 2
+Start: 0&1  /* This is ok in the v1 format */
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+properties: deterministic
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 0
+--END--
+HOA: v1.1
+States: 2
+Start: 0&1  /* This is NOT ok since v1.1 */
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+properties: deterministic
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 0
+--END--
+EOF
+expecterr input <<EOF
+input:7.13-25: deterministic automata should have at most one initial state
+input:20.13-20: complete automata should have at least one initial state
+input:33.1-35.6: automaton is not deterministic...
+input:28.13-25: ... despite 'properties: deterministic'
+input:43.13-25: universal automata should have at most one initial state
+input:62.1-64.6: automaton has existential branching...
+input:57.13-25: ... despite 'properties: !exist-branch'
+input:58.9-64.6: automaton is has no universal branching...
+input:57.27-37: ... despite 'properties: univ-branch'
+note: If this is an issue you cannot fix, you may disable this diagnostic
+      by defining the SPOT_HOA_TOLERANT environment variable.
+input:68.1-10: conjunct initial state despite...
+input:71.26-37: ... property: !univ-branch
+input:91.6-8: universal branch used despite previous declaration...
+input:85.26-37: ... here
+input:86.9-91.8: automaton has no existential branching...
+input:85.13-24: ... despite 'properties: exist-branch'
+note: If this is an issue you cannot fix, you may disable this diagnostic
+      by defining the SPOT_HOA_TOLERANT environment variable.
+input:106.6-9: we can read HOA v1 but this file uses v1.1; $t
+input:108.1-10: conjunct initial state despite...
+input:111.13-25: ... property: deterministic
+EOF
+
+# Mix HOA with neverclaims and LBTT automata
+cat >input <<EOF
+HOA: v1
+States: 2
+Start: 0
+Start: 1
+Start: 0 /* duplicate */
+AP: 2 "a" "\"b\""
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1
+[0] 0
+--END--
+
+/* some LBTT with mixed state/transition acceptance,
+   just because we can */
+4 2ts
+0 1 -1
+1 -1 "c"
+2 -1 & "b" ! "c"
+3 -1 ! "c"
+-1
+1 0 1 -1
+1 0 -1 t
+-1
+2 0 -1
+1 -1 "c"
+2 -1 & "b" ! "c"
+-1
+3 0 -1
+3 0 1 -1 & "a" "b"
+3 1 -1 & "a" ! "b"
+3 0 -1 & ! "a" "b"
+3 -1 & ! "a" ! "b"
+-1
+
+
+never  {    /* a U b */
+T0_init:
+        if
+        :: (b) -> goto accept_all
+        :: (a) -> goto T0_init
+        fi;
+accept_all:
+        skip
+}
+
+
+never {
+  start: if :: false -> goto T0 fi;
+  T0: false
+}
+EOF
+
+expectok input <<EOF
+HOA: v1
+States: 3
+Start: 2
+AP: 2 "a" "\"b\""
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1
+[0] 0
+State: 2
+[1] 1
+[!1] 0
+[!0] 1
+[0] 0
+--END--
+HOA: v1
+States: 4
+Start: 0
+AP: 3 "c" "b" "a"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[0] 1
+[!0&1] 2
+[!0] 3
+State: 1
+[t] 1 {0 1}
+State: 2
+[0] 1
+[!0&1] 2
+State: 3
+[1&2] 3 {0 1}
+[!1&2] 3 {0}
+[1&!2] 3 {1}
+[!1&!2] 3
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "b" "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[0] 1
+[1] 0
+State: 1 {0}
+[t] 1
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[f] 1
+State: 1
+--END--
+EOF
+
+cat >input <<EOF
+HOA: v1
+States: 2
+Start: 0
+Start: 0  /* duplicate */
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0  /* nested /* comment */ */
+State: 1
+[!0] 1
+[0] 0
+--END--
+EOF
+
+expectok input <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic
+--BODY--
+State: 0 {0}
+[1] 1
+[!1] 0
+State: 1
+[!0] 1
+[0] 0
+--END--
+EOF
+
+cat >input <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"/* multi
+line
+comment */
+Acceptance: 1 Inf(0)
+--BODY--
+State: [1] 0 {0}
+[!1] 0
+ 1
+State: 1
+[!0] 1
+     2
+State: 2
+     1
+[t] 2
+   1 2
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+properties: trans-labels /* this is bogus */
+--BODY--
+State: [1] 0 {0} 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+properties: state-labels trans-labels /* this is bogus */
+--BODY--
+State: [1] 0 {0} 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+properties: state-labels /* OK */
+--BODY--
+State: [1] 0 {0} 0
+--END--
+EOF
+
+expecterr input <<EOF
+input:10.1-4: cannot label this edge because...
+input:9.8-10: ... the state is already labeled.
+input:14.6: missing label for this edge (previous edge is labeled)
+input:17.1-3: ignoring this label, because previous edge has no label
+input:27.8-10: state label used although the automaton was...
+input:25.13-24: ... declared with 'properties: trans-labels' here
+input:34.26-37: 'properties: trans-labels' is incompatible with...
+input:34.13-24: ... 'properties: state-labels'.
+EOF
+
+
+cat >input <<EOF
+HOA: v1
+States: /* multi-line
+comment
+*/2
+Start: 0
+Important: 4 very important "with multi-line
+string!"
+AP: 0
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0} 1
+State: 1 0
+--END--
+EOF
+
+expecterr input <<EOF
+input:6.1-7.8: ignoring unsupported header "Important:"
+	(but the capital indicates information that should not be ignored)
+EOF
+
+cat >expected <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic
+--BODY--
+State: 0 {0}
+[t] 1
+State: 1
+[t] 0
+--END--
+EOF
+
+diff expected input.out
+
+# DOS-style new lines should have the same output.
+$PERL -pe -e 's/$/\r/' input
+autfilt --hoa input 2>stderr && exit 1
+cat stderr
+diff stderr input.exp
+diff expected input.out
+
+# Error recovery
+
+cat >input <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {a}  /* not a digit */
+[t] 1
+State: 1
+[a] 0         /* not a digit */
+--END--
+HOA: v1
+Acceptance: 1 Inf(0)
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi
+--BODY--
+State: 0 {0}
+[t] "f" 1     /* WTF? */
+State: 1
+[t] 0
+--END--
+some garbage HOA: v1
+Acceptance: 1 Inf(0)
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi
+--BODY--
+Stat: 0 {0}  /* not State: */
+[t] 1
+State: 1
+[t] 0
+--END--
+this is complete garbage!
+--END--
+and even more garbage
+DRA v2 explicit
+Comment: "Safra[NBA=2]"
+States: 2
+garbage  /* <<--- */
+Acceptance-Pairs: 1
+Start: 0
+AP: 1 "a"
+---
+State: 0
+Acc-Sig:
+0
+1
+State: 1
+Acc-Sig: +0
+0
+1
+more garbage
+DRA v2 explicit
+Comment: "Safra[NBA=2]"
+States: 2
+Acceptance-Pairs: 1
+Start: 0
+AP: 1 "a"
+---
+State: 0
+Acc-Sig:
+0
+1
+State: 1
+Acc-Sig: +0
+0
+1
+HOA: v1
+States: 1
+Start: 0
+AP: 0
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[t] 0
+--END--
+garbage
+EOF
+
+se='syntax error, unexpected'  # this is just to keep lines short
+undefined='invalid token'
+expecterr input <<EOF
+input:8.11: $se identifier, expecting integer or '}'
+input:8.10-12: ignoring this invalid acceptance set
+input:11.2: $se identifier
+input:11.1-3: ignoring this invalid label
+input:21.5-7: $se string, expecting integer
+input:25.1: $se $undefined
+input:32.1-5: $se header name, expecting --END-- or State:
+input:28.1-8: initial state 0 has no definition
+input:25.1-12: leading garbage was ignored
+input:37.1: $se 't'
+input:43.1: $se $undefined
+input:56.1: $se $undefined, expecting State: or end of DSTAR automaton
+input:37.1-39.21: leading garbage was ignored
+input:81.1: $se $undefined
+autfilt: failed to read automaton from input
+EOF
+
+# More error recovery in DSTAR automata
+cat >input <<EOF
+DRA v2 explicit
+Comment: "Safra[NBA=2]"
+States: 3
+States: 3
+Start: 0
+AP: 2 "a" "b"
+---
+State: 0
+Acc-Sig:
+1
+0
+2
+2
+State: 1 "some name"
+Acc-Sig: -0
+1
+1
+1
+1
+State: 2 "another name"
+Acc-Sig: +0
+2
+2
+2
+2
+never { /* true */
+accept_init:
+	if
+	:: (1) -> goto accept_init
+	fi;
+}
+EOF
+
+autfilt input -H >output 2>&1 && exit 1
+cat output
+cat >expected <<EOF
+input:1.16-4.9: redeclaration of state count
+input:1.16-6.13: missing acceptance-pair count
+input:15.11: no acceptance pairs have been declared
+input:21.11: no acceptance pairs have been declared
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[0&!1] 0
+[!0&!1] 1
+[1] 2
+State: 1 "some name"
+[t] 1
+State: 2 "another name"
+[t] 2
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc colored complete
+properties: deterministic
+--BODY--
+State: 0 {0}
+[t] 0
+--END--
+EOF
+diff output expected
+
+# A comment can contain --BODY-- or --END--, so we do not want to be
+# smart about it.
+cat >input <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi /* unclosed comment
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[t] 1
+State: 1
+[t] 0
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[t] 1
+State: 1
+[t] 0
+--END--
+EOF
+
+expecterr input <<EOF
+input:5.17-25.1: unclosed comment
+input:5.17-25.1: syntax error, unexpected end of file
+autfilt: failed to read automaton from input
+EOF
+
+# Likewise for strings
+cat >input <<EOF
+HOA: v1
+States: 2
+Start: 0
+tool: "unterminated string
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[t] 1
+State: 1
+[t] 0
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[t] 1
+State: 1
+[t] 0
+--END--
+EOF
+
+expecterr input <<EOF
+input:4.7-26.1: unclosed string
+input:26.1: syntax error, unexpected end of file
+autfilt: failed to read automaton from input
+EOF
+
+expecterr non-existant<<EOF
+autfilt: Cannot open file non-existant
+EOF
+
+run 2 ../ikwiad -XH foob 2>output.err
+grep 'foob:1.1: Cannot open file foob' output.err
+
+# Make sure we can read multiple automata from stdin
+ltl2tgba 'a U b' 'GFa' --hoa | grep -v '^name:' > input
+autfilt --hoa < input | autfilt --hoa > output
+diff input output
+
+
+
+# Parse something in debug mode, to exercise the %printer
+cat >input <<EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[t] 1
+State: 1
+[t] 0
+--END--
+EOF
+
+run 0 ../ikwiad -d -XH input 2> output.err
+grep -- "--BODY--" output.err
+grep "identifier.*v1" output.err
+
+
+
+# This was generated by
+#      randaut -n 10 -Hl 3 -e 0.055 --seed=3 | fmt
+cat > input <<EOF
+HOA: v1 States: 10 Start: 0 AP: 3 "p0" "p1" "p2" acc-name: all Acceptance:
+0 t properties: trans-labels explicit-labels state-acc deterministic
+--BODY-- State: 0 [0&!1&2] 0 [0&1&2] 1 State: 1 [0&1&2] 2 State: 2
+[!0&1&!2] 3 State: 3 [!0&1&!2] 4 State: 4 [!0&1&2] 1 [0&!1&!2] 5 State:
+5 [!0&1&2] 6 State: 6 [!0&1&2] 7 State: 7 [0&1&2] 8 State: 8 [!0&!1&2]
+9 State: 9 [0&1&2] 2 [!0&!1&!2] 6 [!0&1&!2] 1 --END-- HOA: v1 States: 10
+Start: 0 AP: 3 "p0" "p1" "p2" acc-name: all Acceptance: 0 t properties:
+trans-labels explicit-labels state-acc deterministic --BODY-- State: 0
+[!0&1&2] 1 State: 1 [0&!1&!2] 2 State: 2 [!0&1&!2] 3 State: 3 [0&!1&2]
+4 [!0&!1&!2] 5 [!0&1&!2] 6 State: 4 [!0&!1&!2] 7 [0&!1&2] 0 State: 5
+[0&1&!2] 8 State: 6 [!0&1&!2] 7 State: 7 [!0&1&!2] 9 State: 8 [!0&1&2]
+2 State: 9 [0&1&2] 6 --END-- HOA: v1 States: 10 Start: 0 AP: 3 "p0"
+"p1" "p2" acc-name: all Acceptance: 0 t properties: trans-labels
+explicit-labels state-acc deterministic --BODY-- State: 0 [0&1&!2]
+1 State: 1 [0&1&!2] 2 [0&!1&!2] 3 State: 2 [!0&1&!2] 1 [!0&!1&!2] 4
+State: 3 [0&1&!2] 5 State: 4 [!0&1&2] 3 [!0&!1&2] 6 State: 5 [0&1&!2]
+7 State: 6 [!0&!1&!2] 8 State: 7 [!0&!1&!2] 5 State: 8 [!0&!1&!2] 9
+[0&1&!2] 6 State: 9 [!0&1&2] 8 [0&!1&2] 4 [!0&!1&!2] 7 --END-- HOA:
+v1 States: 10 Start: 0 AP: 3 "p0" "p1" "p2" acc-name: all Acceptance:
+0 t properties: trans-labels explicit-labels state-acc --BODY-- State:
+0 [0&1&2] 1 State: 1 [0&1&2] 2 State: 2 [0&!1&!2] 3 [0&!1&2] 4 [0&!1&2]
+0 State: 3 [!0&1&2] 1 [0&!1&2] 2 [!0&!1&2] 5 State: 4 [0&1&!2] 6 State: 5
+[!0&1&!2] 7 State: 6 [0&!1&!2] 2 State: 7 [!0&!1&2] 8 State: 8 [0&!1&!2]
+9 State: 9 [!0&1&!2] 7 [!0&1&!2] 6 --END-- HOA: v1 States: 10 Start: 0 AP:
+3 "p0" "p1" "p2" acc-name: all Acceptance: 0 t properties: trans-labels
+explicit-labels state-acc --BODY-- State: 0 [!0&!1&2] 1 State: 1 [!0&!1&2]
+2 State: 2 [0&1&!2] 3 State: 3 [!0&1&!2] 4 State: 4 [!0&1&2] 5 State:
+5 [0&!1&!2] 6 State: 6 [!0&!1&!2] 5 [!0&!1&!2] 7 State: 7 [!0&!1&!2] 7
+[!0&!1&2] 6 [0&!1&2] 8 State: 8 [0&1&2] 8 [0&1&!2] 9 State: 9 [0&!1&2]
+2 --END-- HOA: v1 States: 10 Start: 0 AP: 3 "p0" "p1" "p2" acc-name:
+all Acceptance: 0 t properties: trans-labels explicit-labels state-acc
+deterministic --BODY-- State: 0 [!0&!1&2] 1 State: 1 [0&!1&!2] 2 State: 2
+[!0&!1&2] 3 State: 3 [!0&!1&!2] 4 State: 4 [!0&1&!2] 5 State: 5 [!0&1&2]
+6 State: 6 [0&1&!2] 1 [!0&!1&!2] 3 [!0&1&2] 7 State: 7 [0&1&2] 8 State:
+8 [0&!1&!2] 7 [0&1&!2] 9 State: 9 [0&1&2] 0 --END-- HOA: v1 States: 10
+Start: 0 AP: 3 "p0" "p1" "p2" acc-name: all Acceptance: 0 t properties:
+trans-labels explicit-labels state-acc deterministic --BODY-- State: 0
+[0&1&!2] 1 State: 1 [!0&1&2] 2 State: 2 [0&1&2] 3 State: 3 [0&1&!2] 4
+State: 4 [!0&!1&2] 5 State: 5 [!0&!1&!2] 6 State: 6 [!0&1&!2] 7 State: 7
+[!0&!1&!2] 3 [!0&1&2] 8 State: 8 [0&!1&2] 9 State: 9 [!0&!1&!2] 9 [0&!1&2]
+3 [!0&1&!2] 2 --END-- HOA: v1 States: 10 Start: 0 AP: 3 "p0" "p1" "p2"
+acc-name: all Acceptance: 0 t properties: trans-labels explicit-labels
+state-acc --BODY-- State: 0 [0&!1&!2] 1 State: 1 [!0&!1&2] 2 [0&!1&2] 3
+State: 2 [0&!1&2] 4 State: 3 [0&!1&!2] 5 [0&!1&!2] 6 State: 4 [0&!1&!2] 7
+[0&!1&2] 3 State: 5 [!0&!1&!2] 8 State: 6 [!0&!1&2] 4 [0&!1&2] 6 State: 7
+[0&!1&2] 4 [!0&!1&!2] 1 State: 8 [!0&1&2] 6 [0&1&2] 9 State: 9 [0&1&!2]
+3 --END-- HOA: v1 States: 10 Start: 0 AP: 3 "p0" "p1" "p2" acc-name:
+all Acceptance: 0 t properties: trans-labels explicit-labels state-acc
+--BODY-- State: 0 [!0&1&2] 1 State: 1 [!0&!1&!2] 2 [!0&!1&2] 3 [!0&1&2]
+4 [!0&1&2] 5 State: 2 [0&1&!2] 2 [0&!1&2] 6 State: 3 [0&1&2] 3 [0&!1&2] 7
+[!0&1&2] 2 State: 4 [!0&!1&!2] 8 State: 5 [0&!1&!2] 2 [!0&!1&2] 6 State:
+6 [!0&!1&2] 2 [!0&1&!2] 7 State: 7 [0&1&2] 9 State: 8 [!0&1&2] 7 State:
+9 [!0&1&2] 2 --END-- HOA: v1 States: 10 Start: 0 AP: 3 "p0" "p1" "p2"
+acc-name: all Acceptance: 0 t properties: trans-labels explicit-labels
+state-acc deterministic --BODY-- State: 0 [!0&!1&!2] 1 State: 1 [0&1&!2] 2
+[!0&!1&!2] 3 [0&!1&2] 4 State: 2 [0&1&!2] 5 State: 3 [!0&!1&!2] 6 State:
+4 [!0&!1&!2] 7 State: 5 [!0&1&2] 2 State: 6 [!0&!1&2] 8 State: 7 [0&1&2]
+9 State: 8 [0&!1&!2] 7 State: 9 [!0&1&!2] 1 [0&1&!2] 7 --END--
+EOF
+
+expectok input --is-deter --stats='%F:%L: %c' <<EOF
+input:1.1-6.53: 2
+input:6.55-12.28: 2
+input:12.30-18.62: 5
+input:30.11-35.51: 1
+input:35.53-41.21: 3
+input:53.22-58.62: 3
+EOF
+
+expectok input -v --is-deter --stats='%F:%L: %n' <<EOF
+input:18.64-24.42: 2
+input:24.44-30.9: 1
+input:41.23-47.9: 1
+input:47.11-53.20: 1
+EOF
+
+# An example from ltl3ba
+cat >input <<EOF
+HOA: v1
+tool: "ltl3ba" "1.1.0 - working copy"
+name: "BA for GFa && GF(b&&c) && GF(d||e) || x"
+States: 6
+Start: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+AP: 6 "a" "b" "c" "d" "e" "x"
+properties: trans-labels explicit-labels state-acc no-univ-branch
+--BODY--
+State: 0 "T0_init"
+ [(5)] 5
+ [t] 4
+ [(0)] 3
+ [(0 & 1 & 2)] 2
+ [(0 & 1 & 2 & !3 & 4) | (0 & 1 & 2 & 3)] 1
+State: 1 "accept_S1" {0}
+ [t] 4
+ [(0)] 3
+ [(0 & 1 & 2)] 2
+ [(0 & 1 & 2 & !3 & 4) | (0 & 1 & 2 & 3)] 1
+State: 2 "T2_S1"
+ [t] 2
+ [(!3 & 4) | (3)] 1
+State: 3 "T1_S1"
+ [t] 3
+ [(1 & 2)] 2
+ [(1 & 2 & !3 & 4) | (1 & 2 & 3)] 1
+State: 4 "T0_S1"
+ [t] 4
+ [(0)] 3
+ [(0 & 1 & 2)] 2
+ [(0 & 1 & 2 & !3 & 4) | (0 & 1 & 2 & 3)] 1
+State: 5 "accept_all" {0}
+ [t] 5
+--END--
+EOF
+
+expectok input <<EOF
+HOA: v1
+name: "BA for GFa && GF(b&&c) && GF(d||e) || x"
+States: 6
+Start: 0
+AP: 6 "a" "b" "c" "d" "e" "x"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0 "T0_init"
+[5] 5
+[t] 4
+[0] 3
+[0&1&2] 2
+[0&1&2&3 | 0&1&2&4] 1
+State: 1 "accept_S1" {0}
+[t] 4
+[0] 3
+[0&1&2] 2
+[0&1&2&3 | 0&1&2&4] 1
+State: 2 "T2_S1"
+[t] 2
+[3 | 4] 1
+State: 3 "T1_S1"
+[t] 3
+[1&2] 2
+[1&2&3 | 1&2&4] 1
+State: 4 "T0_S1"
+[t] 4
+[0] 3
+[0&1&2] 2
+[0&1&2&3 | 0&1&2&4] 1
+State: 5 "accept_all" {0}
+[t] 5
+--END--
+EOF
+
+# Another example from ltl3ba
+# Here we make sure that we do not always need to create a fake
+# initial state when multiple initial states are used.
+cat >input <<EOF
+HOA: v1
+tool: "ltl3ba" "1.1.0 - working copy"
+name: "TGBA for GFa && GF(b&&c) && GF(d||e) || x"
+States: 3
+Start: 0
+Start: 2
+acc-name: generalized-Buchi 3
+Acceptance: 3 Inf(0) & Inf(1) & Inf(2)
+AP: 6 "a" "b" "c" "d" "e" "x"
+properties: trans-labels explicit-labels trans-acc no-univ-branch
+--BODY--
+State: 0 "(x)"
+ [(5)] 1 {0 1 2}
+State: 1 "t"
+ [t] 1 {0 1 2}
+State: 2 "G((F(a) && F((b) && (c))) && F((d) || (e)))"
+ [t] 2
+ [(0)] 2 {0}
+ [(1 & 2)] 2 {1}
+ [(0 & 1 & 2)] 2 {0 1}
+ [(!3 & 4) | (3)] 2 {2}
+ [(0 & !3 & 4) | (0 & 3)] 2 {0 2}
+ [(1 & 2 & !3 & 4) | (1 & 2 & 3)] 2 {1 2}
+ [(0 & 1 & 2 & !3 & 4) | (0 & 1 & 2 & 3)] 2 {0 1 2}
+--END--
+EOF
+
+expectok input <<EOF
+HOA: v1
+name: "TGBA for GFa && GF(b&&c) && GF(d||e) || x"
+States: 3
+Start: 0
+AP: 6 "a" "b" "c" "d" "e" "x"
+acc-name: generalized-Buchi 3
+Acceptance: 3 Inf(0)&Inf(1)&Inf(2)
+properties: trans-labels explicit-labels trans-acc complete
+--BODY--
+State: 0 "(x)"
+[5] 1 {0 1 2}
+[t] 2
+[0] 2
+[1&2] 2
+[0&1&2] 2
+[3 | 4] 2
+[0&3 | 0&4] 2
+[1&2&3 | 1&2&4] 2
+[0&1&2&3 | 0&1&2&4] 2
+State: 1 "t"
+[t] 1 {0 1 2}
+State: 2 "G((F(a) && F((b) && (c))) && F((d) || (e)))"
+[t] 2
+[0] 2 {0}
+[1&2] 2 {1}
+[0&1&2] 2 {0 1}
+[3 | 4] 2 {2}
+[0&3 | 0&4] 2 {0 2}
+[1&2&3 | 1&2&4] 2 {1 2}
+[0&1&2&3 | 0&1&2&4] 2 {0 1 2}
+--END--
+EOF
+
+
+# named states can be output as comments in never claim
+cat >input <<EOF
+HOA: v1
+name: "a U b"
+States: 2
+Start: 1
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0 "s0" {0}
+[t] 0
+State: 1 "s1"
+[1] 0
+[0&!1] 1
+--END--
+EOF
+expectok input --spin=c <<EOF
+never { /* a U b */
+T0_init: /* s1 */
+  if
+  :: (b) -> goto accept_all
+  :: ((a) && (!(b))) -> goto T0_init
+  fi;
+accept_all: /* s0 */
+  skip
+}
+EOF
+
+
+# ltl3ba 1.1.1 has a bug where it outputs
+#   Acceptance: 1 t
+# when it meant
+#   Acceptance: 1 Inf(0)
+# and a development version of our parser would
+# incorrectly interpret the former as the latter.
+
+cat >input <<EOF
+HOA: v1
+tool: "ltl3ba" "1.1.1"
+name: "TGBA for Fa"
+States: 2
+Start: 0
+acc-name: generalized-Buchi 1
+Acceptance: 1 t
+AP: 1 "a"
+properties: trans-labels explicit-labels trans-acc no-univ-branch
+--BODY--
+State: 0 "F(a)"
+ [(0)] 1 {0}
+ [(!0)] 0
+State: 1 "t"
+ [t] 1 {0}
+--END--
+/* Also try with more acceptance sets */
+HOA: v1
+States: 1
+Start: 0
+AP: 3 "a" "b" "c"
+Acceptance: 5 Inf(0)&Inf(4)&Inf(2)&Inf(!2)
+properties: trans-labels explicit-labels trans-acc complete deterministic
+--BODY--
+State: 0
+[0&1&2] 0 {0 4 2}
+[!0&1&2] 0 {4 2}
+[0&!1&2] 0 {0 2}
+[!0&!1&2] 0 {2}
+[0&1&!2] 0 {0 4}
+[!0&1&!2] 0 {4}
+[0&!1&!2] 0 {0}
+[!0&!1&!2] 0
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Rabin 2
+Acceptance: 4 (Fin(0) & Inf(1)) | (Fin(2) & Inf(3))
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0 {2}
+[0&!1] 1
+[!0&1] 0
+[0&1] 1
+State: 1 {1 2}
+[!0&!1] 1
+[0&!1] 1
+[!0&1] 1
+[0&1] 1
+--END--
+EOF
+
+expectok input -v --is-empty <<EOF
+HOA: v1
+name: "TGBA for Fa"
+States: 2
+Start: 0
+AP: 1 "a"
+Acceptance: 1 t
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0 "F(a)"
+[0] 1 {0}
+[!0] 0
+State: 1 "t"
+[t] 1 {0}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 3 "a" "b" "c"
+Acceptance: 6 Inf(0)&Inf(2)&Inf(4)&Inf(5)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[0&1&2] 0 {0 2 4}
+[!0&1&2] 0 {2 4}
+[0&!1&2] 0 {0 2}
+[!0&!1&2] 0 {2}
+[0&1&!2] 0 {0 4 5}
+[!0&1&!2] 0 {4 5}
+[0&!1&!2] 0 {0 5}
+[!0&!1&!2] 0 {5}
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Rabin 2
+Acceptance: 4 (Fin(0) & Inf(1)) | (Fin(2) & Inf(3))
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0 {2}
+[0&!1] 1
+[!0&1] 0
+[0&1] 1
+State: 1 {1 2}
+[!0&!1] 1
+[0&!1] 1
+[!0&1] 1
+[0&1] 1
+--END--
+EOF
+
+
+# Test removal of useless acceptance sets
+
+# The mapping of acceptance sets for the second automaton is
+#   input   ->  output
+#     0     ->    0
+#     1     ->   removed
+#     2     ->    1
+#     3     ->   removed
+#     4     ->    2
+#    !2     ->    3
+expectok input --cleanup-acc <<EOF
+HOA: v1
+name: "TGBA for Fa"
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic
+--BODY--
+State: 0 "F(a)"
+[0] 1
+[!0] 0
+State: 1 "t"
+[t] 1
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: generalized-Buchi 4
+Acceptance: 4 Inf(0)&Inf(1)&Inf(2)&Inf(3)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[0&1&2] 0 {0 1 2}
+[!0&1&2] 0 {1 2}
+[0&!1&2] 0 {0 1}
+[!0&!1&2] 0 {1}
+[0&1&!2] 0 {0 2 3}
+[!0&1&!2] 0 {2 3}
+[0&!1&!2] 0 {0 3}
+[!0&!1&!2] 0 {3}
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0&!1] 1
+[!0&1] 0
+[0&1] 1
+State: 1 {0}
+[!0&!1] 1
+[0&!1] 1
+[!0&1] 1
+[0&1] 1
+--END--
+EOF
+
+
+# Implicit labels
+
+ltl2tgba -H 'GFa & GFb & (c U d)' >out.hoa
+ltl2tgba -C -Hi 'GFa & GFb & (c U d)' >out-i.hoa
+autfilt -C -Hi out.hoa --name=%M >out-i2.hoa
+diff -u out-i.hoa out-i2.hoa
+sed 's/ stutter-invariant//;/properties:$/d' <out-i.hoa >out-i3.hoa
+autfilt --trust-hoa=no -C -Hi out.hoa --name=%M >out-i2.hoa
+diff -u out-i3.hoa out-i2.hoa
+
+
+
+cat >expected <<EOF
+HOA: v1
+name: "(c U d) & G(Fa & Fb)"
+States: 3
+Start: 0
+AP: 4 "c" "d" "a" "b"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: implicit-labels trans-acc complete deterministic
+properties: stutter-invariant
+--BODY--
+State: 0
+2
+0
+1
+1
+2
+0
+1
+1
+2
+0
+1
+1
+2
+0
+1
+1
+State: 1
+1
+1
+1
+1
+1 {0}
+1 {0}
+1 {0}
+1 {0}
+1 {1}
+1 {1}
+1 {1}
+1 {1}
+1 {0 1}
+1 {0 1}
+1 {0 1}
+1 {0 1}
+State: 2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+--END--
+EOF
+
+diff out-i.hoa expected
+
+expectok out-i.hoa --sbacc -Hi <<EOF
+HOA: v1
+States: 6
+Start: 0
+AP: 4 "c" "d" "a" "b"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: implicit-labels state-acc complete deterministic
+properties: stutter-invariant
+--BODY--
+State: 0
+1 0 2 2 1 0 2 2 1 0 2 2 1 0 2 2
+State: 1
+1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+State: 2 {0 1}
+3 3 3 3 4 4 4 4 5 5 5 5 2 2 2 2
+State: 3
+3 3 3 3 4 4 4 4 5 5 5 5 2 2 2 2
+State: 4 {0}
+3 3 3 3 4 4 4 4 5 5 5 5 2 2 2 2
+State: 5 {1}
+3 3 3 3 4 4 4 4 5 5 5 5 2 2 2 2
+--END--
+EOF
+
+
+# This used to trigger an assertion.
+cat >bug<<EOF
+HOA: v1
+Start: 6
+Acceptance: 0 t
+--BODY--
+--END--
+HOA: v1
+Start: 1
+Start: 0
+Acceptance: 0 t
+--BODY--
+State: 0
+[t] 0
+--END--
+EOF
+
+expecterr bug <<EOF
+bug:2.1-8: initial state 6 has no definition
+bug:7.1-8: initial state 1 has no definition
+EOF
+
+
+cat >input <<EOF
+HOA: v1
+States: 10
+Start: 0
+AP: 2 "p0" "p1"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 1
+[!0&1] 0
+[!0&!1] 3
+State: 3
+[!0&!1] 2
+[!0&!1] 8
+State: 4
+[0&1] 6
+[0&1] 5
+[0&1] 2
+[!0&1] 3
+State: 6
+[!0&!1] 1
+[!0&!1] 3
+[0&1] 7
+[!0&1] 8
+State: 7
+[!0&1] 8
+State: 9
+[0&!1] 9
+[0&!1] 5
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 0
+Acceptance: 0 t
+properties: !inherently-weak !weak terminal
+properties: stutter-invariant stutter-sensitive
+--BODY--
+State: 0 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 0
+Acceptance: 1 Fin(!0)
+properties: !inherently-weak weak very-weak
+--BODY--
+State: 0 0
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 0
+Acceptance: 0 t
+properties: complete !weak very-weak
+--BODY--
+State: 0 0
+--END--
+EOF
+
+expecterr input <<EOF
+input:3.1-8: initial state 0 has no definition
+input:13.9: state 2 has no definition
+input:17.7: state 5 has no definition
+input:14.9: state 8 has no definition
+input:37.31-47: automaton cannot be both stutter-invariantand stutter-sensitive
+input:36.36-43: 'properties: terminal' contradicts...
+input:36.13-28: ... 'properties: !inherently-weak' given here
+input:36.36-43: 'properties: terminal' contradicts...
+input:36.30-34: ... 'properties: !weak' given here
+input:46.13-28: 'properties: !inherently-weak' contradicts...
+input:46.35-43: ... 'properties: very-weak' given here
+input:46.30-33: 'properties: weak' contradicts...
+input:46.13-28: ... 'properties: !inherently-weak' given here
+input:55.22-26: 'properties: !weak' contradicts...
+input:55.28-36: ... 'properties: very-weak' given here
+input:51.1-9: state 1 has no definition...
+input:55.13-20: ... despite 'properties: complete'
+EOF
+
+
+# This input caused a segfault at some point (before Spot's support
+# for alternating automaton).
+cat >input <<EOF
+HOA: v1
+tool: "ltl3ba" "1.1.2"
+States: 12
+Start: 8&6&2
+Start: 8&4&2
+Start: 8&6&0
+Start: 8&4&0
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+AP: 4 "p2" "c1" "p1" "c2"
+properties: trans-labels explicit-labels state-acc univ-branch very-weak
+--BODY--
+State: 0 "X (G(c2))"
+ [t] 1
+State: 1 "G(c2)"
+ [(3)] 1
+State: 2 "FG(c1)" {0}
+ [(1)] 3
+ [t] 2
+State: 3 "G(c1)"
+ [(1)] 3
+State: 4 "X (F!((c2)))"
+ [t] 5
+State: 5 "F!((c2))" {0}
+ [(!3)] 11
+ [t] 5
+State: 6 "GF!((c1))"
+ [(!1)] 6
+ [t] 7&6
+State: 7 "F!((c1))" {0}
+ [(!1)] 11
+ [t] 7
+State: 8 "((!((c1)) U (!((c1)) && !((p1)))) R F!((p2)))"
+ [(!0 & !1 & !2)] 11
+ [(!1 & !2)] 10
+ [(!0 & !1)] 9
+ [(!1)] 10&9
+ [(!0)] 8
+ [t] 10&8
+State: 9 "(!((c1)) U (!((c1)) && !((p1))))" {0}
+ [(!1 & !2)] 11
+ [(!1)] 9
+State: 10 "F!((p2))" {0}
+ [(!0)] 11
+ [t] 10
+State: 11 "t"
+ [t] 11
+--END--
+EOF
+
+expectok input <<EOF
+HOA: v1
+States: 13
+Start: 12
+AP: 4 "p2" "c1" "p1" "c2"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels state-acc univ-branch
+properties: very-weak
+--BODY--
+State: 0 "X (G(c2))"
+[t] 1
+State: 1 "G(c2)"
+[3] 1
+State: 2 "FG(c1)" {0}
+[1] 3
+[t] 2
+State: 3 "G(c1)"
+[1] 3
+State: 4 "X (F!((c2)))"
+[t] 5
+State: 5 "F!((c2))" {0}
+[!3] 11
+[t] 5
+State: 6 "GF!((c1))"
+[!1] 6
+[t] 6&7
+State: 7 "F!((c1))" {0}
+[!1] 11
+[t] 7
+State: 8 "((!((c1)) U (!((c1)) && !((p1)))) R F!((p2)))"
+[!0&!1&!2] 11
+[!1&!2] 10
+[!0&!1] 9
+[!1] 9&10
+[!0] 8
+[t] 8&10
+State: 9 "(!((c1)) U (!((c1)) && !((p1))))" {0}
+[!1&!2] 11
+[!1] 9
+State: 10 "F!((p2))" {0}
+[!0] 11
+[t] 10
+State: 11 "t"
+[t] 11
+State: 12
+[!0&!1&!2] 1&5&11
+[!0&!1&!2] 2&5&11
+[!0&!1&!2] 1&6&11
+[!0&!1&!2] 2&6&11
+[!0&!1] 1&5&9
+[!0&!1] 2&5&9
+[!0&!1] 1&6&9
+[!0&!1] 2&6&9
+[!0&!1] 1&6&8
+[!0&!1] 2&6&8
+[!0&1] 3&5&8
+[!0&1] 3&6&7&8
+[!0] 1&5&8
+[!0] 2&5&8
+[!0] 1&6&7&8
+[!0] 2&6&7&8
+[!1&!2] 1&5&10
+[!1&!2] 2&5&10
+[!1&!2] 1&6&10
+[!1&!2] 2&6&10
+[!1] 1&5&9&10
+[!1] 2&5&9&10
+[!1] 1&6&9&10
+[!1] 2&6&9&10
+[!1] 1&6&8&10
+[!1] 2&6&8&10
+[1] 3&5&8&10
+[1] 3&6&7&8&10
+[t] 1&5&8&10
+[t] 2&5&8&10
+[t] 1&6&7&8&10
+[t] 2&6&7&8&10
+--END--
+EOF
+
+# Some alternation errors
+cat >input <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: no-univ-branch trans-labels explicit-labels state-acc
+properties: complete deterministic
+--BODY--
+State: 0
+[!0&!1] 0&1
+[0&!1] 1
+[!0&1] 2
+[0&1] 0&1
+--END--
+HOA: v1.1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: !univ-branch trans-labels explicit-labels state-acc
+properties: complete deterministic
+--BODY--
+State: 0
+[!0&!1] 0&1
+[0&!1] 1
+[!0&1] 2
+[0&1] 0&1
+--END--
+HOA: v1
+Start: 0&1
+AP: 2 "a" "b"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: univ-branch trans-labels explicit-labels state-acc
+properties: complete deterministic
+--BODY--
+State: 0
+[!0&!1] 0&1
+[0&!1] 1
+[!0&1] 2
+[0&1] 0&1
+--END--
+EOF
+
+expecterr input<<EOF
+input:11.9-11: universal branch used despite previous declaration...
+input:7.13-26: ... here
+input:14.7-9: universal branch used despite previous declaration...
+input:7.13-26: ... here
+input:11.11: state 1 has no definition
+input:13.8: state 2 has no definition
+input:16.6-9: we can read HOA v1 but this file uses v1.1; $err1
+input:26.9-11: universal branch used despite previous declaration...
+input:22.13-24: ... here
+input:29.7-9: universal branch used despite previous declaration...
+input:22.13-24: ... here
+input:26.11: state 1 has no definition
+input:28.8: state 2 has no definition
+input:32.1-10: initial state 1 has no definition
+input:42.8: state 2 has no definition
+EOF
+
+
+cat >input <<EOF
+HOA: v1
+tool: "Rabinizer" "3"
+name: "DTGRA for (G F a | F G b)"
+properties: deterministic
+States: 1
+Start: 0
+Acceptance: 4 (Fin(0)&Inf(1)) | (Fin(2)&Inf(3))
+AP: 2 "a" "b"
+--BODY--
+State: 0
+ 0 {2}   	/*{}*/
+ 0 {1 2}   	/*{a}*/
+ 0 {3}   	/*{b}*/
+ 0 {3 1}   	/*{a, b}*/
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 (Fin(0) | Inf(1)) & (Fin(2) | Inf(3))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {2}
+[0&!1] 0 {1 2}
+[!0&1] 0 {3}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+/* This is Streett, but badly ordered */
+Acceptance: 4 (Inf(3) | Fin(2)) & (Fin(0) | Inf(1))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {2}
+[0&!1] 0 {1 2}
+[!0&1] 0 {3}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 6 Fin(0) | (Fin(1) & Inf(2) & Inf(3)) | (Fin(4) & Inf(5))
+--BODY--
+State: 0
+[!0&!1] 0 {0 1 4}
+[0&!1] 0 {2 4}
+[!0&1] 0 {3 5}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+/* generalized-Rabin, but badely ordered */
+Acceptance: 6 (Inf(5) & Fin(4)) | Fin(0) | (Inf(2) & Fin(1) & Inf(3))
+--BODY--
+State: 0
+[!0&!1] 0 {0 1 4}
+[0&!1] 0 {2 4}
+[!0&1] 0 {3 5}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 3 Fin(0)|Fin(1)|Fin(2)
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0 {}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 Inf(0)|Fin(1)&(Inf(2)|Fin(3)) /* min even 4 */
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0 {}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 Inf(3)|Fin(2)&(Inf(1)|Fin(0)) /* max odd 4 */
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0 {}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 Fin(3) & (Inf(2) | (Fin(1) & Inf(0))) /* max even 4 */
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0 {}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 Inf(0) | (Fin(3)|Inf(2))&Fin(1) /* min even 4 (reordered) */
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0 {}
+--END--
+HOA: v1
+tool: "ltl3ba" "1.1.3"
+name: "VWAA for (a U b) && G(F(b)) && F(G(a))"
+States: 7
+Start: 0
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+AP: 2 "b" "a"
+properties: trans-labels explicit-labels state-acc univ-branch very-weak
+--BODY--
+State: 0 "((((a) U (b)) && GF(b)) && FG(a))"
+ [(0)] 3&1
+ [(!0 & 1)] 5&3&1
+State: 1 "FG(a)" {0}
+ [(1)] 2
+ [t] 1
+State: 2 "G(a)"
+ [(1)] 2
+State: 3 "GF(b)"
+ [(0)] 3
+ [(!0)] 4&3
+State: 4 "F(b)" {0}
+ [(0)] 6
+ [(!0)] 4
+State: 5 "((a) U (b))" {0}
+ [(0)] 6
+ [(!0 & 1)] 5
+State: 6 "t"
+ [t] 6
+--END--
+HOA: v1
+States: 3
+Start: 0
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+AP: 2 "a" "b"
+--BODY--
+State: 0
+0&1 1 0&   2&1 0&1  /* weird spacing on purpose  */
+State: 2
+0 & 1 2 & 1 2 0 & 2 & 1
+State: 1
+0&1 2&1 2 1&1 /* should we warn about duplicate destinations for univ edges? */
+--END--
+EOF
+
+expectok input <<EOF
+HOA: v1
+name: "DTGRA for (G F a | F G b)"
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: Rabin 2
+Acceptance: 4 (Fin(0) & Inf(1)) | (Fin(2) & Inf(3))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {2}
+[0&!1] 0 {1 2}
+[!0&1] 0 {3}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: Streett 2
+Acceptance: 4 (Fin(0) | Inf(1)) & (Fin(2) | Inf(3))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {2}
+[0&!1] 0 {1 2}
+[!0&1] 0 {3}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: Streett 2
+Acceptance: 4 (Fin(0) | Inf(1)) & (Fin(2) | Inf(3))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {2}
+[0&!1] 0 {1 2}
+[!0&1] 0 {3}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-Rabin 3 0 2 1
+Acceptance: 6 Fin(0) | (Fin(1) & (Inf(2)&Inf(3))) | (Fin(4) & Inf(5))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1 4}
+[0&!1] 0 {2 4}
+[!0&1] 0 {3 5}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-Rabin 3 0 2 1
+Acceptance: 6 Fin(0) | (Fin(1) & (Inf(2)&Inf(3))) | (Fin(4) & Inf(5))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1 4}
+[0&!1] 0 {2 4}
+[!0&1] 0 {3 5}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-co-Buchi 3
+Acceptance: 3 Fin(0)|Fin(1)|Fin(2)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: parity min even 4
+Acceptance: 4 Inf(0) | (Fin(1) & (Inf(2) | Fin(3)))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: parity max odd 4
+Acceptance: 4 Inf(3) | (Fin(2) & (Inf(1) | Fin(0)))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: parity max even 4
+Acceptance: 4 Fin(3) & (Inf(2) | (Fin(1) & Inf(0)))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 Inf(0) | ((Fin(3) | Inf(2)) & Fin(1))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+name: "VWAA for (a U b) && G(F(b)) && F(G(a))"
+States: 7
+Start: 0
+AP: 2 "b" "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels state-acc univ-branch
+properties: very-weak
+--BODY--
+State: 0 "((((a) U (b)) && GF(b)) && FG(a))"
+[0] 1&3
+[!0&1] 1&3&5
+State: 1 "FG(a)" {0}
+[1] 2
+[t] 1
+State: 2 "G(a)"
+[1] 2
+State: 3 "GF(b)"
+[0] 3
+[!0] 3&4
+State: 4 "F(b)" {0}
+[0] 6
+[!0] 4
+State: 5 "((a) U (b))" {0}
+[0] 6
+[!0&1] 5
+State: 6 "t"
+[t] 6
+--END--
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic univ-branch
+--BODY--
+State: 0
+[!0&!1] 0&1
+[0&!1] 1
+[!0&1] 0&1&2
+[0&1] 0&1
+State: 1
+[!0&!1] 0&1
+[0&!1] 1&2
+[!0&1] 2
+[0&1] 1
+State: 2
+[!0&!1] 0&1
+[0&!1] 1&2
+[!0&1] 2
+[0&1] 0&1&2
+--END--
+EOF
+
+# The complements are Streett and Rabin, but the acceptance set are
+# not ordered in the way we call "Streett" and "Rabin" in the HOA
+# specifications.
+expectok input --complement-acc <<EOF
+HOA: v1
+name: "DTGRA for (G F a | F G b)"
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 (Inf(0) | Fin(1)) & (Inf(2) | Fin(3))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {2}
+[0&!1] 0 {1 2}
+[!0&1] 0 {3}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 (Inf(0) & Fin(1)) | (Inf(2) & Fin(3))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {2}
+[0&!1] 0 {1 2}
+[!0&1] 0 {3}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 (Fin(3) & Inf(2)) | (Inf(0) & Fin(1))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {2}
+[0&!1] 0 {1 2}
+[!0&1] 0 {3}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 6 Inf(0) & (Inf(1) | (Fin(2)|Fin(3))) & (Inf(4) | Fin(5))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1 4}
+[0&!1] 0 {2 4}
+[!0&1] 0 {3 5}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 6 (Fin(5) | Inf(4)) & Inf(0) & ((Fin(2)|Fin(3)) | Inf(1))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1 4}
+[0&!1] 0 {2 4}
+[!0&1] 0 {3 5}
+[0&1] 0 {1 3}
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: generalized-Buchi 3
+Acceptance: 3 Inf(0)&Inf(1)&Inf(2)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: parity min odd 4
+Acceptance: 4 Fin(0) & (Inf(1) | (Fin(2) & Inf(3)))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: parity max even 4
+Acceptance: 4 Fin(3) & (Inf(2) | (Fin(1) & Inf(0)))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+acc-name: parity max odd 4
+Acceptance: 4 Inf(3) | (Fin(2) & (Inf(1) | Fin(0)))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+States: 1
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 4 Fin(0) & ((Inf(3) & Fin(2)) | Inf(1))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[!0&!1] 0 {0 1}
+[0&!1] 0 {1}
+[!0&1] 0 {2}
+[0&1] 0
+--END--
+HOA: v1
+name: "VWAA for (a U b) && G(F(b)) && F(G(a))"
+States: 7
+Start: 0
+AP: 2 "b" "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc univ-branch
+properties: very-weak
+--BODY--
+State: 0 "((((a) U (b)) && GF(b)) && FG(a))"
+[0] 1&3
+[!0&1] 1&3&5
+State: 1 "FG(a)" {0}
+[1] 2
+[t] 1
+State: 2 "G(a)"
+[1] 2
+State: 3 "GF(b)"
+[0] 3
+[!0] 3&4
+State: 4 "F(b)" {0}
+[0] 6
+[!0] 4
+State: 5 "((a) U (b))" {0}
+[0] 6
+[!0&1] 5
+State: 6 "t"
+[t] 6
+--END--
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic univ-branch
+--BODY--
+State: 0
+[!0&!1] 0&1
+[0&!1] 1
+[!0&1] 0&1&2
+[0&1] 0&1
+State: 1
+[!0&!1] 0&1
+[0&!1] 1&2
+[!0&1] 2
+[0&1] 1
+State: 2
+[!0&!1] 0&1
+[0&!1] 1&2
+[!0&1] 2
+[0&1] 0&1&2
+--END--
+EOF
+
+cat >input <<EOF
+HOA: v1
+tool: "ltl3dra" "0.2.2"
+name: "TGDRA for p0 || XG(p1 && F!p0)"
+States: 4
+Start: 2
+acc-name: generalized-Rabin 3 0 0 1
+Acceptance: 4 (Fin(0)) | (Fin(1)) | (Fin(2)&Inf(3))
+AP: 2 "p0" "p1"
+properties: deterministic trans-labels explicit-labels trans-acc no-univ-branch
+--BODY--
+State: 0 "[]"
+  [t] 0 {0 1 2}
+State: 1 "[{}]"
+  [t] 1 {1 2}
+State: 2 "[{1}, {9}]"
+  [(0)] 1 {1 2}
+  [(!0 & !1)] 3 {0 1 2}
+  [(!0 & 1)] 3 {0 3}
+State: 3 "[{8}]"
+  [(0 & 1)] 3 {0 1}
+  [(!0 & 1)] 3 {0 3}
+  [(!1)] 0 {0 1 2}
+--END--
+EOF
+
+expectok input <<EOF
+HOA: v1
+name: "TGDRA for p0 || XG(p1 && F!p0)"
+States: 4
+Start: 2
+AP: 2 "p0" "p1"
+acc-name: generalized-Rabin 3 0 0 1
+Acceptance: 4 (Fin(0)|Fin(1)) | (Fin(2) & Inf(3))
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0 "[]"
+[t] 0 {0 1 2}
+State: 1 "[{}]"
+[t] 1 {1 2}
+State: 2 "[{1}, {9}]"
+[0] 1 {1 2}
+[!0&!1] 3 {0 1 2}
+[!0&1] 3 {0 3}
+State: 3 "[{8}]"
+[0&1] 3 {0 1}
+[!0&1] 3 {0 3}
+[!1] 0 {0 1 2}
+--END--
+EOF
+
+# A 50000-char word
+BIGLABEL=`yes y | sed 25000q | tr 'y\n' 'xx'`
+cat >bigaut <<EOF
+HOA: v1
+States: 1
+Start: 0
+Acceptance: 1 Fin(0)
+AP: 0
+--BODY--
+State: 0 "$BIGLABEL"
+{0}
+[t] 0
+--END--
+EOF
+# At some point, this crashed with
+# input buffer overflow, can't enlarge buffer because scanner uses REJECT
+run 0 autfilt -q bigaut

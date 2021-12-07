@@ -1,0 +1,522 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Mon Jan 18 11:47:55 2021 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>AUTCROSS</title>
+
+ <LINK REL="stylesheet" TYPE="text/css" HREF="../spot.css">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body class="man"><div id="org-div-home-and-up"><a accesskey="h" href="../tools.html"> UP </a>| <a accesskey="H" href="../index.html"> HOME </a></div>
+
+<h1 align="center">AUTCROSS</h1>
+
+<div id="table-of-contents"><h2>Table of Contents</h2><div id="text-table-of-contents"><ul>
+<li><a href="#NAME">NAME</a></li>
+<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+<li><a href="#ENVIRONMENT VARIABLES">ENVIRONMENT VARIABLES</a></li>
+<li><a href="#OUTPUT DATA">OUTPUT DATA</a></li>
+<li><a href="#REPORTING BUGS">REPORTING BUGS</a></li>
+<li><a href="#COPYRIGHT">COPYRIGHT</a></li>
+<li><a href="#SEE ALSO">SEE ALSO</a></li>
+</ul></div></div>
+
+
+<div class="outline-2"><h2>NAME
+<a name="NAME"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">autcross -
+cross-compare tools that process automata</p>
+
+<div class="outline-2"><h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>autcross</b>
+[<i>OPTION</i>...] [<i>COMMANDFMT</i>...]</p>
+
+<div class="outline-2"><h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Call several
+tools that process automata and cross-compare their output
+to detect bugs, or to gather statistics. The list of
+automata to use should be supplied on standard input, or
+using the <b>-F</b> option.</p>
+
+<h3 style="margin-left:11%">Input:</h3><p style="margin-left:11%"><b>
+-F</b>, <b>--file</b>=<i>FILENAME</i></p>
+
+<p style="margin-left:22%;">process automata from
+FILENAME</p>
+
+<h3 style="margin-left:11%">Specifying
+tools to call:</h3><p style="margin-left:11%"><b>
+--list-shorthands</b></p>
+
+<p style="margin-left:22%;">list availabled shorthands to
+use in COMMANDFMT</p>
+
+<p style="margin-left:11%;"><b>-t</b>,
+<b>--tool</b>=<i>COMMANDFMT</i></p>
+
+<p style="margin-left:22%;">register one tool to call</p>
+
+<p style="margin-left:11%;"><b>-T</b>,
+<b>--timeout</b>=<i>NUMBER</i></p>
+
+<p style="margin-left:22%;">kill tools after NUMBER
+seconds</p>
+
+<p style="margin-left:11%; margin-top: 1em">COMMANDFMT
+should specify input and output arguments using the
+following character sequences:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>%%</p></td>
+<td width="8%"></td>
+<td width="15%">
+
+
+<p>a single %</p></td>
+<td width="63%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;">%H,%S,%L</p>
+
+<p style="margin-left:22%;">filename for the input
+automaton in (H) HOA, (S) Spin&rsquo;s neverclaim, or (L)
+LBTT&rsquo;s format</p>
+
+<p style="margin-left:11%;">%M, %[val]M</p>
+
+<p style="margin-left:22%;">the name of the input
+automaton, with an optional default value</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p>%O</p></td>
+<td width="8%"></td>
+<td width="78%">
+
+
+<p>filename for the automaton output in HOA, never claim,
+LBTT, or ltl2dstar&rsquo;s format</p></td></tr>
+</table>
+
+<h3 style="margin-left:11%">Parsing of
+automata:</h3><p style="margin-left:11%"><b>
+--trust-hoa</b>=<i>BOOL</i></p>
+
+<p style="margin-left:22%;">If false, properties listed in
+HOA files are ignored, unless they can be easily verified.
+If true (the default) any supported property is trusted.</p>
+
+<h3 style="margin-left:11%">autcross
+behavior:</h3><p style="margin-left:11%"><b>
+--fail-on-timeout</b></p>
+
+<p style="margin-left:22%;">consider timeouts as errors</p>
+
+
+<p style="margin-left:11%;"><b>--ignore-execution-failures</b></p>
+
+<p style="margin-left:22%;">ignore automata from
+translators that return with a non-zero exit code, but do
+not flag this as an error</p>
+
+
+<p style="margin-left:11%;"><b>--language-preserved</b></p>
+
+<p style="margin-left:22%;">expect that each tool preserves
+the input language</p>
+
+<p style="margin-left:11%;"><b>--no-checks</b></p>
+
+<p style="margin-left:22%;">do not perform any sanity
+checks</p>
+
+<p style="margin-left:11%;"><b>--stop-on-error</b></p>
+
+<p style="margin-left:22%;">stop on first execution error
+or failure to pass sanity checks (timeouts are OK)</p>
+
+<h3 style="margin-left:11%">Statistics
+output:</h3><p style="margin-left:11%"><b>
+--csv</b>[=[&gt;&gt;]FILENAME]</p>
+
+<p style="margin-left:22%;">output statistics as CSV in
+FILENAME or on standard output (if &rsquo;&gt;&gt;&rsquo; is
+used to request append mode, the header line is not
+output)</p>
+
+<p style="margin-left:11%;"><b>--omit-missing</b></p>
+
+<p style="margin-left:22%;">do not output statistics for
+timeouts or failed translations</p>
+
+
+<h3 style="margin-left:11%">Simplification
+level (for complementation):</h3>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--high</b></p></td>
+<td width="2%"></td>
+<td width="66%">
+
+
+<p>all available optimizations (slow, default)</p></td>
+<td width="12%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--low</b></p></td>
+<td width="2%"></td>
+<td width="66%">
+
+
+<p>minimal optimizations (fast)</p></td>
+<td width="12%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--medium</b></p>
+
+<p style="margin-left:22%;">moderate optimizations</p>
+
+<h3 style="margin-left:11%">Output
+options:</h3><p style="margin-left:11%"><b>
+--color</b>[=<i>WHEN</i>]</p>
+
+<p style="margin-left:22%;">colorize output; WHEN can be
+&rsquo;never&rsquo;, &rsquo;always&rsquo; (the default if
+<b>--color</b> is used without argument), or
+&rsquo;auto&rsquo; (the default if <b>--color</b> is not
+used)</p>
+
+<p style="margin-left:11%;"><b>-q</b>, <b>--quiet</b></p>
+
+<p style="margin-left:22%;">suppress all normal output in
+absence of errors</p>
+
+
+<p style="margin-left:11%;"><b>--save-bogus</b>=[&gt;&gt;]FILENAME</p>
+
+<p style="margin-left:22%;">save automata for which
+problems were detected in FILENAME</p>
+
+<p style="margin-left:11%;"><b>--verbose</b></p>
+
+<p style="margin-left:22%;">print what is being done, for
+debugging</p>
+
+<p style="margin-left:11%; margin-top: 1em">If an output
+FILENAME is prefixed with &rsquo;&gt;&gt;&rsquo;, it is open
+in append mode instead of being truncated.</p>
+
+
+<h3 style="margin-left:11%">Miscellaneous
+options:</h3>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="9%">
+
+
+<p><b>--help</b></p></td>
+<td width="2%"></td>
+<td width="23%">
+
+
+<p>print this help</p></td>
+<td width="55%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>--version</b></p>
+
+<p style="margin-left:22%;">print program version</p>
+
+<p style="margin-left:11%; margin-top: 1em">Mandatory or
+optional arguments to long options are also mandatory or
+optional for any corresponding short options.</p>
+
+<h3 style="margin-left:11%">Exit
+status:</h3>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>0</p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>everything went fine (without <b>--fail-on-timeout</b>,
+timeouts are OK)</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>1</p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>some tools failed to output something we understand, or
+failed sanity checks (statistics were output
+nonetheless)</p> </td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="1%">
+
+
+<p>2</p></td>
+<td width="10%"></td>
+<td width="78%">
+
+
+<p>autcross aborted on error</p></td></tr>
+</table>
+
+<div class="outline-2"><h2>ENVIRONMENT VARIABLES
+<a name="ENVIRONMENT VARIABLES"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>SPOT_TMPDIR</b>,
+<b>TMPDIR</b></p>
+
+<p style="margin-left:22%;">These variables control in
+which directory temporary files (e.g., those who contain the
+input and output when interfacing with translators) are
+created. <b>TMPDIR</b> is only read if <b>SPOT_TMPDIR</b>
+does not exist. If none of these environment variables
+exist, or if their value is empty, files are created in the
+current directory.</p>
+
+<p style="margin-left:11%;"><b>SPOT_TMPKEEP</b></p>
+
+<p style="margin-left:22%;">When this variable is defined,
+temporary files are not removed. This is mostly useful for
+debugging.</p>
+
+<div class="outline-2"><h2>OUTPUT DATA
+<a name="OUTPUT DATA"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">The following
+columns are output in the CSV files. <b><br>
+input.source</b></p>
+
+<p style="margin-left:22%;">Location of the input automaton
+fed to the tool.</p>
+
+<p style="margin-left:11%;"><b>input.name</b></p>
+
+<p style="margin-left:22%;">Name of the input automaton, if
+any. This is supported by the HOA format.</p>
+
+
+<p style="margin-left:11%;"><b>input.ap</b>,<b>output.ap</b>,</p>
+
+<p style="margin-left:22%;">Number of atomic proposition in
+the input and output automata.</p>
+
+
+<p style="margin-left:11%;"><b>input.states</b>,<b>output.states</b></p>
+
+<p style="margin-left:22%;">Number of states in the input
+and output automata.</p>
+
+
+<p style="margin-left:11%;"><b>input.edges</b>,<b>output.edges</b></p>
+
+<p style="margin-left:22%;">Number of edges in the input
+and output automata.</p>
+
+
+<p style="margin-left:11%;"><b>input.transitions</b>,<b>output.transitions</b></p>
+
+<p style="margin-left:22%;">Number of transitions in the
+input and output automata.</p>
+
+
+<p style="margin-left:11%;"><b>input.acc_sets</b>,<b>output.acc_sets</b></p>
+
+<p style="margin-left:22%;">Number of acceptance sets in
+the input and output automata.</p>
+
+
+<p style="margin-left:11%;"><b>input.scc</b>,<b>output.scc</b></p>
+
+<p style="margin-left:22%;">Number of strongly connected
+components in the input and output automata.</p>
+
+
+<p style="margin-left:11%;"><b>input.nondetstates</b>,<b>output.nondetstates</b></p>
+
+<p style="margin-left:22%;">Number of nondeterministic
+states in the input and output automata.</p>
+
+
+<p style="margin-left:11%;"><b>input.nondeterministic</b>,<b>output.nondetstates</b></p>
+
+<p style="margin-left:22%;">1 if the automaton is
+nondeterministic, 0 if it is deterministic.</p>
+
+
+<p style="margin-left:11%;"><b>input.alternating</b>,<b>output.alternating</b></p>
+
+<p style="margin-left:22%;">1 if the automaton has some
+universal branching, 0 otherwise.</p>
+
+
+<p style="margin-left:22%; margin-top: 1em"><b>exit_status</b>,
+<b>exit_code</b> Information about how the execution of the
+tool went. <b>exit_status</b> is a string that can take the
+following values:</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="22%"></td>
+<td width="6%">
+
+
+<p>&quot;ok&quot;</p></td>
+<td width="4%"></td>
+<td width="68%">
+
+
+<p>The tool ran succesfully (this does not imply that the
+produced automaton is correct) and autcross could parse the
+resulting automaton. In this case <b>exit_code</b> is always
+0.</p> </td></tr>
+</table>
+
+<p style="margin-left:22%;">&quot;timeout&quot;</p>
+
+<p style="margin-left:32%;">The tool ran for more than the
+number of seconds specified with the <b>--timeout</b>
+option. In this case <b>exit_code</b> is always -1.</p>
+
+<p style="margin-left:22%;">&quot;exit code&quot;</p>
+
+<p style="margin-left:32%;">The tool terminated with a
+non-zero exit code. <b>exit_code</b> contains that
+value.</p>
+
+<p style="margin-left:22%;">&quot;signal&quot;</p>
+
+<p style="margin-left:32%;">The tool terminated with a
+signal. <b>exit_code</b> contains that signal&rsquo;s
+number.</p>
+
+<p style="margin-left:22%;">&quot;parse error&quot;</p>
+
+<p style="margin-left:32%;">The tool terminated normally,
+but autcross could not parse its output. In this case
+<b>exit_code</b> is always -1.</p>
+
+<p style="margin-left:22%;">&quot;no output&quot;</p>
+
+<p style="margin-left:32%;">The tool terminated normally,
+but without creating the specified output file. In this case
+<b>exit_code</b> is always -1.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>time</b></p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>A floating point number giving the run time of the tool
+in seconds. This is reported for all executions, even
+failling ones.</p></td></tr>
+</table>
+
+<div class="outline-2"><h2>REPORTING BUGS
+<a name="REPORTING BUGS"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Report bugs to
+&lt;<a href="mailto:spot@lrde.epita.fr">spot@lrde.epita.fr</a>&gt;.</p>
+
+<div class="outline-2"><h2>COPYRIGHT
+<a name="COPYRIGHT"></a>
+</h2></div>
+
+
+<p style="margin-left:11%; margin-top: 1em">Copyright
+&copy; 2021 Laboratoire de Recherche et D&eacute;veloppement
+de l&rsquo;Epita. License GPLv3+: <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 3 or later</a>. <br>
+This is free software: you are free to change and
+redistribute it. There is NO WARRANTY, to the extent
+permitted by law.</p>
+
+<div class="outline-2"><h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2></div>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><a href="randaut.1.html"><b>randaut</b></a>(1),
+<a href="genaut.1.html"><b>genaut</b></a>(1), <a href="autfilt.1.html"><b>autfilt</b></a>(1), <a href="ltlcross.1.html"><b>ltlcross</b></a>(1)</p>
+</body>
+</html>

@@ -1,0 +1,64 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs || exit 1
+
+set -x
+
+ltl2tgba 'G(a&b)' > gab.hoa
+ltl2tgba 'Ga' > ga.hoa
+ltl2tgba 'false' > false.hoa
+
+ltl2tgba FGa > fga.hoa
+ltl2tgba FGb > fgb.hoa
+ltl2tgba GFa > gfa.hoa
+
+run 0 autfilt -q fga.hoa --included-in gfa.hoa
+run 0 autfilt -q fga.hoa --included-in fga.hoa
+run 1 autfilt -q gfa.hoa --included-in fga.hoa
+run 0 autfilt -q gab.hoa --included-in fga.hoa --included-in fgb.hoa
+run 1 autfilt -q ga.hoa --included-in fga.hoa --included-in fgb.hoa
+run 0 autfilt -q false.hoa --included-in fga.hoa
+
+run 1 autfilt -q gfa.hoa --equivalent-to fga.hoa
+run 1 autfilt -q fga.hoa --equivalent-to gfa.hoa
+
+run 0 autfilt -D fga.hoa > fgaD.hoa
+grep deterministic fga.hoa && exit 1
+grep deterministic fgaD.hoa
+run 0 autfilt -q fga.hoa --equivalent-to fgaD.hoa
+run 0 autfilt -q fgaD.hoa --equivalent-to fga.hoa
+
+
+# lets test that
+#   (a U b) + !(a U b) == true
+
+ltl2tgba 'a U b' > a1.hoa
+ltl2tgba '!(a U b)' | autfilt --product-or a1.hoa > out.hoa
+ltl2tgba true | autfilt out.hoa --equivalent-to -
+
+
+# This should fails if we replace !(a U b) by !(a U c).
+ltl2tgba '!(a U c)' | autfilt --product-or a1.hoa > out.hoa
+ltl2tgba true | autfilt out.hoa --equivalent-to - && exit 1
+
+:
+

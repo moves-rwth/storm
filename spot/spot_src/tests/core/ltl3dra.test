@@ -1,0 +1,61 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015, 2016 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Do some quick translations to make sure the neverclaims produced by
+# spot actually look correct!  We do that by parsing them via ltlcross.
+# ltl2neverclaim-lbtt.test does the same with LBTT if it is installed.
+
+. ./defs
+set -e
+
+# Skip this test if ltl3dra is not installed.
+(ltl3dra -v) || exit 77
+
+# This used to crash ltlcross because the number of
+# acceptance sets generated was too high.
+ltlcross 'ltl2tgba' 'ltl3dra' -f '(<>((((p0) &&
+(!(<>(p2)))) || ((!(p0)) && (<>(p2)))) U ((<>(((p0) && (!([](((!(p1))
+&& ([](p3))) || ((p1) && (!([](p3)))))))) || ((!(p0)) && ([](((!(p1))
+&& ([](p3))) || ((p1) && (!([](p3))))))))) && (((p0) && (!(<>(p2))))
+|| ((!(p0)) && (<>(p2)))))))'
+
+
+# This used to trigger an assertion because the formula "a=0"&p0 was
+# relabeled p0&p1, and then p0 was unregistered despite being one of
+# the new variables.
+ltldo ltl3dra -f '"a=0" & p0' | grep 'AP: 2.*p0'
+
+# ltl3dra 0.2.2 has a bug were 'ltl3dra -H1 -f true' produce an
+# empty automaton.  ltl3dra 0.2.3 fixes that but introduces another
+# bug where 'ltl3dra -f "!(a <-> Fb)" rejects cycle{!a & b}.
+#
+# # The -H1 option will output alternating automata, so this tests
+# # ltlcross's support in this area.
+# randltl -n 30 2 |
+# ltlcross 'ltl3dra -H1' 'ltl3dra -H2' 'ltl3dra -H3' \
+#          --ignore-execution-failures --ambiguous \
+#          --strength --csv=output.csv
+#
+# # Make sure all lines in output.csv have the same number of comas
+# sed 's/[^,]//g' <output.csv |
+# ( read first
+# while read l; do
+#   test "x$first" = "x$l" || exit 1
+# done)

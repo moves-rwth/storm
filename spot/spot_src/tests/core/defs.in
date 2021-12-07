@@ -1,0 +1,106 @@
+# -*- mode: shell-script; coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2012, 2013, 2015 Laboratoire de Recherche
+# et Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004, 2006 Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Ensure we are running from the right directory.
+test -f ./defs || {
+   echo "defs: not found in current directory" 1>&2
+   exit 1
+}
+
+# If srcdir is not set, then we are not running from `make check'.
+if test -z "$srcdir"; then
+   # compute $srcdir.
+   srcdir=`echo "$0" | sed -e 's,/[^\\/]*$,,'`
+   test $srcdir = $0 && srcdir=.
+fi
+
+# Ensure $srcdir is set correctly.  It should point to a subdirectory of tests.
+test -f $srcdir/../core/defs.in || {
+   echo "$srcdir/../core/defs.in not found, check \$srcdir" 1>&2
+   exit 1
+}
+
+echo "== Running test $0"
+
+me=`echo "$0" | sed -e 's,.*[\\/],,;s/\.test$//'`
+
+testSubDir=$me.dir
+chmod -R a+rwx $testSubDir > /dev/null 2>&1
+rm -rf $testSubDir > /dev/null 2>&1
+mkdir $testSubDir
+cd $testSubDir
+
+# Adjust srcdir now that we are in a subdirectory.  We still want
+# $srcdir to point to the source directory corresponding to the build
+# directory that contains $testSubDir.
+case $srcdir in
+  [\\/$]* | ?:[\\/]* );;
+  *) srcdir=../$srcdir
+esac
+
+DOT='@DOT@'
+LBTT="@LBTT@"
+LBTT_TRANSLATE="@LBTT_TRANSLATE@"
+VALGRIND='@VALGRIND@'
+SPIN='@SPIN@'
+LTL2BA='@LTL2BA@'
+PYTHON='@PYTHON@'
+top_srcdir='@abs_top_srcdir@'
+
+# The test cases assume these variables are undefined
+unset SPOT_DOTEXTRA
+unset SPOT_DOTDEFAULT
+
+need_lbtt()
+{
+  # LBTT may not have been installed or compiled.
+  ("$LBTT" --version) || exit 77
+}
+
+run()
+{
+  expected_exitcode=$1
+  shift
+  exitcode=0
+  if test -n "$VALGRIND"; then
+    # Replace the command name by a full path after lookup in $PATH, so
+    # that valgrind will find it.
+    cmd=`command -v $1`
+    shift
+    test -n "$cmd" || exit 1
+    set $cmd "$@"
+    # Run valgrind.
+    exec 6>valgrind.err
+    GLIBCXX_FORCE_NEW=1 \
+    @abs_top_builddir@/libtool --mode=execute \
+    $VALGRIND --tool=memcheck --leak-check=yes --log-fd=6 -q "$@" ||
+      exitcode=$?
+    cat valgrind.err 1>&2
+    test -z "`sed 1q valgrind.err`" || exit 50
+    rm -f valgrind.err
+  else
+    "$@" || exitcode=$?
+  fi
+  test $exitcode = $expected_exitcode || exit 1
+}
+
+set -x

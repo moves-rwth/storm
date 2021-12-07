@@ -1,0 +1,438 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016 Laboratoire
+# de Recherche et Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+# This only runs various configuration of the translation algorithms
+# through valgrind, and checks for differences in the size of the
+# resulting automata.  The actual language of the automata is not
+# tested.  The columns in the following table are:
+#    ltl2tgba options | states | transitions | acc states
+cat >checkta.txt <<\EOF
+in: a
+-TGTA                |      4 |      8 |    XXX
+-TGTA -RT            |      2 |      3 |    XXX
+-TA                  |      3 |      3 |      3
+-TA -RT              |      2 |      2 |      2
+-TA -lv              |      3 |      3 |      2
+-TA -lv -RT          |      2 |      2 |      1
+-TA -sp              |      3 |      3 |      2
+-TA -sp -RT          |      2 |      2 |      1
+-TA -lv -sp          |      3 |      3 |      2
+-TA -lv -sp -RT      |      2 |      2 |      1
+-TA -DS              |      3 |      3 |      3
+-TA -DS -RT          |      2 |      2 |      2
+-TA -DS -lv          |      3 |      3 |      3
+-TA -DS -lv -RT      |      2 |      2 |      2
+-TA -DS -sp          |      3 |      3 |      3
+-TA -DS -sp -RT      |      2 |      2 |      2
+-TA -DS -lv -sp      |      3 |      3 |      3
+-TA -DS -lv -sp -RT  |      2 |      2 |      2
+-x -TA -DS -in       |      3 |      3 |      3
+-x -TA -DS -in -RT   |      2 |      2 |      2
+in: a U b
+-TGTA                |      8 |     34 |    XXX
+-TGTA -RT            |      4 |     18 |    XXX
+-TA                  |      7 |     20 |      6
+-TA -RT              |      4 |     11 |      3
+-TA -lv              |      8 |     22 |      5
+-TA -lv -RT          |      5 |     13 |      2
+-TA -sp              |      7 |     22 |      4
+-TA -sp -RT          |      4 |     13 |      1
+-TA -lv -sp          |      8 |     22 |      5
+-TA -lv -sp -RT      |      5 |     13 |      2
+-TA -DS              |      7 |     20 |      6
+-TA -DS -RT          |      4 |     11 |      3
+-TA -DS -lv          |      8 |     22 |      5
+-TA -DS -lv -RT      |      5 |     13 |      2
+-TA -DS -sp          |      7 |     22 |      4
+-TA -DS -sp -RT      |      4 |     13 |      1
+-TA -DS -lv -sp      |      8 |     22 |      5
+-TA -DS -lv -sp -RT  |      5 |     13 |      2
+-x -TA -DS -in       |      8 |     22 |      5
+-x -TA -DS -in -RT   |      5 |     13 |      2
+in: F a
+-TGTA                |      5 |     12 |    XXX
+-TGTA -RT            |      4 |     10 |    XXX
+-TA                  |      4 |      4 |      3
+-TA -RT              |      3 |      3 |      2
+-TA -lv              |      5 |      5 |      3
+-TA -lv -RT          |      4 |      4 |      2
+-TA -sp              |      4 |      5 |      2
+-TA -sp -RT          |      3 |      4 |      1
+-TA -lv -sp          |      5 |      5 |      3
+-TA -lv -sp -RT      |      4 |      4 |      2
+-TA -DS              |      4 |      4 |      3
+-TA -DS -RT          |      3 |      3 |      2
+-TA -DS -lv          |      5 |      5 |      3
+-TA -DS -lv -RT      |      4 |      4 |      2
+-TA -DS -sp          |      4 |      5 |      2
+-TA -DS -sp -RT      |      3 |      4 |      1
+-TA -DS -lv -sp      |      5 |      5 |      3
+-TA -DS -lv -sp -RT  |      4 |      4 |      2
+-x -TA -DS -in       |      5 |      5 |      3
+-x -TA -DS -in -RT   |      4 |      4 |      2
+in: a & b & c
+-TGTA                |     10 |     74 |    XXX
+-TGTA -RT            |      2 |      9 |    XXX
+-TA                  |      9 |     63 |      9
+-TA -RT              |      2 |     14 |      2
+-TA -lv              |      9 |     63 |      8
+-TA -lv -RT          |      2 |     14 |      1
+-TA -sp              |      9 |     63 |      8
+-TA -sp -RT          |      2 |     14 |      1
+-TA -lv -sp          |      9 |     63 |      8
+-TA -lv -sp -RT      |      2 |     14 |      1
+-TA -DS              |      9 |     63 |      9
+-TA -DS -RT          |      2 |     14 |      2
+-TA -DS -lv          |      9 |     63 |      9
+-TA -DS -lv -RT      |      2 |     14 |      2
+-TA -DS -sp          |      9 |     63 |      9
+-TA -DS -sp -RT      |      2 |     14 |      2
+-TA -DS -lv -sp      |      9 |     63 |      9
+-TA -DS -lv -sp -RT  |      2 |     14 |      2
+-x -TA -DS -in       |      9 |     63 |      9
+-x -TA -DS -in -RT   |      2 |     14 |      2
+in: a | b | (c U (d & (g U (h ^ i))))
+-TGTA                |    431 |  57396 |    XXX
+-TGTA -RT            |     10 |   1445 |    XXX
+-TA                  |    430 |  51816 |    328
+-TA -RT              |    126 |  15351 |    105
+-TA -lv              |    431 |  56744 |    129
+-TA -lv -RT          |    128 |  16342 |      2
+-TA -sp              |    430 |  56744 |    128
+-TA -sp -RT          |    127 |  16342 |      1
+-TA -lv -sp          |    431 |  56744 |    129
+-TA -lv -sp -RT      |    128 |  16342 |      2
+-TA -DS              |    430 |  51816 |    328
+-TA -DS -RT          |    127 |  15478 |    106
+-TA -DS -lv          |    431 |  56744 |    129
+-TA -DS -lv -RT      |    128 |  16342 |      2
+-TA -DS -sp          |    430 |  56744 |    128
+-TA -DS -sp -RT      |    127 |  16342 |      1
+-TA -DS -lv -sp      |    431 |  56744 |    129
+-TA -DS -lv -sp -RT  |    128 |  16342 |      2
+-x -TA -DS -in       |    431 |  56744 |    129
+-x -TA -DS -in -RT   |    128 |  16342 |      2
+in: a & (b U !a) & (b U !a)
+-TGTA                |      8 |     30 |    XXX
+-TGTA -RT            |      4 |     14 |    XXX
+-TA                  |      7 |     20 |      6
+-TA -RT              |      2 |      5 |      1
+-TA -lv              |      8 |     22 |      5
+-TA -lv -RT          |      4 |     10 |      2
+-TA -sp              |      7 |     22 |      4
+-TA -sp -RT          |      3 |     10 |      1
+-TA -lv -sp          |      8 |     22 |      5
+-TA -lv -sp -RT      |      4 |     10 |      2
+-TA -DS              |      7 |     20 |      6
+-TA -DS -RT          |      3 |      8 |      2
+-TA -DS -lv          |      8 |     22 |      5
+-TA -DS -lv -RT      |      4 |     10 |      2
+-TA -DS -sp          |      7 |     22 |      4
+-TA -DS -sp -RT      |      3 |     10 |      1
+-TA -DS -lv -sp      |      8 |     22 |      5
+-TA -DS -lv -sp -RT  |      4 |     10 |      2
+-x -TA -DS -in       |      8 |     22 |      5
+-x -TA -DS -in -RT   |      4 |     10 |      2
+in: Fa & b & GFc & Gd
+-TGTA                |     21 |    219 |    XXX
+-TGTA -RT            |      7 |     71 |    XXX
+-TA                  |     20 |    182 |      7
+-TA -RT              |     10 |     98 |      3
+-TA -lv              |     21 |    203 |      5
+-TA -lv -RT          |     11 |    112 |      2
+-TA -sp              |     20 |    194 |      4
+-TA -sp -RT          |     10 |    106 |      1
+-TA -lv -sp          |     21 |    203 |      5
+-TA -lv -sp -RT      |     11 |    112 |      2
+-TA -DS              |     28 |    294 |     15
+-TA -DS -RT          |     12 |    126 |      5
+-TA -DS -lv          |     29 |    315 |     13
+-TA -DS -lv -RT      |     13 |    140 |      4
+-TA -DS -sp          |     28 |    306 |     12
+-TA -DS -sp -RT      |     12 |    134 |      3
+-TA -DS -lv -sp      |     29 |    315 |     13
+-TA -DS -lv -sp -RT  |     13 |    140 |      4
+-x -TA -DS -in       |     29 |    240 |      9
+-x -TA -DS -in -RT   |     12 |     93 |      3
+in: Fa & a & GFc & Gc
+-TGTA                |      4 |      8 |    XXX
+-TGTA -RT            |      3 |      6 |    XXX
+-TA                  |      3 |      3 |      3
+-TA -RT              |      2 |      2 |      2
+-TA -lv              |      3 |      3 |      2
+-TA -lv -RT          |      2 |      2 |      1
+-TA -sp              |      3 |      3 |      2
+-TA -sp -RT          |      2 |      2 |      1
+-TA -lv -sp          |      3 |      3 |      2
+-TA -lv -sp -RT      |      2 |      2 |      1
+-TA -DS              |      3 |      3 |      3
+-TA -DS -RT          |      2 |      2 |      2
+-TA -DS -lv          |      3 |      3 |      2
+-TA -DS -lv -RT      |      2 |      2 |      1
+-TA -DS -sp          |      3 |      3 |      2
+-TA -DS -sp -RT      |      2 |      2 |      1
+-TA -DS -lv -sp      |      3 |      3 |      2
+-TA -DS -lv -sp -RT  |      2 |      2 |      1
+-x -TA -DS -in       |      3 |      3 |      2
+-x -TA -DS -in -RT   |      2 |      2 |      1
+in: Fc & (a | b) & GF(a | b) & Gc
+-TGTA                |      8 |     34 |    XXX
+-TGTA -RT            |      8 |     34 |    XXX
+-TA                  |      7 |     21 |      6
+-TA -RT              |      7 |     21 |      6
+-TA -lv              |      7 |     21 |      3
+-TA -lv -RT          |      7 |     21 |      3
+-TA -sp              |      7 |     21 |      3
+-TA -sp -RT          |      7 |     21 |      3
+-TA -lv -sp          |      7 |     21 |      3
+-TA -lv -sp -RT      |      7 |     21 |      3
+-TA -DS              |     11 |     51 |     10
+-TA -DS -RT          |     11 |     51 |     10
+-TA -DS -lv          |     11 |     51 |      7
+-TA -DS -lv -RT      |     11 |     51 |      7
+-TA -DS -sp          |     11 |     51 |      7
+-TA -DS -sp -RT      |     11 |     51 |      7
+-TA -DS -lv -sp      |     11 |     51 |      7
+-TA -DS -lv -sp -RT  |     11 |     51 |      7
+-x -TA -DS -in       |     11 |     33 |      5
+-x -TA -DS -in -RT   |     11 |     33 |      5
+in: a R (b R c)
+-TGTA                |     17 |    124 |    XXX
+-TGTA -RT            |      6 |     30 |    XXX
+-TA                  |     16 |     95 |     16
+-TA -RT              |      6 |     29 |      6
+-TA -lv              |     17 |    103 |     14
+-TA -lv -RT          |      8 |     42 |      6
+-TA -sp              |     16 |    103 |     13
+-TA -sp -RT          |      7 |     42 |      5
+-TA -lv -sp          |     17 |    103 |     14
+-TA -lv -sp -RT      |      8 |     42 |      6
+-TA -DS              |     16 |     95 |     16
+-TA -DS -RT          |      6 |     29 |      6
+-TA -DS -lv          |     16 |     95 |     16
+-TA -DS -lv -RT      |      6 |     29 |      6
+-TA -DS -sp          |     16 |     95 |     16
+-TA -DS -sp -RT      |      6 |     29 |      6
+-TA -DS -lv -sp      |     16 |     95 |     16
+-TA -DS -lv -sp -RT  |      6 |     29 |      6
+-x -TA -DS -in       |     16 |     92 |     16
+-x -TA -DS -in -RT   |      6 |     26 |      6
+in: (a U b) U (c U d)
+-TGTA                |     77 |   1521 |    XXX
+-TGTA -RT            |     18 |    409 |    XXX
+-TA                  |     76 |   1210 |     48
+-TA -RT              |     29 |    493 |      9
+-TA -lv              |     77 |   1418 |     17
+-TA -lv -RT          |     31 |    652 |      2
+-TA -sp              |     76 |   1418 |     16
+-TA -sp -RT          |     30 |    652 |      1
+-TA -lv -sp          |     77 |   1418 |     17
+-TA -lv -sp -RT      |     31 |    652 |      2
+-TA -DS              |     76 |   1210 |     48
+-TA -DS -RT          |     30 |    508 |     10
+-TA -DS -lv          |     77 |   1418 |     17
+-TA -DS -lv -RT      |     31 |    652 |      2
+-TA -DS -sp          |     76 |   1418 |     16
+-TA -DS -sp -RT      |     30 |    652 |      1
+-TA -DS -lv -sp      |     77 |   1418 |     17
+-TA -DS -lv -sp -RT  |     31 |    652 |      2
+-x -TA -DS -in       |     76 |   1308 |     17
+-x -TA -DS -in -RT   |     26 |    500 |      2
+in: ((Gp2)U(F(1)))&(p1 R(p2 R p0))
+-TGTA                |     17 |    124 |    XXX
+-TGTA -RT            |      6 |     30 |    XXX
+-TA                  |     16 |     95 |     16
+-TA -RT              |      6 |     29 |      6
+-TA -lv              |     17 |    103 |     14
+-TA -lv -RT          |      8 |     42 |      6
+-TA -sp              |     16 |    103 |     13
+-TA -sp -RT          |      7 |     42 |      5
+-TA -lv -sp          |     17 |    103 |     14
+-TA -lv -sp -RT      |      8 |     42 |      6
+-TA -DS              |     16 |     95 |     16
+-TA -DS -RT          |      6 |     29 |      6
+-TA -DS -lv          |     16 |     95 |     16
+-TA -DS -lv -RT      |      6 |     29 |      6
+-TA -DS -sp          |     16 |     95 |     16
+-TA -DS -sp -RT      |      6 |     29 |      6
+-TA -DS -lv -sp      |     16 |     95 |     16
+-TA -DS -lv -sp -RT  |      6 |     29 |      6
+-x -TA -DS -in       |     16 |     92 |     16
+-x -TA -DS -in -RT   |      6 |     26 |      6
+in: a U (b U c)
+-TGTA                |     22 |    196 |    XXX
+-TGTA -RT            |      6 |     59 |    XXX
+-TA                  |     21 |    144 |     16
+-TA -RT              |      9 |     62 |      5
+-TA -lv              |     22 |    164 |      9
+-TA -lv -RT          |     11 |     85 |      2
+-TA -sp              |     21 |    164 |      8
+-TA -sp -RT          |     10 |     85 |      1
+-TA -lv -sp          |     22 |    164 |      9
+-TA -lv -sp -RT      |     11 |     85 |      2
+-TA -DS              |     21 |    144 |     16
+-TA -DS -RT          |     10 |     69 |      6
+-TA -DS -lv          |     22 |    164 |      9
+-TA -DS -lv -RT      |     11 |     85 |      2
+-TA -DS -sp          |     21 |    164 |      8
+-TA -DS -sp -RT      |     10 |     85 |      1
+-TA -DS -lv -sp      |     22 |    164 |      9
+-TA -DS -lv -sp -RT  |     11 |     85 |      2
+-x -TA -DS -in       |     22 |    164 |      9
+-x -TA -DS -in -RT   |     11 |     85 |      2
+in: !(Ga U b)
+-TGTA                |     11 |     50 |    XXX
+-TGTA -RT            |      5 |     23 |    XXX
+-TA                  |     10 |     31 |      8
+-TA -RT              |      4 |     13 |      3
+-TA -lv              |     11 |     37 |      6
+-TA -lv -RT          |      6 |     20 |      3
+-TA -sp              |     10 |     37 |      5
+-TA -sp -RT          |      5 |     20 |      2
+-TA -lv -sp          |     11 |     37 |      6
+-TA -lv -sp -RT      |      6 |     20 |      3
+-TA -DS              |     10 |     31 |      8
+-TA -DS -RT          |      5 |     16 |      4
+-TA -DS -lv          |     11 |     37 |      7
+-TA -DS -lv -RT      |      6 |     20 |      4
+-TA -DS -sp          |     10 |     37 |      6
+-TA -DS -sp -RT      |      5 |     20 |      3
+-TA -DS -lv -sp      |     11 |     37 |      7
+-TA -DS -lv -sp -RT  |      6 |     20 |      4
+-x -TA -DS -in       |     11 |     37 |      7
+-x -TA -DS -in -RT   |      6 |     20 |      4
+in: # Make sure '(G (p -> F q)) && ((X (p) U q) || ! X (p U (p && q)))'
+in: # has 21 states and 96 transitions before minimization, and
+in: # has 20 states and 89 transitions, after minimization.
+in: (G (p -> F q)) && ((X (p) U q) || ! X (p U (p && q)))
+-TGTA                |     21 |    127 |    XXX
+-TGTA -RT            |     17 |     93 |    XXX
+-TA                  |     20 |     92 |     12
+-TA -RT              |     15 |     57 |      9
+-TA -lv              |     21 |    104 |      6
+-TA -lv -RT          |     17 |     75 |      4
+-TA -sp              |     20 |    100 |      5
+-TA -sp -RT          |     16 |     70 |      3
+-TA -lv -sp          |     21 |    104 |      6
+-TA -lv -sp -RT      |     17 |     75 |      4
+-TA -DS              |     20 |     92 |     13
+-TA -DS -RT          |     18 |     81 |     12
+-TA -DS -lv          |     21 |    104 |      7
+-TA -DS -lv -RT      |     20 |     99 |      7
+-TA -DS -sp          |     20 |    100 |      6
+-TA -DS -sp -RT      |     19 |     95 |      6
+-TA -DS -lv -sp      |     21 |    104 |      7
+-TA -DS -lv -sp -RT  |     20 |     99 |      7
+-x -TA -DS -in       |     19 |     66 |      5
+-x -TA -DS -in -RT   |     15 |     52 |      5
+in: GFa & GFb & GFc & GFd & GFe & GFg
+-TGTA                |     65 |   4160 |    XXX
+-TGTA -RT            |     65 |   4160 |    XXX
+-TA                  |     64 |   4032 |      1
+-TA -RT              |     64 |   4032 |      1
+-TA -lv              |     64 |   4032 |      1
+-TA -lv -RT          |     64 |   4032 |      1
+-TA -sp              |     64 |   4032 |      1
+-TA -sp -RT          |     64 |   4032 |      1
+-TA -lv -sp          |     64 |   4032 |      1
+-TA -lv -sp -RT      |     64 |   4032 |      1
+-TA -DS              |    448 |  52416 |     70
+-TA -DS -RT          |    448 |  52416 |     70
+-TA -DS -lv          |    448 |  52416 |     70
+-TA -DS -lv -RT      |    448 |  52416 |     70
+-TA -DS -sp          |    448 |  52416 |     70
+-TA -DS -sp -RT      |    448 |  52416 |     70
+-TA -DS -lv -sp      |    448 |  52416 |     70
+-TA -DS -lv -sp -RT  |    448 |  52416 |     70
+-x -TA -DS -in       |    449 |  28608 |     65
+-x -TA -DS -in -RT   |    320 |  20352 |     65
+in: Gq|Gr|(G(q|FGp)&G(r|FG!p))
+-TGTA                |     65 |    842 |    XXX
+-TGTA -RT            |     21 |    294 |    XXX
+-TA                  |     64 |    740 |     26
+-TA -RT              |     22 |    264 |     14
+-TA -lv              |     65 |    776 |     15
+-TA -lv -RT          |     23 |    288 |      7
+-TA -sp              |     64 |    764 |     14
+-TA -sp -RT          |     22 |    280 |      6
+-TA -lv -sp          |     65 |    776 |     15
+-TA -lv -sp -RT      |     23 |    288 |      7
+-TA -DS              |     64 |    740 |     34
+-TA -DS -RT          |     26 |    366 |     20
+-TA -DS -lv          |     65 |    776 |     25
+-TA -DS -lv -RT      |     27 |    396 |     13
+-TA -DS -sp          |     64 |    764 |     24
+-TA -DS -sp -RT      |     26 |    386 |     12
+-TA -DS -lv -sp      |     65 |    776 |     25
+-TA -DS -lv -sp -RT  |     27 |    396 |     13
+-x -TA -DS -in       |     33 |    152 |     19
+-x -TA -DS -in -RT   |     21 |    112 |     11
+in: FG((WaitRight4 M (HasRight1 W GWaitLeft0)) M HasLeft4)
+-TGTA                |     45 |    730 |    XXX
+-TGTA -RT            |     35 |    598 |    XXX
+-TA                  |     44 |    602 |     16
+-TA -RT              |     33 |    482 |      9
+-TA -lv              |     45 |    676 |      9
+-TA -lv -RT          |     35 |    566 |      4
+-TA -sp              |     44 |    667 |      8
+-TA -sp -RT          |     34 |    545 |      3
+-TA -lv -sp          |     45 |    676 |      9
+-TA -lv -sp -RT      |     35 |    566 |      4
+-TA -DS              |     54 |    722 |     26
+-TA -DS -RT          |     42 |    608 |     18
+-TA -DS -lv          |     55 |    800 |     19
+-TA -DS -lv -RT      |     44 |    702 |     13
+-TA -DS -sp          |     54 |    789 |     18
+-TA -DS -sp -RT      |     43 |    686 |     12
+-TA -DS -lv -sp      |     55 |    800 |     19
+-TA -DS -lv -sp -RT  |     44 |    702 |     13
+-x -TA -DS -in       |     55 |    694 |     11
+-x -TA -DS -in -RT   |     41 |    597 |      8
+in: G(F(GWaitLeft7 U Idle4) U (WaitLeft2 M IsEating2))
+-TGTA                |     69 |   1539 |    XXX
+-TGTA -RT            |     49 |    935 |    XXX
+-TA                  |     68 |   1443 |     16
+-TA -RT              |     56 |   1179 |     15
+-TA -lv              |     68 |   1443 |     16
+-TA -lv -RT          |     56 |   1179 |     15
+-TA -sp              |     68 |   1443 |     16
+-TA -sp -RT          |     56 |   1179 |     15
+-TA -lv -sp          |     68 |   1443 |     16
+-TA -lv -sp -RT      |     56 |   1179 |     15
+-TA -DS              |    124 |   2964 |     44
+-TA -DS -RT          |     96 |   2099 |     42
+-TA -DS -lv          |    125 |   3028 |     42
+-TA -DS -lv -RT      |     97 |   2149 |     40
+-TA -DS -sp          |    124 |   3012 |     41
+-TA -DS -sp -RT      |     96 |   2134 |     39
+-TA -DS -lv -sp      |    125 |   3028 |     42
+-TA -DS -lv -sp -RT  |     97 |   2149 |     40
+-x -TA -DS -in       |    125 |   1838 |     25
+-x -TA -DS -in -RT   |     87 |   1296 |     25
+EOF
+
+sed -n 's/in: \(.*\)/\1/p' checkta.txt > input.txt
+run 0 ../checkta input.txt | tee output.txt
+diff checkta.txt output.txt

@@ -1,0 +1,98 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2017, 2019 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+
+# Make sure the SPOT_SATSOLVER envar works.
+
+# DRA produced by ltl2dstar for GFp0 -> GFp1, but manually modified
+# so that simulation-based reduction do not reduce it to 1 state right away.
+cat >test.hoa <<EOF
+HOA: v1
+States: 4
+properties: implicit-labels trans-labels no-univ-branch deterministic complete
+acc-name: Rabin 2
+Acceptance: 4 (Fin(0)&Inf(1))|(Fin(2)&Inf(3))
+Start: 0
+AP: 2 "p0" "p1"
+--BODY--
+State: 0 {0}
+1  {1}  /* manual addition */
+0
+3
+2
+State: 1 {1}
+1
+0
+3
+2
+State: 2 {0 3}
+1
+0
+3
+2
+State: 3 {1 3}
+1
+0
+3
+2
+--END--
+EOF
+
+# Try fake SAT-solvers
+SPOT_SATSOLVER=false \
+  autfilt --sat-minimize test.hoa --stats=%s 2>err && exit 1
+grep 'autfilt: SPOT_SATSOLVER should use %I' err
+
+SPOT_SATSOLVER='false %I' \
+  autfilt --sat-minimize test.hoa --stats=%s 2>err && exit 1
+grep 'autfilt: SPOT_SATSOLVER should use %O' err
+
+SPOT_SATSOLVER='false %I %O' \
+  autfilt --sat-minimize test.hoa --stats=%s >output
+test `cat output` = 4
+
+SPOT_SATSOLVER='this-does-not-exist %I %O' \
+              autfilt --sat-minimize test.hoa --stats=%s 2>err && exit
+grep 'this-does-not-exist.*failed' err
+
+# Now use some real one if we can find one.
+
+if (picosat -h >/dev/null) 2>/dev/null; then
+    SPOT_SATSOLVER='picosat %I >%O'
+elif (glucose --help >/dev/null) 2>/dev/null; then
+    SPOT_SATSOLVER='glucose -model -verb=0 %I >%O'
+else
+    exit 77
+fi
+
+export SPOT_SATSOLVER
+
+# Let's try to find a smaller transition-based Streett automaton We
+# easily really check the expected automaton, because different SAT
+# solver (even different versions of glucose) can return different
+# automata.
+autfilt --sat-minimize='acc="Fin(0)|Inf(1)"' test.hoa --stats=%s >output
+test `cat output` = 1
+
+autfilt -S --sat-minimize='acc="Fin(0)|Inf(1)"' test.hoa --stats=%s >output
+test `cat output` = 3

@@ -1,0 +1,51 @@
+## -*- coding: utf-8; mode: sh -*-
+## Copyright (C) 2013, 2015 Laboratoire de Recherche et Développement de
+## l'Epita (LRDE).
+##
+## This file is part of Spot, a model checking library.
+##
+## Spot is free software; you can redistribute it and/or modify it
+## under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 3 of the License, or
+## (at your option) any later version.
+##
+## Spot is distributed in the hope that it will be useful, but WITHOUT
+## ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+## or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+## License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# The purpose of this script is to fill "$@" with the list of
+# translator tools we want to benchmark.
+
+# Add a dummy initial argument to clear "$@" and also in case one of
+# the tools starts with "-".
+set dummy
+
+# Add third-party tools if they are available.
+test -n "$SPIN"   && set "$@" "{spin} $SPIN -f %s >%N"
+test -n "$LTL2BA" && set "$@" "{ltl2ba} $LTL2BA -f %s >%N"
+test -n "$LTL3BA" && set "$@" "{ltl3ba-M0S0} $LTL3BA -M0 -S0 -f %s >%N" \
+        "{ltl3ba-M1S0} $LTL3BA -M1 -S0 -f %s >%N" \
+        "{ltl3ba-M0S2} $LTL3BA -M0 -S2 -f %s >%N" \
+        "{ltl3ba-M1S2} $LTL3BA -M1 -S2 -f %s >%N"
+
+# Use -s to output a neverclaim, like the other tools.
+set "$@" \
+    "{ltl2tgba-D} $LTL2TGBA --det -s %s >%N" \
+    "{ltl2tgba} $LTL2TGBA --small -s %s >%N"
+
+# If you want to add your own tool, you can add it here.
+# See 'man ltlcross' for the list of %-escapes you may use
+# to specify input formula and output automaton.
+#
+# set "$@" "tool options %... > %..."
+
+# Set the timeout to 5 minutes, and average
+# products on 5 state-spaces.
+set "$@" --timeout=300 --products=5
+
+# Finaly remove the dummy initial argument
+shift

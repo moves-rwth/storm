@@ -1,0 +1,5 @@
+spot (@VERSION@@GITPATCH@-1) stable; urgency=low
+
+  * Initial release
+
+ -- Alexandre Duret-Lutz <adl@lrde.epita.fr>  Fri, 27 Feb 2015 11:00:07 +0100

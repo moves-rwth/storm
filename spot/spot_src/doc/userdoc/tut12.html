@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-01-18 Mon 11:51 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Working with LTL formulas with finite semantics</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="root" />
+<meta name="description" content="Code example for using Spot to translate LTLf formulas"
+ />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="spot.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="tut.html"> UP </a>
+ |
+ <a accesskey="H" href="index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title">Working with LTL formulas with finite semantics</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orge87e637">Shell version</a></li>
+<li><a href="#orge63fa6e">Python version</a></li>
+<li><a href="#org9bfeec2">C++ version</a></li>
+<li><a href="#orgf313b6e">Final notes</a></li>
+</ul>
+</div>
+</div>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="spot2.svg" class="org-svg" id="spotlogo">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div>
+<p>
+The LTL operators used by Spot are defined over infinite words, and
+the various type of automata supported are all &omega;-automata, i.e.,
+automata over infinite words.
+</p>
+
+<p>
+However there is a trick we can use in case we want to use Spot to
+build a finite automaton that recognize some LTLf (i.e. LTL with
+finite semantics) property.  The plan is as follows:
+</p>
+
+<ol class="org-ol">
+<li>Have Spot read the input LTLf formula as if it was LTL.</li>
+<li>Rewrite this formula in a way that embeds the semantics of LTLf in
+LTL.  First, introduce a new atomic proposition <code>alive</code> that will
+be true initially, but that will eventually become false forever.
+Then adjust all original LTL operators so that they have to be
+satisfied during the <code>alive</code> part of the word. For instance the
+formula <code>(a U b) &amp; Fc</code> would be transformed into
+<code>alive &amp; (a U (alive &amp; b)) &amp; F(alive &amp; c) &amp; (alive U G!alive)</code>.</li>
+<li><p>
+Convert the resulting formula into a Büchi automaton:
+</p>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="tut12a.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div></li>
+<li><p>
+Remove the <code>alive</code> property, and, while we are at it, simplify the
+Büchi automaton:
+</p>
+
+<div class="figure">
+<p><object type="image/svg+xml" data="tut12b.svg" class="org-svg">
+Sorry, your browser does not support SVG.</object>
+</p>
+</div></li>
+<li>Interpret the above automaton as finite automaton.  (This part is
+out of scope for Spot.)</li>
+</ol>
+
+<p>
+The above sequence of operations was described by De Giacomo &amp; Vardi
+in their <a href="https://www.cs.rice.edu/~vardi/papers/ijcai13.pdf">IJCAI'13 paper</a> and by Dutta &amp; Vardi in their <a href="https://www.cs.rice.edu/~vardi/papers/memocode14a.pdf">Memocode'14
+paper</a>.  However, beware that the LTLf to LTL rewriting suggested in
+theorem 1 of the <a href="https://www.cs.rice.edu/~vardi/papers/ijcai13.pdf">IJCAI'13 paper</a> has a typo (<code>t(φ₁ U φ₂)</code> should be
+equal to <code>t(φ₁) U t(φ₂ &amp; alive)</code>) that is fixed in the <a href="https://www.cs.rice.edu/~vardi/papers/memocode14a.pdf">Memocode'14
+paper</a>, but that second paper forgets to ensure that <code>alive</code> holds
+initially, as required in the first paper&#x2026;
+</p>
+
+<div id="outline-container-orge87e637" class="outline-2">
+<h2 id="orge87e637">Shell version</h2>
+<div class="outline-text-2" id="text-orge87e637">
+<p>
+The first four steps of the above sequence of operations can be
+executed as follows.  Transforming LTLf to LTL can be done using
+<a href="ltlfilt.html"><code>ltlfilt</code></a>'s <code>--from-ltlf</code> option, translating the resulting formula
+into a Büchi automaton is obviously done with <a href="ltl2tgba.html"><code>ltl2tgba</code></a>, and removing
+an atomic proposition from an automaton can be done using <a href="autfilt.html"><code>autfilt</code></a>'s
+<code>--remove-ap</code> option (adding <code>--small</code> will also simplify the
+automaton).  Interpreting the resulting Büchi automaton as a finite
+automaton is out of scope for Spot.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">ltlfilt --from-ltlf -f <span class="org-string">"(a U b) &amp; Fc"</span> |
+  ltl2tgba -B |
+  autfilt --remove-ap=alive -B --small
+</pre>
+</div>
+
+<pre class="example">
+HOA: v1
+States: 4
+Start: 1
+AP: 3 "b" "a" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: terminal
+--BODY--
+State: 0
+[!2] 0
+[2] 3
+State: 1
+[0&amp;!2] 0
+[!0&amp;1&amp;!2] 1
+[!0&amp;1&amp;2] 2
+[0&amp;2] 3
+State: 2
+[!0&amp;1] 2
+[0] 3
+State: 3 {0}
+[t] 3
+--END--
+</pre>
+
+<p>
+Use <code>-B -D</code> instead of <code>-B</code> if you want to ensure that a deterministic
+automaton is output.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge63fa6e" class="outline-2">
+<h2 id="orge63fa6e">Python version</h2>
+<div class="outline-text-2" id="text-orge63fa6e">
+<p>
+In Python, we use the <code>from_ltlf()</code> function to convert from LTLf to
+LTL and translate the result into a Büchi automaton using
+<code>translate()</code> <a href="tut10.html">as usual</a>. Then we need to use the <code>remove_ap()</code> object,
+which we must first setup with some atomic propositions to remove.
+Finally we call the <code>postprocess()</code> function for automata
+simplifications.  (Note that <code>postprocess()</code> is already called by
+<code>translate()</code>, but in this case removing the atomic proposition allows
+more simplification opportunities.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span class="org-keyword">import</span> spot
+<span class="org-comment-delimiter"># </span><span class="org-comment">Translate LTLf to B&#252;chi.</span>
+<span class="org-variable-name">aut</span> = spot.from_ltlf(<span class="org-string">'(a U b) &amp; Fc'</span>).translate(<span class="org-string">'ba'</span>)
+<span class="org-comment-delimiter"># </span><span class="org-comment">Remove "alive" atomic proposition</span>
+<span class="org-variable-name">rem</span> = spot.remove_ap()
+rem.add_ap(<span class="org-string">'alive'</span>)
+<span class="org-variable-name">aut</span> = rem.strip(aut)
+<span class="org-comment-delimiter"># </span><span class="org-comment">Simplify result and print it.  Use postprocess('ba', 'det')</span>
+<span class="org-comment-delimiter"># </span><span class="org-comment">if you always want a deterministic automaton.</span>
+<span class="org-variable-name">aut</span> = spot.postprocess(aut, <span class="org-string">'ba'</span>)
+<span class="org-keyword">print</span>(aut.to_str(<span class="org-string">'hoa'</span>))
+</pre>
+</div>
+
+<pre class="example">
+HOA: v1
+States: 4
+Start: 1
+AP: 3 "b" "a" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: terminal
+--BODY--
+State: 0
+[!2] 0
+[2] 3
+State: 1
+[0&amp;!2] 0
+[!0&amp;1&amp;!2] 1
+[!0&amp;1&amp;2] 2
+[0&amp;2] 3
+State: 2
+[!0&amp;1] 2
+[0] 3
+State: 3 {0}
+[t] 3
+--END--
+</pre>
+
+<p>
+If you need to print the automaton in a custom format (some finite
+automaton format probably), you should check our example of <a href="tut21.html">custom
+print of an automaton</a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9bfeec2" class="outline-2">
+<h2 id="org9bfeec2">C++ version</h2>
+<div class="outline-text-2" id="text-org9bfeec2">
+<p>
+The C++ version is straightforward adaptation of the Python version.
+The Python functions <code>translate()</code> and <code>postprocess()</code> are convenient
+wrappers around the <code>spot::translator</code> and <code>spot::postprocessor</code>
+objects that we need to use here.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span class="org-preprocessor">#include</span> <span class="org-string">&lt;iostream&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/parse.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/tl/ltlf.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twaalgos/translate.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twaalgos/hoa.hh&gt;</span>
+<span class="org-preprocessor">#include</span> <span class="org-string">&lt;spot/twaalgos/remprop.hh&gt;</span>
+
+<span class="org-type">int</span> <span class="org-function-name">main</span>()
+{
+  <span class="org-constant">spot</span>::<span class="org-type">parsed_formula</span> <span class="org-variable-name">pf</span> = <span class="org-constant">spot</span>::parse_infix_psl(<span class="org-string">"(a U b) &amp; Fc"</span>);
+  <span class="org-keyword">if</span> (pf.format_errors(<span class="org-constant">std</span>::cerr))
+    <span class="org-keyword">return</span> 1;
+
+  <span class="org-constant">spot</span>::<span class="org-type">translator</span> <span class="org-variable-name">trans</span>;
+  trans.set_type(<span class="org-constant">spot</span>::<span class="org-constant">postprocessor</span>::BA);
+  trans.set_pref(<span class="org-constant">spot</span>::<span class="org-constant">postprocessor</span>::Small);
+  <span class="org-constant">spot</span>::<span class="org-type">twa_graph_ptr</span> <span class="org-variable-name">aut</span> = trans.run(<span class="org-constant">spot</span>::from_ltlf(pf.f));
+
+  <span class="org-constant">spot</span>::<span class="org-type">remove_ap</span> <span class="org-variable-name">rem</span>;
+  rem.add_ap(<span class="org-string">"alive"</span>);
+  aut = rem.strip(aut);
+
+  <span class="org-constant">spot</span>::<span class="org-type">postprocessor</span> <span class="org-variable-name">post</span>;
+  post.set_type(<span class="org-constant">spot</span>::<span class="org-constant">postprocessor</span>::BA);
+  post.set_pref(<span class="org-constant">spot</span>::<span class="org-constant">postprocessor</span>::Small); <span class="org-comment-delimiter">// </span><span class="org-comment">or ::Deterministic</span>
+  aut = post.run(aut);
+
+  print_hoa(<span class="org-constant">std</span>::cout, aut) &lt;&lt; <span class="org-string">'\n'</span>;
+  <span class="org-keyword">return</span> 0;
+}
+</pre>
+</div>
+
+<pre class="example">
+HOA: v1
+States: 4
+Start: 1
+AP: 3 "b" "a" "c"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc deterministic
+properties: terminal
+--BODY--
+State: 0
+[!2] 0
+[2] 3
+State: 1
+[0&amp;!2] 0
+[!0&amp;1&amp;!2] 1
+[!0&amp;1&amp;2] 2
+[0&amp;2] 3
+State: 2
+[!0&amp;1] 2
+[0] 3
+State: 3 {0}
+[t] 3
+--END--
+</pre>
+
+<p>
+Again, please check our example of <a href="tut21.html">custom print of an automaton</a> if you
+need to print in some format for NFA/DFA.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf313b6e" class="outline-2">
+<h2 id="orgf313b6e">Final notes</h2>
+<div class="outline-text-2" id="text-orgf313b6e">
+<p>
+Spot only deals with infinite behaviors, so if you plan to use Spot to
+perform some LTLf model checking, you should stop at step 3.  Keep the
+<code>alive</code> proposition in your property automaton, and also add it to the
+Kripke structure representing your system.
+</p>
+
+<p>
+Alternatively, if your Kripke structure is already equipped with some
+<code>dead</code> property (as introduced by default in our <a href="https://spot.lrde.epita.fr/ipynb/ltsmin-dve.html"><code>ltsmin</code> interface</a>),
+you could replace <code>alive</code> by <code>!dead</code> by using <code>ltlfilt
+--from-ltl="!dead"</code> (from the command-line), a running
+<code>from_ltlf(f, "!dead")</code> in Python or C++.
+</p>
+
+<p>
+When working with LTLf, there are two different semantics for the next
+operator:
+</p>
+<ul class="org-ul">
+<li>The weak next: <code>X a</code> is true if <code>a</code> hold in the next step or if
+there are no next step.  In particular, <code>X(0)</code> is true iff there are
+no successor.  (By the way, you cannot write <code>X0</code> because that as an
+atomic proposition: use <code>X(0)</code> or <code>X 0</code>.)</li>
+<li>The strong next: <code>X[!] a</code> is true if <code>a</code> hold in the next step <b>and</b>
+there must be a next step.  In particular <code>X[!]1</code> asserts that
+there is a successor.</li>
+</ul>
+</div>
+</div>
+</div>
+</body>
+</html>

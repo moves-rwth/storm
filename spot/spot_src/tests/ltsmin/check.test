@@ -1,0 +1,68 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2011, 2012, 2014, 2015, 2016 Laboratoire de Recherche
+# et Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+divine compile > output 2>&1
+
+if grep -i -- --ltsmin output; then
+  :
+else
+  echo "divine not installed, or no ltsmin interface"
+  exit 77
+fi
+
+set -e
+
+for opt in '' '-z'; do
+  # The three examples from the README.
+  # (Don't run the first one using "run 0" because it would take too much
+  # time with valgrind.).
+
+  ../modelcheck $opt -E $srcdir/beem-peterson.4.dve \
+    '!GF(P_0.CS|P_1.CS|P_2.CS|P_3.CS)' \
+    | grep -v pages > stdout1
+  # same formula, different syntax.
+  ../modelcheck $opt -E $srcdir/beem-peterson.4.dve \
+    '!GF("P_0==CS"|"P_1 == CS"|"P_2 ==CS"|"P_3==  CS")' \
+    | grep -v pages > stdout2
+  cmp stdout1 stdout2
+  run 0 ../modelcheck $opt -e $srcdir/beem-peterson.4.dve \
+    '!G(P_0.wait -> F P_0.CS)'
+  run 0 ../modelcheck $opt -e $srcdir/beem-peterson.4.dve '!G("pos[1] < 3")'
+done
+
+# Now check some error messages.
+run 1 ../modelcheck foo.dve "F(P_0.CS)" 2>stderr
+cat stderr
+grep 'Cannot open' stderr
+# the dve2C file was generated in the current directory
+run 1 ../modelcheck beem-peterson.4.dve2C \
+        'Xfoo | P_0.f & X"P_0.k < 2xx" | G"pos[0]"' 2>stderr
+cat stderr
+grep 'variable `foo' stderr
+grep "state \`f'.*P_0" stderr
+grep "Unexpected.*\`xx'" stderr
+grep 'Possible.*CS' stderr
+grep 'Possible.*NCS' stderr
+grep 'Possible.*q2' stderr
+grep 'Possible.*q3' stderr
+grep 'Possible.*wait' stderr

@@ -1,0 +1,687 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =ltldo=
+#+DESCRIPTION: Spot's wrapper for third-party LTL translators
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+This tool is a wrapper for tools that read LTL/PSL formulas and
+(optionally) output automata.
+
+It reads formulas specified using the [[file:ioltl.org][common options for specifying
+input]] and passes each formula to a tool (or a list of tools) specified
+using options similar to those of [[file:ltlcross.org][=ltlcross=]].  In case that tool
+returns an automaton, the resulting automaton is read back by =ltldo=
+and is finally output as specified using the [[file:oaut.org][common options for
+outputing automata]].
+
+In effect, =ltldo= wraps the I/O interface of the Spot tools on top of
+any other tool.
+
+* Example: computing statistics for =ltl3ba=
+
+As a motivating example, consider a scenario where we want to run
+[[https://sourceforge.net/projects/ltl3ba/][=ltl3ba=]] on a set of 10 formulas stored in a file.  For each formula
+we would like to compute compute the number of states and edges in the
+Büchi automaton produced by =ltl3ba=.
+
+Here is the input file:
+
+#+BEGIN_SRC sh :results silent
+cat >sample.ltl <<EOF
+1
+1 U a
+!(!((a U Gb) U b) U GFa)
+(b <-> Xc) xor Fb
+FXb R (a R (1 U b))
+Ga
+G(!(c | (a & (a W Gb))) M Xa)
+GF((b R !a) U (Xc M 1))
+G(Xb | Gc)
+XG!F(a xor Gb)
+EOF
+#+END_SRC
+#+RESULTS:
+
+We will first implement this scenario without =ltldo=.
+
+A first problem that the input is not in the correct syntax: although
+=ltl3ba= understands =G= and =F=, it does not support =xor= or =M=,
+and requires the Boolean operators =||= and =&&=.  This syntax
+issue can be fixed by processing the input with [[file:ltlfilt.org][=ltlfilt -s=]].
+
+A second problem is that =ltl3ba= (at least version 1.1.1) can only
+process one formula at a time.  So we'll need to call =ltl3ba= in a
+loop.
+
+Finally, one way to compute the size of the resulting Büchi automaton
+is to pipe the output of =ltl3ba= through [[file:autfilt.org][=autfilt=]].
+
+Here is how the shell command could look like:
+
+#+BEGIN_SRC sh
+ltlfilt -F sample.ltl -s |
+while read f; do
+  ltl3ba -f "$f" | autfilt --stats="$f,%s,%t"
+done
+#+END_SRC
+#+RESULTS:
+#+begin_example
+true,1,1
+true U a,2,4
+!(!((a U []b) U b) U []<>a),2,4
+(((!b && !Xc) || (b && Xc)) && !<>b) || (<>b && !((!b && !Xc) || (b && Xc))),7,21
+<>Xb V (a V (true U b)),6,28
+[]a,1,1
+[](Xa U (Xa && !(c || (a && ([]b V (a || []b)))))),1,0
+[]<>((b V !a) U (true U Xc)),2,4
+[](Xb || []c),3,11
+X[]!<>((a && ![]b) || (!a && []b)),4,10
+#+end_example
+
+
+Using =ltldo= the above command can be reduced to this:
+
+#+BEGIN_SRC sh
+ltldo 'ltl3ba -f %s>%O' -F sample.ltl --stats='%f,%s,%t'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+1,1,1
+1 U a,2,4
+!(!((a U Gb) U b) U GFa),2,4
+(b <-> Xc) xor Fb,7,21
+FXb R (a R (1 U b)),6,28
+Ga,1,1
+G(!(c | (a & (a W Gb))) M Xa),1,0
+GF((b R !a) U (Xc M 1)),2,4
+G(Xb | Gc),3,11
+XG!F(a xor Gb),4,10
+#+end_example
+
+Note that the formulas look different in both cases, because in the
+=while= loop the formula printed has already been processed with
+=ltlfilt=, while =ltldo= emits the input string untouched.
+
+In fact, as we will discuss below, =ltl3ba= is a tool that =ltldo=
+already knows about, so there is a shorter way to run the above
+command:
+
+#+BEGIN_SRC sh :exports code
+ltldo ltl3ba -F sample.ltl --stats='%f,%s,%t'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+1,1,1
+1 U a,2,4
+!(!((a U Gb) U b) U GFa),2,4
+(b <-> Xc) xor Fb,7,21
+FXb R (a R (1 U b)),6,28
+Ga,1,1
+G(!(c | (a & (a W Gb))) M Xa),1,0
+GF((b R !a) U (Xc M 1)),2,4
+G(Xb | Gc),3,11
+XG!F(a xor Gb),4,10
+#+end_example
+
+* Example: running =spin= and producing HOA
+
+Here is another example, where we use Spin to produce two automata in
+the [[http://adl.github.io/hoaf/][HOA format]].  Spin has no support for HOA, but =ltldo= simply
+converts the never claim produced by =spin= into this format.
+
+#+BEGIN_SRC sh :wrap SRC hoa
+ltldo 'spin -f %s>%O' -f a -f GFa
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc colored
+properties: deterministic
+--BODY--
+State: 0 {0}
+[0] 1
+State: 1 {0}
+[t] 1
+--END--
+HOA: v1
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0
+[0] 1
+[t] 0
+State: 1 {0}
+[t] 0
+--END--
+#+END_SRC
+
+Again, using the shorthands defined below, the previous command can be
+simplified to just this:
+
+#+BEGIN_EXAMPLE sh
+  ltldo spin -f a -f GFa
+#+END_EXAMPLE
+
+* Syntax for specifying tools to call
+
+The syntax for specifying how a tool should be called is the same as
+in [[file:ltlcross.org][=ltlcross=]].  Namely, the following sequences are available.
+
+#+BEGIN_SRC sh :exports results
+ltldo --help | sed -n '/character sequences:/,/^$/p' | sed '1d;$d'
+#+END_SRC
+
+#+RESULTS:
+:   %%                         a single %
+:   %f,%s,%l,%w                the formula as a (quoted) string in Spot, Spin,
+:                              LBT, or Wring's syntax
+:   %F,%S,%L,%W                the formula as a file in Spot, Spin, LBT, or
+:                              Wring's syntax
+:   %O                         the automaton output in HOA, never claim, LBTT, or
+:                              ltl2dstar's format
+
+Contrarily to =ltlcross=, it this not mandatory to specify an output
+filename using one of the sequence for that last line.  For instance
+we could simply run a formula though =echo= to compare different
+output syntaxes:
+
+#+BEGIN_SRC sh
+ltldo -f 'p0 U p1' -f 'GFp0' 'echo %f, %s, %l, %w'
+#+END_SRC
+#+RESULTS:
+: (p0) U (p1), (p0) U (p1), U p0 p1, (p0=1) U (p1=1)
+: (G(F(p0))), ([](<>(p0))), G F p0, (G(F(p0=1)))
+
+In this case (i.e., when the command does not specify any output
+filename), =ltldo= will not output anything.
+
+
+As will =ltlcross=, multiple commands can be given, and they will be
+executed on each formula in the same order.
+
+A typical use-case is to compare statistics of different tools:
+
+#+BEGIN_SRC sh
+ltldo -F sample.ltl 'spin -f %s>%O' 'ltl3ba -f %s>%O' --stats=%T,%f,%s,%e
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+spin -f %s>%O,1,2,2
+ltl3ba -f %s>%O,1,1,1
+spin -f %s>%O,1 U a,2,3
+ltl3ba -f %s>%O,1 U a,2,3
+spin -f %s>%O,!(!((a U Gb) U b) U GFa),23,86
+ltl3ba -f %s>%O,!(!((a U Gb) U b) U GFa),2,3
+spin -f %s>%O,(b <-> Xc) xor Fb,12,23
+ltl3ba -f %s>%O,(b <-> Xc) xor Fb,7,11
+spin -f %s>%O,FXb R (a R (1 U b)),28,176
+ltl3ba -f %s>%O,FXb R (a R (1 U b)),6,20
+spin -f %s>%O,Ga,1,1
+ltl3ba -f %s>%O,Ga,1,1
+spin -f %s>%O,G(!(c | (a & (a W Gb))) M Xa),15,51
+ltl3ba -f %s>%O,G(!(c | (a & (a W Gb))) M Xa),1,0
+spin -f %s>%O,GF((b R !a) U (Xc M 1)),12,60
+ltl3ba -f %s>%O,GF((b R !a) U (Xc M 1)),2,4
+spin -f %s>%O,G(Xb | Gc),4,8
+ltl3ba -f %s>%O,G(Xb | Gc),3,5
+spin -f %s>%O,XG!F(a xor Gb),8,21
+ltl3ba -f %s>%O,XG!F(a xor Gb),4,7
+#+end_example
+
+Here we used =%T= to output the name of the tool used to translate the
+formula =%f= as an automaton with =%s= states and =%e= edges.
+If you feel that =%T= has too much clutter, you can give each tool
+a shorter name by prefixing its command with ={name}=.
+
+In the following example, we moved the formula used on its own line
+using the trick that the command =echo %f= will not be subject to
+=--stats= (since it does not declare any output automaton).
+
+#+BEGIN_SRC sh
+ltldo -F sample.ltl  --stats=%T,%s,%e \
+      'echo "#" %f' '{spin}spin -f %s>%O' '{ltl3ba}ltl3ba -f %s>%O'
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+# (1)
+spin,2,2
+ltl3ba,1,1
+# (1) U (a)
+spin,2,3
+ltl3ba,2,3
+# (!((!(((a) U (G(b))) U (b))) U (G(F(a)))))
+spin,23,86
+ltl3ba,2,3
+# ((b) <-> (X(c))) xor (F(b))
+spin,12,23
+ltl3ba,7,11
+# (F(X(b))) R ((a) R ((1) U (b)))
+spin,28,176
+ltl3ba,6,20
+# (G(a))
+spin,1,1
+ltl3ba,1,1
+# (G((!((c) | ((a) & ((a) W (G(b)))))) M (X(a))))
+spin,15,51
+ltl3ba,1,0
+# (G(F(((b) R (!(a))) U ((X(c)) M (1)))))
+spin,12,60
+ltl3ba,2,4
+# (G((X(b)) | (G(c))))
+spin,4,8
+ltl3ba,3,5
+# (X(G(!(F((a) xor (G(b)))))))
+spin,8,21
+ltl3ba,4,7
+#+end_example
+
+Much more readable!
+
+#+BEGIN_SRC sh :results silent :exports results
+rm -f sample.ltl
+#+END_SRC
+
+* Shorthands for existing tools
+
+There is a list of existing tools for which =ltldo= (and =ltlcross=)
+have built-in specifications.  This list can be printed using the
+=--list-shorthands= option:
+
+#+BEGIN_SRC sh
+ltldo --list-shorthands
+#+END_SRC
+#+RESULTS:
+#+begin_example
+If a COMMANDFMT does not use any %-sequence, and starts with one of
+the following words, then the string on the right is appended.
+
+  lbt          <%L>%O
+  ltl2ba       -f %s>%O
+  ltl2da       %f>%O
+  ltl2dpa      %f>%O
+  ltl2ldba     %f>%O
+  ltl2dstar    --output-format=hoa %[MW]L %O
+  ltl2tgba     -H %f>%O
+  ltl3ba       -f %s>%O
+  ltl3dra      -f %s>%O
+  ltl3hoa      -f %f>%O
+  modella      %[MWei^]L %O
+  spin         -f %s>%O
+
+Any {name} and directory component is skipped for the purpose of
+matching those prefixes.  So for instance
+  '{DRA} ~/mytools/ltl2dstar-0.5.2'
+will changed into
+  '{DRA} ~/mytools/ltl2dstar-0.5.2 --output-format=hoa %[MR]L %O'
+#+end_example
+
+Therefore you can type the following to obtain a Dot output (as
+requested with =-d=) for the neverclaim produced by =ltl2ba -f a=.
+
+#+BEGIN_SRC sh :prologue export SPOT_DOTEXTRA= SPOT_DOTDEFAULT=
+ltldo ltl2ba -f a -d
+#+END_SRC
+#+RESULTS:
+#+begin_example
+digraph "" {
+  rankdir=LR
+  label="\n[Büchi]"
+  labelloc="t"
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -> 0
+  0 [label="0", peripheries=2]
+  0 -> 1 [label="a"]
+  1 [label="1", peripheries=2]
+  1 -> 1 [label="1"]
+}
+#+end_example
+
+The =ltl2ba= argument passed to =ltldo= was interpreted as if you had
+typed ={ltl2ba}ltl2ba -f %s>%O=.
+
+The shorthand is only used if it is the first word of a command
+string that does not use any =%= character.  This makes it possible to
+add options:
+
+#+BEGIN_SRC sh
+ltldo ltl3ba 'ltl3ba -H2' -f GFa --stats='%T, %s states, %e edges'
+#+END_SRC
+#+RESULTS:
+: ltl3ba, 2 states, 4 edges
+: ltl3ba -H2, 1 states, 2 edges
+
+* Transparent renaming
+
+If you have ever tried to use =spin=, =ltl2ba=, or =ltl3ba=, to translate
+a formula such as =[]!Error=, you have noticed that it does not work:
+
+#+BEGIN_SRC sh :prologue "exec 2>&1" :epilogue true
+spin -f '[]!Error'
+#+END_SRC
+#+RESULTS:
+: tl_spin: expected predicate, saw 'E'
+: tl_spin: []!Error
+: -------------^
+
+All these tools are based on the same LTL parser, that allows
+only atomic propositions starting with a lowercase letter.
+
+Running the same command through =ltldo= will work:
+
+#+BEGIN_SRC sh
+ltldo spin -f '[]!Error' -s
+#+END_SRC
+#+RESULTS:
+: never {
+: accept_init:
+:   if
+:   :: (!(Error)) -> goto accept_init
+:   fi;
+: }
+
+(We need the =-s= option to obtain a never claim, instead of the
+default HOA output.)
+
+What happened is that =ltldo= renamed the atomic propositions in the
+formula before calling =spin=.  So =spin= actually received the
+formula =[]!p0= and produced a never claim using =p0=.  That never
+claim was then relabeled by =ltldo= to use =Error= instead of =p0=.
+
+This renaming occurs any time some command uses =%s= or =%S= and the
+formula has atomic propositions incompatible with Spin's conventions;
+or when some command uses =%l= or =%L=, and the formula has
+atomic propositions incompatible with [[http://www.tcs.hut.fi/Software/maria/tools/lbt/][LBT's conventions]].
+
+For =%f=, =%w=, =%F=, and =%W=, no relabeling is automatically
+performed, but you can pass option =--relabel= if you need to force it
+for some reason (e.g., if you have a tool that uses almost Spot's
+syntax, but cannot cope with double-quoted atomic propositions).
+
+There are some cases where the renaming is not completely transparent.
+For instance if a translator tool outputs some HOA file named after
+the formula translated, the name will be output unmodified (since this
+can be any text string, there is not way for =ltldo= to assume it is
+an LTL formula).  In the following example, you can see that the
+automaton uses the atomic proposition =Error=, but its name contains a
+reference to =p0=.
+
+#+BEGIN_SRC sh :wrap SRC hoa
+ltldo 'ltl3ba -H' -f '[]!Error'
+#+END_SRC
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+name: "BA for [](!(p0))"
+States: 1
+Start: 0
+AP: 1 "Error"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc colored
+properties: deterministic
+--BODY--
+State: 0 "accept_init" {0}
+[!0] 0
+--END--
+#+END_SRC
+
+If this is a problem, you can always force a new name with the
+=--name= option:
+
+#+BEGIN_SRC sh :wrap SRC hoa
+ltldo 'ltl3ba -H' -f '[]!Error' --name='BA for %f'
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+name: "BA for []!Error"
+States: 1
+Start: 0
+AP: 1 "Error"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc colored
+properties: deterministic
+--BODY--
+State: 0 "accept_init" {0}
+[!0] 0
+--END--
+#+END_SRC
+
+* Acting as a portfolio of translators
+   :PROPERTIES:
+   :CUSTOM_ID: portfolio
+   :END:
+
+Here is a formula on which different translators produce Büchi automata of
+different sizes (states and edges):
+
+#+BEGIN_SRC sh
+ltldo ltl2ba ltl3ba 'ltl2tgba -s' -f 'F(a & Xa | FGa)' \
+      --stats='%T: %s st. (%n non-det.), %e ed.'
+#+END_SRC
+
+#+RESULTS:
+: ltl2ba: 5 st. (2 non-det.), 9 ed.
+: ltl3ba: 3 st. (1 non-det.), 4 ed.
+: ltl2tgba -s: 3 st. (0 non-det.), 5 ed.
+
+Instead of outputting the result of the translation of each formula by each
+translator, =ltldo= can also be configured to output the smallest
+automaton obtained for each formula:
+
+#+BEGIN_SRC sh :wrap SRC hoa
+ltldo ltl2ba ltl3ba 'ltl2tgba -s' -f 'F(a & Xa | FGa)' --smallest
+#+END_SRC
+
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc
+--BODY--
+State: 0
+[t] 0
+[0] 1
+State: 1
+[0] 2
+State: 2 {0}
+[t] 2
+--END--
+#+end_SRC
+
+Therefore, in practice, =ltldo --smallest trans1 trans2 trans3...=
+acts like a portfolio of translators, always returning the smallest
+produced automaton.
+
+The sorting criterion can be specified using =--smallest= or
+=--greatest=, optionally followed by a format string with
+=%=-sequences.  The default criterion is =%s,%e=, so the number of
+states will be compared first, and in case of equality the number of
+edges.  If we desire the automaton that has the fewest states, and in
+case of equality the smallest number of non-deterministic states, we
+can use the following command instead.
+
+#+BEGIN_SRC sh
+ltldo ltl2ba ltl3ba 'ltl2tgba -s' -f 'F(a & Xa | FGa)' --smallest=%s,%n
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+HOA: v1
+name: "F(a & Xa)"
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic terminal
+--BODY--
+State: 0
+[!0] 0
+[0] 1
+State: 1
+[!0] 0
+[0] 2
+State: 2 {0}
+[t] 2
+--END--
+#+end_example
+
+We can of course apply this on a large number of formulas.  For
+instance here is a more complex pipeline, where we take 11 patterns
+from Dwyer et al. (FMSP'98), and print which translator among
+=ltl2ba=, =ltl3ba=, and =ltl2tgba -s= would produce the smallest
+automaton.
+
+#+BEGIN_SRC sh
+genltl --dac=10..20 --format=%F:%L,%f |
+  ltldo -F-/2 ltl2ba ltl3ba 'ltl2tgba -s' --smallest --stats='%<,%T'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+dac-patterns:10,ltl2ba
+dac-patterns:11,ltl3ba
+dac-patterns:12,ltl2tgba -s
+dac-patterns:13,ltl2tgba -s
+dac-patterns:14,ltl2tgba -s
+dac-patterns:15,ltl2tgba -s
+dac-patterns:16,ltl2ba
+dac-patterns:17,ltl2tgba -s
+dac-patterns:18,ltl2ba
+dac-patterns:19,ltl3ba
+dac-patterns:20,ltl2ba
+#+end_example
+
+Note that in case of equality, only the first translator is returned.
+So when =ltl2ba= is output above, it could be (and it probably is, see
+below) the case that =ltl3ba= or =ltl2tgba -s= are also producing
+automata of equal size.
+
+To understand the above pipeline, remove the =ltldo= invocation.  The
+[[file:genltl.org][=genltl=]] command outputs this:
+
+#+BEGIN_SRC sh
+genltl --dac=10..20 --format=%F:%L,%f
+#+END_SRC
+#+RESULTS:
+#+begin_example
+dac-patterns:10,G((p0 & !p1) -> (!p1 U (!p1 & p2)))
+dac-patterns:11,!p0 W (p0 W (!p0 W (p0 W G!p0)))
+dac-patterns:12,Fp0 -> ((!p0 & !p1) U (p0 | ((!p0 & p1) U (p0 | ((!p0 & !p1) U (p0 | ((!p0 & p1) U (p0 | (!p1 U p0)))))))))
+dac-patterns:13,Fp0 -> (!p0 U (p0 & (!p1 W (p1 W (!p1 W (p1 W G!p1))))))
+dac-patterns:14,G((p0 & Fp1) -> ((!p1 & !p2) U (p1 | ((!p1 & p2) U (p1 | ((!p1 & !p2) U (p1 | ((!p1 & p2) U (p1 | (!p2 U p1))))))))))
+dac-patterns:15,G(p0 -> ((!p1 & !p2) U (p2 | ((p1 & !p2) U (p2 | ((!p1 & !p2) U (p2 | ((p1 & !p2) U (p2 | (!p1 W p2) | Gp1)))))))))
+dac-patterns:16,Gp0
+dac-patterns:17,Fp0 -> (p1 U p0)
+dac-patterns:18,G(p0 -> Gp1)
+dac-patterns:19,G((p0 & !p1 & Fp1) -> (p2 U p1))
+dac-patterns:20,G((p0 & !p1) -> (p2 W p1))
+#+end_example
+
+This is a two-column CSV file where each line is a description of the
+origin of the formula (=%F:%L=), followed by the formula itself
+(=%f=).  The =ltldo= from the previous pipeline simply takes its input
+from the second column of its standard input (=-F-/2=), run that
+formula through the three translator, pick the smallest automaton
+(=--smallest=), and for this automaton, it display the translator that
+was used (=%T=) along with the portion of the CSV file that was before
+the input column (=%<=).
+
+
+If you are curious about the actually size of the automata produced by
+=ltl2ba=, =ltl3ba=, and =ltl2tgba -s= in the above example, you can
+quickly build a CSV file using the following pipeline where each
+command append a new column.  We wrap =ltl2ba= and =ltl3ba= with
+=ltldo= so that they can process one column of the CSV that is input,
+and output statistics in CSV as output.  =ltl2tgba= does not need
+that, as it already supports those features. In the resulting CSV
+file, displayed as a table below, entries like =2s 4e 0d= represent an
+automaton with 2 states, 4 edges, and that is not deterministic.  .
+(We have a [[file:csv.org][separate page]] with more examples of reading and writing CSV
+files.)
+
+#+NAME: small-bench
+#+BEGIN_SRC sh :exports code
+echo input,ltl2ba,ltl3ba,ltl2tgba -s
+genltl --dac=10..20 --format=%F:%L,%f |
+  ltldo -F-/2 ltl2ba --stats '%<,%f,%ss %ee %dd' |
+  ltldo -F-/2 ltl3ba --stats '%<,%f,%>,%ss %ee %dd' |
+  ltl2tgba -s -F-/2 --stats '%<,%>,%ss %ee %dd'
+#+END_SRC
+
+#+BEGIN_SRC sh :results output raw :exports results :noweb yes
+sed '
+$d
+s/|/\\vert{}/g
+s/--/@@html:--@@/g
+s/^/| /
+s/$/ |/
+s/,/|/g
+s/"//g
+1a\
+|-|\
+|<c>|<r>|<r>|<r>|
+' <<EOF
+<<small-bench()>>
+EOF
+#+END_SRC
+
+#+ATTR_HTML: :class table-pre
+#+RESULTS:
+|      input      |     ltl2ba |     ltl3ba | ltl2tgba -s |
+|-----------------+------------+------------+-------------|
+|       <c>       |        <r> |        <r> |         <r> |
+| dac-patterns:10 |   2s 4e 0d |   2s 4e 1d |    2s 4e 1d |
+| dac-patterns:11 |   5s 9e 1d |   5s 9e 1d |    5s 9e 1d |
+| dac-patterns:12 |  8s 29e 0d |  8s 20e 0d |   7s 17e 1d |
+| dac-patterns:13 |  8s 17e 0d |  8s 17e 0d |   6s 12e 1d |
+| dac-patterns:14 | 16s 62e 0d | 11s 33e 0d |   7s 19e 1d |
+| dac-patterns:15 | 10s 47e 0d | 10s 41e 0d |   6s 17e 1d |
+| dac-patterns:16 |   1s 1e 1d |   1s 1e 1d |    1s 1e 1d |
+| dac-patterns:17 |   4s 7e 0d |   4s 7e 0d |    3s 5e 1d |
+| dac-patterns:18 |   2s 3e 0d |   2s 3e 1d |    2s 3e 1d |
+| dac-patterns:19 |   4s 8e 0d |   3s 6e 0d |    3s 7e 1d |
+| dac-patterns:20 |   2s 4e 0d |   2s 4e 1d |    2s 4e 1d |
+
+#+ATTR_HTML: :class table-pre
+#+RESULTS:
+
+* Controlling and measuring time
+
+The run time of each command can be restricted with the =-T NUM=
+option.  The argument is the maximum number of seconds that each
+command is allowed to run.
+
+When a timeout occurs a warning is printed on stderr, and no automaton
+(or statistic) is output by =ltdo= for this specific pair of
+command/formula.  The processing then continue with other formulas and
+tools.  Timeouts are not considered as errors, so they have no effect
+on the exit status of =ltldo=.  This behavior can be changed with
+option =--fail-on-timeout=, in which case timeouts are considered
+as errors.
+
+For each command (that does not terminate with a timeout) the runtime
+can be printed using the =%r= escape sequence.  This makes =ltldo= an
+alternative to [[file:ltlcross.org][=ltlcross=]] for running benchmarks without any
+verification.

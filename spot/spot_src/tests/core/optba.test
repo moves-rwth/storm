@@ -1,0 +1,173 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015, 2017, 2019 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -x
+
+# This is a case where autfilt is used to optimize BA, but used to
+# produce a larger one.   See issue #79.
+
+# ltldo -s -f '!(((p1 W c1) U Gp2) || (GXc2 <-> F!F!c1))' 'ltl3ba -M0'
+cat >input <<EOF
+never {
+T0_init:
+  if
+  :: ((!(c1)) && (!(p1)) && (!(p2))) -> goto accept_S1
+  :: ((!(c1)) && (!(p1))) -> goto T0_S2
+  :: ((!(c1)) && (!(p2))) -> goto T0_S3
+  :: ((true)) -> goto T0_S4
+  :: ((!(c1)) && (!(p1)) && (!(p2))) -> goto T0_S5
+  :: ((!(c1)) && (!(p1))) -> goto T0_S6
+  :: ((!(c1)) && (!(p2))) -> goto T0_S7
+  :: ((true)) -> goto T0_S8
+  fi;
+accept_S1:
+  if
+  :: ((!(c1)) && (c2)) -> goto accept_S1
+  :: ((c2)) -> goto T0_S9
+  fi;
+T0_S2:
+  if
+  :: ((c2) && (!(p2))) -> goto T0_S9
+  :: ((c2)) -> goto T0_S2
+  fi;
+T0_S3:
+  if
+  :: ((!(c1)) && (c2) && (!(p1))) -> goto accept_S1
+  :: ((!(c1)) && (c2)) -> goto T0_S3
+  fi;
+T0_S4:
+  if
+  :: ((!(c1)) && (c2) && (!(p1)) && (!(p2))) -> goto accept_S1
+  :: ((!(c1)) && (c2) && (!(p1))) -> goto T0_S2
+  :: ((!(c1)) && (c2) && (!(p2))) -> goto T0_S3
+  :: ((c2) && (!(p2))) -> goto T0_S10
+  :: ((!(c1)) && (c2) && (!(p2))) -> goto accept_S11
+  :: ((c2)) -> goto T0_S4
+  fi;
+T0_S5:
+  if
+  :: ((true)) -> goto T0_S5
+  :: ((!(c2))) -> goto T0_S12
+  fi;
+T0_S6:
+  if
+  :: ((!(p2))) -> goto T0_S5
+  :: ((true)) -> goto T0_S6
+  :: ((!(c2)) && (!(p2))) -> goto T0_S12
+  :: ((!(c2))) -> goto T0_S13
+  fi;
+T0_S7:
+  if
+  :: ((!(c1)) && (!(p1))) -> goto T0_S5
+  :: ((!(c1))) -> goto T0_S7
+  :: ((!(c1)) && (!(c2)) && (!(p1))) -> goto T0_S12
+  :: ((!(c1)) && (!(c2))) -> goto T0_S14
+  fi;
+T0_S8:
+  if
+  :: ((!(c1)) && (!(p1)) && (!(p2))) -> goto T0_S5
+  :: ((!(c1)) && (!(p1))) -> goto T0_S6
+  :: ((!(c1)) && (!(p2))) -> goto T0_S7
+  :: ((!(c1)) && (!(c2)) && (!(p1)) && (!(p2))) -> goto T0_S12
+  :: ((!(c1)) && (!(c2)) && (!(p1))) -> goto T0_S13
+  :: ((!(c1)) && (!(c2)) && (!(p2))) -> goto T0_S14
+  :: ((!(c2))) -> goto T0_S18
+  :: ((true)) -> goto T0_S8
+  fi;
+T0_S9:
+  if
+  :: ((!(c1)) && (c2)) -> goto accept_S1
+  :: ((c2)) -> goto T0_S9
+  fi;
+T0_S10:
+  if
+  :: ((!(c1)) && (c2) && (!(p1)) && (!(p2))) -> goto accept_S1
+  :: ((!(c1)) && (c2) && (!(p1))) -> goto T0_S2
+  :: ((!(c1)) && (c2) && (!(p2))) -> goto T0_S3
+  :: ((c2)) -> goto T0_S10
+  :: ((!(c1)) && (c2)) -> goto accept_S11
+  fi;
+accept_S11:
+  if
+  :: ((!(c1)) && (c2) && (!(p1)) && (!(p2))) -> goto accept_S1
+  :: ((!(c1)) && (c2) && (!(p1))) -> goto T0_S2
+  :: ((!(c1)) && (c2) && (!(p2))) -> goto T0_S3
+  :: ((c2) && (!(p2))) -> goto T0_S10
+  :: ((!(c1)) && (c2) && (!(p2))) -> goto accept_S11
+  :: ((c2)) -> goto T0_S4
+  fi;
+T0_S12:
+  if
+  :: ((true)) -> goto T0_S12
+  :: ((c1)) -> goto accept_S15
+  fi;
+T0_S13:
+  if
+  :: ((!(p2))) -> goto T0_S12
+  :: ((c1) && (!(p2))) -> goto accept_S15
+  :: ((true)) -> goto T0_S13
+  fi;
+T0_S14:
+  if
+  :: ((!(c1)) && (!(p1))) -> goto T0_S12
+  :: ((!(c1))) -> goto T0_S14
+  fi;
+accept_S15:
+  if
+  :: ((c1)) -> goto accept_S15
+  fi;
+accept_S16:
+  if
+  :: ((c1) && (!(p2))) -> goto accept_S16
+  :: ((c1)) -> goto T0_S17
+  fi;
+T0_S17:
+  if
+  :: ((c1) && (!(p2))) -> goto accept_S16
+  :: ((c1)) -> goto T0_S17
+  fi;
+T0_S18:
+  if
+  :: ((!(c1)) && (!(p1)) && (!(p2))) -> goto T0_S12
+  :: ((!(c1)) && (!(p1))) -> goto T0_S13
+  :: ((!(c1)) && (!(p2))) -> goto T0_S14
+  :: ((c1)) -> goto T0_S17
+  :: ((true)) -> goto T0_S18
+  fi;
+}
+EOF
+
+# 18 states is fine for transition-based acceptance
+test `autfilt --exclusive-ap=c1,c2 --high --small --stats=%s input` = 18
+
+# But we should have 19 with Büchi acceptance, not 20.
+test `autfilt --exclusive-ap=c1,c2 --high --small -B --stats=%s input` = 19
+
+
+# This should be reduced to a 3-state minimal WDBA if we
+# correctly recognize that this is an obligation.  Issue #379.
+cat >in <<EOF
+HOA: v1 Start: 0 States: 4 Acceptance: 1 Inf(0)
+AP: 2 "v0" "v1" --BODY-- State: 0 "T3_init" [t] 0 [!0 & !1] 1
+State: 1 "T2" [0&1] 1 [0&1] 2 [!0&!1] 2 [0&1] 3 [!0&!1] 1
+State: 2 "T1" {0} [0&1] 2 State: 3 "all" {0} [t] 3 --END--
+EOF
+test '3,6' = `autfilt --small in --stats=%s,%e`

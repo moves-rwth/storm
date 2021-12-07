@@ -1,0 +1,184 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2015, 2016 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+set -e
+
+cat >double_a.hoa << EOF
+HOA: v1
+name: "F\"x > 1\""
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[0] 0 {0}
+[0] 1
+State: 1
+[1] 1
+[0] 0
+--END--
+EOF
+
+cat >out.exp << EOF
+HOA: v1
+States: 4
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+--BODY--
+State: 0
+[0] 1
+State: 1
+[!0&1] 2
+[0] 3 {0}
+State: 2
+[0&!1] 0
+[!0&1] 2
+[0&1] 3
+State: 3
+[0] 1
+[!0&1] 2
+--END--
+EOF
+
+run 0 ../safra --hoa double_a.hoa -H > out.hoa
+diff out.hoa out.exp
+
+cat >double_b.hoa << EOF
+HOA: v1
+name: "F\"x > 1\""
+States: 2
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[0] 0
+[0] 1
+State: 1
+[1] 1 {0}
+[0] 0
+--END--
+EOF
+
+cat >out.exp << EOF
+HOA: v1
+States: 5
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc deterministic
+--BODY--
+State: 0
+[0] 1
+State: 1
+[0&!1] 1
+[!0&1] 2 {0}
+[0&1] 3
+State: 2
+[0&!1] 0
+[!0&1] 2 {0}
+[0&1] 3
+State: 3
+[0&1] 1 {0}
+[!0&1] 2 {0}
+[0&!1] 4
+State: 4
+[0] 1 {0}
+[!0&1] 2 {0}
+--END--
+EOF
+
+run 0 ../safra --hoa double_b.hoa -H > out.hoa
+diff out.hoa out.exp
+
+# Test scc-based optim
+cat > out.exp << EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Rabin 1
+Acceptance: 2 Fin(0) & Inf(1)
+properties: trans-labels explicit-labels trans-acc deterministic
+--BODY--
+State: 0 "{₀0₀}"
+[0] 1 {1}
+State: 1 "{₀0₀}{₁1₁}"
+[0] 1 {1}
+[!0&1] 2 {0}
+State: 2 "{₀1₀}"
+[0&!1] 2
+[1] 2 {1}
+--END--
+EOF
+
+cat > in.hoa << EOF
+HOA: v1
+States: 2
+Start: 0
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0
+[0] 0 {0}
+[0] 1
+State: 1
+[1] 1 {0}
+[0] 1
+--END--
+EOF
+
+run 0 ../safra --hoa in.hoa --scc_opt -p -H > out.hoa
+diff out.hoa out.exp
+
+# Formulas from bench/dtgbasat/formulas
+cat >formulae <<EOF
+X((a M F((!c & !b) | (c & b))) W (G!c U b))
+X(((a & b) R (!a U !c)) R b)
+XXG(Fa U Xb)
+(!a M !b) W F!c
+(b & Fa & GFc) R a
+(a R (b W a)) W G(!a M (c | b))
+(Fa W b) R (Fc | !a)
+X(G(!a M !b) | G(a | G!a))
+Fa W Gb
+Ga | GFb
+a M G(F!b | X!a)
+G!a R XFb
+F(G((a) | (F(b))))
+FG(!p1 | (p1 M XX!p1))
+EOF
+run 0 ../safra --hoa double_b.hoa -H > out.hoa
+ltlcross -F formulae \
+    "../safra -f %f -H > %O" \
+    "../safra --scc_opt -f %f -H > %O" \
+    "../safra --bisim_opt -f %f -H > %O" \
+    "../safra --stutter -f %f -H > %O" \
+    "../safra --scc_opt --bisim_opt --stutter -f %f -H > %O" \
+    "ltl2tgba"

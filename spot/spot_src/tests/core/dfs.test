@@ -1,0 +1,243 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009, 2010, 2015 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004, 2005 Laboratoire d'Informatique de
+# Paris 6 (LIP6), département Systèmes Répartis Coopératifs (SRC),
+# Université Pierre et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+# All examples are TBA (i.e. they have a unique
+# acceptance condition). Accepting arcs are
+# represented by double arrows.
+#
+# s1=>s2->s3->(large composant from s4 to s9)
+# ^       |
+# |_______|
+
+cat >blue_counter <<'EOF'
+HOA: v1
+States: 9
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0 {0}
+[t] 1
+State: 1
+[t] 2
+State: 2
+[t] 0
+[t] 3
+State: 3
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 4
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 5
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 6
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 7
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 8
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+--END--
+EOF
+
+run 0 ../ikwiad -CR -eSE05 -XH blue_counter
+run 0 ../ikwiad -CR -eTau03_opt -XH blue_counter
+
+# s1->s2->s3->(large composant from s4 to s9)
+# ^       ||
+# ||______||
+# ||______||
+
+cat >blue_last <<'EOF'
+HOA: v1
+States: 9
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete
+--BODY--
+State: 0
+[t] 1
+State: 1
+[t] 2
+State: 2
+[t] 0 {0}
+[t] 3
+State: 3
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 4
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 5
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 6
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 7
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 8
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+--END--
+EOF
+
+run 0 ../ikwiad -CR -eSE05 -XH blue_last
+run 0 ../ikwiad -CR -eTau03_opt -XH blue_last
+
+#  _______
+# |       |
+# |       v
+# s1->s2->s3->(large composant from s4 to s9)
+# ||      ^
+# ||______||
+# ||______||
+
+cat >red <<'EOF'
+HOA: v1
+States: 9
+Start: 0
+AP: 0
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc complete
+--BODY--
+State: 0
+[t] 1
+[t] 2 {0}
+State: 1
+[t] 2
+State: 2
+[t] 0
+[t] 3
+State: 3
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 4
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 5
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 6
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 7
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+State: 8
+[t] 3
+[t] 4
+[t] 5
+[t] 6
+[t] 7
+[t] 8
+--END--
+EOF
+
+run 0 ../ikwiad -CR -eSE05 -XH red
+run 0 ../ikwiad -CR -eTau03_opt -XH red
+
+rm -f red blue_counter blue_last

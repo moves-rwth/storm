@@ -1,0 +1,186 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Creating an alternating automaton by adding states and transitions
+#+DESCRIPTION: Code example for constructing alternating ω-automata in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+This example demonstrates how to create the following alternating
+co-Büchi automaton (recognizing =GFa=) and then print it.
+
+#+NAME: tut23-dot
+#+BEGIN_SRC sh :exports none :var txt=tut23-cpp
+autfilt --dot <<EOF
+$txt
+EOF
+#+END_SRC
+
+#+BEGIN_SRC dot :file tut23-aut.svg :var txt=tut23-dot :exports results
+$txt
+#+END_SRC
+
+#+RESULTS:
+[[file:tut23-aut.svg]]
+
+
+Note that the code is very similar to the [[file:tut22.org][previous example]]: in Spot an
+alternating automaton is just an automaton that uses a mix of standard
+edges (declared with =new_edge()=) and universal edges (declared with
+=new_univ_edge()=).
+
+* C++
+  :PROPERTIES:
+  :CUSTOM_ID: cpp
+  :END:
+
+#+NAME: tut23-cpp
+#+BEGIN_SRC C++ :wrap SRC hoa
+  #include <iostream>
+  #include <spot/twaalgos/hoa.hh>
+  #include <spot/twa/twagraph.hh>
+
+  int main(void)
+  {
+    // The bdd_dict is used to maintain the correspondence between the
+    // atomic propositions and the BDD variables that label the edges of
+    // the automaton.
+    spot::bdd_dict_ptr dict = spot::make_bdd_dict();
+    // This creates an empty automaton that we have yet to fill.
+    spot::twa_graph_ptr aut = make_twa_graph(dict);
+
+    // Since a BDD is associated to every atomic proposition, the
+    // register_ap() function returns a BDD variable number that can be
+    // converted into a BDD using bdd_ithvar().
+    bdd a = bdd_ithvar(aut->register_ap("a"));
+
+    // Set the acceptance condition of the automaton to co-Büchi
+    aut->set_acceptance(1, "Fin(0)");
+
+    // States are numbered from 0.
+    aut->new_states(3);
+    // The default initial state is 0, but it is always better to
+    // specify it explicitly.
+    aut->set_init_state(0U);
+
+    // new_edge() takes 3 mandatory parameters: source state,
+    // destination state, and label.  A last optional parameter can be
+    // used to specify membership to acceptance sets.
+    //
+    // new_univ_edge() is similar, but the destination is a set of
+    // states.
+    aut->new_edge(0, 0, a);
+    aut->new_univ_edge(0, {0, 1}, !a);
+    aut->new_edge(1, 1, !a, {0});
+    aut->new_edge(1, 2, a);
+    aut->new_edge(2, 2, bddtrue);
+
+    // Print the resulting automaton.
+    print_hoa(std::cout, aut);
+    return 0;
+  }
+#+END_SRC
+
+#+RESULTS: tut23-cpp
+#+begin_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: trans-labels explicit-labels trans-acc complete
+properties: deterministic univ-branch
+--BODY--
+State: 0
+[0] 0
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+--END--
+#+end_SRC
+
+* Python
+
+#+BEGIN_SRC python :wrap SRC hoa
+  import spot
+  import buddy
+
+  # The bdd_dict is used to maintain the correspondence between the
+  # atomic propositions and the BDD variables that label the edges of
+  # the automaton.
+  bdict = spot.make_bdd_dict();
+  # This creates an empty automaton that we have yet to fill.
+  aut = spot.make_twa_graph(bdict)
+
+  # Since a BDD is associated to every atomic proposition, the register_ap()
+  # function returns a BDD variable number that can be converted into a BDD
+  # using bdd_ithvar() from the BuDDy library.
+  a = buddy.bdd_ithvar(aut.register_ap("a"))
+
+  # Set the acceptance condition of the automaton to co-Büchi
+  aut.set_acceptance(1, "Fin(0)")
+
+  # States are numbered from 0.
+  aut.new_states(3)
+  # The default initial state is 0, but it is always better to
+  # specify it explicitly.
+  aut.set_init_state(0);
+
+  # new_edge() takes 3 mandatory parameters: source state, destination state,
+  # and label.  A last optional parameter can be used to specify membership
+  # to acceptance sets.  In the Python version, the list of acceptance sets
+  # the transition belongs to should be specified as a list.
+  #
+  # new_univ_edge() is similar, but the destination is a list of states.
+  aut.new_edge(0, 0, a);
+  aut.new_univ_edge(0, [0, 1], -a);
+  aut.new_edge(1, 1, -a, [0]);
+  aut.new_edge(1, 2, a);
+  aut.new_edge(2, 2, buddy.bddtrue);
+
+  # Print the resulting automaton.
+  print(aut.to_str('hoa'))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC hoa
+HOA: v1
+States: 3
+Start: 0
+AP: 1 "a"
+acc-name: co-Buchi
+Acceptance: 1 Fin(0)
+properties: univ-branch trans-labels explicit-labels trans-acc complete
+properties: deterministic
+--BODY--
+State: 0
+[0] 0
+[!0] 0&1
+State: 1
+[!0] 1 {0}
+[0] 2
+State: 2
+[t] 2
+--END--
+#+END_SRC
+
+* Additional comments
+
+Alternating automata in Spot can also have a universal initial state:
+e.g, an automaton may start in =0&1&2=.  Use =set_univ_init_state()=
+to declare such as state.
+
+We have a [[file:tut24.org][separate page]] describing how to explore the edges of an
+alternating automaton.
+
+Once you have built an alternating automaton, you can [[file:tut31.org][remove the
+alternation]] to obtain a non-deterministic Büchi or generalized Büchi
+automaton.
+
+#  LocalWords:  utf html args GFa SRC txt cpp EOF aut svg bdd twa ap
+#  LocalWords:  ithvar init bddtrue acc Buchi bdict BuDDy str

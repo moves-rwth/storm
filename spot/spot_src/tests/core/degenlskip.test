@@ -1,0 +1,134 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013, 2014, 2015, 2016  Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+# Make sure degen-lskip=0 and degen-lskip=1 produce the expected
+# automata for 'GFa & GFb'
+
+ltl2tgba -B 'GFa & GFb' --hoa > out1
+ltl2tgba -B -x degen-lskip=1 'GFa & GFb' --hoa > out2
+ltl2tgba -B -x degen-lskip=0 'GFa & GFb' --hoa > out3
+ltl2tgba -B -x degen-lskip=1,degen-lowinit=1 'GFa & GFb' --hoa > out4
+ltl2tgba -B -x degen-lskip=0,degen-lowinit=1 'GFa & GFb' --hoa > out5
+
+diff out1 out2
+cmp out2 out3 && exit 1
+
+cat <<EOF >expected2
+HOA: v1
+name: "G(Fa & Fb)"
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete deterministic
+--BODY--
+State: 0 {0}
+[0&1] 0
+[!1] 1
+[!0&1] 2
+State: 1
+[0&1] 0
+[!1] 1
+[!0&1] 2
+State: 2
+[0] 0
+[!0] 2
+--END--
+EOF
+
+
+cat <<EOF >expected3
+HOA: v1
+name: "G(Fa & Fb)"
+States: 3
+Start: 0
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete deterministic
+--BODY--
+State: 0 {0}
+[t] 1
+State: 1
+[!1] 1
+[1] 2
+State: 2
+[0] 0
+[!0] 2
+--END--
+EOF
+
+cat <<EOF >expected4
+HOA: v1
+name: "G(Fa & Fb)"
+States: 3
+Start: 1
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[0&1] 0
+[!1] 1
+[!0&1] 2
+State: 1
+[0&1] 0
+[!1] 1
+[!0&1] 2
+State: 2
+[0] 0
+[!0] 2
+--END--
+EOF
+
+cat <<EOF >expected5
+HOA: v1
+name: "G(Fa & Fb)"
+States: 3
+Start: 2
+AP: 2 "a" "b"
+Acceptance: 1 Inf(0)
+--BODY--
+State: 0 {0}
+[t] 2
+State: 1
+[0] 0
+[!0] 1
+State: 2
+[1] 1
+[!1] 2
+--END--
+EOF
+
+
+run 0 autfilt -q -F out2 --isomorph expected2
+run 0 autfilt -q -F out3 --isomorph expected3
+
+cat out4 out5
+
+autfilt -q out4 --isomorph expected2 && exit 1
+autfilt -q out5 --isomorph expected3 && exit 1
+
+autfilt -q out4 --isomorph expected4
+autfilt -q out5 --isomorph expected5

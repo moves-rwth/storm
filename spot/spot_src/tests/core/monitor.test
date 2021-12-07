@@ -1,0 +1,109 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014-2018 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+expect()
+{
+   cat >output.exp
+   run 0 "$@" > output.out
+   cat output.out
+   diff output.out output.exp
+}
+
+expect ltl2tgba -dA --monitor a <<EOF
+digraph "a" {
+  rankdir=LR
+  node [shape="circle"]
+  I [label="", style=invis, width=0]
+  I -> 1
+  0 [label="0"]
+  0 -> 0 [label="1"]
+  1 [label="1"]
+  1 -> 0 [label="a"]
+}
+EOF
+
+expect ltl2tgba --monitor a GFa Ga --hoa<<EOF
+HOA: v1
+name: "a"
+States: 2
+Start: 1
+AP: 1 "a"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+properties: stutter-invariant terminal
+--BODY--
+State: 0
+[t] 0
+State: 1
+[0] 0
+--END--
+HOA: v1
+name: "GFa"
+States: 1
+Start: 0
+AP: 0
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic stutter-invariant terminal
+--BODY--
+State: 0
+[t] 0
+--END--
+HOA: v1
+name: "Ga"
+States: 1
+Start: 0
+AP: 1 "a"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+properties: stutter-invariant weak
+--BODY--
+State: 0
+[0] 0
+--END--
+EOF
+
+# Completing a monitor can produce a Büchi automaton.
+expect ltl2tgba --any -C -M Ga <<EOF
+HOA: v1
+name: "Ga"
+States: 2
+Start: 0
+AP: 1 "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic stutter-invariant very-weak
+--BODY--
+State: 0 {0}
+[0] 0
+[!0] 1
+State: 1
+[t] 1
+--END--
+EOF

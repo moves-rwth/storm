@@ -1,0 +1,74 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2012, 2015 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+set -e
+
+cat >file <<EOF
+HOA: v1
+States: 10
+Start: 0
+AP: 4 "a" "b" "c" "d"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels trans-acc
+--BODY--
+State: 0
+[!0&!1&!2 | 0&2] 0 {0}
+[0&1] 1
+[!0&!1&!2 | 0&2] 2
+[!0&!2] 3
+[!0&!2] 4 {0}
+[0&1] 5
+State: 1
+[0&2] 0 {0}
+[0&1] 1
+[0&2] 2
+[0&1] 5
+State: 2
+[t] 6
+State: 3
+[!1&!2] 6
+[!2] 7
+State: 4
+[!0&!1&!2] 0 {0}
+[!0&!1&!2] 2
+[!0&!2] 3
+[!0&!2] 4 {0}
+State: 5
+[2] 6
+[1] 8
+State: 6
+State: 7
+State: 8
+[1&!2&!3] 9
+State: 9
+[1&!2] 9
+--END--
+EOF
+
+cat >outexp <<EOF
+edges: 12
+states: 6
+EOF
+
+run 0 ../ikwiad -XH -ks -RDS file > out
+
+cmp out outexp

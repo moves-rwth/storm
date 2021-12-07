@@ -1,0 +1,345 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =randltl=
+#+DESCRIPTION: Spot command-line tool for generating random LTL formulas.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+This tool generates random formulas.  By default, it will generate one
+random LTL formula using atomic propositions supplied on the
+command-line.  It can be instructed to generate random Boolean or PSL
+formulas instead, but let us first focus on LTL generation.
+
+For instance to obtain fave random LTL formula over the propositions
+=a=, =b=, or =c=, use:
+
+#+BEGIN_SRC sh
+randltl -n5 a b c
+#+END_SRC
+#+RESULTS:
+: 0
+: 0 R b
+: F(XG(F!b M Fb) W (b R a))
+: F(a R !c)
+: G(a | Fb) W (FGb R !b)
+
+Note that the result does not always use all atomic propositions.
+
+If you do not care about how the atomic propositions are named,
+you can give a nonnegative number instead:
+
+#+BEGIN_SRC sh
+randltl -n5 3
+#+END_SRC
+#+RESULTS:
+: 0
+: 0 R p1
+: F(XG(F!p1 M Fp1) W (p1 R p0))
+: F(p0 R !p2)
+: G(p0 | Fp1) W (FGp1 R !p1)
+
+The syntax of the formula output can be changed using the
+[[file:ioltl.org][common output options]]:
+
+#+BEGIN_SRC sh :exports results
+randltl --help | sed -n '/Output options:/,/^$/p' | sed '1d;$d'
+#+END_SRC
+#+RESULTS:
+#+begin_example
+  -0, --zero-terminated-output   separate output formulas with \0 instead of \n
+                             (for use with xargs -0)
+  -8, --utf8                 output using UTF-8 characters
+      --format=FORMAT, --stats=FORMAT
+                             specify how each line should be output (default:
+                             "%f")
+  -l, --lbt                  output in LBT's syntax
+      --latex                output using LaTeX macros
+  -o, --output=FORMAT        send output to a file named FORMAT instead of
+                             standard output.  The first formula sent to a file
+                             truncates it unless FORMAT starts with '>>'.
+  -p, --full-parentheses     output fully-parenthesized formulas
+  -s, --spin                 output in Spin's syntax
+      --spot                 output in Spot's syntax (default)
+      --wring                output in Wring's syntax
+#+end_example
+
+When you select Spin's or Wring's syntax, operators =W= and =M= are
+automatically rewritten using =U= and =R= (written =V= for Spin).
+When you select LBT's syntax, you should name you atomic propositions
+like =p0=, =p1=, etc... (Atomic proposition named differently will be
+output by Spot in double-quotes, but this is not supported by LBT.)
+
+#+BEGIN_SRC sh
+randltl -l 12
+randltl -8 12
+randltl -s 12
+randltl --wring 12
+#+END_SRC
+
+#+RESULTS:
+: V f W V G p5 p7 p10
+: 0 R ((□p5 R p7) W p10)
+: false V (p10 V (p10 || ([]p5 V p7)))
+: (FALSE) R ((p10=1) R ((p10=1) + ((G(p5=1)) R (p7=1))))
+
+As you might guess from the above result, for a given set of atomic
+propositions (and on the same computer) the generated formula will
+always be the same.  This is because each time =randltl= starts, it
+initializes the seed of the random number generator to =0=.  This seed
+can be changed using the =--seed= option.  For instance the following
+three commands:
+
+#+NAME: result-seed
+#+BEGIN_SRC sh
+randltl a b c d
+randltl --seed=4 a b c d
+randltl --seed=0 a b c d
+#+END_SRC
+
+Will give three formulas in which the first and last are identical:
+
+#+RESULTS: result-seed
+: Xb R ((Gb R c) W d)
+: Gd
+: Xb R ((Gb R c) W d)
+
+When generating random formulas, we usually want large quantity of
+them.  Rather than running =randltl= several times with different
+seeds, we can use the =-n= option to specify a number of formulas to
+produce as seen in the very first example of this page.
+
+By default =randltl= will never output the same formula twice (this
+can be changed with the =--allow-dups= option), so it may generate
+more formulas internally than it eventually prints.  To ensure
+termination, for each output formula the number of ignored (because
+duplicated) random formulas that are generated is limited to 100000.
+Therefore in some situations, most likely when generating small
+formulas, with few atomic proposition, you may see =randltl= stop
+before the requested number of formulas has been output with an error
+message.
+
+If the integer passed to =-n= is negative, =randltl= will attempt to
+generate as many formulas as it can.  This is most useful when
+=randltl= is piped to =ltlfilt= to select random formulas matching a
+certain criterion, as we shall see later.
+
+Besides the list of atomic propositions (=a b c= in our example) and
+the seed, several other parameters control the generation of the
+random formulas.
+
+Initially, the random generator selects a tree size for the formula.
+The default size is =15=, but it can be changed using the =--tree-size=
+option.  For instance in the following, for each formula the tree size
+will be chosen randomly in the range =22..30=.
+#+BEGIN_SRC sh
+randltl -n 5 a b c --tree-size=22..30
+#+END_SRC
+#+RESULTS:
+: c R (!Fa M Xc)
+: !(FGc <-> (c <-> Ga)) -> ((Ga W Fa) M F(c W a))
+: G(((a xor Fc) W (G(a | b) R (b <-> !b))) <-> (b M 1))
+: 0
+: 1
+
+The tree size is just the number of nodes in the syntax tree of the
+formula during its construction.  However because Spot automatically
+applies some /trivial simplifications/ during the construction of its
+formulas (e.g., =F(F(a)= is reduced to =F(a)=, =a&0= to =0=, etc.),
+the actual size of the formula output may be smaller than the
+tree size specified.
+
+It is pretty common to obtain the formulas =0= or =1= among the first
+formulas output, since many random formulas trivially simplify to
+these.  However because duplicate formulas are suppressed by default,
+they shall only occur once.
+
+Stronger simplifications may be requested using the =-r= option, that
+implements many rewritings that helps Spot translators algorithms (so
+beware that using =-r= reduces the randomness of the output).
+
+#+BEGIN_SRC sh
+randltl -n 5 a b c --tree-size=22..30 -r
+#+END_SRC
+#+RESULTS:
+: c R (G!a M Xc)
+: Fa | (FGc & ((c & Ga) | (!c & F!a))) | (GF!c & ((c & F!a) | (!c & Ga)))
+: G((Fb & G((a & G!c) | (!a & Fc))) | (G!b & F((a & Fc) | (!a & G!c))))
+: 0
+: 1
+
+The generator build the syntax tree recursively from its root, by
+considering all operators that could be used for a given tree size (for
+example a tree-size of 2 disables binary operators).  A /priority/ is
+associated to each operator, and the probability of this operator
+being selected is this priority over the sum of the priorities of all
+considered operators.  The default priorities for each operator can
+be seen with =--dump-priorities=:
+
+#+BEGIN_SRC sh
+randltl a b c --dump-priorities
+#+END_SRC
+#+RESULTS:
+#+begin_example
+Use --ltl-priorities to set the following LTL priorities:
+ap	3
+false	1
+true	1
+not	1
+F	1
+G	1
+X	1
+equiv	1
+implies	1
+xor	1
+R	1
+U	1
+W	1
+M	1
+and	1
+or	1
+#+end_example
+
+Where =ap= stands for /atomic propositions/ (=a=, =b=, =c=).  In this
+example, when the generator builds a leaf of the syntax tree (i.e., a
+subformula of tree-size 1), it must ignore all operators, and chose
+between =ap=, =false=, or =true=, and the odds of choosing =ap= is
+3/(3+1+1).
+
+As indicated at the top of the output, these priorities can be changed
+using the =--ltl-priorities= options.  The most common scenario is to
+disable some of the operators by giving them a null priority.  The
+following example disables 6 operators, and augments the priority of
+=U= to 3 to favor its occurrence.
+
+#+BEGIN_SRC sh
+randltl -n 5 a b c --ltl-priorities 'xor=0,implies=0,equiv=0,W=0,M=0,X=0,U=3'
+#+END_SRC
+#+RESULTS:
+: 0
+: b
+: 1
+: !F(1 U ((a U c) U b))
+: 1 U G!b
+
+When using =-r= to simplify generated formulas, beware that these
+rewritings may use operators that you disabled during the initial
+random generation: you may obtain a formula that uses =W= even if =W=
+has a null priority.  (You can use =ltlfilt= to rewrite these
+operators if that is a problem.)
+
+If the =--weak-fairness= option is used, for each random formula
+generated, a weak-fairness formula of the form =GF(a) & GF(b) & GF(c)=
+is generated for a subset of the atomic propositions and "ANDed" to
+the random formula.  The =--tree-size= option has no influence on the
+weak-fairness formula appended.
+
+#+BEGIN_SRC sh
+randltl -n 5 a b c --weak-fairness
+#+END_SRC
+#+RESULTS:
+: 0
+: (!Fb | F!Fc) & GFa & GFb & GFc
+: GFa & GFb & GFc & F(a xor b)
+: (a | b) & GFa & GFb & GFc & (Ga -> Gc)
+: GFa & GFb & GFc & (GXb U (Fc U (Fc | (a R b))))
+
+
+Boolean formulas may be output with the =-B= option:
+#+BEGIN_SRC sh
+randltl -B -n 5 a b c
+#+END_SRC
+#+RESULTS:
+: !(b -> !c)
+: c xor (b | c)
+: !(a & (a xor b))
+: 0
+: !b -> c
+
+In that case, priorities should be set with =--boolean-priorities=.
+
+Finally, PSL formulas may be output using the =-P= option.  However
+keep in mind that since LTL formulas are PSL formulas, generating
+random PSL formula may produce many LTL formulas that do not use any
+PSL operator (this is even more so the case when simplifications are
+enabled with =-r=).
+
+#+BEGIN_SRC sh
+randltl -P -n 5 a b c
+#+END_SRC
+#+RESULTS:
+: 0
+: b
+: !(a W b)
+: 1
+: (a U !b) <-> (!a -> Gb)
+
+As shown with the =--dump-priorities= output below, tweaking the
+priorities used to generated PSL formulas requires three different
+options:
+
+#+BEGIN_SRC sh
+randltl -P a b c --dump-priorities
+#+END_SRC
+#+RESULTS:
+#+begin_example
+Use --ltl-priorities to set the following LTL priorities:
+ap	3
+false	1
+true	1
+not	1
+F	1
+G	1
+X	1
+Closure	1
+equiv	1
+implies	1
+xor	1
+R	1
+U	1
+W	1
+M	1
+and	1
+or	1
+EConcat	1
+UConcat	1
+Use --sere-priorities to set the following SERE priorities:
+eword	1
+boolform	1
+star	1
+star_b	1
+fstar	1
+fstar_b	1
+and	1
+andNLM	1
+or	1
+concat	1
+fusion	1
+Use --boolean-priorities to set the following Boolean formula priorities:
+ap	3
+false	1
+true	1
+not	1
+equiv	1
+implies	1
+xor	1
+and	1
+or	1
+#+end_example
+
+The =--ltl-priorities= option we have seen previously now recognize
+some new PSL-specific operators: =Closure= is the ={sere}= operator,
+=EConcat= is the ={sere}<>->f= operator, and =UConcat= is the
+={sere}[]->f= operator.  When these operator are selected, they
+require a SERE argument which is generated according to the priorities
+set by =--sere-priorities=: =eword= is the empty word, =boolform= is a
+Boolean formula (generated using the priorities set by
+=--boolean-priorities=), =star= is the unbounded Kleen star, while
+=star_b= is the bounded version, and =andNLM= is the
+non-length-matching variant of the =and= operator.
+
+#  LocalWords:  randltl num toc LTL PSL SRC Gb sed utf UTF lbt LBT's
+#  LocalWords:  Xc GFb Gc Xb Fb XFb Xa dups ltlfilt Fc XXc GX GFc XG
+#  LocalWords:  rewritings ltl ap GF ANDed GFa boolean EConcat eword
+#  LocalWords:  UConcat boolform andNLM concat Kleen eval setenv setq
+#  LocalWords:  getenv html args FGb nonnegative Fp FGp xargs LaTeX
+#  LocalWords:  FGc subformula GXb fstar

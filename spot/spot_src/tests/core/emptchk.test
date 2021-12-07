@@ -1,0 +1,44 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2008, 2009, 2010, 2014 Laboratoire de Recherche et
+# Développement de l'Epita (LRDE).
+# Copyright (C) 2003, 2004, 2005 Laboratoire d'Informatique de
+# Paris 6 (LIP6), département Systèmes Répartis Coopératifs (SRC),
+# Université Pierre et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+. ./defs
+
+set -e
+
+cat > emptchk.txt <<EOF
+1, a
+1, a U b
+1, X a
+1, a & b & c
+1, a | b | (c U (d & (g U (h ^ i))))
+1, Xa & (b U !a) & (b U !a)
+1, Fa & Xb & GFc & Gd
+2, Fa & Xa & GFc & Gc
+1, Fc & X(a | Xb) & GF(a | Xb) & Gc
+2, !((FF a) <=> (F x))
+0, Xa && (!a U b) && !b && X!b
+0, (a U !b) && Gb
+EOF
+
+run 0 ../emptchk emptchk.txt

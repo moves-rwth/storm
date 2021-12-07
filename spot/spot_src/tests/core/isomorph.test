@@ -1,0 +1,117 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014, 2015, 2020 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+for i in 0 1 2; do
+  randaut a b --seed=$i -Q10 --hoa >iso$i
+  autfilt iso$i --randomize --hoa >aut$i
+done
+for i in 3 4 5; do
+  randaut a b --seed=$i -Q10 -D --hoa >iso$i
+  autfilt iso$i --randomize --hoa >aut$i
+done
+
+cat aut0 aut1 aut2 aut3 aut4 aut5 > all
+(for i in 0 1 2 3 4 5; do
+  run 0 autfilt all --are-isomorphic iso$i --hoa
+done) > output
+diff all output
+
+# Test if two isomorphic automata with different initial states are detected.
+cat >aut1 <<EOF
+HOA: v1
+name: "1"
+States: 4
+Start: 1
+AP: 0
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0 [t] 1 [t] 1
+State: 1 [t] 2 [t] 2
+State: 2 [t] 3 [t] 3
+State: 3 [t] 0 [t] 0
+--END--
+EOF
+
+cat >aut2 <<EOF
+HOA: v1
+name: "1"
+States: 4
+Start: 0
+AP: 0
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0 [t] 1 [t] 1
+State: 1 [t] 3 [t] 3
+State: 3 [t] 2 [t] 2
+State: 2 [t] 0 [t] 0
+--END--
+EOF
+
+# Check that the number of ingoing and outgoing transitions of a state matters,
+# even if they behave similarly.
+cat >aut3 <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 0
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0 [t] 1 [t] 2
+State: 1 [t] 1 [t] 1
+State: 2 [t] 2
+--END--
+EOF
+
+cat >aut4 <<EOF
+HOA: v1
+States: 3
+Start: 0
+AP: 0
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc complete
+--BODY--
+State: 0 [t] 1 [t] 2
+State: 1 [t] 1
+State: 2 [t] 2 [t] 2
+--END--
+EOF
+
+run 0 autfilt aut1 --are-isomorphic aut2
+run 0 autfilt aut3 --are-isomorphic aut4
+
+run 0 autfilt -u aut1 aut2 aut2 aut3 -c >out
+test 2 = "`cat out`"
+
+ltl2tgba -D -G GFa > aut1
+ltl2tgba -D -G FGa > aut2
+test 0 = `autfilt -c --are-isomorphic aut1 aut2`
+test 2 = `ltl2tgba -D -G 'GFa' 'FG!a' | autfilt -u -c`
+test 1 = `ltl2tgba -D -G 'GFa' 'GFa' | autfilt -u -c`

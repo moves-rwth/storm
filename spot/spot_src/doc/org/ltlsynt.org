@@ -1,0 +1,114 @@
+# -*- coding: utf-8 -*-
+#+TITLE: =ltlsynt=
+#+DESCRIPTION: Spot command-line tool for synthesizing AIGER circuits from LTL/PSL formulas.
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tools.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+
+* Basic usage
+
+This tool synthesizes controllers from LTL/PSL formulas.
+
+Consider a set $I$ of /input/ atomic propositions, a set $O$ of output atomic
+propositions, and a PSL formula \phi over the propositions in $I \cup O$.  A
+=controller= realizing \phi is a function $c: 2^{I \cup O} \times 2^I \mapsto
+2^O$ such that, for every \omega-word $(u_i)_{i \in N} \in (2^I)^\omega$ over
+the input propositions, the word $(u_i \cup c(u_0 \dots u_{i-1}, u_i))_{i \in
+N}$ satisfies \phi.
+
+=ltlsynt= has three mandatory options:
+- =--ins=: a comma-separated list of input atomic propositions;
+- =--outs=: a comma-separated list of output atomic propositions;
+- =--formula= or =--file=: a LTL/PSL specification.
+
+The following example illustrates the synthesis of a controller acting as an
+=AND= gate. We have two inputs =a= and =b= and one output =c=, and we want =c=
+to always be the =AND= of the two inputs:
+#+BEGIN_SRC sh
+ltlsynt --ins=a,b --outs=c -f 'G (a & b <=> c)'
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+REALIZABLE
+HOA: v1
+States: 1
+Start: 0
+AP: 3 "b" "c" "a"
+acc-name: all
+Acceptance: 0 t
+properties: trans-labels explicit-labels state-acc deterministic
+--BODY--
+State: 0
+[0&1&2] 0
+[!0&!1 | !1&!2] 0
+--END--
+#+end_example
+
+The output is composed of two parts:
+- the first one is a single line REALIZABLE or UNREALIZABLE;
+- the second one is an automaton describing the controller (if the input
+  specification is realizable). In this example, the controller has a single
+  state, with two loops labeled by =a & b & c= and =(!a | !b) & !c=.
+
+If a controller exists, then one with finite memory exists. Such controllers
+are easily represented as automata (or more specifically as I/O automata or
+transducers).  In the automaton representing the controller, the acceptance
+condition is irrelevant and trivially true.
+
+The following example illustrates the case of an unrealizable specification. As
+=a= is an input proposition, there is no way to guarantee that it will
+eventually hold.
+
+#+BEGIN_SRC sh :epilogue true
+ltlsynt --ins=a --outs=b -f 'F a'
+#+END_SRC
+
+#+RESULTS:
+: UNREALIZABLE
+
+
+By default, the controller is output in HOA format, but it can be output as an
+[[http://fmv.jku.at/aiger/][AIGER]] circuit thanks to the =--aiger= flag. This
+is the output format required for the [[http://syntcomp.org/][SYNTCOMP]]
+competition.
+
+The generation of a controller can be disabled with the flag =--realizability=.
+In this case, =ltlsynt= output is limited to REALIZABLE or UNREALIZABLE.
+
+* TLSF
+
+=ltlsynt= was made with the [[http://syntcomp.org/][SYNTCOMP]] competition in
+mind, and more specifically the TLSF track of this competition.  TLSF is a
+high-level specification language created for the purpose of this competition.
+Fortunately, the SYNTCOMP organizers also provide a tool called
+[[https://github.com/reactive-systems/syfco][=syfco=]] which can translate a
+TLSF specification to an LTL formula.
+
+The following four steps show you how a TLSF specification called =FILE= can
+be synthesized using =syfco= and =ltlsynt=:
+
+#+BEGIN_SRC sh :export code
+LTL=$(syfco FILE -f ltlxba -m fully)
+IN=$(syfco FILE --print-input-signals)
+OUT=$(syfco FILE --print-output-signals)
+ltlsynt --formula="$LTL" --ins="$IN" --outs="$OUT"
+#+END_SRC
+
+* Algorithm
+
+The tool reduces the synthesis problem to a parity game, and solves the parity
+game using Zielonka's recursive algorithm.  The full reduction from LTL to
+parity game is described in the following paper:
+- *Reactive Synthesis from LTL Specification with Spot*, /Thibaud Michaud/,
+  /Maximilien Colange/.  In Proc. of SYNT@CAV'18. to appear.
+
+You can also ask =ltlsynt= to print to obtained parity game into
+[[https://github.com/tcsprojects/pgsolver][PGSolver]] format, with the flag
+=--print-pg=.  Note that this flag deactivates the resolution of the parity
+game, which is to be deferred to one of the solvers from PGSolver.
+
+#  LocalWords:  utf ltlsynt AIGER html args mapsto SRC acc aiger TLSF
+#  LocalWords:  UNREALIZABLE unrealizable SYNTCOMP realizability Proc
+#  LocalWords:  syfco ltlxba Zielonka's Thibaud Michaud Maximilien
+#  LocalWords:  Colange PGSolver

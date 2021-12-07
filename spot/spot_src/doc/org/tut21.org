@@ -1,0 +1,854 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Custom print of an automaton
+#+DESCRIPTION: Code example for iterating over ω-automata in Spot
+#+INCLUDE: setup.org
+#+HTML_LINK_UP: tut.html
+#+PROPERTY: header-args:sh :results verbatim :exports both
+#+PROPERTY: header-args:python :results output :exports both
+#+PROPERTY: header-args:C+++ :results verbatim :exports both
+
+This example demonstrates how to iterate over an automaton in C++ and
+Python.  This case uses automata stored entirely in memory as a graph:
+states are numbered by integers, and transitions can be seen as tuples
+of the form
+$(\mathit{src},\mathit{dst},\mathit{cond},\mathit{accsets})$ where
+$\mathit{src}$ and $\mathit{dst}$ are integers denoting the source and
+destination states, $\mathit{cond}$ is a BDD representing the label
+(a.k.a. guard), and $\mathit{accsets}$ is an object of type
+=acc_cond::mark_t= encoding the membership to each acceptance sets
+(=acc_cond::mark_t= is basically a bit vector).
+
+The interface available for those graph-based automata allows random
+access to any state of the graph, hence the code given bellow can do a
+simple loop over all states of the automaton.  Spot also supports a
+different kind of interface (not demonstrated here) to
+[[file:tut50.org][iterate over automata that are constructed
+on-the-fly]] and where such a loop would be impossible.
+
+First let's create an example automaton in HOA format.  We use =-U= to
+request unambiguous automata, as this allows us to demonstrate how
+property bits are used.
+
+#+BEGIN_SRC sh :wrap SRC hoa
+ltl2tgba -U 'Fa | G(Fb&Fc)' | tee tut21.hoa
+#+END_SRC
+#+RESULTS:
+#+begin_SRC hoa
+HOA: v1
+name: "F(a | G(Fb & Fc))"
+States: 17
+Start: 0
+AP: 3 "a" "b" "c"
+acc-name: generalized-Buchi 2
+Acceptance: 2 Inf(0)&Inf(1)
+properties: trans-labels explicit-labels trans-acc unambiguous
+properties: stutter-invariant
+--BODY--
+State: 0
+[0] 1
+[!0] 2
+[!0&1&2] 3
+[!0&!1&2] 4
+[!0&!2] 5
+[!0&!2] 6
+State: 1
+[t] 1 {0 1}
+State: 2
+[!1&!2] 2
+[!1&2] 2 {1}
+[1&!2] 2 {0}
+[1&2] 2 {0 1}
+State: 3
+[!0&1&2] 3
+[!0&!1&2] 4
+[!0&!2] 5
+[!0&!2] 6
+[0&!2] 7
+[0&!1&2] 8
+[0&1&2] 9
+[0&!1&2] 10
+[0&1&!2] 11
+[0&!1&!2] 12
+[0&!1&!2] 13
+State: 4
+[!0&1&2] 3
+[!0&!1&2] 4
+[!0&!2] 5
+[!0&1&!2] 6
+[0&1&!2] 7
+[0&!1] 8
+[0&1&2] 9
+[0&!1&2] 10
+[0&1&!2] 11
+[0&!1&!2] 12
+[0&!1&!2] 14
+[!0&!1&!2] 15
+State: 5
+[!0&1&2] 3
+[!0&!1&2] 4
+[!0&!2] 5
+[0&!1&2] 8
+[0&1&2] 9
+[0&!1&2] 10
+[0&1&!2] 11
+[0&!1&!2] 12
+[0&!1&!2] 13
+State: 6
+[!0&!2] 6
+[0&!2] 7
+State: 7
+[!2] 7 {0 1}
+State: 8
+[!1] 8 {0 1}
+State: 9
+[!2] 7
+[!1&2] 8
+[1&2] 9
+[!1&2] 10
+[1&!2] 11
+[!1&!2] 12
+[!1&!2] 13
+State: 10
+[1&!2] 7
+[1&2] 9
+[!1&2] 10
+[1&!2] 11
+[!1&!2] 12
+[!1&!2] 14
+State: 11
+[!1&2] 8
+[1&2] 9
+[!1&2] 10
+[1&!2] 11
+[!1&!2] 12
+[!1&!2] 13
+State: 12
+[1&2] 9
+[!1&2] 10
+[1&!2] 11
+[!1&!2] 12
+State: 13
+[!1&2] 8
+[!1&!2] 13
+State: 14
+[1&!2] 7
+[!1&!2] 14
+State: 15
+[!0&1&!2] 6
+[0&1&!2] 7
+[0&!1&!2] 14
+[!0&!1&!2] 15
+[0&!1&!2] 16
+State: 16
+[!1&!2] 16 {0 1}
+--END--
+#+end_SRC
+
+* C++
+
+We now write some C++ to load this automaton [[file:tut20.org][as we did before]], and in
+=custom_print()= we print it out in a custom way by explicitly
+iterating over its states and edges.
+
+The only tricky part is to print the edge labels.  Since they are
+BDDs, printing them directly would just show the identifiers of BDDs
+involved.  Using =bdd_print_formula= and passing it the BDD dictionary
+associated to the automaton is one way to print the edge labels.
+
+Each automaton stores a vector the atomic propositions it uses.  You
+can iterate on that vector using the =ap()= member function.  If you
+want to convert an atomic proposition (represented by a =formula=)
+into a BDD, use the =bdd_dict::varnum()= method to obtain the
+corresponding BDD variable number, and then use for instance
+=bdd_ithvar()= to convert this BDD variable number into an actual BDD.
+
+#+BEGIN_SRC C++
+  #include <string>
+  #include <iostream>
+  #include <spot/parseaut/public.hh>
+  #include <spot/twaalgos/hoa.hh>
+  #include <spot/twa/bddprint.hh>
+
+  void custom_print(std::ostream& out, spot::twa_graph_ptr& aut);
+
+  int main()
+  {
+    spot::parsed_aut_ptr pa = parse_aut("tut21.hoa", spot::make_bdd_dict());
+    if (pa->format_errors(std::cerr))
+      return 1;
+    // This cannot occur when reading a never claim, but
+    // it could while reading a HOA file.
+    if (pa->aborted)
+      {
+        std::cerr << "--ABORT-- read\n";
+        return 1;
+      }
+    custom_print(std::cout, pa->aut);
+  }
+
+  void custom_print(std::ostream& out, spot::twa_graph_ptr& aut)
+  {
+    // We need the dictionary to print the BDDs that label the edges
+    const spot::bdd_dict_ptr& dict = aut->get_dict();
+
+    // Some meta-data...
+    out << "Acceptance: " << aut->get_acceptance() << '\n';
+    out << "Number of sets: " << aut->num_sets() << '\n';
+    out << "Number of states: " << aut->num_states() << '\n';
+    out << "Number of edges: " << aut->num_edges() << '\n';
+    out << "Initial state: " << aut->get_init_state_number() << '\n';
+    out << "Atomic propositions:";
+    for (spot::formula ap: aut->ap())
+        out << ' ' << ap << " (=" << dict->varnum(ap) << ')';
+    out << '\n';
+
+    // Arbitrary data can be attached to automata, by giving them
+    // a type and a name.  The HOA parser and printer both use the
+    // "automaton-name" to name the automaton.
+    if (auto name = aut->get_named_prop<std::string>("automaton-name"))
+       out << "Name: " << *name << '\n';
+
+    // For the following prop_*() methods, the return value is an
+    // instance of the spot::trival class that can represent
+    // yes/maybe/no.  These properties correspond to bits stored in the
+    // automaton, so they can be queried in constant time.  They are
+    // only set whenever they can be determined at a cheap cost: for
+    // instance an algorithm that always produces deterministic automata
+    // would set the deterministic property on its output.  In this
+    // example, the properties that are set come from the "properties:"
+    // line of the input file.
+    out << "Complete: " << aut->prop_complete() << '\n';
+    out << "Deterministic: " << (aut->prop_universal()
+                                 && aut->is_existential()) << '\n';
+    out << "Unambiguous: " << aut->prop_unambiguous() << '\n';
+    out << "State-Based Acc: " << aut->prop_state_acc() << '\n';
+    out << "Terminal: " << aut->prop_terminal() << '\n';
+    out << "Weak: " << aut->prop_weak() << '\n';
+    out << "Inherently Weak: " << aut->prop_inherently_weak() << '\n';
+    out << "Stutter Invariant: " << aut->prop_stutter_invariant() << '\n';
+
+    // States are numbered from 0 to n-1
+    unsigned n = aut->num_states();
+    for (unsigned s = 0; s < n; ++s)
+      {
+        out << "State " << s << ":\n";
+
+        // The out(s) method returns a fake container that can be
+        // iterated over as if the contents was the edges going
+        // out of s.  Each of these edges is a quadruplet
+        // (src,dst,cond,acc).  Note that because this returns
+        // a reference, the edge can also be modified.
+        for (auto& t: aut->out(s))
+          {
+            out << "  edge(" << t.src << " -> " << t.dst << ")\n    label = ";
+            spot::bdd_print_formula(out, dict, t.cond);
+            out << "\n    acc sets = " << t.acc << '\n';
+          }
+      }
+  }
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Acceptance: Inf(0)&Inf(1)
+Number of sets: 2
+Number of states: 17
+Number of edges: 80
+Initial state: 0
+Atomic propositions: a (=0) b (=1) c (=2)
+Name: F(a | G(Fb & Fc))
+Complete: no
+Deterministic: no
+Unambiguous: yes
+State-Based Acc: maybe
+Terminal: maybe
+Weak: maybe
+Inherently Weak: maybe
+Stutter Invariant: yes
+State 0:
+  edge(0 -> 1)
+    label = a
+    acc sets = {}
+  edge(0 -> 2)
+    label = !a
+    acc sets = {}
+  edge(0 -> 3)
+    label = !a & b & c
+    acc sets = {}
+  edge(0 -> 4)
+    label = !a & !b & c
+    acc sets = {}
+  edge(0 -> 5)
+    label = !a & !c
+    acc sets = {}
+  edge(0 -> 6)
+    label = !a & !c
+    acc sets = {}
+State 1:
+  edge(1 -> 1)
+    label = 1
+    acc sets = {0,1}
+State 2:
+  edge(2 -> 2)
+    label = !b & !c
+    acc sets = {}
+  edge(2 -> 2)
+    label = !b & c
+    acc sets = {1}
+  edge(2 -> 2)
+    label = b & !c
+    acc sets = {0}
+  edge(2 -> 2)
+    label = b & c
+    acc sets = {0,1}
+State 3:
+  edge(3 -> 3)
+    label = !a & b & c
+    acc sets = {}
+  edge(3 -> 4)
+    label = !a & !b & c
+    acc sets = {}
+  edge(3 -> 5)
+    label = !a & !c
+    acc sets = {}
+  edge(3 -> 6)
+    label = !a & !c
+    acc sets = {}
+  edge(3 -> 7)
+    label = a & !c
+    acc sets = {}
+  edge(3 -> 8)
+    label = a & !b & c
+    acc sets = {}
+  edge(3 -> 9)
+    label = a & b & c
+    acc sets = {}
+  edge(3 -> 10)
+    label = a & !b & c
+    acc sets = {}
+  edge(3 -> 11)
+    label = a & b & !c
+    acc sets = {}
+  edge(3 -> 12)
+    label = a & !b & !c
+    acc sets = {}
+  edge(3 -> 13)
+    label = a & !b & !c
+    acc sets = {}
+State 4:
+  edge(4 -> 3)
+    label = !a & b & c
+    acc sets = {}
+  edge(4 -> 4)
+    label = !a & !b & c
+    acc sets = {}
+  edge(4 -> 5)
+    label = !a & !c
+    acc sets = {}
+  edge(4 -> 6)
+    label = !a & b & !c
+    acc sets = {}
+  edge(4 -> 7)
+    label = a & b & !c
+    acc sets = {}
+  edge(4 -> 8)
+    label = a & !b
+    acc sets = {}
+  edge(4 -> 9)
+    label = a & b & c
+    acc sets = {}
+  edge(4 -> 10)
+    label = a & !b & c
+    acc sets = {}
+  edge(4 -> 11)
+    label = a & b & !c
+    acc sets = {}
+  edge(4 -> 12)
+    label = a & !b & !c
+    acc sets = {}
+  edge(4 -> 14)
+    label = a & !b & !c
+    acc sets = {}
+  edge(4 -> 15)
+    label = !a & !b & !c
+    acc sets = {}
+State 5:
+  edge(5 -> 3)
+    label = !a & b & c
+    acc sets = {}
+  edge(5 -> 4)
+    label = !a & !b & c
+    acc sets = {}
+  edge(5 -> 5)
+    label = !a & !c
+    acc sets = {}
+  edge(5 -> 8)
+    label = a & !b & c
+    acc sets = {}
+  edge(5 -> 9)
+    label = a & b & c
+    acc sets = {}
+  edge(5 -> 10)
+    label = a & !b & c
+    acc sets = {}
+  edge(5 -> 11)
+    label = a & b & !c
+    acc sets = {}
+  edge(5 -> 12)
+    label = a & !b & !c
+    acc sets = {}
+  edge(5 -> 13)
+    label = a & !b & !c
+    acc sets = {}
+State 6:
+  edge(6 -> 6)
+    label = !a & !c
+    acc sets = {}
+  edge(6 -> 7)
+    label = a & !c
+    acc sets = {}
+State 7:
+  edge(7 -> 7)
+    label = !c
+    acc sets = {0,1}
+State 8:
+  edge(8 -> 8)
+    label = !b
+    acc sets = {0,1}
+State 9:
+  edge(9 -> 7)
+    label = !c
+    acc sets = {}
+  edge(9 -> 8)
+    label = !b & c
+    acc sets = {}
+  edge(9 -> 9)
+    label = b & c
+    acc sets = {}
+  edge(9 -> 10)
+    label = !b & c
+    acc sets = {}
+  edge(9 -> 11)
+    label = b & !c
+    acc sets = {}
+  edge(9 -> 12)
+    label = !b & !c
+    acc sets = {}
+  edge(9 -> 13)
+    label = !b & !c
+    acc sets = {}
+State 10:
+  edge(10 -> 7)
+    label = b & !c
+    acc sets = {}
+  edge(10 -> 9)
+    label = b & c
+    acc sets = {}
+  edge(10 -> 10)
+    label = !b & c
+    acc sets = {}
+  edge(10 -> 11)
+    label = b & !c
+    acc sets = {}
+  edge(10 -> 12)
+    label = !b & !c
+    acc sets = {}
+  edge(10 -> 14)
+    label = !b & !c
+    acc sets = {}
+State 11:
+  edge(11 -> 8)
+    label = !b & c
+    acc sets = {}
+  edge(11 -> 9)
+    label = b & c
+    acc sets = {}
+  edge(11 -> 10)
+    label = !b & c
+    acc sets = {}
+  edge(11 -> 11)
+    label = b & !c
+    acc sets = {}
+  edge(11 -> 12)
+    label = !b & !c
+    acc sets = {}
+  edge(11 -> 13)
+    label = !b & !c
+    acc sets = {}
+State 12:
+  edge(12 -> 9)
+    label = b & c
+    acc sets = {}
+  edge(12 -> 10)
+    label = !b & c
+    acc sets = {}
+  edge(12 -> 11)
+    label = b & !c
+    acc sets = {}
+  edge(12 -> 12)
+    label = !b & !c
+    acc sets = {}
+State 13:
+  edge(13 -> 8)
+    label = !b & c
+    acc sets = {}
+  edge(13 -> 13)
+    label = !b & !c
+    acc sets = {}
+State 14:
+  edge(14 -> 7)
+    label = b & !c
+    acc sets = {}
+  edge(14 -> 14)
+    label = !b & !c
+    acc sets = {}
+State 15:
+  edge(15 -> 6)
+    label = !a & b & !c
+    acc sets = {}
+  edge(15 -> 7)
+    label = a & b & !c
+    acc sets = {}
+  edge(15 -> 14)
+    label = a & !b & !c
+    acc sets = {}
+  edge(15 -> 15)
+    label = !a & !b & !c
+    acc sets = {}
+  edge(15 -> 16)
+    label = a & !b & !c
+    acc sets = {}
+State 16:
+  edge(16 -> 16)
+    label = !b & !c
+    acc sets = {0,1}
+#+end_example
+
+* Python
+
+Here is the very same example, but written in Python:
+
+#+BEGIN_SRC python
+  import spot
+
+
+  def custom_print(aut):
+      bdict = aut.get_dict()
+      print("Acceptance:", aut.get_acceptance())
+      print("Number of sets:", aut.num_sets())
+      print("Number of states: ", aut.num_states())
+      print("Initial states: ", aut.get_init_state_number())
+      print("Atomic propositions:", end='')
+      for ap in aut.ap():
+          print(' ', ap, ' (=', bdict.varnum(ap), ')', sep='', end='')
+      print()
+      # Templated methods are not available in Python, so we cannot
+      # retrieve/attach arbitrary objects from/to the automaton.  However the
+      # Python bindings have get_name() and set_name() to access the
+      # "automaton-name" property.
+      name = aut.get_name()
+      if name:
+          print("Name: ", name)
+      print("Deterministic:", aut.prop_universal() and aut.is_existential())
+      print("Unambiguous:", aut.prop_unambiguous())
+      print("State-Based Acc:", aut.prop_state_acc())
+      print("Terminal:", aut.prop_terminal())
+      print("Weak:", aut.prop_weak())
+      print("Inherently Weak:", aut.prop_inherently_weak())
+      print("Stutter Invariant:", aut.prop_stutter_invariant())
+
+      for s in range(0, aut.num_states()):
+          print("State {}:".format(s))
+          for t in aut.out(s):
+              print("  edge({} -> {})".format(t.src, t.dst))
+              # bdd_print_formula() is designed to print on a std::ostream, and
+              # is inconvenient to use in Python.  Instead we use
+              # bdd_format_formula() as this simply returns a string.
+              print("    label =", spot.bdd_format_formula(bdict, t.cond))
+              print("    acc sets =", t.acc)
+
+
+  custom_print(spot.automaton("tut21.hoa"))
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+Acceptance: Inf(0)&Inf(1)
+Number of sets: 2
+Number of states:  17
+Initial states:  0
+Atomic propositions: a (=0) b (=1) c (=2)
+Name:  F(a | G(Fb & Fc))
+Deterministic: no
+Unambiguous: yes
+State-Based Acc: maybe
+Terminal: maybe
+Weak: maybe
+Inherently Weak: maybe
+Stutter Invariant: yes
+State 0:
+  edge(0 -> 1)
+    label = a
+    acc sets = {}
+  edge(0 -> 2)
+    label = !a
+    acc sets = {}
+  edge(0 -> 3)
+    label = !a & b & c
+    acc sets = {}
+  edge(0 -> 4)
+    label = !a & !b & c
+    acc sets = {}
+  edge(0 -> 5)
+    label = !a & !c
+    acc sets = {}
+  edge(0 -> 6)
+    label = !a & !c
+    acc sets = {}
+State 1:
+  edge(1 -> 1)
+    label = 1
+    acc sets = {0,1}
+State 2:
+  edge(2 -> 2)
+    label = !b & !c
+    acc sets = {}
+  edge(2 -> 2)
+    label = !b & c
+    acc sets = {1}
+  edge(2 -> 2)
+    label = b & !c
+    acc sets = {0}
+  edge(2 -> 2)
+    label = b & c
+    acc sets = {0,1}
+State 3:
+  edge(3 -> 3)
+    label = !a & b & c
+    acc sets = {}
+  edge(3 -> 4)
+    label = !a & !b & c
+    acc sets = {}
+  edge(3 -> 5)
+    label = !a & !c
+    acc sets = {}
+  edge(3 -> 6)
+    label = !a & !c
+    acc sets = {}
+  edge(3 -> 7)
+    label = a & !c
+    acc sets = {}
+  edge(3 -> 8)
+    label = a & !b & c
+    acc sets = {}
+  edge(3 -> 9)
+    label = a & b & c
+    acc sets = {}
+  edge(3 -> 10)
+    label = a & !b & c
+    acc sets = {}
+  edge(3 -> 11)
+    label = a & b & !c
+    acc sets = {}
+  edge(3 -> 12)
+    label = a & !b & !c
+    acc sets = {}
+  edge(3 -> 13)
+    label = a & !b & !c
+    acc sets = {}
+State 4:
+  edge(4 -> 3)
+    label = !a & b & c
+    acc sets = {}
+  edge(4 -> 4)
+    label = !a & !b & c
+    acc sets = {}
+  edge(4 -> 5)
+    label = !a & !c
+    acc sets = {}
+  edge(4 -> 6)
+    label = !a & b & !c
+    acc sets = {}
+  edge(4 -> 7)
+    label = a & b & !c
+    acc sets = {}
+  edge(4 -> 8)
+    label = a & !b
+    acc sets = {}
+  edge(4 -> 9)
+    label = a & b & c
+    acc sets = {}
+  edge(4 -> 10)
+    label = a & !b & c
+    acc sets = {}
+  edge(4 -> 11)
+    label = a & b & !c
+    acc sets = {}
+  edge(4 -> 12)
+    label = a & !b & !c
+    acc sets = {}
+  edge(4 -> 14)
+    label = a & !b & !c
+    acc sets = {}
+  edge(4 -> 15)
+    label = !a & !b & !c
+    acc sets = {}
+State 5:
+  edge(5 -> 3)
+    label = !a & b & c
+    acc sets = {}
+  edge(5 -> 4)
+    label = !a & !b & c
+    acc sets = {}
+  edge(5 -> 5)
+    label = !a & !c
+    acc sets = {}
+  edge(5 -> 8)
+    label = a & !b & c
+    acc sets = {}
+  edge(5 -> 9)
+    label = a & b & c
+    acc sets = {}
+  edge(5 -> 10)
+    label = a & !b & c
+    acc sets = {}
+  edge(5 -> 11)
+    label = a & b & !c
+    acc sets = {}
+  edge(5 -> 12)
+    label = a & !b & !c
+    acc sets = {}
+  edge(5 -> 13)
+    label = a & !b & !c
+    acc sets = {}
+State 6:
+  edge(6 -> 6)
+    label = !a & !c
+    acc sets = {}
+  edge(6 -> 7)
+    label = a & !c
+    acc sets = {}
+State 7:
+  edge(7 -> 7)
+    label = !c
+    acc sets = {0,1}
+State 8:
+  edge(8 -> 8)
+    label = !b
+    acc sets = {0,1}
+State 9:
+  edge(9 -> 7)
+    label = !c
+    acc sets = {}
+  edge(9 -> 8)
+    label = !b & c
+    acc sets = {}
+  edge(9 -> 9)
+    label = b & c
+    acc sets = {}
+  edge(9 -> 10)
+    label = !b & c
+    acc sets = {}
+  edge(9 -> 11)
+    label = b & !c
+    acc sets = {}
+  edge(9 -> 12)
+    label = !b & !c
+    acc sets = {}
+  edge(9 -> 13)
+    label = !b & !c
+    acc sets = {}
+State 10:
+  edge(10 -> 7)
+    label = b & !c
+    acc sets = {}
+  edge(10 -> 9)
+    label = b & c
+    acc sets = {}
+  edge(10 -> 10)
+    label = !b & c
+    acc sets = {}
+  edge(10 -> 11)
+    label = b & !c
+    acc sets = {}
+  edge(10 -> 12)
+    label = !b & !c
+    acc sets = {}
+  edge(10 -> 14)
+    label = !b & !c
+    acc sets = {}
+State 11:
+  edge(11 -> 8)
+    label = !b & c
+    acc sets = {}
+  edge(11 -> 9)
+    label = b & c
+    acc sets = {}
+  edge(11 -> 10)
+    label = !b & c
+    acc sets = {}
+  edge(11 -> 11)
+    label = b & !c
+    acc sets = {}
+  edge(11 -> 12)
+    label = !b & !c
+    acc sets = {}
+  edge(11 -> 13)
+    label = !b & !c
+    acc sets = {}
+State 12:
+  edge(12 -> 9)
+    label = b & c
+    acc sets = {}
+  edge(12 -> 10)
+    label = !b & c
+    acc sets = {}
+  edge(12 -> 11)
+    label = b & !c
+    acc sets = {}
+  edge(12 -> 12)
+    label = !b & !c
+    acc sets = {}
+State 13:
+  edge(13 -> 8)
+    label = !b & c
+    acc sets = {}
+  edge(13 -> 13)
+    label = !b & !c
+    acc sets = {}
+State 14:
+  edge(14 -> 7)
+    label = b & !c
+    acc sets = {}
+  edge(14 -> 14)
+    label = !b & !c
+    acc sets = {}
+State 15:
+  edge(15 -> 6)
+    label = !a & b & !c
+    acc sets = {}
+  edge(15 -> 7)
+    label = a & b & !c
+    acc sets = {}
+  edge(15 -> 14)
+    label = a & !b & !c
+    acc sets = {}
+  edge(15 -> 15)
+    label = !a & !b & !c
+    acc sets = {}
+  edge(15 -> 16)
+    label = a & !b & !c
+    acc sets = {}
+State 16:
+  edge(16 -> 16)
+    label = !b & !c
+    acc sets = {0,1}
+#+end_example
+
+#+BEGIN_SRC sh :results silent :exports results
+rm -f tut21.hoa
+#+END_SRC
+
+#  LocalWords:  utf html args mathit src dst cond accsets tgba Fb Fc
+#  LocalWords:  acc Buchi BDDs bdd ap ithvar aut const num init bdict
+#  LocalWords:  varnum sep Templated

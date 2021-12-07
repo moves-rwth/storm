@@ -1,0 +1,200 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2014, 2015, 2019 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs || exit 1
+
+set -e
+
+checkopt_noparse()
+{
+    cat >exp
+    run 0 ltlgrind --sort "$@" > out
+    diff exp out
+}
+
+checkopt()
+{
+    checkopt_noparse "$@"
+    # The result must be parsable
+    ltlfilt out
+}
+
+checkopt -f 'Xp1 U (p4 | (p3 xor (p4 W p0)))' <<EOF
+1
+Xp1
+Xp1 U p4
+Xp1 U (p3 | p4)
+p4 | (p3 xor (p4 W p0))
+Xp1 U (!p3 | p4)
+Xp1 U (p3 xor (p4 W p0))
+Xp1 U (p4 | (p4 W p0))
+Xp1 U (p4 | (p3 xor p4))
+Xp1 U (p4 | (p0 xor p3))
+Xp1 U (p0 | (p0 xor p3))
+p1 U (p4 | (p3 xor (p4 W p0)))
+1 U (p4 | (p3 xor (p4 W p0)))
+Xp1 U (p4 | !(p4 W p0))
+Xp1 W (p4 | (p3 xor (p4 W p0)))
+X(0) U (p4 | (p3 xor (p4 W p0)))
+Xp1 U (p4 | (p3 xor (p4 W 0)))
+Xp4 U (p4 | (p3 xor (p4 W p0)))
+Xp3 U (p4 | (p3 xor (p4 W p0)))
+Xp0 U (p4 | (p3 xor (p4 W p0)))
+Xp1 U (p1 | (p3 xor (p1 W p0)))
+Xp1 U (p3 | (p3 xor (p3 W p0)))
+Xp1 U (p4 | (p1 xor (p4 W p0)))
+Xp1 U (p4 | (p4 xor (p4 W p0)))
+Xp1 U (p4 | (p0 xor (p4 W p0)))
+Xp1 U (p4 | (p3 xor (p4 W p1)))
+Xp1 U (p4 | (p3 xor (p4 W p3)))
+Xp1 U (p4 | (p3 & !(p4 W p0)))
+Xp1 U (p4 | (!p3 & (p4 W p0)))
+EOF
+
+checkopt -f '(Xp4 R p3) W !p0' <<EOF
+1
+!p0
+Xp4 R p3
+p3 W !p0
+Xp4 W !p0
+(p4 R p3) W !p0
+(Xp4 R p3) W p0
+(Xp4 R p3) W 0
+(p3 W Xp4) W !p0
+(X(0) R p3) W !p0
+(Xp3 R p3) W !p0
+(Xp0 R p3) W !p0
+(Xp4 R p4) W !p0
+(Xp4 R p0) W !p0
+(Xp4 R p3) W !p4
+(Xp4 R p3) W !p3
+EOF
+
+checkopt -f 'F(!p2 & p3) | Fp0' -n 4 <<EOF
+Fp0
+F(!p2 & p3)
+Fp0 | Fp3
+(!p2 & p3) | Fp0
+EOF
+
+checkopt -f '{(a | b)[*4] & ((a | b)*; c)} <>-> G(d <-> e) xor f' --split-ops \
+<<EOF
+{{a | b}[*4] & {{a | b}[*];c}}<>-> (f xor G(d -> e))
+{{a | b}[*4] & {{a | b}[*];c}}<>-> (f xor G(e -> d))
+{{a | b}[*4] & {{a | b}[*];c}}<>-> (f xor G(d & e))
+{{a | b}[*4] & {{a | b}[*];c}}<>-> (f & !G(d <-> e))
+{{a | b}[*4] & {{a | b}[*];c}}<>-> (!f & G(d <-> e))
+{{a | b}[*4] & {{a | b}[*];c}}<>-> (f xor G(!d & !e))
+{{{a | b}[*];c} && {{a | b}[*4];[*]}}<>-> (f xor G(d <-> e))
+{{a | b}[*4] && {{a | b}[*];c;[*]}}<>-> (f xor G(d <-> e))
+EOF
+
+
+checkopt -f '!(!XXp1 M X(p4 U p2))' --rewrite-ops <<EOF
+!(!XXp1 R X(p4 U p2))
+!(X(p4 U p2) U !XXp1)
+!(!XXp1 M X(p4 W p2))
+EOF
+
+checkopt -f '!(p0 & !p2 & (p1 W 0))' --remove-multop-operands <<EOF
+!(p0 & !p2)
+!(p0 & (p1 W 0))
+!(!p2 & (p1 W 0))
+EOF
+
+checkopt -f '{p1[*..2] | p2[*3..5] | p3[*6..]}[]-> 0' --simplify-bounds <<EOF
+{p2[*3..5] | p3[*6..] | p1[*0..1]}[]-> 0
+{p2[*3..5] | p3[*6..] | p1[*]}[]-> 0
+{p1[*0..2] | p3[*6..] | p2[*2..5]}[]-> 0
+{p1[*0..2] | p3[*6..] | p2[*0..5]}[]-> 0
+{p1[*0..2] | p3[*6..] | p2[*3..4]}[]-> 0
+{p1[*0..2] | p3[*6..] | p2[*3..]}[]-> 0
+{p1[*0..2] | p2[*3..5] | p3[*5..]}[]-> 0
+{p1[*0..2] | p2[*3..5] | p3[*]}[]-> 0
+EOF
+
+checkopt -f '!F(!X(Xp1 R p2) -> p4)' --remove-one-ap <<EOF
+!F(!X(Xp2 R p2) -> p4)
+!F(!X(Xp4 R p2) -> p4)
+!F(!X(Xp1 R p1) -> p4)
+!F(!X(Xp1 R p4) -> p4)
+!F(!X(Xp1 R p2) -> p1)
+!F(!X(Xp1 R p2) -> p2)
+EOF
+
+checkopt -f '!p4 & (p2 | {{!p1}[*]})' --ap-to-const <<EOF
+0
+!p4
+p2 & !p4
+p2 | {{!p1}[*]}
+!p4 & {{!p1}[*]}
+!p4 & (p2 | {[*]})
+EOF
+
+
+checkopt -f 'F(XXp0 | (p4 & Gp0))' --remove-ops <<EOF
+XXp0 | (p4 & Gp0)
+F(Xp0 | (p4 & Gp0))
+F((p0 & p4) | XXp0)
+EOF
+
+checkopt -f '1 U (p3 <-> p4)' -m 2 <<EOF
+0
+1
+p3
+p4
+!p4
+!p3
+p3 -> p4
+p4 -> p3
+p3 & p4
+1 U p3
+1 U p4
+1 U !p3
+1 U !p4
+!p3 & !p4
+1 U (p3 & !p4)
+1 U (!p3 & p4)
+EOF
+
+checkopt -f 'F({{p2;p0}[:*]}[]-> Xp0)' <<EOF
+1
+FXp0
+F!{{p2;p0}[:*]}
+{{p2;p0}[:*]}[]-> Xp0
+F({p2;p0}[]-> Xp0)
+F({{p2;p0}[:*]}[]-> p0)
+F({p0[*2][:*]}[]-> Xp0)
+F({p2[*2][:*]}[]-> Xp2)
+F({{1;p0}[:*]}[]-> Xp0)
+F({{p2;1}[:*]}[]-> Xp0)
+F({{p2;p0}[:*]}[]-> X(0))
+EOF
+
+echo '1,a,3' > input
+checkopt_noparse input/2 <<EOF
+1,0,3
+1,1,3
+EOF
+
+checkopt_noparse -F input/2 --format '%<,%f,%>,%F,%L' <<EOF
+1,0,3,input,1
+1,1,3,input,1
+EOF

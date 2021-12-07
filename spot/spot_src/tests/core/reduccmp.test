@@ -1,0 +1,497 @@
+#! /bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2009-2014, 2016-2019 Laboratoire de Recherche et
+# Developpement de l'Epita (LRDE).
+# Copyright (C) 2004, 2006 Laboratoire d'Informatique de Paris 6 (LIP6),
+# département Systèmes Répartis Coopératifs (SRC), Université Pierre
+# et Marie Curie.
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# Check LTL reductions
+
+. ./defs || exit 1
+
+set -e
+
+cat >common.txt <<EOF
+# No reduction
+a U b, a U b
+a R b, a R b
+a & b, a & b
+a | b, a | b
+a & (a U b), a & (a U b)
+a | (a U b), a | (a U b)
+
+# Syntactic reduction
+a & (!b R !a), false
+(!b R !a) & a, false
+a & (!b R !a) & c, false
+c & (!b R !a) & a, false
+
+a & (!b M !a), false
+(!b M !a) & a, false
+a & (!b M !a) & c, false
+c & (!b M !a) & a, false
+
+a & (b U a), a
+(b U a) & a, a
+a | (b U a), (b U a)
+(b U a) | a, (b U a)
+a U (b U a), (b U a)
+
+a & (b W a), a
+(b W a) & a, a
+a | (b W a), (b W a)
+(b W a) | a, (b W a)
+a W (b W a), (b W a)
+
+a & (b U a) & a, a
+a & (b U a) & a, a
+a | (b U a) | a, (b U a)
+a | (b U a) | a, (b U a)
+a U (b U a), (b U a)
+
+a & c & (b W a), a & c
+a & d & c & e & f & g & b & (x W (g & f)), a&b&c&d&e&f&g
+(F!a & X(!b R a)) | (Ga & X(b U !a)), F!a & X(!b R a)
+d & ((!a & d) | (a & d)), (!a & d) | (a & d)
+
+a <-> !a, 0
+a <-> a, 1
+a ^ a, 0
+a ^ !a, 1
+
+GFa | FGa, GFa
+XXGa | GFa, GFa
+GFa & FGa, FGa
+XXGa & GFa, XXGa
+
+# Basic reductions
+X(true), true
+X(false), false
+F(true), true
+F(false), false
+
+XGF(f), GF(f)
+
+# not reduced
+a R (b W G(c)), a R (b W G(c))
+# not reduced.
+a M ((a&b) R c), a M ((a&b) R c)
+# not reduced.
+(a&b) W (a U c), (a&b) W (a U c)
+
+# Eventuality and universality class reductions
+FFa, Fa
+FGFa, GFa
+b U Fa, Fa
+b U GFa, GFa
+Ga, Ga
+
+a U XXXFb, XXXFb
+
+# issue 93
+GFa U Ga, FGa
+FGa U Ga, FGa
+GFa U a, GFa U a
+Fa U a, Fa
+GFa R Fa, GFa
+FGa R Fa, GFa
+FGa R a, FGa R a
+Ga R a, Ga
+
+# issue 293
+F(G!p1 | p1) W Fp1, 1
+F(p1 | G!p1) W Fp1, 1
+F(Fp1 -> p1) W Fp1, 1
+G(Fp0 | (p0 M (Fp0 W p0))), GFp0
+G((p0 M (Fp0 W p0)) | Fp0), GFp0
+G((Fp0) W ((p0 M (Fp0 W p0)))), GFp0
+!G((Fp0) W ((p0 M (Fp0 W p0)))), FG!p0
+EOF
+
+cp common.txt nottau.txt
+cat >>nottau.txt<<EOF
+G(true), true
+G(false), false
+
+a M 1, Fa
+a W 0, Ga
+1 U a, Fa
+0 R a, Ga
+
+G(a R b), G(b)
+
+FX(a), XF(a)
+GX(a), XG(a)
+
+(Xf W 0) | X(f W 0), XGf
+XFa & FXa, XFa
+
+GF(a | Xb), GF(a | b)
+GF(a | Fb), GF(a | b)
+GF(Xa | Fb), GF(a | b)
+FG(a & Xb), FG(a & b)
+FG(a & Gb), FG(a & b)
+FG(Xa & Gb), FG(a & b)
+
+X(a) U X(b), X(a U b)
+X(a) R X(b), X(a R b)
+Xa & Xb, X(a & b)
+Xa | Xb, X(a | b)
+
+X(a) M X(b), X(a M b)
+X(a) W X(b), X(a W b)
+X(a) M b, b & X(b U a)
+X(a) R b, b & X(b W a)
+X(a) U b, b | X(b M a)
+X(a) W b, b | X(b R a)
+
+(a U b) & (c U b), (a & c) U b
+(a R b) & (a R c), a R (b & c)
+(a U b) | (a U c), a U (b | c)
+(a R b) | (c R b), (a | c) R b
+
+Xa & FGb, X(a & FGb)
+Xa | FGb, X(a | FGb)
+Xa & GFb, X(a & GFb)
+Xa | GFb, X(a | GFb)
+# The following is not reduced to F(a) & GFb.  because
+# (1) is does not help the translate the formula into a
+#     smaller automaton, and ...
+F(a & GFb), F(a & GFb)
+# (2) ... it would hinder this useful reduction (that helps to
+#     produce a smaller automaton)
+F(f1 & GF(f2)) | F(a & GF(b)), F((f1&GFf2)|(a&GFb))
+# FIXME: Don't we want the opposite rewriting?
+# rewriting Fa & GFb as  F(a & GFb) seems better, but
+# it not clear how that scales to Fa & Fb & GFc...
+Fa & GFb, Fa & GFb
+G(a | GFb), Ga | GFb
+# The following is not reduced to F(a & c) & GF(b) for the same
+# reason as above.
+F(a & GFb & c), F(a & GFb & c)
+G(a | GFb | c), G(a | c) | GFb
+
+GFa <=> GFb, F(G(Fa&Fb)|G(!a&!b))
+FGa | (GFa & GFb), F(Ga | (G(Fa & Fb)))
+
+Gb W a, Gb|a
+a W Fb, a W Fb
+Fb M Fa, Fa & Fb
+a M Gb, a M Gb
+GFa R Xf, X(GFa R f)
+GFa U Xf, X(GFa U f)
+
+a U (b | G(a) | c), a W (b | c)
+a U (G(a)), Ga
+(a U b) | (a W c), a W (b | c)
+(a U b) | Ga, a W b
+
+a R (b & F(a) & c), a M (b & c)
+a R (F(a)), Fa
+(a R b) & (a M c), a M (b & c)
+(a R b) & Fa, a M b
+
+(a U b) & (c W b), (a & c) U b
+(a W b) & (c W b), (a & c) W b
+(a R b) | (c M b), (a | c) R b
+(a M b) | (c M b), (a | c) M b
+
+(a R b) | Gb, a R b
+(a M b) | Gb, a R b
+(a U b) & Fb, a U b
+(a W b) & Fb, a U b
+(a M b) | Gb | (c M b), (a | c) R b
+
+GFGa, FGa
+b R Ga, Ga
+b R FGa, FGa
+
+G(!a M a) M 1, 0
+G(!a M a) U 1, 1
+a R (!a M a), 0
+a W (!a M a), Ga
+
+F(a U b), Fb
+F(a M b), F(a & b)
+G(a R b), Gb
+G(a W b), G(a | b)
+
+Fa W Fb, F(GFa | b)
+Ga M Gb, FGa & Gb
+
+a & XGa, Ga
+a & XG(a&b), (XGb)&(Ga)
+a & b & XG(a&b), G(a&b)
+a & b & X(Ga&Gb), G(a&b)
+a & b & XGa &XG(b), G(a&b)
+a & b & XGa & XGc, b & Ga & XGc
+a & b & X(G(a&d) & b) & X(Gc), b & Ga & X(b & G(c&d))
+a|b|c|X(F(a|b)|F(c)|Gd), F(a|b|c)|XGd
+b|c|X(F(a|b)|F(c)|Gd), b|c|X(F(a|b|c)|Gd)
+
+a | (Xa R b) | c, (b W a) | c
+a | (Xa M b) | c, (b U a) | c
+a | (Xa M b) | (Xa R c), (b U a) | (c W a)
+a | (Xa M b) | XF(a), Fa
+# Gb | Fa ?
+a | (Xa R b) | XF(a), (b W a) | Fa
+a & (Xa W b) & c, (b R a) & c
+a & (Xa U b) & c, (b M a) & c
+a & (Xa W b) & (Xa U c), (b R a) & (c M a)
+a & (Xa W b) & XGa, Ga
+# Fb & Ga ?
+a & (Xa U b) & XGa, (b M a) & Ga
+a|(c&b&X((b&c) U a))|d, ((b&c) U a)|d
+a|(c&X((b&c) W a)&b)|d, ((b&c) W a)|d
+a&(c|b|X((b|c) M a))&d, ((b|c) M a)&d
+a&(c|X((b|c) R a)|b)&d, ((b|c) R a)&d
+g R (f|g|h), (f|h) W g
+g M (f|g|h), (f|h) U g
+g U (f&g&h), (f&h) M g
+g W (f&g&h), (f&h) R g
+
+# Syntactic implication
+(a & b) R (a R c), (a & b)R c
+a R ((a & b) R c), (a & b)R c
+a R ((a & b) M c), (a & b)M c
+a M ((a & b) M c), (a & b)M c
+(a & b) M (a R c), (a & b)M c
+(a & b) M (a M c), (a & b)M c
+
+a U ((a & b) U c), a U c
+(a&c) U (b R (c U d)), b R (c U d)
+(a&c) U (b R (c W d)), b R (c W d)
+(a&c) U (b M (c U d)), b M (c U d)
+(a&c) U (b M (c W d)), b M (c W d)
+
+(a R c) R (b & a), c R (b & a)
+(a M c) R (b & a), c R (b & a)
+
+a W ((a&b) U c), a W c
+a W ((a&b) W c), a W c
+
+(a M c) M (b&a), c M (b&a)
+
+((a&c) U b) U c, b U c
+((a&c) W b) U c, b U c
+((a&c) U b) W c, b W c
+((a&c) W b) W c, b W c
+(a R b) R (c&a), b R (c&a)
+(a M b) R (c&a), b R (c&a)
+(a R b) M (c&a), b M (c&a)
+(a M b) M (c&a), b M (c&a)
+
+(x M y) M y, x M y
+(x R y) R y, x R y
+(x & y) M y, x M y
+(x & y) R y, x R y
+
+(a R (b&c)) R (c), (a&b) R c
+(a M (b&c)) R (c), (a&b) R c
+# not reduced
+(a R (b&c)) M (c), (a R (b&c)) M (c)
+(a M (b&c)) M (c), (a&b) M c
+(a W (c&b)) W b, (a W (c&b)) | b
+(a U (c&b)) W b, (a U (c&b)) | b
+(a U (c&b)) U b, (a U (c&b)) | b
+# not reduced
+(a W (c&b)) U b, (a W (c&b)) U b
+
+!x U (x & Fa), F(x & Fa)
+!x R (x | Ga), G(x | Ga)
+!x U ((x | c) & Fa & Fb), F((x | c) & Fa & Fb)
+!x R ((x & c) | Ga | Gb), G((x & c) | Ga | Gb)
+
+G!f | F((f|g) & Fa & Fb), !f W ((f | g) & Fa & Fb)
+F!f & G((f&g) | Ga | Gb), !f M ((f & g) | Ga | Gb)
+
+(x|b) W (x|a), b W (x|a)
+(x|b) U (x|a), b U (x|a)
+
+!x U ((x | c) & Fa & Fb), F((x | c) & Fa & Fb)
+!x R ((x & c) | Ga | Gb), G((x & c) | Ga | Gb)
+
+# Eventuality and universality class reductions
+Fa M b, Fa & b
+GFa M b, GFa & b
+
+G(a & XFb), G(a & Fb)
+G(a & XF(b & XFc & Fd)), G(a & Fb & Fc & Fd)
+GF(a & XF(b & Fc)), G(Fa & Fb & Fc)
+F(a | XGb), F(a | Gb)
+F(a | XG(b | XGc | Gd)), F(a | Gb | Gc | Gd)
+FG(a | XG(b | Gc)), F(Ga | Gb | Gc)
+
+Fa|Xb|GFc, Fa | X(b|GFc)
+Fa|GFc, F(a|GFc)
+FGa|GFc, F(Ga|GFc)
+Ga&Xb&FGc, Ga & X(b&FGc)
+Ga&Xb&GFc, Ga & X(b&GFc)
+Ga&GFc, G(a&Fc)
+G(a|b|GFc|GFd|FGe|FGf), G(a|b)|GF(c|d)|F(Ge|Gf)
+G(a|b)|GFc|GFd|FGe|FGf, G(a|b)|GF(c|d)|F(Ge|Gf)
+X(a|b)|GFc|GFd|FGe|FGf, X(a|b|GF(c|d)|F(Ge|Gf))
+Xa&Xb&GFc&GFd&Ge, X(a&b&G(Fc&Fd))&Ge
+
+# F comes in front when possible...
+GFc|GFd|FGe|FGf, F(GF(c|d)|Ge|Gf)
+G(GFc|GFd|FGe|FGf), F(GF(c|d)|Ge|Gf)
+
+F(G(a | Gb)), F(Ga | Gb)
+G(F(a & Fb)), G(Fa & Fb)
+# These two are not reduced by default
+F(G(a | Fb)), F(G(a | Fb))
+G(F(a | Gb)), G(F(a | Gb))
+
+# issue #385
+F(G(a & Fb)), G(Fb & FGa)
+G(F(a & Gb)), G(Fa & FGb)
+Ge | XGF(Ge & X(c & Fd)), Ge | G(Fd & FGe & Fc)
+G!GXXe -> GF(b & c & Gc), F(G(Fb & FGc) | Ge)
+GFX((e & XXXa) -> (e & X!d)), GF(!a | !d | !e)
+!GFX((e & XXXa) -> (e & X!d)), FG(a & d & e)
+
+# Because reduccmp will translate the formula,
+# this also check for an old bug in ltl2tgba_fm.
+{(c&!c)[->0..1]}!, 0
+
+# Tricky case that used to break the translator,
+# because it was translating closer on-the-fly
+# without pruning the rational automaton.
+{(c&!c)[=2]}, 0
+
+{a && b && c*} <>-> d, a&b&c&d
+{a && b && c[*1..3]} <>-> d, a&b&c&d
+{a && b && c[->0..2]} <>-> d, a&b&c&d
+{a && b && c[+]} <>-> d, a&b&c&d
+{a && b && c[=1]} <>-> d, a&b&c&d
+{a && b && d[=2]} <>-> d, 0
+{a && b && d[*2..]} <>-> d, 0
+{a && b && d[->2..4]} <>-> d, 0
+{a && { c* : b* : (g|h)*}} <>-> d, a & c & b & (g | h) & d
+{a && {b;c}} <>-> d, 0
+{a && {(b;c):e}} <>-> d, 0
+# until better
+{a && {b*;c*}} <>-> d, {a && {b*|c*}} <>-> d
+# until better
+{a && {(b*;c*):e}} <>-> d, {a && {b*|c*} && e} <>-> d
+{a && {b*;c}} <>-> d, a & c & d
+{a && {(b*;c):e}} <>-> d, a & c & d & e
+{a && {b;c*}} <>-> d, a & b & d
+{a && {(b;c*):e}} <>-> d, a & b & d & e
+{{{b1;r1*}&&{b2;r2*}};c}, b1&b2&X{{r1*&&r2*};c}
+{{b1:r1*}&&{b2:r2*}}, {{b1&&b2}:{r1*&&r2*}}
+{{r1*;b1}&&{r2*;b2}}, {{r1*&&r2*};{b1&&b2}}
+{{r1*:b1}&&{r2*:b2}}, {{r1*&&r2*}:{b1&&b2}}
+{{a;b*;c}&&{d;e*}&&{f*;g}&&{h*}}, {{f*;g}&&{h*}&&{{a&&d};{e* && {b*;c}}}}
+{{{b1;r1*}&{b2;r2*}};c}, b1&b2&X{{r1*&r2*};c}
+{{b1:(r1;x1*)}&{b2:(r2;x2*)}}, {{b1&&b2}:{{r1&&r2};{x1*&x2*}}}
+# Not reduced
+{{b1:r1*}&{b2:r2*}}, {{b1:r1*}&{b2:r2*}}
+# Not reduced
+{{r1*;b1}&{r2*;b2}}, {{r1*;b1}&{r2*;b2}}
+# Not reduced
+{{r1*:b1}&{r2*:b2}}, {{r1*:b1}&{r2*:b2}}
+{{a;b*;c}&{d;e*}&{f*;g}&{h*}}, {{f*;g}&{h*}&{{a&&d};{e* & {b*;c}}}}
+{a;(b*;c*;([*0]+{d;e}))*}!, {a;{b|c|{d;e}}*}!
+{a&b&c*}|->!Xb, (X!b | !(a & b)) & (!(a & b) | !c | X(!c R !b))
+{[*]}[]->b, Gb
+{a;[*]}[]->b, Gb | !a
+{[*];a}[]->b, G(b | !a)
+{a;b;[*]}[]->c, !a | X(!b | Gc)
+{a;a;[*]}[]->c, !a | X(!a | Gc)
+{s[*]}[]->b, b W !s
+{s[+]}[]->b, b W !s
+{s[*2..]}[]->b, !s | X(b W !s)
+{a;b*;c;d*}[]->e, !a | X(!b R ((e & X(e W !d)) | !c))
+{a:b*:c:d*}[]->e, !a | ((!c | (e W !d)) W !b)
+{a|b*|c|d*}[]->e, (e | !(a | c)) & (e W !b) & (e W !d)
+{{[*0]|a};b;{[*0]|a};c;e[*]}[]->f,{{[*0]|a};b;{[*0]|a}}[]->X((f&X(f W !e))|!c)
+{(a[*]|b)[*0..1];c}, {{b | a[*]};c}
+{{a|b*};1}, 1
+!{{a|b*};1}, 0
+{{a|b[+]};1}, a|b
+!{{a|b[+]};1}, !a&!b
+{{{a|b[+]}&c[*]};1}, {{a|b[+]}&c[*]}
+!{{{a|b[+]}&c[*]};1}, !{{a|b[+]}&c[*]}
+
+{a&b&c*}<>->!Xb, (a & b & X!b) | (a & b & c & X(c U !b))
+{[*]}<>->b, Fb
+{a;[*]}<>->b, Fb & a
+{[*];a}<>->b, F(a & b)
+{a;b;[*]}<>->c, a & X(b & Fc)
+{a;a;[*]}<>->c, a & X(a & Fc)
+{s[*]}<>->b, b M s
+{s[+]}<>->b, b M s
+{s[*2..]}<>->b, s & X(b M s)
+{1:a*}!, a
+{(1;1):a*}!, Xa
+{a;b*;c;d*}<>->e, a & X(b U (c & (e | X(e M d))))
+{a:b*:c:d*}<>->e, a & ((c & (e M d)) M b)
+{a|b*|c|d*}<>->e, ((a | c) & e) | (e M b) | (e M d)
+{{[*0]|a};b;{[*0]|a};c;e[*]}<>->f, {{[*0]|a};b;{[*0]|a}}<>->X(c&(f|X(f M e)))
+{a;b[*];c[*];e;f*}, a & X({b*;c*;e})
+{a;b*;(a* && (b;c));c*}, a & X({b*;(a* && (b;c))})
+{a;a;b[*2..];b}, a & X(a & X(b & X(b & Xb)))
+!{a;a;b[*2..];b}, !a | X(!a | X(!b | X(!b | X!b)))
+!{a;c[*];e;f*}, !a | X!{c[*];e}
+!{a;b*;(a* && (b;c));c*}, !a | X(!{b*;(a* && (b;c))})
+{(a;c*;d)|(b;c)}, (a & X{c*;d}) | (b & Xc)
+!{(a;c*;d)|(b;c)}, (X(!{c*;d}) | !a) & (X!c | !b)
+(Xc R b) & (Xc W 0), b & XGc
+{{c*|1}[*0..1]}<>-> v, v | (v M c)
+{{b*;c*}[*3..5]}<>-> v, {{b*;c*}[*1..5]} <>-> v
+{{b*&c*}[*3..5]}<>-> v, {{b[+]|c[+]}[*1..5]} <>-> v
+{((a*;b)+[*0])[*4..6]}!, {((a*;b))[*1..6]}!
+# issue 81
+{e[*0..5]}<>->f, {e[*1..5]}<>->f
+{e[*0..5]}[]->f, {e[*1..5]}[]->f
+{(e+[*0])[*0..5]}[]->f, {e[*1..5]}[]->f
+# issue 185
+GF(a && GF(b) && c), G(F(a & c) & Fb)
+# not reduced
+{a;(b[*2..4];c*;([*0]+{d;e}))*}!, {a;(b[*2..4];c*;([*0]+{d;e}))*}!
+{c[*];e[*]}[]-> a, {c[*];e[*]}[]-> a
+# first_match
+{first_match(a*);b}, b
+{first_match(a)}, a
+{first_match(a;b*)}, a
+{first_match(a;c;b*)}, a & Xc
+{first_match(a;c;b*;e)}, a & X(c & X{first_match(b[*];e)})
+{first_match(a;c;b*;(e | [*0]))}, a & Xc
+{first_match(a;c;b[+];(e | [*0]))}, a & X(c & Xb)
+{first_match(b[+];(e | [*0]))}, b
+{first_match(b[*2..3])}, b & Xb
+{first_match(a;b[*2..3];a)}, a & X(b & X(b & X{first_match(b[*0..1];a)}))
+{first_match(b:a[*2][+])}, {first_match(b:a[*2])}
+{first_match(b[*3]:a[*2][+])}, b & X(b & X{first_match(b:a[*2])})
+{first_match((a | (b;b))[*2..3])}, {first_match((a | b[*2])[*2])}
+{first_match((a | (b;b))[:*2..3])}, {first_match((a | b[*2])[:*2])}
+{first_match(a;(a | (b;b))[*2..3])}, a & X{first_match((a | b[*2])[*2])}
+{first_match(a:(a | (b;b))[*2..3])}, {first_match(a:(a | b[*2])[*2])}
+{first_match(a;(a | (b;b))[:*2..3])}, a & X{first_match((a | b[*2])[:*2])}
+{first_match(a:(a | (b;b))[:*2..3])}, {first_match(a:(a | b[*2])[:*2])}
+{first_match(1:e[*0..3])[*]}[]-> c, c W !e
+{first_match(first_match(a*;e);b)}[]->a, {first_match(a[*];e)}[]-> X(a | !b)
+{first_match(first_match(a*;e):b*)}[]->a, {first_match(a[*];e)}[]-> (a | !b)
+EOF
+
+run 0 ../reduccmp nottau.txt
+run 0 ../reductaustr common.txt

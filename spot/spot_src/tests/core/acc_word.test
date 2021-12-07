@@ -1,0 +1,162 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016, 2017, 2018, 2019 Laboratoire de Recherche et Développement
+# de l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+. ./defs
+
+set -e
+
+# The --accept-word option filters automata that accept the given word
+# If several words are given, it filters automata that accept ALL words
+ltl2tgba 'G!a' | autfilt --accept-word 'b; cycle{!a}' -q
+ltl2tgba 'a U b' | autfilt --accept-word 'a; a; cycle{b}' -q
+ltl2tgba 'F(!a&b)' |
+    autfilt --accept-word 'b; cycle{b; !a&b}' --accept-word 'cycle{b}' -q
+ltl2tgba -f 'a U b' |
+    autfilt --accept-word='cycle{!a}' --accept-word='a;cycle{b}' -q
+
+ltl2tgba -f 'a U b' | autfilt --accept-word='cycle{!b}' -q && exit 1
+
+# An example from the documentation:
+randltl -n -1 a b | ltlfilt --simplify --uniq | ltl2tgba |
+  autfilt --accept-word='a&!b;cycle{!a&!b}' --accept-word='!a&!b;cycle{a&b}' \
+          --reject-word='cycle{b}' --stats=%M -n 3 > out
+cat >expect <<EOF
+F!b
+!b
+F(!a & !b)
+EOF
+diff out expect
+
+# The same, without using automata explicitly
+randltl -n -1 a b | ltlfilt --simplify --uniq \
+  --accept-word='a&!b;cycle{!a&!b}' --accept-word='!a&!b;cycle{a&b}' \
+  --reject-word='cycle{b}' -n 3 > out
+diff out expect
+
+# Test syntax errors
+autfilt --reject-w='foobar' </dev/null 2>error && exit 1
+autfilt --accept-w='cycle{foo' </dev/null 2>>error && exit 1
+cat error
+cat >expect <<EOF
+autfilt: failed to parse the argument of --reject-word:
+>>> foobar
+          ^
+A twa_word must contain a cycle
+
+autfilt: failed to parse the argument of --accept-word:
+>>> cycle{foo
+             ^
+Missing ';' or '}' after formula
+
+EOF
+diff expect error
+
+
+ltl2tgba 'a U b' | autfilt -H1.1 --highlight-word='cycle{b}' >out
+cat >expected <<EOF
+HOA: v1.1
+name: "a U b"
+States: 2
+Start: 1
+AP: 2 "b" "a"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc !complete
+properties: deterministic stutter-invariant terminal
+spot.highlight.edges: 1 1 2 1
+--BODY--
+State: 0 {0}
+[t] 0
+State: 1
+[0] 0
+[!0&1] 1
+--END--
+EOF
+diff expected out
+
+ltl2tgba 'Fa & Fb' |
+    autfilt -H1.1 \
+            --highlight-word='2,!a&!b;cycle{!a&b;a&b}' \
+            --highlight-word='3,!a&!b;cycle{a&!b;a&b}' >out
+cat >expected <<EOF
+HOA: v1.1
+name: "Fa & Fb"
+States: 4
+Start: 2
+AP: 2 "a" "b"
+acc-name: Buchi
+Acceptance: 1 Inf(0)
+properties: trans-labels explicit-labels state-acc complete
+properties: deterministic stutter-invariant terminal
+spot.highlight.edges: 1 3 2 3 5 3 6 3 7 2 8 2
+--BODY--
+State: 0 {0}
+[t] 0
+State: 1
+[1] 0
+[!1] 1
+State: 2
+[0&1] 0
+[0&!1] 1
+[!0&!1] 2
+[!0&1] 3
+State: 3
+[0] 0
+[!0] 3
+--END--
+EOF
+diff expected out
+
+
+for w in ',!a&!b;cycle{!a&b;a&b}' '-1,cycle{a}' '1 cycle{a}'; do
+    autfilt --highlight-word="$w" </dev/null 2>stderr && exit 1
+    test $? -eq 2
+    cat stderr
+    grep 'failed to parse the argument of --highlight-word' stderr
+done
+
+
+# highlight-word does not yet work with Fin acceptance
+ltl2tgba -G -D 'FGa' | autfilt --highlight-word='cycle{a}' 2>stderr && exit 1
+test $? -eq 2
+grep 'highlight-word.*Fin' stderr
+
+
+ltlfilt -f 'GFa' --accept-word 'cycle{!a}' && exit 1
+ltlfilt -f 'GF!a' --accept-word 'cycle{!a}'
+
+cat >input <<EOF
+{a ##[2:3] b} |-> c
+{first_match(a ##[2:3] b)} |-> c
+EOF
+test 2 = `ltlfilt -c input --accept-word 'a;!b&!c;!b&!c;b&c;cycle{1}'`
+test 2 = `ltlfilt -c input --accept-word 'a;!b&!c;b&c;cycle{1}'`
+test 0 = `ltlfilt -c input --accept-word 'a;!b;b&!c;b&c;cycle{1}'`
+test 2 = `ltlfilt -c input --accept-word 'a;!b;b&c;b&c;cycle{1}'`
+test 1 = `ltlfilt -c input --accept-word 'a;!b;b&c;b&!c;cycle{1}'`
+
+L='ltlfilt -c input --accept-word'
+cat >input <<EOF
+{(a ##[2:3] b):(c ##[1:2] d)} |-> e
+{first_match(a ##[2:3] b):first_match(c ##[1:2] d)} |-> e
+EOF
+test 2 = `$L 'a;!b&!c;!b&!c;b&c;b&c&d&e;cycle{1}'`
+test 1 = `$L 'a;!b&!c;!b&!c;b&c;b&c&d&e;b&c&d&!e;cycle{1}'`
+test 1 = `$L 'a;!b&!c;b&c;b&c&d&e;b&c&d&!e;cycle{1}'`

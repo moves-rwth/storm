@@ -1,0 +1,56 @@
+#!/bin/sh
+# -*- coding: utf-8 -*-
+# Copyright (C) 2016 Laboratoire de Recherche et Développement de
+# l'Epita (LRDE).
+#
+# This file is part of Spot, a model checking library.
+#
+# Spot is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Spot is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# While running some benchmark, Tomáš Babiak found that Spot took too
+# much time (i.e. >1h) to translate those six formulae.  It turns out
+# that the WDBA minimization was performed after the degeneralization
+# algorithm, while this is not necessary (WDBA will produce a BA, so
+# we may as well skip degeneralization).  Translating these formulae
+# in the test-suite ensure that they don't take too much time (the
+# buildfarm will timeout if it does).
+
+. ./defs
+
+set -e
+
+run 0 ../trival > trival.out
+
+cat > expected <<EOF
+no && no == no
+no && maybe == no
+no && yes == no
+maybe && no == no
+maybe && maybe == maybe
+maybe && yes == maybe
+yes && no == no
+yes && maybe == maybe
+yes && yes == yes
+no || no == no
+no || maybe == maybe
+no || yes == yes
+maybe || no == maybe
+maybe || maybe == maybe
+maybe || yes == yes
+yes || no == yes
+yes || maybe == yes
+yes || yes == yes
+EOF
+
+diff trival.out expected

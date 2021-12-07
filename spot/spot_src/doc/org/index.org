@@ -1,0 +1,82 @@
+# -*- coding: utf-8 -*-
+#+TITLE: Spot: a platform for LTL and ω-automata manipulation
+#+DESCRIPTION: Spot is a library and tool suite for LTL and ω-automata
+#+KEYWORDS: Spot,C++14,library,platform,framework,tool-suite,LTL,PSL,omega-automata
+#+INCLUDE: setup.org
+#+HTML_HEAD_EXTRA: <style>#org-div-home-and-up { display: none; }</style>
+
+Spot is a C++14 library for LTL, ω-automata manipulation and model
+checking.  It has the following notable features:
+
+- Support for [[file:concepts.org::#ltl][LTL]] (several syntaxes supported) and
+  [[file:concepts.org::#psl][a subset of the linear fragment of PSL]].
+- Support for ω-automata with [[file:concepts.org::#acceptance-condition][arbitrary acceptance condition]].
+- Support for [[file:concepts.org::#trans-acc][transition-based acceptance]] (state-based acceptance is
+  supported by a reduction to transition-based acceptance).
+- The automaton parser can read a stream of automata written in any of
+  four syntaxes ([[file:hoa.org][HOA]], [[http://spinroot.com/spin/Man/never.html][never claims]], [[http://www.tcs.hut.fi/Software/lbtt/doc/html/Format-for-automata.html][LBTT]], [[http://www.ltl2dstar.de/docs/ltl2dstar.html][DSTAR]]).
+- Several algorithms for formula manipulation including: simplifying
+  formulas, testing implication or equivalence, [[https://spot.lrde.epita.fr/ipynb/stutter-inv.html][testing
+  stutter-invariance]], removing some operators by rewriting,
+  translation to automata, testing membership to the [[file:hierarchy.org][temporal
+  hierarchy of Manna & Pnueli]]...
+- Several algorithms for automata manipulation including: product,
+  emptiness checks, simulation-based reductions, minimization of
+  weak-DBA, removal of useless SCCs, acceptance-condition
+  transformations, determinization, [[file:satmin.org][SAT-based minimization of
+  deterministic automata]], etc.
+- In addition to the C++ interface, most of its algorithms are usable
+  via [[file:tools.org][command-line tools]], and via [[file:tut.org][Python bindings]].
+- One command-line tool, called [[file:ltlcross.org][=ltlcross=]], is a rewrite of [[http://www.tcs.hut.fi/Software/lbtt/][LBTT]], but
+  with support for PSL and automata with arbitrary acceptance
+  conditions.  It can be used to test tools that translate LTL into
+  ω-automata, or benchmark them.  A similar tool, [[file:autcross.org][=autcross=]], checks
+  tools that transform automata.
+
+* Latest version
+
+The latest version is *{{{LASTRELEASE}}}* and was released on
+*{{{LASTDATE}}}*.  Please see the [[file:install.org][download and installation instructions]].
+
+* Documentation
+
+- [[file:concepts.org][Basic concepts]].
+- [[file:tools.org][Command-line tools]].
+- [[file:tut.org][Code examples]].
+- [[http://spot.lrde.epita.fr/doxygen/][Doxygen documentation]], generated automatically from the source code.
+- [[https://spot.lrde.epita.fr/tl.pdf][Definition of the temporal operators supported by Spot]].
+- [[file:upgrade2.org][Help for upgrading existing code written for Spot 1.2.x to Spot 2]].
+
+* Try Spot On-line
+
+- [[https://spot.lrde.epita.fr/app/][Our on-line translator]] provides a convenient way to translate LTL or
+  PSL formulas into automata, or to study/compare formulas.
+- [[http://spot-sandbox.lrde.epita.fr/][spot-sandbox]] is a Jupyter notebook with a complete installation of
+  Spot that allows you to try the [[file:tools.org][command-line tools]] (using a shell
+  interface) as well as the Python bindings (in an IPython notebook).
+
+* License
+
+Spot is distributed under a [[http://www.gnu.org/licenses/gpl-3.0.html][GNU GPL v3 license]].
+
+One consequence is that any work based on Spot is covered by that
+license as well.  For instance if you distribute a tool that [[https://en.wikipedia.org/wiki/GNU_General_Public_License#Linking_and_derived_works][links
+with]] Spot, you should distribute the source code of that tool as well.
+
+* Staying in touch
+
+=spot-announce@lrde.epita.fr= is an extremely low-traffic and
+read-only mailing list for release announcements.  If you want to stay
+informed about future releases of Spot, we invite you to [[https://lists.lrde.epita.fr/listinfo/spot-announce][subscribe]].
+
+[[mailto:spot@lrde.epita.fr][=spot@lrde.epita.fr=]] is a list for general discussions and questions
+about Spot. [[https://lists.lrde.epita.fr/listinfo/spot][Subscribe here]] if you want to join, but feel free to send
+in any question (in English) or bug report without subscribing.
+
+* Citing
+
+Our [[file:citing.org][citing page]] has a list of papers you could cite if you need to
+reference Spot in an academic publication.
+
+#  LocalWords:  utf psl acc LBTT DSTAR Pnueli DBA SCCs ltlcross GPL
+#  LocalWords:  autcross LASTRELEASE LASTDATE Doxygen Jupyter IPython
