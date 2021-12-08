@@ -39,7 +39,7 @@ namespace storm {
                 variableGroups[groupIndex].unfolded = true;
 
                 // Now that one group has been unfolded, update which groups can be unfolded
-                for (int i = 0; i < variableGroups.size(); i++){
+                for (uint64_t i = 0; i < variableGroups.size(); i++){
                     if (variableGroups[i].allDependenciesUnfolded)
                         continue;
                     if (variableGroups[i].dependencies.count(i) != 0){
@@ -103,7 +103,7 @@ namespace storm {
 
             std::set<uint32_t> UnfoldDependencyGraph::getGroupsWithNoDependencies() {
                 std::set<uint32_t> res;
-                for (int i = 0; i < variableGroups.size(); i++)
+                for (uint64_t i = 0; i < variableGroups.size(); i++)
                     if (!variableGroups[i].unfolded && variableGroups[i].allVariablesUnfoldable && variableGroups[i].allDependenciesUnfolded)
                         res.insert(i);
 
@@ -206,7 +206,7 @@ namespace storm {
                     variableGroups[component].addVariable(variables[index]);
                 }
 
-                for (int i = 0; i < graph.m_vertices.size(); i++) {
+                for (uint64_t i = 0; i < graph.m_vertices.size(); i++) {
                     for (const auto& outEdge : graph.m_vertices[i].m_out_edges) {
                         unsigned long target = findGroupIndex(variables[outEdge.m_target].expressionVariableName);
                         if (variableGroups[sccs[i]].dependencies.count(target) == 0) {
@@ -215,7 +215,7 @@ namespace storm {
                     }
                 }
 
-                for (int i = 0; i < variableGroups.size(); i++){
+                for (uint64_t i = 0; i < variableGroups.size(); i++){
                     if (variableGroups[i].dependencies.empty()){
                         variableGroups[i].allDependenciesUnfolded = true;
                     }
