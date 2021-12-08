@@ -51,9 +51,7 @@ namespace storm {
                     }
                 }
                 if (hasTransientAssignments){
-                    if (session.isLogEnabled()) {
-                        session.addToLog("Pushing transient location assignments to edge destinations");
-                    }
+                    STORM_LOG_TRACE("Pushing transient location assignments to edge destinations");
                     automaton.pushTransientRealLocationAssignmentsToEdges();
                     automaton.pushEdgeAssignmentsToDestinations();
                 }
@@ -66,7 +64,6 @@ namespace storm {
 
             newModel = session.getModel();
             newModel.finalize();
-            log = session.getLog();
         }
 
         Model const &JaniLocalEliminator::getResult() {
@@ -217,10 +214,6 @@ namespace storm {
             autInfo.potentiallyPartOfProp.clear();
         }
 
-        std::vector<std::string> JaniLocalEliminator::getLog() {
-            return log;
-        }
-
         void JaniLocalEliminator::setProperty(storm::jani::Property &newProperty) {
             auto raw = newProperty.getRawFormula();
             bool supported = false;
@@ -273,7 +266,7 @@ namespace storm {
             actionQueue.push(std::move(action));
         }
 
-        JaniLocalEliminator::Session::Session(Model model, Property property, bool flatten) : model(model), property(property), finished(false), logEnabled(false) {
+        JaniLocalEliminator::Session::Session(Model model, Property property, bool flatten) : model(model), property(property), finished(false) {
             if (flatten && model.getNumberOfAutomata() > 1){
                 flatten_automata();
             }
@@ -377,18 +370,6 @@ namespace storm {
             return expressionVarsInProperty.count(expressionVariableIndex) != 0;
         }
 
-        bool JaniLocalEliminator::Session::isLogEnabled() {
-            return logEnabled;
-        }
-
-        void JaniLocalEliminator::Session::addToLog(const std::string& item) {
-            log.push_back(item);
-        }
-
-        std::vector<std::string> JaniLocalEliminator::Session::getLog() {
-            return log;
-        }
-
         void JaniLocalEliminator::Session::flatten_automata() {
             model = model.flattenComposition();
             automataInfo.clear();
@@ -441,25 +422,25 @@ namespace storm {
                 auto result = solver.check();
 
                 if (result != storm::solver::SmtSolver::CheckResult::Unsat) {
-                    if (isLogEnabled()) {
-                        addToLog("\tAdding missing guard from location " + automaton.getLocation(i).getName());
-                        if (result == storm::solver::SmtSolver::CheckResult::Sat){
-                            auto satisfyingAssignment = solver.getModel();
-                            addToLog("\t\tThe guard was satisfiable with assignment ");
-                            for (auto &var : variables){
-                                if (var.hasIntegerType()){
-                                    addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getIntegerValue(var)));
-                                }
-                                else if (var.hasBooleanType()){
-                                    addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getBooleanValue(var)));
-                                }
-                                else if (var.hasRationalType()){
-                                    addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getRationalValue(var)));
-                                }
-                            }
-                        } else {
-                            addToLog("\t\tThe solver could not determine whether the guard was satisfiable");
-                        }
+                    STORM_LOG_TRACE("\tAdding missing guard from location " + automaton.getLocation(i).getName());
+                    if (result == storm::solver::SmtSolver::CheckResult::Sat){
+                        STORM_LOG_TRACE("\t\tThe guard was satisfiable with assignment\n" << ([&] {
+                          std::string message;
+                          for (auto &var : variables){
+                              if (var.hasIntegerType()){
+                                  message += "\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getIntegerValue(var));
+                              }
+                              else if (var.hasBooleanType()){
+                                  message += "\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getBooleanValue(var));
+                              }
+                              else if (var.hasRationalType()){
+                                  message += "\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getRationalValue(var));
+                              }
+                          }
+                          return message;
+                        })());
+                    } else {
+                        STORM_LOG_TRACE("\t\tThe solver could not determine whether the guard was satisfiable");
                     }
                     std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                     std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
@@ -468,8 +449,8 @@ namespace storm {
                     destinationLocationsAndProbabilities.emplace_back(sinkIndex, model.getExpressionManager().rational(1.0));
 
                     automaton.addEdge(storm::jani::Edge(i, 0, boost::none, templateEdge, destinationLocationsAndProbabilities));
-                } else if (isLogEnabled()) {
-                    addToLog("\tLocation " + automaton.getLocation(i).getName() + " has no missing guard");
+                } else {
+                    STORM_LOG_TRACE("\tLocation " + automaton.getLocation(i).getName() + " has no missing guard");
                 }
             }
         }

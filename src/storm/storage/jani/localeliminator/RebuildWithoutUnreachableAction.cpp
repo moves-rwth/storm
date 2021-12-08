@@ -13,9 +13,7 @@ namespace storm {
             }
 
             void RebuildWithoutUnreachableAction::doAction(JaniLocalEliminator::Session &session) {
-                if (session.isLogEnabled()) {
-                    session.addToLog("Rebuilding model without unreachable locations");
-                }
+                STORM_LOG_TRACE("Rebuilding model without unreachable locations");
                 for (const auto &oldAutomaton : session.getModel().getAutomata()) {
                     Automaton newAutomaton(oldAutomaton.getName(), oldAutomaton.getLocationExpressionVariable());
 
@@ -36,9 +34,7 @@ namespace storm {
                             continue;
                         satisfiableEdges.emplace(&oldEdge);
                     }
-                    if (session.isLogEnabled()) {
-                        session.addToLog("\t" +  std::to_string(satisfiableEdges.size()) + " of " + std::to_string(oldAutomaton.getEdges().size()) + " edges are satisfiable.");
-                    }
+                    STORM_LOG_TRACE("\t" +  std::to_string(satisfiableEdges.size()) + " of " + std::to_string(oldAutomaton.getEdges().size()) + " edges are satisfiable.");
 
                     std::unordered_set<uint64_t> reachableLocs;
                     std::unordered_set<uint64_t> reachableLocsOpen;
@@ -64,9 +60,7 @@ namespace storm {
                             }
                         }
                     }
-                    if (session.isLogEnabled()) {
-                        session.addToLog("\t" +  std::to_string(reachableLocs.size()) + " of " + std::to_string(oldAutomaton.getLocations().size()) + " locations are reachable.");
-                    }
+                    STORM_LOG_TRACE("\t" +  std::to_string(reachableLocs.size()) + " of " + std::to_string(oldAutomaton.getLocations().size()) + " locations are reachable.");
 
                     // Because the session keeps track of which variables might satisfy the property, we need to update
                     // those values (because we're changing the indices of locations). As a first step, we store which
@@ -141,16 +135,12 @@ namespace storm {
                     if (automatonInfo.hasSink) {
                         if (reachableLocs.count(automatonInfo.sinkIndex) == 0){
                             automatonInfo.hasSink = false;
-                            if (session.isLogEnabled()) {
-                                session.addToLog("\tThe sink was eliminated.");
-                            }
+                            STORM_LOG_TRACE("\tThe sink was eliminated.");
                         } else {
                             automatonInfo.sinkIndex = oldToNewLocationIndices[automatonInfo.sinkIndex];
                         }
                     }
-                    if (session.isLogEnabled()) {
-                        session.addToLog("\tNew automaton has " +  std::to_string(newAutomaton.getEdges().size()) + " edges.");
-                    }
+                    STORM_LOG_TRACE("\tNew automaton has " +  std::to_string(newAutomaton.getEdges().size()) + " edges.");
 
                     session.getModel().replaceAutomaton(session.getModel().getAutomatonIndex(oldAutomaton.getName()), newAutomaton);
                 }

@@ -21,9 +21,7 @@ namespace storm {
             void AutomaticAction::doAction(JaniLocalEliminator::Session &session) {
                 if (flatten){
                     if (session.getModel().getAutomata().size() > 1) {
-                        if (session.isLogEnabled()){
-                            session.addToLog("Flattening model");
-                        }
+                        STORM_LOG_TRACE("Flattening model");
                         session.flatten_automata();
                     }
                     std::string const &autName = session.getModel().getAutomata()[0].getName();
@@ -32,46 +30,34 @@ namespace storm {
                 else{
                     for (uint64_t i = 0; i < session.getModel().getNumberOfAutomata(); i++){
                         std::string const &autName = session.getModel().getAutomata()[i].getName();
-                        if (session.isLogEnabled()){
-                            session.addToLog("Processing automaton " + autName);
-                        }
+                        STORM_LOG_TRACE("Processing automaton " + autName);
                         processAutomaton(session, autName);
                     }
                 }
 
-                if (session.isLogEnabled()){
-                    session.addToLog("Finished automatic state-space reduction.");
-                    if (session.getModel().getNumberOfAutomata() == 1) {
-                        session.addToLog("Final model size: "
-                                         + std::to_string(session.getModel().getAutomaton(0).getNumberOfEdges()) +
-                                         " edges, " +
-                                         std::to_string(session.getModel().getAutomaton(0).getNumberOfLocations()) +
-                                         " locations");
-                    }
+                STORM_LOG_TRACE("Finished automatic state-space reduction.");
+                if (session.getModel().getNumberOfAutomata() == 1) {
+                    STORM_LOG_TRACE("Final model size: "
+                                     + std::to_string(session.getModel().getAutomaton(0).getNumberOfEdges()) +
+                                     " edges, " +
+                                     std::to_string(session.getModel().getAutomaton(0).getNumberOfLocations()) +
+                                     " locations");
                 }
             }
 
             void AutomaticAction::processAutomaton(JaniLocalEliminator::Session &session, const std::string &autName) {
                 bool isOnlyAutomaton = session.getModel().getNumberOfAutomata() == 1;
-                if (session.isLogEnabled()){
-                    session.addToLog("Generating variable dependency graph");
-                }
+                STORM_LOG_TRACE("Generating variable dependency graph");
                 UnfoldDependencyGraph dependencyGraph(session.getModel());
-                if (session.isLogEnabled()){
-                    session.addToLog(dependencyGraph.toString());
-                }
+                STORM_LOG_TRACE(dependencyGraph.toString());
 
                 auto nextUnfold = chooseNextUnfold(session, autName, dependencyGraph, true);
                 if (!nextUnfold) {
-                    if (session.isLogEnabled()){
-                        session.addToLog("No property variable can be unfolded.");
-                    }
+                    STORM_LOG_TRACE("No property variable can be unfolded.");
                     return;
                 }
                 unfoldGroupAndDependencies(session, autName, dependencyGraph, nextUnfold.get());
-                if (session.isLogEnabled()){
-                    session.addToLog("Performing automatic elimination");
-                }
+                STORM_LOG_TRACE("Performing automatic elimination");
 
                 EliminateAutomaticallyAction eliminatePropertyAction(autName,
                                                                      EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
@@ -108,10 +94,7 @@ namespace storm {
                                                              uint32_t groupIndex) {
 
                 auto orderedDependencies = dependencyGraph.getOrderedDependencies(groupIndex, true);
-                if (session.isLogEnabled()) {
-                    session.addToLog("Unfolding " + dependencyGraph.variableGroups[groupIndex].getVariablesAsString() +
-                                     " and their dependencies");
-                }
+                STORM_LOG_TRACE("Unfolding " + dependencyGraph.variableGroups[groupIndex].getVariablesAsString() + " and their dependencies");
                 for (auto dependency : orderedDependencies) {
                     auto variables = dependencyGraph.variableGroups[dependency].variables;
                     if (variables.size() != 1) {
@@ -122,17 +105,13 @@ namespace storm {
                             // We currently always have to specify an automaton name, regardless of whether the
                             // variable is global or not. This isn't  really a problem, as there is just one automaton
                             // due to the flattening done previously (and the name of that is stored in autName)
-                            if (session.isLogEnabled()) {
-                                session.addToLog("\tUnfolding global variable " + variable.janiVariableName);
-                            }
+                            STORM_LOG_TRACE("\tUnfolding global variable " + variable.janiVariableName);
                             UnfoldAction unfoldAction(autName, variable.janiVariableName,
                                                       variable.expressionVariableName);
                             unfoldAction.doAction(session);
                         } else {
-                            if (session.isLogEnabled()) {
-                                session.addToLog("\tUnfolding variable " + variable.janiVariableName + " (automaton: " +
-                                                 variable.automatonName + ")");
-                            }
+                            STORM_LOG_TRACE("\tUnfolding variable " + variable.janiVariableName + " (automaton: " +
+                                             variable.automatonName + ")");
                             UnfoldAction unfoldAction(variable.automatonName, variable.janiVariableName,
                                                       variable.expressionVariableName);
                             unfoldAction.doAction(session);
@@ -173,27 +152,24 @@ namespace storm {
                                                                                                       automatonName);
 
                 auto propertyVariables = session.getProperty().getUsedVariablesAndConstants();
-                if (session.isLogEnabled()) {
-                    session.addToLog("Choosing next unfold");
-                    if (onlyPropertyVariables){
-                        session.addToLog("\tOnly groups containing a variable from the property will be considered");
-                    }
-                    session.addToLog(dependencyGraph.toString());
+                STORM_LOG_TRACE("Choosing next unfold");
+                if (onlyPropertyVariables){
+                    STORM_LOG_TRACE("\tOnly groups containing a variable from the property will be considered");
                 }
+                STORM_LOG_TRACE(dependencyGraph.toString());
+
                 std::set<uint32_t> groupsWithoutDependencies = dependencyGraph.getGroupsWithNoDependencies();
 
+                STORM_LOG_TRACE("\tAnalysing groups without dependencies:");
                 uint32_t bestValue = 0;
                 uint32_t bestGroup = 0;
-                if (session.isLogEnabled()) {
-                    session.addToLog("\tAnalysing groups without dependencies:");
-                }
                 for (auto groupIndex : groupsWithoutDependencies) {
                     bool containsPropertyVariable = false;
                     UnfoldDependencyGraph::VariableGroup &group = dependencyGraph.variableGroups[groupIndex];
-                    double totalOccurences = 0;
+                    double totalOccurrences = 0;
                     for (const auto &var : group.variables) {
                         if (variableOccurrenceCounts.count(var.expressionVariableName) > 0) {
-                            totalOccurences += variableOccurrenceCounts[var.expressionVariableName];
+                            totalOccurrences += variableOccurrenceCounts[var.expressionVariableName];
                         }
                         for (const auto &propertyVar : propertyVariables){
                             if (propertyVar.getName() == var.expressionVariableName){
@@ -204,24 +180,19 @@ namespace storm {
                     if (onlyPropertyVariables && !containsPropertyVariable){
                         continue;
                     }
-                    if (session.isLogEnabled()) {
-                        session.addToLog("\t\t{" + group.getVariablesAsString() + "}: " + std::to_string(totalOccurences) +
-                                         " occurrences");
-                    }
+                    STORM_LOG_TRACE("\t\t{" + group.getVariablesAsString() + "}: " + std::to_string(totalOccurrences) + " occurrences");
                     if (dependencyGraph.variableGroups[groupIndex].domainSize < maxDomainSize){
-                        if (totalOccurences > bestValue) {
-                            bestValue = totalOccurences;
+                        if (totalOccurrences > bestValue) {
+                            bestValue = totalOccurrences;
                             bestGroup = groupIndex;
                         }
-                    } else if (session.isLogEnabled()) {
-                        session.addToLog("\t\t\tSkipped (domain size too large)");
+                    } else {
+                        STORM_LOG_TRACE("\t\t\tSkipped (domain size too large)");
                     }
                 }
 
                 if (bestValue == 0) {
-                    if (session.isLogEnabled()) {
-                        session.addToLog("No unfoldable variable occurs in any edges.");
-                    }
+                    STORM_LOG_TRACE("No unfoldable variable occurs in any edges.");
                     return boost::none;
                 }
 

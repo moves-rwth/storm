@@ -23,9 +23,7 @@ namespace storm {
 
                         for (const auto& loc : automaton->getLocations()) {
                             if (session.isEliminable(automatonName, loc.getName())) {
-                                if (session.isLogEnabled()) {
-                                    session.addToLog("Eliminating location " + loc.getName());
-                                }
+                                STORM_LOG_TRACE("Eliminating location " + loc.getName());
                                 EliminateAction action = EliminateAction(automatonName, loc.getName());
                                 action.doAction(session);
                             }
@@ -41,9 +39,7 @@ namespace storm {
                         // - it has a loop
                         // After each elimination, this list is updated to account for new loops
                         std::map<std::string, bool> uneliminable;
-                        if (session.isLogEnabled()) {
-                            session.addToLog("Elimination status of locations:");
-                        }
+                        STORM_LOG_TRACE("Elimination status of locations:");
                         for (const auto& loc : automaton->getLocations()) {
                             bool possiblyInitial = session.isPossiblyInitial(automatonName, loc.getName());
                             bool partOfProp = session.isPartOfProp(automatonName, loc.getName());
@@ -53,30 +49,28 @@ namespace storm {
 
                             bool isUneliminable = possiblyInitial || partOfProp || hasLoops || isDeadlock || hasNamedAction;
                             uneliminable.insert(std::pair<std::string, bool>(loc.getName(), isUneliminable));
-                            if (session.isLogEnabled()) {
-                                std::string eliminationStatus = "\t" + loc.getName() + ": ";
-                                if (isUneliminable){
-                                    eliminationStatus += "Uneliminable (";
-                                    if (possiblyInitial)
-                                        eliminationStatus += "initial, ";
-                                    if (partOfProp)
-                                        eliminationStatus += "part of prop, ";
-                                    if (hasLoops)
-                                        eliminationStatus += "has loops, ";
-                                    if (isDeadlock)
-                                        eliminationStatus += "has no outgoing edges, ";
-                                    if (hasNamedAction)
-                                        eliminationStatus += "has named action, ";
-                                    eliminationStatus = eliminationStatus.substr(0, eliminationStatus.size() - 2) + ")";
-                                }else{
-                                    eliminationStatus += "Eliminable";
-                                }
-                                session.addToLog(eliminationStatus);
-                            }
+                            STORM_LOG_TRACE("\t" + loc.getName() + ": " << ([&] {
+                              std::string eliminationStatus = "";
+                              if (isUneliminable){
+                                  eliminationStatus += "Uneliminable (";
+                                  if (possiblyInitial)
+                                      eliminationStatus += "initial, ";
+                                  if (partOfProp)
+                                      eliminationStatus += "part of prop, ";
+                                  if (hasLoops)
+                                      eliminationStatus += "has loops, ";
+                                  if (isDeadlock)
+                                      eliminationStatus += "has no outgoing edges, ";
+                                  if (hasNamedAction)
+                                      eliminationStatus += "has named action, ";
+                                  eliminationStatus = eliminationStatus.substr(0, eliminationStatus.size() - 2) + ")";
+                              }else{
+                                  eliminationStatus += "Eliminable";
+                              }
+                              return eliminationStatus;
+                            })());
                         }
-                        if (session.isLogEnabled()) {
-                            session.addToLog("Performing elimination");
-                        }
+                        STORM_LOG_TRACE("Performing elimination");
 
                         bool done = false;
                         while (!done) {
@@ -112,23 +106,16 @@ namespace storm {
                             }
 
 
-                            if (bestLocIndex == -1){
+                            if (bestLocIndex == -1) {
                                 done = true;
-                                if (session.isLogEnabled()) {
-                                    session.addToLog("Cannot eliminate more locations");
-                                }
+                                STORM_LOG_TRACE("Cannot eliminate more locations");
                             } else if (minNewEdges > transitionCountThreshold) {
                                 done = true;
-                                if (session.isLogEnabled()) {
-                                    session.addToLog(
-                                        "Cannot eliminate more locations without creating too many new transitions (best: " +
+                                STORM_LOG_TRACE("Cannot eliminate more locations without creating too many new transitions (best: " +
                                         std::to_string(minNewEdges) + " new transitions)");
-                                }
                             } else {
                                 std::string locName = automaton->getLocation(bestLocIndex).getName();
-                                if (session.isLogEnabled()) {
-                                    session.addToLog("\tEliminating location " + locName + " (" + std::to_string(minNewEdges) + " new edges)");
-                                }
+                                STORM_LOG_TRACE("\tEliminating location " + locName + " (" + std::to_string(minNewEdges) + " new edges)");
                                 EliminateAction action = EliminateAction(automatonName, locName);
                                 action.doAction(session);
                                 automaton = &session.getModel().getAutomaton(automatonName);
@@ -139,15 +126,11 @@ namespace storm {
                                     if (!uneliminable[loc.getName()]){
                                         if (session.hasLoops(automatonName, loc.getName())){
                                             uneliminable[loc.getName()] = true;
-                                            if (session.isLogEnabled()) {
-                                                session.addToLog("\t" + loc.getName() + " now has a loop");
-                                            }
+                                            STORM_LOG_TRACE("\t" + loc.getName() + " now has a loop");
                                         }
                                         if (restrictToUnnamedActions && session.hasNamedActions(automatonName, loc.getName())){
                                             uneliminable[loc.getName()] = true;
-                                            if (session.isLogEnabled()) {
-                                                session.addToLog("\t" + loc.getName() + " now has a named action");
-                                            }
+                                            STORM_LOG_TRACE("\t" + loc.getName() + " now has a named action");
                                         }
                                     }
                                 }

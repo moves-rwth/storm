@@ -34,10 +34,6 @@ namespace storm {
                 bool getFinished() const;
                 void setFinished(bool finished);
 
-                bool isLogEnabled();
-                void addToLog(const std::string& item);
-                std::vector<std::string> getLog();
-
                 AutomatonInfo &getAutomatonInfo(const std::string& name);
                 void buildAutomataInfo();
                 void flatten_automata();
@@ -66,10 +62,6 @@ namespace storm {
                 Model model;
                 Property property;
                 bool finished;
-                // We keep a log separate from the main log to prevent the main log from being overwhelmed. This log
-                // is exposed via the python API
-                std::vector<std::string> log;
-                bool logEnabled;
 
                 std::map<std::string, AutomatonInfo> automataInfo;
                 std::set<uint_fast64_t> expressionVarsInProperty;
@@ -98,14 +90,12 @@ namespace storm {
             static Model eliminateAutomatically(const Model& model, std::vector<jani::Property> properties, uint64_t locationHeuristic, uint64_t edgesHeuristic);
             void eliminate(bool flatten = true);
             Model const& getResult();
-            std::vector<std::string> getLog();
 
         private:
             Model const& original;
             Model newModel;
             Property property;
             bool addMissingGuards;
-            std::vector<std::string> log;
 
             void setProperty(storm::jani::Property &property);
         };
