@@ -488,14 +488,22 @@ namespace storm {
                 STORM_LOG_ASSERT(rewrites.size() > 1, "No rewritten elements.");
                 STORM_LOG_ASSERT(mElements[rewrites[1]]->hasParents(), "Rewritten elements has no parents.");
                 STORM_LOG_ASSERT(mElements[rewrites[1]]->parents().front()->isGate(), "Rewritten element has no parent gate.");
-                DFTGatePointer originalParent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[rewrites[1]]->parents().front());
+                DFTGatePointer originalParent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[rewrites[0]]);
+                STORM_LOG_ASSERT(std::find_if(mElements[rewrites[1]]->parents().begin(), mElements[rewrites[1]]->parents().end(),
+                                              [&originalParent](std::shared_ptr<DFTElement<ValueType>> const& p) { return p->id() == originalParent->id(); }) !=
+                                     mElements[rewrites[1]]->parents().end(),
+                                 "Rewritten element has not the same parent");
                 std::string newParentName = builder.getUniqueName(originalParent->name());
 
                 // Accumulate children names
                 std::vector<std::string> childrenNames;
                 for (size_t i = 1; i < rewrites.size(); ++i) {
-                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(),
+                    STORM_LOG_ASSERT(std::find_if(mElements[rewrites[i]]->parents().begin(), mElements[rewrites[i]]->parents().end(),
+                                                  [&originalParent](std::shared_ptr<DFTElement<ValueType>> const& p) {
+                                                      return p->id() == originalParent->id();
+                                                  }) != mElements[rewrites[i]]->parents().end(),
                                      "Children have not the same father for rewrite " << mElements[rewrites[i]]->name());
+
                     childrenNames.push_back(mElements[rewrites[i]]->name());
                 }
 
