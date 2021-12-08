@@ -425,6 +425,7 @@ namespace storm {
                     STORM_LOG_TRACE("\tAdding missing guard from location " + automaton.getLocation(i).getName());
                     if (result == storm::solver::SmtSolver::CheckResult::Sat){
                         STORM_LOG_TRACE("\t\tThe guard was satisfiable with assignment\n" << ([&] {
+                          auto satisfyingAssignment = solver.getModel();
                           std::string message;
                           for (auto &var : variables){
                               if (var.hasIntegerType()){
