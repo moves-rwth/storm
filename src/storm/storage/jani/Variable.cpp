@@ -52,10 +52,6 @@ namespace storm {
         void Variable::setInitExpression(storm::expressions::Expression const& initialExpression) {
             this->init = initialExpression;
         }
-
-        void Variable::setTransient(bool transient) {
-            this->transient = transient;
-        }
         
         void Variable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             if (this->hasInitExpression()) {

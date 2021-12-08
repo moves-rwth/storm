@@ -63,7 +63,6 @@ namespace storm {
              * Sets the initial expression for this variable.
              */
             void setInitExpression(storm::expressions::Expression const& initialExpression);
-            void setTransient(bool transient);
             
             bool isTransient() const;
 
