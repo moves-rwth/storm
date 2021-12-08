@@ -7,6 +7,7 @@
 #include "storm/models/sparse/Model.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/VariableExpression.h"
+#include "parallel_hashmap/phmap.h"
 
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
@@ -100,19 +101,19 @@ namespace storm {
 
             std::shared_ptr<Order> bottomTopOrder = nullptr;
 
-            std::map<std::shared_ptr<Order>, std::vector<ConstantType>> minValues;
+            phmap::flat_hash_map<std::shared_ptr<Order>, std::vector<ConstantType>> minValues;
             boost::optional<std::vector<ConstantType>> minValuesInit;
             boost::optional<std::vector<ConstantType>> maxValuesInit;
-            std::map<std::shared_ptr<Order>, std::vector<ConstantType>> maxValues;
+            phmap::flat_hash_map<std::shared_ptr<Order>, std::vector<ConstantType>> maxValues;
 
             storage::SparseMatrix<ValueType> matrix;
             std::shared_ptr<models::sparse::Model<ValueType>> model;
 
-            std::map<uint_fast64_t, std::vector<uint_fast64_t>> stateMap;
-            std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> unknownStatesMap;
+            phmap::flat_hash_map<uint_fast64_t, std::vector<uint_fast64_t>> stateMap;
+            phmap::flat_hash_map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> unknownStatesMap;
 
-            std::map<std::shared_ptr<Order>, bool> usePLA;
-            std::map<std::shared_ptr<Order>, bool> continueExtending;
+            phmap::flat_hash_map<std::shared_ptr<Order>, bool> usePLA;
+            phmap::flat_hash_map<std::shared_ptr<Order>, bool> continueExtending;
             bool cyclic;
 
             std::shared_ptr<logic::Formula const> formula;
@@ -126,7 +127,7 @@ namespace storm {
 
             boost::container::flat_set<uint_fast64_t> nonParametricStates;
 
-            std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
+            phmap::flat_hash_map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
             std::vector<std::set<VariableType>> occuringVariablesAtState;
             MonotonicityChecker<ValueType> monotonicityChecker;
 

@@ -73,7 +73,7 @@ namespace storm {
 
         /*** Public methods ***/
         template <typename ValueType, typename ConstantType>
-        std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, bool usePLA, std::string dotOutfileName) {
+        phmap::flat_hash_map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, bool usePLA, std::string dotOutfileName) {
             if (usePLA) {
                 storm::utility::Stopwatch plaWatch(true);
                 this->extender->initializeMinMaxValues(region);
@@ -168,7 +168,7 @@ namespace storm {
             auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
             criticalTuple = extender->toOrder(region, monRes);
             // Continue based on not (yet) sorted states
-            std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+            phmap::flat_hash_map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
 
             auto val1 = std::get<1>(criticalTuple);
             auto val2 = std::get<2>(criticalTuple);
@@ -187,7 +187,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+            phmap::flat_hash_map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
             if (order->isInvalid()) {
                 // We don't add anything as the order we created with assumptions turns out to be invalid
                 STORM_LOG_INFO("    The order was invalid, so we stop here");

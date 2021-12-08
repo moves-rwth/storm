@@ -12,15 +12,15 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const {
+        phmap::flat_hash_map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const {
             auto vec1 = std::vector<ConstantType>();
             auto vec2 = std::vector<ConstantType>();
             return createAndCheckAssumptions(val1, val2, order, region, vec1, vec2);
         }
 
         template <typename ValueType, typename ConstantType>
-        std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
-            std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> result;
+        phmap::flat_hash_map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
+            phmap::flat_hash_map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> result;
             STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2);
             assert (order->compare(val1, val2) == Order::UNKNOWN);
             auto assumption = createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);

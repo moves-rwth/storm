@@ -23,6 +23,7 @@
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 
 #include "storm/utility/constants.h"
+#include "parallel_hashmap/phmap.h"
 
 #include "storm-pars/api/region.h"
 
@@ -109,7 +110,7 @@ namespace storm {
              * @param dotOutfileName Name for the files of the dot outputs should they be generated
              * @return Map which maps each order to its Reachability Order and used assumptions.
              */
-            std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, bool usePLA = false, std::string dotOutfileName = "dotOutput");
+            phmap::flat_hash_map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, bool usePLA = false, std::string dotOutfileName = "dotOutput");
 
             /*!
              * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity.
@@ -154,9 +155,9 @@ namespace storm {
 
             MonotonicityResult<VariableType> resultCheckOnSamples;
 
-            std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
+            phmap::flat_hash_map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
 
-            std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> monResults;
+            phmap::flat_hash_map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> monResults;
 
             OrderExtender<ValueType, ConstantType> *extender;
 
