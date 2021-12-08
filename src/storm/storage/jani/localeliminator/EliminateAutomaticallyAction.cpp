@@ -86,11 +86,11 @@ namespace storm {
                                 if (uneliminable[loc.getName()])
                                     continue;
 
-                                int locIndex = automaton->getLocationIndex(loc.getName());
+                                auto locIndex = automaton->getLocationIndex(loc.getName());
                                 uint64_t outgoing = automaton->getEdgesFromLocation(locIndex).size();
                                 uint64_t incoming = 0;
                                 for (const auto& edge : automaton->getEdges()) {
-                                    int addedTransitions = 1;
+                                    uint64_t addedTransitions = 1;
                                     for (const auto& dest : edge.getDestinations()) {
                                         if (dest.getLocationIndex() == locIndex) {
                                             addedTransitions *= outgoing;

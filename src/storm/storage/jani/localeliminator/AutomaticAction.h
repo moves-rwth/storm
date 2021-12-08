@@ -6,7 +6,6 @@
 #include "UnfoldDependencyGraph.h"
 #include <boost/optional.hpp>
 
-using namespace boost;
 
 // AutomaticAction performs location elimination completely automatically. For this, it alternates between unfolding a variable and eliminating as many
 // locations as possible from the model. There are two main parameters to control this process:
@@ -26,10 +25,10 @@ namespace storm{
                 void doAction(JaniLocalEliminator::Session &session) override;
 
             private:
-                bool flatten;
-                uint64_t maxDomainSize;
                 uint64_t locationLimit;
                 uint64_t newTransitionLimit;
+                uint64_t maxDomainSize;
+                bool flatten;
 
                 void processAutomaton(JaniLocalEliminator::Session &session, std::string const& autName);
 

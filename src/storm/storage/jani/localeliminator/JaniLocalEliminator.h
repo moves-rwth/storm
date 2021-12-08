@@ -78,6 +78,7 @@ namespace storm {
         public:
             class Action {
             public:
+                virtual ~Action() = default;
                 virtual std::string getDescription() = 0;
                 virtual void doAction(Session &session) = 0;
             };
