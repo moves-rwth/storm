@@ -27,7 +27,7 @@ namespace storm {
     namespace lexicographic {
 
     template<typename SparseModelType, typename ValueType, bool Nondeterministic>
-    class lexicographicModelChecker : public helper::SingleValueModelCheckerHelper<ValueType, storm::models::ModelRepresentation::Sparse> {
+    class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHelper<ValueType, storm::models::ModelRepresentation::Sparse> {
        public:
         typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
         typedef storm::transformer::SubsystemBuilderReturnType<ValueType, storm::models::sparse::StandardRewardModel<ValueType>> SubsystemReturnType;
@@ -35,7 +35,7 @@ namespace storm {
         // using productModelType = typename std::conditional<Nondeterministic, storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Dtmc<ValueType>>::type;
         using productModelType = typename storm::models::sparse::Mdp<ValueType>;
 
-        lexicographicModelChecker(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix)
+        lexicographicModelCheckerHelper(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix)
             : _transitionMatrix(transitionMatrix), formula(formula){};
 
         std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<uint>> getCompleteProductModel(

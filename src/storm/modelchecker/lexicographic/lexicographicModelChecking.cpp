@@ -22,7 +22,7 @@ namespace storm {
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Lexicographic Model checking on model with multiple initial states is not supported.");
 
                 storm::logic::MultiObjectiveFormula const& formula = checkTask.getFormula();
-                helper::lexicographic::lexicographicModelChecker<SparseModelType, ValueType, true> lMC = helper::lexicographic::lexicographicModelChecker<SparseModelType, ValueType, true>(formula, model.getTransitionMatrix());
+                helper::lexicographic::lexicographicModelCheckerHelper<SparseModelType, ValueType, true> lMC = helper::lexicographic::lexicographicModelCheckerHelper<SparseModelType, ValueType, true>(formula, model.getTransitionMatrix());
 
                 auto res = lMC.getCompleteProductModel(model, formulaChecker);
                 //STORM_PRINT("Got product model"<<std::endl);

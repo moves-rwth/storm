@@ -8,7 +8,7 @@
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/logic/Formulas.h"
 #include "storm/environment/Environment.h"
-#include "storm/modelchecker/lexicographic/lexicographicModelChecker.h"
+#include "storm/modelchecker/lexicographic/lexicographicModelCheckerHelper.h"
 
 namespace storm {
 

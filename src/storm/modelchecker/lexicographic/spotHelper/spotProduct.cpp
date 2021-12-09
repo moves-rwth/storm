@@ -55,26 +55,27 @@ namespace storm{
 
             // Request a deterministic, complete automaton with state-based acceptance
             spot::translator trans = spot::translator(dict);
-            trans.set_type(spot::postprocessor::Generic);
-            trans.set_pref(spot::postprocessor::Deterministic | spot::postprocessor::SBAcc | spot::postprocessor::Complete);
-            //STORM_PRINT("1 - Construct deterministic automaton for "<< spotFormula << std::endl);
+            trans.set_type(spot::postprocessor::Parity);
+            trans.set_pref(spot::postprocessor::Deterministic | spot::postprocessor::SBAcc | spot::postprocessor::Complete | spot::postprocessor::Colored);
+            STORM_PRINT("1 - Construct deterministic automaton for "<< spotFormula << std::endl);
             // aut contains the Spot-automaton
             auto aut = trans.run(spotFormula);
-            //STORM_PRINT("2 - DNF info " << aut->get_acceptance() << " " << aut->get_acceptance().is_dnf() << std::endl);
+            STORM_PRINT("2 - DNF info " << aut->get_acceptance() << " " << aut->get_acceptance().is_dnf() << std::endl);
 
             if(!(aut->get_acceptance().is_dnf())){
                 //STORM_PRINT("3 - Convert acceptance condition "<< aut->get_acceptance() << " into CNF..." << std::endl);
                 // Transform the acceptance condition in disjunctive normal form and merge all the Fin-sets of each clause
-                aut = to_generalized_streett(aut,true);
+                //aut = to_generalized_streett(aut,true);
             }
-            aut = spot::dnf_to_streett(aut);
-            //std::ostream objOstream (std::cout.rdbuf());
-            //STORM_PRINT("Automaton for " << prefixLtl << " " << std::endl);
-            //spot::print_dot(objOstream, aut, "cak");
+            std::ostream objOstream (std::cout.rdbuf());
+            spot::print_hoa(objOstream, aut, "is");
+            //aut = spot::dnf_to_streett(aut);
+            STORM_PRINT("Automaton for " << prefixLtl << " " << std::endl);
+            spot::print_dot(objOstream, aut, "cak");
 
             acceptanceConditions.push_back(countAccept);
             countAccept += aut->get_acceptance().top_conjuncts().size();
-            //STORM_PRINT("4 - The deterministic automaton has acceptance condition:  "<< aut->get_acceptance() << std::endl);
+            STORM_PRINT("4 - The deterministic automaton has acceptance condition:  "<< aut->get_acceptance() << std::endl);
             std::stringstream autStreamTemp;
             // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
             spot::print_hoa(autStreamTemp, aut, "is");
