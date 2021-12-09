@@ -25,7 +25,7 @@ namespace storm {
              * @param streett A Flag indicating whether the automaton should be a Streett-automaton
              * @return An automaton equivalent to the formula.
              */
-            static std::shared_ptr<DeterministicAutomaton> ltl2daSpot(storm::logic::Formula const& f, bool dnf, bool streett=false);
+            static std::shared_ptr<DeterministicAutomaton> ltl2daSpot(storm::logic::Formula const& f, bool dnf);
 
             /*!
              * Converts an LTL formula into a deterministic omega-automaton using an external LTL2DA tool.

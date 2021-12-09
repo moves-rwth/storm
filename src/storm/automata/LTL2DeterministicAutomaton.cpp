@@ -22,7 +22,7 @@ namespace storm {
     namespace automata {
 
 
-        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot(storm::logic::Formula const& f, bool dnf, bool streett) {
+        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot(storm::logic::Formula const& f, bool dnf) {
 #ifdef STORM_HAVE_SPOT
             std::string prefixLtl = f.toPrefixString();
 
@@ -41,7 +41,6 @@ namespace storm {
             trans.set_pref(spot::postprocessor::Deterministic | spot::postprocessor::SBAcc | spot::postprocessor::Complete);
             STORM_LOG_INFO("Construct deterministic automaton for "<< spotFormula);
             auto aut = trans.run(spotFormula);
-            STORM_PRINT(aut->get_acceptance() << " " << aut->get_acceptance().is_dnf() << std::endl);
 
             if(!(aut->get_acceptance().is_dnf()) && dnf){
                 STORM_LOG_INFO("Convert acceptance condition "<< aut->get_acceptance() << " into DNF...");
@@ -49,20 +48,13 @@ namespace storm {
                 aut = to_generalized_rabin(aut,true);
             }
             auto now_streett = spot::dnf_to_streett(aut);
-            STORM_PRINT(now_streett->get_acceptance() << std::endl);
 
             STORM_LOG_INFO("The deterministic automaton has acceptance condition:  "<< aut->get_acceptance());
-            STORM_PRINT("The deterministic automaton has acceptance condition:  "<< aut->get_acceptance() << std::endl);
             STORM_LOG_INFO(aut->get_acceptance());
 
             std::stringstream autStream;
             // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
-            if (streett) {
-                spot::print_hoa(autStream, now_streett, "is");
-            } else spot::print_hoa(autStream, aut, "is");
-            std::ostream objOstream (std::cout.rdbuf());
-            spot::print_dot(objOstream, aut, "cak");
-            spot::print_dot(objOstream, now_streett, "cak");
+            spot::print_hoa(autStream, aut, "is");
             storm::automata::DeterministicAutomaton::ptr da = DeterministicAutomaton::parse(autStream);
 
             return da;
