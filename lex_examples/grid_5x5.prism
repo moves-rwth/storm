@@ -1,0 +1,21 @@
+mdp
+
+const double p=0.5;
+
+formula danger = ( (x=1 & y=2) | (x=4 & y=1) | (x=2 & y=5) | (x=5 & y=4));
+formula charge = ( (x=3 & y=1) | (x=1 & y=3) | (x=3 & y=5) | (x=5 & y=3));
+formula one = ( x=1 & y=5 );
+formula two = ( x=5 & y=5 );
+formula three = ( x=1 & y=1 );
+formula four = ( x=5 & y=1 );
+
+module robot
+    x : [1..5] init 3;
+    y : [1..5] init 2;
+    
+    [] true -> p : (x'=min(5,x+2)) + (1-p) : (x'=min(5,x+1));
+    [] true -> p : (x'=max(1,x-2)) + (1-p) : (x'=max(1,x-1));
+    [] true -> p : (y'=min(5,y+2)) + (1-p) : (y'=min(5,y+1));
+    [] true -> p : (y'=max(1,y-2)) + (1-p) : (y'=max(1,y-1));
+    
+endmodule

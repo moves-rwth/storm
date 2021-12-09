@@ -1,0 +1,2 @@
+"upperfloor" : multi(Pmax=? [GF x=1], Pmax=? [GF x=9], Pmax=? [GF x=2]);
+"lowerfloor" : multi(Pmax=? [GF x=9], Pmax=? [GF x=1], Pmax=? [GF x=2]);

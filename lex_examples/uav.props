@@ -1,0 +1,3 @@
+"lex" : multi(Pmax=? [G ! roz], Pmax=? [F (w1=true) & F (w2=true) & F (w6=true)]);
+"one" : Pmax=? [G ! roz];
+"two" : Pmax=? [F (w1=true) & F (w2=true) & F (w6=true)];

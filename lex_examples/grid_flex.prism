@@ -1,0 +1,23 @@
+mdp
+
+const int n;
+const int m;
+const double p=0.5;
+
+formula danger = ( (x=1 & y=2) | (x=m-1 & y=1) | (x=2 & y=n) | (x=m & y=n-1));
+formula charge = ( (x=m-2 & y=1) | (x=1 & y=3) | (x=3 & y=n) | (x=m & y=n-2));
+formula one = ( x=1 & y=n );
+formula two = ( x=m & y=n );
+formula three = ( x=1 & y=1 );
+formula four = ( x=m & y=1 );
+
+module robot
+    x : [1..m] init m-1;
+    y : [1..n] init 2;
+    
+    [] true -> p : (x'=min(m,x+2)) + (1-p) : (x'=min(m,x+1)); // right
+    [] true -> p : (x'=max(1,x-2)) + (1-p) : (x'=max(m,x-1)); // left
+    [] true -> p : (y'=min(n,y+2)) + (1-p) : (y'=min(n,y+1)); // up
+    [] true -> p : (y'=max(1,y-2)) + (1-p) : (x'=max(1,y+1)); // down
+    
+endmodule

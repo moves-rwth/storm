@@ -1,0 +1,5 @@
+"lex1" : multi(Pmax=? [ (GF one & GF two) | (GF three & GF four)], Pmax=? [G ! danger], Pmax=? [F charge]);
+"lex2" : multi(Pmax=? [G ! danger], Pmax=? [ (GF one & GF two) | (GF three & GF four)], Pmax=? [F charge]);
+"one" : Pmax=? [ (GF one & GF two) | (GF three & GF four)];
+"two" : Pmax=? [G ! danger];
+"three" : Pmax=? [GF charge];
