@@ -75,7 +75,8 @@ namespace storm {
                                                 std::vector<std::vector<bool>> const& bccLexArray,
                                                 std::vector<uint_fast64_t> const& oldToNewStateMapping,
                                                 uint const& condition,
-                                                uint const numStates, std::vector<uint_fast64_t> const& compressedToReducedMapping);
+                                                uint const numStates, std::vector<uint_fast64_t> const& compressedToReducedMapping,
+                                                std::map<uint,uint_fast64_t> const& bccToStStateMapping);
 
         MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(std::vector<uint_fast64_t>& newInitalStates,
                                                                                 storm::storage::BitVector const& psiStates,
@@ -95,6 +96,9 @@ namespace storm {
                                 std::vector<uint_fast64_t> const& compressedToReducedMapping,
                                 std::vector<uint_fast64_t> const& oldToNewStateMapping,
                                 MDPSparseModelCheckingHelperReturnType<ValueType> const& res);
+
+        std::pair<storm::storage::SparseMatrix<ValueType>,std::map<uint,uint_fast64_t>> addSinkStates(storm::storage::MaximalEndComponentDecomposition<ValueType> const& bccs,
+                                                                std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel);
     };
 
     } // lexicographic

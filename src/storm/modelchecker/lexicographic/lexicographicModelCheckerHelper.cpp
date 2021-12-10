@@ -214,15 +214,15 @@ namespace storm {
             std::vector<uint_fast64_t> const& oldToNewStateMapping,
             uint const& condition,
             uint const numStates,
-            std::vector<uint_fast64_t> const& compressedToReducedMapping) {
+            std::vector<uint_fast64_t> const& compressedToReducedMapping,
+            std::map<uint,uint_fast64_t> const& bccToStStateMapping) {
         STORM_LOG_ASSERT(!bccLexArray.empty(),"Lex-Array is empty!");
         STORM_LOG_ASSERT(condition<bccLexArray[0].size(),"Condition is not in Lex-Array!");
         std::vector<uint_fast64_t> goodStates;
         for(uint i=0; i<bcc.size(); i++) {
             std::vector<bool> const& bccLex = bccLexArray[i];
             if (bccLex[condition]) {
-                auto firstElement = *bcc[i].begin();
-                uint_fast64_t bccStateOld = firstElement.first;
+                uint_fast64_t bccStateOld = bccToStStateMapping.at(i);
                 uint_fast64_t bccState = oldToNewStateMapping[bccStateOld];
                 auto pointer = std::find(compressedToReducedMapping.begin(), compressedToReducedMapping.end(), bccState);
                 if (pointer!=compressedToReducedMapping.end()) {
@@ -365,13 +365,66 @@ namespace storm {
     }
 
     template<typename SparseModelType, typename ValueType, bool Nondeterministic>
+    std::pair<storm::storage::SparseMatrix<ValueType>,std::map<uint,uint_fast64_t>> lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::addSinkStates(
+            storm::storage::MaximalEndComponentDecomposition<ValueType> const& bccs,
+            std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel) {
+            storm::storage::SparseMatrix<ValueType> const matrix = productModel->getProductModel().getTransitionMatrix();
+            uint countNewRows = 0;
+            std::map<uint_fast64_t, uint> stateToBCC;
+            for (uint i=0; i<bccs.size(); i++) {
+                auto bcc = bccs[i];
+                countNewRows+= bcc.size() + 1;
+                for (auto const& stateAndChoices : bcc) {
+                    uint_fast64_t bccState = stateAndChoices.first;
+                    stateToBCC[bccState] = i;
+                }
+            }
+            storm::storage::SparseMatrixBuilder<ValueType> builder(matrix.getRowCount()+countNewRows, matrix.getColumnCount()+bccs.size(), matrix.getEntryCount()+countNewRows, false, true, matrix.getRowGroupCount());
+            uint_fast64_t numRowGroups = matrix.getColumnCount()+bccs.size();
+            std::map<uint, uint_fast64_t> sTstatesForBCC;
+            uint_fast64_t newestRowGroup = matrix.getRowGroupCount();
+            uint_fast64_t newRow = 0;
+            uint_fast64_t oldRowCounting = 0;
+            auto oldRowGroupIndices = matrix.getRowGroupIndices();
+            for (uint_fast64_t newRowGroup = 0; newRowGroup < matrix.getColumnCount(); ++newRowGroup) {
+                builder.newRowGroup(newRow);
+                for (; oldRowCounting < oldRowGroupIndices[newRowGroup+1]; oldRowCounting++ ) {
+                    for(auto const& entry : matrix.getRow(oldRowCounting)){
+                        builder.addNextValue(newRow, entry.getColumn(), entry.getValue());
+                    }
+                    newRow++;
+                }
+                if ( stateToBCC.find(newRowGroup) != stateToBCC.end() ) {
+                    if (sTstatesForBCC.find(stateToBCC[newRowGroup]) == sTstatesForBCC.end()) {
+                        sTstatesForBCC[stateToBCC[newRowGroup]] = newestRowGroup;
+                        newestRowGroup++;
+                    }
+                    builder.addNextValue(newRow, sTstatesForBCC[stateToBCC[newRowGroup]], storm::utility::one<ValueType>());
+                    newRow++;
+                }
+            }
+            for (uint_fast64_t newRowGroup = matrix.getColumnCount(); newRowGroup < numRowGroups; newRowGroup++) {
+                builder.newRowGroup(newRow);
+                builder.addNextValue(newRow, newRowGroup, storm::utility::one<ValueType>());
+                newRow++;
+            }
+            storm::storage::SparseMatrix<ValueType> newMatrix = builder.build();
+            return {newMatrix, sTstatesForBCC};
+    }
+
+    template<typename SparseModelType, typename ValueType, bool Nondeterministic>
     MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::reachability(
             storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc, std::vector<std::vector<bool>> const& bccLexArray,
             std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel, storm::storage::BitVector& allowed,
             SparseModelType const& originalMdp, ValueType& resultingProb) {
         // Eliminate all BCCs and generate one sink state instead
+        // Add first new states for each BCC
+        auto stStateResult = addSinkStates(bcc, productModel);
+        storm::storage::SparseMatrix<ValueType> newMatrixWithNewStates = stStateResult.first;
+        std::map<uint,uint_fast64_t> bccToStStateMapping = stStateResult.second;
         storm::transformer::EndComponentEliminator<ValueType> eliminator = storm::transformer::EndComponentEliminator<ValueType>();
-        auto result = eliminator.transform(productModel->getProductModel().getTransitionMatrix(), bcc, allowed, allowed, true);
+        storm::storage::BitVector eliminationStates(newMatrixWithNewStates.getColumnCount(),true);
+        auto result = eliminator.transform(newMatrixWithNewStates, bcc, eliminationStates, storm::storage::BitVector(eliminationStates.size(), false), true);
 
         STORM_LOG_ASSERT(!bccLexArray.empty(), "No BCCs in the model!");
         std::vector<std::vector<bool>> bccLexArrayCurrent(bccLexArray);
@@ -380,9 +433,10 @@ namespace storm {
         std::iota(std::begin(compressedToReducedMapping), std::end(compressedToReducedMapping), 0);
         storm::storage::SparseMatrix<ValueType> transitionMatrix = result.matrix;
 
+        // check reachability for each condition and restrict the model to optimal choices
         for (uint condition=0; condition<bccLexArray[0].size(); condition++) {
             storm::storage::BitVector psiStates =
-                getGoodStates(bcc, bccLexArrayCurrent, result.oldToNewStateMapping, condition, transitionMatrix.getColumnCount(), compressedToReducedMapping);
+                getGoodStates(bcc, bccLexArrayCurrent, result.oldToNewStateMapping, condition, transitionMatrix.getColumnCount(), compressedToReducedMapping, bccToStStateMapping);
             if (psiStates.getNumberOfSetBits()==0) {
                 retResult.values[condition] = 0;
                 continue;
@@ -395,7 +449,7 @@ namespace storm {
             }
             retResult.values[condition] = res.values[newInitalStates[0]];
             resultingProb = res.values[newInitalStates[0]];
-            auto removed = removeTransientSCCs(bccLexArrayCurrent, condition, bcc, compressedToReducedMapping, result.oldToNewStateMapping, res);
+            //auto removed = removeTransientSCCs(bccLexArrayCurrent, condition, bcc, compressedToReducedMapping, result.oldToNewStateMapping, res);
             //STORM_PRINT("removed sccs "<<removed<<std::endl);
 
             auto subsystem = getReducedSubsystem(transitionMatrix, res, newInitalStates, psiStates);
