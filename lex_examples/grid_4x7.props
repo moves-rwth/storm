@@ -2,4 +2,4 @@
 "lex2" : multi(Pmax=? [G ! danger], Pmax=? [ (GF one & GF two) | (GF three & GF four)], Pmax=? [F charge]);
 "one" : Pmax=? [ (GF one & GF two) | (GF three & GF four)];
 "two" : Pmax=? [G ! danger];
-"three" : Pmax=? [GF charge];
+"three" : Pmax=? [F charge];

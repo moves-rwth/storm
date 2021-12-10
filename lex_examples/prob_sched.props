@@ -1,0 +1,6 @@
+// expected value: 1, 0.5, 0
+"lex1" : multi(Pmax=? [GF y=2], Pmax=? [GF y=1], Pmax=? [GF y=3]);
+// expected value: 0.5, 1, 0
+"lex2" : multi(Pmax=? [GF y=1], Pmax=? [GF y=2], Pmax=? [GF y=3]);
+// expected value: 0.5, 0.5, 0
+"lex3" : multi(Pmax=? [GF y=1], Pmax=? [GF y=0], Pmax=? [GF y=2]);

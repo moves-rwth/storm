@@ -3,11 +3,11 @@ digraph {
 0 -> 6;
 0 -> 7;
 0 -> 4;
-1 [fillcolor=deepskyblue, style=filled, label="1\n y=1"];
+1 [fillcolor=deepskyblue, style=filled, label="1\n y=2"];
 1 -> 1;
-2 [fillcolor=darkolivegreen2, style=filled, label="2\n y=2"];
+2 [fillcolor=deepskyblue, style=filled, label="2\n y=2"];
 2 -> 5;
-5 [fillcolor=deepskyblue, style=filled, label="5\n y=1"];
+5 [fillcolor=darkolivegreen2, style=filled, label="5\n y=1"];
 3 [];
 3 -> 3;
 4 [fillcolor=coral, style=filled, label="4\n y=3"];
