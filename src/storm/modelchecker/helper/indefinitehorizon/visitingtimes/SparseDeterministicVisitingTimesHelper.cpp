@@ -231,7 +231,7 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
 
     // We need to check if our sound methods like SVI work on this kind of equation system. Most likely not.
     STORM_LOG_WARN_COND(!env.solver().isForceSoundness(),
-                        "Sound computations are not properly implemented for this computation. You might get incorrect results.");
+                        "Sound computations are not properly implemented for the computation of expected number of visits in non-trival SCCs. You might get incorrect results.");
     storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
     bool isFixpointFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem;
 
