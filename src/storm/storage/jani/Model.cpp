@@ -31,6 +31,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 #include "storm/solver/SmtSolver.h"
 
@@ -287,7 +288,8 @@ namespace storm {
                     for (uint_fast64_t innerIndex = 0; innerIndex < possibleEdges[outerIndex].size(); ++innerIndex) {
                         edgeVariables[outerIndex].push_back(newModel.getManager().declareFreshBooleanVariable());
                         allEdgeVariables.push_back(edgeVariables[outerIndex].back());
-                        solver.add(implies(edgeVariables[outerIndex].back(), possibleEdges[outerIndex][innerIndex].get().getGuard()));
+                        storm::expressions::Expression guard = eliminateFunctionCallsInExpression(possibleEdges[outerIndex][innerIndex].get().getGuard(), oldModel);
+                        solver.add(implies(edgeVariables[outerIndex].back(), guard));
                     }
                     
                     storm::expressions::Expression atLeastOneEdgeFromAutomaton = newModel.getManager().boolean(false);
@@ -439,6 +441,12 @@ namespace storm {
             // Check for current restrictions of flatting process.
             STORM_LOG_THROW(this->hasStandardCompliantComposition(), storm::exceptions::WrongFormatException, "Flatting composition is only supported for standard-compliant compositions.");
             STORM_LOG_THROW(this->getModelType() == ModelType::DTMC || this->getModelType() == ModelType::MDP, storm::exceptions::InvalidTypeException, "Unable to flatten modules for model of type '" << this->getModelType() << "'.");
+            STORM_LOG_WARN_COND(!this->getModelFeatures().hasArrays(), "Flattening JANI model with arrays is not supported. We'll try but there might be unexpected errors.");
+            if (this->getModelFeatures().hasFunctions()) {
+                for (auto const& aut : automata) {
+                    STORM_LOG_THROW(aut.getFunctionDefinitions().empty(), storm::exceptions::NotImplementedException, "Flattening JANI model with local function declarations not implemented. Try to eliminate functions first or make them global.");
+                }
+            }
             
             // Otherwise, we need to actually flatten composition.
             Model flattenedModel(this->getName() + "_flattened", this->getModelType(), this->getJaniVersion(), this->getManager().shared_from_this());
