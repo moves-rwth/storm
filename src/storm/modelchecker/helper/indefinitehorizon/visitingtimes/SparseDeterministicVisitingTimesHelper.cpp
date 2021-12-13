@@ -33,14 +33,14 @@ SparseDeterministicVisitingTimesHelper<ValueType>::SparseDeterministicVisitingTi
 
 template<typename ValueType>
 void SparseDeterministicVisitingTimesHelper<ValueType>::provideBackwardTransitions(storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
-    STORM_LOG_WARN_COND(_backwardTransitions == nullptr, "Backward transition matrix was provided but it was already computed or provided before.");
+    STORM_LOG_WARN_COND(!_backwardTransitions, "Backward transition matrix was provided but it was already computed or provided before.");
     _backwardTransitions = &backwardTransitions;
 }
 
 template<typename ValueType>
 void SparseDeterministicVisitingTimesHelper<ValueType>::provideSCCDecomposition(
     storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& decomposition) {
-    STORM_LOG_WARN_COND(_sccDecomposition == nullptr, "SCC Decomposition was provided but it was already computed or provided before.");
+    STORM_LOG_WARN_COND(!_sccDecomposition, "SCC Decomposition was provided but it was already computed or provided before.");
     _sccDecomposition = &decomposition;
 }
 
@@ -107,8 +107,8 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingT
     progress.setMaxCount(_sccDecomposition->size());
     progress.startNewMeasurement(0);
     uint64_t sccIndex = 0;
-    auto sccIte = std::make_reverse_iterator(_sccDecomposition->begin());
-    for (auto sccIt = std::make_reverse_iterator(_sccDecomposition->end()); sccIt != sccIte; ++sccIt) {
+    auto sccItEnd = std::make_reverse_iterator(_sccDecomposition->begin());
+    for (auto sccIt = std::make_reverse_iterator(_sccDecomposition->end()); sccIt != sccItEnd; ++sccIt) {
         auto const& scc = *sccIt;
         if (scc.size() == 1) {
             processSingletonScc(*scc.begin(), stateValues);
@@ -147,12 +147,12 @@ void SparseDeterministicVisitingTimesHelper<ValueType>::computeExpectedVisitingT
 
 template<typename ValueType>
 bool SparseDeterministicVisitingTimesHelper<ValueType>::isContinuousTime() const {
-    return _exitRates != nullptr;
+    return _exitRates;
 }
 
 template<typename ValueType>
 void SparseDeterministicVisitingTimesHelper<ValueType>::createBackwardTransitions() {
-    if (this->_backwardTransitions == nullptr) {
+    if (!this->_backwardTransitions) {
         this->_computedBackwardTransitions = std::make_unique<storm::storage::SparseMatrix<ValueType>>(_transitionMatrix.transpose(true, false));  // will drop zeroes
         this->_backwardTransitions = this->_computedBackwardTransitions.get();
     }
@@ -162,12 +162,12 @@ template<typename ValueType>
 void SparseDeterministicVisitingTimesHelper<ValueType>::createDecomposition(Environment const& env) {
     if (this->_sccDecomposition && !this->_sccDecomposition->hasSccDepth() && env.solver().isForceSoundness()) {
         // We are missing SCCDepths in the given decomposition.
-        STORM_LOG_WARN("Recomputing SCC Decomposition because the currently available  decomposition is computed without SCCDepths.");
+        STORM_LOG_WARN("Recomputing SCC Decomposition because the currently available decomposition is computed without SCCDepths.");
         this->_computedSccDecomposition.reset();
         this->_sccDecomposition = nullptr;
     }
 
-    if (this->_sccDecomposition == nullptr) {
+    if (!this->_sccDecomposition) {
         // The decomposition has not been provided or computed, yet.
         auto options =
             storm::storage::StronglyConnectedComponentDecompositionOptions().forceTopologicalSort().computeSccDepths(env.solver().isForceSoundness());

@@ -111,7 +111,7 @@ class SparseDeterministicVisitingTimesHelper : public SingleValueModelCheckerHel
 
     /*!
      * Solves the equation system for non-trivial SCCs (i.e. non-bottom SCCs with more than 1 state).
-     * @return
+     * @return for each state of the given SCC the expected number of times that state is visited.
      */
     std::vector<ValueType> computeValueForNonTrivialScc(storm::Environment const& env, storm::storage::BitVector const& sccAsBitVector,
                                                         std::vector<ValueType> const& stateValues) const;
