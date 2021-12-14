@@ -104,11 +104,11 @@ namespace storm {
                     Location newLoc(loc.getName(), OrderedAssignments());
                     uint64_t newLocationIndex = newAutomaton.addLocation(newLoc);
                     newIndices.excludedLocationsToNewIndices[origIndex] = newLocationIndex;
-                    for (int64_t i = 0; i < newIndices.variableDomain.size(); i++) {
+                    for (uint64_t i = 0; i < newIndices.variableDomain.size(); i++) {
                         newIndices.locationVariableValueMap[origIndex][i] = newLocationIndex;
                     }
                 }else{
-                    for (int64_t i = 0; i < newIndices.variableDomain.size(); i++) {
+                    for (uint64_t i = 0; i < newIndices.variableDomain.size(); i++) {
                         std::string newLocationName =
                                 loc.getName() + "_" + variableName + "_" + newIndices.variableDomain[i].toString();
                         substitutionMap[eliminatedExpressionVariable] = newIndices.variableDomain[i];
@@ -176,7 +176,7 @@ namespace storm {
                             }
                         }
 
-                        if (newValueIndex < 0 || newValueIndex >= newIndices.variableDomain.size()){
+                        if (newValueIndex < 0 || newValueIndex >= static_cast<int64_t>(newIndices.variableDomain.size())) {
                             STORM_LOG_WARN("Found edge that would lead to out-of-range location during unfolding. This edge will not be added to the unfolded model. It is possible that the edge guard is unsatisfiable, in which case this message can be ignored.");
                             isEdgeInvalid = true;
                             continue; // Abort this iteration to prevent weird behaviour below when accessing a non-existent element of locationVariableValueMap[destination.getLocationIndex()]

@@ -40,7 +40,7 @@ using namespace storm::jani::elimination_actions;
 
 // As many tests rely on building and checking a model (which requires quite a few lines of code), we use this common
 // helper function to do the model checking. Apart from this, the tests don't share any helper functions.
-void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> properties, std::map<storm::expressions::Variable, storm::expressions::Expression> consts, double expectedValue, int states = -1, int transitions = -1){
+void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> properties, std::map<storm::expressions::Variable, storm::expressions::Expression> consts, double expectedValue){
     model = model.defineUndefinedConstants(consts);
     properties[0] = properties[0].substitute(consts);
 
@@ -49,20 +49,13 @@ void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> pro
     options.setBuildAllLabels(true);
     auto explicitModel = storm::api::buildSparseModel<double>(model, options)->template as<Dtmc>();
 
-    if (states != -1){
-        EXPECT_EQ(states, explicitModel->getNumberOfStates());
-    }
-    if (transitions != -1){
-        EXPECT_EQ(transitions, explicitModel->getNumberOfTransitions());
-    }
-
     auto task = storm::modelchecker::CheckTask<>(*(formulae[0]), true);
     storm::Environment env;
     auto checkResult = storm::api::verifyWithSparseEngine<double>(env, explicitModel, task);
     auto quantResult = checkResult->asExplicitQuantitativeCheckResult<double>();
 
     auto initialStates = explicitModel->getInitialStates();
-    EXPECT_EQ(1, initialStates.getNumberOfSetBits());
+    EXPECT_EQ(1u, initialStates.getNumberOfSetBits());
     for (auto state = initialStates.begin(); state != initialStates.end(); ++state){
         EXPECT_NEAR(expectedValue, quantResult[*state], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     }
@@ -138,7 +131,7 @@ TEST(JaniLocalEliminator, FlatteningTest) {
     auto eliminator = JaniLocalEliminator(modelAndProps.first, modelAndProps.second);
     eliminator.eliminate();
     auto result = eliminator.getResult();
-    EXPECT_EQ(1, result.getNumberOfAutomata());
+    EXPECT_EQ(1u, result.getNumberOfAutomata());
 }
 
 // *******************************
@@ -159,7 +152,7 @@ TEST(JaniLocalEliminator, MissingGuardCompletion) {
     eliminator.scheduler.addAction(std::make_unique<EliminateAction>("main", "l_s_1"));
     eliminator.eliminate();
     auto result = eliminator.getResult();
-    EXPECT_EQ(1, result.getNumberOfAutomata());
+    EXPECT_EQ(1u, result.getNumberOfAutomata());
     checkModel(result, modelAndProps.second, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.5);
 }
 
@@ -356,7 +349,7 @@ TEST(JaniLocalEliminator, UnfoldingBoundedInteger) {
     eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("main", "x"));
     eliminator.eliminate();
     auto result = eliminator.getResult();
-    EXPECT_EQ(5, result.getAutomaton(0).getNumberOfLocations());
+    EXPECT_EQ(5u, result.getAutomaton(0).getNumberOfLocations());
     checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.25);
 }
 
@@ -374,7 +367,7 @@ TEST(JaniLocalEliminator, UnfoldingBoolean) {
     eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("main", "x"));
     eliminator.eliminate();
     auto result = eliminator.getResult();
-    EXPECT_EQ(2, result.getAutomaton(0).getNumberOfLocations());
+    EXPECT_EQ(2u, result.getAutomaton(0).getNumberOfLocations());
     checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.875);
 }
 
@@ -401,7 +394,7 @@ TEST(JaniLocalEliminator, UnfoldingWithSink) {
     eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("main", "s"));
     eliminator.eliminate();
     auto result = eliminator.getResult();
-    EXPECT_EQ(5, result.getAutomaton(0).getNumberOfLocations());
+    EXPECT_EQ(5u, result.getAutomaton(0).getNumberOfLocations());
 }
 
 // This test verifies that whether a location can potentially satisfy the property is correctly propagated to the new
@@ -430,7 +423,7 @@ TEST(JaniLocalEliminator, EliminationNewGuardTest) {
     eliminator.eliminate();
     auto result = eliminator.getResult();
 
-    EXPECT_EQ(2, result.getAutomaton(0).getNumberOfLocations());
+    EXPECT_EQ(2u, result.getAutomaton(0).getNumberOfLocations());
     checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 1.0);
 }
 
@@ -450,7 +443,7 @@ TEST(JaniLocalEliminator, EliminationNewProbabilityTest) {
     eliminator.eliminate();
     auto result = eliminator.getResult();
 
-    EXPECT_EQ(3, result.getAutomaton(0).getNumberOfLocations());
+    EXPECT_EQ(3u, result.getAutomaton(0).getNumberOfLocations());
     checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 1.0/12.0);
 }
 
@@ -470,8 +463,8 @@ TEST(JaniLocalEliminator, EliminationNewUpdatesTest) {
     eliminator.eliminate();
     auto result = eliminator.getResult();
 
-    EXPECT_EQ(2, result.getAutomaton(0).getNumberOfLocations());
-    EXPECT_EQ(4, result.getAutomaton(0).getEdgesFromLocation(0).begin()->getDestination(0).getOrderedAssignments().getNumberOfAssignments());
+    EXPECT_EQ(2u, result.getAutomaton(0).getNumberOfLocations());
+    EXPECT_EQ(4u, result.getAutomaton(0).getEdgesFromLocation(0).begin()->getDestination(0).getOrderedAssignments().getNumberOfAssignments());
     checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 1.0);
 }
 
@@ -491,7 +484,7 @@ TEST(JaniLocalEliminator, EliminationMultipleEdges) {
     eliminator.eliminate();
     auto result = eliminator.getResult();
 
-    EXPECT_EQ(6, result.getAutomaton(0).getNumberOfLocations());
+    EXPECT_EQ(6u, result.getAutomaton(0).getNumberOfLocations());
     checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 0.01845238095);
 }
 
@@ -511,6 +504,6 @@ TEST(JaniLocalEliminator, EliminationMultiplicityTest) {
     eliminator.eliminate();
     auto result = eliminator.getResult();
 
-    EXPECT_EQ(2, result.getAutomaton(0).getNumberOfLocations());
+    EXPECT_EQ(2u, result.getAutomaton(0).getNumberOfLocations());
     checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 2.0/15.0);
 }
