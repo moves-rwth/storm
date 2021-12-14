@@ -3,6 +3,7 @@
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -235,7 +236,24 @@ namespace storm {
             // Return CheckResult
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
-
+        
+        template <typename SparseCtmcModelType>
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeExpectedVisitingTimes(Environment const& env) {
+            // Initialize helper
+            auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
+            storm::modelchecker::helper::SparseDeterministicVisitingTimesHelper<ValueType> helper(probabilisticTransitions, this->getModel().getExitRateVector());
+            
+            // Compute result
+            std::vector<ValueType> result;
+            auto const& initialStates = this->getModel().getInitialStates();
+            uint64_t numInitStates = initialStates.getNumberOfSetBits();
+            STORM_LOG_THROW(numInitStates > 0, storm::exceptions::InvalidOperationException, "No initial states given. Cannot compute expected visiting times.");
+            STORM_LOG_WARN_COND(numInitStates== 1, "Multiple initial states found. A uniform distribution over initial states is assumed.");
+            result = helper.computeExpectedVisitingTimes(env, initialStates);
+            
+            // Return CheckResult
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+        }
 
         // Explicitly instantiate the model checker.
         template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>>;

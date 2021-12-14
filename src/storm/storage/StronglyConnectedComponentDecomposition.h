@@ -92,6 +92,11 @@ namespace storm {
             StronglyConnectedComponentDecomposition& operator=(StronglyConnectedComponentDecomposition&& other);
             
             /*!
+             * Retrieves whether SCCDepths have been computed during construction of this.
+             */
+             bool hasSccDepth() const;
+             
+            /*!
              * Gets the depth of the SCC with the given index. This is the number of different SCCs a path starting in the given SCC can reach.
              * E.g., bottom SCCs have depth 0, SCCs from which only bottom SCCs are reachable have depth 1, ...
              * This requires that SCCDepths are computed upon construction of this.

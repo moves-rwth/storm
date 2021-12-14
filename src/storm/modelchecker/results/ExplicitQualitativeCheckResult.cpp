@@ -236,7 +236,7 @@ namespace storm {
         }
         
         template<typename JsonRationalType>
-        void insertJsonEntry(storm::json<JsonRationalType>& json, uint64_t const& id, bool value, boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none) {
+        void insertJsonEntry(storm::json<JsonRationalType>& json, uint64_t const& id, bool value, boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none,  boost::optional<storm::models::sparse::StateLabeling> const& stateLabels = boost::none) {
             storm::json<JsonRationalType> entry;
             if (stateValuations) {
                 entry["s"] = stateValuations->template toJson<JsonRationalType>(id);
@@ -244,28 +244,32 @@ namespace storm {
                 entry["s"] = id;
             }
             entry["v"] = value;
+            if (stateLabels) {
+                auto labs = stateLabels->getLabelsOfState(id);
+                entry["l"] = labs;
+            }
             json.push_back(std::move(entry));
         }
         
         template<typename JsonRationalType>
-        storm::json<JsonRationalType> ExplicitQualitativeCheckResult::toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations) const {
+        storm::json<JsonRationalType> ExplicitQualitativeCheckResult::toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations, boost::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
             storm::json<JsonRationalType> result;
             if (this->isResultForAllStates()) {
                 vector_type const& valuesAsVector = boost::get<vector_type>(truthValues);
                 for (uint64_t state = 0; state < valuesAsVector.size(); ++state) {
-                    insertJsonEntry(result, state, valuesAsVector.get(state), stateValuations);
+                    insertJsonEntry(result, state, valuesAsVector.get(state), stateValuations, stateLabels);
                 }
             } else {
                 map_type const& valuesAsMap = boost::get<map_type>(truthValues);
                 for (auto const& stateValue : valuesAsMap) {
-                    insertJsonEntry(result, stateValue.first, stateValue.second, stateValuations);
+                    insertJsonEntry(result, stateValue.first, stateValue.second, stateValuations, stateLabels);
                 }
             }
             return result;
         }
         
-        template storm::json<double> ExplicitQualitativeCheckResult::toJson<double>(boost::optional<storm::storage::sparse::StateValuations> const&) const;
-        template storm::json<storm::RationalNumber> ExplicitQualitativeCheckResult::toJson<storm::RationalNumber>(boost::optional<storm::storage::sparse::StateValuations> const&) const;
+        template storm::json<double> ExplicitQualitativeCheckResult::toJson<double>(boost::optional<storm::storage::sparse::StateValuations> const&, boost::optional<storm::models::sparse::StateLabeling> const&) const;
+        template storm::json<storm::RationalNumber> ExplicitQualitativeCheckResult::toJson<storm::RationalNumber>(boost::optional<storm::storage::sparse::StateValuations> const&, boost::optional<storm::models::sparse::StateLabeling> const&) const;
 
         
     }

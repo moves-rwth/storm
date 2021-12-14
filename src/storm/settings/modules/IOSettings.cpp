@@ -48,6 +48,7 @@ namespace storm {
             const std::string IOSettings::propertyOptionName = "prop";
             const std::string IOSettings::propertyOptionShortName = "prop";
             const std::string IOSettings::steadyStateDistrOptionName = "steadystate";
+            const std::string IOSettings::expectedVisitingTimesOptionName = "expvisittimes";
             
             const std::string IOSettings::qvbsInputOptionName = "qvbs";
             const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
@@ -105,6 +106,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ") to be checked.").setShortName(janiPropertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").makeOptional().build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName,  steadyStateDistrOptionName, false, "Computes the steady state distribution. Result can be exported using --" + exportCheckResultOptionName +".").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName,  expectedVisitingTimesOptionName, false, "Computes the expected number of times each state is visited (DTMC) or the expected time spend in each state (CTMC). Result can be exported using --" + exportCheckResultOptionName +".").setIsAdvanced().build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
@@ -318,6 +320,10 @@ namespace storm {
             
             bool IOSettings::isComputeSteadyStateDistributionSet() const {
                 return this->getOption(steadyStateDistrOptionName).getHasOptionBeenSet();
+            }
+            
+            bool IOSettings::isComputeExpectedVisitingTimesSet() const {
+                return this->getOption(expectedVisitingTimesOptionName).getHasOptionBeenSet();
             }
             
             bool IOSettings::isQvbsInputSet() const {

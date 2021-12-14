@@ -443,7 +443,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType const& value, boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none) {
+        void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType const& value, boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none, boost::optional<storm::models::sparse::StateLabeling> const& stateLabels = boost::none) {
             typename storm::json<ValueType> entry;
             if (stateValuations) {
                 entry["s"] = stateValuations->template toJson<ValueType>(id);
@@ -451,28 +451,32 @@ namespace storm {
                 entry["s"] = id;
             }
             entry["v"] = value;
+            if (stateLabels) {
+                auto labs = stateLabels->getLabelsOfState(id);
+                entry["l"] = labs;
+            }
             json.push_back(std::move(entry));
         }
         
         template<typename ValueType>
-        storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations) const {
+        storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations, boost::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
             storm::json<ValueType> result;
             if (this->isResultForAllStates()) {
                 vector_type const& valuesAsVector = boost::get<vector_type>(values);
                 for (uint64_t state = 0; state < valuesAsVector.size(); ++state) {
-                    insertJsonEntry(result, state, valuesAsVector[state], stateValuations);
+                    insertJsonEntry(result, state, valuesAsVector[state], stateValuations, stateLabels);
                 }
             } else {
                 map_type const& valuesAsMap = boost::get<map_type>(values);
                 for (auto const& stateValue : valuesAsMap) {
-                    insertJsonEntry(result, stateValue.first, stateValue.second, stateValuations);
+                    insertJsonEntry(result, stateValue.first, stateValue.second, stateValuations, stateLabels);
                 }
             }
             return result;
         }
         
         template<>
-        storm::json<storm::RationalFunction> ExplicitQuantitativeCheckResult<storm::RationalFunction>::toJson(boost::optional<storm::storage::sparse::StateValuations> const&) const {
+        storm::json<storm::RationalFunction> ExplicitQuantitativeCheckResult<storm::RationalFunction>::toJson(boost::optional<storm::storage::sparse::StateValuations> const&, boost::optional<storm::models::sparse::StateLabeling> const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of Check results is not supported for Rational Functions.");
         }
         
