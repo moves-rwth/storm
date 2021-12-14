@@ -1,9 +1,11 @@
 #include "storm-conv/api/storm-conv.h"
+#include <storage/jani/localeliminator/AutomaticAction.h>
 
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/storage/jani/JaniScopeChanger.h"
 #include "storm/storage/jani/visitor/JSONExporter.h"
 
@@ -48,13 +50,18 @@ namespace storm {
                 
                 for (auto const& pair : options.locationVariables) {
                     storm::jani::JaniLocationExpander expander(janiModel);
-                    expander.transform(pair.first, pair.second);
-                    janiModel = expander.getResult();
+                    janiModel = expander.transform(pair.first, pair.second).newModel;
                 }
             }
 
             if (options.simplifyComposition) {
                 janiModel.simplifyComposition();
+            }
+
+            if (options.locationElimination) {
+                auto locationHeuristic = options.locationEliminationLocationHeuristic;
+                auto edgesHeuristic = options.locationEliminationEdgeHeuristic;
+                janiModel = storm::jani::JaniLocalEliminator::eliminateAutomatically(janiModel, properties, locationHeuristic, edgesHeuristic);
             }
             
             if (options.flatten) {

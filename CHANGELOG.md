@@ -15,6 +15,7 @@ Version 1.6.x
 - Added export of schedulers that use memory (in particular optimizing schedulers for LTL properties)
 - Added support for PRISM models that use unbounded integer variables.
 - Added support for nested arrays in JANI.
+- Added `--location-elimination` that can be applied to Jani DTMC models to reduce the size of the resulting Markov models, see [here](https://arxiv.org/abs/2011.00983).
 - Added an export of check results to json. Use `--exportresult` in the command line interface.
 - Added `--exportbuilt` option that exports the built model in various formats. Deprecates `--io:exportexplicit`, `--io:exportdd` and `--io:exportdot`
 - Added export of built model in .json. which can be used to debug and explore the model.

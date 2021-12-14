@@ -47,7 +47,15 @@ namespace storm {
             
             /// If set, attempts to simplify the system composition
             bool simplifyComposition;
-            
+
+            /// If set, attempts to perform location elimination of states to reduce the state space of the final model
+            bool locationElimination;
+
+            /// Controls which locations are eliminated if location elimination is enabled
+            uint64_t locationEliminationLocationHeuristic;
+
+            // Controls which edges are eliminated if location elimination is enabled
+            uint64_t locationEliminationEdgeHeuristic;
         };
     }
 }
