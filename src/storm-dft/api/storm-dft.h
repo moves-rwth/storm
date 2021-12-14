@@ -172,12 +172,24 @@ namespace storm {
          *
          * @param dft DFT
          *
-         * @param calculateMCS
-         * If true exports the bdd representing the top level gate of the dft
+         * @param exportToDot
+         * If true exports the bdd representing the top level event of the dft
          * in the dot format
          *
          * @param filename
          * The name of the file for exporting to dot
+         *
+         * @param calculateMTTF
+         * If true calculates the mean time to failure
+         *
+         * @parameter mttfPrecision
+         * A constant that is used to determine if the mttf calculation converged
+         *
+         * @parameter mttfStepsize
+         * A constant that is used in the mttf calculation
+         *
+         * @parameter mttfAlgorithmName
+         * The name of the mttf algorithm to use
          *
          * @param calculateMCS
          * If true calculates the minimal cut sets
@@ -185,8 +197,24 @@ namespace storm {
          * @param calculateProbability
          * If true calculates the system failure propbability
          *
+         * @param useModularisation
+         * If true tries modularisation
+         *
+         * @param importanceMeasureName
+         * The name of the importance measure to calculate
+         *
          * @param timepoints
          * The timebounds for probability calculations
+         *
+         * @param properties
+         * The bounded until formulas to check (emulating the CTMC method)
+         *
+         * @param additionalRelevantEventNames
+         * A vector of relevant events to be considered
+         *
+         * @param chunksize
+         * The size of the chunks of doubles to work on at a time
+         *
          */
         template<typename ValueType>
         void analyzeDFTBdd(

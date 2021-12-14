@@ -44,14 +44,14 @@ class DFTModularizer {
 
     /**
      * \return
-     * The Probabilities that the top level gate fails at the given timepoints.
+     * The Probabilities that the top level event fails at the given timepoints.
      */
     std::vector<ValueType> getProbabilitiesAtTimepoints(
         std::vector<ValueType> const &timepoints, size_t const chunksize = 0);
 
     /**
      * \return
-     * The Probability that the top level gate fails at the given timebound.
+     * The Probability that the top level event fails at the given timebound.
      */
     ValueType getProbabilityAtTimebound(ValueType const timebound) {
         // workDFT will be set in getProbabilitiesAtTimepoints()
@@ -61,6 +61,7 @@ class DFTModularizer {
 
    private:
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
+    std::shared_ptr<storm::storage::DFT<ValueType>> workDFT{};
 
     /**
      * \return All connected DFTElements of the given element
@@ -92,8 +93,6 @@ class DFTModularizer {
     std::map<ElementId, ElementInfo> elementInfos{};
 
     uint64_t lastDate{};
-
-    std::shared_ptr<storm::storage::DFT<ValueType>> workDFT{};
 
     /**
      * Populates firstVisit, secondVisit and lastVisit.

@@ -1549,7 +1549,7 @@ Format](http://rfc7159.net/rfc7159)
     disallows NaN values:
     > Numeric values that cannot be represented in the grammar below (such as
     > Infinity and NaN) are not permitted.
-    In case the parameter @a val is not a number, a JSON null value is created
+    In case the parameter @a val is +inf, -inf, or nan, the corresponding string literal is created
     instead.
 
     @complexity Constant.
@@ -1565,11 +1565,21 @@ Format](http://rfc7159.net/rfc7159)
         basic_json(const number_float_t val) noexcept
                 : m_type(value_t::number_float), m_value(val)
         {
-            // replace infinity and NAN by null
+            // replace infinity and NAN by string literals
             if (storm::utility::isInfinity(val))
             {
-                m_type = value_t::null;
-                m_value = json_value();
+                m_type = value_t::string;
+                m_value = string_t("inf");
+            }
+            else if (storm::utility::isInfinity<number_float_t>(-val))
+            {
+                m_type = value_t::string;
+                m_value = string_t("-inf");
+            }
+            else if (storm::utility::isNan(val))
+            {
+                m_type = value_t::string;
+                m_value = string_t("nan");
             }
 
             assert_invariant();

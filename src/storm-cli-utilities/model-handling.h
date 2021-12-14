@@ -1103,6 +1103,19 @@ namespace storm {
                 STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << std::endl);
                 STORM_PRINT("Time for model checking: " << watch << "." << std::endl);
             }
+            if (ioSettings.isComputeExpectedVisitingTimesSet()) {
+                storm::utility::Stopwatch watch(true);
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                try {
+                    result = storm::api::computeExpectedVisitingTimesWithSparseEngine<ValueType>(mpi.env, sparseModel);
+                } catch (storm::exceptions::BaseException const& ex) {
+                    STORM_LOG_WARN("Cannot compute expected visiting times: " << ex.what());
+                }
+                watch.stop();
+                postprocessingCallback(result);
+                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << std::endl);
+                STORM_PRINT("Time for model checking: " << watch << "." << std::endl);
+            }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

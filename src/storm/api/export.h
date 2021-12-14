@@ -76,10 +76,10 @@ namespace storm {
             std::ofstream stream;
             storm::utility::openFile(filename, stream);
             if (checkResult->isExplicitQualitativeCheckResult()) {
-                stream << checkResult->asExplicitQualitativeCheckResult().toJson(model->getOptionalStateValuations()).dump(4);
+                stream << checkResult->asExplicitQualitativeCheckResult().toJson(model->getOptionalStateValuations(), model->getStateLabeling()).dump(4);
             } else {
                 STORM_LOG_THROW(checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::NotSupportedException, "Export of check results is only supported for explicit check results (e.g. in the sparse engine)");
-                stream << checkResult->template asExplicitQuantitativeCheckResult<ValueType>().toJson(model->getOptionalStateValuations()).dump(4);
+                stream << checkResult->template asExplicitQuantitativeCheckResult<ValueType>().toJson(model->getOptionalStateValuations(), model->getStateLabeling()).dump(4);
             }
             storm::utility::closeFile(stream);
         }

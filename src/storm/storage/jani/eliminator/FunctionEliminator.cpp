@@ -401,8 +401,12 @@ namespace storm {
         }
 
         storm::expressions::Expression eliminateFunctionCallsInExpression(storm::expressions::Expression const& expression, Model const& model) {
-            detail::FunctionEliminationExpressionVisitor visitor(&model.getGlobalFunctionDefinitions());
-            return visitor.eliminate(expression);
+            if (model.getModelFeatures().hasFunctions()) {
+                detail::FunctionEliminationExpressionVisitor visitor(&model.getGlobalFunctionDefinitions());
+                return visitor.eliminate(expression);
+            } else {
+                return expression;
+            }
         }
     }
 }

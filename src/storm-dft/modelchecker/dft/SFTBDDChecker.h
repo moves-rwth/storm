@@ -52,14 +52,14 @@ class SFTBDDChecker {
     getTransformator() const noexcept;
 
     /**
-     * Exports the Bdd that represents the top level gate to a file
+     * Exports the Bdd that represents the top level event to a file
      * in the dot format.
      *
      * \param filename
      * The name of the file the dot graph is written to
      */
     void exportBddToDot(std::string const &filename) {
-        getSylvanBddManager()->exportBddToDot(getTopLevelGateBdd(), filename);
+        getSylvanBddManager()->exportBddToDot(getTopLevelElementBdd(), filename);
     }
 
     /**
@@ -79,10 +79,10 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The Probability that the top level gate fails.
+     * The Probability that the top level event fails.
      */
     ValueType getProbabilityAtTimebound(ValueType timebound) {
-        return getProbabilityAtTimebound(getTopLevelGateBdd(), timebound);
+        return getProbabilityAtTimebound(getTopLevelElementBdd(), timebound);
     }
 
     /**
@@ -97,7 +97,7 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * The Probabilities that the top level gate fails at the given timepoints.
+     * The Probabilities that the top level event fails at the given timepoints.
      *
      * \param timepoints
      * Array of timebounds to calculate the failure probabilities for.
@@ -108,7 +108,7 @@ class SFTBDDChecker {
      */
     std::vector<ValueType> getProbabilitiesAtTimepoints(
         std::vector<ValueType> const &timepoints, size_t const chunksize = 0) {
-        return getProbabilitiesAtTimepoints(getTopLevelGateBdd(), timepoints,
+        return getProbabilitiesAtTimepoints(getTopLevelElementBdd(), timepoints,
                                             chunksize);
     }
 
@@ -411,9 +411,9 @@ class SFTBDDChecker {
 
     /**
      * \return
-     * Generated Bdd that represents the formula of the top level gate
+     * Generated Bdd that represents the formula of the top level event
      */
-    Bdd getTopLevelGateBdd();
+    Bdd getTopLevelElementBdd();
 
     std::shared_ptr<
         storm::transformations::dft::SftToBddTransformator<ValueType>>
