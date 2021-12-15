@@ -68,7 +68,7 @@ namespace storm {
         }
 
         template <typename VariableType>
-        phmap::flat_hash_map<VariableType, typename MonotonicityResult<VariableType>::Monotonicity> MonotonicityResult<VariableType>::getMonotonicityResult() const {
+        std::map<VariableType, typename MonotonicityResult<VariableType>::Monotonicity> MonotonicityResult<VariableType>::getMonotonicityResult() const {
             return monotonicityResult;
         }
 
@@ -178,7 +178,7 @@ namespace storm {
         template <typename VariableType>
         std::shared_ptr<MonotonicityResult<VariableType>> MonotonicityResult<VariableType>::copy() const {
             std::shared_ptr<MonotonicityResult<VariableType>> copy = std::make_shared<MonotonicityResult<VariableType>>();
-            copy->monotonicityResult = phmap::flat_hash_map<VariableType, Monotonicity>(monotonicityResult);
+            copy->monotonicityResult = std::map<VariableType, Monotonicity>(monotonicityResult);
             copy->setAllMonotonicity(allMonotonicity);
             copy->setSomewhereMonotonicity(somewhereMonotonicity);
             copy->setDone(done);

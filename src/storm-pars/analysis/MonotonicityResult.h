@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <storm/storage/BitVector.h>
-#include "parallel_hashmap/phmap.h"
 
 namespace storm {
     namespace analysis {
@@ -61,7 +60,7 @@ namespace storm {
              *
              * @return The parameter / Monotonicity map
              */
-            phmap::flat_hash_map<VariableType, Monotonicity> getMonotonicityResult() const;
+            std::map<VariableType, Monotonicity> getMonotonicityResult() const;
 
 
             void splitBasedOnMonotonicity(std::set<VariableType> const& consideredVariables, std::set<VariableType>& monotoneIncr, std::set<VariableType>& monotoneDecr, std::set<VariableType> & notMontone) const;
@@ -119,7 +118,7 @@ namespace storm {
             std::shared_ptr<MonotonicityResult<VariableType>> copy() const;
 
         private:
-            phmap::flat_hash_map<VariableType, Monotonicity> monotonicityResult;
+            std::map<VariableType, Monotonicity> monotonicityResult;
             std::set<VariableType> doneVariables;
             bool done;
             bool somewhereMonotonicity;

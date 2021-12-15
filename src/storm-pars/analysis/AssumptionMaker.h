@@ -7,7 +7,6 @@
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/SparseMatrix.h"
-#include "parallel_hashmap/phmap.h"
 
 namespace storm {
     namespace analysis {
@@ -34,8 +33,8 @@ namespace storm {
              * @param region The region for the parameters.
              * @return Map with at most three assumptions, and the validation.
              */
-            phmap::flat_hash_map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;
-            phmap::flat_hash_map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
+            std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;
+            std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
 
             /*!
              * Initializes the given number of sample points for a given model, formula and region.
