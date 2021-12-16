@@ -43,6 +43,7 @@ module n11
 	// if the node is infected, then it tries to attack its neighbouring nodes
 	[attack21_11] (s11=2) -> true;
 	[attack12_11] (s11=2) -> true;
+	[] (s11=2) -> true;
 	
 endmodule
 
@@ -63,6 +64,7 @@ module n21
 	[attack31_21] (s21=2) -> true;
 	[attack22_21] (s21=2) -> true;
 	[attack11_21] (s21=2) -> true;
+	[] (s21=2) -> true;
 
 endmodule
 
@@ -90,6 +92,7 @@ module n22
 	[attack23_22] (s22=2) -> true;
 	[attack12_22] (s22=2) -> true;
 	[attack21_22] (s22=2) -> true;
+	[] (s22=2) -> true;
 	
 endmodule
 
@@ -116,6 +119,7 @@ module n33
 	// if the node is infected, then it tries to attack its neighbouring nodes
 	[attack32_33] (s33=2) -> true;
 	[attack23_33] (s33=2) -> true;
+	[] (s33=2) -> true;
 	
 endmodule
 
