@@ -20,40 +20,30 @@ namespace storm {
             template<typename SparseModelType, typename ValueType>
             helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const& env, SparseModelType const& model, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask, CheckFormulaCallback const& formulaChecker) {
                 STORM_LOG_ASSERT(model.getInitialStates().getNumberOfSetBits() == 1, "Lexicographic Model checking on model with multiple initial states is not supported.");
-
                 storm::logic::MultiObjectiveFormula const& formula = checkTask.getFormula();
+
+                // Define the helper that contains all functions
                 helper::lexicographic::lexicographicModelCheckerHelper<SparseModelType, ValueType, true> lMC = helper::lexicographic::lexicographicModelCheckerHelper<SparseModelType, ValueType, true>(formula, model.getTransitionMatrix());
 
+                // get the product of (i) the product-automaton of all subformuale, and (ii) the model
                 auto res = lMC.getCompleteProductModel(model, formulaChecker);
-                //STORM_PRINT("Got product model"<<std::endl);
-                auto completeProductModel = res.first;
-                auto accCond = res.second;
-                storm::storage::BitVector allowed(completeProductModel->getProductModel().getTransitionMatrix().getRowGroupCount(), true);
-                std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> result = lMC.solve(completeProductModel, accCond, allowed);
-                //STORM_PRINT("Solved ltl formula"<<std::endl);
-                storm::storage::MaximalEndComponentDecomposition<ValueType> bcc = result.first;
-                std::vector<std::vector<bool>> bccLexArrays = result.second;
-                /*for (auto v : bccLexArrays) {
-                    STORM_PRINT("bcc: ");
-                    for (auto w : v) {
-                        STORM_PRINT(w << ",");
-                    }
-                    STORM_PRINT(std::endl);
-                }*/
-                ValueType probRes;
-                helper::MDPSparseModelCheckingHelperReturnType<ValueType> return_result = lMC.reachability(bcc, bccLexArrays, completeProductModel, allowed, model, probRes);
-                //STORM_PRINT("Lex result " << probRes << std::endl);
+
+                std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> completeProductModel = res.first;
+                std::vector<uint> accCond = res.second;
+
+
+                // get the lexicogrpahic array for all MEC of the product-model
+                std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> result = lMC.getLexArrays(completeProductModel, accCond);
+                storm::storage::MaximalEndComponentDecomposition<ValueType> mecs = result.first;
+                std::vector<std::vector<bool>> mecLexArrays = result.second;
+
+                // solve the reachability query
+                // That is: solve reachability for the lexicographic highest condition, restrict the model to optimal actions, repeat
+                helper::MDPSparseModelCheckingHelperReturnType<ValueType> return_result = lMC.lexReachability(mecs, mecLexArrays, completeProductModel,  model);
+                STORM_PRINT("Lexicographic result for all conditions: " << std::endl);
                 for (auto const& v : return_result.values) {
                     STORM_PRINT(" - " << v<<std::endl);
                 }
-                /*storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
-
-                STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-
-                storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(this->getModel().getTransitionMatrix());
-                storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
-
-                auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };*/
                 return return_result;
             }
 

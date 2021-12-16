@@ -31,28 +31,49 @@ namespace storm {
        public:
         typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
         typedef storm::transformer::SubsystemBuilderReturnType<ValueType, storm::models::sparse::StandardRewardModel<ValueType>> SubsystemReturnType;
-        using StateType = typename storm::storage::sparse::state_type;
-        // using productModelType = typename std::conditional<Nondeterministic, storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Dtmc<ValueType>>::type;
+        using StateType = storm::storage::sparse::state_type;
         using productModelType = typename storm::models::sparse::Mdp<ValueType>;
 
+        // init
         lexicographicModelCheckerHelper(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix)
             : _transitionMatrix(transitionMatrix), formula(formula){};
 
+        /**
+         * Returns the product of a model and the product-automaton of all sub-formulae of the multi-objective formula
+         * @param model MDP
+         * @param formulaChecker
+         * @return product-model
+         */
         std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<uint>> getCompleteProductModel(
             SparseModelType const& model, CheckFormulaCallback const& formulaChecker);
 
-        std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> solve(
-            std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<uint>& acceptanceConditions,
-            storm::storage::BitVector& allowed);
+        /**
+         * Given a product of an MDP and a automaton, returns the MECs and their corresponding Lex-Arrays
+         * First: get MEC-decomposition
+         * Second: for each MEC, run an algorithm to get Lex-arrays (see Journal-paper)
+         * @param productModel product of MDP and automaton
+         * @param acceptanceConditions indication which Streett-pairs belong to which subformula
+         * @return MECs, corresp. Lex-arrays
+         */
+        std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> getLexArrays(
+            std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<uint>& acceptanceConditions);
 
-        MDPSparseModelCheckingHelperReturnType<ValueType> reachability(
-            storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc, std::vector<std::vector<bool>> const& bccLexArray,
-            std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel, storm::storage::BitVector& allowed,
-            SparseModelType const& originalMdp, ValueType& resultingProb);
+        /**
+         * Solves the reachability query for a lexicographic objective
+         * In lexicographic order, each objective is solved for reachability, i.e. the MECs where the property can be fullfilled are the goal-states
+         * The model is restricted to optimal actions concerning this reachability query
+         * This is repeated for all objectives.
+         * @param mecs MaximalEndcomponents in the product-model
+         * @param mecLexArray corresponding Lex-arrays for each MEC
+         * @param productModel the product of MDP and automaton
+         * @param originalMdp the original MDP
+         * @return
+         */
+        MDPSparseModelCheckingHelperReturnType<ValueType> lexReachability(
+            storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs, std::vector<std::vector<bool>> const& mecLexArray,
+            std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel,
+            SparseModelType const& originalMdp);
 
-        std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, storm::storage::BitVector> computeECs(
-            automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-            storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector& allowed);
 
        private:
         storm::logic::MultiObjectiveFormula const& formula;
@@ -61,43 +82,66 @@ namespace storm {
         static std::map<std::string, storm::storage::BitVector> computeApSets(
             std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker);
 
+        /**
+         * parses an acceptance condition and returns the set of contained Streett-pairs
+         * it is called recursively
+         * A Streett-pair is assumed to be an OR-condition (Fin | Inf)
+         * @param current acceptance condition
+         * @return
+         */
         std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> getStreettPairs(
             storm::automata::AcceptanceCondition::acceptance_expr::ptr const& current);
 
-        bool isAcceptingStreettConditions(storm::storage::MaximalEndComponent const& scc,
+        /**
+         * Checks whether a Streett-condition can be fulfilled in an MEC
+         * @param mec MEC
+         * @param acceptancePairs list of Streett-pairs that create the Streett-condition
+         * @param acceptance original acceptance condition of the automaton
+         * @param model copy of the product-model
+         * @return whether the condition can be fulfilled or not
+         */
+        bool isAcceptingStreettConditions(storm::storage::MaximalEndComponent const& mec,
                                           std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
                                           storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType model);
-        bool isAcceptingPair(storm::storage::MaximalEndComponent const& scc, storm::automata::AcceptanceCondition::acceptance_expr::ptr const& left,
-                             storm::automata::AcceptanceCondition::acceptance_expr::ptr const& right,
-                             storm::automata::AcceptanceCondition::ptr const& acceptance);
 
+        /**
+         * For a given objective, iterates over the MECs and finds the corresponding sink state
+         * @param mecs all MECs in the model
+         * @param mecLexArrays the corresponding lex-arrays
+         * @param oldToNewStateMapping mapping of original states and compressed states
+         * @param condition the condition to be checked
+         * @param numStatesTotal the number of states in total in the compressed model
+         * @param mecToStateMapping mapping of the MECs to their corresponding sink state
+         * @param compressedToReducedMapping mapping of the compressed model to the reduced to optimal
+         * @return set of "good" states for the given condition
+         */
         storm::storage::BitVector getGoodStates(storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc,
-                                                std::vector<std::vector<bool>> const& bccLexArray,
-                                                std::vector<uint_fast64_t> const& oldToNewStateMapping,
-                                                uint const& condition,
-                                                uint const numStates, std::vector<uint_fast64_t> const& compressedToReducedMapping,
-                                                std::map<uint,uint_fast64_t> const& bccToStStateMapping);
+                                                std::vector<std::vector<bool>> const& bccLexArray, std::vector<uint_fast64_t> const& oldToNewStateMapping,
+                                                uint const& condition, uint const numStates, std::vector<uint_fast64_t> const& compressedToReducedMapping,
+                                                std::map<uint, uint_fast64_t> const& bccToStStateMapping);
 
-        MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(std::vector<uint_fast64_t>& newInitalStates,
-                                                                                storm::storage::BitVector const& psiStates,
-                                                                                storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                                                                                SparseModelType const& originalMdp,
-                                                                                std::vector<uint_fast64_t> const& compressedToReducedMapping,
-                                                                                std::vector<uint_fast64_t> const& oldToNewStateMapping);
+        /**
+         * Solves the reachability-query for a given set of goal-states and initial-states
+         */
+        MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(
+            std::vector<uint_fast64_t>& newInitalStates, storm::storage::BitVector const& psiStates, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
+            SparseModelType const& originalMdp, std::vector<uint_fast64_t> const& compressedToReducedMapping, std::vector<uint_fast64_t> const& oldToNewStateMapping);
 
+        /**
+         * Reduces the model to actions that are optimal for the given strategy.
+         * @param transitionMatrix current transition matrix
+         * @param reachabilityResult result of the reachability query, that contains (i) the reachability value for each state, and (ii) the optimal scheduler
+         * @return
+         */
         SubsystemReturnType getReducedSubsystem(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                 MDPSparseModelCheckingHelperReturnType<ValueType> const& reachabilityResult,
                                                 std::vector<uint_fast64_t> const& newInitalStates,
                                                 storm::storage::BitVector const& goodStates);
 
-        int removeTransientSCCs(std::vector<std::vector<bool>>& bccLexArray,
-                                uint const& condition,
-                                storm::storage::MaximalEndComponentDecomposition<ValueType> const& bcc,
-                                std::vector<uint_fast64_t> const& compressedToReducedMapping,
-                                std::vector<uint_fast64_t> const& oldToNewStateMapping,
-                                MDPSparseModelCheckingHelperReturnType<ValueType> const& res);
-
-        std::pair<storm::storage::SparseMatrix<ValueType>,std::map<uint,uint_fast64_t>> addSinkStates(storm::storage::MaximalEndComponentDecomposition<ValueType> const& bccs,
+        /**
+         * add a new sink-state for each MEC
+         */
+        std::pair<storm::storage::SparseMatrix<ValueType>,std::map<uint,uint_fast64_t>> addSinkStates(storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs,
                                                                 std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel);
     };
 

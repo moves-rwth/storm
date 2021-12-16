@@ -18,6 +18,9 @@ namespace storm {
         namespace lexicographic {
             typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
 
+            /**
+             * check a lexicographic LTL-formula
+             */
             template<typename SparseModelType, typename ValueType>
             helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment const& env, SparseModelType const& model,  CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask, CheckFormulaCallback const& formulaChecker);
 
