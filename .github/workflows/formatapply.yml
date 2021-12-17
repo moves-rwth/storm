@@ -27,7 +27,7 @@ jobs:
           git config user.email 'dev@stormchecker.org'
           if [ -z "$(git status --porcelain)" ]
           then
-          echo "Code did not change'
+          echo "Code did not change"
           else
           git commit -am "Applied code formatting"
           git rev-parse HEAD >> .git-blame-ignore-revs
