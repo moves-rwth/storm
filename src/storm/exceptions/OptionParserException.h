@@ -5,11 +5,11 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
-        
-        STORM_NEW_EXCEPTION(OptionParserException)
-        
-    } // namespace exceptions
-} // namespace storm
+namespace exceptions {
+
+STORM_NEW_EXCEPTION(OptionParserException)
+
+}  // namespace exceptions
+}  // namespace storm
 
 #endif /* STORM_EXCEPTIONS_OPTIONPARSEREXCEPTION_H_ */

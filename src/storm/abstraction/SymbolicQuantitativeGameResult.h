@@ -1,41 +1,42 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
+#include "storm/storage/dd/DdType.h"
 
 namespace storm {
-    namespace abstraction {
+namespace abstraction {
 
-        template<storm::dd::DdType Type, typename ValueType>
-        class SymbolicQuantitativeGameResult {
-        public:
-            SymbolicQuantitativeGameResult() = default;
+template<storm::dd::DdType Type, typename ValueType>
+class SymbolicQuantitativeGameResult {
+   public:
+    SymbolicQuantitativeGameResult() = default;
 
-            SymbolicQuantitativeGameResult(storm::dd::Add<Type, ValueType> const& values);
-            SymbolicQuantitativeGameResult(boost::optional<std::pair<ValueType, ValueType>> const& initialStatesRange, storm::dd::Add<Type, ValueType> const& values, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy);
-            
-            bool hasPlayer1Strategy() const;
+    SymbolicQuantitativeGameResult(storm::dd::Add<Type, ValueType> const& values);
+    SymbolicQuantitativeGameResult(boost::optional<std::pair<ValueType, ValueType>> const& initialStatesRange, storm::dd::Add<Type, ValueType> const& values,
+                                   boost::optional<storm::dd::Bdd<Type>> const& player1Strategy, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy);
 
-            storm::dd::Bdd<Type> const& getPlayer1Strategy() const;
+    bool hasPlayer1Strategy() const;
 
-            storm::dd::Bdd<Type>& getPlayer1Strategy();
+    storm::dd::Bdd<Type> const& getPlayer1Strategy() const;
 
-            bool hasPlayer2Strategy() const;
+    storm::dd::Bdd<Type>& getPlayer1Strategy();
 
-            storm::dd::Bdd<Type> const& getPlayer2Strategy() const;
+    bool hasPlayer2Strategy() const;
 
-            storm::dd::Bdd<Type>& getPlayer2Strategy();
+    storm::dd::Bdd<Type> const& getPlayer2Strategy() const;
 
-            bool hasInitialStatesRange() const;
-            
-            std::pair<ValueType, ValueType> const& getInitialStatesRange() const;
+    storm::dd::Bdd<Type>& getPlayer2Strategy();
 
-            boost::optional<std::pair<ValueType, ValueType>> initialStatesRange;
-            storm::dd::Add<Type, ValueType> values;
-            boost::optional<storm::dd::Bdd<Type>> player1Strategy;
-            boost::optional<storm::dd::Bdd<Type>> player2Strategy;
-        };
-        
-    }
-}
+    bool hasInitialStatesRange() const;
+
+    std::pair<ValueType, ValueType> const& getInitialStatesRange() const;
+
+    boost::optional<std::pair<ValueType, ValueType>> initialStatesRange;
+    storm::dd::Add<Type, ValueType> values;
+    boost::optional<storm::dd::Bdd<Type>> player1Strategy;
+    boost::optional<storm::dd::Bdd<Type>> player2Strategy;
+};
+
+}  // namespace abstraction
+}  // namespace storm

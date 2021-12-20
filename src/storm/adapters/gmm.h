@@ -12,9 +12,8 @@
 #pragma GCC diagnostic ignored "-Wmisleading-indentation"
 #endif
 
-#include "gmm/gmm_matrix.h"
 #include "gmm/gmm_iter_solvers.h"
-
+#include "gmm/gmm_matrix.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

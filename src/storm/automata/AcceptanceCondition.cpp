@@ -1,14 +1,13 @@
 #include "AcceptanceCondition.h"
 
-#include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace automata {
 
 AcceptanceCondition::AcceptanceCondition(std::size_t numberOfStates, unsigned int numberOfAcceptanceSets, acceptance_expr::ptr acceptance)
     : numberOfAcceptanceSets(numberOfAcceptanceSets), acceptance(acceptance) {
-
     // initialize acceptance sets
     for (unsigned int i = 0; i < numberOfAcceptanceSets; i++) {
         acceptanceSets.push_back(storm::storage::BitVector(numberOfStates));
@@ -18,7 +17,6 @@ AcceptanceCondition::AcceptanceCondition(std::size_t numberOfStates, unsigned in
 unsigned int AcceptanceCondition::getNumberOfAcceptanceSets() const {
     return numberOfAcceptanceSets;
 }
-
 
 storm::storage::BitVector& AcceptanceCondition::getAcceptanceSet(unsigned int index) {
     return acceptanceSets.at(index);
@@ -32,51 +30,50 @@ AcceptanceCondition::acceptance_expr::ptr AcceptanceCondition::getAcceptanceExpr
     return acceptance;
 }
 
-
 bool AcceptanceCondition::isAccepting(const storm::storage::StateBlock& scc) const {
     return isAccepting(scc, acceptance);
 }
 
 bool AcceptanceCondition::isAccepting(const storm::storage::StateBlock& scc, acceptance_expr::ptr expr) const {
     switch (expr->getType()) {
-    case acceptance_expr::EXP_AND:
-        return isAccepting(scc, expr->getLeft()) && isAccepting(scc, expr->getRight());
-    case acceptance_expr::EXP_OR:
-        return isAccepting(scc, expr->getLeft()) || isAccepting(scc, expr->getRight());
-    case acceptance_expr::EXP_NOT:
-        return !isAccepting(scc, expr->getLeft());
-    case acceptance_expr::EXP_TRUE:
-        return true;
-    case acceptance_expr::EXP_FALSE:
-        return false;
-    case acceptance_expr::EXP_ATOM: {
-        const cpphoafparser::AtomAcceptance& atom = expr->getAtom();
-        const storm::storage::BitVector& acceptanceSet = acceptanceSets.at(atom.getAcceptanceSet());
-        bool negated = atom.isNegated();
-        bool rv;
-        switch (atom.getType()) {
-        case cpphoafparser::AtomAcceptance::TEMPORAL_INF:
-            rv = false;
-            for (auto& state : scc) {
-                if (acceptanceSet.get(state)) {
-                    rv = true;
-                    break;
-                }
-            }
-            break;
-        case cpphoafparser::AtomAcceptance::TEMPORAL_FIN:
-            rv = true;
-            for (auto& state : scc) {
-                if (acceptanceSet.get(state)) {
+        case acceptance_expr::EXP_AND:
+            return isAccepting(scc, expr->getLeft()) && isAccepting(scc, expr->getRight());
+        case acceptance_expr::EXP_OR:
+            return isAccepting(scc, expr->getLeft()) || isAccepting(scc, expr->getRight());
+        case acceptance_expr::EXP_NOT:
+            return !isAccepting(scc, expr->getLeft());
+        case acceptance_expr::EXP_TRUE:
+            return true;
+        case acceptance_expr::EXP_FALSE:
+            return false;
+        case acceptance_expr::EXP_ATOM: {
+            const cpphoafparser::AtomAcceptance& atom = expr->getAtom();
+            const storm::storage::BitVector& acceptanceSet = acceptanceSets.at(atom.getAcceptanceSet());
+            bool negated = atom.isNegated();
+            bool rv;
+            switch (atom.getType()) {
+                case cpphoafparser::AtomAcceptance::TEMPORAL_INF:
                     rv = false;
+                    for (auto& state : scc) {
+                        if (acceptanceSet.get(state)) {
+                            rv = true;
+                            break;
+                        }
+                    }
                     break;
-                }
+                case cpphoafparser::AtomAcceptance::TEMPORAL_FIN:
+                    rv = true;
+                    for (auto& state : scc) {
+                        if (acceptanceSet.get(state)) {
+                            rv = false;
+                            break;
+                        }
+                    }
+                    break;
             }
-            break;
-        }
 
-        return (negated ? !rv : rv);
-    }
+            return (negated ? !rv : rv);
+        }
     }
 
     throw std::runtime_error("Missing case statement");
@@ -90,8 +87,8 @@ std::vector<std::vector<AcceptanceCondition::acceptance_expr::ptr>> AcceptanceCo
     return dnf;
 }
 
-
-void AcceptanceCondition::extractFromDNFRecursion(AcceptanceCondition::acceptance_expr::ptr e, std::vector<std::vector<acceptance_expr::ptr>>& dnf, bool topLevel) const {
+void AcceptanceCondition::extractFromDNFRecursion(AcceptanceCondition::acceptance_expr::ptr e, std::vector<std::vector<acceptance_expr::ptr>>& dnf,
+                                                  bool topLevel) const {
     if (topLevel) {
         if (e->isOR()) {
             if (e->getLeft()->isOR()) {
@@ -123,8 +120,7 @@ void AcceptanceCondition::extractFromDNFRecursion(AcceptanceCondition::acceptanc
     }
 }
 
-
-AcceptanceCondition::ptr AcceptanceCondition::lift(std::size_t productNumberOfStates, std::function<std::size_t (std::size_t)> mapping) const {
+AcceptanceCondition::ptr AcceptanceCondition::lift(std::size_t productNumberOfStates, std::function<std::size_t(std::size_t)> mapping) const {
     AcceptanceCondition::ptr lifted(new AcceptanceCondition(productNumberOfStates, numberOfAcceptanceSets, acceptance));
     for (unsigned int i = 0; i < numberOfAcceptanceSets; i++) {
         const storm::storage::BitVector& set = getAcceptanceSet(i);
@@ -140,6 +136,5 @@ AcceptanceCondition::ptr AcceptanceCondition::lift(std::size_t productNumberOfSt
     return lifted;
 }
 
-
-}
-}
+}  // namespace automata
+}  // namespace storm

@@ -1,19 +1,20 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/Formulas.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/settings/SettingsManager.h"
 
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm-parsers/parser/AutoParser.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/settings/modules/GeneralSettings.h"
 
 TEST(SparseDtmcEliminationModelCheckerTest, Die) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/die.tra", STORM_TEST_RESOURCES_DIR "/lab/die.lab", "", STORM_TEST_RESOURCES_DIR "/rew/die.coin_flips.trans.rew");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(
+        STORM_TEST_RESOURCES_DIR "/tra/die.tra", STORM_TEST_RESOURCES_DIR "/lab/die.lab", "", STORM_TEST_RESOURCES_DIR "/rew/die.coin_flips.trans.rew");
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -57,7 +58,8 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/crowds5_5.tra", STORM_TEST_RESOURCES_DIR "/lab/crowds5_5.lab", "", "");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
+        storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/crowds5_5.tra", STORM_TEST_RESOURCES_DIR "/lab/crowds5_5.lab", "", "");
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -108,7 +110,9 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4_8.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4_8.lab", "", STORM_TEST_RESOURCES_DIR "/rew/leader4_8.pick.trans.rew");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
+        storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4_8.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4_8.lab", "",
+                                                STORM_TEST_RESOURCES_DIR "/rew/leader4_8.pick.trans.rew");
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

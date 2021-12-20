@@ -8,11 +8,12 @@
 //#include "storm-parsers/parser/FormulaParser.h"
 //#include "storm/storage/expressions/ExpressionEvaluator.h"
 //
-//namespace storm {
+// namespace storm {
 //    namespace builder {
 //
 //        template<typename ValueType>
-//        storm::models::sparse::MarkovAutomaton<ValueType> ExplicitGspnModelBuilder<ValueType>::translateGspn(storm::gspn::GSPN const& gspn, std::string const& formula) {
+//        storm::models::sparse::MarkovAutomaton<ValueType> ExplicitGspnModelBuilder<ValueType>::translateGspn(storm::gspn::GSPN const& gspn, std::string const&
+//        formula) {
 //            // set the given gspn and compute the limits of the net
 //            this->gspn = gspn;
 //            computeCapacities(gspn);
@@ -116,7 +117,8 @@
 //        }
 //
 //        template<typename ValueType>
-//        void ExplicitGspnModelBuilder<ValueType>::addRowForPartitions(std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>> const& partitions, storm::gspn::Marking const& currentMarking) {
+//        void ExplicitGspnModelBuilder<ValueType>::addRowForPartitions(std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>>
+//        const& partitions, storm::gspn::Marking const& currentMarking) {
 //            for (auto& partition : partitions) {
 //                std::cout << "\tnew partition:" << std::endl;
 //                auto accWeight = getAccumulatedWeight(partition);
@@ -144,7 +146,8 @@
 //        }
 //
 //        template<typename ValueType>
-//        void ExplicitGspnModelBuilder<ValueType>::addRowForTimedTransitions(std::vector<std::shared_ptr<storm::gspn::TimedTransition<double>>> const& enabledTimedTransitions, storm::gspn::Marking const& currentMarking, double const& accRate) {
+//        void ExplicitGspnModelBuilder<ValueType>::addRowForTimedTransitions(std::vector<std::shared_ptr<storm::gspn::TimedTransition<double>>> const&
+//        enabledTimedTransitions, storm::gspn::Marking const& currentMarking, double const& accRate) {
 //            std::map<uint_fast64_t , double, storm::builder::ExplicitGspnModelBuilder<ValueType>::cmpByIndex> rates;
 //            for (auto& trans : enabledTimedTransitions) {
 //                std::cout << "\t\ttransname: " << trans.getName() << std::endl;
@@ -167,7 +170,8 @@
 //        }
 //
 //        template<typename ValueType>
-//        void ExplicitGspnModelBuilder<ValueType>::addValuesToBuilder(std::map<uint_fast64_t , double, storm::builder::ExplicitGspnModelBuilder<ValueType>::cmpByIndex> const& values) {
+//        void ExplicitGspnModelBuilder<ValueType>::addValuesToBuilder(std::map<uint_fast64_t , double,
+//        storm::builder::ExplicitGspnModelBuilder<ValueType>::cmpByIndex> const& values) {
 //            for (auto& it : values) {
 //                std::cout << "\t\tadd value \"" << it.second << "\" to " << getBitvector(it.first) << std::endl;
 //                builder.addNextValue(currentRowIndex, it.first, it.second);
@@ -175,7 +179,8 @@
 //        }
 //
 //        template<typename ValueType>
-//        std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>> ExplicitGspnModelBuilder<ValueType>::partitonEnabledImmediateTransitions(
+//        std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>>
+//        ExplicitGspnModelBuilder<ValueType>::partitonEnabledImmediateTransitions(
 //                storm::gspn::Marking const& marking,
 //                std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> const& enabledImmediateTransitions) {
 //            decltype(partitonEnabledImmediateTransitions(marking, enabledImmediateTransitions)) result;
@@ -200,7 +205,8 @@
 //        }
 //
 //        template<typename ValueType>
-//        double ExplicitGspnModelBuilder<ValueType>::getAccumulatedWeight(std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> const& vector) const {
+//        double ExplicitGspnModelBuilder<ValueType>::getAccumulatedWeight(std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> const& vector)
+//        const {
 //            double result = 0;
 //
 //            for (auto &trans : vector) {

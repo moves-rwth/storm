@@ -3,29 +3,28 @@
 #include "storm/storage/dd/DdType.h"
 
 namespace storm {
-    namespace abstraction {
-        
-        template<storm::dd::DdType Type>
-        class SymbolicQualitativeResult;
+namespace abstraction {
 
-        class ExplicitQualitativeResult;
-        
-        class QualitativeResult {
-        public:
-            virtual ~QualitativeResult() = default;
-            
-            virtual bool isSymbolic() const;
-            virtual bool isExplicit() const;
-            
-            template<storm::dd::DdType Type>
-            SymbolicQualitativeResult<Type>& asSymbolicQualitativeResult();
-            template<storm::dd::DdType Type>
-            SymbolicQualitativeResult<Type> const& asSymbolicQualitativeResult() const;
+template<storm::dd::DdType Type>
+class SymbolicQualitativeResult;
 
-            ExplicitQualitativeResult& asExplicitQualitativeResult();
-            ExplicitQualitativeResult const& asExplicitQualitativeResult() const;
+class ExplicitQualitativeResult;
 
-        };
-        
-    }
-}
+class QualitativeResult {
+   public:
+    virtual ~QualitativeResult() = default;
+
+    virtual bool isSymbolic() const;
+    virtual bool isExplicit() const;
+
+    template<storm::dd::DdType Type>
+    SymbolicQualitativeResult<Type>& asSymbolicQualitativeResult();
+    template<storm::dd::DdType Type>
+    SymbolicQualitativeResult<Type> const& asSymbolicQualitativeResult() const;
+
+    ExplicitQualitativeResult& asExplicitQualitativeResult();
+    ExplicitQualitativeResult const& asExplicitQualitativeResult() const;
+};
+
+}  // namespace abstraction
+}  // namespace storm
