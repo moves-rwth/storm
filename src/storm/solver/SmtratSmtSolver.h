@@ -4,49 +4,43 @@
 #include "storm/solver/SmtSolver.h"
 
 #ifdef STORM_HAVE_SMTRAT
-#ifdef SMTRATDOESNTWORK // Does not compile with current version of smtrat.
+#ifdef SMTRATDOESNTWORK  // Does not compile with current version of smtrat.
 
-#include "lib/smtrat.h"
 #include "../adapters/RationalFunctionAdapter.h"
-
+#include "lib/smtrat.h"
 
 namespace storm {
-	namespace solver {
-		class SmtratSmtSolver : public SmtSolver {
-                private:
-                        smtrat::RatOne* solver;
-                        unsigned exitCode;
-                    
-		public:
-			SmtratSmtSolver(storm::expressions::ExpressionManager& manager);
-			virtual ~SmtratSmtSolver();
+namespace solver {
+class SmtratSmtSolver : public SmtSolver {
+   private:
+    smtrat::RatOne* solver;
+    unsigned exitCode;
 
-			virtual void push() override;
+   public:
+    SmtratSmtSolver(storm::expressions::ExpressionManager& manager);
+    virtual ~SmtratSmtSolver();
 
-			virtual void pop() override;
+    virtual void push() override;
 
-			virtual void pop(uint_fast64_t n) override;
+    virtual void pop() override;
 
-			virtual CheckResult check() override;
+    virtual void pop(uint_fast64_t n) override;
 
-                        void add(storm::RawPolynomial const&, storm::CompareRelation);
-                        
-                        template<typename ReturnType>
-                        ReturnType  getModel() const;
-                        
-                        std::vector<smtrat::FormulasT> const& getUnsatisfiableCores() const;
-                        
-                        
-                        
-                        
-                        
-            
-            // The last result that was returned by any of the check methods.
-			CheckResult lastResult;
-		};
-	}
-}
+    virtual CheckResult check() override;
+
+    void add(storm::RawPolynomial const&, storm::CompareRelation);
+
+    template<typename ReturnType>
+    ReturnType getModel() const;
+
+    std::vector<smtrat::FormulasT> const& getUnsatisfiableCores() const;
+
+    // The last result that was returned by any of the check methods.
+    CheckResult lastResult;
+};
+}  // namespace solver
+}  // namespace storm
 #endif
 #endif
 
-#endif // STORM_SOLVER_SMTRATSMTSOLVER
+#endif  // STORM_SOLVER_SMTRATSMTSOLVER

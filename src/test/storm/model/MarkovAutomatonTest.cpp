@@ -1,14 +1,13 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
-
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "test/storm_gtest.h"
 
 TEST(MarkovAutomatonTest, ZenoCycleCheck) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/simple.ma");
-    
+
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
     EXPECT_EQ(8ul, model->getNumberOfTransitions());

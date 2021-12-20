@@ -1,7 +1,7 @@
 #include <storm/exceptions/InvalidArgumentException.h>
-#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "test/storm_gtest.h"
 
 TEST(PrismParser, StandardModelTest) {
     storm::prism::Program result;
@@ -18,20 +18,20 @@ TEST(PrismParser, StandardModelTest) {
 
 TEST(PrismParser, SimpleTest) {
     std::string testInput =
-    R"(dtmc
+        R"(dtmc
     module mod1
         b : bool;
         [a] true -> 1: (b'=true != false = b => false);
     endmodule)";
-    
+
     storm::prism::Program result;
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
     EXPECT_EQ(1ul, result.getNumberOfModules());
     EXPECT_EQ(storm::prism::Program::ModelType::DTMC, result.getModelType());
     EXPECT_FALSE(result.hasUnboundedVariables());
-    
+
     testInput =
-    R"(mdp
+        R"(mdp
     
     module main
         x : [1..5] init 1;
@@ -50,7 +50,7 @@ TEST(PrismParser, SimpleTest) {
 
 TEST(PrismParser, ComplexTest) {
     std::string testInput =
-    R"(ma
+        R"(ma
     
     const int a;
     const int b = 10;
@@ -92,7 +92,7 @@ TEST(PrismParser, ComplexTest) {
         [b] true : a + 7;
         max(f, a) <= 8 : 2*b;
     endrewards)";
-    
+
     storm::prism::Program result;
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
     EXPECT_EQ(storm::prism::Program::ModelType::MA, result.getModelType());
@@ -104,12 +104,12 @@ TEST(PrismParser, ComplexTest) {
 
 TEST(PrismParser, UnboundedTest) {
     std::string testInput =
-    R"(mdp
+        R"(mdp
     module main
         b : int;
         [a] true -> 1: (b'=b+1);
     endmodule)";
-    
+
     storm::prism::Program result;
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
     EXPECT_EQ(1ul, result.getNumberOfModules());
@@ -119,7 +119,7 @@ TEST(PrismParser, UnboundedTest) {
 
 TEST(PrismParser, POMDPInputTest) {
     std::string testInput =
-            R"(pomdp
+        R"(pomdp
 
     observables
             i
@@ -140,7 +140,7 @@ TEST(PrismParser, POMDPInputTest) {
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
 
     std::string testInput2 =
-            R"(pomdp
+        R"(pomdp
 
         observable intermediate = s=1 | s=2;
 
@@ -160,7 +160,7 @@ TEST(PrismParser, POMDPInputTest) {
 
 TEST(PrismParser, NAryPredicates) {
     std::string testInput =
-            R"(dtmc
+        R"(dtmc
 
     module example
     s : [0..4] init 0;
@@ -176,13 +176,12 @@ TEST(PrismParser, NAryPredicates) {
     )";
     storm::prism::Program result;
 
-
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
 }
 
 TEST(PrismParser, IllegalInputTest) {
     std::string testInput =
-    R"(ctmc
+        R"(ctmc
 
     const int a;
     const bool a = true;
@@ -192,12 +191,12 @@ TEST(PrismParser, IllegalInputTest) {
         [] c < 3 -> 2: (c' = c+1); 
     endmodule
     )";
-    
+
     storm::prism::Program result;
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
-    
+
     testInput =
-    R"(dtmc
+        R"(dtmc
     
     const int a;
     
@@ -205,11 +204,11 @@ TEST(PrismParser, IllegalInputTest) {
         a : [0 .. 8] init 1;
         [] a < 3 -> 1: (a' = a+1); 
     endmodule)";
-    
+
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
-    
+
     testInput =
-    R"(dtmc
+        R"(dtmc
     
     const int a = 2;
     formula a = 41;
@@ -218,11 +217,11 @@ TEST(PrismParser, IllegalInputTest) {
         c : [0 .. 8] init 1;
         [] c < 3 -> 1: (c' = c+1); 
     endmodule)";
-    
+
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
-    
+
     testInput =
-    R"(dtmc
+        R"(dtmc
     
     const int a = 2;
     
@@ -240,11 +239,11 @@ TEST(PrismParser, IllegalInputTest) {
     endinit
 
     )";
-    
+
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
-    
+
     testInput =
-    R"(dtmc
+        R"(dtmc
     
     module mod1
         c : [0 .. 8] init 1;
@@ -254,41 +253,41 @@ TEST(PrismParser, IllegalInputTest) {
     module mod2
         [] c < 3 -> 1: (c' = c+1);
     endmodule)";
-    
+
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
-                        
+
     testInput =
-    R"(dtmc
+        R"(dtmc
                         
     module mod1
         c : [0 .. 8] init 1;
         [] c < 3 -> 1: (c' = c+1)&(c'=c-1);
     endmodule)";
-                                        
+
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
-    
+
     testInput =
-    R"(dtmc
+        R"(dtmc
     
     module mod1
         c : [0 .. 8] init 1;
         [] c < 3 -> 1: (c' = true || false);
     endmodule)";
-    
+
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
-    
+
     testInput =
-    R"(dtmc
+        R"(dtmc
     
     module mod1
         c : [0 .. 8] init 1;
         [] c + 3 -> 1: (c' = 1);
     endmodule)";
-    
+
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
-    
+
     testInput =
-    R"(dtmc
+        R"(dtmc
     
     module mod1
         c : [0 .. 8] init 1;
@@ -298,10 +297,11 @@ TEST(PrismParser, IllegalInputTest) {
     label "test" = c + 1;
     
     )";
-    
+
     STORM_SILENT_EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
 }
 
 TEST(PrismParser, IllegalSynchronizedWriteTest) {
-    STORM_SILENT_EXPECT_THROW(storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm"), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm"),
+                              storm::exceptions::WrongFormatException);
 }

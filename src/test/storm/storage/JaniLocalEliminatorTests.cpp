@@ -1,21 +1,21 @@
-#include <storm/builder/ExplicitModelBuilder.h>
-#include "test/storm_gtest.h"
+#include <storm-parsers/parser/FormulaParser.h>
+#include <storm-parsers/parser/JaniParser.h>
 #include <storm/api/storm.h>
+#include <storm/builder/ExplicitModelBuilder.h>
+#include <storm/modelchecker/results/ExplicitQuantitativeCheckResult.h>
+#include <storm/settings/modules/GeneralSettings.h>
 #include "storm-parsers/api/model_descriptions.h"
-#include "storm/storage/jani/ModelFeatures.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
-#include "storm/storage/jani/localeliminator/EliminateAction.h"
-#include "storm/storage/jani/localeliminator/RebuildWithoutUnreachableAction.h"
-#include "storm/storage/jani/localeliminator/UnfoldAction.h"
+#include "storm/environment/Environment.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-#include <storm/modelchecker/results/ExplicitQuantitativeCheckResult.h>
-#include "storm/environment/Environment.h"
-#include <storm/settings/modules/GeneralSettings.h>
-#include <storm-parsers/parser/JaniParser.h>
-#include <storm-parsers/parser/FormulaParser.h>
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/ModelFeatures.h"
+#include "storm/storage/jani/Property.h"
+#include "storm/storage/jani/localeliminator/EliminateAction.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
+#include "storm/storage/jani/localeliminator/RebuildWithoutUnreachableAction.h"
+#include "storm/storage/jani/localeliminator/UnfoldAction.h"
+#include "test/storm_gtest.h"
 
 typedef storm::models::sparse::Dtmc<double> Dtmc;
 typedef storm::models::sparse::Mdp<double> Mdp;
@@ -40,12 +40,13 @@ using namespace storm::jani::elimination_actions;
 
 // As many tests rely on building and checking a model (which requires quite a few lines of code), we use this common
 // helper function to do the model checking. Apart from this, the tests don't share any helper functions.
-void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> properties, std::map<storm::expressions::Variable, storm::expressions::Expression> consts, double expectedValue){
+void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> properties,
+                std::map<storm::expressions::Variable, storm::expressions::Expression> consts, double expectedValue) {
     model = model.defineUndefinedConstants(consts);
     properties[0] = properties[0].substitute(consts);
 
     auto formulae = storm::api::extractFormulasFromProperties(properties);
-    storm::builder::BuilderOptions  options(formulae, model);
+    storm::builder::BuilderOptions options(formulae, model);
     options.setBuildAllLabels(true);
     auto explicitModel = storm::api::buildSparseModel<double>(model, options)->template as<Dtmc>();
 
@@ -56,11 +57,10 @@ void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> pro
 
     auto initialStates = explicitModel->getInitialStates();
     EXPECT_EQ(1u, initialStates.getNumberOfSetBits());
-    for (auto state = initialStates.begin(); state != initialStates.end(); ++state){
+    for (auto state = initialStates.begin(); state != initialStates.end(); ++state) {
         EXPECT_NEAR(expectedValue, quantResult[*state], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     }
 }
-
 
 // *******************************
 // Tests for input behaviour:
@@ -70,55 +70,47 @@ void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> pro
 // when a supported property type is provided.
 TEST(JaniLocalEliminator, PropertyTypeTest) {
     // Load a model (the model contains two variables x and y, but doesn't do anything with them).
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/do_nothing.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/do_nothing.jani", storm::jani::getAllKnownModelFeatures(), boost::none).first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
 
     {
         // This should fail because we only support F and R as top-level operators
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "S=? [ true ]");
-        auto property = storm::jani::Property("steady_state", formula,
-                                              std::set<storm::expressions::Variable>());
+        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("S=? [ true ]");
+        auto property = storm::jani::Property("steady_state", formula, std::set<storm::expressions::Variable>());
         STORM_SILENT_EXPECT_THROW(JaniLocalEliminator(model, property), storm::exceptions::NotSupportedException);
     }
     {
         // This should fail because we only support reachability formulas
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "P=? [G x=1]");
+        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [G x=1]");
         auto property = storm::jani::Property("generally", formula, std::set<storm::expressions::Variable>());
         STORM_SILENT_EXPECT_THROW(JaniLocalEliminator(model, property), storm::exceptions::NotSupportedException);
     }
     {
         // This should fail because we only support reachability formulas (this test is mainly there because of the
         // similarity between eventually and until formulas)
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "P=? [x=1 U y=1]");
+        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [x=1 U y=1]");
         auto property = storm::jani::Property("until", formula, std::set<storm::expressions::Variable>());
         STORM_SILENT_EXPECT_THROW(JaniLocalEliminator(model, property), storm::exceptions::NotSupportedException);
     }
     {
         // This should succeed because reachability probabilities are supported
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "P=? [ F x=1 ]");
-        auto property = storm::jani::Property("reachability", formula,
-                                              std::set<storm::expressions::Variable>());
+        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [ F x=1 ]");
+        auto property = storm::jani::Property("reachability", formula, std::set<storm::expressions::Variable>());
         EXPECT_NO_THROW(JaniLocalEliminator(model, property));
     }
     {
         // This should succeed because reachability probabilities are supported
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "R=? [ F x=1 ]");
-        auto property = storm::jani::Property("reward_reachability", formula,
-                                              std::set<storm::expressions::Variable>());
+        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("R=? [ F x=1 ]");
+        auto property = storm::jani::Property("reward_reachability", formula, std::set<storm::expressions::Variable>());
         EXPECT_NO_THROW(JaniLocalEliminator(model, property));
     }
 }
 
 // This test verifies that an error is given if no properties are provided.
 TEST(JaniLocalEliminator, NoPropertiesTest) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/do_nothing.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/do_nothing.jani", storm::jani::getAllKnownModelFeatures(), boost::none).first;
     std::vector<storm::jani::Property> empty_properties;
     STORM_SILENT_ASSERT_THROW(JaniLocalEliminator(model, empty_properties), storm::exceptions::InvalidArgumentException);
 }
@@ -126,8 +118,8 @@ TEST(JaniLocalEliminator, NoPropertiesTest) {
 // This test verifies that the model is flattened if it has more than one automaton and that the user is informed
 // of this.
 TEST(JaniLocalEliminator, FlatteningTest) {
-    auto modelAndProps = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/two_modules.jani",
-                                                    storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto modelAndProps =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/two_modules.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
     auto eliminator = JaniLocalEliminator(modelAndProps.first, modelAndProps.second);
     eliminator.eliminate();
     auto result = eliminator.getResult();
@@ -145,8 +137,8 @@ TEST(JaniLocalEliminator, MissingGuardCompletion) {
     // taking additional precautions, this missing guard will propagate to s_0, which causes an incorrect result.
     // If we activate the addMissingGuards option of the eliminator, this will be avoided.
 
-    auto modelAndProps = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/missing_guard.jani",
-                                                    storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto modelAndProps =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/missing_guard.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
     auto eliminator = JaniLocalEliminator(modelAndProps.first, modelAndProps.second, true);
     eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("main", "s"));
     eliminator.scheduler.addAction(std::make_unique<EliminateAction>("main", "l_s_1"));
@@ -158,15 +150,14 @@ TEST(JaniLocalEliminator, MissingGuardCompletion) {
 
 // This test verifies that locations with loops are correctly identified.
 TEST(JaniLocalEliminator, LoopDetection) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/loops.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/loops.jani", storm::jani::getAllKnownModelFeatures(), boost::none).first;
 
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-            "P=? [F x=1]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F x=1]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
-    // TODO: To access the internals, I replicate some of the internal behaviour of the JaniLocalEliminator. This should probably be done in a neater way by exposing the relevant bits publicly.
+    // TODO: To access the internals, I replicate some of the internal behaviour of the JaniLocalEliminator. This should probably be done in a neater way by
+    // exposing the relevant bits publicly.
 
     auto session = JaniLocalEliminator::Session(model, property);
     UnfoldAction unfoldAction("main", "s");
@@ -183,15 +174,16 @@ TEST(JaniLocalEliminator, LoopDetection) {
 
 // This test verifies that locations that can potentially satisfy the property are correctly identified.
 TEST(JaniLocalEliminator, IsPartOfPropComputation) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/three_variables.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/three_variables.jani", storm::jani::getAllKnownModelFeatures(), boost::none)
+            .first;
 
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-            "P=? [F (x=1 & (y>3 | z<2))]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F (x=1 & (y>3 | z<2))]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
-    // TODO: To access the internals, I replicate some of the internal behaviour of the JaniLocalEliminator. This should probably be done in a neater way by exposing the relevant bits publicly.
+    // TODO: To access the internals, I replicate some of the internal behaviour of the JaniLocalEliminator. This should probably be done in a neater way by
+    // exposing the relevant bits publicly.
 
     auto session = JaniLocalEliminator::Session(model, property);
     EXPECT_TRUE(session.computeIsPartOfProp("main", "l"));
@@ -227,12 +219,12 @@ TEST(JaniLocalEliminator, IsPartOfPropComputation) {
 
 // This test verifies that the initial location is correctly identified.
 TEST(JaniLocalEliminator, IsInitialDetection) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/initial_locations.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/initial_locations.jani", storm::jani::getAllKnownModelFeatures(), boost::none)
+            .first;
 
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-            "P=? [F x=1]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F x=1]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto session = JaniLocalEliminator::Session(model, property);
@@ -285,12 +277,12 @@ TEST(JaniLocalEliminator, IsInitialDetection) {
 
 // This test verifies that the eliminable locations are correctly identified.
 TEST(JaniLocalEliminator, IsEliminableDetection) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/uneliminable_locations.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/uneliminable_locations.jani", storm::jani::getAllKnownModelFeatures(),
+                                            boost::none)
+                     .first;
 
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-            "P=? [F s=4]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F s=4]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto session = JaniLocalEliminator::Session(model, property);
@@ -310,20 +302,19 @@ TEST(JaniLocalEliminator, IsEliminableDetection) {
 
 // This test verifies that the set of variables that make up the property is correctly identified.
 TEST(JaniLocalEliminator, IsVariablePartOfProperty) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/do_nothing.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/do_nothing.jani", storm::jani::getAllKnownModelFeatures(), boost::none).first;
     {
         storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "P=? [F x=1]");
+        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F x=1]");
         auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
         auto session = JaniLocalEliminator::Session(model, property);
         EXPECT_TRUE(session.isVariablePartOfProperty("x"));
         EXPECT_FALSE(session.isVariablePartOfProperty("y"));
-    }{
+    }
+    {
         storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-                "P=? [F x=1 & y=1]");
+        std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F x=1 & y=1]");
         auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
         auto session = JaniLocalEliminator::Session(model, property);
         EXPECT_TRUE(session.isVariablePartOfProperty("x"));
@@ -337,12 +328,11 @@ TEST(JaniLocalEliminator, IsVariablePartOfProperty) {
 
 // This test verifies that unfolding a bounded integer works correctly
 TEST(JaniLocalEliminator, UnfoldingBoundedInteger) {
-
     auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_bounded_integer_unfolding.jani",
-                                                    storm::jani::getAllKnownModelFeatures(), boost::none).first;
+                                            storm::jani::getAllKnownModelFeatures(), boost::none)
+                     .first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-            "P=? [F x=1]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F x=1]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto eliminator = JaniLocalEliminator(model, property, false);
@@ -355,12 +345,11 @@ TEST(JaniLocalEliminator, UnfoldingBoundedInteger) {
 
 // This test verifies that unfolding a boolean works correctly
 TEST(JaniLocalEliminator, UnfoldingBoolean) {
-
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_bool_unfolding.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_bool_unfolding.jani", storm::jani::getAllKnownModelFeatures(), boost::none)
+            .first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-            "P=? [F (!x)]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F (!x)]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto eliminator = JaniLocalEliminator(model, property, false);
@@ -374,10 +363,10 @@ TEST(JaniLocalEliminator, UnfoldingBoolean) {
 // This test verifies that trying to unfold a variable that has already been unfolded produces an error
 TEST(JaniLocalEliminator, UnfoldingTwice) {
     auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_bounded_integer_unfolding.jani",
-    storm::jani::getAllKnownModelFeatures(), boost::none).first;
+                                            storm::jani::getAllKnownModelFeatures(), boost::none)
+                     .first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-            "P=? [F x=1]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F x=1]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto eliminator = JaniLocalEliminator(model, property, false);
@@ -388,8 +377,8 @@ TEST(JaniLocalEliminator, UnfoldingTwice) {
 
 // This test verifies that the sink isn't duplicated during unfolding and that the correct location is marked as sink
 TEST(JaniLocalEliminator, UnfoldingWithSink) {
-    auto modelAndProps = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/missing_guard.jani",
-                                                    storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto modelAndProps =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/missing_guard.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
     auto eliminator = JaniLocalEliminator(modelAndProps.first, modelAndProps.second, true);
     eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("main", "s"));
     eliminator.eliminate();
@@ -409,11 +398,10 @@ TEST(JaniLocalEliminator, IsPartOfPropPropagationUnfolding) {
 
 // This test verifies that combining the two guards during elimination works correctly.
 TEST(JaniLocalEliminator, EliminationNewGuardTest) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_guards.jani",
-                                                    storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_guards.jani", storm::jani::getAllKnownModelFeatures(), boost::none).first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-        "P=? [F c=2]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F c=2]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto eliminator = JaniLocalEliminator(model, property, false);
@@ -429,11 +417,11 @@ TEST(JaniLocalEliminator, EliminationNewGuardTest) {
 
 // This test verifies that combining the two probabilities during elimination works correctly.
 TEST(JaniLocalEliminator, EliminationNewProbabilityTest) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_probabilities.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_probabilities.jani", storm::jani::getAllKnownModelFeatures(), boost::none)
+            .first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-        "P=? [F c=2]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F c=2]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto eliminator = JaniLocalEliminator(model, property, false);
@@ -444,16 +432,16 @@ TEST(JaniLocalEliminator, EliminationNewProbabilityTest) {
     auto result = eliminator.getResult();
 
     EXPECT_EQ(3u, result.getAutomaton(0).getNumberOfLocations());
-    checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 1.0/12.0);
+    checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 1.0 / 12.0);
 }
 
 // This test verifies that generating a new assignment block from two existing ones works correctly.
 TEST(JaniLocalEliminator, EliminationNewUpdatesTest) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_assignments.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/simple_assignments.jani", storm::jani::getAllKnownModelFeatures(), boost::none)
+            .first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-        "P=? [F c=2&x=3&y=5&z=4&w=2]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F c=2&x=3&y=5&z=4&w=2]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto eliminator = JaniLocalEliminator(model, property, false);
@@ -470,11 +458,11 @@ TEST(JaniLocalEliminator, EliminationNewUpdatesTest) {
 
 // This test tests the elimination process if multiple edges are incoming and outgoing from the location to be eliminated
 TEST(JaniLocalEliminator, EliminationMultipleEdges) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/incoming_and_outgoing.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/incoming_and_outgoing.jani", storm::jani::getAllKnownModelFeatures(), boost::none)
+            .first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-        "P=? [F c=4]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F c=4]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto eliminator = JaniLocalEliminator(model, property, false);
@@ -490,11 +478,10 @@ TEST(JaniLocalEliminator, EliminationMultipleEdges) {
 
 // This test verifies the behaviour if multiple destinations of a single edge point to the location to be eliminated.
 TEST(JaniLocalEliminator, EliminationMultiplicityTest) {
-    auto model = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/multiplicity.jani",
-                                            storm::jani::getAllKnownModelFeatures(), boost::none).first;
+    auto model =
+        storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/localeliminator/multiplicity.jani", storm::jani::getAllKnownModelFeatures(), boost::none).first;
     storm::parser::FormulaParser formulaParser(model.getExpressionManager().shared_from_this());
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString(
-        "P=? [F c=2&x=3]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F c=2&x=3]");
     auto property = storm::jani::Property("prop", formula, std::set<storm::expressions::Variable>());
 
     auto eliminator = JaniLocalEliminator(model, property, false);
@@ -505,5 +492,5 @@ TEST(JaniLocalEliminator, EliminationMultiplicityTest) {
     auto result = eliminator.getResult();
 
     EXPECT_EQ(2u, result.getAutomaton(0).getNumberOfLocations());
-    checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 2.0/15.0);
+    checkModel(result, {property}, std::map<storm::expressions::Variable, storm::expressions::Expression>(), 2.0 / 15.0);
 }

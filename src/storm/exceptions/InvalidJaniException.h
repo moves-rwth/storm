@@ -5,11 +5,11 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
+namespace exceptions {
 
-        STORM_NEW_EXCEPTION(InvalidJaniException)
+STORM_NEW_EXCEPTION(InvalidJaniException)
 
-    } // namespace exceptions
-} // namespace storm
+}  // namespace exceptions
+}  // namespace storm
 
-#endif //STORM_INVALIDJANIEXCEPTION_H
+#endif  // STORM_INVALIDJANIEXCEPTION_H

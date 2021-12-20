@@ -153,7 +153,8 @@ bool SparseDeterministicVisitingTimesHelper<ValueType>::isContinuousTime() const
 template<typename ValueType>
 void SparseDeterministicVisitingTimesHelper<ValueType>::createBackwardTransitions() {
     if (!this->_backwardTransitions) {
-        this->_computedBackwardTransitions = std::make_unique<storm::storage::SparseMatrix<ValueType>>(_transitionMatrix.transpose(true, false));  // will drop zeroes
+        this->_computedBackwardTransitions =
+            std::make_unique<storm::storage::SparseMatrix<ValueType>>(_transitionMatrix.transpose(true, false));  // will drop zeroes
         this->_backwardTransitions = this->_computedBackwardTransitions.get();
     }
 }
@@ -231,7 +232,8 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
 
     // We need to check if our sound methods like SVI work on this kind of equation system. Most likely not.
     STORM_LOG_WARN_COND(!env.solver().isForceSoundness(),
-                        "Sound computations are not properly implemented for the computation of expected number of visits in non-trival SCCs. You might get incorrect results.");
+                        "Sound computations are not properly implemented for the computation of expected number of visits in non-trival SCCs. You might get "
+                        "incorrect results.");
     storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
     bool isFixpointFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem;
 
@@ -252,7 +254,7 @@ std::vector<ValueType> SparseDeterministicVisitingTimesHelper<ValueType>::comput
         }
         ++valIt;
     }
-    
+
     // Get the solver object and satisfy requirements
     auto solver = linearEquationSolverFactory.create(env, std::move(sccMatrix));
     solver->setLowerBound(storm::utility::zero<ValueType>());

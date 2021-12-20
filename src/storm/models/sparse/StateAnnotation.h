@@ -4,18 +4,18 @@
 #include "storm/storage/sparse/StateType.h"
 
 namespace storm {
-    namespace models {
-        namespace sparse {
-            
-            class StateAnnotation {
-            public:
-                virtual ~StateAnnotation() = default;
+namespace models {
+namespace sparse {
 
-                virtual std::string getStateInfo(storm::storage::sparse::state_type const& state) const = 0;
-            };
-            
-        }
-    }
-}
+class StateAnnotation {
+   public:
+    virtual ~StateAnnotation() = default;
+
+    virtual std::string getStateInfo(storm::storage::sparse::state_type const& state) const = 0;
+};
+
+}  // namespace sparse
+}  // namespace models
+}  // namespace storm
 
 #endif /* STORM_MODELS_SPARSE_STATEANNOTATION_H_ */

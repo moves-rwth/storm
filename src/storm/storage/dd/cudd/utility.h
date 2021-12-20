@@ -6,16 +6,16 @@
 #include "cuddObj.hh"
 
 namespace storm {
-    namespace dd {
-        
-        struct CuddPointerPairHash {
-            std::size_t operator()(std::pair<DdNode const*, DdNode const*> const& pair) const {
-                std::hash<DdNode const*> hasher;
-                std::size_t seed = hasher(pair.first);
-                boost::hash_combine(seed, hasher(pair.second));
-                return seed;
-            }
-        };
-        
+namespace dd {
+
+struct CuddPointerPairHash {
+    std::size_t operator()(std::pair<DdNode const*, DdNode const*> const& pair) const {
+        std::hash<DdNode const*> hasher;
+        std::size_t seed = hasher(pair.first);
+        boost::hash_combine(seed, hasher(pair.second));
+        return seed;
     }
-}
+};
+
+}  // namespace dd
+}  // namespace storm

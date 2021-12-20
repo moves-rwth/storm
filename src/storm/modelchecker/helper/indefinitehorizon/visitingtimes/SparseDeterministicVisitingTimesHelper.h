@@ -126,7 +126,6 @@ class SparseDeterministicVisitingTimesHelper : public SingleValueModelCheckerHel
     std::unique_ptr<storm::storage::StronglyConnectedComponentDecomposition<ValueType>> _computedSccDecomposition;
 };
 
-
 }  // namespace helper
 }  // namespace modelchecker
 }  // namespace storm

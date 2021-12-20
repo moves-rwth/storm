@@ -1,24 +1,22 @@
 #ifndef PARALLELCOMPOSITIONBUILDER_H
-#define	PARALLELCOMPOSITIONBUILDER_H
+#define PARALLELCOMPOSITIONBUILDER_H
 
 #include "storm/models/sparse/Ctmc.h"
 
 namespace storm {
-    namespace builder {
+namespace builder {
 
-        /*!
-         * Build a parallel composition of Markov chains.
-         */
-        template<typename ValueType>
-        class ParallelCompositionBuilder {
+/*!
+ * Build a parallel composition of Markov chains.
+ */
+template<typename ValueType>
+class ParallelCompositionBuilder {
+   public:
+    static std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> compose(std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> const& ctmcA,
+                                                                           std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> const& ctmcB, bool labelAnd);
+};
 
-        public:
+}  // namespace builder
+}  // namespace storm
 
-            static std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> compose(std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> const& ctmcA, std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> const& ctmcB, bool labelAnd);
-
-        };
-
-    }
-}
-
-#endif	/* PARALLELCOMPOSITIONBUILDER_*/
+#endif /* PARALLELCOMPOSITIONBUILDER_*/
