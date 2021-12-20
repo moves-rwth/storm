@@ -1,0 +1,11 @@
+dtmc
+
+module main
+
+    x: bool init true;
+    s: [0..3];
+
+    [] s<3 -> 0.5: (x'=false) + 0.5: (s'=s+1);
+    [] s=3 -> true;
+
+endmodule

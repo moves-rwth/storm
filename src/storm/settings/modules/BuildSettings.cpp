@@ -37,6 +37,7 @@ namespace storm {
             const std::string buildOverlappingGuardsLabelOptionName = "build-overlapping-guards-label";
             const std::string noSimplifyOptionName = "no-simplify";
             const std::string bitsForUnboundedVariablesOptionName = "int-bits";
+            const std::string performLocationElimination = "location-elimination";
 
             BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
 
@@ -59,6 +60,11 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, noSimplifyOptionName, false, "If set, simplification PRISM input is disabled.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bitsForUnboundedVariablesOptionName, false, "Sets the number of bits that is used for unbounded integer variables.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "The number of bits.").addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorExcluding(0,63)).setDefaultValueUnsignedInteger(32).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, performLocationElimination, false, "If set, location elimination will be performed before the model is built.").setIsAdvanced()
+                                    .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("location-heuristic", "If this number of locations is reached, no further unfolding will be performed").setDefaultValueUnsignedInteger(10).makeOptional().build())
+                                    .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("edges-heuristic", "Determines how many new edges may be created by a single elimination").setDefaultValueUnsignedInteger(10000).makeOptional().build())
+                                    .build());
+
             }
 
             bool BuildSettings::isExplorationOrderSet() const {
@@ -135,6 +141,18 @@ namespace storm {
                 return this->getOption(bitsForUnboundedVariablesOptionName).getArgumentByName("number").getValueAsUnsignedInteger();
             }
 
+
+            bool BuildSettings::isLocationEliminationSet() const {
+                return this->getOption(performLocationElimination).getHasOptionBeenSet();
+            }
+
+            uint64_t BuildSettings::getLocationEliminationLocationHeuristic() const{
+                return this->getOption(performLocationElimination).getArgumentByName("location-heuristic").getValueAsUnsignedInteger();
+            }
+
+            uint64_t BuildSettings::getLocationEliminationEdgesHeuristic() const {
+                return this->getOption(performLocationElimination).getArgumentByName("edges-heuristic").getValueAsUnsignedInteger();
+            }
         }
 
 

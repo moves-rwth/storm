@@ -51,7 +51,7 @@ namespace storm {
             }
 
             // Compute independent subtrees
-            if (dft.topLevelType() == storm::storage::DFTElementType::OR) {
+            if (dft.getTopLevelType() == storm::storage::DFTElementType::OR) {
                 // We only support this for approximation with top level element OR
                 for (auto const& child : dft.getGate(dft.getTopLevelIndex())->children()) {
                     // Consider all children of the top level gate

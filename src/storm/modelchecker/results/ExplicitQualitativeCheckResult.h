@@ -9,6 +9,7 @@
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/sparse/StateValuations.h"
+#include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/utility/OsDetection.h"
 #include "storm/adapters/JsonAdapter.h"
@@ -66,7 +67,7 @@ namespace storm {
             virtual void filter(QualitativeCheckResult const& filter) override;
             
             template<typename JsonRationalType = storm::RationalNumber>
-            storm::json<JsonRationalType> toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none) const;
+            storm::json<JsonRationalType> toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none, boost::optional<storm::models::sparse::StateLabeling> const& stateLabels = boost::none) const;
 
         private:
             static void performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, bool logicalAnd);

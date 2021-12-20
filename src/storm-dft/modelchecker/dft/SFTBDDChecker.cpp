@@ -285,7 +285,7 @@ SFTBDDChecker::SFTBDDChecker(
         transformator)
     : transformator{transformator} {}
 
-Bdd SFTBDDChecker::getTopLevelGateBdd() {
+Bdd SFTBDDChecker::getTopLevelElementBdd() {
     return transformator->transformTopLevel();
 }
 
@@ -322,7 +322,7 @@ std::vector<std::vector<std::string>> SFTBDDChecker::getMinimalCutSets() {
 }
 
 std::vector<std::vector<uint32_t>> SFTBDDChecker::getMinimalCutSetsAsIndices() {
-    auto const bdd{getTopLevelGateBdd().Minsol()};
+    auto const bdd{getTopLevelElementBdd().Minsol()};
 
     std::vector<std::vector<uint32_t>> mcs{};
     std::vector<uint32_t> buffer{};
@@ -441,7 +441,7 @@ ValueType SFTBDDChecker::getImportanceMeasureAtTimebound(
         indexToProbability[currentIndex] = be->getUnreliability(timebound);
     }
 
-    auto const bdd{getTopLevelGateBdd()};
+    auto const bdd{getTopLevelElementBdd()};
     auto const index{getSylvanBddManager()->getIndex(beName)};
     std::map<uint64_t, ValueType> bddToProbability{};
     std::map<uint64_t, ValueType> bddToBirnbaumFactor{};
@@ -457,7 +457,7 @@ ValueType SFTBDDChecker::getImportanceMeasureAtTimebound(
 template <typename FuncType>
 std::vector<ValueType> SFTBDDChecker::getAllImportanceMeasuresAtTimebound(
     ValueType timebound, FuncType func) {
-    auto const bdd{getTopLevelGateBdd()};
+    auto const bdd{getTopLevelElementBdd()};
 
     std::vector<ValueType> resultVector{};
     resultVector.reserve(getDFT()->getBasicElements().size());
@@ -489,7 +489,7 @@ template <typename FuncType>
 std::vector<ValueType> SFTBDDChecker::getImportanceMeasuresAtTimepoints(
     std::string const &beName, std::vector<ValueType> const &timepoints,
     size_t chunksize, FuncType func) {
-    auto const bdd{getTopLevelGateBdd()};
+    auto const bdd{getTopLevelElementBdd()};
     std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
         bddToProbabilities{};
     std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
@@ -536,7 +536,7 @@ template <typename FuncType>
 std::vector<std::vector<ValueType>>
 SFTBDDChecker::getAllImportanceMeasuresAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t chunksize, FuncType func) {
-    auto const bdd{getTopLevelGateBdd()};
+    auto const bdd{getTopLevelElementBdd()};
     auto const basicElements{getDFT()->getBasicElements()};
 
     std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>

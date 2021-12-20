@@ -10,6 +10,7 @@
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/sparse/StateValuations.h"
+#include "storm/models/sparse/StateLabeling.h"
 
 #include "storm/utility/OsDetection.h"
 #include "storm/adapters/JsonAdapter.h"
@@ -78,7 +79,7 @@ namespace storm {
             storm::storage::Scheduler<ValueType> const& getScheduler() const;
             storm::storage::Scheduler<ValueType>& getScheduler();
             
-            storm::json<ValueType> toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none) const;
+            storm::json<ValueType> toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none, boost::optional<storm::models::sparse::StateLabeling> const& stateLabels = boost::none) const;
             
         private:
             // The values of the quantitative check result.

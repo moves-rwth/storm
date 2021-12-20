@@ -331,7 +331,7 @@ namespace storm {
                      assert (order->sortStates(&successors).size() == successors.size());
                      assert (order->contains(currentState) && order->getNode(currentState) != nullptr);
 
-                    if (monRes != nullptr && currentStateMode.second != -1) {
+                    if (monRes != nullptr && currentStateMode.second) {
                         for (auto& param : occuringVariablesAtState[currentState]) {
                             checkParOnStateMonRes(currentState, order, param, monRes);
                         }

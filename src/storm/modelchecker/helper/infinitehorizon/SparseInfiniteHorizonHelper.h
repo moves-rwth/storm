@@ -111,6 +111,11 @@ namespace storm {
                 bool isContinuousTime() const;
                 
                 /*!
+                 * @post _backwardTransitions points to backward transitions.
+                 */
+                void createBackwardTransitions();
+                
+                /*!
                  * @post _longRunComponentDecomposition points to a decomposition of the long run components (MECs, BSCCs)
                  */
                 virtual void createDecomposition() = 0;

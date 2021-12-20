@@ -2,6 +2,7 @@
 
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/LraViHelper.h"
+#include "storm/modelchecker/helper/indefinitehorizon/visitingtimes/SparseDeterministicVisitingTimesHelper.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 
 #include "storm/storage/SparseMatrix.h"
@@ -507,62 +508,34 @@ namespace storm {
                 if (numBSCCs == 1) {
                     bsccReachProbs.front() = storm::utility::one<ValueType>();
                 } else {
-                    // Compute mapping from state indices to their BSCC and
-                    // the set of states that do not lie in a BSCC
-                    std::vector<uint64_t> stateToBsccMap(this->_transitionMatrix.getRowGroupCount(), std::numeric_limits<uint64_t>::max());
-                    storm::storage::BitVector statesNotInComponent(this->_transitionMatrix.getRowGroupCount(), true);
+                    // Get the expected number of times we visit each non-BSCC state
+                    // We deliberately exclude the exit rates here as we want to make this computation on the induced DTMC to get the expected number of times
+                    // that a successor state is chosen probabilistically.
+                    auto visittimesHelper = SparseDeterministicVisitingTimesHelper<ValueType>(this->_transitionMatrix);
+                    this->createBackwardTransitions();
+                    visittimesHelper.provideBackwardTransitions(*this->_backwardTransitions);
+                    auto expVisitTimes = visittimesHelper.computeExpectedVisitingTimes(env, initialDistributionGetter);
+                    // Then use the expected visiting times to compute BSCC reachability probabilities
+                    storm::storage::BitVector nonBsccStates(this->_transitionMatrix.getRowCount(), true);
                     for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
                         for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
-                            uint64_t state = internal::getComponentElementState(element);
-                            statesNotInComponent.set(state, false);
-                            stateToBsccMap[state] = currentComponentIndex;
+                            nonBsccStates.set(internal::getComponentElementState(element), false);
                         }
                     }
-                    // For each non-BSCC state, compute the expected number of times we visit that state by solving an equation system
-                    // The equation system basically considers an equation `init(s) + sum_s' P(s',s) * x_s' = x_s` for each state s.
-                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                    bool isEqSysFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
-                    auto eqSysMatrix = this->_transitionMatrix.getSubmatrix(false, statesNotInComponent, statesNotInComponent, isEqSysFormat);
-                    boost::optional<std::vector<ValueType>> upperBounds;
-                    // Check solver requirements
-                    auto requirements = linearEquationSolverFactory.getRequirements(env);
-                    requirements.clearLowerBounds();
-                    if (requirements.upperBounds()) {
-                        auto toBsccProbabilities = this->_transitionMatrix.getConstrainedRowSumVector(statesNotInComponent, ~statesNotInComponent);
-                        upperBounds = computeUpperBoundsForExpectedVisitingTimes(eqSysMatrix, toBsccProbabilities);
-                        requirements.clearUpperBounds();
-                    }
-                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                    eqSysMatrix = eqSysMatrix.transpose(false, true); // Transpose so that each row considers the predecessors
-                    if (isEqSysFormat) {
-                        eqSysMatrix.convertToEquationSystem();
-                    }
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, eqSysMatrix);
-                    solver->setLowerBound(storm::utility::zero<ValueType>());
-                    if (upperBounds) {
-                        solver->setUpperBounds(std::move(upperBounds.get()));
-                    }
-                    std::vector<ValueType> eqSysRhs;
-                    eqSysRhs.reserve(eqSysMatrix.getRowCount());
-                    for (auto state : statesNotInComponent) {
-                        eqSysRhs.push_back(initialDistributionGetter(state));
-                    }
-                    std::vector<ValueType> eqSysValues(eqSysMatrix.getRowCount());
-                    solver->solveEquations(env, eqSysValues, eqSysRhs);
-                    
-                    // Now that we have the expected number of times we visit each non-BSCC state, we can compute the probabilities to reach each bscc.
-                    // Run over all transitions that enter a BSCC
-                    uint64_t eqSysStateIndex = 0;
-                    for (auto state : statesNotInComponent) {
-                        for (auto const& entry : this->_transitionMatrix.getRow(state)) {
-                            if (!statesNotInComponent.get(entry.getColumn())) {
-                                // Add the probability that the BSCC is reached from this state.
-                                bsccReachProbs[stateToBsccMap[entry.getColumn()]] += entry.getValue() * eqSysValues[eqSysStateIndex];
+                    for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
+                        auto& bsccVal = bsccReachProbs[currentComponentIndex];
+                        for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
+                            uint64_t state = internal::getComponentElementState(element);
+                            bsccVal += initialDistributionGetter(state);
+                            for (auto const& pred : this->_backwardTransitions->getRow(state)) {
+                                if (nonBsccStates.get(pred.getColumn())) {
+                                    bsccVal += pred.getValue() * expVisitTimes[pred.getColumn()];
+                                }
                             }
                         }
-                        ++eqSysStateIndex;
                     }
                 }
+                
                 // As a last step, we normalize these values to counter numerical inaccuracies a bit.
                 // This is only reasonable in non-exact mode.
                 if (!env.solver().isForceExact()) {

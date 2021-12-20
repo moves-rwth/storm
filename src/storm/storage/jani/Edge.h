@@ -60,6 +60,11 @@ namespace storm {
              * Retrieves the guard of this edge.
              */
             storm::expressions::Expression const& getGuard() const;
+
+            /*!
+             * Sets a new guard for this edge.
+             */
+            void setGuard(storm::expressions::Expression const& guard);
             
             /*!
              * Retrieves the destination with the given index.

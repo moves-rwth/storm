@@ -82,7 +82,7 @@ namespace storm {
 
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(const CheckTask <storm::logic::BoundedUntilFormula, ConstantType> &checkTask) {
             // get the step bound
             STORM_LOG_THROW(!checkTask.getFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
             STORM_LOG_THROW(checkTask.getFormula().hasUpperBound(), storm::exceptions::NotSupportedException, "Expected a bounded until formula with an upper bound.");
@@ -207,7 +207,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(const CheckTask <storm::logic::CumulativeRewardFormula, ConstantType> &checkTask) {
             // Obtain the stepBound
             stepBound = checkTask.getFormula().getBound().evaluateAsInt();
             if (checkTask.getFormula().isBoundStrict()) {
@@ -537,7 +537,8 @@ namespace storm {
         }
 
         template<typename SparseModelType, typename ConstantType>
-        std::shared_ptr<storm::analysis::Order> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) {
+        std::shared_ptr<storm::analysis::Order>
+        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) {
             if (this->orderExtender) {
                 auto res = this->orderExtender->extendOrder(order, region);
                 order = std::get<0>(res);
@@ -614,9 +615,10 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
-                storm::storage::ParameterRegion<ValueType> &region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
-                std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart(
+                storm::storage::ParameterRegion<ValueType> &region,
+                std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
+                storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum) const {
             assert (regionVector.size() == 0);
 
             std::multimap<double, VariableType> sortedOnValues;
