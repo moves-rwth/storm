@@ -118,22 +118,22 @@ std::string const& QvbsBenchmark::getConstantDefinition(uint64_t instanceIndex) 
 
 std::string QvbsBenchmark::getInfo(uint64_t instanceIndex, boost::optional<std::vector<std::string>> propertyFilter) const {
     std::stringstream s;
-    s << "--------------------------------------------------------------" << std::endl;
+    s << "--------------------------------------------------------------\n";
     s << "QVBS " << getString(modelData["type"]) << "-Benchmark: " << getString(modelData["name"]) << " (" << getString(modelData["short"]) << ") v"
-      << getString(modelData["version"]) << std::endl;
+      << getString(modelData["version"]) << '\n';
     if (instanceInfos.size() == 1) {
-        s << "1 instance:" << std::endl;
+        s << "1 instance:\n";
     } else if (instanceInfos.size() > 1) {
-        s << instanceInfos.size() << " instances:" << std::endl;
+        s << instanceInfos.size() << " instances:\n";
     }
     for (uint64_t i = 0; i < instanceInfos.size(); ++i) {
-        s << "\t" << (i == instanceIndex ? "*" : " ") << i << "\t" << instanceInfos[i] << std::endl;
+        s << "\t" << (i == instanceIndex ? "*" : " ") << i << "\t" << instanceInfos[i] << '\n';
     }
     if (modelData.count("properties") == 1) {
         if (modelData["properties"].size() == 1) {
-            s << "1 property:" << std::endl;
+            s << "1 property:\n";
         } else if (modelData["properties"].size() > 1) {
-            s << modelData["properties"].size() << " properties:" << std::endl;
+            s << modelData["properties"].size() << " properties:\n";
         }
         for (auto const& property : modelData["properties"]) {
             std::string propertyName = getString(property["name"]);
@@ -143,10 +143,10 @@ std::string QvbsBenchmark::getInfo(uint64_t instanceIndex, boost::optional<std::
             } else {
                 s << " ";
             }
-            s << propertyName << " \t(" << getString(property["type"]) << ")" << std::endl;
+            s << propertyName << " \t(" << getString(property["type"]) << ")\n";
         }
     }
-    s << "--------------------------------------------------------------" << std::endl;
+    s << "--------------------------------------------------------------\n";
     return s.str();
 }
 

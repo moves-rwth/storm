@@ -39,24 +39,24 @@ void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostre
         std::string arrowOrigin = std::to_string(i);
         if (this->hasChoiceLabeling()) {
             arrowOrigin = "\"" + arrowOrigin + "c\"";
-            outStream << "\t" << arrowOrigin << " [shape = \"point\"]" << std::endl;
+            outStream << "\t" << arrowOrigin << " [shape = \"point\"]\n";
             outStream << "\t" << i << " -> " << arrowOrigin << " [label= \"{";
             storm::utility::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(i), maxWidthLabel);
-            outStream << "}\"];" << std::endl;
+            outStream << "}\"];\n";
         }
 
         typename storm::storage::SparseMatrix<ValueType>::const_rows row = this->getTransitionMatrix().getRow(i);
         for (auto const& transition : row) {
             if (transition.getValue() != storm::utility::zero<ValueType>()) {
                 if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
-                    outStream << "\t" << arrowOrigin << " -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ];" << std::endl;
+                    outStream << "\t" << arrowOrigin << " -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ];\n";
                 }
             }
         }
     }
 
     if (finalizeOutput) {
-        outStream << "}" << std::endl;
+        outStream << "}\n";
     }
 }
 

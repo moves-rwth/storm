@@ -19,10 +19,10 @@ struct SpiritErrorHandler {
 
         std::stringstream stream;
         stream << "Parsing error at " << get_line(where) << ":" << boost::spirit::get_column(lineStart, where) << ": "
-               << " expecting " << what << ", here:" << std::endl;
-        stream << "\t" << line << std::endl;
+               << " expecting " << what << ", here:\n";
+        stream << "\t" << line << '\n';
         auto caretColumn = boost::spirit::get_column(lineStart, where);
-        stream << "\t" << std::string(caretColumn - 1, ' ') << "^" << std::endl;
+        stream << "\t" << std::string(caretColumn - 1, ' ') << "^\n";
 
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, stream.str());
         return qi::fail;

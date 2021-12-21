@@ -67,7 +67,7 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Nondet
 template<typename ValueType, typename RewardModelType>
 void NondeterministicModel<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
     this->printModelInformationHeaderToStream(out);
-    out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
+    out << "Choices: \t" << this->getNumberOfChoices() << '\n';
     this->printModelInformationFooterToStream(out);
 }
 
@@ -111,7 +111,7 @@ void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::os
                     outStream << ", fillcolor=\"red\"";
                 }
             }
-            outStream << "];" << std::endl;
+            outStream << "];\n";
 
             // The arrow to the intermediate node:
             outStream << "\t" << state << " -> \"" << state << "c" << choice << "\"";
@@ -152,9 +152,9 @@ void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::os
             }
 
             if (arrowHasLabel || scheduler != nullptr) {
-                outStream << "]" << std::endl;
+                outStream << "]\n";
             }
-            outStream << ";" << std::endl;
+            outStream << ";\n";
 
             // Now draw all probabilistic arcs that belong to this non-deterministic choice.
             for (auto const& transition : row) {
@@ -169,14 +169,14 @@ void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::os
                             outStream << " [style = \"dotted\"]";
                         }
                     }
-                    outStream << ";" << std::endl;
+                    outStream << ";\n";
                 }
             }
         }
     }
 
     if (finalizeOutput) {
-        outStream << "}" << std::endl;
+        outStream << "}\n";
     }
 }
 

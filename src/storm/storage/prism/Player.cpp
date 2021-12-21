@@ -33,7 +33,7 @@ std::ostream& operator<<(std::ostream& stream, Player const& player) {
         } else {
             stream << ",";
         }
-        stream << std::endl << "\t" << module;
+        stream << "\n\t" << module;
     }
     for (auto const& action : player.getActions()) {
         if (firstElement) {
@@ -41,9 +41,9 @@ std::ostream& operator<<(std::ostream& stream, Player const& player) {
         } else {
             stream << ",";
         }
-        stream << std::endl << "\t[" << action << "]";
+        stream << "\n\t[" << action << "]";
     }
-    stream << std::endl << "endplayer" << std::endl;
+    stream << "\nendplayer\n";
     return stream;
 }
 }  // namespace prism

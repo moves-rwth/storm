@@ -88,35 +88,26 @@ struct SparseMultiObjectivePreprocessorResult {
     }
 
     void printToStream(std::ostream& out) const {
-        out << std::endl;
-        out << "---------------------------------------------------------------------------------------------------------------------------------------"
-            << std::endl;
-        out << "                                                       Multi-objective Query                                              " << std::endl;
-        out << "---------------------------------------------------------------------------------------------------------------------------------------"
-            << std::endl;
-        out << std::endl;
-        out << "Original Formula: " << std::endl;
-        out << "--------------------------------------------------------------" << std::endl;
-        out << "\t" << originalFormula << std::endl;
-        out << std::endl;
-        out << "The query considers " << objectives.size() << " objectives:" << std::endl;
-        out << "--------------------------------------------------------------" << std::endl;
+        out << "\n---------------------------------------------------------------------------------------------------------------------------------------\n";
+        out << "                                                       Multi-objective Query                                              \n";
+        out << "---------------------------------------------------------------------------------------------------------------------------------------\n";
+        out << "\nOriginal Formula: \n";
+        out << "--------------------------------------------------------------\n";
+        out << "\t" << originalFormula << '\n';
+        out << "\nThe query considers " << objectives.size() << " objectives:\n";
+        out << "--------------------------------------------------------------\n";
         for (auto const& obj : objectives) {
             obj.printToStream(out);
-            out << std::endl;
+            out << '\n';
         }
-        out << "Number of Long-Run-Average Reward Objectives (after preprocessing): " << getNumberOfLongRunAverageRewardFormulas() << "." << std::endl;
-        out << "Number of Total Reward Objectives (after preprocessing): " << getNumberOfTotalRewardFormulas() << "." << std::endl;
-        out << "--------------------------------------------------------------" << std::endl;
-        out << std::endl;
-        out << "Original Model Information:" << std::endl;
+        out << "Number of Long-Run-Average Reward Objectives (after preprocessing): " << getNumberOfLongRunAverageRewardFormulas() << ".\n";
+        out << "Number of Total Reward Objectives (after preprocessing): " << getNumberOfTotalRewardFormulas() << ".\n";
+        out << "--------------------------------------------------------------\n";
+        out << "\nOriginal Model Information:\n";
         originalModel.printModelInformationToStream(out);
-        out << std::endl;
-        out << "Preprocessed Model Information:" << std::endl;
+        out << "\nPreprocessed Model Information:\n";
         preprocessedModel->printModelInformationToStream(out);
-        out << std::endl;
-        out << "---------------------------------------------------------------------------------------------------------------------------------------"
-            << std::endl;
+        out << "\n---------------------------------------------------------------------------------------------------------------------------------------\n";
     }
 
     friend std::ostream& operator<<(std::ostream& out, SparseMultiObjectivePreprocessorResult<SparseModelType> const& ret) {

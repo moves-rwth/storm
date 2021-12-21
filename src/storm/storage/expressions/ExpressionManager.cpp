@@ -345,14 +345,14 @@ std::shared_ptr<ExpressionManager const> ExpressionManager::getSharedPointer() c
 }
 
 std::ostream& operator<<(std::ostream& out, ExpressionManager const& manager) {
-    out << "manager {" << std::endl;
+    out << "manager {\n";
 
     for (auto const& variableTypePair : manager) {
         out << "\t" << variableTypePair.second << " " << variableTypePair.first.getName() << " [offset " << variableTypePair.first.getOffset() << ", "
-            << variableTypePair.first.getIndex() << " ]" << std::endl;
+            << variableTypePair.first.getIndex() << " ]\n";
     }
 
-    out << "}" << std::endl;
+    out << "}\n";
 
     return out;
 }

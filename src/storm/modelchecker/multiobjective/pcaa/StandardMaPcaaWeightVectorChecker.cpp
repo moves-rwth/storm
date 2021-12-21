@@ -77,7 +77,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
     }
     // Print some statistics (if requested)
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states." << std::endl);
+        STORM_PRINT_AND_LOG("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states.\n");
     }
 }
 

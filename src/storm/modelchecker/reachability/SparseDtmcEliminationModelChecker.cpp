@@ -328,13 +328,13 @@ SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(sto
         std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
         std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
 
-        STORM_PRINT_AND_LOG(std::endl);
-        STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
-        STORM_PRINT_AND_LOG("    * time for SCC decomposition: " << sccDecompositionTimeInMilliseconds.count() << "ms" << std::endl);
-        STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms" << std::endl);
-        STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms" << std::endl);
-        STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
-        STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
+        STORM_PRINT_AND_LOG('\n');
+        STORM_PRINT_AND_LOG("Time breakdown:\n");
+        STORM_PRINT_AND_LOG("    * time for SCC decomposition: " << sccDecompositionTimeInMilliseconds.count() << "ms\n");
+        STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms\n");
+        STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms\n");
+        STORM_PRINT_AND_LOG("------------------------------------------\n");
+        STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms\n");
     }
 
     // Now, we return the value for the only initial state.
@@ -745,9 +745,9 @@ std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelTy
     std::shared_ptr<StatePriorityQueue> statePriorities =
         createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, statesToEliminate);
 
-    STORM_LOG_INFO("Computing conditional probilities." << std::endl);
+    STORM_LOG_INFO("Computing conditional probilities.\n");
     uint_fast64_t numberOfStatesToEliminate = statePriorities->size();
-    STORM_LOG_INFO("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique." << std::endl);
+    STORM_LOG_INFO("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique.\n");
     performPrioritizedStateElimination(statePriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, this->getModel().getInitialStates(),
                                        true);
 
@@ -900,9 +900,9 @@ void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStat
         createStatePriorityQueue(distanceBasedPriorities, transitionMatrix, backwardTransitions, values, subsystem);
 
     std::size_t numberOfStatesToEliminate = statePriorities->size();
-    STORM_LOG_DEBUG("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique." << std::endl);
+    STORM_LOG_DEBUG("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique.\n");
     performPrioritizedStateElimination(statePriorities, transitionMatrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
-    STORM_LOG_DEBUG("Eliminated " << numberOfStatesToEliminate << " states." << std::endl);
+    STORM_LOG_DEBUG("Eliminated " << numberOfStatesToEliminate << " states.\n");
 }
 
 template<typename SparseDtmcModelType>
@@ -913,7 +913,7 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performHyb
     boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
     // When using the hybrid technique, we recursively treat the SCCs up to some size.
     std::vector<storm::storage::sparse::state_type> entryStateQueue;
-    STORM_LOG_DEBUG("Eliminating " << subsystem.size() << " states using the hybrid elimination technique." << std::endl);
+    STORM_LOG_DEBUG("Eliminating " << subsystem.size() << " states using the hybrid elimination technique.\n");
     uint_fast64_t maximalDepth = treatScc(transitionMatrix, values, initialStates, subsystem, initialStates, forwardTransitions, backwardTransitions, false, 0,
                                           storm::settings::getModule<storm::settings::modules::EliminationSettings>().getMaximalSccSize(), entryStateQueue,
                                           computeResultsForInitialStatesOnly, distanceBasedPriorities);
@@ -925,7 +925,7 @@ uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performHyb
         std::shared_ptr<StatePriorityQueue> queuePriorities = std::make_shared<StaticStatePriorityQueue>(sortedStates);
         performPrioritizedStateElimination(queuePriorities, transitionMatrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
     }
-    STORM_LOG_DEBUG("Eliminated " << subsystem.size() << " states." << std::endl);
+    STORM_LOG_DEBUG("Eliminated " << subsystem.size() << " states.\n");
     return maximalDepth;
 }
 

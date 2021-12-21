@@ -42,12 +42,12 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initialize(Envi
 template<typename ModelType, typename GeometryValueType>
 std::string DeterministicSchedsLpChecker<ModelType, GeometryValueType>::getStatistics(std::string const& prefix) const {
     std::stringstream out;
-    out << prefix << swAll << " seconds for LP Checker including... " << std::endl;
-    out << prefix << "  " << swInit << " seconds for LP initialization" << std::endl;
-    out << prefix << "  " << swCheckWeightVectors << " seconds for checking weight vectors" << std::endl;
-    out << prefix << "  " << swCheckAreas << " seconds for checking areas" << std::endl;
-    out << prefix << "  " << swValidate << " seconds for validating LP solutions" << std::endl;
-    out << prefix << "  " << numLpQueries << " calls to LP optimization" << std::endl;
+    out << prefix << swAll << " seconds for LP Checker including... \n";
+    out << prefix << "  " << swInit << " seconds for LP initialization\n";
+    out << prefix << "  " << swCheckWeightVectors << " seconds for checking weight vectors\n";
+    out << prefix << "  " << swCheckAreas << " seconds for checking areas\n";
+    out << prefix << "  " << swValidate << " seconds for validating LP solutions\n";
+    out << prefix << "  " << numLpQueries << " calls to LP optimization\n";
     return out.str();
 }
 
@@ -98,7 +98,7 @@ boost::optional<std::vector<GeometryValueType>> DeterministicSchedsLpChecker<Mod
     lpModel->optimize();
     swCheckWeightVectors.stop();
     ++numLpQueries;
-    // STORM_PRINT_AND_LOG("Writing model to file '" << std::to_string(numLpQueries) << ".lp'" << std::endl;);
+    // STORM_PRINT_AND_LOG("Writing model to file '" << std::to_string(numLpQueries) << ".lp'\n";);
     // lpModel->writeModelToFile(std::to_string(numLpQueries) + ".lp");
     boost::optional<Point> result;
     if (!lpModel->isInfeasible()) {
@@ -363,7 +363,7 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::initializeLpMod
     } else {
         flowEncoding = env.modelchecker().multi().getEncodingType() == storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow;
     }
-    STORM_LOG_INFO("Using " << (flowEncoding ? "flow" : "classical") << " encoding." << std::endl);
+    STORM_LOG_INFO("Using " << (flowEncoding ? "flow" : "classical") << " encoding.\n");
 
     uint64_t numStates = model.getNumberOfStates();
     uint64_t initialState = *model.getInitialStates().begin();
@@ -681,7 +681,7 @@ void DeterministicSchedsLpChecker<ModelType, GeometryValueType>::checkRecursive(
             ++numLpQueries;
             STORM_LOG_TRACE("\tDone solving MILP...");
 
-            // STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'" << std::endl;);
+            // STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'\n";);
             // lpModel->writeModelToFile(polytopeTree.toId() + ".lp");
 
             if (lpModel->isInfeasible()) {

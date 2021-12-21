@@ -325,25 +325,24 @@ std::vector<std::string> Model<Type, ValueType>::getLabels() const {
 
 template<storm::dd::DdType Type, typename ValueType>
 void Model<Type, ValueType>::printModelInformationHeaderToStream(std::ostream& out) const {
-    out << "-------------------------------------------------------------- " << std::endl;
-    out << "Model type: \t" << this->getType() << " (symbolic)" << std::endl;
-    out << "States: \t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)" << std::endl;
-    out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)" << std::endl;
+    out << "-------------------------------------------------------------- \n";
+    out << "Model type: \t" << this->getType() << " (symbolic)\n";
+    out << "States: \t" << this->getNumberOfStates() << " (" << reachableStates.getNodeCount() << " nodes)\n";
+    out << "Transitions: \t" << this->getNumberOfTransitions() << " (" << transitionMatrix.getNodeCount() << " nodes)\n";
 }
 
 template<storm::dd::DdType Type, typename ValueType>
 void Model<Type, ValueType>::printModelInformationFooterToStream(std::ostream& out) const {
     this->printRewardModelsInformationToStream(out);
     this->printDdVariableInformationToStream(out);
-    out << std::endl;
-    out << "Labels: \t" << (this->labelToExpressionMap.size() + this->labelToBddMap.size()) << std::endl;
+    out << "\nLabels: \t" << (this->labelToExpressionMap.size() + this->labelToBddMap.size()) << '\n';
     for (auto const& label : labelToBddMap) {
-        out << "   * " << label.first << " -> " << label.second.getNonZeroCount() << " state(s) (" << label.second.getNodeCount() << " nodes)" << std::endl;
+        out << "   * " << label.first << " -> " << label.second.getNonZeroCount() << " state(s) (" << label.second.getNodeCount() << " nodes)\n";
     }
     for (auto const& label : labelToExpressionMap) {
-        out << "   * " << label.first << std::endl;
+        out << "   * " << label.first << '\n';
     }
-    out << "-------------------------------------------------------------- " << std::endl;
+    out << "-------------------------------------------------------------- \n";
 }
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -358,9 +357,9 @@ void Model<Type, ValueType>::printRewardModelsInformationToStream(std::ostream& 
                               rewardModelNames.push_back(nameRewardModelPair.first);
                           }
                       });
-        out << "Reward Models:  " << boost::join(rewardModelNames, ", ") << std::endl;
+        out << "Reward Models:  " << boost::join(rewardModelNames, ", ") << '\n';
     } else {
-        out << "Reward Models:  none" << std::endl;
+        out << "Reward Models:  none\n";
     }
 }
 

@@ -143,7 +143,7 @@ SparseModelMemoryProduct<ValueType, RewardModelType> MemoryStructure::product(
 std::string MemoryStructure::toString() const {
     std::stringstream stream;
 
-    stream << "Memory Structure with " << getNumberOfStates() << " states: " << std::endl;
+    stream << "Memory Structure with " << getNumberOfStates() << " states: \n";
 
     for (uint_fast64_t state = 0; state < getNumberOfStates(); ++state) {
         stream << "State " << state << ": Labels = {";
@@ -155,7 +155,7 @@ std::string MemoryStructure::toString() const {
             firstLabel = false;
             stream << label;
         }
-        stream << "}, Transitions: " << std::endl;
+        stream << "}, Transitions: \n";
         for (uint_fast64_t transitionTarget = 0; transitionTarget < getNumberOfStates(); ++transitionTarget) {
             stream << "\t From " << state << " to " << transitionTarget << ": \t";
             auto const& transition = getTransitionMatrix()[state][transitionTarget];
@@ -164,7 +164,7 @@ std::string MemoryStructure::toString() const {
             } else {
                 stream << "false";
             }
-            stream << std::endl;
+            stream << '\n';
         }
     }
 

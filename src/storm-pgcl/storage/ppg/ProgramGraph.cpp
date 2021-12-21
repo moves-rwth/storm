@@ -178,30 +178,30 @@ std::vector<ProgramVariableIdentifier> ProgramGraph::variablesNotInGuards() cons
 //        }
 
 void ProgramGraph::printDot(std::ostream& os) const {
-    os << "digraph ppg {" << std::endl;
+    os << "digraph ppg {\n";
 
     for (auto const& loc : locations) {
-        os << "\tl" << loc.first << "[label=" << loc.first << "];" << std::endl;
+        os << "\tl" << loc.first << "[label=" << loc.first << "];\n";
     }
-    os << std::endl;
+    os << '\n';
     for (auto const& loc : locations) {
         if (loc.second.nrOutgoingEdgeGroups() > 1) {
             for (auto const& edgegroup : loc.second) {
-                os << "\teg" << edgegroup->getId() << "[shape=rectangle];" << std::endl;
+                os << "\teg" << edgegroup->getId() << "[shape=rectangle];\n";
             }
         }
     }
-    os << std::endl;
+    os << '\n';
     for (auto const& loc : locations) {
         for (auto const& edgegroup : loc.second) {
             if (loc.second.nrOutgoingEdgeGroups() > 1) {
-                os << "\tl" << loc.first << " -> eg" << edgegroup->getId() << ";" << std::endl;
+                os << "\tl" << loc.first << " -> eg" << edgegroup->getId() << ";\n";
                 for (auto const& edge : *edgegroup) {
                     os << "\teg" << edgegroup->getId() << " -> l" << edge->getTargetId();
                     if (!edge->hasNoAction()) {
                         os << " [label=\"" << edge->getActionId() << "\"]";
                     }
-                    os << ";" << std::endl;
+                    os << ";\n";
                 }
             } else {
                 for (auto const& edge : *edgegroup) {
@@ -209,12 +209,12 @@ void ProgramGraph::printDot(std::ostream& os) const {
                     if (!edge->hasNoAction()) {
                         os << " [label=\"" << edge->getActionId() << "\"]";
                     }
-                    os << ";" << std::endl;
+                    os << ";\n";
                 }
             }
         }
     }
-    os << "}" << std::endl;
+    os << "}\n";
 }
 }  // namespace ppg
 }  // namespace storm

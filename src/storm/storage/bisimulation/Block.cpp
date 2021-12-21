@@ -38,13 +38,12 @@ bool Block<DataType>::operator!=(Block const& other) const {
 
 template<typename DataType>
 void Block<DataType>::print(Partition<DataType> const& partition) const {
-    std::cout << "block [" << this << "] " << this->id << " from " << this->beginIndex << " to " << this->endIndex << " with data [" << this->data() << "]"
-              << std::endl;
+    std::cout << "block [" << this << "] " << this->id << " from " << this->beginIndex << " to " << this->endIndex << " with data [" << this->data() << "]\n";
     std::cout << "states ";
     for (auto stateIt = partition.begin(*this), stateIte = partition.end(*this); stateIt != stateIte; ++stateIt) {
         std::cout << *stateIt << ", ";
     }
-    std::cout << std::endl;
+    std::cout << '\n';
 }
 
 template<typename DataType>

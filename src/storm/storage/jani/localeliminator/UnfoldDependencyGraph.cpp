@@ -215,28 +215,27 @@ UnfoldDependencyGraph::VariableInfo::VariableInfo(std::string expressionVariable
 void UnfoldDependencyGraph::printGroups() {
     int groupCounter = 0;
     for (const auto &group : variableGroups) {
-        std::cout << std::endl << "Variable Group " << groupCounter << std::endl;
+        std::cout << "\nVariable Group " << groupCounter << '\n';
         if (group.allVariablesUnfoldable) {
-            std::cout << "\tDomain size: " << group.domainSize << std::endl;
-            std::cout << "\tCan be unfolded" << std::endl;
+            std::cout << "\tDomain size: " << group.domainSize << '\n';
+            std::cout << "\tCan be unfolded\n";
         } else {
-            std::cout << "\tCan not be unfolded" << std::endl;
+            std::cout << "\tCan not be unfolded\n";
         }
-        std::cout << "\tVariables:" << std::endl;
+        std::cout << "\tVariables:\n";
         for (const auto &var : group.variables) {
             std::cout << "\t\t" << var.expressionVariableName;
             if (var.isConstBoundedInteger)
-                std::cout << " (const-bounded integer with domain size " << var.domainSize << ")";
+                std::cout << " (const-bounded integer with domain size " << var.domainSize << ")\n";
             else
-                std::cout << " (not a const-bounded integer)";
-            std::cout << std::endl;
+                std::cout << " (not a const-bounded integer)\n";
         }
         if (group.dependencies.empty())
-            std::cout << "\tNo Dependencies" << std::endl;
+            std::cout << "\tNo Dependencies\n";
         else
-            std::cout << "\tDependencies:" << std::endl;
+            std::cout << "\tDependencies:\n";
         for (auto dep : group.dependencies) {
-            std::cout << "\t\t" << dep << std::endl;
+            std::cout << "\t\t" << dep << '\n';
         }
 
         groupCounter++;

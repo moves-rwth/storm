@@ -297,7 +297,7 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
             if (assumption != nullptr) {
-                STORM_LOG_INFO("Handling assumption " << *assumption << std::endl);
+                STORM_LOG_INFO("Handling assumption " << *assumption << '\n');
                 handleAssumption(order, assumption);
             }
 

@@ -50,7 +50,7 @@ storm::utility::Stopwatch startStopwatch(std::string const& message) {
 
 void stopStopwatch(storm::utility::Stopwatch& stopWatch) {
     stopWatch.stop();
-    STORM_PRINT_AND_LOG(" done. (" << stopWatch << " seconds)." << std::endl);
+    STORM_PRINT_AND_LOG(" done. (" << stopWatch << " seconds).\n");
 }
 
 void processPrismInputJaniOutput(storm::prism::Program const& prismProg, std::vector<storm::jani::Property> const& properties) {

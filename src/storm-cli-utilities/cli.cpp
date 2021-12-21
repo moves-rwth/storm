@@ -86,9 +86,9 @@ std::string shellQuoteSingleIfNecessary(const std::string& arg) {
 }
 
 void printHeader(std::string const& name, const int argc, const char** argv) {
-    STORM_PRINT(name << " " << storm::StormVersion::shortVersionString() << std::endl);
+    STORM_PRINT(name << " " << storm::StormVersion::shortVersionString() << '\n');
 #ifndef NDEBUG
-    STORM_PRINT("DEBUG BUILD" << std::endl);
+    STORM_PRINT("DEBUG BUILD\n");
 #endif
     // "Compute" the command line argument string with which storm was invoked.
     std::stringstream commandStream;
@@ -99,45 +99,44 @@ void printHeader(std::string const& name, const int argc, const char** argv) {
     std::string command = commandStream.str();
 
     if (!command.empty()) {
-        STORM_PRINT(std::endl);
+        STORM_PRINT('\n');
         std::time_t result = std::time(nullptr);
         STORM_PRINT("Date: " << std::ctime(&result));
-        STORM_PRINT("Command line arguments:" << commandStream.str() << std::endl);
-        STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << std::endl << std::endl);
+        STORM_PRINT("Command line arguments:" << commandStream.str() << '\n');
+        STORM_PRINT("Current working directory: " << storm::utility::cli::getCurrentWorkingDirectory() << "\n\n");
     }
 }
 
 void printVersion(std::string const& name) {
-    STORM_PRINT(storm::StormVersion::longVersionString() << std::endl);
-    STORM_PRINT(storm::StormVersion::buildInfo() << std::endl);
+    STORM_PRINT(storm::StormVersion::longVersionString() << '\n');
+    STORM_PRINT(storm::StormVersion::buildInfo() << '\n');
 
 #ifdef STORM_HAVE_INTELTBB
     STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version "
-                                                                << TBB_INTERFACE_VERSION << ")." << std::endl);
+                                                                << TBB_INTERFACE_VERSION << ").\n");
 #endif
 #ifdef STORM_HAVE_GLPK
-    STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << "." << std::endl);
+    STORM_PRINT("Linked with GNU Linear Programming Kit v" << GLP_MAJOR_VERSION << "." << GLP_MINOR_VERSION << ".\n");
 #endif
 #ifdef STORM_HAVE_GUROBI
-    STORM_PRINT("Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << "." << std::endl);
+    STORM_PRINT("Linked with Gurobi Optimizer v" << GRB_VERSION_MAJOR << "." << GRB_VERSION_MINOR << "." << GRB_VERSION_TECHNICAL << ".\n");
 #endif
 #ifdef STORM_HAVE_Z3
     unsigned int z3Major, z3Minor, z3BuildNumber, z3RevisionNumber;
     Z3_get_version(&z3Major, &z3Minor, &z3BuildNumber, &z3RevisionNumber);
-    STORM_PRINT("Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << "."
-                                                       << std::endl);
+    STORM_PRINT("Linked with Microsoft Z3 Optimizer v" << z3Major << "." << z3Minor << " Build " << z3BuildNumber << " Rev " << z3RevisionNumber << ".\n");
 #endif
 #ifdef STORM_HAVE_MSAT
     char* msatVersion = msat_get_version();
-    STORM_PRINT("Linked with " << msatVersion << "." << std::endl);
+    STORM_PRINT("Linked with " << msatVersion << ".\n");
     msat_free(msatVersion);
 #endif
 #ifdef STORM_HAVE_SMTRAT
-    STORM_PRINT("Linked with SMT-RAT " << SMTRAT_VERSION << "." << std::endl);
+    STORM_PRINT("Linked with SMT-RAT " << SMTRAT_VERSION << ".\n");
 #endif
 #ifdef STORM_HAVE_CARL
     // TODO get version string
-    STORM_PRINT("Linked with CArL." << std::endl);
+    STORM_PRINT("Linked with CArL.\n");
 #endif
 
 #ifdef STORM_HAVE_CUDA
@@ -148,9 +147,9 @@ void printVersion(std::string const& name) {
         STORM_PRINT("Compiled with CUDA support, ");
         // This function call returns 0 if there are no CUDA capable devices.
         if (deviceCount == 0) {
-            STORM_PRINT("but there are no available device(s) that support CUDA." << std::endl);
+            STORM_PRINT("but there are no available device(s) that support CUDA.\n");
         } else {
-            STORM_PRINT("detected " << deviceCount << " CUDA capable device(s):" << std::endl);
+            STORM_PRINT("detected " << deviceCount << " CUDA capable device(s):\n");
         }
 
         int dev, driverVersion = 0, runtimeVersion = 0;
@@ -160,18 +159,18 @@ void printVersion(std::string const& name) {
             cudaDeviceProp deviceProp;
             cudaGetDeviceProperties(&deviceProp, dev);
 
-            STORM_PRINT("CUDA device " << dev << ": \"" << deviceProp.name << "\"" << std::endl);
+            STORM_PRINT("CUDA device " << dev << ": \"" << deviceProp.name << "\"\n");
 
             // Console log
             cudaDriverGetVersion(&driverVersion);
             cudaRuntimeGetVersion(&runtimeVersion);
             STORM_PRINT("  CUDA Driver Version / Runtime Version          " << driverVersion / 1000 << "." << (driverVersion % 100) / 10 << " / "
-                                                                            << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10 << std::endl);
-            STORM_PRINT("  CUDA Capability Major/Minor version number:    " << deviceProp.major << "." << deviceProp.minor << std::endl);
+                                                                            << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10 << '\n');
+            STORM_PRINT("  CUDA Capability Major/Minor version number:    " << deviceProp.major << "." << deviceProp.minor << '\n');
         }
-        STORM_PRINT(std::endl);
+        STORM_PRINT('\n');
     } else {
-        STORM_PRINT("Compiled with CUDA support, but an error occured trying to find CUDA devices." << std::endl);
+        STORM_PRINT("Compiled with CUDA support, but an error occured trying to find CUDA devices.\n");
     }
 #endif
 }
@@ -290,7 +289,7 @@ void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
     struct rusage ru;
     getrusage(RUSAGE_SELF, &ru);
 
-    std::cout << std::endl << "Performance statistics:" << std::endl;
+    std::cout << "\nPerformance statistics:\n";
 #ifdef MACOS
     // For Mac OS, this is returned in bytes.
     uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024 / 1024;
@@ -299,11 +298,11 @@ void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {
     // For Linux, this is returned in kilobytes.
     uint64_t maximumResidentSizeInMegabytes = ru.ru_maxrss / 1024;
 #endif
-    std::cout << "  * peak memory usage: " << maximumResidentSizeInMegabytes << "MB" << std::endl;
+    std::cout << "  * peak memory usage: " << maximumResidentSizeInMegabytes << "MB\n";
     char oldFillChar = std::cout.fill('0');
-    std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << ru.ru_utime.tv_usec / 1000 << "s" << std::endl;
+    std::cout << "  * CPU time: " << ru.ru_utime.tv_sec << "." << std::setw(3) << ru.ru_utime.tv_usec / 1000 << "s\n";
     if (wallclockMilliseconds != 0) {
-        std::cout << "  * wallclock time: " << (wallclockMilliseconds / 1000) << "." << std::setw(3) << (wallclockMilliseconds % 1000) << "s" << std::endl;
+        std::cout << "  * wallclock time: " << (wallclockMilliseconds / 1000) << "." << std::setw(3) << (wallclockMilliseconds % 1000) << "s\n";
     }
     std::cout.fill(oldFillChar);
 }

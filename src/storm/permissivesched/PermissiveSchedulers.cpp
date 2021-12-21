@@ -31,7 +31,7 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP
     STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported");
     comp.calculatePermissiveScheduler(storm::logic::isLowerBound(safeProp.getComparisonType()), safeProp.getThresholdAs<double>());
     // comp.dumpLpToFile("milpdump.lp");
-    std::cout << "Found Solution: " << (comp.foundSolution() ? "yes" : "no") << std::endl;
+    std::cout << "Found Solution: " << (comp.foundSolution() ? "yes" : "no") << '\n';
     if (comp.foundSolution()) {
         return boost::optional<SubMDPPermissiveScheduler<RM>>(comp.getScheduler());
     } else {

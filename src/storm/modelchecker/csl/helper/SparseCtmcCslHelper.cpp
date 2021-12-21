@@ -590,7 +590,7 @@ std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Env
         /*std::vector<ValueType> b = transposedMatrix.getConstrainedRowSumVector(relevantStates, initialStates);
         for (auto& element : b) {
             element /= uniformizationRate;
-            std::cout << element << std::endl;
+            std::cout << element << '\n';
         }*/
 
         ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;

@@ -596,7 +596,7 @@ namespace storm {
         std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
             for (auto const& elem : mElements) {
-                stream << "[" << elem->id() << "]" << *elem << std::endl;
+                stream << "[" << elem->id() << "]" << *elem << '\n';
             }
             return stream.str();
         }
@@ -614,7 +614,7 @@ namespace storm {
             stream << "[" << mElements[mTopLevelIndex]->id() << "] {";
             std::vector<size_t>::const_iterator it = mTopModule.begin();
             if (it == mTopModule.end()) {
-                stream << "}" << std::endl;
+                stream << "}\n";
                 return stream.str();
             }
             STORM_LOG_ASSERT(it != mTopModule.end(), "Element not found.");
@@ -624,7 +624,7 @@ namespace storm {
                 stream << ", " << mElements[(*it)]->name();
                 ++it;
             }
-            stream << "}" << std::endl;
+            stream << "}\n";
 
             for (auto const& spareModule : mSpareModules) {
                 stream << "[" << mElements[spareModule.first]->name() << "] = {";
@@ -638,7 +638,7 @@ namespace storm {
                         ++it;
                     }
                 }
-                stream << "}" << std::endl;
+                stream << "}\n";
             }
             return stream.str();
         }
@@ -661,7 +661,7 @@ namespace storm {
                         stream << "using " << useId;
                     }
                 }
-                stream << std::endl;
+                stream << '\n';
             }
             return stream.str();
         }
@@ -763,7 +763,7 @@ namespace storm {
                     for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
                         if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
                             if (!wellformed) {
-                                stream << std::endl;
+                                stream << '\n';
                             }
                             stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
                             wellformed = false;
@@ -778,7 +778,7 @@ namespace storm {
                     std::shared_ptr<DFTDependency<ValueType> const> dependency = this->getDependency(idDependency);
                     if (dependency->dependentEvents().size() != 1) {
                         if (!wellformed) {
-                            stream << std::endl;
+                            stream << '\n';
                         }
                         stream << "Dependency '" << dependency->name() << "' is not binary.";
                         wellformed = false;
@@ -1140,40 +1140,40 @@ namespace storm {
             STORM_LOG_ASSERT(noBE + noStatic + noDynamic == nrElements(), "No. of elements does not match.");
 
             // Print output
-            stream << "=============DFT Statistics==============" << std::endl;
-            stream << "Number of BEs: " << nrBasicElements() << std::endl;
-            stream << "Number of static elements: " << noStatic << std::endl;
-            stream << "Number of dynamic elements: " << noDynamic << std::endl;
-            stream << "Number of elements: " << nrElements() << std::endl;
-            stream << "-----------------------------------------" << std::endl;
+            stream << "=============DFT Statistics==============\n";
+            stream << "Number of BEs: " << nrBasicElements() << '\n';
+            stream << "Number of static elements: " << noStatic << '\n';
+            stream << "Number of dynamic elements: " << noDynamic << '\n';
+            stream << "Number of elements: " << nrElements() << '\n';
+            stream << "-----------------------------------------\n";
             if (noBE > 0) {
-                stream << "Number of BEs: " << noBE << std::endl;
+                stream << "Number of BEs: " << noBE << '\n';
             }
             if (noAnd > 0) {
-                stream << "Number of AND gates: " << noAnd << std::endl;
+                stream << "Number of AND gates: " << noAnd << '\n';
             }
             if (noOr > 0) {
-                stream << "Number of OR gates: " << noOr << std::endl;
+                stream << "Number of OR gates: " << noOr << '\n';
             }
             if (noVot > 0) {
-                stream << "Number of VOT gates: " << noVot << std::endl;
+                stream << "Number of VOT gates: " << noVot << '\n';
             }
             if (noPand > 0) {
-                stream << "Number of PAND gates: " << noPand << std::endl;
+                stream << "Number of PAND gates: " << noPand << '\n';
             }
             if (noPor > 0) {
-                stream << "Number of POR gates: " << noPor << std::endl;
+                stream << "Number of POR gates: " << noPor << '\n';
             }
             if (noSpare > 0) {
-                stream << "Number of SPARE gates: " << noSpare << std::endl;
+                stream << "Number of SPARE gates: " << noSpare << '\n';
             }
             if (noDependency > 0) {
-                stream << "Number of Dependencies: " << noDependency << std::endl;
+                stream << "Number of Dependencies: " << noDependency << '\n';
             }
             if (noRestriction > 0) {
-                stream << "Number of Restrictions: " << noRestriction << std::endl;
+                stream << "Number of Restrictions: " << noRestriction << '\n';
             }
-            stream << "=========================================" << std::endl;
+            stream << "=========================================\n";
         }
 
         // Explicitly instantiate the class.

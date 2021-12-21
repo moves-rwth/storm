@@ -142,7 +142,7 @@ class PolytopeTree {
             return "Empty PolytopeTree";
         }
         std::stringstream s;
-        s << "PolytopeTree node with " << getChildren().size() << " children: " << getPolytope()->toString(true) << std::endl << "Vertices: ";
+        s << "PolytopeTree node with " << getChildren().size() << " children: " << getPolytope()->toString(true) << "\nVertices: ";
         auto vertices = getPolytope()->getVertices();
         for (auto const& v : vertices) {
             s << "[";
@@ -151,7 +151,7 @@ class PolytopeTree {
             }
             s << "]\t";
         }
-        s << std::endl;
+        s << '\n';
         return s.str();
     }
 

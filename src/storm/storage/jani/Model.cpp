@@ -1627,7 +1627,7 @@ std::string filterName(std::string const& text) {
 }
 
 void Model::writeDotToStream(std::ostream& outStream) const {
-    outStream << "digraph " << filterName(name) << " {" << std::endl;
+    outStream << "digraph " << filterName(name) << " {\n";
 
     std::vector<std::string> actionNames;
     for (auto const& act : actions) {
@@ -1636,7 +1636,7 @@ void Model::writeDotToStream(std::ostream& outStream) const {
 
     for (auto const& automaton : automata) {
         automaton.writeDotToStream(outStream, actionNames);
-        outStream << std::endl;
+        outStream << '\n';
     }
 
     outStream << "}";

@@ -30,10 +30,10 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
     }
 
     // Write header
-    os << "// Exported by storm" << std::endl;
-    os << "// Original model type: " << sparseModel->getType() << std::endl;
-    os << "@type: " << sparseModel->getType() << std::endl;
-    os << "@parameters" << std::endl;
+    os << "// Exported by storm\n";
+    os << "// Original model type: " << sparseModel->getType() << '\n';
+    os << "@type: " << sparseModel->getType() << '\n';
+    os << "@parameters\n";
     if (parameters.empty()) {
         for (std::string const& parameter : getParameters(sparseModel)) {
             os << parameter << " ";
@@ -43,7 +43,7 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
             os << parameter << " ";
         }
     }
-    os << std::endl;
+    os << '\n';
 
     // Optionally write placeholders which only need to be parsed once
     // This is used to reduce the parsing effort for rational functions
@@ -53,20 +53,20 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
         placeholders = generatePlaceholders(sparseModel, exitRates);
     }
     if (!placeholders.empty()) {
-        os << "@placeholders" << std::endl;
+        os << "@placeholders\n";
         for (auto const& entry : placeholders) {
-            os << "$" << entry.second << " : " << entry.first << std::endl;
+            os << "$" << entry.second << " : " << entry.first << '\n';
         }
     }
 
-    os << "@reward_models" << std::endl;
+    os << "@reward_models\n";
     for (auto const& rewardModel : sparseModel->getRewardModels()) {
         os << rewardModel.first << " ";
     }
-    os << std::endl;
-    os << "@nr_states" << std::endl << sparseModel->getNumberOfStates() << std::endl;
-    os << "@nr_choices" << std::endl << sparseModel->getNumberOfChoices() << std::endl;
-    os << "@model" << std::endl;
+    os << '\n';
+    os << "@nr_states\n" << sparseModel->getNumberOfStates() << '\n';
+    os << "@nr_choices\n" << sparseModel->getNumberOfChoices() << '\n';
+    os << "@model\n";
 
     storm::storage::SparseMatrix<ValueType> const& matrix = sparseModel->getTransitionMatrix();
 
@@ -116,10 +116,10 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
                 os << " " << label;
             }
         }
-        os << std::endl;
+        os << '\n';
         // Write state valuations as comments
         if (sparseModel->hasStateValuations()) {
-            os << "//" << sparseModel->getStateValuations().getStateInfo(group) << std::endl;
+            os << "//" << sparseModel->getStateValuations().getStateInfo(group) << '\n';
         }
 
         // Write probabilities
@@ -165,14 +165,14 @@ void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::
             if (!first) {
                 os << "]";
             }
-            os << std::endl;
+            os << '\n';
 
             // Write transitions
             for (auto it = matrix.begin(row); it != matrix.end(row); ++it) {
                 ValueType prob = it->getValue();
                 os << "\t\t" << it->getColumn() << " : ";
                 writeValue(os, prob, placeholders);
-                os << std::endl;
+                os << '\n';
             }
         }
     }  // end state iteration

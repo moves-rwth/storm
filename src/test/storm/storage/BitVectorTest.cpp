@@ -144,7 +144,7 @@ TEST(BitVectorDeathTest, GetSetAssertion) {
     EXPECT_DEATH_IF_SUPPORTED(vector.set(32), "");
 #endif
 #else
-    std::cerr << "WARNING: Not testing GetSetAssertions, as they are disabled in release mode." << std::endl;
+    std::cerr << "WARNING: Not testing GetSetAssertions, as they are disabled in release mode.\n";
     SUCCEED();
 #endif
 }

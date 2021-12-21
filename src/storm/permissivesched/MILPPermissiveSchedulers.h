@@ -64,19 +64,19 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
         std::fstream filestream;
         filestream.open(filename, std::fstream::out);
         for (auto const& pVar : mProbVariables) {
-            filestream << pVar.second.getName() << "->" << solver.getContinuousValue(pVar.second) << std::endl;
+            filestream << pVar.second.getName() << "->" << solver.getContinuousValue(pVar.second) << '\n';
         }
         for (auto const& yVar : multistrategyVariables) {
-            filestream << yVar.second.getName() << "->" << solver.getBinaryValue(yVar.second) << std::endl;
+            filestream << yVar.second.getName() << "->" << solver.getBinaryValue(yVar.second) << '\n';
         }
         for (auto const& aVar : mAlphaVariables) {
-            filestream << aVar.second.getName() << "->" << solver.getBinaryValue(aVar.second) << std::endl;
+            filestream << aVar.second.getName() << "->" << solver.getBinaryValue(aVar.second) << '\n';
         }
         for (auto const& betaVar : mBetaVariables) {
-            filestream << betaVar.second.getName() << "->" << solver.getBinaryValue(betaVar.second) << std::endl;
+            filestream << betaVar.second.getName() << "->" << solver.getBinaryValue(betaVar.second) << '\n';
         }
         for (auto const& gammaVar : mGammaVariables) {
-            filestream << gammaVar.second.getName() << "->" << solver.getContinuousValue(gammaVar.second) << std::endl;
+            filestream << gammaVar.second.getName() << "->" << solver.getContinuousValue(gammaVar.second) << '\n';
         }
         filestream.close();
     }

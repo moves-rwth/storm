@@ -1001,7 +1001,7 @@ class MILPMinimalLabelSetGenerator {
                             storm::exceptions::InvalidArgumentException,
                             "Given probability threshold " << probabilityThreshold << " can not be " << (strictBound ? "achieved" : "exceeded")
                                                            << " in model with maximal reachability probability of " << maximalReachabilityProbability << ".");
-            std::cout << std::endl << "Maximal reachability in model is " << maximalReachabilityProbability << "." << std::endl << std::endl;
+            std::cout << "\nMaximal reachability in model is " << maximalReachabilityProbability << ".\n\n";
         }
 
         // (2) Identify relevant and problematic states.
@@ -1042,7 +1042,7 @@ class MILPMinimalLabelSetGenerator {
     static std::shared_ptr<HighLevelCounterexample> computeCounterexample(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
                                                                           storm::models::sparse::Mdp<T> const& mdp,
                                                                           std::shared_ptr<storm::logic::Formula const> const& formula) {
-        std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
+        std::cout << "\nGenerating minimal label counterexample for formula " << *formula << '\n';
 
         // Check whether there are choice origins available
         STORM_LOG_THROW(mdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException,
@@ -1113,9 +1113,8 @@ class MILPMinimalLabelSetGenerator {
             getMinimalLabelSet(env, mdp, labelSets, phiStates, psiStates, threshold, strictBound, true,
                                storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
         auto endTime = std::chrono::high_resolution_clock::now();
-        std::cout << std::endl
-                  << "Computed minimal command set of size " << usedLabelSet.size() << " in "
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+        std::cout << "\nComputed minimal command set of size " << usedLabelSet.size() << " in "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms.\n";
 
         if (symbolicModel.isPrismProgram()) {
             return std::make_shared<HighLevelCounterexample>(symbolicModel.asPrismProgram().restrictCommands(usedLabelSet));

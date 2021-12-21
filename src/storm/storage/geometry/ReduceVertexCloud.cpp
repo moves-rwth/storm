@@ -59,7 +59,7 @@ std::pair<storm::storage::BitVector, bool> ReduceVertexCloud<ValueType>::elimina
     storm::storage::BitVector vertices(input.size());
     for (uint64_t pointIndex = 0; pointIndex < input.size(); ++pointIndex) {
 #ifdef _DEBUG_REUCE_VERTEX_CLOUD
-        std::cout << pointIndex << " out of " << input.size() << std::endl;
+        std::cout << pointIndex << " out of " << input.size() << '\n';
 #endif
         smtSolver->push();
         std::map<uint64_t, std::vector<storm::expressions::Expression>> dimensionTerms;
@@ -90,7 +90,7 @@ std::pair<storm::storage::BitVector, bool> ReduceVertexCloud<ValueType>::elimina
 #ifdef _DEBUG_REDUCE_VERTEX_CLOUD
             if (input[pointIndex].size() == 2) {
                 std::cout << "point " << toString(input[pointIndex]) << " is a vertex:";
-                std::cout << smtSolver->getSmtLibString() << std::endl;
+                std::cout << smtSolver->getSmtLibString() << '\n';
             }
 #endif
             vertices.set(pointIndex, true);
@@ -106,7 +106,7 @@ std::pair<storm::storage::BitVector, bool> ReduceVertexCloud<ValueType>::elimina
                 }
                 varIndex++;
             }
-            std::cout << std::endl;
+            std::cout << '\n';
         }
         if (timeOut >)
 #endif
@@ -118,8 +118,8 @@ std::pair<storm::storage::BitVector, bool> ReduceVertexCloud<ValueType>::elimina
             }
         smtSolver->pop();
 #ifdef _DEBUG_REDUCE_VERTEX_CLOUD
-        std::cout << "Solver time " << solverTime.getTimeInMilliseconds() << std::endl;
-        std::cout << "Total time " << totalTime.getTimeInMilliseconds() << std::endl;
+        std::cout << "Solver time " << solverTime.getTimeInMilliseconds() << '\n';
+        std::cout << "Total time " << totalTime.getTimeInMilliseconds() << '\n';
 #endif
     }
     return {vertices, false};

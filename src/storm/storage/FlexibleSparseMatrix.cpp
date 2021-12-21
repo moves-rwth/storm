@@ -303,20 +303,20 @@ std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<ValueType> cons
     for (FlexibleIndex i = 0; i < matrix.getColumnCount(); ++i) {
         out << i << "\t";
     }
-    out << std::endl;
+    out << '\n';
 
     if (!matrix.hasTrivialRowGrouping()) {
         // Iterate over all row groups
         FlexibleIndex rowGroupCount = matrix.getRowGroupCount();
         for (FlexibleIndex rowGroup = 0; rowGroup < rowGroupCount; ++rowGroup) {
-            out << "\t---- group " << rowGroup << "/" << (rowGroupCount - 1) << " ---- " << std::endl;
+            out << "\t---- group " << rowGroup << "/" << (rowGroupCount - 1) << " ---- \n";
             FlexibleIndex endRow = matrix.rowGroupIndices[rowGroup + 1];
             // Iterate over all rows.
             for (FlexibleIndex row = matrix.rowGroupIndices[rowGroup]; row < endRow; ++row) {
                 // Print the actual row.
                 out << rowGroup << "\t(\t";
                 matrix.printRow(out, row);
-                out << "\t)\t" << rowGroup << std::endl;
+                out << "\t)\t" << rowGroup << '\n';
             }
         }
 
@@ -326,7 +326,7 @@ std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<ValueType> cons
             // Print the actual row.
             out << row << "\t(\t";
             matrix.printRow(out, row);
-            out << "\t)\t" << row << std::endl;
+            out << "\t)\t" << row << '\n';
         }
     }
 
@@ -335,7 +335,7 @@ std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<ValueType> cons
     for (FlexibleIndex i = 0; i < matrix.getColumnCount(); ++i) {
         out << i << "\t";
     }
-    out << std::endl;
+    out << '\n';
     return out;
 }
 

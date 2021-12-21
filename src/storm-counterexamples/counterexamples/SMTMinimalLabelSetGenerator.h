@@ -483,7 +483,7 @@ class SMTMinimalLabelSetGenerator {
                 //                        for (auto const& e : labelSetAndPrecedingLabelSetsPair.first) {
                 //                            std::cout << e << ", ";
                 //                        }
-                //                        std::cout << std::endl;
+                //                        std::cout << '\n';
                 // Find out the commands for the currently considered label set.
                 storm::expressions::Expression guardConjunction;
 
@@ -538,7 +538,7 @@ class SMTMinimalLabelSetGenerator {
                 if (checkResult == storm::solver::SmtSolver::CheckResult::Unsat) {
                     STORM_LOG_DEBUG("Selection not enabled in initial state.");
 
-                    // std::cout << "not gc: " << !guardConjunction << std::endl;
+                    // std::cout << "not gc: " << !guardConjunction << '\n';
                     localSolver->add(!guardConjunction);
                     STORM_LOG_DEBUG("Asserted disjunction of negated guards.");
 
@@ -547,7 +547,7 @@ class SMTMinimalLabelSetGenerator {
                         if (labelSetAndPrecedingLabelSetsPair.first == precedingLabelSet)
                             continue;
 
-                        // std::cout << "push" << std::endl;
+                        // std::cout << "push\n";
                         // Create a restore point so we can easily pop-off all weakest precondition expressions.
                         localSolver->push();
 
@@ -607,7 +607,7 @@ class SMTMinimalLabelSetGenerator {
                             }
                         }
 
-                        // std::cout << "pgc: " << preceedingGuardConjunction << std::endl;
+                        // std::cout << "pgc: " << preceedingGuardConjunction << '\n';
 
                         // Assert all the guards of the preceding command set.
                         localSolver->add(preceedingGuardConjunction);
@@ -808,11 +808,11 @@ class SMTMinimalLabelSetGenerator {
                 if (initialCombinations.find(labelSet) == initialCombinations.end() && hasKnownPredecessor.find(labelSet) == hasKnownPredecessor.end()) {
                     predecessorExpression = variableInformation.manager->boolean(false);
 
-                    //                        std::cout << "labelSet" << std::endl;
+                    //                        std::cout << "labelSet\n";
                     //                        for (auto const& e : labelSet) {
                     //                            std::cout << e << ", ";
                     //                        }
-                    //                        std::cout << std::endl;
+                    //                        std::cout << '\n';
 
                     auto const& preceedingLabelSets = backwardImplications.at(labelSet);
 
@@ -1792,7 +1792,7 @@ class SMTMinimalLabelSetGenerator {
                                 "Given probability threshold " << propertyThreshold[i] << " can not be " << (strictBound ? "achieved" : "exceeded")
                                                                << " in model with maximal reachability probability of " << maximalReachabilityProbability[i]
                                                                << ".");
-                std::cout << std::endl << "Maximal property value in model is " << maximalReachabilityProbability[i] << "." << std::endl << std::endl;
+                std::cout << "\nMaximal property value in model is " << maximalReachabilityProbability[i] << ".\n\n";
             }
         }
 
@@ -1983,25 +1983,21 @@ class SMTMinimalLabelSetGenerator {
                 allLabels.insert(e.begin(), e.end());
             }
 
-            std::cout << "Metrics:" << std::endl;
-            std::cout << "    * all labels: " << allLabels.size() << std::endl;
-            std::cout << "    * known labels: " << relevancyInformation.knownLabels.size() << std::endl;
-            std::cout << "    * relevant labels: " << (relevancyInformation.knownLabels.size() + relevancyInformation.relevantLabels.size()) << std::endl;
-            std::cout << std::endl;
-            std::cout << "Time breakdown:" << std::endl;
-            std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms" << std::endl;
-            std::cout << "    * time for solving: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime).count() << "ms" << std::endl;
-            std::cout << "    * time for checking: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalModelCheckingTime).count() << "ms"
-                      << std::endl;
-            std::cout << "    * time for analysis: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalAnalysisTime).count() << "ms" << std::endl;
-            std::cout << "------------------------------------------" << std::endl;
-            std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms" << std::endl;
-            std::cout << std::endl;
-            std::cout << "Other:" << std::endl;
-            std::cout << "    * number of models checked: " << iterations << std::endl;
+            std::cout << "Metrics:\n";
+            std::cout << "    * all labels: " << allLabels.size() << '\n';
+            std::cout << "    * known labels: " << relevancyInformation.knownLabels.size() << '\n';
+            std::cout << "    * relevant labels: " << (relevancyInformation.knownLabels.size() + relevancyInformation.relevantLabels.size()) << "\n\n";
+            std::cout << "Time breakdown:\n";
+            std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms\n";
+            std::cout << "    * time for solving: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSolverTime).count() << "ms\n";
+            std::cout << "    * time for checking: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalModelCheckingTime).count() << "ms\n";
+            std::cout << "    * time for analysis: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalAnalysisTime).count() << "ms\n";
+            std::cout << "------------------------------------------\n";
+            std::cout << "    * total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms\n\n";
+            std::cout << "Other:\n";
+            std::cout << "    * number of models checked: " << iterations << '\n';
             std::cout << "    * number of models that could not reach a target state: " << zeroProbabilityCount << " ("
-                      << 100 * static_cast<double>(zeroProbabilityCount) / iterations << "%)" << std::endl
-                      << std::endl;
+                      << 100 * static_cast<double>(zeroProbabilityCount) / iterations << "%)\n\n";
         }
 
         return result;
@@ -2091,9 +2087,8 @@ class SMTMinimalLabelSetGenerator {
 
         auto endTime = std::chrono::high_resolution_clock::now();
         if (!silent) {
-            std::cout << std::endl
-                      << "Extended command for lower bounded property to size " << commandSet.size() << " in "
-                      << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+            std::cout << "\nExtended command for lower bounded property to size " << commandSet.size() << " in "
+                      << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms.\n";
         }
     }
 
@@ -2220,9 +2215,9 @@ class SMTMinimalLabelSetGenerator {
         auto endTime = std::chrono::high_resolution_clock::now();
         if (!options.silent) {
             for (auto const& labelSet : labelSets) {
-                std::cout << std::endl << "Computed minimal label set of size " << labelSet.size();
+                std::cout << "\nComputed minimal label set of size " << labelSet.size();
             }
-            std::cout << std::endl << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
+            std::cout << "\n in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms.\n";
         }
 
         // Extend the command set properly.
@@ -2239,7 +2234,7 @@ class SMTMinimalLabelSetGenerator {
                                                                           storm::models::sparse::Model<T> const& model,
                                                                           std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
-        std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
+        std::cout << "\nGenerating minimal label counterexample for formula " << *formula << '\n';
         GeneratorStats stats;
         CexInput prec = precompute(env, symbolicModel, model, formula);
         if (prec.lowerBoundedFormula) {

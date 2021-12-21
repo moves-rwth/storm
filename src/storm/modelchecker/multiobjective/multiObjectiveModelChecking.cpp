@@ -40,9 +40,11 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
     auto preprocessorResult = preprocessing::SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(env, model, formula);
     swPreprocessing.stop();
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Preprocessing done in " << swPreprocessing << " seconds." << std::endl << " Result: " << preprocessorResult << std::endl);
+        STORM_PRINT_AND_LOG("Preprocessing done in " << swPreprocessing << " seconds.\n"
+                                                     << " Result: " << preprocessorResult << '\n');
     } else {
-        STORM_LOG_INFO("Preprocessing done in " << swPreprocessing << " seconds." << std::endl << " Result: " << preprocessorResult << std::endl);
+        STORM_LOG_INFO("Preprocessing done in " << swPreprocessing << " seconds.\n"
+                                                << " Result: " << preprocessorResult << '\n');
     }
 
     // Invoke the analysis
@@ -119,7 +121,7 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
         STORM_PRINT_AND_LOG("Solving multi-objective query took " << swTotal << " seconds (consisting of " << swPreprocessing
                                                                   << " seconds for preprocessing and " << swAnalysis
-                                                                  << " seconds for analyzing the preprocessed model)." << std::endl);
+                                                                  << " seconds for analyzing the preprocessed model).\n");
     }
 
     return result;
