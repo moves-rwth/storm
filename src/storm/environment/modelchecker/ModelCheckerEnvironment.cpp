@@ -9,46 +9,41 @@
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
-
 namespace storm {
-    
-    ModelCheckerEnvironment::ModelCheckerEnvironment() {
-        auto const& mcSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
-        if (mcSettings.isLtl2daToolSet()) {
-            ltl2daTool = mcSettings.getLtl2daTool();
-        }
-    }
-    
-    ModelCheckerEnvironment::~ModelCheckerEnvironment() {
-        // Intentionally left empty
-    }
-    
-    MultiObjectiveModelCheckerEnvironment& ModelCheckerEnvironment::multi() {
-        return multiObjectiveModelCheckerEnvironment.get();
-    }
-    
-    MultiObjectiveModelCheckerEnvironment const& ModelCheckerEnvironment::multi() const {
-        return multiObjectiveModelCheckerEnvironment.get();
-    }
 
-    bool ModelCheckerEnvironment::isLtl2daToolSet() const {
-        return ltl2daTool.is_initialized();
+ModelCheckerEnvironment::ModelCheckerEnvironment() {
+    auto const& mcSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
+    if (mcSettings.isLtl2daToolSet()) {
+        ltl2daTool = mcSettings.getLtl2daTool();
     }
-
-    std::string const& ModelCheckerEnvironment::getLtl2daTool() const {
-        return ltl2daTool.get();
-    }
-
-    void ModelCheckerEnvironment::setLtl2daTool(std::string const& value) {
-        ltl2daTool = value;
-    }
-
-    void ModelCheckerEnvironment::unsetLtl2daTool() {
-        ltl2daTool = boost::none;
-    }
-
-
-
 }
-    
 
+ModelCheckerEnvironment::~ModelCheckerEnvironment() {
+    // Intentionally left empty
+}
+
+MultiObjectiveModelCheckerEnvironment& ModelCheckerEnvironment::multi() {
+    return multiObjectiveModelCheckerEnvironment.get();
+}
+
+MultiObjectiveModelCheckerEnvironment const& ModelCheckerEnvironment::multi() const {
+    return multiObjectiveModelCheckerEnvironment.get();
+}
+
+bool ModelCheckerEnvironment::isLtl2daToolSet() const {
+    return ltl2daTool.is_initialized();
+}
+
+std::string const& ModelCheckerEnvironment::getLtl2daTool() const {
+    return ltl2daTool.get();
+}
+
+void ModelCheckerEnvironment::setLtl2daTool(std::string const& value) {
+    ltl2daTool = value;
+}
+
+void ModelCheckerEnvironment::unsetLtl2daTool() {
+    ltl2daTool = boost::none;
+}
+
+}  // namespace storm

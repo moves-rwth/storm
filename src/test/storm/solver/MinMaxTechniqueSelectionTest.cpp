@@ -2,10 +2,8 @@
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 
-TEST( MinMaxMethod, Simple ) {
+TEST(MinMaxMethod, Simple) {
     storm::solver::MinMaxMethodSelection ts = storm::solver::MinMaxMethodSelection::PolicyIteration;
     storm::solver::MinMaxMethod t = storm::solver::MinMaxMethod::PolicyIteration;
-       ASSERT_EQ(convert(ts), t);
-    
-    
+    ASSERT_EQ(convert(ts), t);
 }

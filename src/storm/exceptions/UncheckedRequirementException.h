@@ -4,9 +4,9 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
-        
-        STORM_NEW_EXCEPTION(UncheckedRequirementException)
-        
-    } // namespace exceptions
-} // namespace storm
+namespace exceptions {
+
+STORM_NEW_EXCEPTION(UncheckedRequirementException)
+
+}  // namespace exceptions
+}  // namespace storm

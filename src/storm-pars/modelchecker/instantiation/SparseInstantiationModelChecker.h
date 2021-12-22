@@ -29,6 +29,8 @@ namespace storm {
             // This bypasses the graph analysis for the different instantiations.
             void setInstantiationsAreGraphPreserving(bool value);
             bool getInstantiationsAreGraphPreserving() const;
+
+            SparseModelType const& getOriginalModel() const;
             
         protected:
             

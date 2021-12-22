@@ -1,29 +1,30 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
-#include "storm-parsers/parser/PrismParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 
 #include "storm/builder/ExplicitModelBuilder.h"
 
-#include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 
 TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
 
     // Build the die model without its reward model.
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
+    std::shared_ptr<storm::models::sparse::Model<double>> model =
+        storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
 
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
-    
+
     storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>> bisim(*mdp);
     ASSERT_NO_THROW(bisim.computeBisimulationDecomposition());
     std::shared_ptr<storm::models::sparse::Model<double>> result;
     ASSERT_NO_THROW(result = bisim.getQuotient());
-    
+
     EXPECT_EQ(storm::models::ModelType::Mdp, result->getType());
     EXPECT_EQ(77ul, result->getNumberOfStates());
     EXPECT_EQ(183ul, result->getNumberOfTransitions());
@@ -31,11 +32,11 @@ TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
 
     typename storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>::Options options;
     options.respectedAtomicPropositions = std::set<std::string>({"two"});
-    
+
     storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>> bisim2(*mdp, options);
     ASSERT_NO_THROW(bisim2.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim2.getQuotient());
-    
+
     EXPECT_EQ(storm::models::ModelType::Mdp, result->getType());
     EXPECT_EQ(11ul, result->getNumberOfStates());
     EXPECT_EQ(26ul, result->getNumberOfTransitions());
@@ -46,11 +47,11 @@ TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
 
     typename storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>::Options options2(*mdp, *formula);
-    
+
     storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>> bisim3(*mdp, options2);
     ASSERT_NO_THROW(bisim3.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim3.getQuotient());
-    
+
     EXPECT_EQ(storm::models::ModelType::Mdp, result->getType());
     EXPECT_EQ(11ul, result->getNumberOfStates());
     EXPECT_EQ(26ul, result->getNumberOfTransitions());

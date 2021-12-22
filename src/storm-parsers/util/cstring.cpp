@@ -19,13 +19,13 @@ namespace cstring {
  *	@return Result of strtol()
  */
 uint_fast64_t checked_strtol(char const* str, char const** end) {
-	uint_fast64_t res = strtol(str, const_cast<char**>(end), 10);
-	if (str == *end) {
-		STORM_LOG_ERROR("Error while parsing integer. Next input token is not a number.");
-		STORM_LOG_ERROR("\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-		throw storm::exceptions::WrongFormatException("Error while parsing integer. Next input token is not a number.");
-	}
-	return res;
+    uint_fast64_t res = strtol(str, const_cast<char**>(end), 10);
+    if (str == *end) {
+        STORM_LOG_ERROR("Error while parsing integer. Next input token is not a number.");
+        STORM_LOG_ERROR("\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
+        throw storm::exceptions::WrongFormatException("Error while parsing integer. Next input token is not a number.");
+    }
+    return res;
 }
 
 /*!
@@ -37,13 +37,13 @@ uint_fast64_t checked_strtol(char const* str, char const** end) {
  *	@return Result of strtod()
  */
 double checked_strtod(char const* str, char const** end) {
-	double res = strtod(str, const_cast<char**>(end));
-	if (str == *end) {
-		STORM_LOG_ERROR("Error while parsing floating point. Next input token is not a number.");
-		STORM_LOG_ERROR("\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
-		throw storm::exceptions::WrongFormatException("Error while parsing floating point. Next input token is not a number.");
-	}
-	return res;
+    double res = strtod(str, const_cast<char**>(end));
+    if (str == *end) {
+        STORM_LOG_ERROR("Error while parsing floating point. Next input token is not a number.");
+        STORM_LOG_ERROR("\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
+        throw storm::exceptions::WrongFormatException("Error while parsing floating point. Next input token is not a number.");
+    }
+    return res;
 }
 
 /*!
@@ -52,9 +52,9 @@ double checked_strtod(char const* str, char const** end) {
  * @param buf The string buffer to operate on.
  * @return A pointer to the first whitespace character.
  */
-char const* skipWord(char const* buf){
-	while(!isspace(*buf) && *buf != '\0') buf++;
-	return buf;
+char const* skipWord(char const* buf) {
+    while (!isspace(*buf) && *buf != '\0') buf++;
+    return buf;
 }
 
 /*!
@@ -64,28 +64,28 @@ char const* skipWord(char const* buf){
  *	@return	A pointer to the first non-whitespace character.
  */
 char const* trimWhitespaces(char const* buf) {
-	while (isspace(*buf)) buf++;
-	return buf;
+    while (isspace(*buf)) buf++;
+    return buf;
 }
 
 /*!
  * @brief Encapsulates the usage of function @strcspn to forward to the end of the line (next char is the newline character).
  */
 char const* forwardToLineEnd(char const* buffer) {
-	return buffer + strcspn(buffer, "\n\r\0");
+    return buffer + strcspn(buffer, "\n\r\0");
 }
 
 /*!
  * @brief Encapsulates the usage of function @strchr to forward to the next line
  */
 char const* forwardToNextLine(char const* buffer) {
-	char const* lineEnd = forwardToLineEnd(buffer);
-	while((*lineEnd == '\n') || (*lineEnd == '\r')) lineEnd++;
-	return lineEnd;
+    char const* lineEnd = forwardToLineEnd(buffer);
+    while ((*lineEnd == '\n') || (*lineEnd == '\r')) lineEnd++;
+    return lineEnd;
 }
 
-} // namespace cstring
+}  // namespace cstring
 
-} // namespace utility
+}  // namespace utility
 
-} // namespace storm
+}  // namespace storm

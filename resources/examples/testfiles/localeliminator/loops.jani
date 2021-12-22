@@ -1,0 +1,350 @@
+{
+    "actions": [],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 0)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 1)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 2)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 4",
+                                    "ref": "s",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 5",
+                                    "ref": "s",
+                                    "value": 5
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 3)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 3
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 4",
+                                    "ref": "s",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/4",
+                                "exp": 0.25
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 4",
+                                    "ref": "s",
+                                    "value": 4
+                                },
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/4",
+                                "exp": 0.25
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 5",
+                                    "ref": "s",
+                                    "value": 5
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 4)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 4
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 6",
+                                    "ref": "s",
+                                    "value": 6
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((s = 5) & (x = 0))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 5
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "x",
+                                "op": "=",
+                                "right": 0
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 5",
+                                    "ref": "s",
+                                    "value": 5
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 6",
+                                    "ref": "s",
+                                    "value": 6
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/2",
+                                "exp": 0.5
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((s = 5) & (x = 1))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 5
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "x",
+                                "op": "=",
+                                "right": 1
+                            }
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "main",
+            "variables": []
+        }
+    ],
+    "constants": [],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "loops",
+    "properties": [],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "main"
+            }
+        ]
+    },
+    "type": "dtmc",
+    "variables": [
+        {
+            "initial-value": 0,
+            "name": "s",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 6
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "x",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        }
+    ]
+}

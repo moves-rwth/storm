@@ -4,9 +4,9 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
+namespace exceptions {
 
-        STORM_NEW_EXCEPTION(AmbiguousModelException)
+STORM_NEW_EXCEPTION(AmbiguousModelException)
 
-    } // namespace exceptions
-} // namespace storm
+}  // namespace exceptions
+}  // namespace storm

@@ -1,0 +1,196 @@
+{
+    "actions": [],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- (x + 1)",
+                                    "ref": "x",
+                                    "value": {
+                                        "left": "x",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 / 3)",
+                                "exp": {
+                                    "left": 1,
+                                    "op": "/",
+                                    "right": 3
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "y <- (y + 1)",
+                                    "ref": "y",
+                                    "value": {
+                                        "left": "y",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 / 3)",
+                                "exp": {
+                                    "left": 1,
+                                    "op": "/",
+                                    "right": 3
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "z <- (z + 1)",
+                                    "ref": "z",
+                                    "value": {
+                                        "left": "z",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 / 3)",
+                                "exp": {
+                                    "left": 1,
+                                    "op": "/",
+                                    "right": 3
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((x < 5) & (y < 5)) & (z < 5))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "x",
+                                    "op": "<",
+                                    "right": 5
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "y",
+                                    "op": "<",
+                                    "right": 5
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "z",
+                                "op": "<",
+                                "right": 5
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((x = 5) | (y = 5)) | (z = 5))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "x",
+                                    "op": "=",
+                                    "right": 5
+                                },
+                                "op": "∨",
+                                "right": {
+                                    "left": "y",
+                                    "op": "=",
+                                    "right": 5
+                                }
+                            },
+                            "op": "∨",
+                            "right": {
+                                "left": "z",
+                                "op": "=",
+                                "right": 5
+                            }
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "main",
+            "variables": []
+        }
+    ],
+    "constants": [],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "three_variables",
+    "properties": [],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "main"
+            }
+        ]
+    },
+    "type": "dtmc",
+    "variables": [
+        {
+            "initial-value": 0,
+            "name": "x",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 5
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "y",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 5
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "z",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 5
+            }
+        }
+    ]
+}

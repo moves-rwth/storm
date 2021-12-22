@@ -1,11 +1,10 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
-#include "storm/api/storm.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm/api/storm.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/jani/Property.h"
-
+#include "test/storm_gtest.h"
 
 TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/stream2.ma");
@@ -29,7 +28,6 @@ TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(formulas[2], true));
     EXPECT_NEAR(0.7888888889, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
-
     // Keep labels
     auto transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::KeepLabels);
     ASSERT_EQ(9ul, transformed.first->getNumberOfStates());
@@ -43,9 +41,8 @@ TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.6487584849, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(0.7888888889, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(0.7888888889, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
     // Merge labels
     transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::MergeLabels);
@@ -60,9 +57,8 @@ TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.6487584849, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(0.7888888889, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(0.7888888889, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
     // Delete labels
     transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::DeleteLabels);
@@ -77,13 +73,13 @@ TEST(NonMarkovianChainTransformerTest, StreamExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.6487584849, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(0.7888888889, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(0.7888888889, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 }
 
 TEST(NonMarkovianChainTransformerTest, ChainElimination1ExampleTest) {
-    auto model = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ma/chain_elimination1.drn")->template as<storm::models::sparse::MarkovAutomaton<double>>();
+    auto model = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ma/chain_elimination1.drn")
+                     ->template as<storm::models::sparse::MarkovAutomaton<double>>();
     std::string formulasString = "Pmin=? [ F \"Fail\"];Pmin=? [ F<=300 \"Fail\"];Tmin=? [ F \"Fail\" ]";
     auto formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulasString));
 
@@ -105,7 +101,6 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination1ExampleTest) {
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(formulas[2], true));
     EXPECT_NEAR(3333.333333, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
-
     // Keep labels
     auto transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::KeepLabels);
     ASSERT_EQ(13ul, transformed.first->getNumberOfStates());
@@ -121,9 +116,8 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination1ExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.08606881472, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(3333.333333, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(3333.333333, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
     // Merge labels
     transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::MergeLabels);
@@ -140,9 +134,8 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination1ExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.08606881472, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(3333.333333, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(3333.333333, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
     // Delete labels
     transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::DeleteLabels);
@@ -160,12 +153,13 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination1ExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.08606881472, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(3333.333333, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(3333.333333, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 }
 
 TEST(NonMarkovianChainTransformerTest, ChainElimination2ExampleTest) {
-    auto model = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ma/chain_elimination2.drn")->template as<storm::models::sparse::MarkovAutomaton<double>>();
+    auto model = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ma/chain_elimination2.drn")
+                     ->template as<storm::models::sparse::MarkovAutomaton<double>>();
     std::string formulasString = "Pmin=? [ F \"Fail\"];Pmin=? [ F<=300 \"Fail\"];Tmin=? [ F \"Fail\" ]";
     auto formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulasString));
 
@@ -188,7 +182,6 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination2ExampleTest) {
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(formulas[2], true));
     EXPECT_NEAR(190, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
-
     // Keep labels
     auto transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::KeepLabels);
     ASSERT_EQ(7ul, transformed.first->getNumberOfStates());
@@ -204,9 +197,8 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination2ExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.791015319, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(190, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(190, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
     // Merge labels
     transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::MergeLabels);
@@ -224,9 +216,8 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination2ExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.791015319, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(190, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(190, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 
     // Delete labels
     transformed = storm::api::eliminateNonMarkovianChains(model, formulas, storm::transformer::EliminationLabelBehavior::DeleteLabels);
@@ -244,6 +235,6 @@ TEST(NonMarkovianChainTransformerTest, ChainElimination2ExampleTest) {
     EXPECT_EQ(1, result->asExplicitQuantitativeCheckResult<double>()[initState]);
     result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[1], true));
     EXPECT_NEAR(0.791015319, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
-    //result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
-    //EXPECT_NEAR(190, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
+    // result = storm::api::verifyWithSparseEngine(model, storm::api::createTask<double>(transformed.second[2], true));
+    // EXPECT_NEAR(190, result->asExplicitQuantitativeCheckResult<double>()[initState], 1e-6);
 }

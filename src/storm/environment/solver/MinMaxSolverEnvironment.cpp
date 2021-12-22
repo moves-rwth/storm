@@ -6,79 +6,82 @@
 #include "storm/utility/macros.h"
 
 namespace storm {
-    
-    MinMaxSolverEnvironment::MinMaxSolverEnvironment() {
-        auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-        
-        minMaxMethod = minMaxSettings.getMinMaxEquationSolvingMethod();
-        methodSetFromDefault = minMaxSettings.isMinMaxEquationSolvingMethodSetFromDefaultValue();
-        if (minMaxSettings.isMaximalIterationCountSet()) {
-            maxIterationCount = minMaxSettings.getMaximalIterationCount();
-        } else {
-            maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
-        }
-        precision = storm::utility::convertNumber<storm::RationalNumber>(minMaxSettings.getPrecision());
-        considerRelativeTerminationCriterion = minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
-        STORM_LOG_ASSERT(considerRelativeTerminationCriterion || minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute, "Unknown convergence criterion");
-        multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
-        symmetricUpdates = minMaxSettings.isForceIntervalIterationSymmetricUpdatesSet();
-    }
 
-    MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
-        // Intentionally left empty
+MinMaxSolverEnvironment::MinMaxSolverEnvironment() {
+    auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
+
+    minMaxMethod = minMaxSettings.getMinMaxEquationSolvingMethod();
+    methodSetFromDefault = minMaxSettings.isMinMaxEquationSolvingMethodSetFromDefaultValue();
+    if (minMaxSettings.isMaximalIterationCountSet()) {
+        maxIterationCount = minMaxSettings.getMaximalIterationCount();
+    } else {
+        maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
     }
-    
-    storm::solver::MinMaxMethod const& MinMaxSolverEnvironment::getMethod() const {
-        return minMaxMethod;
-    }
-    
-    bool const& MinMaxSolverEnvironment::isMethodSetFromDefault() const {
-        return methodSetFromDefault;
-    }
-    
-    void MinMaxSolverEnvironment::setMethod(storm::solver::MinMaxMethod value, bool isSetFromDefault) {
-        methodSetFromDefault = isSetFromDefault;
-        minMaxMethod = value;
-    }
-    
-    uint64_t const& MinMaxSolverEnvironment::getMaximalNumberOfIterations() const {
-        return maxIterationCount;
-    }
-    
-    void MinMaxSolverEnvironment::setMaximalNumberOfIterations(uint64_t value) {
-        maxIterationCount = value;
-    }
-    
-    storm::RationalNumber const& MinMaxSolverEnvironment::getPrecision() const {
-        return precision;
-    }
-    
-    void MinMaxSolverEnvironment::setPrecision(storm::RationalNumber value) {
-        precision = value;
-    }
-    
-    bool const& MinMaxSolverEnvironment::getRelativeTerminationCriterion() const {
-        return considerRelativeTerminationCriterion;
-    }
-    
-    void MinMaxSolverEnvironment::setRelativeTerminationCriterion(bool value) {
-        considerRelativeTerminationCriterion = value;
-    }
-    
-    storm::solver::MultiplicationStyle const& MinMaxSolverEnvironment::getMultiplicationStyle() const {
-        return multiplicationStyle;
-    }
-    
-    void MinMaxSolverEnvironment::setMultiplicationStyle(storm::solver::MultiplicationStyle value) {
-        multiplicationStyle = value;
-    }
-    
-    bool MinMaxSolverEnvironment::isSymmetricUpdatesSet() const {
-        return symmetricUpdates;
-    }
-    
-    void MinMaxSolverEnvironment::setSymmetricUpdates(bool value) {
-        symmetricUpdates = value;
-    }
-    
+    precision = storm::utility::convertNumber<storm::RationalNumber>(minMaxSettings.getPrecision());
+    considerRelativeTerminationCriterion =
+        minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
+    STORM_LOG_ASSERT(considerRelativeTerminationCriterion ||
+                         minMaxSettings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute,
+                     "Unknown convergence criterion");
+    multiplicationStyle = minMaxSettings.getValueIterationMultiplicationStyle();
+    symmetricUpdates = minMaxSettings.isForceIntervalIterationSymmetricUpdatesSet();
 }
+
+MinMaxSolverEnvironment::~MinMaxSolverEnvironment() {
+    // Intentionally left empty
+}
+
+storm::solver::MinMaxMethod const& MinMaxSolverEnvironment::getMethod() const {
+    return minMaxMethod;
+}
+
+bool const& MinMaxSolverEnvironment::isMethodSetFromDefault() const {
+    return methodSetFromDefault;
+}
+
+void MinMaxSolverEnvironment::setMethod(storm::solver::MinMaxMethod value, bool isSetFromDefault) {
+    methodSetFromDefault = isSetFromDefault;
+    minMaxMethod = value;
+}
+
+uint64_t const& MinMaxSolverEnvironment::getMaximalNumberOfIterations() const {
+    return maxIterationCount;
+}
+
+void MinMaxSolverEnvironment::setMaximalNumberOfIterations(uint64_t value) {
+    maxIterationCount = value;
+}
+
+storm::RationalNumber const& MinMaxSolverEnvironment::getPrecision() const {
+    return precision;
+}
+
+void MinMaxSolverEnvironment::setPrecision(storm::RationalNumber value) {
+    precision = value;
+}
+
+bool const& MinMaxSolverEnvironment::getRelativeTerminationCriterion() const {
+    return considerRelativeTerminationCriterion;
+}
+
+void MinMaxSolverEnvironment::setRelativeTerminationCriterion(bool value) {
+    considerRelativeTerminationCriterion = value;
+}
+
+storm::solver::MultiplicationStyle const& MinMaxSolverEnvironment::getMultiplicationStyle() const {
+    return multiplicationStyle;
+}
+
+void MinMaxSolverEnvironment::setMultiplicationStyle(storm::solver::MultiplicationStyle value) {
+    multiplicationStyle = value;
+}
+
+bool MinMaxSolverEnvironment::isSymmetricUpdatesSet() const {
+    return symmetricUpdates;
+}
+
+void MinMaxSolverEnvironment::setSymmetricUpdates(bool value) {
+    symmetricUpdates = value;
+}
+
+}  // namespace storm

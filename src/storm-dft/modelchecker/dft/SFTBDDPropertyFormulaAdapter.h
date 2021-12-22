@@ -281,7 +281,7 @@ class SFTBDDPropertyFormulaAdapter {
         AtomicLabelFormulaCPointer const &formula) const {
         auto const label{formula->getLabel()};
         if (label == "failed") {
-            return getDFT()->getTopLevelGate()->name();
+            return getDFT()->getTopLevelElement()->name();
         } else if (boost::ends_with(label, "_failed")) {
             auto const name{label.substr(0, label.size() - 7)};
             return name;

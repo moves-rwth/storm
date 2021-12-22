@@ -1,100 +1,115 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
 
-#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm-parsers/api/storm-parsers.h"
+#include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/storage/geometry/Polytope.h"
-#include "storm/storage/geometry/Hyperrectangle.h"
-#include "storm/storage/jani/Property.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/api/storm.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm/storage/geometry/Hyperrectangle.h"
+#include "storm/storage/geometry/Polytope.h"
+#include "storm/storage/jani/Property.h"
 
 #include "storm/environment/Environment.h"
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
     storm::Environment env;
-        env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
-
+    env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
-    std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
-    
+    std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) ";  // pareto
+
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     storm::generator::NextStateGeneratorOptions options(formulas);
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
-    
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> ma =
+        storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options)
+            .build()
+            ->as<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>();
+
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
-    
-    storm::RationalNumber p1 = storm::utility::convertNumber<storm::RationalNumber>(11.0); p1 /= storm::utility::convertNumber<storm::RationalNumber>(6.0);
-    storm::RationalNumber p2 = storm::utility::convertNumber<storm::RationalNumber>(1.0); p2 /= storm::utility::convertNumber<storm::RationalNumber>(2.0);
+
+    storm::RationalNumber p1 = storm::utility::convertNumber<storm::RationalNumber>(11.0);
+    p1 /= storm::utility::convertNumber<storm::RationalNumber>(6.0);
+    storm::RationalNumber p2 = storm::utility::convertNumber<storm::RationalNumber>(1.0);
+    p2 /= storm::utility::convertNumber<storm::RationalNumber>(2.0);
     std::vector<storm::RationalNumber> p = {p1, p2};
-    storm::RationalNumber q1 = storm::utility::convertNumber<storm::RationalNumber>(29.0); q1 /= storm::utility::convertNumber<storm::RationalNumber>(18.0);
-    storm::RationalNumber q2 = storm::utility::convertNumber<storm::RationalNumber>(2.0); q2 /= storm::utility::convertNumber<storm::RationalNumber>(3.0);
+    storm::RationalNumber q1 = storm::utility::convertNumber<storm::RationalNumber>(29.0);
+    q1 /= storm::utility::convertNumber<storm::RationalNumber>(18.0);
+    storm::RationalNumber q2 = storm::utility::convertNumber<storm::RationalNumber>(2.0);
+    q2 /= storm::utility::convertNumber<storm::RationalNumber>(3.0);
     std::vector<storm::RationalNumber> q = {q1, q2};
-    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>({p,q}));
+    auto expectedAchievableValues =
+        storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>({p, q}));
     EXPECT_TRUE(expectedAchievableValues->contains(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getUnderApproximation()));
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getOverApproximation()->contains(expectedAchievableValues));
-    
 }
 
-
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
-    
-    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
-    
+
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/server.ma";
-    std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) "; // pareto
+    std::string formulasAsString = "multi(Tmax=? [ F \"error\" ], Pmax=? [ F \"processB\" ]) ";  // pareto
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma =
+        storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
-    
-    // we do our checks with rationals to avoid numerical issues when doing polytope computations...
-    std::vector<double> p = {11.0/6.0, 1.0/2.0};
-    std::vector<double> q = {29.0/18.0, 2.0/3.0};
-    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(
-            std::vector<std::vector<storm::RationalNumber>>({storm::utility::vector::convertNumericVector<storm::RationalNumber>(p),
-                                                             storm::utility::vector::convertNumericVector<storm::RationalNumber>(q)}));
-    // due to precision issues, we enlarge one of the polytopes before checking containement
-    storm::RationalNumber eps = storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-    std::vector<storm::RationalNumber> lb(2,-eps), ub(2,eps);
-    auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
 
-    if (storm::test::z3AtLeastVersion(4,8,8)) {
+    // we do our checks with rationals to avoid numerical issues when doing polytope computations...
+    std::vector<double> p = {11.0 / 6.0, 1.0 / 2.0};
+    std::vector<double> q = {29.0 / 18.0, 2.0 / 3.0};
+    auto expectedAchievableValues =
+        storm::storage::geometry::Polytope<storm::RationalNumber>::createDownwardClosure(std::vector<std::vector<storm::RationalNumber>>(
+            {storm::utility::vector::convertNumericVector<storm::RationalNumber>(p), storm::utility::vector::convertNumericVector<storm::RationalNumber>(q)}));
+    // due to precision issues, we enlarge one of the polytopes before checking containement
+    storm::RationalNumber eps =
+        storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    std::vector<storm::RationalNumber> lb(2, -eps), ub(2, eps);
+    auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb, ub).asPolytope();
+
+    if (storm::test::z3AtLeastVersion(4, 8, 8)) {
         // TODO: z3 v4.8.8 is known to be broken here. Check if this is fixed in future versions >4.8.8
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
-    
-    EXPECT_TRUE(expectedAchievableValues->minkowskiSum(bloatingBox)->contains(result->asExplicitParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
-    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
 
+    EXPECT_TRUE(
+        expectedAchievableValues->minkowskiSum(bloatingBox)
+            ->contains(result->asExplicitParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
+    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>()
+                    .getOverApproximation()
+                    ->convertNumberRepresentation<storm::RationalNumber>()
+                    ->minkowskiSum(bloatingBox)
+                    ->contains(expectedAchievableValues));
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
-    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
 
@@ -102,31 +117,39 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
-    std::string formulasAsString = "multi(Tmin=? [ F \"all_jobs_finished\" ], Pmax=? [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\" ]) ";
+    std::string formulasAsString =
+        "multi(Tmin=? [ F \"all_jobs_finished\" ], Pmax=? [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\" ]) ";
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma =
+        storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
 
-    std::vector<double> j12 = {1.266666667,0.1617571721,0.5};
-    std::vector<double> j13 = {1.283333333,0.1707737575,0.25};
-    std::vector<double> j23 = {1.333333333,0.1978235137,0.1};
+    std::vector<double> j12 = {1.266666667, 0.1617571721, 0.5};
+    std::vector<double> j13 = {1.283333333, 0.1707737575, 0.25};
+    std::vector<double> j23 = {1.333333333, 0.1978235137, 0.1};
 
     // we do our checks with rationals to avoid numerical issues when doing polytope computations...
-    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::create(
-            std::vector<std::vector<storm::RationalNumber>>({storm::utility::vector::convertNumericVector<storm::RationalNumber>(j12),
-                                                             storm::utility::vector::convertNumericVector<storm::RationalNumber>(j13),
-                                                             storm::utility::vector::convertNumericVector<storm::RationalNumber>(j23)}));
+    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::create(std::vector<std::vector<storm::RationalNumber>>(
+        {storm::utility::vector::convertNumericVector<storm::RationalNumber>(j12), storm::utility::vector::convertNumericVector<storm::RationalNumber>(j13),
+         storm::utility::vector::convertNumericVector<storm::RationalNumber>(j23)}));
     // due to precision issues, we enlarge one of the polytopes before checking containement
-    storm::RationalNumber eps = storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-    std::vector<storm::RationalNumber> lb(3,-eps), ub(3,eps);
-    auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
+    storm::RationalNumber eps =
+        storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    std::vector<storm::RationalNumber> lb(3, -eps), ub(3, eps);
+    auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb, ub).asPolytope();
 
-    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
+    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>()
+                    .getOverApproximation()
+                    ->convertNumberRepresentation<storm::RationalNumber>()
+                    ->minkowskiSum(bloatingBox)
+                    ->contains(expectedAchievableValues));
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj) {
@@ -134,47 +157,59 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
-    std::string formulasAsString = "multi(T<=1.31 [ F \"all_jobs_finished\" ], P>=0.17 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.31 [ F \"slowest_before_fastest\" ]) "; //true
-    formulasAsString += "; multi(T<=1.29 [ F \"all_jobs_finished\" ], P>=0.18 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.29 [ F \"slowest_before_fastest\" ])"; //false
+    std::string formulasAsString =
+        "multi(T<=1.31 [ F \"all_jobs_finished\" ], P>=0.17 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.31 [ F \"slowest_before_fastest\" ]) ";  // true
+    formulasAsString +=
+        "; multi(T<=1.29 [ F \"all_jobs_finished\" ], P>=0.18 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.29 [ F \"slowest_before_fastest\" ])";  // false
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma =
+        storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
     EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result2 = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
+    std::unique_ptr<storm::modelchecker::CheckResult> result2 =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
     ASSERT_TRUE(result2->isExplicitQualitativeCheckResult());
     EXPECT_FALSE(result2->asExplicitQualitativeCheckResult()[initState]);
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj) {
-    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.ma";
-    std::string formulasAsString = "multi(Tmin=? [ F \"all_jobs_finished\" ], P>=0.1797900683 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.3 [ F \"slowest_before_fastest\" ]) "; //quantitative
-    formulasAsString += "; multi(T<=1.26 [ F \"all_jobs_finished\" ], P>=0.2 [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\" ])"; //false
+    std::string formulasAsString =
+        "multi(Tmin=? [ F \"all_jobs_finished\" ], P>=0.1797900683 [ F<=0.2 \"half_of_jobs_finished\" ], P<=0.3 [ F \"slowest_before_fastest\" ]) ";  // quantitative
+    formulasAsString +=
+        "; multi(T<=1.26 [ F \"all_jobs_finished\" ], P>=0.2 [ F<=0.2 \"half_of_jobs_finished\" ], Pmin=? [ F \"slowest_before_fastest\" ])";  // false
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma =
+        storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
     uint_fast64_t const initState = *ma->getInitialStates().begin();
 
-
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_NEAR(1.3, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
+    EXPECT_NEAR(1.3, result->asExplicitQuantitativeCheckResult<double>()[initState],
+                storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result2 = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
+    std::unique_ptr<storm::modelchecker::CheckResult> result2 =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
     ASSERT_TRUE(result2->isExplicitQualitativeCheckResult());
     EXPECT_FALSE(result2->asExplicitQualitativeCheckResult()[initState]);
 }
@@ -188,10 +223,13 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, "");
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma =
+        storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::MarkovAutomaton<double>>();
 
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+    std::unique_ptr<storm::modelchecker::CheckResult> result =
+        storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
     ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
 
     std::vector<double> j12 = {0.2591835573, 0.01990529674};
@@ -199,21 +237,23 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_2Obj) {
     std::vector<double> j23 = {0.3934717664, 0.01948095743};
 
     // we do our checks with rationals to avoid numerical issues when doing polytope computations...
-    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::create(
-            std::vector<std::vector<storm::RationalNumber>>({storm::utility::vector::convertNumericVector<storm::RationalNumber>(j12),
-                                                             storm::utility::vector::convertNumericVector<storm::RationalNumber>(j13),
-                                                             storm::utility::vector::convertNumericVector<storm::RationalNumber>(j23)}));
+    auto expectedAchievableValues = storm::storage::geometry::Polytope<storm::RationalNumber>::create(std::vector<std::vector<storm::RationalNumber>>(
+        {storm::utility::vector::convertNumericVector<storm::RationalNumber>(j12), storm::utility::vector::convertNumericVector<storm::RationalNumber>(j13),
+         storm::utility::vector::convertNumericVector<storm::RationalNumber>(j23)}));
     // due to precision issues, we enlarge one of the polytopes before checking containement
-    storm::RationalNumber eps = storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-    std::vector<storm::RationalNumber> lb(2,-eps), ub(2,eps);
-    auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
+    storm::RationalNumber eps =
+        storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    std::vector<storm::RationalNumber> lb(2, -eps), ub(2, eps);
+    auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb, ub).asPolytope();
 
-    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
-
+    EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>()
+                    .getOverApproximation()
+                    ->convertNumberRepresentation<storm::RationalNumber>()
+                    ->minkowskiSum(bloatingBox)
+                    ->contains(expectedAchievableValues));
 }
 
-
-template <typename ValueType>
+template<typename ValueType>
 bool expectPointConained(std::vector<std::vector<ValueType>> const& pointset, std::vector<ValueType> const& point, ValueType precision) {
     for (auto const& p : pointset) {
         EXPECT_EQ(p.size(), point.size()) << "Missmatch in point dimension.";
@@ -265,8 +305,7 @@ bool expectPointConained(std::vector<std::vector<ValueType>> const& pointset, st
     return false;
 }
 
-
-template <typename ValueType>
+template<typename ValueType>
 bool expectSubset(std::vector<std::vector<ValueType>> const& lhs, std::vector<std::vector<ValueType>> const& rhs, ValueType precision) {
     for (auto const& p : lhs) {
         if (!expectPointConained(rhs, p, precision)) {
@@ -276,7 +315,7 @@ bool expectSubset(std::vector<std::vector<ValueType>> const& lhs, std::vector<st
     return true;
 }
 
-template <typename ValueType>
+template<typename ValueType>
 std::vector<std::vector<ValueType>> convertPointset(std::vector<std::vector<std::string>> const& in) {
     std::vector<std::vector<ValueType>> out;
     for (auto const& point_str : in) {
@@ -289,78 +328,94 @@ std::vector<std::vector<ValueType>> convertPointset(std::vector<std::vector<std:
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, simple_lra) {
-    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/multiobj_simple_lra.ma";
-    std::string formulasAsString  = "multi(R{\"first\"}max=? [LRA], LRAmax=? [ x=4 ] );\n"; // pareto
-    formulasAsString += "multi(R{\"first\"}max=? [LRA], LRAmin=? [ x=4] );\n"; // pareto
-    formulasAsString += "multi(R{\"first\"}max=? [LRA], LRAmin=? [ x=4] , R{\"second\"}max=? [LRA]);\n"; // pareto
-    formulasAsString += "multi(R{\"first\"}max=? [LRA], LRAmax=? [ x=4] , R{\"second\"}max=? [C]);\n"; // pareto
-    formulasAsString += "multi(R{\"first\"}max=? [LRA], LRAmax=? [ x=4] , R{\"second\"}min=? [C]);\n"; // pareto
-    
+    std::string formulasAsString = "multi(R{\"first\"}max=? [LRA], LRAmax=? [ x=4 ] );\n";                // pareto
+    formulasAsString += "multi(R{\"first\"}max=? [LRA], LRAmin=? [ x=4] );\n";                            // pareto
+    formulasAsString += "multi(R{\"first\"}max=? [LRA], LRAmin=? [ x=4] , R{\"second\"}max=? [LRA]);\n";  // pareto
+    formulasAsString += "multi(R{\"first\"}max=? [LRA], LRAmax=? [ x=4] , R{\"second\"}max=? [C]);\n";    // pareto
+    formulasAsString += "multi(R{\"first\"}max=? [LRA], LRAmax=? [ x=4] , R{\"second\"}min=? [C]);\n";    // pareto
+
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     storm::generator::NextStateGeneratorOptions options(formulas);
     auto ma = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<double>>();
-    
+
     {
-        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+        std::unique_ptr<storm::modelchecker::CheckResult> result =
+            storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
         std::vector<std::vector<std::string>> expectedPoints;
-        expectedPoints.emplace_back(std::vector<std::string>({"98","3/10"}));
-        expectedPoints.emplace_back(std::vector<std::string>({"33","7/10"}));
+        expectedPoints.emplace_back(std::vector<std::string>({"98", "3/10"}));
+        expectedPoints.emplace_back(std::vector<std::string>({"33", "7/10"}));
         double eps = 1e-4;
-        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
-        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
+        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps))
+            << "Non-Pareto point found.";
+        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps))
+            << "Pareto point missing.";
     }
     {
-        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
+        std::unique_ptr<storm::modelchecker::CheckResult> result =
+            storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
         std::vector<std::vector<std::string>> expectedPoints;
-        expectedPoints.emplace_back(std::vector<std::string>({"98","3/10"}));
+        expectedPoints.emplace_back(std::vector<std::string>({"98", "3/10"}));
         double eps = 1e-4;
-        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
-        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
+        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps))
+            << "Non-Pareto point found.";
+        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps))
+            << "Pareto point missing.";
     }
     {
-        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[2]->asMultiObjectiveFormula());
+        std::unique_ptr<storm::modelchecker::CheckResult> result =
+            storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[2]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
         std::vector<std::vector<std::string>> expectedPoints;
-        expectedPoints.emplace_back(std::vector<std::string>({"98","3/10", "0"}));
+        expectedPoints.emplace_back(std::vector<std::string>({"98", "3/10", "0"}));
         double eps = 1e-4;
-        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
-        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
+        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps))
+            << "Non-Pareto point found.";
+        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps))
+            << "Pareto point missing.";
     }
     {
-        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[3]->asMultiObjectiveFormula());
+        std::unique_ptr<storm::modelchecker::CheckResult> result =
+            storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[3]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
         std::vector<std::vector<std::string>> expectedPoints;
         expectedPoints.emplace_back(std::vector<std::string>({"98", "3/10", "42/10"}));
         expectedPoints.emplace_back(std::vector<std::string>({"33", "7/10", "42/10"}));
         double eps = 1e-4;
-        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
-        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
+        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps))
+            << "Non-Pareto point found.";
+        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps))
+            << "Pareto point missing.";
     }
     {
-        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[4]->asMultiObjectiveFormula());
+        std::unique_ptr<storm::modelchecker::CheckResult> result =
+            storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[4]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
         std::vector<std::vector<std::string>> expectedPoints;
         expectedPoints.emplace_back(std::vector<std::string>({"98", "3/10", "0"}));
         expectedPoints.emplace_back(std::vector<std::string>({"33", "7/10", "0"}));
         double eps = 1e-4;
-        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
-        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
+        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps))
+            << "Non-Pareto point found.";
+        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps))
+            << "Pareto point missing.";
     }
 }
-    
+
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, polling) {
-    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
     storm::Environment env;
@@ -368,39 +423,44 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, polling) {
 
     std::string programFile = STORM_TEST_RESOURCES_DIR "/ma/polling.ma";
     std::string constantsDefStr = "N=1,Q=1";
-    std::string formulasAsString  = "multi(LRAmin=? [\"q1full\"], LRAmin=? [\"q2full\"]);\n"; // pareto
-    formulasAsString += "multi(Pmin=? [F<0.1 \"q1full\"], LRAmin=? [\"q1full\"]);\n" ; // pareto
-    
+    std::string formulasAsString = "multi(LRAmin=? [\"q1full\"], LRAmin=? [\"q2full\"]);\n";  // pareto
+    formulasAsString += "multi(Pmin=? [F<0.1 \"q1full\"], LRAmin=? [\"q1full\"]);\n";         // pareto
+
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsDefStr);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
     storm::generator::NextStateGeneratorOptions options(formulas);
     auto ma = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::MarkovAutomaton<double>>();
-    
+
     {
-        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
+        std::unique_ptr<storm::modelchecker::CheckResult> result =
+            storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[0]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
         std::vector<std::vector<std::string>> expectedPoints;
-        expectedPoints.emplace_back(std::vector<std::string>({"62771/102086","89585/102086"}));
-        expectedPoints.emplace_back(std::vector<std::string>({"77531/89546","64985/89546"}));
+        expectedPoints.emplace_back(std::vector<std::string>({"62771/102086", "89585/102086"}));
+        expectedPoints.emplace_back(std::vector<std::string>({"77531/89546", "64985/89546"}));
         double eps = 1e-4;
-        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
-        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
+        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps))
+            << "Non-Pareto point found.";
+        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps))
+            << "Pareto point missing.";
     }
     {
-        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
+        std::unique_ptr<storm::modelchecker::CheckResult> result =
+            storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *ma, formulas[1]->asMultiObjectiveFormula());
         ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
         std::vector<std::vector<std::string>> expectedPoints;
-        expectedPoints.emplace_back(std::vector<std::string>({"0.25918177931828","62771/102086"}));
+        expectedPoints.emplace_back(std::vector<std::string>({"0.25918177931828", "62771/102086"}));
         double eps = 1e-4;
         // TODO: Right now, there is a non-optimal point included due to numerical imprecisions. We therefore skip this check:
-        //EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
-        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
+        // EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) <<
+        // "Non-Pareto point found.";
+        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps))
+            << "Pareto point missing.";
     }
 }
-
-
 
 #endif /*  defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */

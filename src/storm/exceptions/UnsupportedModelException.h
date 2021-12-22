@@ -5,10 +5,10 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
+namespace exceptions {
 
-        STORM_NEW_EXCEPTION(UnsupportedModelException)
+STORM_NEW_EXCEPTION(UnsupportedModelException)
 
-    } // namespace exceptions
-} // namespace storm
-#endif //STORM_UNSUPPORTEDMODELEXCEPTION_H
+}  // namespace exceptions
+}  // namespace storm
+#endif  // STORM_UNSUPPORTEDMODELEXCEPTION_H

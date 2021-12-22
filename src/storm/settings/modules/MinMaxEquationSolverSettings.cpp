@@ -1,117 +1,151 @@
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 
-#include "storm/settings/Option.h"
 #include "storm/settings/ArgumentBuilder.h"
+#include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 
-#include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
-    namespace settings {
-        namespace modules {
-            
-            const std::string MinMaxEquationSolverSettings::moduleName = "minmax";
-            const std::string MinMaxEquationSolverSettings::solvingMethodOptionName = "method";
-            const std::string MinMaxEquationSolverSettings::maximalIterationsOptionName = "maxiter";
-            const std::string MinMaxEquationSolverSettings::maximalIterationsOptionShortName = "i";
-            const std::string MinMaxEquationSolverSettings::precisionOptionName = "precision";
-            const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
-            const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
-            const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
+namespace settings {
+namespace modules {
 
-            MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "lp", "linear-programming", "rs", "ratsearch", "ii", "interval-iteration", "svi", "sound-value-iteration", "ovi", "optimistic-value-iteration", "topological", "vi-to-pi", "acyclic"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.").setIsAdvanced()
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("topological").build()).build());
-                
-                this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
-                
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+const std::string MinMaxEquationSolverSettings::moduleName = "minmax";
+const std::string MinMaxEquationSolverSettings::solvingMethodOptionName = "method";
+const std::string MinMaxEquationSolverSettings::maximalIterationsOptionName = "maxiter";
+const std::string MinMaxEquationSolverSettings::maximalIterationsOptionShortName = "i";
+const std::string MinMaxEquationSolverSettings::precisionOptionName = "precision";
+const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
+const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
+const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").setIsAdvanced().build());
+MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
+    std::vector<std::string> minMaxSolvingTechniques = {
+        "vi",     "value-iteration",    "pi",  "policy-iteration",      "lp",  "linear-programming",         "rs",          "ratsearch",
+        "ii",     "interval-iteration", "svi", "sound-value-iteration", "ovi", "optimistic-value-iteration", "topological", "vi-to-pi",
+        "acyclic"};
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, solvingMethodOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
+            .setIsAdvanced()
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique.")
+                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques))
+                             .setDefaultValueString("topological")
+                             .build())
+            .build());
 
-                std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.").setIsAdvanced()
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
-                
-                this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false, "If set, interval iteration performs an update on both, lower and upper bound in each iteration").setIsAdvanced().build());
-                
-            }
-            
-            storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvingMethod() const {
-                std::string minMaxEquationSolvingTechnique = this->getOption(solvingMethodOptionName).getArgumentByName("name").getValueAsString();
-                if (minMaxEquationSolvingTechnique == "value-iteration" || minMaxEquationSolvingTechnique == "vi") {
-                    return storm::solver::MinMaxMethod::ValueIteration;
-                } else if (minMaxEquationSolvingTechnique == "policy-iteration" || minMaxEquationSolvingTechnique == "pi") {
-                    return storm::solver::MinMaxMethod::PolicyIteration;
-                } else if (minMaxEquationSolvingTechnique == "linear-programming" || minMaxEquationSolvingTechnique == "lp") {
-                    return storm::solver::MinMaxMethod::LinearProgramming;
-                } else if (minMaxEquationSolvingTechnique == "ratsearch" || minMaxEquationSolvingTechnique == "rs") {
-                    return storm::solver::MinMaxMethod::RationalSearch;
-                } else if (minMaxEquationSolvingTechnique == "interval-iteration" || minMaxEquationSolvingTechnique == "ii") {
-                    return storm::solver::MinMaxMethod::IntervalIteration;
-                } else if (minMaxEquationSolvingTechnique == "sound-value-iteration" || minMaxEquationSolvingTechnique == "svi") {
-                    return storm::solver::MinMaxMethod::SoundValueIteration;
-                } else if (minMaxEquationSolvingTechnique == "optimistic-value-iteration" || minMaxEquationSolvingTechnique == "ovi") {
-                    return storm::solver::MinMaxMethod::OptimisticValueIteration;
-                } else if (minMaxEquationSolvingTechnique == "topological") {
-                    return storm::solver::MinMaxMethod::Topological;
-                } else if (minMaxEquationSolvingTechnique == "vi-to-pi") {
-                    return storm::solver::MinMaxMethod::ViToPi;
-                } else if (minMaxEquationSolvingTechnique == "acyclic") {
-                    return storm::solver::MinMaxMethod::Acyclic;
-                }
-                
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
-            }
-            
-            bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSetFromDefaultValue() const {
-                return !this->getOption(solvingMethodOptionName).getArgumentByName("name").getHasBeenSet() || this->getOption(solvingMethodOptionName).getArgumentByName("name").wasSetFromDefaultValue();
-            }
-            
-            bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSet() const {
-                return this->getOption(solvingMethodOptionName).getHasOptionBeenSet();
-            }
-            
-            bool MinMaxEquationSolverSettings::isMaximalIterationCountSet() const {
-                return this->getOption(maximalIterationsOptionName).getHasOptionBeenSet();
-            }
-            
-            uint_fast64_t MinMaxEquationSolverSettings::getMaximalIterationCount() const {
-                return this->getOption(maximalIterationsOptionName).getArgumentByName("count").getValueAsUnsignedInteger();
-            }
-            
-            bool MinMaxEquationSolverSettings::isPrecisionSet() const {
-                return this->getOption(precisionOptionName).getHasOptionBeenSet();
-            }
-            
-            double MinMaxEquationSolverSettings::getPrecision() const {
-                return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
-            }
-            
-            bool MinMaxEquationSolverSettings::isConvergenceCriterionSet() const {
-                return this->getOption(absoluteOptionName).getHasOptionBeenSet();
-            }
-            
-            MinMaxEquationSolverSettings::ConvergenceCriterion MinMaxEquationSolverSettings::getConvergenceCriterion() const {
-                return this->getOption(absoluteOptionName).getHasOptionBeenSet() ? MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute : MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
-            }
-            
-            storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterationMultiplicationStyle() const {
-                std::string multiplicationStyleString = this->getOption(valueIterationMultiplicationStyleOptionName).getArgumentByName("name").getValueAsString();
-                if (multiplicationStyleString == "gaussseidel" || multiplicationStyleString == "gs") {
-                    return storm::solver::MultiplicationStyle::GaussSeidel;
-                } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
-                    return storm::solver::MultiplicationStyle::Regular;
-                }
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
-            }
-            
-            bool MinMaxEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {
-                return this->getOption(intervalIterationSymmetricUpdatesOptionName).getHasOptionBeenSet();
-            }
-            
-        }
-    }
+    this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false,
+                                                   "The maximal number of iterations to perform before iterative solving is aborted.")
+                        .setShortName(maximalIterationsOptionShortName)
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build())
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.")
+                                         .setDefaultValueDouble(1e-06)
+                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
+                                         .build())
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false,
+                                                   "Sets whether the relative or the absolute error is considered for detecting convergence.")
+                        .setIsAdvanced()
+                        .build());
+
+    std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
+    this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false,
+                                                   "Sets which method multiplication style to prefer for value iteration.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles))
+                                         .setDefaultValueString("gaussseidel")
+                                         .build())
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, intervalIterationSymmetricUpdatesOptionName, false,
+                                                   "If set, interval iteration performs an update on both, lower and upper bound in each iteration")
+                        .setIsAdvanced()
+                        .build());
 }
+
+storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvingMethod() const {
+    std::string minMaxEquationSolvingTechnique = this->getOption(solvingMethodOptionName).getArgumentByName("name").getValueAsString();
+    if (minMaxEquationSolvingTechnique == "value-iteration" || minMaxEquationSolvingTechnique == "vi") {
+        return storm::solver::MinMaxMethod::ValueIteration;
+    } else if (minMaxEquationSolvingTechnique == "policy-iteration" || minMaxEquationSolvingTechnique == "pi") {
+        return storm::solver::MinMaxMethod::PolicyIteration;
+    } else if (minMaxEquationSolvingTechnique == "linear-programming" || minMaxEquationSolvingTechnique == "lp") {
+        return storm::solver::MinMaxMethod::LinearProgramming;
+    } else if (minMaxEquationSolvingTechnique == "ratsearch" || minMaxEquationSolvingTechnique == "rs") {
+        return storm::solver::MinMaxMethod::RationalSearch;
+    } else if (minMaxEquationSolvingTechnique == "interval-iteration" || minMaxEquationSolvingTechnique == "ii") {
+        return storm::solver::MinMaxMethod::IntervalIteration;
+    } else if (minMaxEquationSolvingTechnique == "sound-value-iteration" || minMaxEquationSolvingTechnique == "svi") {
+        return storm::solver::MinMaxMethod::SoundValueIteration;
+    } else if (minMaxEquationSolvingTechnique == "optimistic-value-iteration" || minMaxEquationSolvingTechnique == "ovi") {
+        return storm::solver::MinMaxMethod::OptimisticValueIteration;
+    } else if (minMaxEquationSolvingTechnique == "topological") {
+        return storm::solver::MinMaxMethod::Topological;
+    } else if (minMaxEquationSolvingTechnique == "vi-to-pi") {
+        return storm::solver::MinMaxMethod::ViToPi;
+    } else if (minMaxEquationSolvingTechnique == "acyclic") {
+        return storm::solver::MinMaxMethod::Acyclic;
+    }
+
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
+                    "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
+}
+
+bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSetFromDefaultValue() const {
+    return !this->getOption(solvingMethodOptionName).getArgumentByName("name").getHasBeenSet() ||
+           this->getOption(solvingMethodOptionName).getArgumentByName("name").wasSetFromDefaultValue();
+}
+
+bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSet() const {
+    return this->getOption(solvingMethodOptionName).getHasOptionBeenSet();
+}
+
+bool MinMaxEquationSolverSettings::isMaximalIterationCountSet() const {
+    return this->getOption(maximalIterationsOptionName).getHasOptionBeenSet();
+}
+
+uint_fast64_t MinMaxEquationSolverSettings::getMaximalIterationCount() const {
+    return this->getOption(maximalIterationsOptionName).getArgumentByName("count").getValueAsUnsignedInteger();
+}
+
+bool MinMaxEquationSolverSettings::isPrecisionSet() const {
+    return this->getOption(precisionOptionName).getHasOptionBeenSet();
+}
+
+double MinMaxEquationSolverSettings::getPrecision() const {
+    return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
+}
+
+bool MinMaxEquationSolverSettings::isConvergenceCriterionSet() const {
+    return this->getOption(absoluteOptionName).getHasOptionBeenSet();
+}
+
+MinMaxEquationSolverSettings::ConvergenceCriterion MinMaxEquationSolverSettings::getConvergenceCriterion() const {
+    return this->getOption(absoluteOptionName).getHasOptionBeenSet() ? MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute
+                                                                     : MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
+}
+
+storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterationMultiplicationStyle() const {
+    std::string multiplicationStyleString = this->getOption(valueIterationMultiplicationStyleOptionName).getArgumentByName("name").getValueAsString();
+    if (multiplicationStyleString == "gaussseidel" || multiplicationStyleString == "gs") {
+        return storm::solver::MultiplicationStyle::GaussSeidel;
+    } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
+        return storm::solver::MultiplicationStyle::Regular;
+    }
+    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
+}
+
+bool MinMaxEquationSolverSettings::isForceIntervalIterationSymmetricUpdatesSet() const {
+    return this->getOption(intervalIterationSymmetricUpdatesOptionName).getHasOptionBeenSet();
+}
+
+}  // namespace modules
+}  // namespace settings
+}  // namespace storm

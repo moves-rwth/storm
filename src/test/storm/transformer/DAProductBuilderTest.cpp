@@ -1,20 +1,20 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
-#include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm-parsers/parser/PrismParser.h"
-#include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/automata/DeterministicAutomaton.h"
+#include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/settings/SettingMemento.h"
 #include "storm/settings/modules/IOSettings.h"
 
 #include "storm/storage/BitVector.h"
 #include "storm/transformer/DAProductBuilder.h"
 
 #include <memory>
-#include <string>
 #include <sstream>
+#include <string>
 
 TEST(DAProductBuilderTest_aUb, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
@@ -23,23 +23,23 @@ TEST(DAProductBuilderTest_aUb, Dtmc) {
     auto dtmc = std::dynamic_pointer_cast<storm::models::sparse::Dtmc<double>>(model);
 
     std::string aUb =
-            "HOA: v1\n"
-            "States: 3\n"
-            "Start: 0\n"
-            "acc-name: Rabin 1\n"
-            "Acceptance: 2 (Fin(0) & Inf(1))\n"
-            "AP: 2 \"a\" \"b\""
-            "--BODY--\n"
-            "State: 0 \"a U b\" \n { 0 }\n"
-            "  2  /* !a  & !b */\n"
-            "  0  /*  a  & !b */\n"
-            "  1  /* !a  &  b */\n"
-            "  1  /*  a  &  b */\n"
-            "State: 1 { 1 }\n"
-            "  1 1 1 1       /* four transitions on one line */\n"
-            "State: 2 \"sink state\" { 0 }\n"
-            "  2 2 2 2\n"
-            "--END--\n";
+        "HOA: v1\n"
+        "States: 3\n"
+        "Start: 0\n"
+        "acc-name: Rabin 1\n"
+        "Acceptance: 2 (Fin(0) & Inf(1))\n"
+        "AP: 2 \"a\" \"b\""
+        "--BODY--\n"
+        "State: 0 \"a U b\" \n { 0 }\n"
+        "  2  /* !a  & !b */\n"
+        "  0  /*  a  & !b */\n"
+        "  1  /* !a  &  b */\n"
+        "  1  /*  a  &  b */\n"
+        "State: 1 { 1 }\n"
+        "  1 1 1 1       /* four transitions on one line */\n"
+        "State: 2 \"sink state\" { 0 }\n"
+        "  2 2 2 2\n"
+        "--END--\n";
 
     std::istringstream in = std::istringstream(aUb);
     storm::automata::DeterministicAutomaton::ptr da;
@@ -89,23 +89,23 @@ TEST(DAProductBuilderTest_aWb, Dtmc) {
     auto dtmc = std::dynamic_pointer_cast<storm::models::sparse::Dtmc<double>>(model);
 
     std::string aUb =
-            "HOA: v1\n"
-            "States: 3\n"
-            "Start: 0\n"
-            "acc-name: Rabin 1\n"
-            "Acceptance: 2 (Fin(0) & Inf(1))\n"
-            "AP: 2 \"a\" \"b\""
-            "--BODY--\n"
-            "State: 0 \"a U b\" \n"
-            "  2  /* !a  & !b */\n"
-            "  0  /*  a  & !b */\n"
-            "  1  /* !a  &  b */\n"
-            "  1  /*  a  &  b */\n"
-            "State: 1 { 1 }\n"
-            "  1 1 1 1       /* four transitions on one line */\n"
-            "State: 2 \"sink state\" { 0 }\n"
-            "  2 2 2 2\n"
-            "--END--\n";
+        "HOA: v1\n"
+        "States: 3\n"
+        "Start: 0\n"
+        "acc-name: Rabin 1\n"
+        "Acceptance: 2 (Fin(0) & Inf(1))\n"
+        "AP: 2 \"a\" \"b\""
+        "--BODY--\n"
+        "State: 0 \"a U b\" \n"
+        "  2  /* !a  & !b */\n"
+        "  0  /*  a  & !b */\n"
+        "  1  /* !a  &  b */\n"
+        "  1  /*  a  &  b */\n"
+        "State: 1 { 1 }\n"
+        "  1 1 1 1       /* four transitions on one line */\n"
+        "State: 2 \"sink state\" { 0 }\n"
+        "  2 2 2 2\n"
+        "--END--\n";
 
     std::istringstream in = std::istringstream(aUb);
     storm::automata::DeterministicAutomaton::ptr da;

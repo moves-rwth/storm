@@ -1,12 +1,11 @@
 #include <storm/exceptions/InvalidArgumentException.h>
-#include "test/storm_gtest.h"
 #include "storm-config.h"
-#include "storm-parsers/parser/JaniParser.h"
 #include "storm-parsers/api/model_descriptions.h"
-#include "storm/storage/jani/Property.h"
+#include "storm-parsers/parser/JaniParser.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/ModelType.h"
-
+#include "storm/storage/jani/Property.h"
+#include "test/storm_gtest.h"
 
 TEST(JaniParser, DieExampleTest) {
     std::string testInput = R"({
@@ -415,4 +414,3 @@ TEST(JaniParser, UnassignedVariablesTest) {
     EXPECT_TRUE(result.first.hasConstant("c"));
     EXPECT_EQ(2ul, result.first.getNumberOfAutomata());
 }
-
