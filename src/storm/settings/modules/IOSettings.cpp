@@ -1,16 +1,16 @@
 #include "storm/settings/modules/IOSettings.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/SettingMemento.h"
-#include "storm/settings/Option.h"
-#include "storm/settings/OptionBuilder.h"
-#include "storm/settings/ArgumentBuilder.h"
-#include "storm/settings/Argument.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/parser/CSVParser.h"
+#include "storm/settings/Argument.h"
+#include "storm/settings/ArgumentBuilder.h"
+#include "storm/settings/Option.h"
+#include "storm/settings/OptionBuilder.h"
+#include "storm/settings/SettingMemento.h"
+#include "storm/settings/SettingsManager.h"
 
-#include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace settings {
@@ -48,6 +48,7 @@ const std::string IOSettings::janiPropertyOptionShortName = "jprop";
 const std::string IOSettings::propertyOptionName = "prop";
 const std::string IOSettings::propertyOptionShortName = "prop";
 const std::string IOSettings::steadyStateDistrOptionName = "steadystate";
+const std::string IOSettings::expectedVisitingTimesOptionName = "expvisittimes";
 
 const std::string IOSettings::qvbsInputOptionName = "qvbs";
 const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
@@ -57,70 +58,207 @@ const std::string IOSettings::propertiesAsMultiOptionName = "propsasmulti";
 std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
 
 IOSettings::IOSettings() : ModuleSettings(moduleName) {
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, false, "If given, the loaded model will be written to the specified file in the dot format.").setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportDotMaxWidthOptionName, false, "The maximal width for labels in the dot format. For longer lines a linebreak is inserted. Value 0 represents no linebreaks.").setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("width", "The maximal line width for the dot format. Default is 0 meaning no linebreaks.").setDefaultValueUnsignedInteger(0).build()).build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, exportDotOptionName, false,
+                                       "If given, the loaded model will be written to the specified file in the dot format.")
+            .setIsAdvanced()
+            .addArgument(
+                storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build())
+            .build());
+    this->addOption(storm::settings::OptionBuilder(
+                        moduleName, exportDotMaxWidthOptionName, false,
+                        "The maximal width for labels in the dot format. For longer lines a linebreak is inserted. Value 0 represents no linebreaks.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(
+                                         "width", "The maximal line width for the dot format. Default is 0 meaning no linebreaks.")
+                                         .setDefaultValueUnsignedInteger(0)
+                                         .build())
+                        .build());
     std::vector<std::string> exportFormats({"auto", "dot", "drdd", "drn", "json"});
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportBuildOptionName, false, "Exports the built model to a file.")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("file", "The output file.").build())
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The output format. 'auto' detects from the file extension.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(exportFormats)).setDefaultValueString("auto").makeOptional().build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, false, "If given, the loaded jani model will be written to the specified file in the dot format.").setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setIsAdvanced().setShortName(exportCdfOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory where the cdf files will be stored.").build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportSchedulerOptionName, false, "Exports the choices of an optimal scheduler to the given file (if supported by engine).").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file. Use file extension '.json' to export in json.").build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportCheckResultOptionName, false, "Exports the result to a given file (if supported by engine). The export will be in json.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.").setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName,  preventDRNPlaceholderOptionName, true, "If given, the exported DRN contains no placeholders").setIsAdvanced().build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, exportDdOptionName, "", "If given, the loaded model will be written to the specified file in the drdd format.").setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename", "The name of the file from which to read the transitions.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, explicitDrnOptionName, false, "Parses the model given in the DRN format.").setShortName(explicitDrnOptionShortName)
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("drn filename", "The name of the DRN file containing the model.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, exportBuildOptionName, false, "Exports the built model to a file.")
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("file", "The output file.").build())
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("format", "The output format. 'auto' detects from the file extension.")
+                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(exportFormats))
+                             .setDefaultValueString("auto")
+                             .makeOptional()
+                             .build())
+            .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, false,
+                                       "If given, the loaded jani model will be written to the specified file in the dot format.")
+            .setIsAdvanced()
+            .addArgument(
+                storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build())
+            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false,
+                                                   "Exports the cumulative density function for reward bounded properties into a .csv file.")
+                        .setIsAdvanced()
+                        .setShortName(exportCdfOptionShortName)
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
+                                         "directory", "A path to an existing directory where the cdf files will be stored.")
+                                         .build())
                         .build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, explicitImcaOptionName, false, "Parses the model given in the IMCA format.").setShortName(explicitImcaOptionShortName)
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("imca filename", "The name of the imca file containing the model.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build())
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, exportSchedulerOptionName, false,
+                                       "Exports the choices of an optimal scheduler to the given file (if supported by engine).")
+            .setIsAdvanced()
+            .addArgument(
+                storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file. Use file extension '.json' to export in json.").build())
+            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, exportCheckResultOptionName, false,
+                                                   "Exports the result to a given file (if supported by engine). The export will be in json.")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build())
                         .build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, prismInputOptionName, false, "Parses the model given in the PRISM format.")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the PRISM input.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, janiInputOptionName, false, "Parses the model given in the JANI format.")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the JANI input.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").setIsAdvanced().build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").makeOptional().build())
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "",
+                                       "If given, the loaded model will be written to the specified file in the drn format.")
+            .setIsAdvanced()
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build())
+            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, preventDRNPlaceholderOptionName, true, "If given, the exported DRN contains no placeholders")
+                        .setIsAdvanced()
+                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, exportDdOptionName, "",
+                                       "If given, the loaded model will be written to the specified file in the drdd format.")
+            .setIsAdvanced()
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build())
+            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.")
+                        .setShortName(explicitOptionShortName)
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("transition filename",
+                                                                                            "The name of the file from which to read the transitions.")
+                                         .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                                         .build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename",
+                                                                                            "The name of the file from which to read the state labeling.")
+                                         .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                                         .build())
+                        .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, explicitDrnOptionName, false, "Parses the model given in the DRN format.")
+                        .setShortName(explicitDrnOptionShortName)
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("drn filename", "The name of the DRN file containing the model.")
+                                         .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                                         .build())
+                        .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, explicitImcaOptionName, false, "Parses the model given in the IMCA format.")
+                        .setShortName(explicitImcaOptionShortName)
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("imca filename", "The name of the imca file containing the model.")
+                                         .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                                         .build())
+                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, prismInputOptionName, false, "Parses the model given in the PRISM format.")
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the PRISM input.")
+                             .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                             .build())
+            .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, janiInputOptionName, false, "Parses the model given in the JANI format.")
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the JANI input.")
+                             .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                             .build())
+            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.")
+                        .setIsAdvanced()
+                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.")
+            .setShortName(propertyOptionShortName)
+            .addArgument(
+                storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.")
+                             .setDefaultValueString("all")
+                             .makeOptional()
+                             .build())
+            .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, false,
+                                                   "If given, the transition rewards are read from this file and added to the explicit model. Note that this "
+                                                   "requires the model to be given as an explicit model (i.e., via --" +
+                                                       explicitOptionName + ").")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.")
+                                         .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                                         .build())
+                        .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, stateRewardsOptionName, false,
+                                                   "If given, the state rewards are read from this file and added to the explicit model. Note that this "
+                                                   "requires the model to be given as an explicit model (i.e., via --" +
+                                                       explicitOptionName + ").")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.")
+                                         .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                                         .build())
+                        .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, choiceLabelingOptionName, false,
+                                                   "If given, the choice labels are read from this file and added to the explicit model. Note that this "
+                                                   "requires the model to be given as an explicit model (i.e., via --" +
+                                                       explicitOptionName + ").")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.")
+                                         .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                                         .build())
+                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(
+            moduleName, constantsOptionName, false,
+            "Specifies the constant replacements to use in symbolic models. Note that this requires the model to be given as an symbolic model (i.e., via --" +
+                prismInputOptionName + " or --" + janiInputOptionName + ").")
+            .setShortName(constantsOptionShortName)
+            .addArgument(
+                storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.")
+                    .setDefaultValueString("")
+                    .build())
+            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false,
+                                                   "Specifies the properties from the jani model (given by --" + janiInputOptionName + ") to be checked.")
+                        .setShortName(janiPropertyOptionShortName)
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked")
+                                         .setDefaultValueString("")
+                                         .makeOptional()
+                                         .build())
+                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, steadyStateDistrOptionName, false,
+                                       "Computes the steady state distribution. Result can be exported using --" + exportCheckResultOptionName + ".")
+            .setIsAdvanced()
+            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, expectedVisitingTimesOptionName, false,
+                                                   "Computes the expected number of times each state is visited (DTMC) or the expected time spend in each "
+                                                   "state (CTMC). Result can be exported using --" +
+                                                       exportCheckResultOptionName + ".")
+                        .setIsAdvanced()
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, false, "If given, the transition rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the transition rewards.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, stateRewardsOptionName, false, "If given, the state rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, choiceLabelingOptionName, false, "If given, the choice labels are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").").setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that this requires the model to be given as an symbolic model (i.e., via --" + prismInputOptionName + " or --" + janiInputOptionName + ").").setShortName(constantsOptionShortName)
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ") to be checked.").setShortName(janiPropertyOptionShortName)
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").makeOptional().build()).build());
-    this->addOption(storm::settings::OptionBuilder(moduleName,  steadyStateDistrOptionName, false, "Computes the steady state distribution. Result can be exported using --" + exportCheckResultOptionName +".").setIsAdvanced().build());
-
-    this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
+    this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.")
+                        .setShortName(qvbsInputOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
-                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("instance-index", "The selected instance of this model.").setDefaultValueUnsignedInteger(0).makeOptional().build())
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The comma separated list of property names to check. Omit to check all, \"\" to check none.").setDefaultValueString("").makeOptional().build())
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("instance-index", "The selected instance of this model.")
+                                         .setDefaultValueUnsignedInteger(0)
+                                         .makeOptional()
+                                         .build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(
+                                         "filter", "The comma separated list of property names to check. Omit to check all, \"\" to check none.")
+                                         .setDefaultValueString("")
+                                         .makeOptional()
+                                         .build())
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, propertiesAsMultiOptionName, false, "If set, the selected properties are interpreted as a multi-objective formula.").setIsAdvanced().build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, propertiesAsMultiOptionName, false,
+                                                   "If set, the selected properties are interpreted as a multi-objective formula.")
+                        .setIsAdvanced()
+                        .build());
 
 #ifdef STORM_HAVE_QVBS
     std::string qvbsRootDefault = STORM_QVBS_ROOT;
 #else
     std::string qvbsRootDefault = "";
 #endif
-    this->addOption(storm::settings::OptionBuilder(moduleName, qvbsRootOptionName, false, "Specifies the root directory of the Quantitative Verification Benchmark Set. Default can be set in CMAKE.")
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "The path.").setDefaultValueString(qvbsRootDefault).build()).build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, qvbsRootOptionName, false,
+                                                   "Specifies the root directory of the Quantitative Verification Benchmark Set. Default can be set in CMAKE.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "The path.").setDefaultValueString(qvbsRootDefault).build())
+                        .build());
 }
 
 bool IOSettings::isExportDotSet() const {
@@ -297,7 +435,8 @@ bool IOSettings::isJaniPropertiesSet() const {
 }
 
 bool IOSettings::areJaniPropertiesSelected() const {
-    return this->getOption(janiPropertyOptionName).getHasOptionBeenSet() && (this->getOption(janiPropertyOptionName).getArgumentByName("values").getValueAsString() != "");
+    return this->getOption(janiPropertyOptionName).getHasOptionBeenSet() &&
+           (this->getOption(janiPropertyOptionName).getArgumentByName("values").getValueAsString() != "");
 }
 
 std::vector<std::string> IOSettings::getSelectedJaniProperties() const {
@@ -318,6 +457,10 @@ std::string IOSettings::getPropertyFilter() const {
 
 bool IOSettings::isComputeSteadyStateDistributionSet() const {
     return this->getOption(steadyStateDistrOptionName).getHasOptionBeenSet();
+}
+
+bool IOSettings::isComputeExpectedVisitingTimesSet() const {
+    return this->getOption(expectedVisitingTimesOptionName).getHasOptionBeenSet();
 }
 
 bool IOSettings::isQvbsInputSet() const {
@@ -348,7 +491,8 @@ boost::optional<std::vector<std::string>> IOSettings::getQvbsPropertyFilter() co
 std::string IOSettings::getQvbsRoot() const {
     auto const& path = this->getOption(qvbsRootOptionName).getArgumentByName("path");
 #ifndef STORM_HAVE_QVBS
-    STORM_LOG_THROW(this->getOption(qvbsRootOptionName).getHasOptionBeenSet(), storm::exceptions::InvalidSettingsException, "QVBS Root is not specified. Either use the --" + qvbsRootOptionName + " option or specify it within CMAKE.");
+    STORM_LOG_THROW(this->getOption(qvbsRootOptionName).getHasOptionBeenSet(), storm::exceptions::InvalidSettingsException,
+                    "QVBS Root is not specified. Either use the --" + qvbsRootOptionName + " option or specify it within CMAKE.");
 #endif
     return path.getValueAsString();
 }
@@ -358,9 +502,12 @@ bool IOSettings::isPropertiesAsMultiSet() const {
 }
 
 void IOSettings::finalize() {
-    STORM_LOG_WARN_COND(!isExportDdSet(), "Option '--" << moduleName << ":" << exportDdOptionName << "' is depreciated. Use '--" << moduleName << ":" << exportBuildOptionName << "' instead.");
-    STORM_LOG_WARN_COND(!isExportDotSet(), "Option '--" << moduleName << ":" << exportDotOptionName << "' is depreciated. Use '--" << moduleName << ":" << exportBuildOptionName << "' instead.");
-    STORM_LOG_WARN_COND(!isExportExplicitSet(), "Option '--" << moduleName << ":" << exportExplicitOptionName << "' is depreciated. Use '--" << moduleName << ":" << exportBuildOptionName << "' instead.");
+    STORM_LOG_WARN_COND(!isExportDdSet(), "Option '--" << moduleName << ":" << exportDdOptionName << "' is depreciated. Use '--" << moduleName << ":"
+                                                       << exportBuildOptionName << "' instead.");
+    STORM_LOG_WARN_COND(!isExportDotSet(), "Option '--" << moduleName << ":" << exportDotOptionName << "' is depreciated. Use '--" << moduleName << ":"
+                                                        << exportBuildOptionName << "' instead.");
+    STORM_LOG_WARN_COND(!isExportExplicitSet(), "Option '--" << moduleName << ":" << exportExplicitOptionName << "' is depreciated. Use '--" << moduleName
+                                                             << ":" << exportBuildOptionName << "' instead.");
 }
 
 bool IOSettings::check() const {
@@ -369,7 +516,8 @@ bool IOSettings::check() const {
     numSymbolicInputs += isPrismInputSet() ? 1 : 0;
     numSymbolicInputs += isQvbsInputSet() ? 1 : 0;
     STORM_LOG_THROW(numSymbolicInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple symbolic input models.");
-    STORM_LOG_THROW(!isExportJaniDotSet() || isJaniInputSet() || isQvbsInputSet(), storm::exceptions::InvalidSettingsException, "Jani-to-dot export is only available for jani models" );
+    STORM_LOG_THROW(!isExportJaniDotSet() || isJaniInputSet() || isQvbsInputSet(), storm::exceptions::InvalidSettingsException,
+                    "Jani-to-dot export is only available for jani models");
 
     // Ensure that not two explicit input models were given.
     uint64_t numExplicitInputs = isExplicitSet() ? 1 : 0;
@@ -378,14 +526,16 @@ bool IOSettings::check() const {
     STORM_LOG_THROW(numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException, "Multiple explicit input models");
 
     // Ensure that the model was given either symbolically or explicitly.
-    STORM_LOG_THROW(numSymbolicInputs + numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");
+    STORM_LOG_THROW(numSymbolicInputs + numExplicitInputs <= 1, storm::exceptions::InvalidSettingsException,
+                    "The model may be either given in an explicit or a symbolic format (PRISM or JANI), but not both.");
 
     // Make sure PRISM-to-JANI conversion is only set if the actual input is in PRISM format.
-    STORM_LOG_THROW(!isPrismToJaniSet() || isPrismInputSet(), storm::exceptions::InvalidSettingsException, "For the transformation from PRISM to JANI, the input model must be given in the prism format.");
+    STORM_LOG_THROW(!isPrismToJaniSet() || isPrismInputSet(), storm::exceptions::InvalidSettingsException,
+                    "For the transformation from PRISM to JANI, the input model must be given in the prism format.");
 
     return true;
 }
 
-} // namespace modules
-} // namespace settings
-} // namespace storm
+}  // namespace modules
+}  // namespace settings
+}  // namespace storm
