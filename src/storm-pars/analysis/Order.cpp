@@ -70,7 +70,7 @@ namespace storm {
         }
 
         void Order::addAbove(uint_fast64_t state, Node *node) {
-            STORM_LOG_INFO("Add " << state << " above " << *node->states.begin() << std::endl);
+            STORM_LOG_INFO("Add " << state << " above " << *node->states.begin() << '\n');
 
             assert (nodes[state] == nullptr);
             Node *newNode = new Node();
@@ -91,7 +91,7 @@ namespace storm {
         }
 
         void Order::addBelow(uint_fast64_t state, Node *node) {
-            STORM_LOG_INFO("Add " << state << " below " << *node->states.begin()<< std::endl);
+            STORM_LOG_INFO("Add " << state << " below " << *node->states.begin()<< '\n');
 
             assert (nodes[state] == nullptr);
             Node *newNode = new Node();
@@ -112,7 +112,7 @@ namespace storm {
         }
 
         void Order::addBetween(uint_fast64_t state, Node *above, Node *below) {
-            STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin() << std::endl);
+            STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin() << '\n');
 
             assert(compare(above, below) == ABOVE);
             assert (above != nullptr && below != nullptr);
@@ -156,7 +156,7 @@ namespace storm {
         void Order::addRelationNodes(Order::Node *above, Order::Node * below, bool allowMerge) {
             assert (allowMerge || compare(above, below) != BELOW);
 
-            STORM_LOG_INFO("Add relation between (above) " << *above->states.begin() << " and " << *below->states.begin() << std::endl);
+            STORM_LOG_INFO("Add relation between (above) " << *above->states.begin() << " and " << *below->states.begin() << '\n');
 
             if (allowMerge) {
                 if (compare(below, above) == ABOVE) {
@@ -172,7 +172,7 @@ namespace storm {
         }
 
         void Order::addToNode(uint_fast64_t state, Node *node) {
-            STORM_LOG_INFO("Add "<< state << " to between (above) " << *node->states.begin() << std::endl);
+            STORM_LOG_INFO("Add "<< state << " to between (above) " << *node->states.begin() << '\n');
 
             if (nodes[state] == nullptr) {
                 // State is not in the order yet
@@ -191,7 +191,7 @@ namespace storm {
         }
 
         bool Order::mergeNodes(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2) {
-            STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << std::endl);
+            STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << '\n');
 
             // Merges node2 into node 1
             // everything above n2 also above n1
@@ -564,7 +564,7 @@ namespace storm {
 
         void Order::toDotOutput() const {
             // Graphviz Output start
-            STORM_PRINT("Dot Output:" << std::endl << "digraph model {" << std::endl);
+            STORM_PRINT("Dot Output:\n" << "digraph model {\n");
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(doneStates);
@@ -577,7 +577,7 @@ namespace storm {
                 for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
                     if (getNode(j) == getNode(i)) stateCoverage.set(j, false);
                 }
-                STORM_PRINT("\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];" << std::endl);
+                STORM_PRINT("\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];\n");
             }
 
             // Edges of the digraph
@@ -594,18 +594,18 @@ namespace storm {
                     if (std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()) {
                         seenNodes.insert(n);
                         if (!v[state]) {
-                            STORM_PRINT("\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";" << std::endl);
+                            STORM_PRINT("\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";\n");
                         }
                     }
                 }
             }
             // Graphviz Output end
-            STORM_PRINT("}" << std::endl);
+            STORM_PRINT("}\n");
         }
 
         void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
             // Graphviz Output start
-            dotOutfile << "Dot Output:" << std::endl << "digraph model {" << std::endl;
+            dotOutfile << "Dot Output:\n" << "digraph model {\n";
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
@@ -617,7 +617,7 @@ namespace storm {
                     if (getNode(j) == getNode(i)) stateCoverage.set(j, false);
                 }
 
-                dotOutfile << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];" << std::endl;
+                dotOutfile << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];\n";
             }
 
             // Edges of the digraph
@@ -638,7 +638,7 @@ namespace storm {
                     if (std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()) {
                         seenNodes.insert(n);
                         if (!v[state]) {
-                            dotOutfile << "\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";" << std::endl;
+                            dotOutfile << "\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";\n";
                         }
 
                     }
@@ -647,7 +647,7 @@ namespace storm {
             }
 
             // Graphviz Output end
-            dotOutfile << "}" << std::endl;
+            dotOutfile << "}\n";
         }
 
         /*** Private methods ***/

@@ -90,7 +90,7 @@ void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& i
             }
         }
         modelParsingWatch.stop();
-        STORM_PRINT("Time for model input parsing: " << modelParsingWatch << "." << std::endl << std::endl);
+        STORM_PRINT("Time for model input parsing: " << modelParsingWatch << ".\n\n");
     }
 }
 
@@ -118,7 +118,7 @@ SymbolicInput parseSymbolicInputQvbs(storm::settings::modules::IOSettings const&
     input.model = std::move(janiInput.first);
     input.properties = std::move(janiInput.second);
     modelParsingWatch.stop();
-    STORM_PRINT("Time for model input parsing: " << modelParsingWatch << "." << std::endl << std::endl);
+    STORM_PRINT("Time for model input parsing: " << modelParsingWatch << ".\n\n");
 
     // Parse additional properties
     boost::optional<std::set<std::string>> propertyFilter = storm::api::parsePropertyFilter(ioSettings.getPropertyFilter());
@@ -200,10 +200,9 @@ void getModelProcessingInformationAutomatic(SymbolicInput const& input, ModelPro
     if (as.enableExact() && mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision) {
         mpi.verificationValueType = ModelProcessingInformation::ValueType::Exact;
     }
-    STORM_PRINT_AND_LOG("Automatic engine picked the following settings: "
-                        << std::endl
-                        << "\tengine=" << mpi.engine << std::boolalpha << "\t bisimulation=" << mpi.applyBisimulation << "\t exact="
-                        << (mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision) << std::noboolalpha << std::endl);
+    STORM_PRINT_AND_LOG("Automatic engine picked the following settings: \n"
+                        << "\tengine=" << mpi.engine << std::boolalpha << "\t bisimulation=" << mpi.applyBisimulation
+                        << "\t exact=" << (mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision) << std::noboolalpha << '\n');
 }
 
 /*!
@@ -526,7 +525,7 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
 
     modelBuildingWatch.stop();
     if (result) {
-        STORM_PRINT("Time for model construction: " << modelBuildingWatch << "." << std::endl << std::endl);
+        STORM_PRINT("Time for model construction: " << modelBuildingWatch << ".\n\n");
     }
 
     return result;
@@ -780,23 +779,23 @@ std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::
     preprocessingWatch.stop();
 
     if (result.second) {
-        STORM_PRINT(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);
+        STORM_PRINT("\nTime for model preprocessing: " << preprocessingWatch << ".\n\n");
     }
     return result;
 }
 
 void printComputingCounterexample(storm::jani::Property const& property) {
-    STORM_PRINT("Computing counterexample for property " << *property.getRawFormula() << " ..." << std::endl);
+    STORM_PRINT("Computing counterexample for property " << *property.getRawFormula() << " ...\n");
 }
 
 void printCounterexample(std::shared_ptr<storm::counterexamples::Counterexample> const& counterexample, storm::utility::Stopwatch* watch = nullptr) {
     if (counterexample) {
-        STORM_PRINT(*counterexample << std::endl);
+        STORM_PRINT(*counterexample << '\n');
         if (watch) {
-            STORM_PRINT("Time for computation: " << *watch << "." << std::endl);
+            STORM_PRINT("Time for computation: " << *watch << ".\n");
         }
     } else {
-        STORM_PRINT(" failed." << std::endl);
+        STORM_PRINT(" failed.\n");
     }
 }
 
@@ -903,7 +902,7 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
     } else {
         switch (ft) {
             case storm::modelchecker::FilterType::VALUES:
-                STORM_PRINT(*result << std::endl);
+                STORM_PRINT(*result << '\n');
                 break;
             case storm::modelchecker::FilterType::EXISTS:
                 STORM_PRINT(result->asQualitativeCheckResult().existsTrue());
@@ -924,11 +923,11 @@ void printFilteredResult(std::unique_ptr<storm::modelchecker::CheckResult> const
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Filter type only defined for quantitative results.");
         }
     }
-    STORM_PRINT(std::endl);
+    STORM_PRINT('\n');
 }
 
 void printModelCheckingProperty(storm::jani::Property const& property) {
-    STORM_PRINT(std::endl << "Model checking property \"" << property.getName() << "\": " << *property.getRawFormula() << " ..." << std::endl);
+    STORM_PRINT("\nModel checking property \"" << property.getName() << "\": " << *property.getRawFormula() << " ...\n");
 }
 
 template<typename ValueType>
@@ -941,10 +940,10 @@ void printResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result
                     << " (for " << (property.getFilter().getStatesFormula()->isInitialFormula() ? "initial" : ss.str()) << " states): ");
         printFilteredResult<ValueType>(result, property.getFilter().getFilterType());
         if (watch) {
-            STORM_PRINT("Time for model checking: " << *watch << "." << std::endl);
+            STORM_PRINT("Time for model checking: " << *watch << ".\n");
         }
     } else {
-        STORM_LOG_ERROR("Property is unsupported by selected engine/settings." << std::endl);
+        STORM_LOG_ERROR("Property is unsupported by selected engine/settings.\n");
     }
 }
 
@@ -1170,8 +1169,8 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
         }
         watch.stop();
         postprocessingCallback(result);
-        STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << std::endl);
-        STORM_PRINT("Time for model checking: " << watch << "." << std::endl);
+        STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << '\n');
+        STORM_PRINT("Time for model checking: " << watch << ".\n");
     }
     if (ioSettings.isComputeExpectedVisitingTimesSet()) {
         storm::utility::Stopwatch watch(true);
@@ -1183,8 +1182,8 @@ void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& mod
         }
         watch.stop();
         postprocessingCallback(result);
-        STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << std::endl);
-        STORM_PRINT("Time for model checking: " << watch << "." << std::endl);
+        STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << '\n');
+        STORM_PRINT("Time for model checking: " << watch << ".\n");
     }
 }
 

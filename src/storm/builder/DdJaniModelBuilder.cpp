@@ -2212,7 +2212,7 @@ storm::dd::Bdd<Type> fixDeadlocks(storm::jani::ModelType const& modelType, storm
             storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();
             uint_fast64_t count = 0;
             for (auto it = deadlockStatesAdd.begin(), ite = deadlockStatesAdd.end(); it != ite && count < 3; ++it, ++count) {
-                STORM_LOG_INFO((*it).first.toPrettyString(variables.rowMetaVariables) << std::endl);
+                STORM_LOG_INFO((*it).first.toPrettyString(variables.rowMetaVariables) << '\n');
             }
 
             // Create a global identity DD.

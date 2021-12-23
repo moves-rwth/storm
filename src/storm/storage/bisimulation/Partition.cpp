@@ -348,20 +348,19 @@ void Partition<DataType>::print() const {
     for (auto const& block : this->blocks) {
         block->print(*this);
     }
-    std::cout << "states in partition" << std::endl;
+    std::cout << "states in partition\n";
     for (auto const& state : states) {
         std::cout << state << " ";
     }
-    std::cout << std::endl << "positions: " << std::endl;
+    std::cout << "\npositions: \n";
     for (auto const& index : positions) {
         std::cout << index << " ";
     }
-    std::cout << std::endl << "state to block mapping: " << std::endl;
+    std::cout << "\nstate to block mapping: \n";
     for (auto const& block : stateToBlockMapping) {
         std::cout << block << "[" << block->getId() << "] ";
     }
-    std::cout << std::endl;
-    std::cout << "size: " << blocks.size() << std::endl;
+    std::cout << "\nsize: " << blocks.size() << '\n';
     STORM_LOG_ASSERT(this->check(), "Partition corrupted.");
 }
 

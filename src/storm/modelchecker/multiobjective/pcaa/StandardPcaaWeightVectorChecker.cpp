@@ -121,26 +121,25 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
 
     // Print some statistics (if requested)
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Weight Vector Checker Statistics:" << std::endl);
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states." << std::endl);
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions." << std::endl);
+        STORM_PRINT_AND_LOG("Weight Vector Checker Statistics:\n");
+        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states.\n");
+        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions.\n");
         if (lraMecDecomposition) {
-            STORM_PRINT_AND_LOG("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis." << std::endl);
+            STORM_PRINT_AND_LOG("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis.\n");
             uint64_t numLraMecStates = 0;
             for (auto const& mec : this->lraMecDecomposition->mecs) {
                 numLraMecStates += mec.size();
             }
-            STORM_PRINT_AND_LOG(numLraMecStates << " states lie on such an end component." << std::endl);
+            STORM_PRINT_AND_LOG(numLraMecStates << " states lie on such an end component.\n");
         }
-        STORM_PRINT_AND_LOG(std::endl);
+        STORM_PRINT_AND_LOG('\n');
     }
 }
 
 template<class SparseModelType>
 void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& env, std::vector<ValueType> const& weightVector) {
     checkHasBeenCalled = true;
-    STORM_LOG_INFO("Invoked WeightVectorChecker with weights "
-                   << std::endl
+    STORM_LOG_INFO("Invoked WeightVectorChecker with weights \n"
                    << "\t" << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVector)));
 
     // Prepare and invoke weighted infinite horizon (long run average) phase

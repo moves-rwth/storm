@@ -151,12 +151,12 @@ namespace storm {
         
         inline std::ostream& operator<<(std::ostream& os, DFTIndependentSymmetries const& s)  {
             for(size_t index : s.sortedSymmetries) {
-                os << "Symmetry group for " << index << std::endl;
+                os << "Symmetry group for " << index << '\n';
                 for(auto const& eqClass : s.groups.at(index)) {
                     for(auto const& i : eqClass) {
                         os << i << " ";
                     }
-                    os << std::endl;
+                    os << '\n';
                 }
             }
             return os;

@@ -152,28 +152,28 @@ void GSPN::setCapacities(std::unordered_map<std::string, uint64_t> const& mappin
 }
 
 void GSPN::writeDotToStream(std::ostream& outStream) const {
-    outStream << "digraph " << this->getName() << " {" << std::endl;
+    outStream << "digraph " << this->getName() << " {\n";
 
     // print places with initial marking (not printed is the capacity)
     outStream << "\t"
-              << "node [shape=ellipse]" << std::endl;
+              << "node [shape=ellipse]\n";
     for (auto& place : this->getPlaces()) {
         outStream << "\t" << place.getName() << " [label=\"" << place.getName() << "(" << place.getNumberOfInitialTokens();
-        outStream << ")\"];" << std::endl;
+        outStream << ")\"];\n";
     }
 
     // print transitions with weight/rate
     outStream << "\t"
-              << "node [shape=box]" << std::endl;
+              << "node [shape=box]\n";
 
     for (auto& trans : this->getImmediateTransitions()) {
         outStream << "\t" << trans.getName() << " [fontcolor=white, style=filled, fillcolor=black, label=<" << trans.getName()
-                  << "<br/><FONT POINT-SIZE=\"10\"> π = " + std::to_string(trans.getPriority()) << "</FONT>>];" << std::endl;
+                  << "<br/><FONT POINT-SIZE=\"10\"> π = " + std::to_string(trans.getPriority()) << "</FONT>>];\n";
     }
 
     for (auto& trans : this->getTimedTransitions()) {
         outStream << "\t" << trans.getName() << " [label=\"" << trans.getName();
-        outStream << "(" << trans.getRate() << ")\"];" << std::endl;
+        outStream << "(" << trans.getRate() << ")\"];\n";
         STORM_LOG_WARN_COND(trans.hasSingleServerSemantics(), "Unable to export non-trivial transition semantics");  // TODO
     }
 
@@ -182,27 +182,27 @@ void GSPN::writeDotToStream(std::ostream& outStream) const {
         for (auto const& inEntry : trans.getInputPlaces()) {
             if (trans.getOutputPlaces().count(inEntry.first) == 0) {
                 outStream << "\t" << places.at(inEntry.first).getName() << " -> " << trans.getName() << "[label=\""
-                          << (inEntry.second > 1 ? std::to_string(inEntry.second) : "") << "\"];" << std::endl;
+                          << (inEntry.second > 1 ? std::to_string(inEntry.second) : "") << "\"];\n";
             }
         }
 
         for (auto const& inhEntry : trans.getInhibitionPlaces()) {
             if (trans.getOutputPlaces().count(inhEntry.first) == 0) {
                 outStream << "\t" << places.at(inhEntry.first).getName() << " -> " << trans.getName() << "[arrowhead=\"dot\", label=\""
-                          << (inhEntry.second > 1 ? std::to_string(inhEntry.second) : "") << "\"];" << std::endl;
+                          << (inhEntry.second > 1 ? std::to_string(inhEntry.second) : "") << "\"];\n";
             }
         }
 
         for (auto const& outEntry : trans.getOutputPlaces()) {
             if (trans.getInhibitionPlaces().count(outEntry.first) == 1) {
                 outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\""
-                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];" << std::endl;
+                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];\n";
             } else if (trans.getInputPlaces().count(outEntry.first) == 1) {
                 outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\""
-                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];" << std::endl;
+                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];\n";
             } else {
                 outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\""
-                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\"];" << std::endl;
+                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\"];\n";
             }
         }
     }
@@ -211,32 +211,32 @@ void GSPN::writeDotToStream(std::ostream& outStream) const {
         for (auto const& inEntry : trans.getInputPlaces()) {
             if (trans.getOutputPlaces().count(inEntry.first) == 0) {
                 outStream << "\t" << places.at(inEntry.first).getName() << " -> " << trans.getName() << "[label=\""
-                          << (inEntry.second > 1 ? std::to_string(inEntry.second) : "") << "\"];" << std::endl;
+                          << (inEntry.second > 1 ? std::to_string(inEntry.second) : "") << "\"];\n";
             }
         }
 
         for (auto const& inhEntry : trans.getInhibitionPlaces()) {
             if (trans.getOutputPlaces().count(inhEntry.first) == 0) {
                 outStream << "\t" << places.at(inhEntry.first).getName() << " -> " << trans.getName() << "[arrowhead=\"dot\", label=\""
-                          << (inhEntry.second > 1 ? std::to_string(inhEntry.second) : "") << "\"];" << std::endl;
+                          << (inhEntry.second > 1 ? std::to_string(inhEntry.second) : "") << "\"];\n";
             }
         }
 
         for (auto const& outEntry : trans.getOutputPlaces()) {
             if (trans.getInhibitionPlaces().count(outEntry.first) == 1) {
                 outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[arrowtail=\"dot\", label=\""
-                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];" << std::endl;
+                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];\n";
             } else if (trans.getInputPlaces().count(outEntry.first) == 1) {
                 outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\""
-                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];" << std::endl;
+                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\", dir=both];\n";
             } else {
                 outStream << "\t" << trans.getName() << " -> " << places.at(outEntry.first).getName() << "[label=\""
-                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\"];" << std::endl;
+                          << (outEntry.second > 1 ? std::to_string(outEntry.second) : "") << "\"];\n";
             }
         }
     }
 
-    outStream << "}" << std::endl;
+    outStream << "}\n";
 }
 
 void GSPN::setName(std::string const& name) {
@@ -422,11 +422,11 @@ void GSPN::toPnpro(std::ostream& stream) const {
     auto space2 = "    ";
     auto space3 = "      ";
     auto projectName = "storm-export";  // TODO add to args
-    stream << "<project name=\"" << projectName << "\" version=\"121\">" << std::endl;
-    stream << space << "<gspn name=\"" << getName() << "\" >" << std::endl;
+    stream << "<project name=\"" << projectName << "\" version=\"121\">\n";
+    stream << space << "<gspn name=\"" << getName() << "\" >\n";
 
     u_int32_t x = 1;
-    stream << space2 << "<nodes>" << std::endl;
+    stream << space2 << "<nodes>\n";
     for (auto& place : places) {
         stream << space3 << "<place marking=\"" << place.getNumberOfInitialTokens() << "\" ";
         stream << "name =\"" << place.getName() << "\" ";
@@ -437,7 +437,7 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "x=\"" << x << "\" ";
             stream << "y=\"1\" ";
         }
-        stream << "/>" << std::endl;
+        stream << "/>\n";
         x = x + 3;
     }
     x = 1;
@@ -457,7 +457,7 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "x=\"" << x << "\" ";
             stream << "y=\"4\" ";
         }
-        stream << "/>" << std::endl;
+        stream << "/>\n";
         x = x + 3;
     }
     for (auto& trans : immediateTransitions) {
@@ -472,12 +472,12 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "x=\"" << x << "\" ";
             stream << "y=\"4\" ";
         }
-        stream << "/>" << std::endl;
+        stream << "/>\n";
         x = x + 3;
     }
-    stream << space2 << "</nodes>" << std::endl;
+    stream << space2 << "</nodes>\n";
 
-    stream << space2 << "<edges>" << std::endl;
+    stream << space2 << "<edges>\n";
     for (auto& trans : timedTransitions) {
         for (auto const& inEntry : trans.getInputPlaces()) {
             stream << space3 << "<arc ";
@@ -485,7 +485,7 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "tail=\"" << places.at(inEntry.first).getName() << "\" ";
             stream << "kind=\"INPUT\" ";
             stream << "mult=\"" << inEntry.second << "\" ";
-            stream << "/>" << std::endl;
+            stream << "/>\n";
         }
         for (auto const& inhEntry : trans.getInhibitionPlaces()) {
             stream << space3 << "<arc ";
@@ -493,7 +493,7 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "tail=\"" << places.at(inhEntry.first).getName() << "\" ";
             stream << "kind=\"INHIBITOR\" ";
             stream << "mult=\"" << inhEntry.second << "\" ";
-            stream << "/>" << std::endl;
+            stream << "/>\n";
         }
         for (auto const& outEntry : trans.getOutputPlaces()) {
             stream << space3 << "<arc ";
@@ -501,7 +501,7 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "tail=\"" << trans.getName() << "\" ";
             stream << "kind=\"OUTPUT\" ";
             stream << "mult=\"" << outEntry.second << "\" ";
-            stream << "/>" << std::endl;
+            stream << "/>\n";
         }
     }
     for (auto& trans : immediateTransitions) {
@@ -511,7 +511,7 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "tail=\"" << places.at(inEntry.first).getName() << "\" ";
             stream << "kind=\"INPUT\" ";
             stream << "mult=\"" << inEntry.second << "\" ";
-            stream << "/>" << std::endl;
+            stream << "/>\n";
         }
         for (auto const& inhEntry : trans.getInhibitionPlaces()) {
             stream << space3 << "<arc ";
@@ -519,7 +519,7 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "tail=\"" << places.at(inhEntry.first).getName() << "\" ";
             stream << "kind=\"INHIBITOR\" ";
             stream << "mult=\"" << inhEntry.second << "\" ";
-            stream << "/>" << std::endl;
+            stream << "/>\n";
         }
         for (auto const& outEntry : trans.getOutputPlaces()) {
             stream << space3 << "<arc ";
@@ -527,12 +527,12 @@ void GSPN::toPnpro(std::ostream& stream) const {
             stream << "tail=\"" << trans.getName() << "\" ";
             stream << "kind=\"OUTPUT\" ";
             stream << "mult=\"" << outEntry.second << "\" ";
-            stream << "/>" << std::endl;
+            stream << "/>\n";
         }
     }
-    stream << space2 << "</edges>" << std::endl;
-    stream << space << "</gspn>" << std::endl;
-    stream << "</project>" << std::endl;
+    stream << space2 << "</edges>\n";
+    stream << space << "</gspn>\n";
+    stream << "</project>\n";
 }
 
 void GSPN::toPnml(std::ostream& stream) const {
@@ -541,46 +541,46 @@ void GSPN::toPnml(std::ostream& stream) const {
     std::string space3 = "      ";
     std::string space4 = "        ";
 
-    stream << "<pnml>" << std::endl;
-    stream << space << "<net id=\"" << getName() << "\">" << std::endl;
+    stream << "<pnml>\n";
+    stream << space << "<net id=\"" << getName() << "\">\n";
 
     // add places
     for (const auto& place : places) {
-        stream << space2 << "<place id=\"" << place.getName() << "\">" << std::endl;
-        stream << space3 << "<initialMarking>" << std::endl;
-        stream << space4 << "<value>Default," << place.getNumberOfInitialTokens() << "</value>" << std::endl;
-        stream << space3 << "</initialMarking>" << std::endl;
+        stream << space2 << "<place id=\"" << place.getName() << "\">\n";
+        stream << space3 << "<initialMarking>\n";
+        stream << space4 << "<value>Default," << place.getNumberOfInitialTokens() << "</value>\n";
+        stream << space3 << "</initialMarking>\n";
         if (place.hasRestrictedCapacity()) {
-            stream << space3 << "<capacity>" << std::endl;
-            stream << space4 << "<value>Default," << place.getCapacity() << "</value>" << std::endl;
-            stream << space3 << "</capacity>" << std::endl;
+            stream << space3 << "<capacity>\n";
+            stream << space4 << "<value>Default," << place.getCapacity() << "</value>\n";
+            stream << space3 << "</capacity>\n";
         }
-        stream << space2 << "</place>" << std::endl;
+        stream << space2 << "</place>\n";
     }
 
     // add immediate transitions
     for (const auto& trans : immediateTransitions) {
-        stream << space2 << "<transition id=\"" << trans.getName() << "\">" << std::endl;
-        stream << space3 << "<rate>" << std::endl;
-        stream << space4 << "<value>" << trans.getWeight() << "</value>" << std::endl;
-        stream << space3 << "</rate>" << std::endl;
-        stream << space3 << "<timed>" << std::endl;
-        stream << space4 << "<value>false</value>" << std::endl;
-        stream << space3 << "</timed>" << std::endl;
-        stream << space2 << "</transition>" << std::endl;
+        stream << space2 << "<transition id=\"" << trans.getName() << "\">\n";
+        stream << space3 << "<rate>\n";
+        stream << space4 << "<value>" << trans.getWeight() << "</value>\n";
+        stream << space3 << "</rate>\n";
+        stream << space3 << "<timed>\n";
+        stream << space4 << "<value>false</value>\n";
+        stream << space3 << "</timed>\n";
+        stream << space2 << "</transition>\n";
     }
 
     // add timed transitions
     for (const auto& trans : timedTransitions) {
         STORM_LOG_WARN_COND(trans.hasInfiniteServerSemantics(), "Unable to export non-trivial transition semantics");  // TODO
-        stream << space2 << "<transition id=\"" << trans.getName() << "\">" << std::endl;
-        stream << space3 << "<rate>" << std::endl;
-        stream << space4 << "<value>" << trans.getRate() << "</value>" << std::endl;
-        stream << space3 << "</rate>" << std::endl;
-        stream << space3 << "<timed>" << std::endl;
-        stream << space4 << "<value>true</value>" << std::endl;
-        stream << space3 << "</timed>" << std::endl;
-        stream << space2 << "</transition>" << std::endl;
+        stream << space2 << "<transition id=\"" << trans.getName() << "\">\n";
+        stream << space3 << "<rate>\n";
+        stream << space4 << "<value>" << trans.getRate() << "</value>\n";
+        stream << space3 << "</rate>\n";
+        stream << space3 << "<timed>\n";
+        stream << space4 << "<value>true</value>\n";
+        stream << space3 << "</timed>\n";
+        stream << space2 << "</transition>\n";
     }
 
     uint64_t i = 0;
@@ -592,15 +592,15 @@ void GSPN::toPnml(std::ostream& stream) const {
             stream << "id=\"arc" << i++ << "\" ";
             stream << "source=\"" << places.at(inEntry.first).getName() << "\" ";
             stream << "target=\"" << trans.getName() << "\" ";
-            stream << ">" << std::endl;
+            stream << ">\n";
 
-            stream << space3 << "<inscription>" << std::endl;
-            stream << space4 << "<value>Default," << inEntry.second << "</value>" << std::endl;
-            stream << space3 << "</inscription>" << std::endl;
+            stream << space3 << "<inscription>\n";
+            stream << space4 << "<value>Default," << inEntry.second << "</value>\n";
+            stream << space3 << "</inscription>\n";
 
-            stream << space3 << "<type value=\"normal\" />" << std::endl;
+            stream << space3 << "<type value=\"normal\" />\n";
 
-            stream << space2 << "</arc>" << std::endl;
+            stream << space2 << "</arc>\n";
         }
 
         // add inhibition arcs
@@ -609,15 +609,15 @@ void GSPN::toPnml(std::ostream& stream) const {
             stream << "id=\"arc" << i++ << "\" ";
             stream << "source=\"" << places.at(inhEntry.first).getName() << "\" ";
             stream << "target=\"" << trans.getName() << "\" ";
-            stream << ">" << std::endl;
+            stream << ">\n";
 
-            stream << space3 << "<inscription>" << std::endl;
-            stream << space4 << "<value>Default," << inhEntry.second << "</value>" << std::endl;
-            stream << space3 << "</inscription>" << std::endl;
+            stream << space3 << "<inscription>\n";
+            stream << space4 << "<value>Default," << inhEntry.second << "</value>\n";
+            stream << space3 << "</inscription>\n";
 
-            stream << space3 << "<type value=\"inhibition\" />" << std::endl;
+            stream << space3 << "<type value=\"inhibition\" />\n";
 
-            stream << space2 << "</arc>" << std::endl;
+            stream << space2 << "</arc>\n";
         }
 
         // add output arcs
@@ -626,15 +626,15 @@ void GSPN::toPnml(std::ostream& stream) const {
             stream << "id=\"arc" << i++ << "\" ";
             stream << "source=\"" << trans.getName() << "\" ";
             stream << "target=\"" << places.at(outEntry.first).getName() << "\" ";
-            stream << ">" << std::endl;
+            stream << ">\n";
 
-            stream << space3 << "<inscription>" << std::endl;
-            stream << space4 << "<value>Default," << outEntry.second << "</value>" << std::endl;
-            stream << space3 << "</inscription>" << std::endl;
+            stream << space3 << "<inscription>\n";
+            stream << space4 << "<value>Default," << outEntry.second << "</value>\n";
+            stream << space3 << "</inscription>\n";
 
-            stream << space3 << "<type value=\"normal\" />" << std::endl;
+            stream << space3 << "<type value=\"normal\" />\n";
 
-            stream << space2 << "</arc>" << std::endl;
+            stream << space2 << "</arc>\n";
         }
     }
 
@@ -646,15 +646,15 @@ void GSPN::toPnml(std::ostream& stream) const {
             stream << "id=\"arc" << i++ << "\" ";
             stream << "source=\"" << places.at(inEntry.first).getName() << "\" ";
             stream << "target=\"" << trans.getName() << "\" ";
-            stream << ">" << std::endl;
+            stream << ">\n";
 
-            stream << space3 << "<inscription>" << std::endl;
-            stream << space4 << "<value>Default," << inEntry.second << "</value>" << std::endl;
-            stream << space3 << "</inscription>" << std::endl;
+            stream << space3 << "<inscription>\n";
+            stream << space4 << "<value>Default," << inEntry.second << "</value>\n";
+            stream << space3 << "</inscription>\n";
 
-            stream << space3 << "<type value=\"normal\" />" << std::endl;
+            stream << space3 << "<type value=\"normal\" />\n";
 
-            stream << space2 << "</arc>" << std::endl;
+            stream << space2 << "</arc>\n";
         }
 
         // add inhibition arcs
@@ -663,15 +663,15 @@ void GSPN::toPnml(std::ostream& stream) const {
             stream << "id=\"arc" << i++ << "\" ";
             stream << "source=\"" << places.at(inhEntry.first).getName() << "\" ";
             stream << "target=\"" << trans.getName() << "\" ";
-            stream << ">" << std::endl;
+            stream << ">\n";
 
-            stream << space3 << "<inscription>" << std::endl;
-            stream << space4 << "<value>Default," << inhEntry.second << "</value>" << std::endl;
-            stream << space3 << "</inscription>" << std::endl;
+            stream << space3 << "<inscription>\n";
+            stream << space4 << "<value>Default," << inhEntry.second << "</value>\n";
+            stream << space3 << "</inscription>\n";
 
-            stream << space3 << "<type value=\"inhibition\" />" << std::endl;
+            stream << space3 << "<type value=\"inhibition\" />\n";
 
-            stream << space2 << "</arc>" << std::endl;
+            stream << space2 << "</arc>\n";
         }
 
         // add output arcs
@@ -680,20 +680,20 @@ void GSPN::toPnml(std::ostream& stream) const {
             stream << "id=\"arc" << i++ << "\" ";
             stream << "source=\"" << trans.getName() << "\" ";
             stream << "target=\"" << places.at(outEntry.first).getName() << "\" ";
-            stream << ">" << std::endl;
+            stream << ">\n";
 
-            stream << space3 << "<inscription>" << std::endl;
-            stream << space4 << "<value>Default," << outEntry.second << "</value>" << std::endl;
-            stream << space3 << "</inscription>" << std::endl;
+            stream << space3 << "<inscription>\n";
+            stream << space4 << "<value>Default," << outEntry.second << "</value>\n";
+            stream << space3 << "</inscription>\n";
 
-            stream << space3 << "<type value=\"normal\" />" << std::endl;
+            stream << space3 << "<type value=\"normal\" />\n";
 
-            stream << space2 << "</arc>" << std::endl;
+            stream << space2 << "</arc>\n";
         }
     }
 
-    stream << space << "</net>" << std::endl;
-    stream << "</pnml>" << std::endl;
+    stream << space << "</net>\n";
+    stream << "</pnml>\n";
 }
 
 void GSPN::toJson(std::ostream& stream) const {
@@ -701,9 +701,9 @@ void GSPN::toJson(std::ostream& stream) const {
 }
 
 void GSPN::writeStatsToStream(std::ostream& stream) const {
-    stream << "Number of places: " << getNumberOfPlaces() << std::endl;
-    stream << "Number of timed transitions: " << getNumberOfTimedTransitions() << std::endl;
-    stream << "Number of immediate transitions: " << getNumberOfImmediateTransitions() << std::endl;
+    stream << "Number of places: " << getNumberOfPlaces() << '\n';
+    stream << "Number of timed transitions: " << getNumberOfTimedTransitions() << '\n';
+    stream << "Number of immediate transitions: " << getNumberOfImmediateTransitions() << '\n';
 }
 }  // namespace gspn
 }  // namespace storm

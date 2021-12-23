@@ -241,9 +241,9 @@ template<typename ValueType>
 std::string Polytope<ValueType>::toString(bool numbersAsDouble) const {
     auto halfspaces = this->getHalfspaces();
     std::stringstream stream;
-    stream << "Polytope with " << halfspaces.size() << " Halfspaces" << (halfspaces.empty() ? "" : ":") << std::endl;
+    stream << "Polytope with " << halfspaces.size() << " Halfspaces" << (halfspaces.empty() ? "" : ":") << '\n';
     for (auto const& h : halfspaces) {
-        stream << "   " << h.toString(numbersAsDouble) << std::endl;
+        stream << "   " << h.toString(numbersAsDouble) << '\n';
     }
     return stream.str();
 }

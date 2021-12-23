@@ -125,14 +125,14 @@ std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<Val
     }
 
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("---------------------------------" << std::endl);
-        STORM_PRINT_AND_LOG("Statistics:" << std::endl);
-        STORM_PRINT_AND_LOG("---------------------------------" << std::endl);
-        STORM_PRINT_AND_LOG("          #checked epochs: " << epochOrder.size() << "." << std::endl);
-        STORM_PRINT_AND_LOG("             overall Time: " << swAll << "." << std::endl);
-        STORM_PRINT_AND_LOG("Epoch Model building Time: " << swBuild << "." << std::endl);
-        STORM_PRINT_AND_LOG("Epoch Model checking Time: " << swCheck << "." << std::endl);
-        STORM_PRINT_AND_LOG("---------------------------------" << std::endl);
+        STORM_PRINT_AND_LOG("---------------------------------\n");
+        STORM_PRINT_AND_LOG("Statistics:\n");
+        STORM_PRINT_AND_LOG("---------------------------------\n");
+        STORM_PRINT_AND_LOG("          #checked epochs: " << epochOrder.size() << ".\n");
+        STORM_PRINT_AND_LOG("             overall Time: " << swAll << ".\n");
+        STORM_PRINT_AND_LOG("Epoch Model building Time: " << swBuild << ".\n");
+        STORM_PRINT_AND_LOG("Epoch Model checking Time: " << swCheck << ".\n");
+        STORM_PRINT_AND_LOG("---------------------------------\n");
     }
 
     return result;

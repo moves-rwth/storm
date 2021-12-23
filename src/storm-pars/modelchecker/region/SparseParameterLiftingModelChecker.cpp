@@ -110,13 +110,13 @@ namespace storm {
 
                     // Check for result
                     if (existsSat && getInstantiationCheckerSAT().check(env, valuationToCheckSat)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
-                        STORM_LOG_INFO("Region " << region << " is AllSat, discovered with instantiation checker on " << valuationToCheckSat << " and help of monotonicity" << std::endl);
+                        STORM_LOG_INFO("Region " << region << " is AllSat, discovered with instantiation checker on " << valuationToCheckSat << " and help of monotonicity\n");
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
                         return RegionResult::AllSat;
                     }
 
                     if (existsViolated && !getInstantiationCheckerVIO().check(env, valuationToCheckViolated)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
-                        STORM_LOG_INFO("Region " << region << " is AllViolated, discovered with instantiation checker on " << valuationToCheckViolated << " and help of monotonicity" << std::endl);
+                        STORM_LOG_INFO("Region " << region << " is AllViolated, discovered with instantiation checker on " << valuationToCheckViolated << " and help of monotonicity\n");
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
                         return RegionResult::AllViolated;
                     }
@@ -268,7 +268,7 @@ namespace storm {
                 storm::utility::Stopwatch monotonicityWatch(true);
                 this->extendLocalMonotonicityResult(region, order, monRes);
                 monotonicityWatch.stop();
-                STORM_LOG_INFO(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
+                STORM_LOG_INFO("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
 
                 regionQueue.emplace(region, order, monRes, initBound);
             } else {
@@ -287,7 +287,7 @@ namespace storm {
             }
 
             initialWatch.stop();
-            STORM_LOG_INFO(std::endl << "Total time for initial points: " << initialWatch << "." << std::endl << std::endl);
+            STORM_LOG_INFO("\nTotal time for initial points: " << initialWatch << ".\n\n");
             if (!initialValue) {
                 STORM_LOG_INFO("Initial value: " << value.get() << " at " << valuation);
             } else {
@@ -422,21 +422,21 @@ namespace storm {
                     }
 
                     STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound.get() << ".");
-                    STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
+                    STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region.\n");
                 }
                 loopWatch.stop();
             }
 
-            STORM_LOG_INFO("Total number of splits: " << numberOfSplits << std::endl);
-            STORM_PRINT("Total number of plaCalls: " << numberOfPLACalls << std::endl);
+            STORM_LOG_INFO("Total number of splits: " << numberOfSplits << '\n');
+            STORM_PRINT("Total number of plaCalls: " << numberOfPLACalls << '\n');
             if (useMonotonicity) {
-                STORM_PRINT("Total number of plaCalls for bounds for monotonicity checking: " << numberOfPLACallsBounds << std::endl);
-                STORM_PRINT("Total number of copies of the order: " << numberOfOrderCopies << std::endl);
+                STORM_PRINT("Total number of plaCalls for bounds for monotonicity checking: " << numberOfPLACallsBounds << '\n');
+                STORM_PRINT("Total number of copies of the order: " << numberOfOrderCopies << '\n');
                 STORM_PRINT("Total number of copies of the local monotonicity result: " << numberOfMonResCopies
-                                                                                        << std::endl);
+                                                                                        << '\n');
             }
-            STORM_LOG_INFO(std::endl << "Total time for region refinement: " << loopWatch << "." << std::endl << std::endl);
-            STORM_LOG_INFO(std::endl << "Total time for additional bounds: " << boundsWatch << "." << std::endl << std::endl);
+            STORM_LOG_INFO("\nTotal time for region refinement: " << loopWatch << ".\n\n");
+            STORM_LOG_INFO("\nTotal time for additional bounds: " << boundsWatch << ".\n\n");
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
         }
@@ -564,18 +564,18 @@ namespace storm {
             ConstantType value = storm::solver::minimize(dir) ? 1 : 0;
             Valuation valuation;
             std::set<VariableType> monIncr, monDecr, notMon, notMonFirst;
-            STORM_LOG_INFO("Number of parameters: " << region.getVariables().size() << std::endl;);
+            STORM_LOG_INFO("Number of parameters: " << region.getVariables().size() << '\n';);
 
             if (localMonRes != nullptr) {
                 localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
 
                 auto numMon = monIncr.size() + monDecr.size();
-                STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
+                STORM_LOG_INFO("Number of monotone parameters: " << numMon << '\n';);
 
                 if (numMon < region.getVariables().size()) {
                     checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
-                    STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
-                    STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
+                    STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << '\n';);
+                    STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << '\n';);
                 }
 
                 valuation = region.getPoint(dir, monIncr, monDecr);

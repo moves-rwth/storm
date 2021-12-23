@@ -41,14 +41,14 @@ void Statistics<StateType, ValueType>::updateMaxPathLength(std::size_t const& cu
 
 template<typename StateType, typename ValueType>
 void Statistics<StateType, ValueType>::printToStream(std::ostream& out, ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
-    out << std::endl << "Exploration statistics:" << std::endl;
+    out << "\nExploration statistics:\n";
     out << "Discovered states: " << explorationInformation.getNumberOfDiscoveredStates() << " (" << numberOfExploredStates << " explored, "
-        << explorationInformation.getNumberOfUnexploredStates() << " unexplored, " << numberOfTargetStates << " target)" << std::endl;
-    out << "Exploration steps: " << explorationSteps << std::endl;
-    out << "Sampled paths: " << pathsSampled << std::endl;
-    out << "Maximal path length: " << maxPathLength << std::endl;
-    out << "Precomputations: " << numberOfPrecomputations << std::endl;
-    out << "EC detections: " << ecDetections << " (" << failedEcDetections << " failed, " << totalNumberOfEcDetected << " EC(s) detected)" << std::endl;
+        << explorationInformation.getNumberOfUnexploredStates() << " unexplored, " << numberOfTargetStates << " target)\n";
+    out << "Exploration steps: " << explorationSteps << '\n';
+    out << "Sampled paths: " << pathsSampled << '\n';
+    out << "Maximal path length: " << maxPathLength << '\n';
+    out << "Precomputations: " << numberOfPrecomputations << '\n';
+    out << "EC detections: " << ecDetections << " (" << failedEcDetections << " failed, " << totalNumberOfEcDetected << " EC(s) detected)\n";
 }
 
 template struct Statistics<uint32_t, double>;

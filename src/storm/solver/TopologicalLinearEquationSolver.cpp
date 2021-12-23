@@ -226,8 +226,8 @@ bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment con
         this->sccSolver->setUpperBounds(storm::utility::vector::filterVector(this->getUpperBounds(), scc));
     }
 
-    // std::cout << "rhs is " << storm::utility::vector::toString(sccB) << std::endl;
-    // std::cout << "x is " << storm::utility::vector::toString(sccX) << std::endl;
+    // std::cout << "rhs is " << storm::utility::vector::toString(sccB) << '\n';
+    // std::cout << "x is " << storm::utility::vector::toString(sccX) << '\n';
 
     bool returnvalue = this->sccSolver->solveEquations(sccSolverEnvironment, sccX, sccB);
     storm::utility::vector::setVectorValues(globalX, scc, sccX);

@@ -327,7 +327,7 @@ std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLP
 
     STORM_LOG_INFO("Deterministic automaton for LTL formula has " << da->getNumberOfStates() << " states, " << da->getAPSet().size()
                                                                   << " atomic propositions and " << *da->getAcceptance()->getAcceptanceExpression()
-                                                                  << " as acceptance condition." << std::endl);
+                                                                  << " as acceptance condition.\n");
 
     std::vector<ValueType> numericResult = computeDAProductProbabilities(env, *da, apSatSets);
 

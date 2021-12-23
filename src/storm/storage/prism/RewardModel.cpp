@@ -131,17 +131,17 @@ std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel) {
     if (rewardModel.getName() != "") {
         stream << " \"" << rewardModel.getName() << "\"";
     }
-    stream << std::endl;
+    stream << '\n';
     for (auto const& reward : rewardModel.getStateRewards()) {
-        stream << reward << std::endl;
+        stream << reward << '\n';
     }
     for (auto const& reward : rewardModel.getStateActionRewards()) {
-        stream << reward << std::endl;
+        stream << reward << '\n';
     }
     for (auto const& reward : rewardModel.getTransitionRewards()) {
-        stream << reward << std::endl;
+        stream << reward << '\n';
     }
-    stream << "endrewards" << std::endl;
+    stream << "endrewards\n";
     return stream;
 }
 

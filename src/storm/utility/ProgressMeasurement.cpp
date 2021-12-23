@@ -43,7 +43,7 @@ bool ProgressMeasurement::updateProgress(uint64_t count, std::ostream& outstream
         double itemsPerSecond = (static_cast<double>(count - this->lastDisplayedCount) * 1000.0 / static_cast<double>(durationSinceLastMessage));
         outstream << "Completed " << count << " " << itemName << " " << (this->isMaxCountSet() ? "(out of " + std::to_string(this->getMaxCount()) + ") " : "")
                   << "in " << std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count() << "s (currently " << itemsPerSecond << " "
-                  << itemName << " per second)." << std::endl;
+                  << itemName << " per second).\n";
         timeOfLastMessage = std::chrono::high_resolution_clock::now();
         lastDisplayedCount = count;
         return true;

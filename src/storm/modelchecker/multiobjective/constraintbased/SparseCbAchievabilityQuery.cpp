@@ -55,20 +55,20 @@ bool SparseCbAchievabilityQuery<SparseModelType>::checkAchievability() {
     swCheck.stop();
 
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Building the constraintsystem took " << swInitialization << " seconds and checking the SMT formula took " << swCheck << " seconds."
-                                                                  << std::endl);
+        STORM_PRINT_AND_LOG("Building the constraintsystem took " << swInitialization << " seconds and checking the SMT formula took " << swCheck
+                                                                  << " seconds.\n");
     }
 
     switch (result) {
         case storm::solver::SmtSolver::CheckResult::Sat:
-            // std::cout << std::endl << "Satisfying assignment: " << std::endl << solver->getModelAsValuation().toString(true) << std::endl;
+            // std::cout << "\nSatisfying assignment: \n" << solver->getModelAsValuation().toString(true) << '\n';
             return true;
         case storm::solver::SmtSolver::CheckResult::Unsat:
-            // std::cout << std::endl << "Unsatisfiability core: {" << std::endl;
+            // std::cout << "\nUnsatisfiability core: {\n";
             // for (auto const& expr : solver->getUnsatCore()) {
-            //    std::cout << "\t " << expr << std::endl;
+            //    std::cout << "\t " << expr << '\n';
             // }
-            // std::cout << "}" << std::endl;
+            // std::cout << "}\n";
             return false;
         default:
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");

@@ -40,8 +40,8 @@ Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents
 template<typename ValueType, typename RewardModelType>
 void Pomdp<ValueType, RewardModelType>::printModelInformationToStream(std::ostream &out) const {
     this->printModelInformationHeaderToStream(out);
-    out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
-    out << "Observations: \t" << this->nrObservations << std::endl;
+    out << "Choices: \t" << this->getNumberOfChoices() << '\n';
+    out << "Observations: \t" << this->nrObservations << '\n';
     this->printModelInformationFooterToStream(out);
 }
 

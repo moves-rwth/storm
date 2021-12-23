@@ -124,37 +124,37 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ParallelCompositionBuild
     std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> composedCtmc = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(matrixComposed, labeling);
 
     // Print for debugging
-    /*std::cout << "Matrix A:" << std::endl;
-    std::cout << matrixA << std::endl;
-    std::cout << "Matrix B:" << std::endl;
-    std::cout << matrixB << std::endl;
-    std::cout << "Composed matrix: " << std::endl << matrixComposed;
-    std::cout << "Labeling A" << std::endl;
+    /*std::cout << "Matrix A:\n";
+    std::cout << matrixA << '\n';
+    std::cout << "Matrix B:\n";
+    std::cout << matrixB << '\n';
+    std::cout << "Composed matrix: \n" << matrixComposed;
+    std::cout << "Labeling A\n";
     labelingA.printLabelingInformationToStream(std::cout);
     for (size_t stateA = 0; stateA < sizeA; ++stateA) {
         std::cout << "State " << stateA << ": ";
         for (auto label : labelingA.getLabelsOfState(stateA)) {
             std::cout << label << ", ";
         }
-        std::cout << std::endl;
+        std::cout << '\n';
     }
-    std::cout << "Labeling B" << std::endl;
+    std::cout << "Labeling B\n";
     labelingB.printLabelingInformationToStream(std::cout);
     for (size_t stateB = 0; stateB < sizeB; ++stateB) {
         std::cout << "State " << stateB << ": ";
         for (auto label : labelingB.getLabelsOfState(stateB)) {
             std::cout << label << ", ";
         }
-        std::cout << std::endl;
+        std::cout << '\n';
     }
-    std::cout << "Labeling Composed" << std::endl;
+    std::cout << "Labeling Composed\n";
     labeling.printLabelingInformationToStream(std::cout);
     for (size_t state = 0; state < size; ++state) {
         std::cout << "State " << state << ": ";
         for (auto label : labeling.getLabelsOfState(state)) {
             std::cout << label << ", ";
         }
-        std::cout << std::endl;
+        std::cout << '\n';
     }*/
 
     return composedCtmc;

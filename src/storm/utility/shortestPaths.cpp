@@ -357,7 +357,7 @@ void ShortestPathsGenerator<T>::printKShortestPath(state_t targetNode, unsigned 
     if (p.predecessorNode) {
         printKShortestPath(p.predecessorNode.get(), p.predecessorK, false);
     } else {
-        std::cout << " ]" << std::endl;
+        std::cout << " ]\n";
     }
 }
 

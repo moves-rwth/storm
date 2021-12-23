@@ -300,7 +300,7 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
                 auto statesPerSecond = numberOfExploredStatesSinceLastMessage / durationSinceLastMessage;
                 auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfStart).count();
                 std::cout << "Explored " << numberOfExploredStates << " states in " << durationSinceStart << " seconds (currently " << statesPerSecond
-                          << " states per second)." << std::endl;
+                          << " states per second).\n";
                 timeOfLastMessage = std::chrono::high_resolution_clock::now();
                 numberOfExploredStatesSinceLastMessage = 0;
             }
@@ -308,7 +308,7 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
 
         if (storm::utility::resources::isTerminate()) {
             auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - timeOfStart).count();
-            std::cout << "Explored " << numberOfExploredStates << " states in " << durationSinceStart << " seconds before abort." << std::endl;
+            std::cout << "Explored " << numberOfExploredStates << " states in " << durationSinceStart << " seconds before abort.\n";
             STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted in state space exploration.");
             break;
         }

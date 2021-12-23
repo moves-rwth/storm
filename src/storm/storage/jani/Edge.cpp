@@ -181,11 +181,11 @@ std::ostream& operator<<(std::ostream& stream, Edge const& edge) {
     if (edge.getDestinations().empty()) {
         stream << "without any destination";
     } else {
-        stream << " to ... [" << std::endl;
+        stream << " to ... [\n";
         for (auto const& dest : edge.getDestinations()) {
             stream << "\tlocation_id: " << dest.getLocationIndex() << " with probability '" << dest.getProbability() << "' and updates: ";
             if (dest.getOrderedAssignments().empty()) {
-                stream << "none" << std::endl;
+                stream << "none\n";
             }
             bool first = true;
             for (auto const& a : dest.getOrderedAssignments()) {
