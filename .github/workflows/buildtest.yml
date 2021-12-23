@@ -31,7 +31,7 @@ jobs:
     name: Indepth Tests (${{ matrix.cmakeArgs.name }})
     runs-on: ubuntu-latest
     env:
-      DISTRO: "ubuntu-20.10"
+      DISTRO: "ubuntu-21.10"
     strategy:
       matrix:
         cmakeArgs:
@@ -101,7 +101,7 @@ jobs:
     name: Build, Test and Deploy
     runs-on: ubuntu-latest
     env:
-      DISTRO: "ubuntu-20.10"
+      DISTRO: "ubuntu-21.10"
     strategy:
       matrix:
         debugOrRelease: ["debug", "release"]
