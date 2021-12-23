@@ -25,7 +25,7 @@ namespace storm {
             // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
             auto sortedSuccStates = this->sortStatesOrderAndMinMax(successors, order);
             for (uint_fast64_t succ: successors) {
-                if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
+                if (this->usePLA[order] && order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
                     auto addRes = this->addStatesBasedOnMinMax(order, currentState, succ);
                     if (addRes == Order::NodeComparison::ABOVE) {
                         addedSomething = true;

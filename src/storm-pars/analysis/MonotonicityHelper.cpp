@@ -12,6 +12,7 @@
 #include "storm-pars/analysis/AssumptionChecker.h"
 #include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
 #include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
+#include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
 
 namespace storm {
     namespace analysis {
@@ -57,7 +58,14 @@ namespace storm {
             }
 
             if (model->isOfType(models::ModelType::Dtmc)) {
-                this->extender = new analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
+                if (formulas[0]->isProbabilityOperatorFormula()) {
+                    this->extender = new analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
+                } else if (formulas[0]->isRewardOperatorFormula()) {
+                    this->extender = new analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
+
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for property" << formulas[0]);
+                }
             } else if (model->isOfType(models::ModelType::Mdp)) {
                 // TODO where to get prMax? Based on what was given via --prop?
                 this->extender = new analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true);
@@ -173,7 +181,7 @@ namespace storm {
 
             // Create initial order
             auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
-            criticalTuple = extender->toOrder(region, monRes);
+            criticalTuple = toOrder(region, monRes);
             // Continue based on not (yet) sorted states
             std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
 
@@ -243,7 +251,7 @@ namespace storm {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                                 assumptionsCopy.push_back(std::move(assumption.first));
                             }
-                            auto criticalTuple = extender->extendOrder(orderCopy, region, monResCopy, assumption.first);
+                            auto criticalTuple = extendOrder(orderCopy, region, monResCopy, assumption.first);
                             extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
                         } else {
                             // It is the last one, so we don't need to create a copy.
@@ -251,12 +259,48 @@ namespace storm {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                                 assumptions.push_back(std::move(assumption.first));
                             }
-                            auto criticalTuple = extender->extendOrder(order, region, monRes, assumption.first);
+                            auto criticalTuple = extendOrder(order, region, monRes, assumption.first);
                             extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
                         }
                     }
                 }
             }
+        }
+
+        template <typename ValueType, typename ConstantType>
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHelper<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+            ReachabilityOrderExtenderDtmc<ValueType, ConstantType>* castedPointerReachDtmc = dynamic_cast<ReachabilityOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
+            if (castedPointerReachDtmc != nullptr) {
+                return castedPointerReachDtmc->toOrder(region, monRes);
+            }
+            ReachabilityOrderExtenderMdp<ValueType, ConstantType>* castedPointerReachMdp = dynamic_cast<ReachabilityOrderExtenderMdp<ValueType, ConstantType>*>(extender);
+            if (castedPointerReachMdp != nullptr) {
+                return castedPointerReachMdp->toOrder(region, monRes);
+            }
+            RewardOrderExtenderDtmc<ValueType, ConstantType>* castedPointerRewDtmc = dynamic_cast<RewardOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
+            if (castedPointerRewDtmc != nullptr) {
+                return castedPointerRewDtmc->toOrder(region, monRes);
+            }
+            STORM_LOG_ASSERT(false, "Unexpected order extender type");
+            return extender->toOrder(region, monRes);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHelper<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+            ReachabilityOrderExtenderDtmc<ValueType, ConstantType>* castedPointerReachDtmc = dynamic_cast<ReachabilityOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
+            if (castedPointerReachDtmc != nullptr) {
+                return castedPointerReachDtmc->extendOrder(order, region, monRes, assumption);
+            }
+            ReachabilityOrderExtenderMdp<ValueType, ConstantType>* castedPointerReachMdp = dynamic_cast<ReachabilityOrderExtenderMdp<ValueType, ConstantType>*>(extender);
+            if (castedPointerReachMdp != nullptr) {
+                return castedPointerReachMdp->extendOrder(order, region, monRes, assumption);
+            }
+            RewardOrderExtenderDtmc<ValueType, ConstantType>* castedPointerRewDtmc = dynamic_cast<RewardOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
+            if (castedPointerRewDtmc != nullptr) {
+                return castedPointerRewDtmc->extendOrder(order, region, monRes, assumption);
+            }
+            STORM_LOG_ASSERT(false, "Unexpected order extender type");
+            return extender->extendOrder(order, region, monRes, assumption);
         }
 
         template <typename ValueType, typename ConstantType>

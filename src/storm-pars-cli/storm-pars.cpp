@@ -890,15 +890,14 @@ namespace storm {
                     storm::pars::performGradientDescent<ValueType>(model, input, omittedParameters);
                     return;
             }
-
-            if (regions.empty()) {
+            auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
+            if (monSettings.isMonotonicityAnalysisSet()) {
+                storm::pars::analyzeMonotonicity(model, input, regions);
+            } else if (regions.empty()) {
                 storm::pars::verifyPropertiesWithSparseEngine(model, input, samples);
             } else {
                 auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
-                auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
-                if (monSettings.isMonotonicityAnalysisSet()) {
-                    storm::pars::analyzeMonotonicity(model, input, regions);
-                } else if (regionSettings.isExtremumSet()) {
+                if (regionSettings.isExtremumSet()) {
                     storm::pars::computeRegionExtremumWithSparseEngine(model, input, regions, monotonicitySettings, monotoneParameters);
                 } else {
                     assert (monotoneParameters == boost::none);
@@ -947,8 +946,7 @@ namespace storm {
             if (model->isSparseModel()) {
                 storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples, monotonicitySettings, monotoneParameters, monThresh, omittedParameters);
             } else {
-                assert (!monotonicitySettings.useMonotonicity);
-                assert (monotoneParameters == boost::none);
+                STORM_LOG_ASSERT (!monotonicitySettings.useMonotonicity, "Monotonicity cannot be applied to DD models");
                 storm::pars::verifyWithDdEngine<DdType, ValueType>(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), input, regions, samples);
             }
         }

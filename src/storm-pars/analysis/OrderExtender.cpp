@@ -102,7 +102,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            return this->extendOrder(nullptr, region, monRes, nullptr);
+            return extendOrder(nullptr, region, monRes, nullptr);
         }
 
         template<typename ValueType, typename ConstantType>
@@ -189,7 +189,7 @@ namespace storm {
                             result.insert(itr, state);
                             added = true;
                             break;
-                        } else if (compareRes == Order::NodeComparison::UNKNOWN) {
+                        } else if (usePLA[order] && compareRes == Order::NodeComparison::UNKNOWN) {
                             compareRes = addStatesBasedOnMinMax(order, state, *itr);
                             if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
                                 // insert at current pointer (while keeping other values)
