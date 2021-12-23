@@ -101,7 +101,7 @@ void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::abstraction::Menu
                                             abstractionInformation.getSourcePredicateVariables(), abstractionInformation.getBottomStateVariable(true)));
     }
 
-    out << "digraph game {" << std::endl;
+    out << "digraph game {\n";
 
     // Create the player 1 nodes.
     storm::dd::Add<DdType, ValueType> statesAsAdd = filteredReachableStates.template toAdd<ValueType>();
@@ -125,7 +125,7 @@ void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::abstraction::Menu
         } else if (isHighlight) {
             out << ", style=\"filled\", fillcolor=\"red\"";
         }
-        out << " ];" << std::endl;
+        out << " ];\n";
     }
 
     // Create the nodes of the second player.
@@ -139,9 +139,9 @@ void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::abstraction::Menu
                                              abstractionInformation.getSourcePredicateVariables(), abstractionInformation.getBottomStateVariable(true));
         uint_fast64_t index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
         out << stateName << "_" << index;
-        out << " [ shape=\"square\", width=0, height=0, margin=0, label=\"" << index << "\" ];" << std::endl;
+        out << " [ shape=\"square\", width=0, height=0, margin=0, label=\"" << index << "\" ];\n";
         out << "\tpl1_" << stateName << " -> "
-            << "pl2_" << stateName << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
+            << "pl2_" << stateName << "_" << index << " [ label=\"" << index << "\" ];\n";
     }
 
     // Create the nodes of the probabilistic player.
@@ -156,9 +156,9 @@ void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::abstraction::Menu
         std::string stateName = stateNameStream.str();
         index = abstractionInformation.decodePlayer2Choice(stateValue.first, currentGame.getPlayer2Variables().size());
         out << stateName << "_" << index;
-        out << " [ shape=\"point\", label=\"\" ];" << std::endl;
+        out << " [ shape=\"point\", label=\"\" ];\n";
         out << "\tpl2_" << stateName << " -> "
-            << "plp_" << stateName << "_" << index << " [ label=\"" << index << "\" ];" << std::endl;
+            << "plp_" << stateName << "_" << index << " [ label=\"" << index << "\" ];\n";
     }
 
     for (auto stateValue : filteredTransitions) {
@@ -170,10 +170,10 @@ void MenuGameAbstractor<DdType, ValueType>::exportToDot(storm::abstraction::Menu
         uint_fast64_t pl1Index = abstractionInformation.decodePlayer1Choice(stateValue.first, abstractionInformation.getPlayer1VariableCount());
         uint_fast64_t pl2Index = abstractionInformation.decodePlayer2Choice(stateValue.first, currentGame.getPlayer2Variables().size());
         out << "\tplp_" << sourceStateName << "_" << pl1Index << "_" << pl2Index << " -> pl1_" << successorStateName << " [ label=\"" << stateValue.second
-            << "\"];" << std::endl;
+            << "\"];\n";
     }
 
-    out << "}" << std::endl;
+    out << "}\n";
     storm::utility::closeFile(out);
 }
 

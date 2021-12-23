@@ -360,7 +360,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
         }
 
         if (storm::utility::resources::isTerminate()) {
-            std::cout << "Parsed " << state << "/" << stateSize << " states before abort." << std::endl;
+            std::cout << "Parsed " << state << "/" << stateSize << " states before abort.\n";
             STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted in state space exploration.");
             break;
         }

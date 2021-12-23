@@ -75,7 +75,7 @@ storm::dd::Bdd<Type> NondeterministicModel<Type, ValueType>::getIllegalSuccessor
 template<storm::dd::DdType Type, typename ValueType>
 void NondeterministicModel<Type, ValueType>::printModelInformationToStream(std::ostream& out) const {
     this->printModelInformationHeaderToStream(out);
-    out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
+    out << "Choices: \t" << this->getNumberOfChoices() << '\n';
     this->printModelInformationFooterToStream(out);
 }
 

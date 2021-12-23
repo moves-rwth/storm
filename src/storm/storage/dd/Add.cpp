@@ -1165,12 +1165,12 @@ AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end() const {
 template<DdType LibraryType, typename ValueType>
 std::ostream& operator<<(std::ostream& out, Add<LibraryType, ValueType> const& add) {
     out << "ADD [" << add.getInternalAdd().getStringId() << "] with " << add.getNonZeroCount() << " nnz, " << add.getNodeCount() << " nodes, "
-        << add.getLeafCount() << " leaves" << std::endl;
+        << add.getLeafCount() << " leaves\n";
     std::vector<std::string> variableNames;
     for (auto const& variable : add.getContainedMetaVariables()) {
         variableNames.push_back(variable.getName());
     }
-    out << "contained variables: " << boost::algorithm::join(variableNames, ", ") << std::endl;
+    out << "contained variables: " << boost::algorithm::join(variableNames, ", ") << '\n';
     return out;
 }
 

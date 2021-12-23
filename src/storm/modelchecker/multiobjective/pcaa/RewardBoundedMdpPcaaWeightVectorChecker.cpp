@@ -55,16 +55,16 @@ template<class SparseMdpModelType>
 RewardBoundedMdpPcaaWeightVectorChecker<SparseMdpModelType>::~RewardBoundedMdpPcaaWeightVectorChecker() {
     swAll.stop();
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("--------------------------------------------------" << std::endl);
-        STORM_PRINT_AND_LOG("Statistics:" << std::endl);
-        STORM_PRINT_AND_LOG("--------------------------------------------------" << std::endl);
-        STORM_PRINT_AND_LOG("           #checked weight vectors: " << numChecks << "." << std::endl);
-        STORM_PRINT_AND_LOG("           #checked epochs overall: " << numCheckedEpochs << "." << std::endl);
-        STORM_PRINT_AND_LOG("# checked epochs per weight vector: " << numCheckedEpochs / numChecks << "." << std::endl);
-        STORM_PRINT_AND_LOG("                      overall Time: " << swAll << "." << std::endl);
-        STORM_PRINT_AND_LOG("         Epoch Model building time: " << swEpochModelBuild << "." << std::endl);
-        STORM_PRINT_AND_LOG("         Epoch Model checking time: " << swEpochModelAnalysis << "." << std::endl);
-        STORM_PRINT_AND_LOG("--------------------------------------------------" << std::endl);
+        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
+        STORM_PRINT_AND_LOG("Statistics:\n");
+        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
+        STORM_PRINT_AND_LOG("           #checked weight vectors: " << numChecks << ".\n");
+        STORM_PRINT_AND_LOG("           #checked epochs overall: " << numCheckedEpochs << ".\n");
+        STORM_PRINT_AND_LOG("# checked epochs per weight vector: " << numCheckedEpochs / numChecks << ".\n");
+        STORM_PRINT_AND_LOG("                      overall Time: " << swAll << ".\n");
+        STORM_PRINT_AND_LOG("         Epoch Model building time: " << swEpochModelBuild << ".\n");
+        STORM_PRINT_AND_LOG("         Epoch Model checking time: " << swEpochModelAnalysis << ".\n");
+        STORM_PRINT_AND_LOG("--------------------------------------------------\n");
     }
 }
 

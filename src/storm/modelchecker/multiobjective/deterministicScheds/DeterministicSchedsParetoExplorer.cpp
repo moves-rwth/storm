@@ -169,7 +169,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Pointset:
     point.setParetoOptimal(true);
 
     if (env.modelchecker().multi().isPrintResultsSet()) {
-        std::cout << "## achievable point: [" << point.toString(true) << "]" << std::endl;
+        std::cout << "## achievable point: [" << point.toString(true) << "]\n";
     }
     points.emplace_hint(points.end(), currId, std::move(point));
     return currId++;
@@ -223,9 +223,9 @@ template<class SparseModelType, typename GeometryValueType>
 void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Pointset::printToStream(std::ostream& out, bool includeIDs, bool convertToDouble) {
     for (auto const& p : this->points) {
         if (includeIDs) {
-            out << p.first << ": [" << p.second.toString(convertToDouble) << "]" << std::endl;
+            out << p.first << ": [" << p.second.toString(convertToDouble) << "]\n";
         } else {
-            out << p.second.toString(convertToDouble) << std::endl;
+            out << p.second.toString(convertToDouble) << '\n';
         }
     }
 }
@@ -316,9 +316,9 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Determini
         models.push_back(&preprocessorResult.originalModel);
         models.push_back(model.get());
         for (SparseModelType const* m : models) {
-            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfStates() << " states in " << modelname << std::endl);
-            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfChoices() << " choices in " << modelname << std::endl);
-            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfTransitions() << " transitions in " << modelname << std::endl);
+            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfStates() << " states in " << modelname << '\n');
+            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfChoices() << " choices in " << modelname << '\n');
+            STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfTransitions() << " transitions in " << modelname << '\n');
             storm::RationalNumber numScheds = storm::utility::one<storm::RationalNumber>();
             for (uint64_t state = 0; state < m->getNumberOfStates(); ++state) {
                 storm::RationalNumber numChoices = storm::utility::convertNumber<storm::RationalNumber, uint64_t>(m->getNumberOfChoices(state));
@@ -326,7 +326,7 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Determini
             }
             auto numSchedsStr = storm::utility::to_string(numScheds);
             STORM_PRINT_AND_LOG("#STATS " << numSchedsStr.front() << "e" << (numSchedsStr.size() - 1) << " memoryless deterministic schedulers in " << modelname
-                                          << std::endl);
+                                          << '\n');
             storm::storage::MaximalEndComponentDecomposition<ModelValueType> mecs(*m);
             uint64_t nonConstMecCounter = 0;
             uint64_t nonConstMecStateCounter = 0;
@@ -344,13 +344,13 @@ DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::Determini
                 if (mecHasNonConstValue)
                     ++nonConstMecCounter;
             }
-            STORM_PRINT_AND_LOG("#STATS " << nonConstMecCounter << " non-constant MECS in " << modelname << std::endl);
-            STORM_PRINT_AND_LOG("#STATS " << nonConstMecStateCounter << " non-constant MEC States in " << modelname << std::endl);
+            STORM_PRINT_AND_LOG("#STATS " << nonConstMecCounter << " non-constant MECS in " << modelname << '\n');
+            STORM_PRINT_AND_LOG("#STATS " << nonConstMecStateCounter << " non-constant MEC States in " << modelname << '\n');
             // Print the same statistics for the unfolded model as well.
             modelname = "unfolded-model";
         }
         sw.stop();
-        STORM_PRINT_AND_LOG("#STATS " << sw << " seconds for computing these statistics." << std::endl);
+        STORM_PRINT_AND_LOG("#STATS " << sw << " seconds for computing these statistics.\n");
     }
 }
 
@@ -385,8 +385,7 @@ std::unique_ptr<CheckResult> DeterministicSchedsParetoExplorer<SparseModelType, 
                 eps.back() = storm::utility::convertNumber<GeometryValueType>(1e-8);
             }
         }
-        STORM_PRINT_AND_LOG("Relative precision is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(eps))
-                                                     << std::endl);
+        STORM_PRINT_AND_LOG("Relative precision is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(eps)) << '\n');
     } else {
         STORM_LOG_THROW(env.modelchecker().multi().getPrecisionType() == MultiObjectiveModelCheckerEnvironment::PrecisionType::Absolute,
                         storm::exceptions::IllegalArgumentException, "Unknown multiobjective precision type.");
@@ -409,9 +408,9 @@ std::unique_ptr<CheckResult> DeterministicSchedsParetoExplorer<SparseModelType, 
         }
     }
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("#STATS " << paretoPoints.size() << " Pareto points" << std::endl);
-        STORM_PRINT_AND_LOG("#STATS " << unachievableAreas.size() << " unachievable areas" << std::endl);
-        STORM_PRINT_AND_LOG("#STATS " << overApproximation->getHalfspaces().size() << " unachievable halfspaces" << std::endl);
+        STORM_PRINT_AND_LOG("#STATS " << paretoPoints.size() << " Pareto points\n");
+        STORM_PRINT_AND_LOG("#STATS " << unachievableAreas.size() << " unachievable areas\n");
+        STORM_PRINT_AND_LOG("#STATS " << overApproximation->getHalfspaces().size() << " unachievable halfspaces\n");
         STORM_PRINT_AND_LOG(lpChecker->getStatistics("#STATS "));
     }
     return std::make_unique<storm::modelchecker::ExplicitParetoCurveCheckResult<ModelValueType>>(originalModelInitialState, std::move(paretoPoints), nullptr,
@@ -441,7 +440,7 @@ void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::addH
             }
             std::cout << storm::utility::convertNumber<double>(xi);
         }
-        std::cout << "];[" << storm::utility::convertNumber<double>(offset) << "]" << std::endl;
+        std::cout << "];[" << storm::utility::convertNumber<double>(offset) << "]\n";
     }
     storm::storage::geometry::Halfspace<GeometryValueType> overApproxHalfspace(normalVector, offset);
     overApproximation = overApproximation->intersection(overApproxHalfspace);
@@ -476,7 +475,7 @@ void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::addU
             }
             std::cout << "]";
         }
-        std::cout << std::endl;
+        std::cout << '\n';
     }
     unachievableAreas.push_back(area);
 }

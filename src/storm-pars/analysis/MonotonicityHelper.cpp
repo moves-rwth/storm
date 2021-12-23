@@ -78,14 +78,14 @@ namespace storm {
                 storm::utility::Stopwatch plaWatch(true);
                 this->extender->initializeMinMaxValues(region);
                 plaWatch.stop();
-                STORM_PRINT(std::endl << "Total time for pla checking: " << plaWatch << "." << std::endl << std::endl);
+                STORM_PRINT("\nTotal time for pla checking: " << plaWatch << ".\n\n");
             }
             createOrder();
 
             //output of results
             for (auto itr : monResults) {
                 if (itr.first != nullptr) {
-                    std::cout << "Number of done states: " << itr.first->getNumberOfDoneStates() << std::endl;
+                    std::cout << "Number of done states: " << itr.first->getNumberOfDoneStates() << '\n';
                 }
                 if (checkSamples) {
                     for (auto & entry : resultCheckOnSamples.getMonotonicityResult()) {
@@ -100,23 +100,23 @@ namespace storm {
                     if (!first) {
                         outfile << " & ";
                     } else {
-                        outfile << "Assumptions: " << std::endl << "    ";
+                        outfile << "Assumptions: \n" << "    ";
                         first = false;
                     }
                     outfile << *assumption;
                 }
                 if (!first) {
-                    outfile << std::endl;
+                    outfile << '\n';
                 } else {
-                    outfile << "No Assumptions" << std::endl;
+                    outfile << "No Assumptions\n";
                 }
-                outfile << "Monotonicity Result: " << std::endl << "    " << temp << std::endl << std::endl;
+                outfile << "Monotonicity Result: \n" << "    " << temp << "\n\n";
             }
 
             if (monResults.size() == 0) {
-                outfile << "No monotonicity found, as the order is insufficient" << std::endl;
+                outfile << "No monotonicity found, as the order is insufficient\n";
                 if (checkSamples) {
-                        outfile << "Monotonicity Result on samples: " << resultCheckOnSamples.toString() << std::endl;
+                        outfile << "Monotonicity Result on samples: " << resultCheckOnSamples.toString() << '\n';
                 }
             }
 
@@ -129,14 +129,14 @@ namespace storm {
                     std::ofstream dotOutfile;
                     std::string name = dotOutfileName + std::to_string(i);
                     utility::openFile(name, dotOutfile);
-                    dotOutfile << "Assumptions:" << std::endl;
+                    dotOutfile << "Assumptions:\n";
                     auto assumptionItr = orderItr->second.second.begin();
                     while (assumptionItr != orderItr->second.second.end()) {
-                        dotOutfile << *assumptionItr << std::endl;
-                        dotOutfile << std::endl;
+                        dotOutfile << *assumptionItr << '\n';
+                        dotOutfile << '\n';
                         assumptionItr++;
                     }
-                    dotOutfile << std::endl;
+                    dotOutfile << '\n';
                     orderItr->first->dotOutputToFile(dotOutfile);
                     utility::closeFile(dotOutfile);
                     i++;

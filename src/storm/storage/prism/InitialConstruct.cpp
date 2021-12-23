@@ -17,9 +17,9 @@ InitialConstruct InitialConstruct::substitute(std::map<storm::expressions::Varia
 }
 
 std::ostream& operator<<(std::ostream& stream, InitialConstruct const& initialConstruct) {
-    stream << "init " << std::endl;
-    stream << "\t" << initialConstruct.getInitialStatesExpression() << std::endl;
-    stream << "endinit" << std::endl;
+    stream << "init \n";
+    stream << "\t" << initialConstruct.getInitialStatesExpression() << '\n';
+    stream << "endinit\n";
     return stream;
 }
 }  // namespace prism

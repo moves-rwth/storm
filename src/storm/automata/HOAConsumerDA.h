@@ -155,7 +155,7 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
                             storm::exceptions::InvalidOperationException,
                             "HOA automaton: multiple definitions of successor for state " << stateId << " and edge " << edgeIndex);
 
-            // std::cout << stateId << " -(" << edgeIndex << ")-> " << successor << std::endl;
+            // std::cout << stateId << " -(" << edgeIndex << ")-> " << successor << '\n';
             da->setSuccessor(stateId, edgeIndex, successor);
             markEdgeAsSeen(stateId, edgeIndex);
 

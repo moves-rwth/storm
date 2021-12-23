@@ -1017,21 +1017,21 @@ class ExplicitGameExporter {
 
     void exportEdge(std::ofstream& out, EdgeData const& data, bool& first) {
         if (!first) {
-            out << "," << std::endl;
+            out << ",\n";
         } else {
             first = false;
         }
-        out << "\t\t{" << std::endl;
-        out << "\t\t\t\"data\": {" << std::endl;
-        out << "\t\t\t\t\"id\": \"" << data.id << "\"," << std::endl;
+        out << "\t\t{\n";
+        out << "\t\t\t\"data\": {\n";
+        out << "\t\t\t\t\"id\": \"" << data.id << "\",\n";
         if (data.probability != storm::utility::zero<ValueType>()) {
-            out << "\t\t\t\t\"name\": \"" << data.probability << "\"," << std::endl;
+            out << "\t\t\t\t\"name\": \"" << data.probability << "\",\n";
         } else {
-            out << "\t\t\t\t\"name\": \"" << data.label << "\"," << std::endl;
+            out << "\t\t\t\t\"name\": \"" << data.label << "\",\n";
         }
-        out << "\t\t\t\t\"source\": \"" << data.source << "\"," << std::endl;
-        out << "\t\t\t\t\"target\": \"" << data.target << "\"" << std::endl;
-        out << "\t\t\t}," << std::endl;
+        out << "\t\t\t\t\"source\": \"" << data.source << "\",\n";
+        out << "\t\t\t\t\"target\": \"" << data.target << "\"\n";
+        out << "\t\t\t},\n";
         out << "\t\t\t\"classes\": \"";
         if (data.min && data.max) {
             out << "minMaxEdge";
@@ -1042,26 +1042,26 @@ class ExplicitGameExporter {
         } else {
             out << "edge";
         }
-        out << "\"" << std::endl;
+        out << "\"\n";
         out << "\t\t}";
     }
 
     void exportNode(std::ofstream& out, NodeData const& data, ExplicitQuantitativeResultMinMax<ValueType> const* quantitativeResult, bool& first) {
         if (!first) {
-            out << "," << std::endl;
+            out << ",\n";
         } else {
             first = false;
         }
-        out << "\t\t{" << std::endl;
-        out << "\t\t\t\"data\": {" << std::endl;
-        out << "\t\t\t\t\"id\": \"" << data.id << "\"," << std::endl;
+        out << "\t\t{\n";
+        out << "\t\t\t\"data\": {\n";
+        out << "\t\t\t\t\"id\": \"" << data.id << "\",\n";
         out << "\t\t\t\t\"name\": \"" << data.id;
         if (quantitativeResult && data.player == 1) {
             out << " [" << quantitativeResult->getMin().getValues()[data.id] << ", " << quantitativeResult->getMax().getValues()[data.id] << "]";
         }
-        out << "\"" << std::endl;
-        out << "\t\t\t}," << std::endl;
-        out << "\t\t\t\"group\": \"nodes\"," << std::endl;
+        out << "\"\n";
+        out << "\t\t\t},\n";
+        out << "\t\t\t\"group\": \"nodes\",\n";
         out << "\t\t\t\"classes\": \"";
         if (data.player == 1) {
             if (data.initial) {
@@ -1076,7 +1076,7 @@ class ExplicitGameExporter {
         } else if (data.player == 0) {
             out << "plpnode";
         }
-        out << "\"" << std::endl;
+        out << "\"\n";
         out << "\t\t}";
     }
 
@@ -1162,20 +1162,20 @@ class ExplicitGameExporter {
         // Finally, export the data structures we built.
 
         // Export nodes.
-        out << "{\n\t\"nodes\": [" << std::endl;
+        out << "{\n\t\"nodes\": [\n";
         bool first = true;
         for (auto const& node : nodes) {
             exportNode(out, node, &quantitativeResult, first);
         }
-        out << "\n\t]," << std::endl;
+        out << "\n\t],\n";
 
         // Export edges.
         first = true;
-        out << "\t\"edges\": [" << std::endl;
+        out << "\t\"edges\": [\n";
         for (auto const& edge : edges) {
             exportEdge(out, edge, first);
         }
-        out << "\n\t]\n}" << std::endl;
+        out << "\n\t]\n}\n";
     }
 
     bool showNonStrategyAlternatives;
@@ -1758,13 +1758,13 @@ void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::abstracti
         std::streamsize originalPrecision = std::cout.precision();
         std::cout << std::fixed << std::setprecision(2);
 
-        std::cout << std::endl;
-        std::cout << "Statistics:" << std::endl;
+        std::cout << '\n';
+        std::cout << "Statistics:\n";
         std::cout << "    * size of final game: " << game.getReachableStates().getNonZeroCount() << " player 1 states, "
-                  << game.getTransitionMatrix().getNonZeroCount() << " transitions" << std::endl;
-        std::cout << "    * peak size of game: " << peakPlayer1States << " player 1 states, " << peakTransitions << " transitions" << std::endl;
-        std::cout << "    * refinements: " << refinements << std::endl;
-        std::cout << "    * predicates: " << abstractionInformation.getNumberOfPredicates() << std::endl << std::endl;
+                  << game.getTransitionMatrix().getNonZeroCount() << " transitions\n";
+        std::cout << "    * peak size of game: " << peakPlayer1States << " player 1 states, " << peakTransitions << " transitions\n";
+        std::cout << "    * refinements: " << refinements << '\n';
+        std::cout << "    * predicates: " << abstractionInformation.getNumberOfPredicates() << "\n\n";
 
         uint64_t totalAbstractionTimeMillis = totalAbstractionWatch.getTimeInMilliseconds();
         uint64_t totalTranslationTimeMillis = totalTranslationWatch.getTimeInMilliseconds();
@@ -1774,24 +1774,23 @@ void GameBasedMdpModelChecker<Type, ModelType>::printStatistics(storm::abstracti
         uint64_t setupTime = setupWatch.getTimeInMilliseconds();
         uint64_t totalTimeMillis = totalWatch.getTimeInMilliseconds();
 
-        std::cout << "Time breakdown:" << std::endl;
-        std::cout << "    * setup: " << setupTime << "ms (" << 100 * static_cast<double>(setupTime) / totalTimeMillis << "%)" << std::endl;
+        std::cout << "Time breakdown:\n";
+        std::cout << "    * setup: " << setupTime << "ms (" << 100 * static_cast<double>(setupTime) / totalTimeMillis << "%)\n";
         std::cout << "    * abstraction: " << totalAbstractionTimeMillis << "ms (" << 100 * static_cast<double>(totalAbstractionTimeMillis) / totalTimeMillis
-                  << "%)" << std::endl;
+                  << "%)\n";
         if (this->solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Sparse) {
             std::cout << "    * translation: " << totalTranslationTimeMillis << "ms ("
-                      << 100 * static_cast<double>(totalTranslationTimeMillis) / totalTimeMillis << "%)" << std::endl;
+                      << 100 * static_cast<double>(totalTranslationTimeMillis) / totalTimeMillis << "%)\n";
             if (fixPlayer1Strategy || fixPlayer2Strategy) {
                 std::cout << "    * strategy processing: " << totalStrategyProcessingTimeMillis << "ms ("
-                          << 100 * static_cast<double>(totalStrategyProcessingTimeMillis) / totalTimeMillis << "%)" << std::endl;
+                          << 100 * static_cast<double>(totalStrategyProcessingTimeMillis) / totalTimeMillis << "%)\n";
             }
         }
-        std::cout << "    * solution: " << totalSolutionTimeMillis << "ms (" << 100 * static_cast<double>(totalSolutionTimeMillis) / totalTimeMillis << "%)"
-                  << std::endl;
+        std::cout << "    * solution: " << totalSolutionTimeMillis << "ms (" << 100 * static_cast<double>(totalSolutionTimeMillis) / totalTimeMillis << "%)\n";
         std::cout << "    * refinement: " << totalRefinementTimeMillis << "ms (" << 100 * static_cast<double>(totalRefinementTimeMillis) / totalTimeMillis
-                  << "%)" << std::endl;
-        std::cout << "    ---------------------------------------------" << std::endl;
-        std::cout << "    * total: " << totalTimeMillis << "ms" << std::endl << std::endl;
+                  << "%)\n";
+        std::cout << "    ---------------------------------------------\n";
+        std::cout << "    * total: " << totalTimeMillis << "ms\n\n";
 
         std::cout << std::defaultfloat << std::setprecision(originalPrecision);
     }

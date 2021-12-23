@@ -1098,23 +1098,23 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type,
     //            bool min1ChoiceInPivotIsProb0Max = !(min1ChoiceInPivot && qualitativeResult.prob0Max.getPlayer2States()).isZero();
     //            bool min1ChoiceInPivotIsProb1Min = !(min1ChoiceInPivot && qualitativeResult.prob1Min.getPlayer2States()).isZero();
     //            bool min1ChoiceInPivotIsProb1Max = !(min1ChoiceInPivot && qualitativeResult.prob1Max.getPlayer2States()).isZero();
-    //            std::cout << "after redirection (min)" << std::endl;
-    //            std::cout << "min choice is prob0 in min? " << min1ChoiceInPivotIsProb0Min << ", max? " << min1ChoiceInPivotIsProb0Max << std::endl;
-    //            std::cout << "min choice is prob1 in min? " << min1ChoiceInPivotIsProb1Min << ", max? " << min1ChoiceInPivotIsProb1Max << std::endl;
-    //            std::cout << "min" << std::endl;
+    //            std::cout << "after redirection (min)\n";
+    //            std::cout << "min choice is prob0 in min? " << min1ChoiceInPivotIsProb0Min << ", max? " << min1ChoiceInPivotIsProb0Max << '\n';
+    //            std::cout << "min choice is prob1 in min? " << min1ChoiceInPivotIsProb1Min << ", max? " << min1ChoiceInPivotIsProb1Max << '\n';
+    //            std::cout << "min\n";
     //            for (auto const& e : (min1ChoiceInPivot && minPlayer2Strategy).template toAdd<ValueType>()) {
-    //                std::cout << e.first << " -> " << e.second << std::endl;
+    //                std::cout << e.first << " -> " << e.second << '\n';
     //            }
-    //            std::cout << "max" << std::endl;
+    //            std::cout << "max\n";
     //            for (auto const& e : (min1ChoiceInPivot && maxPlayer2Strategy).template toAdd<ValueType>()) {
-    //                std::cout << e.first << " -> " << e.second << std::endl;
+    //                std::cout << e.first << " -> " << e.second << '\n';
     //            }
     //            bool different = (min1ChoiceInPivot && minPlayer2Strategy) != (min1ChoiceInPivot && maxPlayer2Strategy);
-    //            std::cout << "min/max choice of player 2 is different? " << different << std::endl;
+    //            std::cout << "min/max choice of player 2 is different? " << different << '\n';
     //            bool min1MinPlayer2Choice = !(min1ChoiceInPivot && minPlayer2Strategy).isZero();
     //            bool min1MaxPlayer2Choice = !(min1ChoiceInPivot && maxPlayer2Strategy).isZero();
-    //            std::cout << "max/min choice there? " << min1MinPlayer2Choice << std::endl;
-    //            std::cout << "max/max choice there? " << min1MaxPlayer2Choice << std::endl;
+    //            std::cout << "max/min choice there? " << min1MinPlayer2Choice << '\n';
+    //            std::cout << "max/max choice there? " << min1MaxPlayer2Choice << '\n';
     //
     //            auto max1ChoiceInPivot = SymbolicPivotStateResult.pivotState && game.getExtendedTransitionMatrix().toBdd() && maxPlayer1Strategy;
     //            STORM_LOG_ASSERT(!max1ChoiceInPivot.isZero(), "wth?");
@@ -1122,15 +1122,15 @@ bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type,
     //            bool max1ChoiceInPivotIsProb0Max = !(max1ChoiceInPivot && qualitativeResult.prob0Max.getPlayer2States()).isZero();
     //            bool max1ChoiceInPivotIsProb1Min = !(max1ChoiceInPivot && qualitativeResult.prob1Min.getPlayer2States()).isZero();
     //            bool max1ChoiceInPivotIsProb1Max = !(max1ChoiceInPivot && qualitativeResult.prob1Max.getPlayer2States()).isZero();
-    //            std::cout << "after redirection (max)" << std::endl;
-    //            std::cout << "max choice is prob0 in min? " << max1ChoiceInPivotIsProb0Min << ", max? " << max1ChoiceInPivotIsProb0Max << std::endl;
-    //            std::cout << "max choice is prob1 in min? " << max1ChoiceInPivotIsProb1Min << ", max? " << max1ChoiceInPivotIsProb1Max << std::endl;
+    //            std::cout << "after redirection (max)\n";
+    //            std::cout << "max choice is prob0 in min? " << max1ChoiceInPivotIsProb0Min << ", max? " << max1ChoiceInPivotIsProb0Max << '\n';
+    //            std::cout << "max choice is prob1 in min? " << max1ChoiceInPivotIsProb1Min << ", max? " << max1ChoiceInPivotIsProb1Max << '\n';
     //            different = (max1ChoiceInPivot && minPlayer2Strategy) != (max1ChoiceInPivot && maxPlayer2Strategy);
-    //            std::cout << "min/max choice of player 2 is different? " << different << std::endl;
+    //            std::cout << "min/max choice of player 2 is different? " << different << '\n';
     //            bool max1MinPlayer2Choice = !(max1ChoiceInPivot && minPlayer2Strategy).isZero();
     //            bool max1MaxPlayer2Choice = !(max1ChoiceInPivot && maxPlayer2Strategy).isZero();
-    //            std::cout << "max/min choice there? " << max1MinPlayer2Choice << std::endl;
-    //            std::cout << "max/max choice there? " << max1MaxPlayer2Choice << std::endl;
+    //            std::cout << "max/min choice there? " << max1MinPlayer2Choice << '\n';
+    //            std::cout << "max/max choice there? " << max1MaxPlayer2Choice << '\n';
 
     boost::optional<RefinementPredicates> predicates;
     if (useInterpolation) {

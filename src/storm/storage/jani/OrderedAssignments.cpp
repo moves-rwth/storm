@@ -307,9 +307,9 @@ bool OrderedAssignments::checkOrder() const {
 }
 
 std::ostream& operator<<(std::ostream& stream, OrderedAssignments const& assignments) {
-    stream << "[" << std::endl;
+    stream << "[\n";
     for (auto const& e : assignments.allAssignments) {
-        stream << "\t" << *e << std::endl;
+        stream << "\t" << *e << '\n';
     }
     stream << "]";
     return stream;

@@ -129,41 +129,43 @@ void Odd::exportToDot(std::string const& filename) const {
     storm::utility::openFile(filename, dotFile);
 
     // Print header.
-    dotFile << "digraph \"ODD\" {" << std::endl << "center=true;" << std::endl << "edge [dir = none];" << std::endl;
+    dotFile << "digraph \"ODD\" {\n"
+            << "center=true;\n"
+            << "edge [dir = none];\n";
 
     // Print levels as ranks.
-    dotFile << "{ node [shape = plaintext];" << std::endl << "edge [style = invis];" << std::endl;
+    dotFile << "{ node [shape = plaintext];\n"
+            << "edge [style = invis];\n";
     std::vector<std::string> levelNames;
     for (uint_fast64_t level = 0; level < this->getHeight(); ++level) {
         levelNames.push_back("\"" + std::to_string(level) + "\"");
     }
     dotFile << boost::join(levelNames, " -> ") << ";";
-    dotFile << "}" << std::endl;
+    dotFile << "}\n";
 
     std::map<uint_fast64_t, std::unordered_set<storm::dd::Odd const*>> levelToOddNodesMap;
     this->addToLevelToOddNodesMap(levelToOddNodesMap);
 
     for (auto const& levelNodes : levelToOddNodesMap) {
-        dotFile << "{ rank = same; \"" << levelNodes.first << "\"" << std::endl;
+        dotFile << "{ rank = same; \"" << levelNodes.first << "\"\n";
         ;
         for (auto const& node : levelNodes.second) {
-            dotFile << "\"" << node << "\";" << std::endl;
+            dotFile << "\"" << node << "\";\n";
         }
-        dotFile << "}" << std::endl;
+        dotFile << "}\n";
     }
 
     for (auto const& levelNodes : levelToOddNodesMap) {
         for (auto const& node : levelNodes.second) {
-            dotFile << "\"" << node << "\" [label=\"" << node->getTotalOffset() << "\"];" << std::endl;
+            dotFile << "\"" << node << "\" [label=\"" << node->getTotalOffset() << "\"];\n";
             if (!node->isTerminalNode()) {
-                dotFile << "\"" << node << "\" -> \"" << &node->getElseSuccessor() << "\" [style=dashed, label=\"0\"];" << std::endl;
-                dotFile << "\"" << node << "\" -> \"" << &node->getThenSuccessor() << "\" [style=solid, label=\"" << node->getElseOffset() << "\"];"
-                        << std::endl;
+                dotFile << "\"" << node << "\" -> \"" << &node->getElseSuccessor() << "\" [style=dashed, label=\"0\"];\n";
+                dotFile << "\"" << node << "\" -> \"" << &node->getThenSuccessor() << "\" [style=solid, label=\"" << node->getElseOffset() << "\"];\n";
             }
         }
     }
 
-    dotFile << "}" << std::endl;
+    dotFile << "}\n";
     storm::utility::closeFile(dotFile);
 }
 

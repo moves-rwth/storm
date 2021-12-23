@@ -365,7 +365,7 @@ void print(std::vector<typename SparseMatrix<ValueType>::index_type> const& rowG
     typename SparseMatrix<ValueType>::index_type endRows;
     // Iterate over all row groups.
     for (typename SparseMatrix<ValueType>::index_type group = 0; group < rowGroupIndices.size(); ++group) {
-        std::cout << "\t---- group " << group << "/" << (rowGroupIndices.size() - 1) << " ---- " << std::endl;
+        std::cout << "\t---- group " << group << "/" << (rowGroupIndices.size() - 1) << " ---- \n";
         endGroups = group < rowGroupIndices.size() - 1 ? rowGroupIndices[group + 1] : rowIndications.size();
         // Iterate over all rows in a row group
         for (typename SparseMatrix<ValueType>::index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
@@ -376,7 +376,7 @@ void print(std::vector<typename SparseMatrix<ValueType>::index_type> const& rowG
             for (typename SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
                 std::cout << "(" << columnsAndValues[pos].getColumn() << ": " << columnsAndValues[pos].getValue() << ") ";
             }
-            std::cout << std::endl;
+            std::cout << '\n';
         }
     }
 }
@@ -2478,11 +2478,11 @@ std::ostream& operator<<(std::ostream& out, SparseMatrix<ValueType> const& matri
     for (typename SparseMatrix<ValueType>::index_type i = 0; i < matrix.getColumnCount(); ++i) {
         out << i << "\t";
     }
-    out << std::endl;
+    out << '\n';
 
     // Iterate over all row groups.
     for (typename SparseMatrix<ValueType>::index_type group = 0; group < matrix.getRowGroupCount(); ++group) {
-        out << "\t---- group " << group << "/" << (matrix.getRowGroupCount() - 1) << " ---- " << std::endl;
+        out << "\t---- group " << group << "/" << (matrix.getRowGroupCount() - 1) << " ---- \n";
         typename SparseMatrix<ValueType>::index_type start = matrix.hasTrivialRowGrouping() ? group : matrix.getRowGroupIndices()[group];
         typename SparseMatrix<ValueType>::index_type end = matrix.hasTrivialRowGrouping() ? group + 1 : matrix.getRowGroupIndices()[group + 1];
 
@@ -2501,7 +2501,7 @@ std::ostream& operator<<(std::ostream& out, SparseMatrix<ValueType> const& matri
                 }
                 ++currentRealIndex;
             }
-            out << "\t)\t" << i << std::endl;
+            out << "\t)\t" << i << '\n';
         }
     }
 
@@ -2510,7 +2510,7 @@ std::ostream& operator<<(std::ostream& out, SparseMatrix<ValueType> const& matri
     for (typename SparseMatrix<ValueType>::index_type i = 0; i < matrix.getColumnCount(); ++i) {
         out << i << "\t";
     }
-    out << std::endl;
+    out << '\n';
 
     return out;
 }
@@ -2535,7 +2535,7 @@ void SparseMatrix<ValueType>::printAsMatlabMatrix(std::ostream& out) const {
                 }
                 ++currentRealIndex;
             }
-            out << ";" << std::endl;
+            out << ";\n";
         }
     }
 }

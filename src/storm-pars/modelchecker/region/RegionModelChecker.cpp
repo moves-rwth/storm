@@ -71,7 +71,7 @@ namespace storm {
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-                    STORM_PRINT_AND_LOG("Progress (solved fraction) :" << std::endl <<  "0% [");
+                    STORM_PRINT_AND_LOG("Progress (solved fraction) :\n" <<  "0% [");
                     while (displayedProgress < storm::utility::one<CoefficientType>() - thresholdAsCoefficient) {
                         STORM_PRINT_AND_LOG(" ");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
@@ -80,7 +80,7 @@ namespace storm {
                         STORM_PRINT_AND_LOG("-");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
                     }
-                    STORM_PRINT_AND_LOG("] 100%" << std::endl << "   [");
+                    STORM_PRINT_AND_LOG("] 100%\n" << "   [");
                     displayedProgress = storm::utility::zero<CoefficientType>();
                 }
 
@@ -174,7 +174,7 @@ namespace storm {
                         }
                     }
                     monWatch.stop();
-                    STORM_PRINT(std::endl << "Time for orderBuilding and monRes initialization: " << monWatch << "." << std::endl << std::endl);
+                    STORM_PRINT("\nTime for orderBuilding and monRes initialization: " << monWatch << ".\n\n");
                 }
                 bool useSameOrder = useMonotonicity && order->getDoneBuilding();
                 bool useSameLocalMonotonicityResult = useSameOrder && localMonotonicityResult->isDone();
@@ -309,13 +309,13 @@ namespace storm {
                         STORM_PRINT_AND_LOG("-");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
                     }
-                    STORM_PRINT_AND_LOG("]" << std::endl);
+                    STORM_PRINT_AND_LOG("]\n");
                     
-                    STORM_PRINT_AND_LOG("Region Refinement Statistics:" << std::endl);
-                    STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions." << std::endl);
+                    STORM_PRINT_AND_LOG("Region Refinement Statistics:\n");
+                    STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions.\n");
 
                     if (useMonotonicity) {
-                        STORM_PRINT_AND_LOG("    " << numberOfRegionsKnownThroughMonotonicity << " regions where discovered with help of monotonicity." << std::endl);
+                        STORM_PRINT_AND_LOG("    " << numberOfRegionsKnownThroughMonotonicity << " regions where discovered with help of monotonicity.\n");
 
                     }
                 }

@@ -242,9 +242,9 @@ class ProgramGraph {
     void checkValid() {}
 
     void printInfo(std::ostream& os) const {
-        os << "Number of variables: " << nrVariables() << std::endl;
-        os << "Number of locations: " << nrLocations() << std::endl;
-        os << "Number of actions: " << nrActions() << std::endl;
+        os << "Number of variables: " << nrVariables() << '\n';
+        os << "Number of locations: " << nrLocations() << '\n';
+        os << "Number of actions: " << nrActions() << '\n';
     }
 
     void printDot(std::ostream& os) const;

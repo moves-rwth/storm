@@ -378,20 +378,20 @@ storm::expressions::Expression const& Module::getInvariant() const {
 }
 
 std::ostream& operator<<(std::ostream& stream, Module const& module) {
-    stream << "module " << module.getName() << std::endl;
+    stream << "module " << module.getName() << '\n';
     for (auto const& booleanVariable : module.getBooleanVariables()) {
-        stream << "\t" << booleanVariable << std::endl;
+        stream << "\t" << booleanVariable << '\n';
     }
     for (auto const& integerVariable : module.getIntegerVariables()) {
-        stream << "\t" << integerVariable << std::endl;
+        stream << "\t" << integerVariable << '\n';
     }
     for (auto const& clockVariable : module.getClockVariables()) {
-        stream << "\t" << clockVariable << std::endl;
+        stream << "\t" << clockVariable << '\n';
     }
     for (auto const& command : module.getCommands()) {
-        stream << "\t" << command << std::endl;
+        stream << "\t" << command << '\n';
     }
-    stream << "endmodule" << std::endl;
+    stream << "endmodule\n";
     return stream;
 }
 

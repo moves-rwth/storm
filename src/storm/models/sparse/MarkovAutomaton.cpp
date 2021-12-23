@@ -294,15 +294,15 @@ bool MarkovAutomaton<ValueType, RewardModelType>::checkContainsZenoCycle() const
 template<typename ValueType, typename RewardModelType>
 void MarkovAutomaton<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
     this->printModelInformationHeaderToStream(out);
-    out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
-    out << "Markovian St.: \t" << this->getMarkovianStates().getNumberOfSetBits() << std::endl;
+    out << "Choices: \t" << this->getNumberOfChoices() << '\n';
+    out << "Markovian St.: \t" << this->getMarkovianStates().getNumberOfSetBits() << '\n';
     out << "Max. Rate: \t";
     if (this->getMarkovianStates().empty()) {
         out << "None";
     } else {
         out << this->getMaximalExitRate();
     }
-    out << std::endl;
+    out << '\n';
     this->printModelInformationFooterToStream(out);
 }
 

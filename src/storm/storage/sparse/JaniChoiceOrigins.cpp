@@ -49,7 +49,7 @@ void JaniChoiceOrigins::computeIdentifierInfos() const {
         for (auto const& edgeIndex : edgeSet) {
             auto autAndEdgeOffset = model->decodeAutomatonAndEdgeIndices(edgeIndex);
             ss << model->getAutomaton(autAndEdgeOffset.first).getEdge(autAndEdgeOffset.second).toString();
-            ss << "," << std::endl;
+            ss << ",\n";
         }
         this->identifierToInfo.emplace_back(ss.str());
         ss.clear();

@@ -69,8 +69,8 @@ TEST(NeutralECRemover, SimpleModelTest) {
     std::vector<uint_fast64_t> expectedNewToOldRowMapping = {6, 7, 8, 2, 3, 11, 1, 0};
     std::vector<uint_fast64_t> expectedOldToNewStateMapping = {2, 1, std::numeric_limits<uint_fast64_t>::max(), 0, 1};
 
-    // std::cout << "Original matrix:" << std::endl << matrix << std::endl << std::endl << "Computation Result: " << std::endl << res.matrix << std::endl<<
-    // std::endl << "expected Matrix" << std::endl<< expectedMatrix << std::endl;
+    // std::cout << "Original matrix:\n" << matrix << "\n\nComputation Result: \n" << res.matrix
+    // << "\n\nexpected Matrix\n"<< expectedMatrix << '\n';
 
     // Note that there are other possible solutions that yield equivalent matrices / vectors.
     // In particular, the ordering within the row groups depends on the MEC decomposition implementation.
@@ -133,8 +133,8 @@ TEST(NeutralECRemover, SimpleModelTest) {
                         }
                     }
                     EXPECT_TRUE(foundEqualEntry) << "Could not matching entry for expected entry'" << expectedEntry.getValue() << " (row " << expectedRow
-                                                 << ", column " << expectedEntry.getColumn() << "). Was searching at row " << actualRow << " of actual matrix "
-                                                 << std::endl
+                                                 << ", column " << expectedEntry.getColumn() << "). Was searching at row " << actualRow
+                                                 << " of actual matrix \n"
                                                  << res.matrix << ".";
                 }
             }
