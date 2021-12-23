@@ -211,7 +211,14 @@ namespace storm {
 
                     storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(matrix);
                     storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardsTransitionMatrix, true);
-                    auto actionRewards = std::vector<ValueType>(matrix.getRowCount(), storm::utility::zero<ValueType>());
+                    // get the action-based reward values
+                    std::vector<ValueType> actionRewards;
+                    if(model->hasUniqueRewardModel()) {
+                        actionRewards = sparseModel->getUniqueRewardModel().getTotalRewardVector(matrix);
+                    } else {
+                        STORM_LOG_ASSERT(sparseModel->getRewardModels().size() == 0, "All rewards get lost");
+                        actionRewards = std::vector<ValueType>(matrix.getRowCount(), storm::utility::zero<ValueType>());
+                    }
                     storm::solver::stateelimination::NondeterministicModelStateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, actionRewards);
                     for(auto state : selectedStates) {
                         stateEliminator.eliminateState(state, true);
@@ -223,9 +230,16 @@ namespace storm {
                     selectedStates.complement();
                     auto keptRows = matrix.getRowFilter(selectedStates);
                     storm::storage::SparseMatrix<ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
-                    // TODO @Jip: note that rewards get lost
-                    result = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates));
 
+                    // obtain the reward model for the resulting system
+                    std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
+                    if(model->hasUniqueRewardModel()) {
+                        storm::utility::vector::filterVectorInPlace(actionRewards, keptRows);
+                        storm::models::sparse::StandardRewardModel<ValueType> rewardModel((boost::none, std::move(actionRewards)));
+                        rewardModels.insert(std::make_pair(model->getUniqueRewardModelName(), rewardModel));
+                    }
+
+                    result= std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates), std::move(rewardModels));
                     eliminationWatch.stop();
                     STORM_PRINT(std::endl << "Time for scc elimination: " << eliminationWatch << "." << std::endl << std::endl);
                     result->printModelInformationToStream(std::cout);
