@@ -180,6 +180,9 @@ namespace storm {
             for (auto state : states) {
                 if (result.size() == 0) {
                     result.push_back(state);
+                    if (!order->contains(state)) {
+                        order->add(state);
+                    }
                 } else {
                     bool added = false;
                     for (auto itr = result.begin();  itr != result.end(); ++itr) {
