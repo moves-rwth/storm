@@ -224,11 +224,11 @@ namespace storm {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::VariableType VariableType;
 
             RegionBound(RegionBound<SparseModelType, ConstantType> const& other) = default;
-            RegionBound(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& r, std::shared_ptr<storm::analysis::Order> o, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> l, ConstantType const& b) : region(r), order(o), localMonRes(l), bound(b) {}
+            RegionBound(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& r, std::shared_ptr<storm::analysis::Order> o, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> l, boost::optional<ConstantType> const& b) : region(r), order(o), localMonRes(l), bound(b) {}
             storm::storage::ParameterRegion<typename SparseModelType::ValueType> region;
             std::shared_ptr<storm::analysis::Order> order;
             std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonRes;
-            ConstantType bound;
+            boost::optional<ConstantType> bound;
         };
 
         template<typename SparseModelType, typename ConstantType>
@@ -248,9 +248,7 @@ namespace storm {
 
             storm::utility::Stopwatch boundsWatch(false);
             auto numberOfPLACallsBounds = 0;
-            ConstantType initBound;
-            initBound = storm::utility::zero<ConstantType>();
-            bool first = true;
+            boost::optional<ConstantType> initBound;
             if (useMonotonicity) {
                 if (this->isUseBoundsSet()) {
                     numberOfPLACallsBounds++;
@@ -273,7 +271,6 @@ namespace storm {
                 STORM_LOG_INFO("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
 
                 regionQueue.emplace(region, order, monRes, initBound);
-                first = false;
             } else {
                 regionQueue.emplace(region, nullptr, nullptr, initBound);
             }
@@ -316,16 +313,15 @@ namespace storm {
                     std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
 
                     // Check whether this region needs further investigation based on the bound of the parent region
-                    bool investigateBounds = first || (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
-                                             || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision));
-                    first = false;
+                    bool investigateBounds = !currBound || (minimize && currBound.get() < value.get() - storm::utility::convertNumber<ConstantType>(precision))
+                                             || (!minimize && currBound.get() > value.get() + storm::utility::convertNumber<ConstantType>(precision));
                     if (investigateBounds) {
                         numberOfPLACalls++;
                         auto bounds = getBound(env, currRegion, dir, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                         currBound = bounds[*this->parametricModel->getInitialStates().begin()];
                         // Check whether this region needs further investigation based on the bound of this region
-                        bool lookAtRegion = (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
-                                            || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision));
+                        bool lookAtRegion = (minimize && currBound.get() < value.get() - storm::utility::convertNumber<ConstantType>(precision))
+                                            || (!minimize && currBound.get() > value.get() + storm::utility::convertNumber<ConstantType>(precision));
                         if (lookAtRegion) {
                             if (useMonotonicity) {
                                 // Continue extending order/monotonicity result
@@ -364,8 +360,8 @@ namespace storm {
                                 valuation = point;
                             }
 
-                            if ((minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
-                                || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
+                            if ((minimize && currBound.get() < value.get() - storm::utility::convertNumber<ConstantType>(precision))
+                                || (!minimize && currBound.get() > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
 
                                 // We will split the region in this case, but first we set the bounds to extend the order for the new regions.
                                 if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding()) {
@@ -407,8 +403,8 @@ namespace storm {
                         // Add the new regions to the queue
                         if (useMonotonicity) {
                             for (auto &r : newRegions) {
-                                r.setBoundParent(storm::utility::convertNumber<CoefficientType>(currBound));
-                                regionQueue.emplace(r, order, localMonotonicityResult, currBound);
+                                r.setBoundParent(storm::utility::convertNumber<CoefficientType>(currBound.get()));
+                                regionQueue.emplace(r, order, localMonotonicityResult, currBound.get());
                             }
                             if (numberOfCopiesOrder.find(order) != numberOfCopiesOrder.end()) {
                                 numberOfCopiesOrder[order] += newRegions.size();
@@ -419,13 +415,13 @@ namespace storm {
                             }
                         } else {
                             for (auto &r : newRegions) {
-                                r.setBoundParent(storm::utility::convertNumber<CoefficientType>(currBound));
-                                regionQueue.emplace(r, nullptr, nullptr, currBound);
+                                r.setBoundParent(storm::utility::convertNumber<CoefficientType>(currBound.get()));
+                                regionQueue.emplace(r, nullptr, nullptr, currBound.get());
                             }
                         }
                     }
 
-                    STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound << ".");
+                    STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound.get() << ".");
                     STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region.\n");
                 }
                 loopWatch.stop();
