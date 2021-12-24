@@ -123,7 +123,7 @@ namespace storm {
             // when it is cyclic and the current state is part of an SCC we do forwardreasoning
             if (this->cyclic && !order->isTrivial(currentState) && order->contains(currentState)) {
                 // Try to extend the order for this scc
-                return  extendByForwardReasoning(order, region, currentState);
+                return extendByForwardReasoning(order, region, currentState);
             } else {
                 assert (order->isTrivial(currentState) || !order->contains(currentState));
                 // Do backward reasoning, all successor states must be in the order
@@ -164,7 +164,12 @@ namespace storm {
                 } else if (n1 != nullptr) {
                     order->addBetween(val2, n1, order->getBottom());
                 } else if (n2 != nullptr) {
-                    order->addBetween(val1, order->getTop(), n2);
+                    // TODO: This should be moved to reward/reachorderextender, as top is only nullptr for rewards
+                    if (order->getTop() == nullptr) {
+                        order->addAbove(val1, n2);
+                    } else {
+                        order->addBetween(val1, order->getTop(), n2);
+                    }
                 } else {
                     order->add(val1);
                     order->addBetween(val2, order->getNode(val1), order->getBottom());
@@ -185,22 +190,28 @@ namespace storm {
                     }
                 } else {
                     bool added = false;
-                    for (auto itr = result.begin();  itr != result.end(); ++itr) {
-                        auto compareRes = order->compare(state, (*itr));
+                    for (auto index = 0; index < result.size(); ++index) {
+                        auto compareRes = order->compare(state, result[index]);
                         if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
+                            if (!order->contains(state)) {
+                                // This can only happen if *itr refers to top/bottom state
+                                order->add(state);
+                            }
                             // insert at current pointer (while keeping other values)
-                            result.insert(itr, state);
+                            result.insert(result.begin() + index, state);
                             added = true;
                             break;
                         } else if (usePLA[order] && compareRes == Order::NodeComparison::UNKNOWN) {
-                            compareRes = addStatesBasedOnMinMax(order, state, *itr);
+                            compareRes = addStatesBasedOnMinMax(order, state, result[index]);
                             if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
                                 // insert at current pointer (while keeping other values)
-                                result.insert(itr, state);
+                                result.insert(result.begin() + index, state);
                                 added = true;
+                                STORM_LOG_ASSERT(order->contains(state), "Expecting order to contain state" << state);
+                                STORM_LOG_ASSERT(order->contains(result[index]), "Expecting order to contain state" << result[index]);
                                 break;
                             } else if (compareRes == Order::NodeComparison::UNKNOWN) {
-                                return {{(*itr), state}, std::move(result)};
+                                return {{(result[index]), state}, std::move(result)};
                             }
                         }
                     }
@@ -291,6 +302,7 @@ namespace storm {
                 if (order != nullptr) {
                     minValues[order] = minCheck.getValueVector();
                     maxValues[order] = maxCheck.getValueVector();
+                    usePLA[order] = true;
                 } else {
                     minValuesInit = minCheck.getValueVector();
                     maxValuesInit = maxCheck.getValueVector();
