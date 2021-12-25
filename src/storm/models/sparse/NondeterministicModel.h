@@ -29,7 +29,9 @@ namespace storm {
                  */
                 NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
                 NondeterministicModel(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
-                
+
+                virtual ~NondeterministicModel() = default;
+
                 /*!
                  * Retrieves the vector indicating which matrix rows represent non-deterministic choices of a certain state.
                  *

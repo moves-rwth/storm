@@ -16,6 +16,8 @@ namespace storm {
             Model(ModelType const& modelType) : ModelBase(modelType) {
                 // Intentionally left empty.
             }
+
+            virtual ~Model() = default;
             
         };
 

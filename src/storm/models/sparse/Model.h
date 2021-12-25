@@ -38,6 +38,7 @@ namespace storm {
                 static const storm::models::ModelRepresentation Representation = ModelRepresentation::Sparse;
                 
                 Model(Model<ValueType, RewardModelType> const& other) = default;
+                virtual ~Model() = default;
                 Model& operator=(Model<ValueType, RewardModelType> const& other) = default;
                 
                 /*!
