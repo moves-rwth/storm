@@ -57,7 +57,7 @@ namespace storm {
                 result.insert(assumption);
             }
             assert (order->compare(val1, val2) == Order::UNKNOWN);
-            STORM_LOG_INFO("None of the assumptions is valid, number of possible assumptions:  " << result.size() << std::endl);
+            STORM_LOG_INFO("None of the assumptions is valid on the entire region, number of possible assumptions:  " << result.size() << std::endl);
             return result;
         }
 

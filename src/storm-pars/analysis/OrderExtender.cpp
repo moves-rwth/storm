@@ -160,7 +160,7 @@ namespace storm {
             } else {
                 STORM_LOG_ASSERT (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater, "Unknown comparision type found, it is neither equal nor greater");
                 if (n1 != nullptr && n2 != nullptr) {
-                    order->addRelationNodes(n1, n2);
+                    order->addRelationNodes(n1, n2, true);
                 } else if (n1 != nullptr) {
                     order->addBetween(val2, n1, order->getBottom());
                 } else if (n2 != nullptr) {
@@ -201,8 +201,10 @@ namespace storm {
                             result.insert(result.begin() + index, state);
                             added = true;
                             break;
-                        } else if (usePLA[order] && compareRes == Order::NodeComparison::UNKNOWN) {
-                            compareRes = addStatesBasedOnMinMax(order, state, result[index]);
+                        } else if (compareRes == Order::NodeComparison::UNKNOWN) {
+                            if (usePLA[order]) {
+                                compareRes = addStatesBasedOnMinMax(order, state, result[index]);
+                            }
                             if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
                                 // insert at current pointer (while keeping other values)
                                 result.insert(result.begin() + index, state);
@@ -237,12 +239,17 @@ namespace storm {
                    && mins[state1] == mins[state2]) {
                 if (order->contains(state1)) {
                     if (order->contains(state2)) {
+                        STORM_LOG_INFO("Merging state " << state1 << " and " << state2 << " based on min max values");
                         order->merge(state1, state2);
                         STORM_LOG_THROW(!order->isInvalid(), storm::exceptions::UnexpectedException, "Extending the order yields an invalid order, please contact the developers");
                     } else {
+                        STORM_LOG_INFO("Adding state " << state2 << " to " << state1 << " based on min max values");
+
                         order->addToNode(state2, order->getNode(state1));
                     }
                 } else if (order->contains(state2)) {
+                    STORM_LOG_INFO("Adding state " << state1 << " to " << state2 << " based on min max values");
+
                     order->addToNode(state1, order->getNode(state2));
                 }
                 return Order::SAME;
@@ -256,6 +263,8 @@ namespace storm {
                 }
                 STORM_LOG_ASSERT (order->compare(state1, state2) != Order::BELOW, "Expecting the comparison to NOT be BELOW");
                 STORM_LOG_ASSERT (order->compare(state1, state2) != Order::SAME, "Expecting the comparison to NOT be SAME");
+                STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
+
                 order->addRelation(state1, state2);
 
                 return Order::ABOVE;
@@ -269,6 +278,7 @@ namespace storm {
                 }
                 STORM_LOG_ASSERT (order->compare(state2, state1) != Order::BELOW, "Expecting the comparison to NOT be BELOW");
                 STORM_LOG_ASSERT (order->compare(state2, state1) != Order::SAME, "Expecting the comparison to NOT be SAME");
+                STORM_LOG_INFO("Adding state " << state2 << " above " << state1 << " based on min max values");
                 order->addRelation(state2, state1);
                 return Order::BELOW;
             } else {
@@ -406,6 +416,68 @@ namespace storm {
         std::vector<uint_fast64_t> const& OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, uint_fast64_t choiceNumber) {
             STORM_LOG_ASSERT(stateMap.size() > state && stateMap[state].size() > choiceNumber, "Cannot get successors for state " << state<< " at choice " << choiceNumber << ". Index out of bounds.");
             return stateMap[state][choiceNumber];
+        }
+        template<typename ValueType, typename ConstantType>
+        std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> OrderExtender<ValueType, ConstantType>::sortForFowardReasoning(
+            uint_fast64_t currentState, std::shared_ptr<Order> order) {
+
+            std::vector<uint_fast64_t> statesSorted;
+            statesSorted.push_back(currentState);
+            bool pla = (this->usePLA.find(order) != this->usePLA.end() && this->usePLA.at(order));
+            // Go over all states
+            bool oneUnknown = false;
+            bool unknown = false;
+            uint_fast64_t s1 = this->numberOfStates;
+            uint_fast64_t s2 = this->numberOfStates;
+            auto const& successors = this->getSuccessors(currentState);
+            for (auto& state : successors) {
+                unknown = false;
+                bool added = false;
+                for (auto itr = statesSorted.begin(); itr != statesSorted.end(); ++itr) {
+                    auto compareRes = order->compareFast(state, (*itr));
+                    if (pla && compareRes == Order::NodeComparison::UNKNOWN) {
+                        compareRes = this->addStatesBasedOnMinMax(order, state, (*itr));
+                    }
+                    if (compareRes == Order::NodeComparison::UNKNOWN) {
+                        compareRes = order->compare(state, *itr);
+                    }
+                    if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
+                        if (!order->contains(state) && compareRes == Order::NodeComparison::ABOVE) {
+                            order->add(state);
+                            order->addStateToHandle(state);
+                        }
+                        added = true;
+                        // insert at current pointer (while keeping other values)
+                        statesSorted.insert(itr, state);
+                        break;
+                    } else if (compareRes == Order::NodeComparison::UNKNOWN && !oneUnknown) {
+                        // We miss state in the result.
+                        s1 = state;
+                        s2 = *itr;
+                        oneUnknown = true;
+                        added = true;
+                        break;
+                    } else if (compareRes == Order::NodeComparison::UNKNOWN && oneUnknown) {
+                        unknown = true;
+                        added = true;
+                        break;
+                    }
+                }
+                if (!(unknown && oneUnknown) && !added ) {
+                    // State will be last in the list
+                    statesSorted.push_back(state);
+                }
+                if (unknown && oneUnknown) {
+                    break;
+                }
+            }
+            if (!unknown && oneUnknown) {
+                STORM_LOG_ASSERT (statesSorted.size() == successors.size(), "Expecting all states to be sorted except for one");
+                s2 = this->numberOfStates;
+            }
+
+            STORM_LOG_ASSERT(s1!=s2 || s1 != this->numberOfStates || (statesSorted.size() == successors.size() + 1), "Expecting all states to be sorted, or s1 to at least contain a valid state number");
+            return {{s1, s2}, std::move(statesSorted)};
         }
 
         template class OrderExtender<RationalFunction, double>;

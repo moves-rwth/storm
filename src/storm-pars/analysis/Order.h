@@ -107,7 +107,7 @@ namespace storm {
              *
              * @param above The node closest to the top Node of the Order.
              * @param below The node closest to the bottom Node of the Order.
-             * @param allowMerge TODO ??
+             * @param allowMerge Whether merging of nodes is allowed or not (should only happen when using assumptions)
              */
             void addRelationNodes(storm::analysis::Order::Node *above, storm::analysis::Order::Node *below, bool allowMerge = false);
 
@@ -116,7 +116,7 @@ namespace storm {
              *
              * @param above The state closest to the top Node of the Order.
              * @param below The state closest to the bottom Node of the Order.
-             * @param allowMerge TODO ??
+             * @param allowMerge Whether merging of nodes is allowed or not (should only happen when using assumptions)
              */
             void addRelation(uint_fast64_t above, uint_fast64_t below, bool allowMerge = false);
 
@@ -449,7 +449,6 @@ namespace storm {
 
 
            private:
-
             /*!
              * Checks if a node is above another node
              *
@@ -523,6 +522,7 @@ namespace storm {
 
             // The bottom node
             Node* bottom;
+
 
 
             /*** Important sets of states: ***/

@@ -251,6 +251,7 @@ namespace storm {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                                 assumptionsCopy.push_back(std::move(assumption.first));
                             }
+                            // TODO hier gaat ergens iets fout met de assumption
                             auto criticalTuple = extendOrder(orderCopy, region, monResCopy, assumption.first);
                             extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
                         } else {

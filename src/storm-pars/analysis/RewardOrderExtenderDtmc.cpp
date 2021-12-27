@@ -18,6 +18,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
+            STORM_LOG_INFO("Doing backward reasoning");
             bool addedSomething = false;
             auto& successors = this->getSuccessors(currentState);
 
@@ -26,23 +27,7 @@ namespace storm {
 
             auto sortedSuccStates = this->sortStatesOrderAndMinMax(successors, order);
             if (sortedSuccStates.first.first != this->numberOfStates) {
-//                // We couldn't order all of them, but maybe we can still sort the current state based on min/max values
-//                for (uint_fast64_t succ: successors) {
-//                    if (this->usePLA[order] && order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
-//                        auto addRes = this->addStatesBasedOnMinMax(order, currentState, succ);
-//                        if (addRes == Order::NodeComparison::ABOVE) {
-//                            addedSomething = true;
-//                        } else if (addRes == Order::NodeComparison::SAME) {
-//                            addedSomething = true;
-//                            STORM_LOG_ASSERT(sortedSuccStates.first.first == this->numberOfStates,
-//                                             "Expecting all successor states to be sorted and to be at the same node");
-//                            break;
-//                        }
-//                    }
-//                }
-                if (!addedSomething) {
-                    return sortedSuccStates.first;
-                }
+                return sortedSuccStates.first;
             } else {
                 // We could order all successor states
                 // We are considering rewards, so our current state is always above the lowest one of all our successor states
@@ -118,88 +103,149 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
-            STORM_LOG_THROW(this->getSuccessors(currentState).size() == 2, exceptions::NotImplementedException, "Forward reasoning implies cycles, not implemented for expected rewards with more than 2 successors");
-            // we assume we have 2 successors otherwise it get to complicated.
+            STORM_LOG_INFO("Forwardsreasoning");
+
+            std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
+            uint_fast64_t s1= sorted.first.first;
+            uint_fast64_t s2 = sorted.first.second;
+            std::vector<uint_fast64_t>& statesSorted = sorted.second;
             STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
-            auto& successors = this->getSuccessors(currentState);
-            auto succ0 = successors[0];
-            auto succ1 = successors[1];
-            Order::NodeComparison orderFirstSucc = order->compare(currentState, succ0);
-            Order::NodeComparison orderSecondSucc = order->compare(currentState, succ1);
-            if (this->usePLA[order] && orderFirstSucc == Order::NodeComparison::UNKNOWN) {
-                orderFirstSucc = this->addStatesBasedOnMinMax(order, currentState, succ0);
-            }
-            if (this->usePLA[order] && orderSecondSucc == Order::NodeComparison::UNKNOWN) {
-                orderSecondSucc = this->addStatesBasedOnMinMax(order, currentState, succ1);
-            }
-            STORM_LOG_ASSERT (orderFirstSucc == Order::NodeComparison::UNKNOWN || order->contains(succ0), "Expecting order to contain succ0 or to not know how to order succ0");
-            STORM_LOG_ASSERT (orderSecondSucc == Order::NodeComparison::UNKNOWN || order->contains(succ1), "Expecting order to contain succ0 or to not know how to order succ1");
-            if (orderFirstSucc == Order::NodeComparison::UNKNOWN && orderSecondSucc == Order::NodeComparison::UNKNOWN) {
-                return {succ0, succ1};
-            }
-            bool success = false;
-            if (orderFirstSucc == Order::NodeComparison::UNKNOWN) {
-                std::swap(orderFirstSucc, orderSecondSucc);
-                std::swap(succ0, succ1);
-            }
-            if (orderSecondSucc == Order::NodeComparison::UNKNOWN) {
-                // we can order currentState and succ0, try if we can add succ1 as well
-                if (orderFirstSucc == Order::NodeComparison::SAME) {
-                    success = true;
-                    // curr is same as succ0, ER(curr) = rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
-                    // ER(curr) = ER(succ0)
-                    // ER(curr) = rew(curr) + f * ER(curr) + (1-f) * ER(succ1)
-                    // (1-f)*ER(curr) = rew(curr) + (1-f) * ER(succ1)
-                    if (order->contains(succ1)) {
-                        order->addRelation(succ0, succ1);
-                    } else {
-                        order->addBelow(succ1, order->getNode(succ0));
-                    }
-                }
-                if (orderFirstSucc == Order::NodeComparison::BELOW) {
-                    success = true;
-                    // curr is below succ0, ER(curr) = rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
-                    // ER(curr) < ER(succ0)
 
-                    // Order wrt succ0
-                    // ER(succ0) > rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
-                    // non-negative rewards, so ER(succ1) < ER(succ0)
-                    if (order->contains(succ1)) {
-                        order->addRelation(succ0, succ1);
-                    } else {
-                        order->addBelow(succ1, order->getNode(succ0));
+            if (s1 != this->numberOfStates && s2 != this->numberOfStates) {
+                // Several states could not be ordered, it can be however that we can order all successor states, so we continue with backward reasoning
+                if (s1 == currentState || s2 == currentState) {
+                    for (auto& state : this->getSuccessors(currentState)) {
+                        if (!order->contains(state)) {
+                            order->add(state);
+                        }
                     }
-                    // Order wrt curr
-                    // ER(curr) > rew(curr) + f * ER(curr) + (1-f) * ER(succ1)
-                    // (1-f) * ER(curr) > rew(curr) + (1-f) * ER(succ1)
-                    if (order->contains(succ1)) {
-                        order->addRelation(currentState, succ1);
-                    } else {
-                        order->addBelow(succ1, order->getNode(currentState));
-                    }
+                    return extendByBackwardReasoning(order, region, currentState);
+                } else {
+                    return {s1, s2};
                 }
-                if (orderFirstSucc == Order::NodeComparison::ABOVE) {
-                    // curr is above succ0, ER(curr) = rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
-                    // ER(curr) > ER(succ0)
-
-                    // Order wrt succ0
-                    // ER(succ0) < rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
-                    // (1-f) * ER(succ0) < rew(curr)  + (1-f) * ER(succ1)
-                    // ER(succ0) < rew(curr)/(1-f) + ER(succ1)
-                    // We can only do something when we know something from min/max
-                    // We do backward reasoning afterwards
-                    if (this->usePLA[order] && this->addStatesBasedOnMinMax(order, succ0, succ1) != Order::NodeComparison::UNKNOWN) {
-                        return extendByBackwardReasoning(order, region, currentState);
-                    }
-                }
+            } else if (statesSorted.size() == (this->getSuccessors(currentState).size() + 1)) {
+                // Everything is sorted
+                assert (s1 == this->numberOfStates && s2 == this->numberOfStates);
+                return {s1, s2};
             } else {
+                // s1 is the state we could not sort, this should be one of the successors.
+                STORM_LOG_ASSERT(s2 == this->numberOfStates, "Expecting only one state not to be sorted");
+                STORM_LOG_ASSERT(s1 != this->numberOfStates, "Expecting only one state not to be sorted");
+                STORM_LOG_ASSERT(s1 != currentState, "Expecting the unsorted state to not be the current state");
+                // TODO: change all usePLA[order] to find version.
+                if (statesSorted.at(statesSorted.size() - 1) == currentState) {
+                    // the current state is lower than all other successors, so s1 should be smaller then all other successors
+                    order->addBelow(s1, order->getNode(currentState));
+                    return {s2, s2};
+                } else if (this->usePLA[order]) {
+                    // TODO: make use of forward reasoning and do backward as last solution
+                    return extendByBackwardReasoning(order, region, currentState);
+                } else {
+                    for (auto& state :this->getSuccessors(currentState)) {
+                        // Find a state to which we cannot order s1, it should be one of the successors
+                       if (state != s1 && order->compare(s1, state) == Order::UNKNOWN) {
+                           // Problem is with comparing
+                           return {s1, state};
+                       }
+                    }
+                    // In case this did not help, all successor states can be sorted.
+                    if (!order->contains(s1)) {
+                        // It could be that s1 was not yet added, and could only be sorted because the other state was top/bottom, so we add it.
+                        order->add(s1);
+                    }
+                    STORM_LOG_ASSERT(order->sortStates(this->getSuccessors(currentState)).size() == this->getSuccessors(currentState).size(), "Expecting all successor states to be ordered");
+                    return {s2, s2};
+                }
 
             }
-            if (success) {
-                return {this->numberOfStates, this->numberOfStates};
-            } else {
-                return extendByBackwardReasoning(order, region, currentState);
-            }
+//
+//
+//
+//
+//            auto& successors = this->getSuccessors(currentState);
+//            auto succ0 = successors[0];
+//            auto succ1 = successors[1];
+//            Order::NodeComparison orderFirstSucc = order->compare(currentState, succ0);
+//            Order::NodeComparison orderSecondSucc = order->compare(currentState, succ1);
+//            if (this->usePLA[order] && orderFirstSucc == Order::NodeComparison::UNKNOWN) {
+//                orderFirstSucc = this->addStatesBasedOnMinMax(order, currentState, succ0);
+//            }
+//            if (this->usePLA[order] && orderSecondSucc == Order::NodeComparison::UNKNOWN) {
+//                orderSecondSucc = this->addStatesBasedOnMinMax(order, currentState, succ1);
+//            }
+//            STORM_LOG_ASSERT (orderFirstSucc == Order::NodeComparison::UNKNOWN || order->contains(succ0), "Expecting order to contain succ0 or to not know how to order succ0");
+//            STORM_LOG_ASSERT (orderSecondSucc == Order::NodeComparison::UNKNOWN || order->contains(succ1), "Expecting order to contain succ0 or to not know how to order succ1");
+//            if (orderFirstSucc == Order::NodeComparison::UNKNOWN && orderSecondSucc == Order::NodeComparison::UNKNOWN) {
+//                if (order->compare(succ0, succ1) != Order::NodeComparison::UNKNOWN) {
+//                    return extendByBackwardReasoning(order, region, currentState);
+//                } else {
+//                    return {succ0, succ1};
+//                }
+//            }
+//            bool success = false;
+//            if (orderFirstSucc == Order::NodeComparison::UNKNOWN) {
+//                std::swap(orderFirstSucc, orderSecondSucc);
+//                std::swap(succ0, succ1);
+//            }
+//            if (orderSecondSucc == Order::NodeComparison::UNKNOWN) {
+//                // we can order currentState and succ0, try if we can add succ1 as well
+//                if (orderFirstSucc == Order::NodeComparison::SAME) {
+//                    success = true;
+//                    // curr is same as succ0, ER(curr) = rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
+//                    // ER(curr) = ER(succ0)
+//                    // ER(curr) = rew(curr) + f * ER(curr) + (1-f) * ER(succ1)
+//                    // (1-f)*ER(curr) = rew(curr) + (1-f) * ER(succ1)
+//                    if (order->contains(succ1)) {
+//                        order->addRelation(succ0, succ1);
+//                    } else {
+//                        order->addBelow(succ1, order->getNode(succ0));
+//                    }
+//                }
+//                if (orderFirstSucc == Order::NodeComparison::BELOW) {
+//                    success = true;
+//                    // curr is below succ0, ER(curr) = rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
+//                    // ER(curr) < ER(succ0)
+//
+//                    // Order wrt succ0
+//                    // ER(succ0) > rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
+//                    // non-negative rewards, so ER(succ1) < ER(succ0)
+//                    if (order->contains(succ1)) {
+//                        order->addRelation(succ0, succ1);
+//                    } else {
+//                        order->addBelow(succ1, order->getNode(succ0));
+//                    }
+//                    // Order wrt curr
+//                    // ER(curr) > rew(curr) + f * ER(curr) + (1-f) * ER(succ1)
+//                    // (1-f) * ER(curr) > rew(curr) + (1-f) * ER(succ1)
+//                    if (order->contains(succ1)) {
+//                        order->addRelation(currentState, succ1);
+//                    } else {
+//                        order->addBelow(succ1, order->getNode(currentState));
+//                    }
+//                }
+//                if (orderFirstSucc == Order::NodeComparison::ABOVE) {
+//                    // curr is above succ0, ER(curr) = rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
+//                    // ER(curr) > ER(succ0)
+//
+//                    // Order wrt succ0
+//                    // ER(succ0) < rew(curr) + f * ER(succ0) + (1-f) * ER(succ1)
+//                    // (1-f) * ER(succ0) < rew(curr)  + (1-f) * ER(succ1)
+//                    // ER(succ0) < rew(curr)/(1-f) + ER(succ1)
+//                    // We can only do something when we know something from min/max
+//                    // We do backward reasoning afterwards
+//                    if (this->usePLA[order] && this->addStatesBasedOnMinMax(order, succ0, succ1) != Order::NodeComparison::UNKNOWN) {
+//                        return extendByBackwardReasoning(order, region, currentState);
+//                    }
+//                }
+//            } else {
+//
+//            }
+//            if (success) {
+//                return {this->numberOfStates, this->numberOfStates};
+//            } else {
+//                return extendByBackwardReasoning(order, region, currentState);
+//            }
+            return {this->numberOfStates, this->numberOfStates};
         }
 
         template <typename ValueType, typename ConstantType>
@@ -214,9 +260,15 @@ namespace storm {
             }
 
             auto currentStateMode = this->getNextState(order, this->numberOfStates, false);
-            while (currentStateMode.first != this->numberOfStates) {
+            while (!order->isInvalid() && currentStateMode.first != this->numberOfStates) {
                 STORM_LOG_ASSERT (currentStateMode.first < this->numberOfStates, "Unexpected state number");
                 auto& currentState = currentStateMode.first;
+
+                if (currentStateMode.second) {
+                    STORM_LOG_INFO("Currently considering state: " << currentState << " based on topological sorting");
+                } else {
+                    STORM_LOG_INFO("Currently considering state: " << currentState << " based on statesToHandle (not topological approach)");
+                }
                 auto const & successors = this->getSuccessors(currentState);
                 std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
 
@@ -235,6 +287,10 @@ namespace storm {
                     } else {
                         result = this->extendNormal(order, region, currentState);
                     }
+                }
+
+                if (order->isInvalid()) {
+                    return {order, 0,0};
                 }
 
                 if (result.first == this->numberOfStates) {
@@ -305,7 +361,9 @@ namespace storm {
                 order->addToNode(currentState, order->getNode(successor));
             } else {
                 STORM_LOG_ASSERT(!(reward < ValueType(0)), "Expecting reward to be positive");
-                order->addAbove(currentState, order->getNode(successor));
+                if (order->compareFast(currentState, successor) != Order::NodeComparison::ABOVE) {
+                    order->addAbove(currentState, order->getNode(successor));
+                }
             }
         }
 

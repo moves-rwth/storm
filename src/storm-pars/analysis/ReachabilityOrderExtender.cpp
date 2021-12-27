@@ -136,63 +136,12 @@ namespace storm {
             STORM_LOG_ASSERT (order->contains(currentState), "Can't apply forward reasoning if order doesn't contain current state");
             STORM_LOG_ASSERT (this->cyclic, "Needs cyclic model for forward reasoning");
 
-            std::vector<uint_fast64_t> statesSorted;
-            statesSorted.push_back(currentState);
-            bool pla = (this->usePLA.find(order) != this->usePLA.end() && this->usePLA.at(order));
-            // Go over all states
-            bool oneUnknown = false;
-            bool unknown = false;
-            uint_fast64_t s1 = this->numberOfStates;
-            uint_fast64_t s2 = this->numberOfStates;
-            auto const& successors = this->getSuccessors(currentState);
-            for (auto& state : successors) {
-                unknown = false;
-                bool added = false;
-                for (auto itr = statesSorted.begin(); itr != statesSorted.end(); ++itr) {
-                    auto compareRes = order->compareFast(state, (*itr));
-                    if (pla && compareRes == Order::NodeComparison::UNKNOWN) {
-                        compareRes = this->addStatesBasedOnMinMax(order, state, (*itr));
-                    }
-                    if (compareRes == Order::NodeComparison::UNKNOWN) {
-                        compareRes = order->compare(state, *itr);
-                    }
-                    if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
-                        if (!order->contains(state) && compareRes == Order::NodeComparison::ABOVE) {
-                            order->add(state);
-                            order->addStateToHandle(state);
-                        }
-                        added = true;
-                        // insert at current pointer (while keeping other values)
-                        statesSorted.insert(itr, state);
-                        break;
-                    } else if (compareRes == Order::NodeComparison::UNKNOWN && !oneUnknown) {
-                        // We miss state in the result.
-                        s1 = state;
-                        s2 = *itr;
-                        oneUnknown = true;
-                        added = true;
-                        break;
-                    } else if (compareRes == Order::NodeComparison::UNKNOWN && oneUnknown) {
-                        unknown = true;
-                        added = true;
-                        break;
-                    }
-                }
-                if (!(unknown && oneUnknown) && !added ) {
-                    // State will be last in the list
-                    statesSorted.push_back(state);
-                }
-                if (unknown && oneUnknown) {
-                    break;
-                }
-            }
-            if (!unknown && oneUnknown) {
-                STORM_LOG_ASSERT (statesSorted.size() == successors.size(), "Expecting all states to be sorted except for one");
-                s2 = this->numberOfStates;
-            }
-
+            std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
+            uint_fast64_t s1= sorted.first.second;
+            uint_fast64_t s2 = sorted.first.second;
+            std::vector<uint_fast64_t>& statesSorted = sorted.second;
             if (s1 == this->numberOfStates) {
-                STORM_LOG_ASSERT (statesSorted.size() == successors.size() + 1, "Expecting all states to be sorted, done for now");
+                STORM_LOG_ASSERT (statesSorted.size() == this->getSuccessors(currentState).size() + 1, "Expecting all states to be sorted, done for now");
                 // all could be sorted, no need to do anything
             } else if (s2 == this->numberOfStates) {
                 if (!order->contains(s1)) {

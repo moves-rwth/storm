@@ -236,8 +236,16 @@ namespace storm {
                 expressions::Expression expr2;
                 if (rewardModel != nullptr) {
                     // We are dealing with a reward property
-                    expr1 = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(val1));
-                    expr2 = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(val2));
+                    if (rewardModel->hasStateActionRewards()) {
+                        expr1 = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(val1));
+                        expr2 = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(val2));
+                    } else if (rewardModel->hasStateRewards()) {
+                        expr1 = valueTypeToExpression.toExpression(rewardModel->getStateReward(val1));
+                        expr2 = valueTypeToExpression.toExpression(rewardModel->getStateReward(val2));
+                    } else {
+                        STORM_LOG_ASSERT(false, "Expecting reward");
+                    }
+
                 } else {
                     // We are dealing with a probability property
                     expr1 = manager->rational(0);

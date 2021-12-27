@@ -156,9 +156,11 @@ namespace storm {
              * @return pair with the sorted states and a pair of states which could not be sorted
              */
             std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(std::vector<uint_fast64_t> const& states, std::shared_ptr<Order> order);
+
         protected:
             virtual std::shared_ptr<Order> getInitialOrder() = 0;
             void buildStateMap();
+            std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortForFowardReasoning(uint_fast64_t currentState, std::shared_ptr<Order> order);
 
 
             // Order extension

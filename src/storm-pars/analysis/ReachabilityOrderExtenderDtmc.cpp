@@ -124,7 +124,7 @@ namespace storm {
                                 if (!order->contains(state2)) {
                                     order->add(state2);
                                 }
-                                order->addRelation(state1, state2, false);
+                                order->addRelation(state1, state2);
                             } else if (min[state2] > max[state1]) {
                                 if (!order->contains(state1)) {
                                     order->add(state1);
@@ -132,7 +132,7 @@ namespace storm {
                                 if (!order->contains(state2)) {
                                     order->add(state2);
                                 }
-                                order->addRelation(state2, state1, false);
+                                order->addRelation(state2, state1);
                             } else if (min[state1] == max[state2] && max[state1] == min[state2]) {
                                 if (!order->contains(state1) && !order->contains(state2)) {
                                     order->add(state1);
