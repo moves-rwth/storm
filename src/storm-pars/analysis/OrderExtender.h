@@ -31,8 +31,9 @@ namespace storm {
             * @param model The model for which the order should be extended.
             * @param formula The considered formula.
             * @param region The Region of the model's parameters.
+            * @param useAssumptions Whether assumptions can be made.
             */
-           OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula);
+           OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions = true);
 
             /*!
              * Constructs a new OrderExtender.
@@ -40,8 +41,9 @@ namespace storm {
              * @param topStates The top states of the order.
              * @param bottomStates The bottom states of the order.
              * @param matrix The matrix of the considered model.
+             * @param useAssumptions Whether assumptions can be made.
              */
-           OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
+           OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool useAssumptions = true);
 
             /*!
              * Creates an order based on the given formula.
@@ -204,6 +206,7 @@ namespace storm {
 
         private:
             MonotonicityChecker<ValueType> monotonicityChecker;
+            bool useAssumptions;
         };
     }
 }

@@ -19,17 +19,20 @@ namespace storm {
     namespace analysis {
 
         template <typename ValueType, typename ConstantType>
-        OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : monotonicityChecker(model->getTransitionMatrix()) {
+        OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions) : monotonicityChecker(model->getTransitionMatrix()) {
             this->model = model;
             this->matrix = model->getTransitionMatrix();
             this->numberOfStates = this->model->getNumberOfStates();
             this->formula = formula;
+            this->useAssumptions = useAssumptions;
         }
 
         template <typename ValueType, typename ConstantType>
-        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : monotonicityChecker(matrix) {
+        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool useAssumptions) : monotonicityChecker(matrix) {
             this->matrix = matrix;
             this->model = nullptr;
+            this->useAssumptions = useAssumptions;
+
 
             storm::storage::StronglyConnectedComponentDecompositionOptions options;
             options.forceTopologicalSort();
@@ -107,13 +110,17 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         bool OrderExtender<ValueType, ConstantType>::extendWithAssumption(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
-            bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
-            assert (order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
-            auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, this->minValues[order], this->maxValues[order]) : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
-            if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                this->handleAssumption(order, assumptions.begin()->first);
-                // Assumptions worked, we continue
-                return true;
+            if (useAssumptions) {
+                bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
+                assert(order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
+                auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region, this->minValues[order],
+                                                                                                this->maxValues[order])
+                                             : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
+                if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                    this->handleAssumption(order, assumptions.begin()->first);
+                    // Assumptions worked, we continue
+                    return true;
+                }
             }
             return false;
         }
