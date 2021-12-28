@@ -205,7 +205,7 @@ namespace storm {
         }
 
         void Order::addToNode(uint_fast64_t state, Node *node) {
-            STORM_LOG_INFO("Add "<< state << " to between (above) " << *node->states.begin() << std::endl);
+            STORM_LOG_INFO("Add "<< state << " to " << *node->states.begin() << std::endl);
 
             if (nodes[state] == nullptr) {
                 // State is not in the order yet

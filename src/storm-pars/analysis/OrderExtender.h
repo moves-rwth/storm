@@ -201,6 +201,7 @@ namespace storm {
 
             // To make assumptions
             AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
+            std::vector<uint_fast64_t> statesToHandleInitially;
 
 
 

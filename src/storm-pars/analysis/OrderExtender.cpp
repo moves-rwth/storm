@@ -12,7 +12,7 @@
 #include "storm-pars/api/export.h"
 #include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
-
+#include "storm/api/verification.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 namespace storm {
@@ -79,12 +79,15 @@ namespace storm {
                 while (currentOption < numberOfOptionsForState) {
                     auto row = matrix.getRow(rowCount);
                     stateMap[state].push_back(std::vector<uint64_t>());
+                    bool selfloop = false;
                     for (auto& entry : row) {
-                        // ignore self-loops when there are more transitions
-                        if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                            stateMap[state][currentOption].push_back(entry.getColumn());
-                        }
+                        selfloop |= state == entry.getColumn();
+                        stateMap[state][currentOption].push_back(entry.getColumn());
                         storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                    }
+                    if (selfloop && stateMap[state][currentOption].size() == 2) {
+                        // We have a selfloop and one successor, so we add the state to states to handle
+                        statesToHandleInitially.push_back(state);
                     }
                     currentOption++;
                     rowCount++;
@@ -128,6 +131,12 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState)  {
             // when it is cyclic and the current state is part of an SCC we do forwardreasoning
+            if (this->cyclic && !order->isTrivial(currentState) && !order->contains(currentState)) {
+                auto& successors = this->getSuccessors(currentState);
+                if (successors.size() == 2 && (successors[0] == currentState || successors[1] == currentState)) {
+                    order->add(currentState);
+                }
+            }
             if (this->cyclic && !order->isTrivial(currentState) && order->contains(currentState)) {
                 // Try to extend the order for this scc
                 return extendByForwardReasoning(order, region, currentState);
@@ -303,12 +312,20 @@ namespace storm {
                 auto env = Environment();
                 boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTask;
                 if (this->formula->hasQuantitativeResult()) {
-                    checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*formula);
+                    checkTask  = storm::api::createTask<ValueType>(formula, false);
                 } else {
                     storm::logic::OperatorInformation opInfo(boost::none, boost::none);
-                    auto newFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
+                    if (formula->isProbabilityOperatorFormula()) {
+                        auto newFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
                             formula->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), opInfo);
-                    checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
+                        std::cout << "Formula: " << formula->asProbabilityOperatorFormula().getSubformula() << std::endl;
+                        checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
+                    } else {
+                        STORM_LOG_ASSERT(formula->isRewardOperatorFormula(), "Expecting formula to be reward formula");
+                        auto newFormula = std::make_shared<storm::logic::RewardOperatorFormula>(
+                            formula->asRewardOperatorFormula().getSubformula().asSharedPointer(), model->getUniqueRewardModelName(), opInfo);
+                        checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
+                    }
                 }
                 STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
                 plaModelChecker.specify(env, model, checkTask.get(), false, false);

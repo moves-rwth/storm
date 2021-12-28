@@ -235,6 +235,7 @@ namespace storm {
                     monResults.insert({order, {monRes, assumptions}});
                     STORM_LOG_INFO("    None of the assumptions were valid, we stop exploring the current order");
                 } else {
+
                     STORM_LOG_INFO("    Created " << newAssumptions.size() << " assumptions, we continue extending the current order");
                 }
 
