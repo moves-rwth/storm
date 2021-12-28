@@ -1,5 +1,6 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
+#include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
 
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
@@ -204,7 +205,8 @@ namespace storm {
             }
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
-
+            storm::storage::BitVector topStates (this->parametricModel->getNumberOfStates(), false);
+            this->orderExtender = std::make_shared<storm::analysis::RewardOrderExtenderDtmc<ValueType,ConstantType>>(&topStates ,&infinityStates, this->parametricModel->getTransitionMatrix());
 
         }
 
