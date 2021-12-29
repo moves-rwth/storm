@@ -108,15 +108,13 @@ namespace storm {
 
             if (result == AssumptionStatus::UNKNOWN) {
                 // If result from sample checking was unknown, the assumption might hold
-                std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
-                assumption->gatherVariables(vars);
-
                 STORM_LOG_THROW(assumption->getRelationType() ==
                                         expressions::BinaryRelationExpression::RelationType::Greater ||
                                     assumption->getRelationType() ==
                                         expressions::BinaryRelationExpression::RelationType::Equal,
                                 exceptions::NotSupportedException,
                                 "Only Greater Or Equal assumptions supported");
+
                 result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
             }
             return result;
@@ -152,6 +150,146 @@ namespace storm {
             auto var2 = assumption->getSecondOperand()->asVariableExpression().getVariableName();
             auto row1 = matrix.getRow(val1);
             auto row2 = matrix.getRow(val2);
+
+bool swap = false;
+            if (row2.getNumberOfEntries() == 2 && (row2.begin()->getColumn() == val1 || ((++row2.begin())->getColumn() == val1))) {
+                swap = true;
+                std::swap(val1, val2);
+                std::swap(var1, var2);
+                std::swap(row1, row2);
+            }
+            // if number of successors of val1 = 2, and one of those successors is val2 we try some inline smtsolving
+            if (row1.getNumberOfEntries() == 2 && (row1.begin()->getColumn() == val2 || (++row1.begin())->getColumn() == val2)) {
+
+                // Add all variables to the manager
+                std::set<expressions::Variable> stateVariables;
+                std::set<expressions::Variable> topVariables;
+                std::set<expressions::Variable> bottomVariables;
+                for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
+                    auto varname1 = "s" + std::to_string(itr1->getColumn());
+                    if (!manager->hasVariable(varname1)) {
+                        if (order->isTopState(itr1->getColumn())) {
+                            topVariables.insert(manager->declareRationalVariable(varname1));
+                        } else if (order->isBottomState(itr1->getColumn())) {
+                            bottomVariables.insert(manager->declareRationalVariable(varname1));
+                        } else {
+                            stateVariables.insert(manager->declareRationalVariable(varname1));
+                        }
+                    }
+                }
+
+
+                // Add relation on successor states
+                expressions::Expression exprOrderSucc = manager->boolean(true);
+                for (auto itr = row1.begin(); itr != row1.end(); ++itr) {
+                    for (auto itr2 = itr+1; itr2 != row1.end(); ++itr2) {
+                        auto comp = order->compare(itr->getColumn(), itr2->getColumn());
+                        if (comp == Order::NodeComparison::ABOVE) {
+                            exprOrderSucc = exprOrderSucc && manager->getVariable("s" + std::to_string(itr->getColumn())) > manager->getVariable("s"+ std::to_string(itr2->getColumn()));
+                        }
+                        if (comp == Order::NodeComparison::SAME) {
+                            exprOrderSucc = exprOrderSucc && manager->getVariable("s" + std::to_string(itr->getColumn())) >= manager->getVariable("s"+ std::to_string(itr2->getColumn())) && manager->getVariable("s" + std::to_string(itr->getColumn())) <= manager->getVariable("s"+ std::to_string(itr2->getColumn()));
+                        }
+                        if (comp == Order::NodeComparison::BELOW) {
+                            exprOrderSucc = exprOrderSucc && manager->getVariable("s"+ std::to_string(itr2->getColumn())) > manager->getVariable("s" + std::to_string(itr->getColumn()));
+                        }
+                    }
+                }
+
+
+                solver::Z3SmtSolver s(*manager);
+                // state val1 goes with prob f to state val2 and prob 1-f to the other state. Denoted by expr1
+                auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
+                expressions::Expression expr1;
+                expressions::Expression expr2 = manager->getVariable("s" + std::to_string(val2));
+                if (rewardModel != nullptr) {
+                    // We are dealing with a reward property
+                    if (rewardModel->hasStateActionRewards()) {
+                        expr1 = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(val1));
+                    } else if (rewardModel->hasStateRewards()) {
+                        expr1 = valueTypeToExpression.toExpression(rewardModel->getStateReward(val1));
+                    } else {
+                        STORM_LOG_ASSERT(false, "Expecting reward");
+                    }
+                } else {
+                    // We are dealing with a probability property
+                    expr1 = manager->rational(0);
+                    expr2 = manager->rational(0);
+                }
+                for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
+                    expr1 = expr1 + (valueTypeToExpression.toExpression(itr1->getValue()) *
+                                     manager->getVariable("s" + std::to_string(itr1->getColumn())));
+                }
+
+
+                // Create expression for the assumption based on the relation to successors
+                // It is the negation of actual assumption
+                expressions::Expression exprToCheck;
+                if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
+                    if (swap) {
+                        exprToCheck = expr1 >= expr2;
+                    } else {
+                        exprToCheck = expr1 <= expr2;
+                    }
+                } else {
+                    assert (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal);
+                    exprToCheck = expr1 != expr2;
+                }
+
+                auto variables = manager->getVariables();
+                // Bounds for the state probabilities and parameters
+                expressions::Expression exprBounds = manager->boolean(true);
+
+
+                for (auto var : variables) {
+                    if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
+                        // the var is a state
+                        if (minValues.size() > 0) {
+                            std::string test = var.getName();
+                            auto val = std::stoi(test.substr(1,test.size()-1));
+                            exprBounds = exprBounds && manager->rational(minValues[val]) <= var &&
+                                         var <= manager->rational(maxValues[val]);
+                        } else if (rewardModel == nullptr) {
+                            // Probability property
+                            exprBounds = exprBounds && manager->rational(0) <= var &&
+                                         var <= manager->rational(1);
+                        } else {
+                            // Reward Property
+                            exprBounds = exprBounds && manager->rational(0) <= var;
+                        }
+                    } else if (find(topVariables.begin(), topVariables.end(), var) != topVariables.end()) {
+                        // the var is =)
+                        STORM_LOG_ASSERT(rewardModel == nullptr, "Cannot have top states when also having a reward model");
+                        exprBounds = exprBounds && var == manager->rational(1);
+                    } else if (find(bottomVariables.begin(), bottomVariables.end(), var) != bottomVariables.end()) {
+                        // the var is =(
+                        exprBounds = exprBounds && var == manager->rational(0);
+                    } else {
+                        // the var is a parameter
+                        auto lb = utility::convertNumber<RationalNumber>(region.getLowerBoundary(var.getName()));
+                        auto ub = utility::convertNumber<RationalNumber>(region.getUpperBoundary(var.getName()));
+                        exprBounds = exprBounds && manager->rational(lb) < var && var < manager->rational(ub);
+                    }
+                }
+
+                s.add(exprOrderSucc);
+                s.add(exprBounds);
+                s.setTimeout(100);
+                // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
+                // when this is not the case, the order is invalid
+                // however, it could be that the sat solver didn't finish in time, in that case we just continue.
+                if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
+                    return AssumptionStatus::INVALID;
+                }
+                assert (s.check() != solver::SmtSolver::CheckResult::Unsat);
+
+                s.add(exprToCheck);
+                auto smtRes = s.check();
+                if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
+                    // If there is no thing satisfying the negation we are safe.
+                    return AssumptionStatus::VALID;
+                }
+            }
 
             bool orderKnown = true;
             // if the state with number var1 (var2) occurs in the successors of the state with number var2 (var1) we need to add var1 == expr1 (var2 == expr2) to the bounds
@@ -326,9 +464,9 @@ namespace storm {
                 auto smtRes = s.check();
                 if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
                     // If there is no thing satisfying the negation we are safe.
-                    result = AssumptionStatus::VALID;
+                    return AssumptionStatus::VALID;
                 } else if (smtRes == solver::SmtSolver::CheckResult::Sat) {
-                    result = AssumptionStatus::INVALID;
+                    return AssumptionStatus::INVALID;
                 }
             }
             return result;

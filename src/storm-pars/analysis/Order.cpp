@@ -8,6 +8,7 @@
 namespace storm {
     namespace analysis {
         Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
+            STORM_LOG_ASSERT(bottomStates->getNumberOfSetBits() > 0, "Expecting order to contain at least one bottom state");
             init(numberOfStates, decomposition);
             this->numberOfAddedStates = 0;
             this->onlyInitialOrder = true;

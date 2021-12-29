@@ -1,5 +1,7 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 #include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
+#include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
+#include "storm-pars/analysis/Order.h"
 #include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
 
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
@@ -124,10 +126,14 @@ namespace storm {
             // No requirements for bounded formulas
             solverFactory->setRequirementsChecked(true);
 
-            // For monotonicity checking
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
-            // TODO change to this, results in an "undefined reference" error atm
-            this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType,ConstantType>>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+            if (RegionModelChecker<ValueType>::isUseMonotonicitySet()) {
+                // For monotonicity checking
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+                    storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
+                // TODO change to this, results in an "undefined reference" error atm
+                this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(
+                    &statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+            }
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -163,7 +169,10 @@ namespace storm {
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
 
-            this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType,ConstantType>>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+            if (RegionModelChecker<ValueType>::isUseMonotonicitySet()) {
+                this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(
+                    &statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+            }
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -176,23 +185,17 @@ namespace storm {
             storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->parametricModel->getBackwardTransitions(), storm::storage::BitVector(this->parametricModel->getNumberOfStates(), true), targetStates);
             infinityStates.complement();
             maybeStates = ~(targetStates | infinityStates);
-
             // set the result for all the non-maybe states
             resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
             storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::infinity<ConstantType>());
-
             // if there are maybestates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the reward vector
                 STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel->hasRewardModel(checkTask.getRewardModel())) || (!checkTask.isRewardModelSet() && this->parametricModel->hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by the CheckTask is not available in the given model.");
-
                 typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel->getRewardModel(checkTask.getRewardModel()) : this->parametricModel->getUniqueRewardModel();
-
                 std::vector<ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
-
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, regionSplitEstimationsEnabled);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, regionSplitEstimationsEnabled, RegionModelChecker<ValueType>::isUseMonotonicitySet());
             }
-
             // We only know a lower bound for the result
             lowerResultBound = storm::utility::zero<ConstantType>();
 
@@ -205,9 +208,12 @@ namespace storm {
             }
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
-            storm::storage::BitVector topStates (this->parametricModel->getNumberOfStates(), false);
-            this->orderExtender = std::make_shared<storm::analysis::RewardOrderExtenderDtmc<ValueType,ConstantType>>(&topStates ,&infinityStates, this->parametricModel->getTransitionMatrix());
 
+            if (RegionModelChecker<ValueType>::isUseMonotonicitySet()) {
+                storm::storage::BitVector topStates(this->parametricModel->getNumberOfStates(), false);
+                this->orderExtender = std::make_shared<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(
+                    &topStates, &targetStates, this->parametricModel->getTransitionMatrix(), this->parametricModel->getUniqueRewardModel());
+            }
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -543,8 +549,22 @@ namespace storm {
         template<typename SparseModelType, typename ConstantType>
         std::shared_ptr<storm::analysis::Order>
         SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) {
+
             if (this->orderExtender) {
-                auto res = this->orderExtender->extendOrder(order, region);
+                std::tuple<std::shared_ptr<storm::analysis::Order>, uint_fast64_t, uint_fast64_t> res = {nullptr, 0,0};
+                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>> castedPointerReachDtmc = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerReachDtmc != nullptr) {
+                    res = castedPointerReachDtmc->extendOrder(order, region);
+                }
+                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>> castedPointerReachMdp = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerReachMdp != nullptr) {
+                    res = castedPointerReachMdp->extendOrder(order, region);
+                }
+                std::shared_ptr<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>> castedPointerRewDtmc = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerRewDtmc != nullptr) {
+                    res = castedPointerRewDtmc->extendOrder(order, region);
+                }
+                STORM_LOG_ASSERT(std::get<0>(res) != nullptr, "Unexpected order extender type");
                 order = std::get<0>(res);
                 if (std::get<1>(res) != order->getNumberOfStates()) {
                     this->orderExtender->setUnknownStates(order, std::get<1>(res), std::get<2>(res));
@@ -612,7 +632,11 @@ namespace storm {
                 localMonotonicityResult->setDone();
                 while (order->existsNextState()) {
                     // Simply add the states we couldn't add sofar between =) and =( as we could find local monotonicity for all parametric states
-                    order->add(order->getNextStateNumber().second);
+                    auto nextState = order->getNextStateNumber().second;
+                    if (!order->contains(nextState)) {
+                        order->add(nextState);
+                        order->setSufficientForState(nextState);
+                    }
                 }
                 assert (order->getDoneBuilding());
             }
