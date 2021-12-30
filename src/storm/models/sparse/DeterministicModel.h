@@ -29,6 +29,8 @@ class DeterministicModel : public Model<ValueType, RewardModelType> {
     DeterministicModel(DeterministicModel<ValueType, RewardModelType>&& other) = default;
     DeterministicModel<ValueType, RewardModelType>& operator=(DeterministicModel<ValueType, RewardModelType>&& model) = default;
 
+    virtual ~DeterministicModel() = default;
+
     virtual void writeDotToStream(std::ostream& outStream, size_t maxWidthLabel = 30, bool includeLabeling = true,
                                   storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr,
                                   std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr,

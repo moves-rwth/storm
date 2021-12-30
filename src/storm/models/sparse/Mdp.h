@@ -47,6 +47,8 @@ class Mdp : public NondeterministicModel<ValueType, RewardModelType> {
 
     Mdp(Mdp<ValueType, RewardModelType>&& other) = default;
     Mdp& operator=(Mdp<ValueType, RewardModelType>&& other) = default;
+
+    virtual ~Mdp() = default;
 };
 
 }  // namespace sparse

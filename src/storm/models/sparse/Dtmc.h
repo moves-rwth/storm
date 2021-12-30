@@ -47,6 +47,8 @@ class Dtmc : public DeterministicModel<ValueType, RewardModelType> {
     Dtmc(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
     Dtmc& operator=(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
 
+    virtual ~Dtmc() = default;
+
     virtual void reduceToStateBasedRewards() override;
 };
 
