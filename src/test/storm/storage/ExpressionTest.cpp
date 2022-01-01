@@ -1,18 +1,17 @@
 #include <map>
 #include <string>
 
-#include "test/storm_gtest.h"
+#include "storm-parsers/parser/ValueParser.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidTypeException.h"
 #include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
-#include "storm/storage/expressions/SimpleValuation.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
-#include "storm/exceptions/InvalidTypeException.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm-parsers/parser/ValueParser.h"
+#include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/ToRationalFunctionVisitor.h"
-
+#include "test/storm_gtest.h"
 
 TEST(Expression, FactoryMethodTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -27,7 +26,7 @@ TEST(Expression, FactoryMethodTest) {
 
 TEST(Expression, AccessorTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-    
+
     storm::expressions::Expression trueExpression;
     storm::expressions::Expression falseExpression;
     storm::expressions::Expression threeExpression;
@@ -35,7 +34,7 @@ TEST(Expression, AccessorTest) {
     storm::expressions::Expression boolVarExpression;
     storm::expressions::Expression intVarExpression;
     storm::expressions::Expression rationalVarExpression;
-    
+
     ASSERT_NO_THROW(trueExpression = manager->boolean(true));
     ASSERT_NO_THROW(falseExpression = manager->boolean(false));
     ASSERT_NO_THROW(threeExpression = manager->integer(3));
@@ -43,13 +42,13 @@ TEST(Expression, AccessorTest) {
     ASSERT_NO_THROW(boolVarExpression = manager->declareBooleanVariable("x"));
     ASSERT_NO_THROW(intVarExpression = manager->declareIntegerVariable("y"));
     ASSERT_NO_THROW(rationalVarExpression = manager->declareRationalVariable("z"));
-    
+
     EXPECT_TRUE(trueExpression.hasBooleanType());
     EXPECT_TRUE(trueExpression.isLiteral());
     EXPECT_TRUE(trueExpression.isTrue());
     EXPECT_FALSE(trueExpression.isFalse());
     EXPECT_TRUE(trueExpression.getVariables() == std::set<storm::expressions::Variable>());
-    
+
     EXPECT_TRUE(falseExpression.hasBooleanType());
     EXPECT_TRUE(falseExpression.isLiteral());
     EXPECT_FALSE(falseExpression.isTrue());
@@ -61,13 +60,13 @@ TEST(Expression, AccessorTest) {
     EXPECT_FALSE(threeExpression.isTrue());
     EXPECT_FALSE(threeExpression.isFalse());
     EXPECT_TRUE(threeExpression.getVariables() == std::set<storm::expressions::Variable>());
-    
+
     EXPECT_TRUE(piExpression.hasRationalType());
     EXPECT_TRUE(piExpression.isLiteral());
     EXPECT_FALSE(piExpression.isTrue());
     EXPECT_FALSE(piExpression.isFalse());
     EXPECT_TRUE(piExpression.getVariables() == std::set<storm::expressions::Variable>());
-    
+
     EXPECT_TRUE(boolVarExpression.hasBooleanType());
     EXPECT_FALSE(boolVarExpression.isLiteral());
     EXPECT_FALSE(boolVarExpression.isTrue());
@@ -89,7 +88,7 @@ TEST(Expression, AccessorTest) {
 
 TEST(Expression, OperatorTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-    
+
     storm::expressions::Expression trueExpression;
     storm::expressions::Expression falseExpression;
     storm::expressions::Expression threeExpression;
@@ -97,7 +96,7 @@ TEST(Expression, OperatorTest) {
     storm::expressions::Expression boolVarExpression;
     storm::expressions::Expression intVarExpression;
     storm::expressions::Expression rationalVarExpression;
-    
+
     ASSERT_NO_THROW(trueExpression = manager->boolean(true));
     ASSERT_NO_THROW(falseExpression = manager->boolean(false));
     ASSERT_NO_THROW(threeExpression = manager->integer(3));
@@ -105,7 +104,7 @@ TEST(Expression, OperatorTest) {
     ASSERT_NO_THROW(boolVarExpression = manager->declareBooleanVariable("x"));
     ASSERT_NO_THROW(intVarExpression = manager->declareIntegerVariable("y"));
     ASSERT_NO_THROW(rationalVarExpression = manager->declareRationalVariable("z"));
-    
+
     storm::expressions::Expression tempExpression;
 
     STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::ite(trueExpression, falseExpression, piExpression), storm::exceptions::InvalidTypeException);
@@ -115,7 +114,7 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.hasIntegerType());
     ASSERT_NO_THROW(tempExpression = storm::expressions::ite(boolVarExpression, trueExpression, falseExpression));
     EXPECT_TRUE(tempExpression.hasBooleanType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = trueExpression + piExpression, storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = threeExpression + threeExpression);
     EXPECT_TRUE(tempExpression.hasIntegerType());
@@ -123,7 +122,7 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.hasRationalType());
     ASSERT_NO_THROW(tempExpression = rationalVarExpression + rationalVarExpression);
     EXPECT_TRUE(tempExpression.hasRationalType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = trueExpression - piExpression, storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = threeExpression - threeExpression);
     EXPECT_TRUE(tempExpression.hasIntegerType());
@@ -131,7 +130,7 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.hasRationalType());
     ASSERT_NO_THROW(tempExpression = rationalVarExpression - rationalVarExpression);
     EXPECT_TRUE(tempExpression.hasRationalType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = -trueExpression, storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = -threeExpression);
     EXPECT_TRUE(tempExpression.hasIntegerType());
@@ -191,19 +190,19 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.hasBooleanType());
     ASSERT_NO_THROW(tempExpression = intVarExpression > rationalVarExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = trueExpression >= piExpression, storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = threeExpression >= threeExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
     ASSERT_NO_THROW(tempExpression = intVarExpression >= rationalVarExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = trueExpression < piExpression, storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = threeExpression < threeExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
     ASSERT_NO_THROW(tempExpression = intVarExpression < rationalVarExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = trueExpression <= piExpression, storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = threeExpression <= threeExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
@@ -229,7 +228,7 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.hasRationalType());
     ASSERT_NO_THROW(tempExpression = storm::expressions::modulo(piExpression, piExpression));
     EXPECT_TRUE(tempExpression.hasRationalType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::minimum(trueExpression, piExpression), storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = storm::expressions::minimum(threeExpression, threeExpression));
     EXPECT_TRUE(tempExpression.hasIntegerType());
@@ -241,25 +240,25 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.hasIntegerType());
     ASSERT_NO_THROW(tempExpression = storm::expressions::maximum(intVarExpression, rationalVarExpression));
     EXPECT_TRUE(tempExpression.hasRationalType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::implies(trueExpression, piExpression), storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = storm::expressions::implies(trueExpression, falseExpression));
     EXPECT_TRUE(tempExpression.hasBooleanType());
     ASSERT_NO_THROW(tempExpression = storm::expressions::implies(boolVarExpression, boolVarExpression));
     EXPECT_TRUE(tempExpression.hasBooleanType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::iff(trueExpression, piExpression), storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = storm::expressions::iff(trueExpression, falseExpression));
     EXPECT_TRUE(tempExpression.hasBooleanType());
     ASSERT_NO_THROW(tempExpression = storm::expressions::iff(boolVarExpression, boolVarExpression));
     EXPECT_TRUE(tempExpression.hasBooleanType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = trueExpression != piExpression, storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = trueExpression != falseExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
     ASSERT_NO_THROW(tempExpression = boolVarExpression != boolVarExpression);
     EXPECT_TRUE(tempExpression.hasBooleanType());
-    
+
     STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::floor(trueExpression), storm::exceptions::InvalidTypeException);
     ASSERT_NO_THROW(tempExpression = storm::expressions::floor(threeExpression));
     EXPECT_TRUE(tempExpression.hasIntegerType());
@@ -286,7 +285,7 @@ TEST(Expression, OperatorTest) {
 
 TEST(Expression, SubstitutionTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-    
+
     storm::expressions::Expression trueExpression;
     storm::expressions::Expression falseExpression;
     storm::expressions::Expression threeExpression;
@@ -294,7 +293,7 @@ TEST(Expression, SubstitutionTest) {
     storm::expressions::Expression boolVarExpression;
     storm::expressions::Expression intVarExpression;
     storm::expressions::Expression rationalVarExpression;
-    
+
     ASSERT_NO_THROW(trueExpression = manager->boolean(true));
     ASSERT_NO_THROW(falseExpression = manager->boolean(false));
     ASSERT_NO_THROW(threeExpression = manager->integer(3));
@@ -302,15 +301,17 @@ TEST(Expression, SubstitutionTest) {
     ASSERT_NO_THROW(boolVarExpression = manager->declareBooleanVariable("x"));
     ASSERT_NO_THROW(intVarExpression = manager->declareIntegerVariable("y"));
     ASSERT_NO_THROW(rationalVarExpression = manager->declareRationalVariable("z"));
-    
+
     storm::expressions::Expression tempExpression;
     ASSERT_NO_THROW(tempExpression = (intVarExpression < threeExpression || boolVarExpression) && boolVarExpression);
 
 #ifdef WINDOWS
-	storm::expressions::Expression twopointseven = manager->rational(2.7);
-	std::map<storm::expressions::Variable, storm::expressions::Expression> substution = { std::make_pair(manager->getVariable("y"), twopointseven), std::make_pair(manager->getVariable("x"), manager->boolean(true)) };
+    storm::expressions::Expression twopointseven = manager->rational(2.7);
+    std::map<storm::expressions::Variable, storm::expressions::Expression> substution = {std::make_pair(manager->getVariable("y"), twopointseven),
+                                                                                         std::make_pair(manager->getVariable("x"), manager->boolean(true))};
 #else
-    std::map<storm::expressions::Variable, storm::expressions::Expression> substution = { std::make_pair(manager->getVariable("y"), manager->rational(2.7)), std::make_pair(manager->getVariable("x"), manager->boolean(true)) };
+    std::map<storm::expressions::Variable, storm::expressions::Expression> substution = {std::make_pair(manager->getVariable("y"), manager->rational(2.7)),
+                                                                                         std::make_pair(manager->getVariable("x"), manager->boolean(true))};
 #endif
     storm::expressions::Expression substitutedExpression;
     ASSERT_NO_THROW(substitutedExpression = tempExpression.substitute(substution));
@@ -319,27 +320,27 @@ TEST(Expression, SubstitutionTest) {
 
 TEST(Expression, SimplificationTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-    
+
     storm::expressions::Expression trueExpression;
     storm::expressions::Expression falseExpression;
     storm::expressions::Expression threeExpression;
     storm::expressions::Expression intVarExpression;
 
-ASSERT_NO_THROW(trueExpression = manager->boolean(true));
-ASSERT_NO_THROW(falseExpression = manager->boolean(false));
-ASSERT_NO_THROW(threeExpression = manager->integer(3));
-ASSERT_NO_THROW(intVarExpression = manager->declareIntegerVariable("y"));
+    ASSERT_NO_THROW(trueExpression = manager->boolean(true));
+    ASSERT_NO_THROW(falseExpression = manager->boolean(false));
+    ASSERT_NO_THROW(threeExpression = manager->integer(3));
+    ASSERT_NO_THROW(intVarExpression = manager->declareIntegerVariable("y"));
 
-storm::expressions::Expression tempExpression;
-storm::expressions::Expression simplifiedExpression;
+    storm::expressions::Expression tempExpression;
+    storm::expressions::Expression simplifiedExpression;
 
-ASSERT_NO_THROW(tempExpression = trueExpression || intVarExpression > threeExpression);
-ASSERT_NO_THROW(simplifiedExpression = tempExpression.simplify());
-EXPECT_TRUE(simplifiedExpression.isTrue());
+    ASSERT_NO_THROW(tempExpression = trueExpression || intVarExpression > threeExpression);
+    ASSERT_NO_THROW(simplifiedExpression = tempExpression.simplify());
+    EXPECT_TRUE(simplifiedExpression.isTrue());
 
-ASSERT_NO_THROW(tempExpression = falseExpression && intVarExpression > threeExpression);
-ASSERT_NO_THROW(simplifiedExpression = tempExpression.simplify());
-EXPECT_TRUE(simplifiedExpression.isFalse());
+    ASSERT_NO_THROW(tempExpression = falseExpression && intVarExpression > threeExpression);
+    ASSERT_NO_THROW(simplifiedExpression = tempExpression.simplify());
+    EXPECT_TRUE(simplifiedExpression.isFalse());
 }
 
 TEST(Expression, SimpleEvaluationTest) {

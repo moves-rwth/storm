@@ -1,11 +1,11 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm-parsers/parser/DeterministicModelParser.h"
-#include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/Ctmc.h"
 #include "storm/exceptions/FileIoException.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -13,15 +13,20 @@
 
 TEST(DeterministicModelParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(
+        storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"),
+        storm::exceptions::FileIoException);
 
-    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseCtmc(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(
+        storm::parser::DeterministicModelParser<>::parseCtmc(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"),
+        storm::exceptions::FileIoException);
 }
 
 TEST(DeterministicModelParserTest, BasicDtmcParsing) {
-
     // Parse a Dtmc and check the result.
-    storm::models::sparse::Dtmc<double> dtmc(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_general.tra", STORM_TEST_RESOURCES_DIR "/lab/dtmc_general.lab", STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.state.rew", STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.trans.rew"));
+    storm::models::sparse::Dtmc<double> dtmc(storm::parser::DeterministicModelParser<>::parseDtmc(
+        STORM_TEST_RESOURCES_DIR "/tra/dtmc_general.tra", STORM_TEST_RESOURCES_DIR "/lab/dtmc_general.lab",
+        STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.state.rew", STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.trans.rew"));
 
     ASSERT_EQ(8ul, dtmc.getNumberOfStates());
     ASSERT_EQ(16ul, dtmc.getNumberOfTransitions());
@@ -50,9 +55,10 @@ TEST(DeterministicModelParserTest, BasicDtmcParsing) {
 }
 
 TEST(DeterministicModelParserTest, BasicCtmcParsing) {
-
     // Parse a Ctmc and check the result.
-    storm::models::sparse::Ctmc<double> ctmc(storm::parser::DeterministicModelParser<>::parseCtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_general.tra", STORM_TEST_RESOURCES_DIR "/lab/dtmc_general.lab", STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.state.rew", STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.trans.rew"));
+    storm::models::sparse::Ctmc<double> ctmc(storm::parser::DeterministicModelParser<>::parseCtmc(
+        STORM_TEST_RESOURCES_DIR "/tra/dtmc_general.tra", STORM_TEST_RESOURCES_DIR "/lab/dtmc_general.lab",
+        STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.state.rew", STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.trans.rew"));
 
     ASSERT_EQ(8ul, ctmc.getNumberOfStates());
     ASSERT_EQ(16ul, ctmc.getNumberOfTransitions());
@@ -81,18 +87,28 @@ TEST(DeterministicModelParserTest, BasicCtmcParsing) {
 }
 
 TEST(DeterministicModelParserTest, MismatchedFiles) {
-
     // Test file combinations that do not match, i.e. differing number of states, transitions, etc.
 
     // The labeling file contains a label for a non existent state.
-    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mismatched.tra", STORM_TEST_RESOURCES_DIR "/lab/dtmc_general.lab"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mismatched.tra",
+                                                                                   STORM_TEST_RESOURCES_DIR "/lab/dtmc_general.lab"),
+                              storm::exceptions::OutOfRangeException);
 
     // The state reward file contains a reward for a non existent state.
-    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mismatched.tra", STORM_TEST_RESOURCES_DIR "/lab/dtmc_mismatched.lab", STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.state.rew"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mismatched.tra",
+                                                                                   STORM_TEST_RESOURCES_DIR "/lab/dtmc_mismatched.lab",
+                                                                                   STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.state.rew"),
+                              storm::exceptions::OutOfRangeException);
 
     // The transition reward file contains rewards for a non existent state.
-    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mismatched.tra", STORM_TEST_RESOURCES_DIR "/lab/dtmc_mismatched.lab", "", STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.trans.rew"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mismatched.tra",
+                                                                                   STORM_TEST_RESOURCES_DIR "/lab/dtmc_mismatched.lab", "",
+                                                                                   STORM_TEST_RESOURCES_DIR "/rew/dtmc_general.trans.rew"),
+                              storm::exceptions::OutOfRangeException);
 
     // The transition reward file contains rewards for a non existent transition
-    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mismatched.tra", STORM_TEST_RESOURCES_DIR "/lab/dtmc_mismatched.lab", "", STORM_TEST_RESOURCES_DIR "/rew/dtmc_mismatched.trans.rew"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicModelParser<>::parseDtmc(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mismatched.tra",
+                                                                                   STORM_TEST_RESOURCES_DIR "/lab/dtmc_mismatched.lab", "",
+                                                                                   STORM_TEST_RESOURCES_DIR "/rew/dtmc_mismatched.trans.rew"),
+                              storm::exceptions::OutOfRangeException);
 }

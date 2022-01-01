@@ -37,7 +37,7 @@ namespace storm {
             statesPerObservation[model.getNrObservations()] = actualInitialStates;
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-            std::cout << "build valution builder.." << std::endl;
+            std::cout << "build valution builder..\n";
 #endif
             storm::storage::sparse::StateValuationsBuilder svbuilder;
             svbuilder.addVariable(svvar);
@@ -47,7 +47,7 @@ namespace storm {
             std::map<uint64_t,uint64_t> oldToUnfolded;
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-            std::cout << "start buildiing matrix..." << std::endl;
+            std::cout << "start buildiing matrix...\n";
 #endif
 
             // Add this initial state state:
@@ -67,7 +67,7 @@ namespace storm {
                 for (auto const& unfoldedToOldEntry : unfoldedToOld) {
                     transitionMatrixBuilder.newRowGroup(newRowGroupStart);
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-                    std::cout << "\tconsider new state " << unfoldedToOldEntry.first << std::endl;
+                    std::cout << "\tconsider new state " << unfoldedToOldEntry.first << '\n';
 #endif
                     assert(step == 0 || newRowCount == transitionMatrixBuilder.getLastRow() + 1);
                     svbuilder.addState(unfoldedToOldEntry.first, {}, {static_cast<int64_t>(unfoldedToOldEntry.second)});
@@ -76,8 +76,8 @@ namespace storm {
 
                     for (uint64_t oldRowIndex = oldRowIndexStart; oldRowIndex != oldRowIndexEnd; oldRowIndex++) {
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-                        std::cout << "\t\tconsider old action " << oldRowIndex << std::endl;
-                        std::cout << "\t\tconsider new row nr " << newRowCount << std::endl;
+                        std::cout << "\t\tconsider old action " << oldRowIndex << '\n';
+                        std::cout << "\t\tconsider new row nr " << newRowCount << '\n';
 #endif
 
                         ValueType resetProb = storm::utility::zero<ValueType>();
@@ -88,7 +88,7 @@ namespace storm {
                             }
                         }
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-                        std::cout << "\t\t\t add reset with probability " << resetProb << std::endl;
+                        std::cout << "\t\t\t add reset with probability " << resetProb << '\n';
 #endif
 
                         // Add the resets
@@ -96,7 +96,7 @@ namespace storm {
                             transitionMatrixBuilder.addNextValue(newRowCount, 0, resetProb);
                         }
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-                        std::cout << "\t\t\t add other transitions..." << std::endl;
+                        std::cout << "\t\t\t add other transitions...\n";
 #endif
 
                         // Now, we build the outgoing transitions.
@@ -116,7 +116,7 @@ namespace storm {
                                 column = entryIt->second;
                             }
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-                            std::cout << "\t\t\t\t transition to " << column << "with probability " << oldRowEntry.getValue()  << std::endl;
+                            std::cout << "\t\t\t\t transition to " << column << "with probability " << oldRowEntry.getValue()  << '\n';
 #endif
                             transitionMatrixBuilder.addNextValue(newRowCount, column,
                                                                    oldRowEntry.getValue());
@@ -139,7 +139,7 @@ namespace storm {
                 STORM_LOG_ASSERT(risk.size() > unfoldedToOldEntry.second, "Must be a state");
                 STORM_LOG_ASSERT(!cc.isLess(storm::utility::one<ValueType>(), risk[unfoldedToOldEntry.second]), "Risk must be a probability");
                 STORM_LOG_ASSERT(!cc.isLess(risk[unfoldedToOldEntry.second], storm::utility::zero<ValueType>()), "Risk must be a probability");
-                //std::cout << "risk is" <<  risk[unfoldedToOldEntry.second] << std::endl;
+                //std::cout << "risk is" <<  risk[unfoldedToOldEntry.second] << '\n';
                 if (!storm::utility::isOne(risk[unfoldedToOldEntry.second])) {
                     transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState,
                                                          storm::utility::one<ValueType>() - risk[unfoldedToOldEntry.second]);
@@ -161,13 +161,13 @@ namespace storm {
             transitionMatrixBuilder.addNextValue(newRowGroupStart, targetState, storm::utility::one<ValueType>());
             svbuilder.addState(targetState, {}, {-1});
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-            std::cout << "build matrix..." << std::endl;
+            std::cout << "build matrix...\n";
 #endif
 
             storm::storage::sparse::ModelComponents<ValueType> components;
             components.transitionMatrix = transitionMatrixBuilder.build();
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-            std::cout << components.transitionMatrix << std::endl;
+            std::cout << components.transitionMatrix << '\n';
 #endif
             STORM_LOG_ASSERT(components.transitionMatrix.getRowGroupCount() == targetState + 1, "Expect row group count (" << components.transitionMatrix.getRowGroupCount() << ") one more as target state index " << targetState << ")");
 

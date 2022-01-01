@@ -1,9 +1,9 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm-parsers/parser/PrismParser.h"
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/shortestPaths.h"
@@ -14,7 +14,7 @@
 //       An independent verification of the values would be really nice ...
 
 std::shared_ptr<storm::models::sparse::Model<double>> buildExampleModel() {
-	std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm";
+    std::string prismModelPath = STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm";
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(prismModelPath);
     storm::prism::Program program = modelDescription.preprocess().asPrismProgram();
     return storm::builder::ExplicitModelBuilder<double>(program).build();
@@ -84,12 +84,13 @@ TEST(KSPTest, kspStateSet) {
     EXPECT_EQ(50ull, bv.getNumberOfSetBits());
 
     // The result may sadly depend on the compiler/system, so checking a particular outcome is not feasible.
-//    storm::storage::BitVector referenceBV(model->getNumberOfStates(), false);
-//    for (auto s : std::vector<storm::utility::ksp::state_t>{0, 1, 2, 4, 6, 9, 12, 17, 22, 30, 37, 45, 52, 58, 65, 70, 74, 77, 81, 85, 92, 98, 104, 112, 119, 127, 134, 140, 146, 154, 161, 169, 176, 182, 188, 196, 203, 211, 218, 224, 230, 238, 245, 253, 260, 266, 272, 281, 288, 296}) {
-//        referenceBV.set(s, true);
-//    }
-//
-//    EXPECT_EQ(referenceBV, bv);
+    //    storm::storage::BitVector referenceBV(model->getNumberOfStates(), false);
+    //    for (auto s : std::vector<storm::utility::ksp::state_t>{0, 1, 2, 4, 6, 9, 12, 17, 22, 30, 37, 45, 52, 58, 65, 70, 74, 77, 81, 85, 92, 98, 104, 112,
+    //    119, 127, 134, 140, 146, 154, 161, 169, 176, 182, 188, 196, 203, 211, 218, 224, 230, 238, 245, 253, 260, 266, 272, 281, 288, 296}) {
+    //        referenceBV.set(s, true);
+    //    }
+    //
+    //    EXPECT_EQ(referenceBV, bv);
 }
 
 TEST(KSPTest, kspPathAsList) {
@@ -98,8 +99,9 @@ TEST(KSPTest, kspPathAsList) {
 
     auto list = spg.getPathAsList(7);
     EXPECT_EQ(50ull, list.size());
-    
+
     // TODO: use path that actually has a loop or something to make this more interesting
-//    auto reference = storm::utility::ksp::OrderedStateList{296, 288, 281, 272, 266, 260, 253, 245, 238, 230, 224, 218, 211, 203, 196, 188, 182, 176, 169, 161, 154, 146, 140, 134, 127, 119, 112, 104, 98, 92, 85, 77, 70, 81, 74, 65, 58, 52, 45, 37, 30, 22, 17, 12, 9, 6, 4, 2, 1, 0};
-//    EXPECT_EQ(reference, list);
+    //    auto reference = storm::utility::ksp::OrderedStateList{296, 288, 281, 272, 266, 260, 253, 245, 238, 230, 224, 218, 211, 203, 196, 188, 182, 176, 169,
+    //    161, 154, 146, 140, 134, 127, 119, 112, 104, 98, 92, 85, 77, 70, 81, 74, 65, 58, 52, 45, 37, 30, 22, 17, 12, 9, 6, 4, 2, 1, 0}; EXPECT_EQ(reference,
+    //    list);
 }

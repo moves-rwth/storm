@@ -2,27 +2,27 @@
 #include "storm/abstraction/SymbolicStateSet.h"
 
 namespace storm {
-    namespace abstraction {
-        
-        bool StateSet::isSymbolic() const {
-            return false;
-        }
-        
-        template<storm::dd::DdType Type>
-        SymbolicStateSet<Type> const& StateSet::asSymbolicStateSet() const {
-            return static_cast<SymbolicStateSet<Type> const&>(*this);
-        }
-        
-        template<storm::dd::DdType Type>
-        SymbolicStateSet<Type>& StateSet::asSymbolicStateSet() {
-            return static_cast<SymbolicStateSet<Type>&>(*this);
-        }
-        
-        template SymbolicStateSet<storm::dd::DdType::CUDD> const& StateSet::asSymbolicStateSet() const;
-        template SymbolicStateSet<storm::dd::DdType::CUDD>& StateSet::asSymbolicStateSet();
+namespace abstraction {
 
-        template SymbolicStateSet<storm::dd::DdType::Sylvan> const& StateSet::asSymbolicStateSet() const;
-        template SymbolicStateSet<storm::dd::DdType::Sylvan>& StateSet::asSymbolicStateSet();
-
-    }
+bool StateSet::isSymbolic() const {
+    return false;
 }
+
+template<storm::dd::DdType Type>
+SymbolicStateSet<Type> const& StateSet::asSymbolicStateSet() const {
+    return static_cast<SymbolicStateSet<Type> const&>(*this);
+}
+
+template<storm::dd::DdType Type>
+SymbolicStateSet<Type>& StateSet::asSymbolicStateSet() {
+    return static_cast<SymbolicStateSet<Type>&>(*this);
+}
+
+template SymbolicStateSet<storm::dd::DdType::CUDD> const& StateSet::asSymbolicStateSet() const;
+template SymbolicStateSet<storm::dd::DdType::CUDD>& StateSet::asSymbolicStateSet();
+
+template SymbolicStateSet<storm::dd::DdType::Sylvan> const& StateSet::asSymbolicStateSet() const;
+template SymbolicStateSet<storm::dd::DdType::Sylvan>& StateSet::asSymbolicStateSet();
+
+}  // namespace abstraction
+}  // namespace storm

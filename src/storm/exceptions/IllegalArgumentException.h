@@ -5,11 +5,11 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
-        
-        STORM_NEW_EXCEPTION(IllegalArgumentException)
-        
-    } // namespace exceptions    
-} // namespace storm
+namespace exceptions {
+
+STORM_NEW_EXCEPTION(IllegalArgumentException)
+
+}  // namespace exceptions
+}  // namespace storm
 
 #endif /* STORM_EXCEPTIONS_ILLEGALARGUMENTEXCEPTION_H_ */

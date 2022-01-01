@@ -549,35 +549,35 @@ namespace storm {
         void DFTASFChecker::toFile(std::string const &filename) {
             std::ofstream stream;
             storm::utility::openFile(filename, stream);
-            stream << "; time point variables" << std::endl;
+            stream << "; time point variables\n";
             for (auto const &timeVarEntry : timePointVariables) {
-                stream << "(declare-fun " << varNames[timeVarEntry.second] << "() Int)" << std::endl;
+                stream << "(declare-fun " << varNames[timeVarEntry.second] << "() Int)\n";
             }
-            stream << "; claim variables" << std::endl;
+            stream << "; claim variables\n";
             for (auto const &claimVarEntry : claimVariables) {
-                stream << "(declare-fun " << varNames[claimVarEntry.second] << "() Int)" << std::endl;
+                stream << "(declare-fun " << varNames[claimVarEntry.second] << "() Int)\n";
             }
-            stream << "; Markovian variables" << std::endl;
+            stream << "; Markovian variables\n";
             for (auto const &markovianVarEntry : markovianVariables) {
-                stream << "(declare-fun " << varNames[markovianVarEntry.second] << "() Bool)" << std::endl;
+                stream << "(declare-fun " << varNames[markovianVarEntry.second] << "() Bool)\n";
             }
-            stream << "; Dependency variables" << std::endl;
+            stream << "; Dependency variables\n";
             for (auto const &depVarEntry : dependencyVariables) {
-                stream << "(declare-fun " << varNames[depVarEntry.second] << "() Int)" << std::endl;
+                stream << "(declare-fun " << varNames[depVarEntry.second] << "() Int)\n";
             }
             if (!tmpTimePointVariables.empty()) {
-                stream << "; Temporary variables" << std::endl;
+                stream << "; Temporary variables\n";
                 for (auto const &tmpVar : tmpTimePointVariables) {
-                    stream << "(declare-fun " << varNames[tmpVar] << "() Int)" << std::endl;
+                    stream << "(declare-fun " << varNames[tmpVar] << "() Int)\n";
                 }
             }
             for (auto const &constraint : constraints) {
                 if (!constraint->description().empty()) {
-                    stream << "; " << constraint->description() << std::endl;
+                    stream << "; " << constraint->description() << '\n';
                 }
-                stream << "(assert " << constraint->toSmtlib2(varNames) << ")" << std::endl;
+                stream << "(assert " << constraint->toSmtlib2(varNames) << ")\n";
             }
-            stream << "(check-sat)" << std::endl;
+            stream << "(check-sat)\n";
             storm::utility::closeFile(stream);
         }
 

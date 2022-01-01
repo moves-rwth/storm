@@ -4,13 +4,13 @@
 #include <iostream>
 
 namespace storm {
-    namespace logic {
-        
-        enum class RewardMeasureType { Expectation, Variance };
+namespace logic {
 
-        std::ostream& operator<<(std::ostream& out, RewardMeasureType const& type);
+enum class RewardMeasureType { Expectation, Variance };
 
-    }
-}
+std::ostream& operator<<(std::ostream& out, RewardMeasureType const& type);
+
+}  // namespace logic
+}  // namespace storm
 
 #endif /* STORM_LOGIC_REWARDMEASURETYPE_H_ */

@@ -7,22 +7,22 @@
 // Since it is not cheap to delete edges, their guards are instead only set to false. It is recommended to execute a RebuildWithoutUnreachableAction after
 // eliminating locations to actually remove edges and the now-unreachable locations.
 
-namespace storm{
-    namespace jani{
-        namespace elimination_actions{
-        class EliminateAction : public JaniLocalEliminator::Action {
-            public:
-                explicit EliminateAction(const std::string &automatonName, const std::string &locationName);
+namespace storm {
+namespace jani {
+namespace elimination_actions {
+class EliminateAction : public JaniLocalEliminator::Action {
+   public:
+    explicit EliminateAction(const std::string &automatonName, const std::string &locationName);
 
-                std::string getDescription() override;
-                void doAction(JaniLocalEliminator::Session &session) override;
-            private:
-                void eliminateDestination(JaniLocalEliminator::Session &session, Automaton &automaton, Edge &edge, uint64_t destIndex, detail::Edges &outgoing);
+    std::string getDescription() override;
+    void doAction(JaniLocalEliminator::Session &session) override;
 
-                std::string automatonName;
-                std::string locationName;
-            };
-        }
-    }
-}
+   private:
+    void eliminateDestination(JaniLocalEliminator::Session &session, Automaton &automaton, Edge &edge, uint64_t destIndex, detail::Edges &outgoing);
 
+    std::string automatonName;
+    std::string locationName;
+};
+}  // namespace elimination_actions
+}  // namespace jani
+}  // namespace storm

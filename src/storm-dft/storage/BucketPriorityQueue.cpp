@@ -170,18 +170,18 @@ namespace storm {
 
         template<typename PriorityType>
         void BucketPriorityQueue<PriorityType>::print(std::ostream& out) const {
-            out << "Bucket priority queue with size " << buckets.size() << ", lower value: " << lowerValue << " and logBase: " << logBase << std::endl;
+            out << "Bucket priority queue with size " << buckets.size() << ", lower value: " << lowerValue << " and logBase: " << logBase << '\n';
             out << "Immediate bucket: ";
             for (auto item : immediateBucket) {
                 out << item->getId() << ", ";
             }
-            out << std::endl;
-            out << "Current bucket (" << currentBucket << ") has " << nrUnsortedItems  << " unsorted items" << std::endl;
+            out << '\n';
+            out << "Current bucket (" << currentBucket << ") has " << nrUnsortedItems  << " unsorted items\n";
             for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
                 if (!buckets[bucket].empty()) {
-                    out << "Bucket " << bucket << ":" << std::endl;
+                    out << "Bucket " << bucket << ":\n";
                     for (auto item : buckets[bucket]) {
-                        out << "\t" << item->getId() << ": " << item->getPriority() << std::endl;
+                        out << "\t" << item->getId() << ": " << item->getPriority() << '\n';
                     }
                 }
             }
@@ -193,7 +193,7 @@ namespace storm {
             for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
                 out << buckets[bucket].size() << " ";
             }
-            out << std::endl;
+            out << '\n';
         }
 
         // Template instantiations

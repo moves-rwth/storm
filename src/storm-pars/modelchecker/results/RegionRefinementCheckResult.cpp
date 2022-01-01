@@ -46,12 +46,12 @@ namespace storm {
                 uint_fast64_t const sizeX = 128;
                 uint_fast64_t const sizeY = 64;
                 
-                out << "Region refinement Check result (visualization):" << std::endl;
-                out << " \t x-axis: " << x << "  \t y-axis: " << y << "  \t S=safe, [ ]=unsafe, -=ambiguous " << std::endl;
+                out << "Region refinement Check result (visualization):\n";
+                out << " \t x-axis: " << x << "  \t y-axis: " << y << "  \t S=safe, [ ]=unsafe, -=ambiguous \n";
                 for (uint_fast64_t i = 0; i < sizeX+2; ++i) {
                     out << "#";
                 }
-                out << std::endl;
+                out << '\n';
                 
                 CoefficientType deltaX = (getParameterSpace().getUpperBoundary(x) - getParameterSpace().getLowerBoundary(x)) / storm::utility::convertNumber<CoefficientType>(sizeX);
                 CoefficientType deltaY = (getParameterSpace().getUpperBoundary(y) - getParameterSpace().getLowerBoundary(y)) / storm::utility::convertNumber<CoefficientType>(sizeY);
@@ -95,12 +95,12 @@ namespace storm {
                             out << "-";
                         }
                     }
-                    out << "#" << std::endl;
+                    out << "#\n";
                 }
                 for (uint_fast64_t i = 0; i < sizeX+2; ++i) {
                     out << "#";
                 }
-                out << std::endl;
+                out << '\n';
             } else {
                 STORM_LOG_WARN("Writing illustration of region check result to a stream is only implemented for two parameters.");
             }

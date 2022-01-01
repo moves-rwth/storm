@@ -4,9 +4,9 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
-        
-        STORM_NEW_EXCEPTION(InternalException)
-        
-    }
+namespace exceptions {
+
+STORM_NEW_EXCEPTION(InternalException)
+
 }
+}  // namespace storm

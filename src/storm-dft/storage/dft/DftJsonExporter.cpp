@@ -20,7 +20,7 @@ namespace storm {
 
         template<typename ValueType>
         void DftJsonExporter<ValueType>::toStream(storm::storage::DFT<ValueType> const& dft, std::ostream& os) {
-            os << translate(dft).dump(4) << std::endl;
+            os << translate(dft).dump(4) << '\n';
         }
 
         template<typename ValueType>

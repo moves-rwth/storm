@@ -54,11 +54,21 @@ class ExpectedVisitingTimesCtmcCslModelCheckerTest : public ::testing::Test {
     typedef typename storm::models::sparse::Ctmc<ValueType> SparseModelType;
 
     ExpectedVisitingTimesCtmcCslModelCheckerTest() : _environment(TestType::createEnvironment()) {}
-    storm::Environment const& env() const { return _environment; }
-    ValueType parseNumber(std::string const& input) const { return storm::utility::convertNumber<ValueType>(input); }
-    ValueType precision() const { return TestType::isExact ? parseNumber("0") : parseNumber("1e-6"); }
-    bool isSparseModel() const { return std::is_same<typename TestType::ModelType, SparseModelType>::value; }
-    CtmcEngine getEngine() const { return TestType::engine; }
+    storm::Environment const& env() const {
+        return _environment;
+    }
+    ValueType parseNumber(std::string const& input) const {
+        return storm::utility::convertNumber<ValueType>(input);
+    }
+    ValueType precision() const {
+        return TestType::isExact ? parseNumber("0") : parseNumber("1e-6");
+    }
+    bool isSparseModel() const {
+        return std::is_same<typename TestType::ModelType, SparseModelType>::value;
+    }
+    CtmcEngine getEngine() const {
+        return TestType::engine;
+    }
 
     template<typename MT = typename TestType::ModelType>
     typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<MT>>::type buildJaniModel(
@@ -101,24 +111,24 @@ TYPED_TEST(ExpectedVisitingTimesCtmcCslModelCheckerTest, expvisittimestest) {
     std::sort(sortedVector.begin(), sortedVector.end());
 
     EXPECT_NEAR(sortedVector[0], this->parseNumber("8/2025"), this->precision())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[1], this->parseNumber("4/135"), this->precision())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[2], this->parseNumber("2/27"), this->precision())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[3], this->parseNumber("17/81"), this->precision())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[4], this->parseNumber("401/1620"), this->precision())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[5], this->parseNumber("341/1215"), this->precision())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_EQ(sortedVector[6], storm::utility::infinity<ValueType>())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_EQ(sortedVector[7], storm::utility::infinity<ValueType>())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_EQ(sortedVector[8], storm::utility::infinity<ValueType>())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_EQ(sortedVector[9], storm::utility::infinity<ValueType>())
-        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of expected visiting times computation is " << storm::utility::vector::toString(resultVector) << '\n';
 }
 }  // namespace
