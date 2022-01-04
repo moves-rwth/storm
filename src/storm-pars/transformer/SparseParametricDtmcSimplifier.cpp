@@ -166,6 +166,7 @@ namespace storm {
             }
 
             this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination, rewardModelNameAsVector.front(), keepRewardsAsConstantAsPossible);
+
             return true;
         }
         

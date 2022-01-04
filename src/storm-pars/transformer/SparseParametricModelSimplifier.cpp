@@ -108,57 +108,146 @@ namespace storm {
                 actionRewards = std::vector<typename SparseModelType::ValueType>(model.getTransitionMatrix().getRowCount(), storm::utility::zero<typename SparseModelType::ValueType>());
             }
 
-            boost::optional<storage::SparseMatrix<typename SparseModelType::ValueType>> matrix;
+            boost::optional<storage::SparseMatrix<typename SparseModelType::ValueType>> transposeMatrix;
             // Find the states that are to be eliminated
             storm::storage::BitVector selectedStates = consideredStates;
-            for (auto state : consideredStates) {
-                if (sparseMatrix.getRowGroupSize(state) == 1 && (!rewardModelName.is_initialized() || storm::utility::isConstant(actionRewards[sparseMatrix.getRowGroupIndices()[state]]))) {
-                    for (auto const& entry : sparseMatrix.getRowGroup(state)) {
-                        if(!storm::utility::isConstant(entry.getValue())) {
-                            selectedStates.set(state, false);
-                            break;
-                        }
-                    }
-                } else {
-                    selectedStates.set(state, false);
-                    break;
-                }
-                if (keepRewardsAsConstantAsPossible) {
-                    STORM_LOG_ASSERT(rewardModelName.is_initialized(), "Keeping rewards constant while not having rewards makes no sense");
-                    if (!matrix.is_initialized()) {
+
+            if (keepRewardsAsConstantAsPossible) {
+                // We need two rounds, they only work on deterministic states
+                // 1) eliminate all states with constant outgoing transitions and constant ingoing transitions
+                // 2) eliminate all states with constant outgoing transitions and reward of 0
+                STORM_LOG_ASSERT(rewardModelName.is_initialized(), "Keeping rewards constant while not having rewards makes no sense");
+                // Round 1
+                for (auto state : consideredStates) {
+                    if (!transposeMatrix.is_initialized()) {
                         // we join groups, so if there is non-determinism, all transitions are now in the same row
-                        matrix = sparseMatrix.transpose(true);
+                        transposeMatrix = sparseMatrix.transpose(true);
                     }
-                    // We don't want rewards to become rational functions, so we check if all ingoing transitions are constant, if this is the case, we can eliminate the state
-                    // Ingoing transitions:
-                    for (auto const& entry : matrix->getRow(state)) {
-                        if (!entry.getValue().isConstant()) {
-                            selectedStates.set(state, false);
-                            break;
+                    if (sparseMatrix.getRowGroupSize(state) > 1) {
+                        // This state is non-deterministic so we cannot eliminate it
+                        selectedStates.set(state, false);
+                    } else {
+                        // Check ingoing transitions
+                        for (auto const& entry : transposeMatrix->getRow(state)) {
+                            if (!entry.getValue().isConstant()) {
+                                selectedStates.set(state, false);
+                                break;
+                            }
+                        }
+                        // Check outgoing transitions
+                        for (auto const& entry : sparseMatrix.getRowGroup(state)) {
+                            if(!storm::utility::isConstant(entry.getValue())) {
+                                selectedStates.set(state, false);
+                                break;
+                            }
                         }
                     }
                 }
+                // Now eliminate the states for round 1
+                storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleMatrixRound1(sparseMatrix);
+                storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleBackwardTransitionsRound1(sparseMatrix.transpose(), true);
+                storm::solver::stateelimination::NondeterministicModelStateEliminator<typename SparseModelType::ValueType> stateEliminatorRound1(flexibleMatrixRound1, flexibleBackwardTransitionsRound1, actionRewards);
+                for(auto state : selectedStates) {
+                    stateEliminatorRound1.eliminateState(state, true);
+                }
+                selectedStates.complement();
+                auto keptRowsRound1 = sparseMatrix.getRowFilter(selectedStates);
+                storm::storage::SparseMatrix<typename  SparseModelType::ValueType> newTransitionMatrixRound1 = flexibleMatrixRound1.createSparseMatrix(keptRowsRound1, selectedStates);
+                // obtain the reward model for the resulting system
+                if(rewardModelName) {
+                    storm::utility::vector::filterVectorInPlace(actionRewards, keptRowsRound1);
+                }
+                auto labeling = model.getStateLabeling().getSubLabeling(selectedStates);
+
+
+                // Round 2
+                storm::storage::BitVector selectedStatesRound2(newTransitionMatrixRound1.getRowCount(), false);
+                // Now eliminate the states for round 2
+                auto nrEliminated = 0;
+                // State refers to the original state nr in considered states
+                // state-nrEliminated is the stateNumber after elimination
+                for (auto state = 0; state < keptRowsRound1.size(); ++state) {
+                    if (!keptRowsRound1[state]) {
+                        nrEliminated++;
+                    }  else {
+                        auto newStateNumber = state - nrEliminated;
+                        // If the state is kept and we should consider it
+                        // we check if the outgoing transitions in the new transition matrix are constant, and the reward is 0
+                        if (consideredStates[state] && newTransitionMatrixRound1.getRowGroupSize(newStateNumber) == 1 && storm::utility::isZero(actionRewards[sparseMatrix.getRowGroupIndices()[state-nrEliminated]])) {
+                            selectedStatesRound2.set(newStateNumber, true);
+                            for (auto const& entry : newTransitionMatrixRound1.getRowGroup(newStateNumber)) {
+                                if (!storm::utility::isConstant(entry.getValue())) {
+                                    selectedStatesRound2.set(newStateNumber, false);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Get resulting model
+                storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleMatrixRound2(newTransitionMatrixRound1);
+                storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleBackwardTransitionsRound2(newTransitionMatrixRound1.transpose(), true);
+                storm::solver::stateelimination::NondeterministicModelStateEliminator<typename SparseModelType::ValueType> stateEliminatorRound2(
+                    flexibleMatrixRound2, flexibleBackwardTransitionsRound2, actionRewards);
+                for (auto state : selectedStatesRound2) {
+                    stateEliminatorRound2.eliminateState(state, true);
+                }
+
+                selectedStatesRound2.complement();
+                auto keptRowsRound2 = newTransitionMatrixRound1.getRowFilter(selectedStatesRound2);
+                storm::storage::SparseMatrix<typename SparseModelType::ValueType> newTransitionMatrixRound2 =
+                    flexibleMatrixRound2.createSparseMatrix(keptRowsRound2, selectedStatesRound2);
+
+                // obtain the reward model for the resulting system
+                std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModelsRound2;
+                if (rewardModelName) {
+                    storm::utility::vector::filterVectorInPlace(actionRewards, keptRowsRound2);
+                    rewardModelsRound2.insert(std::make_pair(*rewardModelName, typename SparseModelType::RewardModelType(boost::none, std::move(actionRewards))));
+                }
+
+                return std::make_shared<SparseModelType>(std::move(newTransitionMatrixRound2), model.getStateLabeling().getSubLabeling(selectedStates).getSubLabeling(selectedStatesRound2),
+                                                         std::move(rewardModelsRound2));
+
+            } else {
+                // We don't care about rewards possibly getting non-constant
+                for (auto state : consideredStates) {
+                    if (sparseMatrix.getRowGroupSize(state) == 1 &&
+                        (!rewardModelName.is_initialized() || storm::utility::isConstant(actionRewards[sparseMatrix.getRowGroupIndices()[state]]))) {
+                        for (auto const& entry : sparseMatrix.getRowGroup(state)) {
+                            if (!storm::utility::isConstant(entry.getValue())) {
+                                selectedStates.set(state, false);
+                                break;
+                            }
+                        }
+                    } else {
+                        selectedStates.set(state, false);
+                        break;
+                    }
+                }
+                // invoke elimination and obtain resulting transition matrix
+                storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleMatrix(sparseMatrix);
+                storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleBackwardTransitions(sparseMatrix.transpose(), true);
+                storm::solver::stateelimination::NondeterministicModelStateEliminator<typename SparseModelType::ValueType> stateEliminator(
+                    flexibleMatrix, flexibleBackwardTransitions, actionRewards);
+                for (auto state : selectedStates) {
+                    stateEliminator.eliminateState(state, true);
+                }
+                selectedStates.complement();
+                auto keptRows = sparseMatrix.getRowFilter(selectedStates);
+                storm::storage::SparseMatrix<typename SparseModelType::ValueType> newTransitionMatrix =
+                    flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
+
+                // obtain the reward model for the resulting system
+                std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
+                if (rewardModelName) {
+                    storm::utility::vector::filterVectorInPlace(actionRewards, keptRows);
+                    rewardModels.insert(std::make_pair(*rewardModelName, typename SparseModelType::RewardModelType(boost::none, std::move(actionRewards))));
+                }
+
+                return std::make_shared<SparseModelType>(std::move(newTransitionMatrix), model.getStateLabeling().getSubLabeling(selectedStates),
+                                                         std::move(rewardModels));
             }
-            
-            // invoke elimination and obtain resulting transition matrix
-            storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleMatrix(sparseMatrix);
-            storm::storage::FlexibleSparseMatrix<typename SparseModelType::ValueType> flexibleBackwardTransitions(sparseMatrix.transpose(), true);
-            storm::solver::stateelimination::NondeterministicModelStateEliminator<typename SparseModelType::ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, actionRewards);
-            for(auto state : selectedStates) {
-                stateEliminator.eliminateState(state, true);
-            }
-            selectedStates.complement();
-            auto keptRows = sparseMatrix.getRowFilter(selectedStates);
-            storm::storage::SparseMatrix<typename  SparseModelType::ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
-            
-            // obtain the reward model for the resulting system
-            std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
-            if(rewardModelName) {
-                storm::utility::vector::filterVectorInPlace(actionRewards, keptRows);
-                rewardModels.insert(std::make_pair(*rewardModelName, typename SparseModelType::RewardModelType(boost::none, std::move(actionRewards))));
-            }
-                
-            return std::make_shared<SparseModelType>(std::move(newTransitionMatrix), model.getStateLabeling().getSubLabeling(selectedStates), std::move(rewardModels));
         }
 
 
