@@ -116,11 +116,11 @@ namespace storm {
             
             return true;
         }
-        
+
         template<typename SparseModelType>
-        bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula) {
+        bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) {
             typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
-            
+
             // Get the prob1 and the maybeStates
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(this->originalModel);
             if(!propositionalChecker.canHandle(formula.getSubformula().asEventuallyFormula().getSubformula())) {
@@ -150,7 +150,7 @@ namespace storm {
                 targetLabel = "_" + targetLabel;
             }
             this->simplifiedModel->getStateLabeling().addLabel(targetLabel, std::move(targetStates));
-            
+
             // obtain the simplified formula for the simplified model
             auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> (targetLabel);
             auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula const>(labelFormula, storm::logic::FormulaContext::Reward);
@@ -164,14 +164,15 @@ namespace storm {
             if (mergerResult.sinkState) {
                 considerForElimination.set(*mergerResult.sinkState, false);
             }
-            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination, rewardModelNameAsVector.front());
-                
+
+            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination, rewardModelNameAsVector.front(), keepRewardsAsConstantAsPossible);
             return true;
         }
         
         template<typename SparseModelType>
-        bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) {
+        bool SparseParametricDtmcSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) {
             STORM_LOG_THROW(formula.getSubformula().asCumulativeRewardFormula().getBound().getBaseExpression().isIntegerLiteralExpression(), storm::exceptions::UnexpectedException, "Expected a cumulative reward formula with integral bound.");
+            STORM_LOG_ASSERT (!keepRewardsAsConstantAsPossible, "Forcing rewards to stay constant not implemented");
 
             typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
 

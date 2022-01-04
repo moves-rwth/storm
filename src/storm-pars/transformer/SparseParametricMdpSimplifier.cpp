@@ -142,9 +142,10 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-        bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula) {
+        bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) {
             typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
-            
+
+            STORM_LOG_ASSERT (!keepRewardsAsConstantAsPossible, "Forcing rewards to stay constant not implemented");
             bool minimizing = formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);
 
             // Get the prob1 and the maybeStates
@@ -215,9 +216,10 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-        bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) {
+        bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) {
             STORM_LOG_THROW(formula.getSubformula().asCumulativeRewardFormula().getBound().getBaseExpression().isIntegerLiteralExpression(), storm::exceptions::UnexpectedException, "Expected a cumulative reward formula with integral bound.");
-                        
+
+            STORM_LOG_ASSERT (!keepRewardsAsConstantAsPossible, "Forcing rewards to stay constant not implemented");
             typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
 
             bool minimizing = formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);

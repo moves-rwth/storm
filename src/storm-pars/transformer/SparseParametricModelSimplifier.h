@@ -25,7 +25,7 @@ namespace storm {
              * Invokes the simplification of the model w.r.t. the given formula.
              * Returns true, iff simplification was successful
              */
-            bool simplify( storm::logic::Formula const& formula);
+            bool simplify( storm::logic::Formula const& formula, bool keepRewardsAsConstantAsPossible = false);
             
             /*
              * Retrieves the simplified model.
@@ -46,8 +46,8 @@ namespace storm {
             virtual bool simplifyForUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula);
             virtual bool simplifyForReachabilityProbabilities(storm::logic::ProbabilityOperatorFormula const& formula);
             virtual bool simplifyForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula);
-            virtual bool simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula);
-            virtual bool simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula);
+            virtual bool simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible);
+            virtual bool simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible);
             
             /*!
              * Eliminates all states that satisfy
@@ -59,7 +59,7 @@ namespace storm {
              * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given).
              * Labelings of eliminated states will be lost
              */
-            static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model,  storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName = boost::none);
+            static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model,  storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName = boost::none, bool keepRewardsAsConstantAsPossible = false);
             
             SparseModelType const& originalModel;
             

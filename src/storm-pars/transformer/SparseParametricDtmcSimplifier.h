@@ -21,8 +21,8 @@ namespace storm {
             // Perform the simplification for the corresponding formula type
             virtual bool simplifyForUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) override;
             virtual bool simplifyForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula) override;
-            virtual bool simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula) override;
-            virtual bool simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) override;
+            virtual bool simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) override;
+            virtual bool simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) override;
             
         };
     }

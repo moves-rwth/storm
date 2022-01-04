@@ -22,7 +22,7 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-        bool SparseParametricModelSimplifier<SparseModelType>::simplify(storm::logic::Formula const& formula) {
+        bool SparseParametricModelSimplifier<SparseModelType>::simplify(storm::logic::Formula const& formula, bool keepRewardsAsConstantAsPossible) {
             // Make sure that there is no old result from a previous call
             simplifiedModel = nullptr;
             simplifiedFormula = nullptr;
@@ -39,9 +39,9 @@ namespace storm {
                 storm::logic::RewardOperatorFormula rewOpForm = formula.asRewardOperatorFormula();
                 STORM_LOG_THROW((rewOpForm.hasRewardModelName() && originalModel.hasRewardModel(rewOpForm.getRewardModelName())) || (!rewOpForm.hasRewardModelName() && originalModel.hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by formula " << formula << " is not available in the given model.");
                 if (rewOpForm.getSubformula().isReachabilityRewardFormula()) {
-                    return simplifyForReachabilityRewards(rewOpForm);
+                    return simplifyForReachabilityRewards(rewOpForm, keepRewardsAsConstantAsPossible);
                 } else if (rewOpForm.getSubformula().isCumulativeRewardFormula()) {
-                    return simplifyForCumulativeRewards(rewOpForm);
+                    return simplifyForCumulativeRewards(rewOpForm, keepRewardsAsConstantAsPossible);
                 }
             }
             // reaching this point means that the provided formula is not supported. Thus, no simplification is possible.
@@ -83,21 +83,21 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-        bool SparseParametricModelSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula) {
+        bool SparseParametricModelSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) {
             // If this method was not overridden by any subclass, simplification is not possible
             STORM_LOG_DEBUG("Simplification not possible because the formula is not supported. Formula: " << formula);
             return false;
         }
         
         template<typename SparseModelType>
-        bool SparseParametricModelSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula) {
+        bool SparseParametricModelSimplifier<SparseModelType>::simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) {
             // If this method was not overridden by any subclass, simplification is not possible
             STORM_LOG_DEBUG("Simplification not possible because the formula is not supported. Formula: " << formula);
             return false;
         }
         
         template<typename SparseModelType>
-         std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType>::eliminateConstantDeterministicStates(SparseModelType const& model, storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName) {
+         std::shared_ptr<SparseModelType> SparseParametricModelSimplifier<SparseModelType>::eliminateConstantDeterministicStates(SparseModelType const& model, storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName, bool keepRewardsAsConstantAsPossible) {
             storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& sparseMatrix = model.getTransitionMatrix();
             
             // get the action-based reward values
@@ -107,7 +107,8 @@ namespace storm {
             } else {
                 actionRewards = std::vector<typename SparseModelType::ValueType>(model.getTransitionMatrix().getRowCount(), storm::utility::zero<typename SparseModelType::ValueType>());
             }
-            
+
+            boost::optional<storage::SparseMatrix<typename SparseModelType::ValueType>> matrix;
             // Find the states that are to be eliminated
             storm::storage::BitVector selectedStates = consideredStates;
             for (auto state : consideredStates) {
@@ -120,6 +121,22 @@ namespace storm {
                     }
                 } else {
                     selectedStates.set(state, false);
+                    break;
+                }
+                if (keepRewardsAsConstantAsPossible) {
+                    STORM_LOG_ASSERT(rewardModelName.is_initialized(), "Keeping rewards constant while not having rewards makes no sense");
+                    if (!matrix.is_initialized()) {
+                        // we join groups, so if there is non-determinism, all transitions are now in the same row
+                        matrix = sparseMatrix.transpose(true);
+                    }
+                    // We don't want rewards to become rational functions, so we check if all ingoing transitions are constant, if this is the case, we can eliminate the state
+                    // Ingoing transitions:
+                    for (auto const& entry : matrix->getRow(state)) {
+                        if (!entry.getValue().isConstant()) {
+                            selectedStates.set(state, false);
+                            break;
+                        }
+                    }
                 }
             }
             
