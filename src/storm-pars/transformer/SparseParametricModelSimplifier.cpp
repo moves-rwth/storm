@@ -113,9 +113,10 @@ namespace storm {
             storm::storage::BitVector selectedStates = consideredStates;
 
             if (keepRewardsAsConstantAsPossible) {
-                // We need two rounds, they only work on deterministic states
+                // We need two rounds
                 // 1) eliminate all states with constant outgoing transitions and constant ingoing transitions
                 // 2) eliminate all states with constant outgoing transitions and reward of 0
+                // Furthermore, we only consider deterministic states
                 STORM_LOG_ASSERT(rewardModelName.is_initialized(), "Keeping rewards constant while not having rewards makes no sense");
                 // Round 1
                 for (auto state : consideredStates) {
