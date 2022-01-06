@@ -7,13 +7,6 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
     RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions) : OrderExtender<ValueType, ConstantType>(model, formula, useAssumptions) {
             this->rewardModel = this->model->getUniqueRewardModel();
-            for (uint_fast64_t state = 0; state < this->numberOfStates; ++state) {
-                if (this->rewardModel.hasStateRewards()) {
-                    STORM_LOG_ASSERT(this->rewardModel.getStateReward(state).isConstant(), "Expecting rewards to be constant");
-                } else if (this->rewardModel.hasStateActionRewards()) {
-                    STORM_LOG_ASSERT(this->rewardModel.getStateActionReward(state).isConstant(), "Expecting rewards to be constant");
-                }
-            }
             this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
         }
 
