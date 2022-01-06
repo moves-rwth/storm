@@ -42,7 +42,11 @@ namespace storm {
                 STORM_LOG_INFO("Reward at this state: " << reward);
 
                 if (reward.isZero()) {
-                    order->addBetween(currentState, *(sortedSuccStates.second.begin()), sortedSuccStates.second.back());
+                    if (order->compare(*(sortedSuccStates.second.begin()),  sortedSuccStates.second.back()) == Order::NodeComparison::SAME) {
+                        order->addToNode(currentState, order->getNode( sortedSuccStates.second.back()));
+                    } else {
+                        order->addBetween(currentState, *(sortedSuccStates.second.begin()), sortedSuccStates.second.back());
+                    }
                 } else {
                     // We are considering rewards, so our current state is always above the lowest one of all our successor states
                     order->addAbove(currentState, order->getNode(sortedSuccStates.second.back()));
@@ -57,23 +61,30 @@ namespace storm {
                                     if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
                                         this->handleAssumption(order, assumptions.begin()->first);
                                     }
+                                } else if (!order->contains(currentState)) {
+                                    order->add(currentState);
                                 }
+                            } else if (!order->contains(currentState)) {
+                                order->add(currentState);
                             }
                         }
                     } else {
                         for (uint_fast64_t succ : successors) {
-                            if (this->addStatesBasedOnMinMax(order, currentState, succ) == Order::NodeComparison::UNKNOWN) {
+                            if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
                                 auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region);
                                 if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
                                     this->handleAssumption(order, assumptions.begin()->first);
                                 }
+                            } else if (!order->contains(currentState)) {
+                                order->add(currentState);
                             }
                         }
                     }
                 }
             }
 
-            STORM_LOG_ASSERT (order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting order to contain state");
+            STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
+            STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
             return std::make_pair(this->numberOfStates, this->numberOfStates);
         }
 

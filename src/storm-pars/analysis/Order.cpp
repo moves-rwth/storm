@@ -135,6 +135,7 @@ namespace storm {
         void Order::addBetween(uint_fast64_t state, Node *above, Node *below) {
             STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin() << std::endl);
 
+            STORM_LOG_ASSERT (above != below, "Cannot add between the same nodes");
             if(above == nullptr){
                 addAbove(state, below);
                 return;
