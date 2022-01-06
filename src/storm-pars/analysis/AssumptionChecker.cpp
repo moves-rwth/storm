@@ -298,9 +298,6 @@ namespace storm {
             }
 
             s.add(exprToCheck);
-            std::cout << "Checking: " << exprToCheck << std::endl;
-            std::cout << "Bounds: " << exprBounds << std::endl;
-            std::cout << "Order: " << exprOrderSucc << std::endl;
             auto smtRes = s.check();
             if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
                 // If there is no thing satisfying the negation we are safe.
