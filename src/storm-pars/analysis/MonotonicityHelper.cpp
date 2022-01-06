@@ -20,6 +20,9 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) : assumptionMaker(model->getTransitionMatrix()) {
             STORM_LOG_ASSERT (model != nullptr, "Expecting model to be provided for monotonicity helper");
+            if (model->hasUniqueRewardModel()) {
+                this->assumptionMaker.setRewardModel(std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(model->getUniqueRewardModel()));
+            }
             this->model = model;
             this->formulas = formulas;
             this->precision = utility::convertNumber<ConstantType>(precision);

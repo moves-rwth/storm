@@ -53,6 +53,8 @@ namespace storm {
              */
             void setSampleValues(std::vector<std::vector<ConstantType>>const & samples);
 
+            void setRewardModel(std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel);
+
            private:
             std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
 
@@ -61,7 +63,6 @@ namespace storm {
             std::shared_ptr<expressions::ExpressionManager> expressionManager;
 
             uint_fast64_t numberOfStates;
-
         };
     }
 }
