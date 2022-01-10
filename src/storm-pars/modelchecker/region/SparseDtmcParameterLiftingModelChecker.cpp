@@ -170,6 +170,8 @@ namespace storm {
             solverFactory->setRequirementsChecked(true);
 
             if (RegionModelChecker<ValueType>::isUseMonotonicitySet()) {
+                STORM_LOG_THROW(!statesWithProbability01.first.empty(), storm::exceptions::InvalidPropertyException, "There should be state with probability of reaching goal of 0");
+                STORM_LOG_THROW(!statesWithProbability01.second.empty(), storm::exceptions::InvalidPropertyException, "There should be state with probability of reaching goal of 1");
                 this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(
                     &statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
             }
