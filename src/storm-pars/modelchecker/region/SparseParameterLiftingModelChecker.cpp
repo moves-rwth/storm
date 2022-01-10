@@ -369,7 +369,7 @@ namespace storm {
                                     if (minimize) {
                                         orderExtender->setMinMaxValues(bounds, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), order);
                                     } else {
-                                        orderExtender->setMinMaxValues(getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), bounds, order);
+                                        orderExtender->setMinMaxValues(getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), bounds, order);
                                     }
                                     boundsWatch.stop();
                                 }

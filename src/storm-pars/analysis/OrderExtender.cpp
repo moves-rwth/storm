@@ -277,8 +277,8 @@ namespace storm {
                 if (!order->contains(state2)) {
                     order->add(state2);
                 }
-                STORM_LOG_ASSERT (order->compare(state1, state2) != Order::BELOW, "Expecting the comparison to NOT be BELOW");
-                STORM_LOG_ASSERT (order->compare(state1, state2) != Order::SAME, "Expecting the comparison to NOT be SAME");
+                STORM_LOG_ASSERT (order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
+                STORM_LOG_ASSERT (order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
                 STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
 
                 order->addRelation(state1, state2);
@@ -292,8 +292,8 @@ namespace storm {
                 if (!order->contains(state2)) {
                     order->add(state2);
                 }
-                STORM_LOG_ASSERT (order->compare(state2, state1) != Order::BELOW, "Expecting the comparison to NOT be BELOW");
-                STORM_LOG_ASSERT (order->compare(state2, state1) != Order::SAME, "Expecting the comparison to NOT be SAME");
+                STORM_LOG_ASSERT (order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
+                STORM_LOG_ASSERT (order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
                 STORM_LOG_INFO("Adding state " << state2 << " above " << state1 << " based on min max values");
                 order->addRelation(state2, state1);
                 return Order::BELOW;

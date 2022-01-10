@@ -239,11 +239,12 @@ namespace storm {
             for (auto& var : manager->getVariables()) {
                 if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
                     // the var is a state
+                    std::string stateName = var.getName();
+                    auto state = std::stoi(stateName.substr(1,stateName.size()-1));
+                    STORM_LOG_ASSERT(state < this->matrix.getRowGroupCount(), "Invalid state number");
                     if (minValues.size() > 0) {
-                        std::string test = var.getName();
-                        auto val = std::stoi(test.substr(1,test.size()-1));
-                        exprBounds = exprBounds && manager->rational(minValues[val]) <= var &&
-                                     var <= manager->rational(maxValues[val]);
+                        exprBounds = exprBounds && manager->rational(minValues[state]) <= var &&
+                                     var <= manager->rational(maxValues[state]);
                     } else if (rewardModel == nullptr) {
                         // Probability property
                         exprBounds = exprBounds && manager->rational(0) <= var &&
@@ -318,12 +319,9 @@ namespace storm {
             if (row1.getNumberOfEntries() == 2 && row2.getNumberOfEntries() == 2) {
                 AssumptionStatus result = validateAssumptionSMTSolverTwoSucc(state1, state2, assumption, order, region, minValues, maxValues);
                 if (result != AssumptionStatus::UNKNOWN) {
-                    std::cout << *assumption << " Special validation smt"<< std::endl;
-
                     return result;
                 }
             }
-            std::cout << *assumption << "Normal validation smt"<< std::endl;
 
             // if the state with number var1 (var2) occurs in the successors of the state with number var2 (var1) we need to add var1 == expr1 (var2 == expr2) to the bounds
             bool addVar1 = false;
@@ -465,16 +463,14 @@ namespace storm {
             for (auto var : variables) {
                 if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
                     // the var is a state
+                    std::string stateName = var.getName();
+                    auto state = std::stoi(stateName.substr(1,stateName.size()-1));
+                    STORM_LOG_ASSERT(state < this->matrix.getRowGroupCount(), "Invalid state number");
                     if (minValues.size() > 0) {
-                        std::string test = var.getName();
-                        auto val = std::stoi(test.substr(1,test.size()-1));
-                        std::cout << "Bound from minmax" << std::endl;
-                        exprBounds = exprBounds && manager->rational(minValues[val]) <= var &&
-                                     var <= manager->rational(maxValues[val]);
+                        exprBounds = exprBounds && manager->rational(minValues[state]) <= var &&
+                                     var <= manager->rational(maxValues[state]);
                     } else if (rewardModel == nullptr) {
                         // Probability property
-                        std::cout << "Bound from probprop" << std::endl;
-
                         exprBounds = exprBounds && manager->rational(0) <= var &&
                                      var <= manager->rational(1);
                     } else {
