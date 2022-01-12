@@ -90,6 +90,9 @@ namespace storm {
             //Reserve space for failed spares
             ++mMaxSpareChildCount;
             mStateVectorSize = DFTStateGenerationInfo::getStateVectorSize(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
+
+            // Set TLE as relevant
+            setRelevantEvents({}, false);
         }
 
         template<typename ValueType>
