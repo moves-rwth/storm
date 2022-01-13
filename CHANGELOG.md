@@ -29,7 +29,11 @@ Version 1.6.x
 - Prism-language: n-ary predicates are supported (e.g., ExactlyOneOf)
 - Added support for continuous integration with Github Actions.
 - `storm-pars`: Exploit monotonicity for computing extremal values and parameter space partitioning.
+- `storm-dft`: Support for analysis of static fault trees via BDDs (Flag `--bdd`). In particular, efficient computation of multiple time bounds was added and support for several importance measures (Argument `--importance`).
+- `storm-dft`: Computation of minimal cut sets for static fault trees (Flag `--mcs`).
+- `storm-dft`: Improved modularisation for DFT by exploiting SFT analysis via BDDs.
 - `storm-dft`: Fixed don't care propagation for shared SPAREs which resulted in wrong results.
+- Developer: Added support for automatic code formatting and corresponding CI workflow.
 
 ## Version 1.6.3 (2020/11)
 - Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.
