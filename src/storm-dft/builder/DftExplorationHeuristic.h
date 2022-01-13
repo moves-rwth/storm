@@ -22,25 +22,16 @@ namespace storm {
         class DFTExplorationHeuristic {
 
         public:
-            explicit DFTExplorationHeuristic(size_t id) : id(id), expand(false), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()), depth(0), probability(storm::utility::one<ValueType>()) {
+            explicit DFTExplorationHeuristic(size_t id) : id(id), expand(false) {
                 // Intentionally left empty
-            }
-
-            DFTExplorationHeuristic(size_t id, DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) : id(id), expand(false), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()), depth(predecessor.depth + 1), probability(storm::utility::zero<ValueType>()) {
-                this->updateHeuristicValues(predecessor, rate, exitRate);
             }
 
             virtual ~DFTExplorationHeuristic() = default;
 
-            void setBounds(ValueType lowerBound, ValueType upperBound) {
-                this->lowerBound = lowerBound;
-                this->upperBound = upperBound;
-            }
+            virtual bool updateHeuristicValues(DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) = 0;
 
-            virtual bool updateHeuristicValues(DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) {
-                STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(exitRate), "Exit rate is 0");
-                probability += predecessor.getProbability() * rate/exitRate;
-                return true;
+            virtual void setBounds(ValueType lowerBound, ValueType upperBound) {
+                STORM_LOG_ASSERT(false, "Not implemented.");
             }
 
             void markExpand() {
@@ -55,20 +46,20 @@ namespace storm {
                 return expand;
             }
 
-            size_t getDepth() const {
-                return depth;
+            virtual size_t getDepth() const {
+                STORM_LOG_ASSERT(false, "Not implemented.");
             }
 
-            ValueType getProbability() const {
-                return probability;
+            virtual ValueType getProbability() const {
+                STORM_LOG_ASSERT(false, "Not implemented.");
             }
 
-            ValueType getLowerBound() const {
-                return lowerBound;
+            virtual ValueType getLowerBound() const {
+                STORM_LOG_ASSERT(false, "Not implemented.");
             }
 
-            ValueType getUpperBound() const {
-                return upperBound;
+            virtual ValueType getUpperBound() const {
+                STORM_LOG_ASSERT(false, "Not implemented.");
             }
 
             virtual double getPriority() const = 0;
@@ -84,21 +75,16 @@ namespace storm {
         protected:
             size_t id;
             bool expand;
-            ValueType lowerBound;
-            ValueType upperBound;
-            size_t depth;
-            ValueType probability;
         };
+
 
         template<typename ValueType>
         class DFTExplorationHeuristicDepth : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicDepth(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
-                // Intentionally left empty
+            DFTExplorationHeuristicDepth(size_t id) : DFTExplorationHeuristic<ValueType>(id), depth(0) {
             }
 
-            DFTExplorationHeuristicDepth(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
-                // Intentionally left empty
+            DFTExplorationHeuristicDepth(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor) : DFTExplorationHeuristic<ValueType>(id), depth(predecessor.getDepth() + 1) {
             }
 
             bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType, ValueType) override {
@@ -107,6 +93,10 @@ namespace storm {
                     return true;
                 }
                 return false;
+            }
+
+            size_t getDepth() const override {
+                return depth;
             }
 
             double getPriority() const override {
@@ -120,34 +110,66 @@ namespace storm {
             bool operator<(DFTExplorationHeuristic<ValueType> const& other) const override {
                 return this->getPriority() > other.getPriority();
             }
+
+       protected:
+            size_t depth;
         };
+
 
         template<typename ValueType>
         class DFTExplorationHeuristicProbability : public DFTExplorationHeuristic<ValueType> {
         public:
-            DFTExplorationHeuristicProbability(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
-                // Intentionally left empty
+            DFTExplorationHeuristicProbability(size_t id) : DFTExplorationHeuristic<ValueType>(id), probability(storm::utility::one<ValueType>()) {
             }
 
-            DFTExplorationHeuristicProbability(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
-                // Intentionally left empty
+            DFTExplorationHeuristicProbability(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id), probability(storm::utility::zero<ValueType>()) {
+                this->updateHeuristicValues(predecessor, rate, exitRate);
+            }
+
+            bool updateHeuristicValues(DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) override {
+                STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(exitRate), "Exit rate is 0");
+                probability += predecessor.getProbability() * rate/exitRate;
+                return true;
+            }
+
+            ValueType getProbability() const override {
+                return probability;
             }
 
             double getPriority() const override;
+
+        protected:
+            ValueType probability;
         };
 
+
         template<typename ValueType>
-        class DFTExplorationHeuristicBoundDifference : public DFTExplorationHeuristic<ValueType> {
+        class DFTExplorationHeuristicBoundDifference : public DFTExplorationHeuristicProbability<ValueType> {
         public:
-            DFTExplorationHeuristicBoundDifference(size_t id) : DFTExplorationHeuristic<ValueType>(id) {
-                // Intentionally left empty
+            DFTExplorationHeuristicBoundDifference(size_t id) : DFTExplorationHeuristicProbability<ValueType>(id), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()) {
             }
 
-            DFTExplorationHeuristicBoundDifference(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristic<ValueType>(id, predecessor, rate, exitRate) {
-                // Intentionally left empty
+            DFTExplorationHeuristicBoundDifference(size_t id, DFTExplorationHeuristic<ValueType> const& predecessor, ValueType rate, ValueType exitRate) : DFTExplorationHeuristicProbability<ValueType>(id, predecessor, rate, exitRate), lowerBound(storm::utility::zero<ValueType>()), upperBound(storm::utility::infinity<ValueType>()) {
+            }
+
+            void setBounds(ValueType lowerBound, ValueType upperBound) override {
+                this->lowerBound = lowerBound;
+                this->upperBound = upperBound;
+            }
+
+            ValueType getLowerBound() const override {
+                return lowerBound;
+            }
+
+            ValueType getUpperBound() const override {
+                return upperBound;
             }
 
             double getPriority() const override;
+
+        protected:
+            ValueType lowerBound;
+            ValueType upperBound;
         };
 
     }
