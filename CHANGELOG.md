@@ -8,7 +8,8 @@ The releases of major and minor versions contain an overview of changes since th
 
 Version 1.6.x
 -------------
-## Version 1.6.4 (20xx/xx)
+
+## Version 1.6.4 (2022/01)
 - Added support for model checking LTL properties in the sparse (and dd-to-sparse) engine. Requires building with Spot or an external LTL to deterministic automaton converter (using option `--ltl2datool`).
 - Added cmake options `STORM_USE_SPOT_SYSTEM` and `STORM_USE_SPOT_SHIPPED` to facilitate building Storm with [Spot](https://spot.lrde.epita.fr/).
 - Improved parsing of formulas in PRISM-style syntax.
