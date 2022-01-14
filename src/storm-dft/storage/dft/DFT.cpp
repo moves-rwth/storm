@@ -1187,6 +1187,45 @@ namespace storm {
             stream << "=========================================\n";
         }
 
+#ifdef STORM_HAVE_CARL
+        std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunction> const& dft) {
+            std::set<storm::RationalFunctionVariable> result;
+            for (size_t i = 0; i < dft.nrElements(); ++i) {
+                std::shared_ptr<storm::storage::DFTElement<storm::RationalFunction> const> element = dft.getElement(i);
+                switch (element->type()) {
+                    case storm::storage::DFTElementType::BE: {
+                        auto be = std::static_pointer_cast<storm::storage::DFTBE<storm::RationalFunction> const>(element);
+                        if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
+                            auto beExp = std::static_pointer_cast<storm::storage::BEExponential<storm::RationalFunction> const>(element);
+                            beExp->activeFailureRate().gatherVariables(result);
+                            beExp->dormancyFactor().gatherVariables(result);
+                        }
+                        break;
+                    }
+                    case storm::storage::DFTElementType::PDEP: {
+                        auto dep = std::static_pointer_cast<storm::storage::DFTDependency<storm::RationalFunction> const>(element);
+                        dep->probability().gatherVariables(result);
+                        break;
+                    }
+                    case storm::storage::DFTElementType::AND:
+                    case storm::storage::DFTElementType::OR:
+                    case storm::storage::DFTElementType::VOT:
+                    case storm::storage::DFTElementType::PAND:
+                    case storm::storage::DFTElementType::POR:
+                    case storm::storage::DFTElementType::SPARE:
+                    case storm::storage::DFTElementType::SEQ:
+                    case storm::storage::DFTElementType::MUTEX:
+                        // Do nothing
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "DFT type '" << element->type() << "' not known.");
+                }
+            }
+            return result;
+        }
+#endif
+
+
         // Explicitly instantiate the class.
         template
         class DFT<double>;
