@@ -98,6 +98,10 @@ These issues seem to have been fixed with cmake version ```3.19.5```. Make sure 
 You can now obtain, configure, and build Storm as outlined [here](build.html#obtaining-the-source-code).
 However, you need to ensure that you invoke universal binaries, in particular `cmake` and `make`, using ```arch -x86_64``` as a prefix.
 
+An easy way to ensure this is to start a new terminal session in x86 mode via
+```console
+arch -x86_64 zsh
+```
 
 {:.alert .alert-info}
 The prefix ```arch -x86_64``` is not necessary for non-universal x86 binaries. However, if you are not sure, you can just apply the prefix to all commands.
