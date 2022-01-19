@@ -23,17 +23,14 @@ Older versions of the CLT are known to cause issues during the installation. The
 
 ### Homebrew
 
-{:.alert .alert-info}
-You can have [seperate homebrew installations](https://docs.brew.sh/Installation#multiple-installations){:target="_blank"} that use default paths for x86 and ARM, respectively. One valid configuration would be to have 
-<ul>
- <li>one homebrew installation for x86 compilation in ```/usr/local/``` and</li>
- <li>one for ARM compilation in ```/opt/homebrew/```.</li>
-</ul>
-
 You need a homebrew installation for x86 compilation, preferably in ```/usr/local/```. This can be done via
 ```console
 $ arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
+
+{:.alert .alert-info}
+You can have [seperate homebrew installations](https://docs.brew.sh/Installation#multiple-installations){:target="_blank"} that use default paths for x86 and ARM, respectively. One valid configuration would be to have one homebrew installation for x86 compilation in ```/usr/local/``` and one for ARM compilation in ```/opt/homebrew/```.
+
 
 We set an alias `brew86` to ensure that the x86 homebrew installation is invoked.
 ```console
