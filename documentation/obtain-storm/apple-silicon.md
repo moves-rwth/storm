@@ -59,7 +59,7 @@ Rosetta 2: true
 you are ready to continue.
 
 ### General Dependencies
-Install the x86 version of the [general dependencies](dependencies.html#general-dependencies) of Storm using homebrew. You need to enable x86 emulation (through Rosetta 2) by prefixing the brew command with `arch -x86_64`, i.e. execute one of the following
+Install the x86 version of the [general dependencies](dependencies.html#general-dependencies) of Storm using homebrew. You need to enable x86 emulation (through Rosetta 2) by prefixing the brew command with `arch -x86_64`, e.g. by using the `brew86` alias:
 
 - Required:
 ``` console
@@ -72,7 +72,7 @@ $ brew86 install cln ginac automake cmake boost gmp glpk hwloc z3 xerces-c
 ```
  
 {:.alert .alert-info}
-Make sure to use the correct x86 installation of Homebrew (e.g. using the `brew86` alias defined above. If the wrong installation is specified or the installations would be done to paths used for ARM binaries, Homebrew will notify you and cancel the installation.
+If the wrong homebrew installation is specified, the installations are done to paths used for ARM binaries which will not work with Storm.
 
 ### CMake
 ARM versions of CMake do often not play nicely with the compilation of dependencies Storm is using, which is why we recommend to use a x86 version of cmake. Check which architecture your cmake executable is targeting by executing:
