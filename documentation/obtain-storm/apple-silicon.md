@@ -11,9 +11,10 @@ Native ARM compilation is work in progress.
 
 ##  Installing Dependencies
 
-### Development Tools
-Similarly to the x86-based preparations, you first need to download either the command line tools (CLT) or Xcode. Installing the CLT can be done using the terminal by executing
+### x86 Emulation and Development Tools
+Install Rosetta 2 and either the command line tools (CLT) or Xcode. Installing Rosetta 2 and the CLT can be done using the terminal by executing
 ``` console
+$ softwareupdate --install-rosetta
 $ xcode-select --install
 ```
 
@@ -21,20 +22,27 @@ $ xcode-select --install
 Older versions of the CLT are known to cause issues during the installation. The following steps have successfully been tested using the CLT in version ```12.4.0.0.1.1610135815```. More recent versions should work as well.
 
 ### Homebrew
-Furthermore, we recommend having [seperate homebrew installations](https://docs.brew.sh/Installation#multiple-installations){:target="_blank"} that use default paths for x86 and ARM, respectively. One valid configuration would be to have 
 
-- one homebrew installation for x86 compilation in ```/usr/local/``` and
-- one for ARM compilation in ```/opt/homebrew/```.
+{:.alert .alert-info}
+You can have [seperate homebrew installations](https://docs.brew.sh/Installation#multiple-installations){:target="_blank"} that use default paths for x86 and ARM, respectively. One valid configuration would be to have 
+<ul>
+ <li>one homebrew installation for x86 compilation in ```/usr/local/``` and</li>
+ <li>one for ARM compilation in ```/opt/homebrew/```.</li>
+</ul>
 
-For installing Storm, you only need a homebrew installation for x86 compilation, preferably in ```/usr/local/```.
-We set an environment variable to ensure that the x86 homebrew installation is invoked.
+You need a homebrew installation for x86 compilation, preferably in ```/usr/local/```. This can be done via
 ```console
-$ export X86_BREW=/usr/local/bin/brew # change path if necessary.
-````
+$ arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+We set an alias `brew86` to ensure that the x86 homebrew installation is invoked.
+```console
+$ alias brew86=arch -x86_64 /usr/local/bin/brew  # change path if necessary.
+```
 
 Confirm that homebrew recognizes CLT _or_ Xcode by querying
 ``` console
-$ $X86_BREW config | grep 'CLT\|Xcode'
+$ brew86 config | grep 'CLT\|Xcode'
 ```
 If the output provides no information for _both_ entries, like so:
 ``` console
@@ -45,7 +53,7 @@ you need to reinstall either suites. Downloading CLT [directly from Apples websi
 
 Finally, check that Rosetta 2 can be detected by Homebrew:
 ``` console
-$ arch -x86_64 /usr/local/bin/brew config | grep 'Rosetta 2'
+$ brew86 config | grep 'Rosetta 2'
 ```
 If you have never run any application using Rosetta 2, a popup will appear asking you to install it. If the above command yields
 ``` console
@@ -58,16 +66,16 @@ Install the x86 version of the [general dependencies](dependencies.html#general-
 
 - Required:
 ``` console
-$ arch -x86_64 $X86_BREW install cln ginac automake cmake boost gmp glpk hwloc
+$ brew86 install cln ginac automake cmake boost gmp glpk hwloc
 ```
 
 - Recommended:
 ``` console
-$ arch -x86_64 $X86_BREW install cln ginac automake cmake boost gmp glpk hwloc z3 xerces-c
+$ brew86 install cln ginac automake cmake boost gmp glpk hwloc z3 xerces-c
 ```
  
 {:.alert .alert-info}
-Make sure to use the correct x86 installation of Homebrew. If the wrong installation is specified or the installations would be done to paths used for ARM binaries, Homebrew will notify you and cancel the installation.
+Make sure to use the correct x86 installation of Homebrew (e.g. using the `brew86` alias defined above. If the wrong installation is specified or the installations would be done to paths used for ARM binaries, Homebrew will notify you and cancel the installation.
 
 ### CMake
 ARM versions of CMake do often not play nicely with the compilation of dependencies Storm is using, which is why we recommend to use a x86 version of cmake. Check which architecture your cmake executable is targeting by executing:
