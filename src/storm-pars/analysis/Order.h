@@ -401,7 +401,7 @@ namespace storm {
              *
              * @param dotOutfile
              */
-            void dotOutputToFile(std::ofstream& dotOutfile) const;
+            void dotOutputToFile(std::ostream &dotOutfile) const;
 
             /*!
              * Creates a copy of the calling Order.

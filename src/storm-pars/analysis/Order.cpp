@@ -643,7 +643,7 @@ namespace storm {
             STORM_PRINT("}" << std::endl);
         }
 
-        void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
+        void Order::dotOutputToFile(std::ostream &dotOutfile) const {
             // Graphviz Output start
             dotOutfile << "Dot Output:" << std::endl << "digraph model {" << std::endl;
 
@@ -773,7 +773,7 @@ namespace storm {
         std::string Order::nodeLabel(Node* n) const {
             if (n == top) return "=)";
             // if topstates is empty, we have a reward formula, so we don't want =) or =(
-            if (n == bottom && top != nullptr && top->states.empty()) return "=(";
+            if (n == bottom && top != nullptr && !top->states.empty()) return "=(";
             auto itr = n->states.begin();
             std::string label = "s" + std::to_string(*itr);
             ++itr;
