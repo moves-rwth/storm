@@ -91,10 +91,10 @@ $ sudo apt-get install build-essential git cmake libboost-all-dev libcln-dev lib
 
 ### CArL
 
-Storm makes use of [CArL](https://github.com/smtrat/carl){:target="_blank"} for the representation of rationals and rational functions. If you don't have it installed on your system, our build script will download and configure it automatically for you. However, under certain circumstances, you might want to install CArL yourself. This may for example be advantageous if you need to repeatedly build Storm from scratch or you want to change its source code. Installing CArL is as easy as
+Storm makes use of [CArL](https://github.com/ths-rwth/carl){:target="_blank"} for the representation of rationals and rational functions. If you don't have it installed on your system, our build script will download and configure it automatically for you. However, under certain circumstances, you might want to install CArL yourself. This may for example be advantageous if you need to repeatedly build Storm from scratch or you want to change its source code. Installing CArL is as easy as
 
 ```console
-$ git clone -b master14 https://github.com/smtrat/carl
+$ git clone -b master14 https://github.com/ths-rwth/carl
 $ cd carl
 $ mkdir build
 $ cd build
