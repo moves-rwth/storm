@@ -530,7 +530,6 @@ namespace storm {
                     }
                     // Calculate difference with result for previous valuation
                     ConstantType diffCenter = previousCenter - valueCenter;
-                    assert (previousCenter == -1 || (diffCenter >= -1 && diffCenter <= 1));
                     if (previousCenter != -1) {
                         assert (previousCenter != -1 && previousCenter != -1);
                         monDecr &= diffCenter > 0 && diffCenter > 0 && diffCenter > 0; // then previous value is larger than the current value from the initial states
@@ -553,7 +552,6 @@ namespace storm {
                 }
             }
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value), std::move(valuation));
-
         }
 
         template<typename SparseModelType, typename ConstantType>
