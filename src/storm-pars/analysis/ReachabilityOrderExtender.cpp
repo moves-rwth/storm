@@ -31,7 +31,7 @@ namespace storm {
         std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder() {
             if (this->initialOrder == nullptr) {
                 STORM_LOG_ASSERT (this->model != nullptr, "Can't get initial order if model is not specified");
-                STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
+                // STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
                 modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*(this->model));
                 storage::BitVector phiStates;
                 storage::BitVector psiStates;
@@ -73,7 +73,7 @@ namespace storm {
                     options.forceTopologicalSort();
                     decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
                 }
-                auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
+                auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(true), firstStates);
                 this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
                 this->buildStateMap();
             }
