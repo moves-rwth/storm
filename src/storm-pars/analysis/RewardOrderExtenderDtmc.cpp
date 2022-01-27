@@ -39,7 +39,7 @@ namespace storm {
                     STORM_LOG_ASSERT(false, "Expecting reward");
                 }
 
-                STORM_LOG_INFO("Reward at this state: " << reward);
+                STORM_LOG_INFO("Reward at this state (" << currentState << "): " << reward);
 
                 if (reward.isZero()) {
                     if (order->compare(*(sortedSuccStates.second.begin()),  sortedSuccStates.second.back()) == Order::NodeComparison::SAME) {
@@ -144,16 +144,37 @@ namespace storm {
             this->continueExtending[this->initialOrder] = true;
             return this->initialOrder;
         }
-// idee werkt hij moet alleen nog de voglende uit de slang ook toevoegen met statestohandle, dus na 3 en 9 ook naar 49 gaan kijken
+
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
             STORM_LOG_INFO("Doing Forward reasoning");
+            STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
+
+
+            if (this->usePLA[order]) {
+                // try to sort stuff with assumptions, done here so the order of succs doesn't matter
+                for (auto& succ : this->getSuccessors(currentState)) {
+                    if (order->compareFast(succ, currentState) == Order::NodeComparison::UNKNOWN) {
+                        auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region, this->minValues[order], this->maxValues[order]);
+                        if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
+                            this->handleAssumption(order, assumptions.begin()->first);
+                            if (!order->contains(succ)) {
+                                for (auto& succSucc : this->getSuccessors(succ)) {
+                                    if (order->contains(succSucc)) {
+                                        order->addStateToHandle(succ);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
             uint_fast64_t s1= sorted.first.first;
             uint_fast64_t s2 = sorted.first.second;
             std::vector<uint_fast64_t>& statesSorted = sorted.second;
-            STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
             if (s1 != this->numberOfStates && s2 != this->numberOfStates) {
                 // Several states could not be ordered

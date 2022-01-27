@@ -272,13 +272,12 @@ namespace storm {
 
         /*** Checking on the order ***/
 
-        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis){
+        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis) {
             return  compare(getNode(state1), getNode(state2), hypothesis);
         }
 
         Order::NodeComparison Order::compareFast(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis) const {
-            auto res = compareFast(getNode(state1), getNode(state2), hypothesis);
-            return res;
+            return compareFast(getNode(state1), getNode(state2), hypothesis);
         }
 
         Order::NodeComparison Order::compareFast(Node* node1, Node* node2, NodeComparison hypothesis) const {
