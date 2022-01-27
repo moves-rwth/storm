@@ -28,7 +28,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool useAssumptions) : monotonicityChecker(matrix) {
+        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool isOptimistic, bool useAssumptions) : monotonicityChecker(matrix) {
             this->matrix = matrix;
             this->model = nullptr;
             this->useAssumptions = useAssumptions;
@@ -56,7 +56,7 @@ namespace storm {
             }
 
             auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
-            this->initialOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
+            this->initialOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
             buildStateMap();
         }
 
@@ -107,8 +107,8 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            return extendOrder(nullptr, region, monRes, nullptr);
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, bool isOptimistic, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+            return extendOrder(getInitialOrder(isOptimistic), region, monRes, nullptr);
         }
 
         template<typename ValueType, typename ConstantType>
@@ -250,14 +250,13 @@ namespace storm {
             STORM_LOG_ASSERT (minValues.find(order) != minValues.end() && maxValues.find(order) != maxValues.end(), "Cannot add states based on min max values if the minmax values are not initialized for this order");
             std::vector<ConstantType> const& mins = minValues.at(order);
             std::vector<ConstantType> const& maxs = maxValues.at(order);
-            if (mins[state1] == maxs[state1]
-                && mins[state2] == maxs[state2]
-                   && mins[state1] == mins[state2]) {
+            if (mins[state1] == maxs[state1] && mins[state2] == maxs[state2] && mins[state1] == mins[state2]) {
                 if (order->contains(state1)) {
                     if (order->contains(state2)) {
                         STORM_LOG_INFO("Merging state " << state1 << " and " << state2 << " based on min max values");
                         order->merge(state1, state2);
-                        STORM_LOG_THROW(!order->isInvalid(), storm::exceptions::UnexpectedException, "Extending the order yields an invalid order, please contact the developers");
+                        STORM_LOG_THROW(!order->isInvalid(), storm::exceptions::UnexpectedException,
+                                        "Extending the order yields an invalid order, please contact the developers");
                     } else {
                         STORM_LOG_INFO("Adding state " << state2 << " to " << state1 << " based on min max values");
 
@@ -269,37 +268,75 @@ namespace storm {
                     order->addToNode(state1, order->getNode(state2));
                 }
                 return Order::SAME;
-            } else if (mins[state1] > maxs[state2]) {
-                // state 1 will always be larger than state2
-                if (!order->contains(state1)) {
-                    order->add(state1);
-                }
-                if (!order->contains(state2)) {
-                    order->add(state2);
-                }
-                STORM_LOG_ASSERT (order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
-                STORM_LOG_ASSERT (order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
-                STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
+            }
 
-                order->addRelation(state1, state2);
+            if (order->isOptimistic()) {
+                if (mins[state1] > mins[state2] && maxs[state1] > maxs[state2]) {
+                    // state 1 will probably be larger than state2
+                    if (!order->contains(state1)) {
+                        order->add(state1);
+                    }
+                    if (!order->contains(state2)) {
+                        order->add(state2);
+                    }
+                    STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
+                    STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
+                    STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
 
-                return Order::ABOVE;
-            } else if (mins[state2] > maxs[state1]) {
-                // state2 will always be larger than state1
-                if (!order->contains(state1)) {
-                    order->add(state1);
+                    order->addRelation(state1, state2);
+
+                    return Order::ABOVE;
+                } else if (mins[state2] > mins[state1] && maxs[state2] > maxs[state1]) {
+                    // state2 will probably be larger than state1
+                    if (!order->contains(state1)) {
+                        order->add(state1);
+                    }
+                    if (!order->contains(state2)) {
+                        order->add(state2);
+                    }
+                    STORM_LOG_ASSERT(order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
+                    STORM_LOG_ASSERT(order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
+                    STORM_LOG_INFO("Adding state " << state2 << " above " << state1 << " based on min max values");
+                    order->addRelation(state2, state1);
+                    return Order::BELOW;
+                } else {
+                    // Couldn't add relation between state1 and state 2 based on min/max values;
+                    return Order::UNKNOWN;
                 }
-                if (!order->contains(state2)) {
-                    order->add(state2);
-                }
-                STORM_LOG_ASSERT (order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
-                STORM_LOG_ASSERT (order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
-                STORM_LOG_INFO("Adding state " << state2 << " above " << state1 << " based on min max values");
-                order->addRelation(state2, state1);
-                return Order::BELOW;
+
             } else {
-                // Couldn't add relation between state1 and state 2 based on min/max values;
-                return Order::UNKNOWN;
+                if (mins[state1] > maxs[state2]) {
+                    // state 1 will always be larger than state2
+                    if (!order->contains(state1)) {
+                        order->add(state1);
+                    }
+                    if (!order->contains(state2)) {
+                        order->add(state2);
+                    }
+                    STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
+                    STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
+                    STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
+
+                    order->addRelation(state1, state2);
+
+                    return Order::ABOVE;
+                } else if (mins[state2] > maxs[state1]) {
+                    // state2 will always be larger than state1
+                    if (!order->contains(state1)) {
+                        order->add(state1);
+                    }
+                    if (!order->contains(state2)) {
+                        order->add(state2);
+                    }
+                    STORM_LOG_ASSERT(order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
+                    STORM_LOG_ASSERT(order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
+                    STORM_LOG_INFO("Adding state " << state2 << " above " << state1 << " based on min max values");
+                    order->addRelation(state2, state1);
+                    return Order::BELOW;
+                } else {
+                    // Couldn't add relation between state1 and state 2 based on min/max values;
+                    return Order::UNKNOWN;
+                }
             }
         }
 

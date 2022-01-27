@@ -28,7 +28,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder() {
+        std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder(bool isOptimistic) {
             if (this->initialOrder == nullptr) {
                 STORM_LOG_ASSERT (this->model != nullptr, "Can't get initial order if model is not specified");
                 // STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
@@ -74,7 +74,7 @@ namespace storm {
                     decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
                 }
                 auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(true), firstStates);
-                this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
+                this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
                 this->buildStateMap();
             }
 

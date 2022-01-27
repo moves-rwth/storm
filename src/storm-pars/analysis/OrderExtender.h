@@ -43,17 +43,19 @@ namespace storm {
              * @param matrix The matrix of the considered model.
              * @param useAssumptions Whether assumptions can be made.
              */
-           OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool useAssumptions = true);
+           OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool isOptimistic, bool useAssumptions = true);
 
             /*!
              * Creates an order based on the given formula.
              *
+             * @param region The region for the order.
+             * @param isOptimistic Boolean if optimistic order or normal order should be build
              * @param monRes The monotonicity result so far.
              * @return A triple with a pointer to the order and two states of which the current place in the order
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced but needed.
              */
-            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, bool isOptimistic, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
 
             /*!
              * Extends the order for the given region.
@@ -125,7 +127,6 @@ namespace storm {
              */
             bool isHope(std::shared_ptr<Order> order);
 
-
             /**
              * Returns all variables occuring at the outgoing transitions of states.
              *
@@ -160,7 +161,7 @@ namespace storm {
             std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(std::vector<uint_fast64_t> const& states, std::shared_ptr<Order> order);
 
         protected:
-            virtual std::shared_ptr<Order> getInitialOrder() = 0;
+            virtual std::shared_ptr<Order> getInitialOrder(bool isOptimistic) = 0;
             void buildStateMap();
             std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortForFowardReasoning(uint_fast64_t currentState, std::shared_ptr<Order> order);
 

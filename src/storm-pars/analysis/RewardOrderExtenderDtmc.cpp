@@ -89,7 +89,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::shared_ptr<Order> RewardOrderExtenderDtmc<ValueType, ConstantType>::getInitialOrder() {
+        std::shared_ptr<Order> RewardOrderExtenderDtmc<ValueType, ConstantType>::getInitialOrder(bool isOptimistic) {
             if (this->initialOrder == nullptr) {
                 assert (this->model != nullptr);
                 STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
@@ -121,7 +121,7 @@ namespace storm {
                 auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
 
                 // Create Order
-                this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
+                this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
                 this->buildStateMap();
                 for (auto& state : this->statesToHandleInitially) {
                     this->initialOrder->addStateToHandle(state);
@@ -241,13 +241,10 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_ASSERT(!(assumption != nullptr && order == nullptr), "Can't deal with assumptions for non-existing order");
+            STORM_LOG_ASSERT(order != nullptr, "Order should be provided");
             STORM_LOG_INFO_COND(assumption == nullptr, "Extending order with assumption: " << *assumption);
             if (assumption != nullptr) {
                 this->handleAssumption(order, assumption);
-            }
-            if (order == nullptr) {
-                order = this->getInitialOrder();
             }
 
             auto currentStateMode = this->getNextState(order, this->numberOfStates, false);

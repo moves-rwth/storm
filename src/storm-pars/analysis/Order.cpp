@@ -7,9 +7,9 @@
 
 namespace storm {
     namespace analysis {
-        Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
+        Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool isOptimistic) {
             STORM_LOG_ASSERT(bottomStates->getNumberOfSetBits() > 0, "Expecting order to contain at least one bottom state");
-            init(numberOfStates, decomposition);
+            init(numberOfStates, decomposition, isOptimistic);
             this->numberOfAddedStates = 0;
             this->onlyInitialOrder = true;
             if(!topStates->empty()){
@@ -39,8 +39,8 @@ namespace storm {
             }
         }
 
-        Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
-            init(numberOfStates, decomposition);
+        Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool isOptimistic) {
+            init(numberOfStates, decomposition, isOptimistic);
 
             this->onlyInitialOrder = true;
             this->sufficientForState.set(topState);
@@ -63,8 +63,9 @@ namespace storm {
             }
         }
 
-        Order::Order(){
+        Order::Order() {
             this->invalid = false;
+            this->optimistic = true;
         }
 
         /*** Modifying the order ***/
@@ -558,6 +559,7 @@ namespace storm {
             copiedOrder->sufficientForState = storm::storage::BitVector(sufficientForState);
             copiedOrder->numberOfAddedStates = this->numberOfAddedStates;
             copiedOrder->doneBuilding = this->doneBuilding;
+            copiedOrder->setOptimistic(this->isOptimistic());
 
             auto seenStates = storm::storage::BitVector(numberOfStates, false);
             //copy nodes
@@ -691,7 +693,8 @@ namespace storm {
 
         /*** Private methods ***/
 
-        void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool doneBuilding) {
+        void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool isOptimistic, bool doneBuilding) {
+            this->optimistic = isOptimistic;
             this->numberOfStates = numberOfStates;
             this->invalid = false;
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
@@ -850,14 +853,23 @@ namespace storm {
             mdpScheduler.get()[state] = action;
         }
 
-        uint64_t Order::getActionAtState(uint_fast64_t state) {
-            assert(mdpScheduler != boost::none);
-            return mdpScheduler.get()[state];
+        uint64_t Order::getActionAtState(uint_fast64_t state) const {
+            STORM_LOG_ASSERT (mdpScheduler != boost::none, "Expecting the mdp scheduler to exist");
+            STORM_LOG_ASSERT (mdpScheduler->size() > state, "Cannot get action for a state which is outside the mdpscheduler range");
+            return mdpScheduler->at(state);
         }
 
-        bool Order::isActionSetAtState(uint_fast64_t state){
-            if (mdpScheduler == boost::none) return false;
-            return mdpScheduler.get()[state] != std::numeric_limits<uint64_t>::max();
+        bool Order::isActionSetAtState(uint_fast64_t state) const {
+            if (mdpScheduler == boost::none || (mdpScheduler->size() > state)) return false;
+            return mdpScheduler->at(state) != std::numeric_limits<uint64_t>::max();
+        }
+
+        bool Order::isOptimistic() const {
+           return optimistic;
+        }
+
+        void Order::setOptimistic(bool isOptimistic) {
+            this->optimistic = isOptimistic;
         }
     }
 }

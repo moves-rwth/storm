@@ -29,7 +29,6 @@ namespace storm {
              */
             RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions = true);
 
-            // TODO: @Jip do we want topstates here, it should be empty?
             /*!
              * Constructs a new RewardOrderExtender.
              *
@@ -43,9 +42,9 @@ namespace storm {
 
             // Override methods from OrderExtender
             std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
-            std::shared_ptr<Order> getInitialOrder() override;
 
            protected:
+            std::shared_ptr<Order> getInitialOrder(bool isOptimistic) override;
             std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
             std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order,storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
 

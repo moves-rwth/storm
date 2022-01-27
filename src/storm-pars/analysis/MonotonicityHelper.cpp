@@ -277,18 +277,18 @@ namespace storm {
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHelper<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             ReachabilityOrderExtenderDtmc<ValueType, ConstantType>* castedPointerReachDtmc = dynamic_cast<ReachabilityOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
             if (castedPointerReachDtmc != nullptr) {
-                return castedPointerReachDtmc->toOrder(region, monRes);
+                return castedPointerReachDtmc->toOrder(region, false, monRes);
             }
             ReachabilityOrderExtenderMdp<ValueType, ConstantType>* castedPointerReachMdp = dynamic_cast<ReachabilityOrderExtenderMdp<ValueType, ConstantType>*>(extender);
             if (castedPointerReachMdp != nullptr) {
-                return castedPointerReachMdp->toOrder(region, monRes);
+                return castedPointerReachMdp->toOrder(region, false, monRes);
             }
             RewardOrderExtenderDtmc<ValueType, ConstantType>* castedPointerRewDtmc = dynamic_cast<RewardOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
             if (castedPointerRewDtmc != nullptr) {
-                return castedPointerRewDtmc->toOrder(region, monRes);
+                return castedPointerRewDtmc->toOrder(region, false, monRes);
             }
             STORM_LOG_ASSERT(false, "Unexpected order extender type");
-            return extender->toOrder(region, monRes);
+            return extender->toOrder(region, false, monRes);
         }
 
         template <typename ValueType, typename ConstantType>
