@@ -53,6 +53,16 @@ namespace storm {
                         *requiresSingleInitialState = true;
                     }
                     return true;
+                } else {
+                    auto lexObjectiveFragment = storm::logic::lexObjective().setHOAPathFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setRewardAccumulationAllowed(true);
+                    auto modelCheckerSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
+                    bool lex = modelCheckerSettings.isUseLex();
+                    if (lex && formula.isInFragment(lexObjectiveFragment)) {
+                        if (requiresSingleInitialState) {
+                            *requiresSingleInitialState = true;
+                        }
+                        return true;
+                    }
                 }
             }
             return false;
