@@ -1,6 +1,4 @@
-//
-// Created by steffi on 27.01.22.
-//
+// Copied and adapted from https://gitlab.lrde.epita.fr/spot
 
 #ifndef STORM_TESTSPOT_H
 #define STORM_TESTSPOT_H

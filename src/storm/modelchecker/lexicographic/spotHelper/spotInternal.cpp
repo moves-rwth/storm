@@ -1,6 +1,5 @@
-//
-// Created by steffi on 27.01.22.
-//
+// Copied and adapted from https://gitlab.lrde.epita.fr/spot
+
 #include "storm/modelchecker/lexicographic/spotHelper/spotInternal.h"
 #include <deque>
 
