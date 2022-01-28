@@ -13,8 +13,8 @@
 #include "spot/twaalgos/translate.hh"
 #include "spot/twaalgos/hoa.hh"
 #include "spot/twaalgos/totgba.hh"
-#include "spot/twaalgos/product.hh"
 #include "spot/twaalgos/dot.hh"
+#include "storm/modelchecker/lexicographic/spotHelper/spotInternal.h"
 #endif
 
 namespace storm{
@@ -56,19 +56,14 @@ namespace storm{
 
             acceptanceConditions.push_back(countAccept);
             countAccept += aut->get_acceptance().top_conjuncts().size();
-            std::ostream objOstream (std::cout.rdbuf());
-            std::cout << "new Automaton\n";
-            spot::print_dot(objOstream, aut, "cak");
-                if (first) {
+            if (first) {
                 // the first automaton does not need to be merged with the product automaton
                 productAutomaton = aut;
                 first = false;
                 continue;
             } else {
                 // create a product of the the new automaton and the already existing product automaton
-                productAutomaton = spot::product(aut,productAutomaton);
-                std::cout << "New Product Automaton\n";
-                spot::print_dot(objOstream, productAutomaton, "cak");
+                productAutomaton = storm::spothelper::product(aut, productAutomaton);
             }
         }
         acceptanceConditions.push_back(countAccept);
