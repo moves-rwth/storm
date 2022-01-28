@@ -15,6 +15,7 @@
 #include "spot/twaalgos/totgba.hh"
 #include "spot/twaalgos/product.hh"
 #include "spot/twaalgos/dot.hh"
+#include "storm/modelchecker/lexicographic/spotHelper/spotInternal.h"
 #endif
 
 namespace storm{
@@ -66,7 +67,8 @@ namespace storm{
                 continue;
             } else {
                 // create a product of the the new automaton and the already existing product automaton
-                productAutomaton = spot::product(aut,productAutomaton);
+                //productAutomaton = spot::product(aut,productAutomaton);
+                productAutomaton = storm::spothelper::product(aut, productAutomaton);
                 std::cout << "New Product Automaton\n";
                 spot::print_dot(objOstream, productAutomaton, "cak");
             }

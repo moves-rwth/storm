@@ -100,7 +100,7 @@ namespace storm {
          * @param model copy of the product-model
          * @return whether the condition can be fulfilled or not
          */
-        bool isAcceptingStreettConditions(storm::storage::MaximalEndComponent const& mec,
+        bool isAcceptingStreettConditions(storm::storage::MaximalEndComponent const& scc,
                                           std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
                                           storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType& model);
 
