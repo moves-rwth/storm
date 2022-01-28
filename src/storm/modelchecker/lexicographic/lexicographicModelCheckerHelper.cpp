@@ -195,7 +195,7 @@ const storm::storage::BitVector& getStreettSet(storm::automata::AcceptanceCondit
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 bool lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::isAcceptingStreettConditions(
     storm::storage::MaximalEndComponent const& scc, std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
-    storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType model) {
+    storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType& model) {
     bool ret = true;
     std::vector<uint_fast64_t> states;
     for (auto const& state : scc) {
