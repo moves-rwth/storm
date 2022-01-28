@@ -38,7 +38,7 @@ namespace storm {
         lexicographicModelCheckerHelper(storm::logic::MultiObjectiveFormula const& formula, storm::storage::SparseMatrix<ValueType> const& transitionMatrix)
             : _transitionMatrix(transitionMatrix), formula(formula){};
 
-        /**
+        /*!
          * Returns the product of a model and the product-automaton of all sub-formulae of the multi-objective formula
          * @param model MDP
          * @param formulaChecker
@@ -47,10 +47,10 @@ namespace storm {
         std::pair<std::shared_ptr<storm::transformer::DAProduct<SparseModelType>>, std::vector<uint>> getCompleteProductModel(
             SparseModelType const& model, CheckFormulaCallback const& formulaChecker);
 
-        /**
+        /*!
          * Given a product of an MDP and a automaton, returns the MECs and their corresponding Lex-Arrays
          * First: get MEC-decomposition
-         * Second: for each MEC, run an algorithm to get Lex-arrays (see Journal-paper)
+         * Second: for each MEC, run an algorithm to get Lex-arrays
          * @param productModel product of MDP and automaton
          * @param acceptanceConditions indication which Streett-pairs belong to which subformula
          * @return MECs, corresp. Lex-arrays
@@ -58,9 +58,9 @@ namespace storm {
         std::pair<storm::storage::MaximalEndComponentDecomposition<ValueType>, std::vector<std::vector<bool>>> getLexArrays(
             std::shared_ptr<storm::transformer::DAProduct<productModelType>> productModel, std::vector<uint>& acceptanceConditions);
 
-        /**
+        /*!
          * Solves the reachability query for a lexicographic objective
-         * In lexicographic order, each objective is solved for reachability, i.e. the MECs where the property can be fullfilled are the goal-states
+         * In lexicographic order, each objective is solved for reachability, i.e. the MECs where the property can be fulfilled are the goal-states
          * The model is restricted to optimal actions concerning this reachability query
          * This is repeated for all objectives.
          * @param mecs MaximalEndcomponents in the product-model
@@ -82,7 +82,7 @@ namespace storm {
         static std::map<std::string, storm::storage::BitVector> computeApSets(
             std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted, CheckFormulaCallback const& formulaChecker);
 
-        /**
+        /*!
          * parses an acceptance condition and returns the set of contained Streett-pairs
          * it is called recursively
          * A Streett-pair is assumed to be an OR-condition (Fin | Inf)
@@ -92,7 +92,7 @@ namespace storm {
         std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> getStreettPairs(
             storm::automata::AcceptanceCondition::acceptance_expr::ptr const& current);
 
-        /**
+        /*!
          * Checks whether a Streett-condition can be fulfilled in an MEC
          * @param mec MEC
          * @param acceptancePairs list of Streett-pairs that create the Streett-condition
@@ -104,7 +104,7 @@ namespace storm {
                                           std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
                                           storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType model);
 
-        /**
+        /*!
          * For a given objective, iterates over the MECs and finds the corresponding sink state
          * @param mecs all MECs in the model
          * @param mecLexArrays the corresponding lex-arrays
@@ -120,14 +120,14 @@ namespace storm {
                                                 uint const& condition, uint const numStates, std::vector<uint_fast64_t> const& compressedToReducedMapping,
                                                 std::map<uint, uint_fast64_t> const& bccToStStateMapping);
 
-        /**
+        /*!
          * Solves the reachability-query for a given set of goal-states and initial-states
          */
         MDPSparseModelCheckingHelperReturnType<ValueType> solveOneReachability(
             std::vector<uint_fast64_t>& newInitalStates, storm::storage::BitVector const& psiStates, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
             SparseModelType const& originalMdp, std::vector<uint_fast64_t> const& compressedToReducedMapping, std::vector<uint_fast64_t> const& oldToNewStateMapping);
 
-        /**
+        /*!
          * Reduces the model to actions that are optimal for the given strategy.
          * @param transitionMatrix current transition matrix
          * @param reachabilityResult result of the reachability query, that contains (i) the reachability value for each state, and (ii) the optimal scheduler
@@ -138,7 +138,7 @@ namespace storm {
                                                 std::vector<uint_fast64_t> const& newInitalStates,
                                                 storm::storage::BitVector const& goodStates);
 
-        /**
+        /*!
          * add a new sink-state for each MEC
          */
         std::pair<storm::storage::SparseMatrix<ValueType>,std::map<uint,uint_fast64_t>> addSinkStates(storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs,
