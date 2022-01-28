@@ -102,7 +102,7 @@ namespace storm {
          */
         bool isAcceptingStreettConditions(storm::storage::MaximalEndComponent const& scc,
                                           std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
-                                          storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType& model);
+                                          storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType model);
 
         /**
          * For a given objective, iterates over the MECs and finds the corresponding sink state
