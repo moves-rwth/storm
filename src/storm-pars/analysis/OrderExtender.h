@@ -68,6 +68,7 @@ namespace storm {
              */
             virtual std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) = 0;
 
+
             /**
              * Initializes the min max values for a given region.
              * Stored for the given order, if the order is provided.
@@ -161,9 +162,17 @@ namespace storm {
             std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(std::vector<uint_fast64_t> const& states, std::shared_ptr<Order> order);
 
         protected:
-            virtual std::shared_ptr<Order> getInitialOrder(bool isOptimistic) = 0;
             void buildStateMap();
             std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortForFowardReasoning(uint_fast64_t currentState, std::shared_ptr<Order> order);
+            /*!
+             * Creates the initial order.
+             * The order is based on either the formula and model or the provided top/bottom states.
+             * These are provided when constructing the OrderExtender.
+             *
+             * @param isOptimistic bool ean whether the order should be optimistic or not
+             * @return pointer to the created order
+             */
+            virtual std::shared_ptr<Order> getInitialOrder(bool isOptimistic) = 0;
 
 
             // Order extension

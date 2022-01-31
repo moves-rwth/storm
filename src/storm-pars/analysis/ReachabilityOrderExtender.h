@@ -15,12 +15,12 @@ namespace storm {
             // Used to call the constructor of OrderExtender
             ReachabilityOrderExtender(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
-           protected:
-                // Override methods from OrderExtender
-                void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) override;
-                std::shared_ptr<Order> getInitialOrder(bool isOptimistic) override;
-                virtual void addInitialStatesMinMax(std::shared_ptr<Order> order) = 0;
 
+           protected:
+                void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) override;
+                virtual void addInitialStatesMinMax(std::shared_ptr<Order> order) = 0;
+                // Override methods from OrderExtender
+                std::shared_ptr<Order> getInitialOrder(bool isOptimistic) override;
                 std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
                 std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
 
