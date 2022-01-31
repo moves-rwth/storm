@@ -77,7 +77,7 @@ namespace storm {
             } else {
                 addBetween(state, top, bottom);
             }
-            addStateToHandle(state);
+//            addStateToHandle(state);
         }
 
         void Order::addAbove(uint_fast64_t state, Node *node) {

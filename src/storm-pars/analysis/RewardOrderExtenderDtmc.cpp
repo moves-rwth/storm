@@ -5,13 +5,13 @@
 namespace storm {
     namespace analysis {
         template<typename ValueType, typename ConstantType>
-    RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions) : OrderExtender<ValueType, ConstantType>(model, formula, useAssumptions) {
+    RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
             this->rewardModel = this->model->getUniqueRewardModel();
             this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
         }
 
         template<typename ValueType, typename ConstantType>
-        RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, storm::models::sparse::StandardRewardModel<ValueType> rewardModel, bool useAssumptions) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, useAssumptions) {
+        RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix, storm::models::sparse::StandardRewardModel<ValueType> rewardModel) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->rewardModel = rewardModel;
             this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
         }
@@ -90,59 +90,67 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::shared_ptr<Order> RewardOrderExtenderDtmc<ValueType, ConstantType>::getInitialOrder(bool isOptimistic) {
-            if (this->initialOrder == nullptr) {
+            if (this->bottomStates == boost::none || this->topStates == boost::none) {
                 assert (this->model != nullptr);
                 STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
                 modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*(this->model));
 
                 // TODO check if eventually formula is true for all initial states?
                 // TODO Add UNTIL formulas
-                assert (this->formula->asRewardOperatorFormula().getSubformula().isEventuallyFormula());
-                storage::BitVector topStates = storage::BitVector(this->numberOfStates, false);
-                storage::BitVector bottomStates = propositionalChecker.check(this->formula->asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-
-                auto& matrix = this->model->getTransitionMatrix();
-                std::vector<uint64_t> firstStates;
-                storm::storage::BitVector subStates (topStates.size(), true);
-
-                for (auto state : bottomStates) {
-                    firstStates.push_back(state);
-                    subStates.set(state, false);
-                }
-
-                this->cyclic = storm::utility::graph::hasCycle(matrix, subStates);
-                storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
-                if (this->cyclic) {
-                    storm::storage::StronglyConnectedComponentDecompositionOptions options;
-                    options.forceTopologicalSort();
-                    decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
-                }
-
-                auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
-
-                // Create Order
-                this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
-                this->buildStateMap();
-                for (auto& state : this->statesToHandleInitially) {
-                    this->initialOrder->addStateToHandle(state);
-                }
+                STORM_LOG_THROW(this->formula->asRewardOperatorFormula().getSubformula().isEventuallyFormula(), storm::exceptions::NotImplementedException, "Expected reward only implemented for eventually formulla");
+                this->topStates = storage::BitVector(this->numberOfStates, false);
+                this->bottomStates = propositionalChecker.check(this->formula->asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
             }
 
-            if (this->minValues.empty() && this->minValuesInit) {
-                this->minValues[this->initialOrder] = this->minValuesInit.get();
+            std::vector<uint64_t> firstStates;
+            storm::storage::BitVector subStates (this->bottomStates->size(), true);
+
+            for (auto state : (this->bottomStates.get())) {
+                firstStates.push_back(state);
+                subStates.set(state, false);
             }
 
-            if (this->maxValues.empty() && this->maxValuesInit) {
-                this->maxValues[this->initialOrder] = this->maxValuesInit.get();
+            this->cyclic = storm::utility::graph::hasCycle(this->matrix, subStates);
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
+            if (this->cyclic) {
+                storm::storage::StronglyConnectedComponentDecompositionOptions options;
+                options.forceTopologicalSort();
+                decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);
             }
 
-            if (!this->minValues.empty() && !this->maxValues.empty()) {
-                this->usePLA[this->initialOrder] = true;
+            auto statesSorted = storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates);
+
+            // Create Order
+            std::shared_ptr<Order> order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
+            this->buildStateMap();
+            for (auto& state : this->statesToHandleInitially) {
+                order->addStateToHandle(state);
+            }
+
+            if (this->minValuesInit) {
+                this->minValues[order] = this->minValuesInit.get();
+            }
+
+            if (this->maxValuesInit) {
+                this->maxValues[order] = this->maxValuesInit.get();
+            }
+
+            if (this->minValuesInit && this->maxValuesInit) {
+                this->usePLA[order] = true;
+
+                for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
+                    auto& successors = this->getSuccessors(i);
+                    for (uint_fast64_t succ1 = 0; succ1 <successors.size(); ++succ1) {
+                        for (uint_fast64_t succ2 = succ1 + 1; succ2 < successors.size(); ++succ2) {
+                            this->addStatesBasedOnMinMax(order, succ1, succ2);
+                        }
+                    }
+                }
             } else {
-                this->usePLA[this->initialOrder] = false;
+                this->usePLA[order] = false;
             }
-            this->continueExtending[this->initialOrder] = true;
-            return this->initialOrder;
+            this->continueExtending[order] = true;
+            return order;
         }
 
         template<typename ValueType, typename ConstantType>
@@ -154,7 +162,7 @@ namespace storm {
             if (this->usePLA[order]) {
                 // try to sort stuff with assumptions, done here so the order of succs doesn't matter
                 for (auto& succ : this->getSuccessors(currentState)) {
-                    if (order->compareFast(succ, currentState) == Order::NodeComparison::UNKNOWN) {
+                    if (order->compare(succ, currentState) == Order::NodeComparison::UNKNOWN) {
                         auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region, this->minValues[order], this->maxValues[order]);
                         if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
                             this->handleAssumption(order, assumptions.begin()->first);

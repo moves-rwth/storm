@@ -4,12 +4,12 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType, typename ConstantType>
-    ReachabilityOrderExtenderDtmc<ValueType, ConstantType>::ReachabilityOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions) : ReachabilityOrderExtender<ValueType, ConstantType>(model, formula, useAssumptions) {
+    ReachabilityOrderExtenderDtmc<ValueType, ConstantType>::ReachabilityOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : ReachabilityOrderExtender<ValueType, ConstantType>(model, formula) {
             // intentionally left empty
         }
 
         template<typename ValueType, typename ConstantType>
-        ReachabilityOrderExtenderDtmc<ValueType, ConstantType>::ReachabilityOrderExtenderDtmc(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool useAssumptions) : ReachabilityOrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, useAssumptions) {
+        ReachabilityOrderExtenderDtmc<ValueType, ConstantType>::ReachabilityOrderExtenderDtmc(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : ReachabilityOrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             // intentionally left empty
         }
 

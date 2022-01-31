@@ -380,22 +380,20 @@ namespace storm {
                             if (minValues[itr2->getColumn()] > maxValues[itr1->getColumn()]) {
                                 if (!order->contains(itr1->getColumn())) {
                                     order->add(itr1->getColumn());
-                                    order->addStateToHandle(itr1->getColumn());
                                 }
                                 if (!order->contains(itr2->getColumn())) {
                                     order->add(itr2->getColumn());
-                                    order->addStateToHandle(itr2->getColumn());
                                 }
                                 order->addRelation(itr2->getColumn(), itr1->getColumn());
                                 comp = Order::NodeComparison::BELOW;
                             } else if (minValues[itr1->getColumn()] > maxValues[itr2->getColumn()]) {
                                 if (!order->contains(itr1->getColumn())) {
                                     order->add(itr1->getColumn());
-                                    order->addStateToHandle(itr1->getColumn());
+//                                    order->addStateToHandle(itr1->getColumn());
                                 }
                                 if (!order->contains(itr2->getColumn())) {
                                     order->add(itr2->getColumn());
-                                    order->addStateToHandle(itr2->getColumn());
+//                                    order->addStateToHandle(itr2->getColumn());
                                 }
                                 order->addRelation(itr1->getColumn(), itr2->getColumn());
                                 comp = Order::NodeComparison::ABOVE;
@@ -503,7 +501,7 @@ namespace storm {
             // when this is not the case, the order is invalid
             // however, it could be that the sat solver didn't finish in time, in that case we just continue.
             if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
-                STORM_LOG_ASSERT(false, "The order of successors plus the bounds should be satisfiable, probably the order is invalid");
+                STORM_LOG_ASSERT(order->isOptimistic(), "The order of successors plus the bounds should be satisfiable, probably the order is invalid");
                 return AssumptionStatus::INVALID;
             }
 

@@ -62,9 +62,9 @@ namespace storm {
 
             if (model->isOfType(models::ModelType::Dtmc)) {
                 if (formulas[0]->isProbabilityOperatorFormula()) {
-                    this->extender = new analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0], false);
+                    this->extender = new analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
                 } else if (formulas[0]->isRewardOperatorFormula()) {
-                    this->extender = new analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0], false);
+                    this->extender = new analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
 
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for property" << formulas[0]);
@@ -72,7 +72,7 @@ namespace storm {
             } else if (model->isOfType(models::ModelType::Mdp)) {
                 // TODO: @Jip this doesn't work for min props
                 // TODO where to get prMax? Based on what was given via --prop?
-                this->extender = new analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true, false);
+                this->extender = new analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for model type: ");
             }

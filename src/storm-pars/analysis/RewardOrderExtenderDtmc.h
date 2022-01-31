@@ -27,7 +27,7 @@ namespace storm {
              * @param model The model for which the order should be extended.
              * @param formula The considered formula.
              */
-            RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions = true);
+            RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula);
 
             /*!
              * Constructs a new RewardOrderExtender.
@@ -36,7 +36,7 @@ namespace storm {
              * @param bottomStates The bottom states of the reward order.
              * @param matrix The matrix of the considered model.
              */
-            RewardOrderExtenderDtmc(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, storm::models::sparse::StandardRewardModel<ValueType> rewardModel, bool useAssumptions = true);
+            RewardOrderExtenderDtmc(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix, storm::models::sparse::StandardRewardModel<ValueType> rewardModel);
 
 
 

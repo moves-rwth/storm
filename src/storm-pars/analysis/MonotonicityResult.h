@@ -91,6 +91,8 @@ namespace storm {
              */
             bool isAllMonotonicity() const;
 
+            int getNumberOfMonotoneParameters() const;
+
             /*!
              * Sets the done bool to the given truth value
              */

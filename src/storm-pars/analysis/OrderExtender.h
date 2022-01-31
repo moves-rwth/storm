@@ -33,7 +33,7 @@ namespace storm {
             * @param region The Region of the model's parameters.
             * @param useAssumptions Whether assumptions can be made.
             */
-           OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions = true);
+           OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula);
 
             /*!
              * Constructs a new OrderExtender.
@@ -43,7 +43,7 @@ namespace storm {
              * @param matrix The matrix of the considered model.
              * @param useAssumptions Whether assumptions can be made.
              */
-           OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool isOptimistic, bool useAssumptions = true);
+           OrderExtender(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
             /*!
              * Creates an order based on the given formula.
@@ -177,7 +177,8 @@ namespace storm {
             std::pair<uint_fast64_t, bool> getNextState(std::shared_ptr<Order> order, uint_fast64_t stateNumber, bool done);
 
             // Order properties
-            std::shared_ptr<Order> initialOrder = nullptr;
+            boost::optional<storm::storage::BitVector> topStates;
+            boost::optional<storm::storage::BitVector> bottomStates;
             boost::optional<std::vector<ConstantType>> minValuesInit;
             boost::optional<std::vector<ConstantType>> maxValuesInit;
             std::map<std::shared_ptr<Order>, bool> usePLA;

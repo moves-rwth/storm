@@ -10,10 +10,10 @@ namespace storm {
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
 
             // Used to call the constructor of OrderExtender
-            ReachabilityOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions = true);
+            ReachabilityOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula);
 
             // Used to call the constructor of OrderExtender
-            ReachabilityOrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool useAssumptions = true);
+            ReachabilityOrderExtender(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
            protected:
                 // Override methods from OrderExtender

@@ -364,6 +364,14 @@ namespace storm {
         }
 
         template <typename ParametricType>
+        std::shared_ptr<storm::analysis::Order>
+        RegionModelChecker<ParametricType>::getInitialOrder(storm::storage::ParameterRegion<ParametricType> region, bool isOptimistic) {
+            STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
+            // Does nothing
+            return nullptr;
+        }
+
+        template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
             STORM_LOG_WARN("Setting constant entries fo local monotonicity result not implemented");
             // Does nothing

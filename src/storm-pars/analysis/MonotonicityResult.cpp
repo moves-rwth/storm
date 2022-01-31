@@ -176,6 +176,20 @@ namespace storm {
         }
 
         template <typename VariableType>
+        int MonotonicityResult<VariableType>::getNumberOfMonotoneParameters() const {
+            if (!this->somewhereMonotonicity) {
+                return 0;
+            }
+            auto count = 0;
+            for (auto& var : this->doneVariables) {
+                if (this->monotonicityResult.at(var) != Monotonicity::Not && this->monotonicityResult.at(var) != Monotonicity::Unknown){
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        template <typename VariableType>
         std::shared_ptr<MonotonicityResult<VariableType>> MonotonicityResult<VariableType>::copy() const {
             std::shared_ptr<MonotonicityResult<VariableType>> copy = std::make_shared<MonotonicityResult<VariableType>>();
             copy->monotonicityResult = std::map<VariableType, Monotonicity>(monotonicityResult);

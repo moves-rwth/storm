@@ -84,6 +84,8 @@ namespace storm {
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
 
+            virtual std::shared_ptr<storm::analysis::Order> getInitialOrder(storm::storage::ParameterRegion<ParametricType> region, bool isOptimistic);
+
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
             bool isUseMonotonicitySet() const;
