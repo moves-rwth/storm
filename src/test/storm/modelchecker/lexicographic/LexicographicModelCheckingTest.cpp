@@ -1,24 +1,10 @@
 #include "test/storm_gtest.h"
 #include "storm-config.h"
-
 #include "storm/environment/Environment.h"
-#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/models/sparse/Mdp.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/api/storm.h"
 #include "storm-parsers/api/storm-parsers.h"
-#include "test/storm_gtest.h"
-#include "storm-config.h"
-
-
-
-
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
 
