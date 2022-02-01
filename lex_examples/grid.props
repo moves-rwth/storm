@@ -1,5 +1,0 @@
-"lex1" : multi(Pmax=? [GF one & GF two & GF three & GF four], Pmax=? [G ! danger], Pmax=? [GF charge]);
-"lex2" : multi(Pmax=? [G ! danger], Pmax=? [GF one & GF two & GF three & GF four], Pmax=? [GF charge]);
-"visit" : Pmax=? [GF one & GF two & GF three & GF four];
-"safe" : Pmax=? [G ! danger];
-"charge" :  Pmax=? [GF charge];

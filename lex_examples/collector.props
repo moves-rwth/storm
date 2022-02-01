@@ -1,2 +1,0 @@
-// The collector shall stay in the z=0 states, and also fulfill x=2 (which is impossible)
-"global": multi(Pmax=? [G z=0], Pmax=? [F x=2], Pmax=? [GF y=1], Pmax=? [GF y=2])
