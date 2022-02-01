@@ -310,18 +310,9 @@ namespace storm {
         
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
-            auto modelCheckerSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
-            bool lex = modelCheckerSettings.isUseLex();
-            if (lex) {
-                auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
-                auto ret = lexicographic::check(env, this->getModel(), checkTask, formulaChecker);
-                std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret.values)));
-                return result;
-            } else {
-                return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula());
-            }
+            return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula());
         }
-        
+
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException, "Computing quantiles is only supported for the initial states of a model.");
@@ -337,7 +328,16 @@ namespace storm {
                 return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<ValueType>(initialState, std::move(res)));
             }
         }
-        
+
+        template<class SparseMdpModelType>
+        std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkLexObjectiveFormula(
+            const Environment& env, const CheckTask<storm::logic::MultiObjectiveFormula, ValueType>& checkTask) {
+            auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+            auto ret = lexicographic::check(env, this->getModel(), checkTask, formulaChecker);
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret.values)));
+            return result;
+        }
+
         template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>>;
 
 #ifdef STORM_HAVE_CARL

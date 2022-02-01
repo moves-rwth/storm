@@ -244,7 +244,10 @@ namespace storm {
             } else if (stateFormula.isGameFormula()) {
                 return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
             } else if (stateFormula.isMultiObjectiveFormula()){
-                return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+                auto modelCheckerSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
+                bool lex = modelCheckerSettings.isUseLex();
+                if (lex) return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+                else return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
             } else if (stateFormula.isQuantileFormula()){
                 return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));
             }
@@ -361,8 +364,12 @@ namespace storm {
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
-            //STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
-            STORM_PRINT("Here I would probably start my code?"<<std::endl);
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkLexObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
         }
 
         template<typename ModelType>
