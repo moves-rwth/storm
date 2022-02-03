@@ -64,6 +64,7 @@ class SolveGoal {
     SolveGoal(OptimizationDirection d);
     SolveGoal(OptimizationDirection d, storm::logic::ComparisonType boundComparisonType, ValueType const& boundThreshold,
               storm::storage::BitVector const& relevantValues);
+    SolveGoal(OptimizationDirection d, storm::storage::BitVector const& relevantValues);
 
     /*!
      * Flips the comparison type, the direction, and computes the new threshold as 1 - old threshold.

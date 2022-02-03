@@ -2556,6 +2556,33 @@ std::size_t SparseMatrix<ValueType>::hash() const {
     return result;
 }
 
+template<typename ValueType>
+void SparseMatrix<ValueType>::removeIncomingTransitions(SparseMatrix::index_type state) {
+    typename storm::storage::SparseMatrix<ValueType>::index_type endGroups;
+    typename storm::storage::SparseMatrix<ValueType>::index_type endRows;
+
+    // Iterate over all row groups.
+    for (typename storm::storage::SparseMatrix<ValueType>::index_type group = 0; group < rowGroupIndices->size(); ++group) {
+        auto trueRowGroupIndices = rowGroupIndices.get();
+        endGroups = group < rowGroupIndices->size()-1 ? trueRowGroupIndices[group+1] : rowIndications.size();
+        // Iterate over all rows in a row group
+        for (typename storm::storage::SparseMatrix<ValueType>::index_type i = trueRowGroupIndices[group]; i < endGroups; ++i) {
+            endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
+            // Print the actual row.
+            bool remove = false;
+            for (typename storm::storage::SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
+                if (columnsAndValues[pos].getColumn()==state) remove = true;
+            }
+            if (remove) {
+                for (typename storm::storage::SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
+                    columnsAndValues[pos].setValue(ValueType(0));
+                }
+            }
+        }
+    }
+    this->dropZeroEntries();
+}
+
 #ifdef STORM_HAVE_CARL
 std::set<storm::RationalFunctionVariable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix) {
     std::set<storm::RationalFunctionVariable> result;

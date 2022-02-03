@@ -176,6 +176,48 @@ FragmentSpecification multiObjective() {
     return multiObjective;
 }
 
+FragmentSpecification lexObjective() {
+    FragmentSpecification lexObjective = propositional();
+
+    lexObjective.setMultiObjectiveFormulasAllowed(true);
+    lexObjective.setMultiObjectiveFormulaAtTopLevelRequired(true);
+    lexObjective.setNestedMultiObjectiveFormulasAllowed(false);
+    lexObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(true);
+    lexObjective.setNestedOperatorsInsideMultiObjectiveFormulasAllowed(false);
+    lexObjective.setProbabilityOperatorsAllowed(true);
+    lexObjective.setUntilFormulasAllowed(true);
+    lexObjective.setGloballyFormulasAllowed(true);
+    lexObjective.setReachabilityProbabilityFormulasAllowed(true);
+    lexObjective.setRewardOperatorsAllowed(true);
+    lexObjective.setReachabilityRewardFormulasAllowed(true);
+    lexObjective.setTotalRewardFormulasAllowed(true);
+    lexObjective.setBoundedUntilFormulasAllowed(true);
+    lexObjective.setStepBoundedUntilFormulasAllowed(true);
+    lexObjective.setTimeBoundedUntilFormulasAllowed(true);
+    lexObjective.setLongRunAverageOperatorsAllowed(true);
+    lexObjective.setLongRunAverageRewardFormulasAllowed(true);
+
+    lexObjective.setCumulativeRewardFormulasAllowed(true);
+    lexObjective.setInstantaneousFormulasAllowed(true);
+    lexObjective.setStepBoundedCumulativeRewardFormulasAllowed(true);
+    lexObjective.setTimeBoundedCumulativeRewardFormulasAllowed(true);
+    lexObjective.setBinaryBooleanPathFormulasAllowed(true);
+    lexObjective.setUnaryBooleanPathFormulasAllowed(true);
+    lexObjective.setNestedOperatorsAllowed(true);
+    lexObjective.setNestedPathFormulasAllowed(true);
+    lexObjective.setHOAPathFormulasAllowed(true);
+    lexObjective.setProbabilityOperatorsAllowed(true);
+    lexObjective.setGloballyFormulasAllowed(true);
+    lexObjective.setReachabilityProbabilityFormulasAllowed(true);
+    lexObjective.setNextFormulasAllowed(true);
+    lexObjective.setUntilFormulasAllowed(true);
+    lexObjective.setBoundedUntilFormulasAllowed(true);
+    lexObjective.setStepBoundedUntilFormulasAllowed(true);
+    lexObjective.setTimeBoundedUntilFormulasAllowed(true);
+
+    return lexObjective;
+}
+
 FragmentSpecification quantiles() {
     FragmentSpecification quantiles = propositional();
 
@@ -196,7 +238,7 @@ FragmentSpecification quantiles() {
 
     return quantiles;
 }
-
+        
 FragmentSpecification::FragmentSpecification() {
     probabilityOperator = false;
     rewardOperator = false;
@@ -259,7 +301,7 @@ FragmentSpecification::FragmentSpecification() {
 
     rewardAccumulation = false;
 }
-
+        
 FragmentSpecification FragmentSpecification::copy() const {
     return FragmentSpecification(*this);
 }
@@ -304,7 +346,7 @@ bool FragmentSpecification::areMultiObjectiveFormulasAllowed() const {
     return multiObjectiveFormula;
 }
 
-FragmentSpecification& FragmentSpecification::setMultiObjectiveFormulasAllowed(bool newValue) {
+FragmentSpecification& FragmentSpecification::setMultiObjectiveFormulasAllowed( bool newValue) {
     this->multiObjectiveFormula = newValue;
     return *this;
 }
@@ -313,7 +355,7 @@ bool FragmentSpecification::areQuantileFormulasAllowed() const {
     return quantileFormula;
 }
 
-FragmentSpecification& FragmentSpecification::setQuantileFormulasAllowed(bool newValue) {
+FragmentSpecification& FragmentSpecification::setQuantileFormulasAllowed( bool newValue) {
     this->quantileFormula = newValue;
     return *this;
 }

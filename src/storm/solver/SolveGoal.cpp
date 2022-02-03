@@ -1,9 +1,9 @@
 #include "storm/solver/SolveGoal.h"
 
-#include <memory>
+#include  <memory>
 
-#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/modelchecker/CheckTask.h"
 
@@ -38,6 +38,11 @@ template<typename ValueType>
 SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType boundComparisonType, ValueType const& boundThreshold,
                                 storm::storage::BitVector const& relevantValues)
     : optimizationDirection(optimizationDirection), comparisonType(boundComparisonType), threshold(boundThreshold), relevantValueVector(relevantValues) {
+    // Intentionally left empty.
+}
+
+template<typename ValueType>
+SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection, storm::storage::BitVector const& relevantValues) : optimizationDirection(optimizationDirection), relevantValueVector(relevantValues) {
     // Intentionally left empty.
 }
 
