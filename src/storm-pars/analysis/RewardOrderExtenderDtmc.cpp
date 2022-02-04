@@ -8,12 +8,30 @@ namespace storm {
     RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
             this->rewardModel = this->model->getUniqueRewardModel();
             this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
+            for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
+                if (rewardModel.hasStateActionRewards()) {
+                    STORM_LOG_ASSERT(rewardModel.getStateActionReward(i).isConstant(), "Expecting rewards to be constant");
+                } else if (rewardModel.hasStateRewards()) {
+                    STORM_LOG_ASSERT(rewardModel.getStateReward(i).isConstant(), "Expecting rewards to be constant");
+                } else {
+                    STORM_LOG_ASSERT(false, "Expecting reward");
+                }
+            }
         }
 
         template<typename ValueType, typename ConstantType>
         RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix, storm::models::sparse::StandardRewardModel<ValueType> rewardModel) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->rewardModel = rewardModel;
-            this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
+            this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
+                if (rewardModel.hasStateActionRewards()) {
+                    STORM_LOG_ASSERT(rewardModel.getStateActionReward(i).isConstant(), "Expecting rewards to be constant");
+                } else if (rewardModel.hasStateRewards()) {
+                    STORM_LOG_ASSERT(rewardModel.getStateReward(i).isConstant(), "Expecting rewards to be constant");
+                } else {
+                    STORM_LOG_ASSERT(false, "Expecting reward");
+                }
+            }
+
         }
 
         template<typename ValueType, typename ConstantType>
