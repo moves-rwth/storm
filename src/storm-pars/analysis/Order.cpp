@@ -187,6 +187,10 @@ namespace storm {
         }
 
         void Order::addRelationNodes(Order::Node *above, Order::Node * below, bool allowMerge) {
+            if (above == below) {
+                this->invalid = true;
+                return;
+            }
             if (compare(above, below) == BELOW) {
                 if (allowMerge) {
                     mergeNodes(above, below);
