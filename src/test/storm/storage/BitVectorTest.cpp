@@ -594,3 +594,10 @@ TEST(BitVectorTest, Expand) {
     ASSERT_EQ(128ul, vector2.size());
     ASSERT_EQ(2ul, vector2.getNumberOfSetBits());
 }
+
+TEST(BitVectorTest, Assignment) {
+    storm::storage::BitVector v1(10), v2(100000);
+    v1 = v2;
+    v1.set(9999);
+    ASSERT_TRUE(v1.get(9999));
+}
