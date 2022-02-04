@@ -238,7 +238,7 @@ FragmentSpecification quantiles() {
 
     return quantiles;
 }
-        
+
 FragmentSpecification::FragmentSpecification() {
     probabilityOperator = false;
     rewardOperator = false;
@@ -301,7 +301,7 @@ FragmentSpecification::FragmentSpecification() {
 
     rewardAccumulation = false;
 }
-        
+
 FragmentSpecification FragmentSpecification::copy() const {
     return FragmentSpecification(*this);
 }
@@ -346,7 +346,7 @@ bool FragmentSpecification::areMultiObjectiveFormulasAllowed() const {
     return multiObjectiveFormula;
 }
 
-FragmentSpecification& FragmentSpecification::setMultiObjectiveFormulasAllowed( bool newValue) {
+FragmentSpecification& FragmentSpecification::setMultiObjectiveFormulasAllowed(bool newValue) {
     this->multiObjectiveFormula = newValue;
     return *this;
 }
@@ -355,7 +355,7 @@ bool FragmentSpecification::areQuantileFormulasAllowed() const {
     return quantileFormula;
 }
 
-FragmentSpecification& FragmentSpecification::setQuantileFormulasAllowed( bool newValue) {
+FragmentSpecification& FragmentSpecification::setQuantileFormulasAllowed(bool newValue) {
     this->quantileFormula = newValue;
     return *this;
 }

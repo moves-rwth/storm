@@ -124,7 +124,8 @@ class AbstractModelChecker {
     virtual std::unique_ptr<CheckResult> checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask);
 
     // The methods to check lexicographic LTL formulae
-    virtual std::unique_ptr<CheckResult> checkLexObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask);
+    virtual std::unique_ptr<CheckResult> checkLexObjectiveFormula(Environment const& env,
+                                                                  CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask);
 
     // The methods to check game formulas.
     virtual std::unique_ptr<CheckResult> checkGameFormula(Environment const& env, CheckTask<storm::logic::GameFormula, ValueType> const& checkTask);

@@ -18,10 +18,10 @@
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
-#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
-#include "storm/settings/modules/ModelCheckerSettings.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/QuantileHelper.h"
@@ -418,7 +418,9 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
 template<class SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkLexObjectiveFormula(
     const Environment& env, const CheckTask<storm::logic::MultiObjectiveFormula, ValueType>& checkTask) {
-    auto formulaChecker = [&] (storm::logic::Formula const& formula) { return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector(); };
+    auto formulaChecker = [&](storm::logic::Formula const& formula) {
+        return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    };
     auto ret = lexicographic::check(env, this->getModel(), checkTask, formulaChecker);
     std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret.values)));
     return result;

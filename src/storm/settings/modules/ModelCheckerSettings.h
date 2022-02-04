@@ -55,4 +55,3 @@ class ModelCheckerSettings : public ModuleSettings {
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
