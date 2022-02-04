@@ -817,7 +817,6 @@ namespace storm {
                                                                                      << "..." << std::endl);
                     }
                     storm::utility::Stopwatch watch(true);
-                    // TODO: hier eventueel checkExtremalValue van maken
                     if (regionSettings.isExtremumSuggestionSet()) {
                         ValueType suggestion = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumSuggestion());
                         if (storm::api::checkExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, suggestion, monotonicitySettings, generateSplitEstimates, monotoneParameters)) {
