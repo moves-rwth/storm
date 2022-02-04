@@ -235,7 +235,7 @@ namespace storm {
                     std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
                     if(model->hasUniqueRewardModel()) {
                         storm::utility::vector::filterVectorInPlace(actionRewards, keptRows);
-                        rewardModels.insert(std::make_pair(model->getUniqueRewardModelName(), storm::models::sparse::StandardRewardModel<ValueType>(boost::none, std::move(actionRewards)));
+                        rewardModels.insert(std::make_pair(model->getUniqueRewardModelName(), storm::models::sparse::StandardRewardModel<ValueType>(boost::none, std::move(actionRewards))));
                     }
 
                     result= std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates), std::move(rewardModels));
