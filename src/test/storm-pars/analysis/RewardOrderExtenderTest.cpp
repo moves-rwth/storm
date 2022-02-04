@@ -50,10 +50,11 @@ TEST(RewardOrderExtenderTest, RewardTest1) {
 
     // Extender
     auto extender = RewardOrderExtenderDtmcTester(model, formulas[0]);
-    auto order = std::get<0>(extender.toOrder(region, false));
+    auto order = extender.getInitialOrder(false);
     ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
 
     extender.initializeMinMaxValues(region, order);
+    order->toDotOutput();
 
     // Note: Due to Storm's parsing, state 6 is s5 in the model and state 5 is s6 in the model.
     // Everything else is the same
@@ -73,7 +74,6 @@ TEST(RewardOrderExtenderTest, RewardTest1) {
 
     // s3 check
     extender.extendByBackwardReasoning(order, region, 3);
-
     EXPECT_EQ(order->compare(3, 5), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(3, 6), storm::analysis::Order::NodeComparison::UNKNOWN);
     EXPECT_EQ(order->compare(3, 7), storm::analysis::Order::NodeComparison::ABOVE);
@@ -90,6 +90,7 @@ TEST(RewardOrderExtenderTest, RewardTest1) {
 
     // s1 check
     extender.extendByBackwardReasoning(order, region, 1);
+    order->toDotOutput();
     EXPECT_EQ(order->compare(1, 2), storm::analysis::Order::NodeComparison::UNKNOWN);
     EXPECT_EQ(order->compare(1, 3), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(1, 4), storm::analysis::Order::NodeComparison::UNKNOWN);
@@ -124,7 +125,7 @@ TEST(RewardOrderExtenderTest, RewardTest2) {
 
     // Extender
     auto extender = RewardOrderExtenderDtmcTester(model, formulas[0]);
-    auto order = std::get<0>(extender.toOrder(region, false));
+    auto order = extender.getInitialOrder(false);
     ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
 
     extender.initializeMinMaxValues(region, order);
@@ -198,7 +199,7 @@ TEST(RewardOrderExtenderTest, RewardTest3) {
 
     // Extender
     auto extender = RewardOrderExtenderDtmcTester(model, formulas[0]);
-    auto order = std::get<0>(extender.toOrder(region, false));
+    auto order = extender.getInitialOrder(false);
     extender.initializeMinMaxValues(region, order);
     extender.extendOrder(order, region);
 
@@ -244,7 +245,7 @@ TEST(RewardOrderExtenderTest, RewardTest4) {
 
     // Extender
     auto extender = RewardOrderExtenderDtmcTester(model, formulas[0]);
-    auto order = std::get<0>(extender.toOrder(region, false));
+    auto order = extender.getInitialOrder(false);
     extender.initializeMinMaxValues(region, order);
     extender.extendOrder(order, region);
 
