@@ -43,7 +43,7 @@
 
         // Create the region
         auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
-        auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.00001, 0.00001 <= pL <= 0.99999", vars);
+        auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.99999, 0.00001 <= pL <= 0.99999", vars);
 
         auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(dtmc->getTransitionMatrix());
         auto expressionManager = std::make_shared<storm::expressions::ExpressionManager>(storm::expressions::ExpressionManager());
