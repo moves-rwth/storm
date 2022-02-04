@@ -92,14 +92,14 @@ namespace storm {
 
         /*** Public methods ***/
         template <typename ValueType, typename ConstantType>
-        std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, bool usePLA, std::string dotOutfileName) {
-            if (usePLA) {
+        std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, bool isOptimistic, bool useBoundsFromPLA, std::string dotOutfileName) {
+            if (useBoundsFromPLA) {
                 storm::utility::Stopwatch plaWatch(true);
                 this->extender->initializeMinMaxValues(region);
                 plaWatch.stop();
                 STORM_PRINT(std::endl << "Total time for pla checking: " << plaWatch << "." << std::endl << std::endl);
             }
-            createOrder();
+            createOrder(isOptimistic);
 
             //output of results
             for (auto itr : monResults) {
@@ -179,13 +179,13 @@ namespace storm {
 
         /*** Private methods ***/
         template <typename ValueType, typename ConstantType>
-        void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
+        void MonotonicityHelper<ValueType, ConstantType>::createOrder(bool isOptimistic) {
             // Transform to Orders
             std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> criticalTuple;
 
             // Create initial order
             auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
-            criticalTuple = toOrder(region, monRes);
+            criticalTuple = toOrder(region, isOptimistic, monRes);
             // Continue based on not (yet) sorted states
             std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
 
@@ -274,21 +274,21 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHelper<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHelper<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, bool isOptimistic, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             ReachabilityOrderExtenderDtmc<ValueType, ConstantType>* castedPointerReachDtmc = dynamic_cast<ReachabilityOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
             if (castedPointerReachDtmc != nullptr) {
-                return castedPointerReachDtmc->toOrder(region, false, monRes);
+                return castedPointerReachDtmc->toOrder(region, isOptimistic, monRes);
             }
             ReachabilityOrderExtenderMdp<ValueType, ConstantType>* castedPointerReachMdp = dynamic_cast<ReachabilityOrderExtenderMdp<ValueType, ConstantType>*>(extender);
             if (castedPointerReachMdp != nullptr) {
-                return castedPointerReachMdp->toOrder(region, false, monRes);
+                return castedPointerReachMdp->toOrder(region, isOptimistic, monRes);
             }
             RewardOrderExtenderDtmc<ValueType, ConstantType>* castedPointerRewDtmc = dynamic_cast<RewardOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
             if (castedPointerRewDtmc != nullptr) {
-                return castedPointerRewDtmc->toOrder(region, false, monRes);
+                return castedPointerRewDtmc->toOrder(region, isOptimistic, monRes);
             }
             STORM_LOG_ASSERT(false, "Unexpected order extender type");
-            return extender->toOrder(region, false, monRes);
+            return extender->toOrder(region, isOptimistic, monRes);
         }
 
         template <typename ValueType, typename ConstantType>

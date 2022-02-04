@@ -17,6 +17,7 @@ namespace storm {
             const std::string MonotonicitySettings::monotonicityAnalysisShortName = "ma";
             const std::string MonotonicitySettings::usePLABounds = "useBounds";
             const std::string MonotonicitySettings::sccElimination = "eliminateSCCs";
+            const std::string MonotonicitySettings::optimisticOrder = "optimistic";
             const std::string MonotonicitySettings::samplesMonotonicityAnalysis = "samples";
 
             const std::string MonotonicitySettings::dotOutput = "dotOutput";
@@ -31,6 +32,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").setIsAdvanced().setShortName(monotonicityAnalysisShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, usePLABounds, true, "Sets whether pla bounds should be used for monotonicity analysis").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, true, "Sets whether SCCs should be eliminated in the monotonicity analysis").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, optimisticOrder, true, "Sets whether the created order should be optimistic or not").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesMonotonicityAnalysis, true, "Sets whether monotonicity should be checked on samples").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(samplesMonotonicityAnalysis, "The number of samples taken in monotonicity-analysis can be given, default is 0, no samples").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, monSolution, true, "Sets whether monotonicity should be checked on solution function or reachability order").setIsAdvanced().setShortName(monSolutionShortName).build());
@@ -52,6 +54,11 @@ namespace storm {
 
             bool MonotonicitySettings::isSccEliminationSet() const {
                 return this->getOption(sccElimination).getHasOptionBeenSet();
+            }
+
+            bool MonotonicitySettings::isOptimisticOrderSet() const {
+                STORM_LOG_ASSERT(this->isUsePLABoundsSet(), "Cannot create an optimistic order without pla bounds");
+                return this->getOption(optimisticOrder).getHasOptionBeenSet();
             }
 
             bool MonotonicitySettings::isDotOutputSet() const {

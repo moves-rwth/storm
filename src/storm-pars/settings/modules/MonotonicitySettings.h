@@ -29,6 +29,7 @@ namespace storm {
                  * Retrieves whether SCCs in the monotonicity analysis should be eliminated.
                  */
                 bool isSccEliminationSet() const;
+                bool isOptimisticOrderSet() const;
 
                 /*!
                  * Retrieves whether a dot output of the reachability orders should be given
@@ -66,8 +67,6 @@ namespace storm {
                  */
                 uint64_t getMonotonicityThreshold() const;
 
-
-
                 const static std::string moduleName;
 
             private:
@@ -75,6 +74,7 @@ namespace storm {
                 const static std::string monotonicityAnalysisShortName;
                 const static std::string usePLABounds;
                 const static std::string sccElimination;
+                const static std::string optimisticOrder;
                 const static std::string samplesMonotonicityAnalysis;
                 const static std::string dotOutput;
                 static const std::string exportMonotonicityName;
