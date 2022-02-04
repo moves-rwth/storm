@@ -249,8 +249,6 @@ namespace storm {
             storm::utility::Stopwatch boundsWatch(false);
             auto numberOfPLACallsBounds = 0;
             boost::optional<ConstantType> initBound;
-            std::shared_ptr<analysis::Order> optimisticOrder = nullptr;
-            std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> optimisticMonRes = nullptr;
             if (useMonotonicity) {
                 if (this->isUseBoundsSet()) {
                     numberOfPLACallsBounds++;
@@ -264,13 +262,10 @@ namespace storm {
                     }
                     orderExtender->setMinMaxValues(minBound, maxBound);
                 }
-                auto order = this->getInitialOrder(region, false);
-                optimisticOrder = this->getInitialOrder(region, true);
+                auto order = this->getInitialOrder(region, this->isUseOptimisticOrderSet());
                 auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
-                optimisticMonRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(optimisticOrder->getNumberOfStates()));
                 storm::utility::Stopwatch monotonicityWatch(true);
                 this->extendLocalMonotonicityResult(region, order, monRes);
-                this->extendLocalMonotonicityResult(region, optimisticOrder, optimisticMonRes);
                 monotonicityWatch.stop();
                 STORM_LOG_INFO(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
 
@@ -283,10 +278,8 @@ namespace storm {
             boost::optional<ConstantType> value;
             Valuation valuation;
             if (!initialValue) {
-                auto init = getGoodInitialPoint(env, region, dir, optimisticMonRes);
-                STORM_LOG_INFO("Number of optimistic monotone parameters:" << optimisticMonRes->getGlobalMonotonicityResult()->getNumberOfMonotoneParameters());
+                auto init = getGoodInitialPoint(env, region, dir, regionQueue.top().localMonRes);
                 STORM_LOG_INFO("Number of definitely monotone parameters:" << regionQueue.top().localMonRes->getGlobalMonotonicityResult()->getNumberOfMonotoneParameters());
-                STORM_LOG_INFO("Number of sufficient states optimistic:" << optimisticOrder->getNumberOfSufficientStates());
                 STORM_LOG_INFO("Number of sufficient states:" << regionQueue.top().order->getNumberOfSufficientStates());
                 value = storm::utility::convertNumber<ConstantType>(init.first);
                 valuation = std::move(init.second);
@@ -383,7 +376,7 @@ namespace storm {
                                     boundsWatch.stop();
                                 }
                                 // Now split the region
-                                if (useMonotonicity) {
+                                if (useMonotonicity && !order->isOptimistic()) {
                                     this->splitSmart(currRegion, newRegions,
                                                      *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
                                 } else if (this->isRegionSplitEstimateSupported()) {

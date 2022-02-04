@@ -378,18 +378,23 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() const{
+        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() const {
             return useMonotonicity;
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isUseBoundsSet() {
+        bool RegionModelChecker<ParametricType>::isUseBoundsSet() const {
             return useBounds;
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isOnlyGlobalSet() {
+        bool RegionModelChecker<ParametricType>::isOnlyGlobalSet() const {
             return useOnlyGlobal;
+        }
+
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::isUseOptimisticOrderSet() const {
+            return useOptimisticOrder;
         }
 
         template <typename ParametricType>
@@ -407,6 +412,12 @@ namespace storm {
         void RegionModelChecker<ParametricType>::setUseOnlyGlobal(bool global) {
             assert (!global || useMonotonicity);
             this->useOnlyGlobal = global;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setUseOptimisticOrder(bool optimistic){
+            assert (useMonotonicity && useBounds);
+            this->useOptimisticOrder = optimistic;
         }
 
         template <typename ParametricType>

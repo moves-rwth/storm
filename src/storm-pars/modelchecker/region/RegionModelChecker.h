@@ -89,12 +89,14 @@ namespace storm {
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
             bool isUseMonotonicitySet() const;
-            bool isUseBoundsSet();
-            bool isOnlyGlobalSet();
+            bool isUseBoundsSet() const;
+            bool isOnlyGlobalSet() const;
+            bool isUseOptimisticOrderSet() const;
 
             void setUseMonotonicity(bool monotonicity = true);
             void setUseBounds(bool bounds = true);
             void setUseOnlyGlobal(bool global = true);
+            void setUseOptimisticOrder(bool optimistic = true);
 
             void setMonotoneParameters(std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneParameters);
 
@@ -102,6 +104,7 @@ namespace storm {
             bool useMonotonicity = false;
             bool useOnlyGlobal = false;
             bool useBounds = false;
+            bool useOptimisticOrder = false;
 
         protected:
 

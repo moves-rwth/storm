@@ -798,10 +798,18 @@ namespace storm {
                 STORM_LOG_THROW(property.getRawFormula()->hasQuantitativeResult(), storm::exceptions::NotSupportedException, "Extremum cannot be computed for this type of property.");
                 for (auto const& region : regions) {
                     if (monotonicitySettings.useMonotonicity) {
-                        STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
-                                                                                     << *property.getRawFormula()
-                                                                                     << " within region " << region
-                                                                                     << " and using monotonicity ..." << std::endl);
+                        if (monotonicitySettings.useOptimisticOrder) {
+                            STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
+                                                                                         << *property.getRawFormula()
+                                                                                         << " within region " << region
+                                                                                         << " and using optimistic monotonicity ..." << std::endl);
+                        } else {
+                            STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
+                                                                                         << *property.getRawFormula()
+                                                                                         << " within region " << region
+                                                                                         << " and using monotonicity ..." << std::endl);
+                        }
+
                     } else {
                         STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
                                                                                      << *property.getRawFormula()
@@ -1050,7 +1058,7 @@ namespace storm {
                                     model->as<storm::models::sparse::Model<ValueType>>()));
                 }
 // TODO: is onlyGlobalSet was used here
-                verifyParametricModel<DdType, ValueType>(model, input, regions, samples, storm::api::MonotonicitySetting(parSettings.isUseMonotonicitySet(), false, monSettings.isUsePLABoundsSet()), monotoneParameters, monSettings.getMonotonicityThreshold(), omittedParameters);
+                verifyParametricModel<DdType, ValueType>(model, input, regions, samples, storm::api::MonotonicitySetting(parSettings.isUseMonotonicitySet(), false, monSettings.isUsePLABoundsSet(), monSettings.isOptimisticOrderSet()), monotoneParameters, monSettings.getMonotonicityThreshold(), omittedParameters);
             }
         }
 
