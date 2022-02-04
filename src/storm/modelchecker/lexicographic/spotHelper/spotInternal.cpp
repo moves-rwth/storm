@@ -1,13 +1,12 @@
 // Copied and adapted from https://gitlab.lrde.epita.fr/spot
 
+#ifdef STORM_HAVE_SPOT
 #include "storm/modelchecker/lexicographic/spotHelper/spotInternal.h"
 #include <deque>
 
 namespace storm {
 namespace spothelper {
-unsigned int testFunc() {
-    return 10;
-}
+
 typedef std::pair<unsigned, unsigned> product_state;
 
 struct product_state_hash {
@@ -118,3 +117,4 @@ twa_graph_ptr product(const const_twa_graph_ptr& left, const const_twa_graph_ptr
 }
 }
 }
+#endif
