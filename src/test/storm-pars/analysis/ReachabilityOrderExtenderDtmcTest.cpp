@@ -131,7 +131,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_matrix) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
     auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.toOrder(region, false);
     auto order = std::get<0>(res);
     EXPECT_EQ(order->getNumberOfAddedStates(), model->getNumberOfStates());
     EXPECT_TRUE(order->getDoneBuilding());
@@ -175,7 +175,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_without_bisimulation_on_matrix) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
     auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.toOrder(region, false);
     auto order = std::get<0>(res);
     EXPECT_FALSE(order->getNumberOfAddedStates() == order->getNumberOfStates());
     EXPECT_FALSE(order->getDoneBuilding());
@@ -249,7 +249,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_matrix) {
 
     // OrderExtender
     auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.toOrder(region, false);
     auto order = std::get<0>(res);
     EXPECT_EQ(model->getNumberOfStates(), order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
@@ -335,7 +335,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_matrix) {
 
     // OrderExtender
     auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.toOrder(region, false);
     auto order = std::get<0>(res);
     EXPECT_EQ( model->getNumberOfStates(), order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
@@ -385,6 +385,6 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
 
     // OrderExtender
     auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
-    auto res = extender.extendOrder(nullptr, region);
+    auto res = extender.toOrder(region, false);
     EXPECT_TRUE(std::get<0>(res)->getDoneBuilding());
 }
