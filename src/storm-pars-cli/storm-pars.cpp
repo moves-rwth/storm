@@ -235,8 +235,7 @@ namespace storm {
                     std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
                     if(model->hasUniqueRewardModel()) {
                         storm::utility::vector::filterVectorInPlace(actionRewards, keptRows);
-                        storm::models::sparse::StandardRewardModel<ValueType> rewardModel((boost::none, std::move(actionRewards)));
-                        rewardModels.insert(std::make_pair(model->getUniqueRewardModelName(), rewardModel));
+                        rewardModels.insert(std::make_pair(model->getUniqueRewardModelName(), storm::models::sparse::StandardRewardModel<ValueType>(boost::none, std::move(actionRewards)));
                     }
 
                     result= std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates), std::move(rewardModels));
@@ -727,9 +726,9 @@ namespace storm {
             if (!monSettings.isMonSolutionSet()) {
                 auto monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(model, formulas, regions, monSettings.getNumberOfSamples(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision(), monSettings.isDotOutputSet());
                 if (monSettings.isExportMonotonicitySet()) {
-                    monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
+                    monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isOptimisticOrderSet(), monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
                 } else {
-                    monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
+                    monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.isOptimisticOrderSet(), monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
                 }
             } else {
                 // Checking monotonicity based on solution function
