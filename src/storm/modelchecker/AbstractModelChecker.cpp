@@ -35,8 +35,8 @@
 #include <boost/core/typeinfo.hpp>
 #include <storm/models/symbolic/MarkovAutomaton.h>
 
-#include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
 
 namespace storm {
 namespace modelchecker {
@@ -252,7 +252,8 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeReachabilit
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(Environment const& env,
+                                                                                CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
     storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
     if (stateFormula.isBinaryBooleanStateFormula()) {
         return this->checkBinaryBooleanStateFormula(env, checkTask.substituteFormula(stateFormula.asBinaryBooleanStateFormula()));
@@ -276,12 +277,14 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
         return this->checkBooleanLiteralFormula(env, checkTask.substituteFormula(stateFormula.asBooleanLiteralFormula()));
     } else if (stateFormula.isGameFormula()) {
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
-    } else if (stateFormula.isMultiObjectiveFormula()){
+    } else if (stateFormula.isMultiObjectiveFormula()) {
         auto modelCheckerSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
         bool lex = modelCheckerSettings.isUseLex();
-        if (lex) return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
-        else return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
-    } else if (stateFormula.isQuantileFormula()){
+        if (lex)
+            return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+        else
+            return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+    } else if (stateFormula.isQuantileFormula()) {
         return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));
     }
     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");

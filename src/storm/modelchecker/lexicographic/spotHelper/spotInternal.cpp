@@ -11,9 +11,10 @@ unsigned int testFunc() {
 typedef std::pair<unsigned, unsigned> product_state;
 
 struct product_state_hash {
-    size_t operator()(product_state s) const noexcept { return wang32_hash(s.first ^ wang32_hash(s.second)); }
+    size_t operator()(product_state s) const noexcept {
+        return wang32_hash(s.first ^ wang32_hash(s.second));
+    }
 };
-
 
 template<typename T>
 static void product_main(const const_twa_graph_ptr& left, const const_twa_graph_ptr& right, unsigned left_state, unsigned right_state, twa_graph_ptr& res,
@@ -52,7 +53,8 @@ static void product_main(const const_twa_graph_ptr& left, const const_twa_graph_
         for (auto& l : left->out(top.first.first))
             for (auto& r : right->out(top.first.second)) {
                 auto cond = l.cond & r.cond;
-                if (cond == bddfalse) continue;
+                if (cond == bddfalse)
+                    continue;
                 auto dst = new_state(l.dst, r.dst);
                 res->new_edge(top.second, dst, cond, merge_acc(l.acc, r.acc));
                 // If right is deterministic, we can abort immediately!
@@ -64,7 +66,8 @@ enum acc_op { and_acc, or_acc, xor_acc, xnor_acc };
 
 static twa_graph_ptr product_aux(const const_twa_graph_ptr& left, const const_twa_graph_ptr& right, unsigned left_state, unsigned right_state, acc_op aop,
                                  const output_aborter* aborter) {
-    if (SPOT_UNLIKELY(!(left->is_existential() && right->is_existential()))) throw std::runtime_error("product() does not support alternating automata");
+    if (SPOT_UNLIKELY(!(left->is_existential() && right->is_existential())))
+        throw std::runtime_error("product() does not support alternating automata");
     if (SPOT_UNLIKELY(left->get_dict() != right->get_dict()))
         throw std::runtime_error(
             "product: left and right automata should "
@@ -97,12 +100,18 @@ static twa_graph_ptr product_aux(const const_twa_graph_ptr& left, const const_tw
     } else {
         // The product of two non-deterministic automata could be
         // deterministic.  Likewise for non-complete automata.
-        if (left->prop_universal() && right->prop_universal()) res->prop_universal(true);
-        if (left->prop_complete() && right->prop_complete()) res->prop_complete(true);
-        if (left->prop_stutter_invariant() && right->prop_stutter_invariant()) res->prop_stutter_invariant(true);
-        if (left->prop_inherently_weak() && right->prop_inherently_weak()) res->prop_inherently_weak(true);
-        if (left->prop_weak() && right->prop_weak()) res->prop_weak(true);
-        if (left->prop_terminal() && right->prop_terminal()) res->prop_terminal(true);
+        if (left->prop_universal() && right->prop_universal())
+            res->prop_universal(true);
+        if (left->prop_complete() && right->prop_complete())
+            res->prop_complete(true);
+        if (left->prop_stutter_invariant() && right->prop_stutter_invariant())
+            res->prop_stutter_invariant(true);
+        if (left->prop_inherently_weak() && right->prop_inherently_weak())
+            res->prop_inherently_weak(true);
+        if (left->prop_weak() && right->prop_weak())
+            res->prop_weak(true);
+        if (left->prop_terminal() && right->prop_terminal())
+            res->prop_terminal(true);
         res->prop_state_acc(left->prop_state_acc() && right->prop_state_acc());
     }
     return res;
@@ -116,5 +125,5 @@ twa_graph_ptr product(const const_twa_graph_ptr& left, const const_twa_graph_ptr
 twa_graph_ptr product(const const_twa_graph_ptr& left, const const_twa_graph_ptr& right, const output_aborter* aborter) {
     return product(left, right, left->get_init_state_number(), right->get_init_state_number(), aborter);
 }
-}
-}
+}  // namespace spothelper
+}  // namespace storm

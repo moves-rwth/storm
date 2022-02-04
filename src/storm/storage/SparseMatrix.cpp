@@ -2564,14 +2564,15 @@ void SparseMatrix<ValueType>::removeIncomingTransitions(SparseMatrix::index_type
     // Iterate over all row groups.
     for (typename storm::storage::SparseMatrix<ValueType>::index_type group = 0; group < rowGroupIndices->size(); ++group) {
         auto trueRowGroupIndices = rowGroupIndices.get();
-        endGroups = group < rowGroupIndices->size()-1 ? trueRowGroupIndices[group+1] : rowIndications.size();
+        endGroups = group < rowGroupIndices->size() - 1 ? trueRowGroupIndices[group + 1] : rowIndications.size();
         // Iterate over all rows in a row group
         for (typename storm::storage::SparseMatrix<ValueType>::index_type i = trueRowGroupIndices[group]; i < endGroups; ++i) {
-            endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
+            endRows = i < rowIndications.size() - 1 ? rowIndications[i + 1] : columnsAndValues.size();
             // Print the actual row.
             bool remove = false;
             for (typename storm::storage::SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
-                if (columnsAndValues[pos].getColumn()==state) remove = true;
+                if (columnsAndValues[pos].getColumn() == state)
+                    remove = true;
             }
             if (remove) {
                 for (typename storm::storage::SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {

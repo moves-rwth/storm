@@ -34,8 +34,8 @@ ModelCheckerSettings::ModelCheckerSettings() : ModuleSettings(moduleName) {
 }
 
 bool ModelCheckerSettings::isFilterRewZeroSet() const {
-        return this->getOption(filterRewZeroOptionName).getHasOptionBeenSet();
-    }
+    return this->getOption(filterRewZeroOptionName).getHasOptionBeenSet();
+}
 
 bool ModelCheckerSettings::isLtl2daToolSet() const {
     return this->getOption(ltl2daToolOptionName).getHasOptionBeenSet();
@@ -49,6 +49,6 @@ bool ModelCheckerSettings::isUseLex() const {
     return this->getOption(useLexicographicModelChecking).getHasOptionBeenSet();
 }
 
-} // namespace modules
-} // namespace settings
-} // namespace storm
+}  // namespace modules
+}  // namespace settings
+}  // namespace storm

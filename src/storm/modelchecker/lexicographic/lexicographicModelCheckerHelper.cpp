@@ -121,7 +121,8 @@ MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelpe
     // eliminate the MECs (collapse them into one state)
     storm::transformer::EndComponentEliminator<ValueType> eliminator = storm::transformer::EndComponentEliminator<ValueType>();
     storm::storage::BitVector eliminationStates(newMatrixWithNewStates.getColumnCount(), true);
-    auto compressionResult = eliminator.transform(newMatrixWithNewStates, mecs, eliminationStates, storm::storage::BitVector(eliminationStates.size(), false), true);
+    auto compressionResult =
+        eliminator.transform(newMatrixWithNewStates, mecs, eliminationStates, storm::storage::BitVector(eliminationStates.size(), false), true);
 
     STORM_LOG_ASSERT(!mecLexArray.empty(), "No MECs in the model!");
     std::vector<std::vector<bool>> bccLexArrayCurrent(mecLexArray);
@@ -134,8 +135,8 @@ MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelpe
     // check reachability for each condition and restrict the model to optimal choices
     for (uint condition = 0; condition < mecLexArray[0].size(); condition++) {
         // get the goal-states for this objective (i.e. the st-states of the MECs where the objective can be fulfilled
-        storm::storage::BitVector psiStates = getGoodStates(mecs, bccLexArrayCurrent, compressionResult.oldToNewStateMapping, condition, transitionMatrix.getColumnCount(),
-                                                            compressedToReducedMapping, bccToStStateMapping);
+        storm::storage::BitVector psiStates = getGoodStates(mecs, bccLexArrayCurrent, compressionResult.oldToNewStateMapping, condition,
+                                                            transitionMatrix.getColumnCount(), compressedToReducedMapping, bccToStStateMapping);
         if (psiStates.getNumberOfSetBits() == 0) {
             retResult.values[condition] = 0;
             continue;
@@ -143,7 +144,8 @@ MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelpe
 
         // solve the reachability query for this set of goal states
         std::vector<uint_fast64_t> newInitalStates;
-        auto res = solveOneReachability(newInitalStates, psiStates, transitionMatrix, originalMdp, compressedToReducedMapping, compressionResult.oldToNewStateMapping);
+        auto res =
+            solveOneReachability(newInitalStates, psiStates, transitionMatrix, originalMdp, compressedToReducedMapping, compressionResult.oldToNewStateMapping);
         if (newInitalStates.empty()) {
             retResult.values[condition] = 0;
             continue;
@@ -307,7 +309,6 @@ typename lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondetermin
 lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::getReducedSubsystem(
     storm::storage::SparseMatrix<ValueType> const& transitionMatrix, MDPSparseModelCheckingHelperReturnType<ValueType> const& reachabilityResult,
     std::vector<uint_fast64_t> const& newInitalStates, storm::storage::BitVector const& goodStates) {
-
     std::vector<std::vector<uint>> optimalActions;
     std::vector<uint_fast64_t> keptActions;
     std::vector<uint_fast64_t> const& rowGroupIndices = transitionMatrix.getRowGroupIndices();
@@ -407,8 +408,6 @@ lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::a
     storm::storage::SparseMatrix<ValueType> newMatrix = builder.build();
     return {newMatrix, sTstatesForBCC};
 }
-
-
 
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 std::map<std::string, storm::storage::BitVector> lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::computeApSets(

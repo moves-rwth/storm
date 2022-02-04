@@ -11,6 +11,7 @@
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
+#include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -19,7 +20,6 @@
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "storm/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
-#include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
 
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
