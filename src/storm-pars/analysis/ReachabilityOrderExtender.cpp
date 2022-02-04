@@ -162,7 +162,7 @@ namespace storm {
             STORM_LOG_ASSERT (this->cyclic, "Needs cyclic model for forward reasoning");
 
             std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
-            uint_fast64_t s1= sorted.first.second;
+            uint_fast64_t s1= sorted.first.first;
             uint_fast64_t s2 = sorted.first.second;
             std::vector<uint_fast64_t>& statesSorted = sorted.second;
             if (s1 == this->numberOfStates) {
