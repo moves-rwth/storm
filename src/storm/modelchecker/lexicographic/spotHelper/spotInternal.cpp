@@ -1,7 +1,8 @@
 // Copied and adapted from https://gitlab.lrde.epita.fr/spot
 
-#ifdef STORM_HAVE_SPOT
 #include "storm/modelchecker/lexicographic/spotHelper/spotInternal.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/utility/macros.h"
 #include <deque>
 
 namespace storm {
@@ -11,13 +12,40 @@ typedef std::pair<unsigned, unsigned> product_state;
 
 struct product_state_hash {
     size_t operator()(product_state s) const noexcept {
+#ifdef STORM_HAVE_SPOT
         return wang32_hash(s.first ^ wang32_hash(s.second));
+#endif
     }
 };
 
-template<typename T>
-static void product_main(const const_twa_graph_ptr& left, const const_twa_graph_ptr& right, unsigned left_state, unsigned right_state, twa_graph_ptr& res,
-                         T merge_acc, const output_aborter* aborter) {
+enum acc_op { and_acc, or_acc, xor_acc, xnor_acc };
+
+//twa_graph_ptr product(const const_twa_graph_ptr& left, const const_twa_graph_ptr& right) {
+void* product(const void* leftVoid, const void* rightVoid) {
+    twa_graph_ptr left = static_cast<twa_graph_ptr>(leftVoid);
+    twa_graph_ptr right = static_cast<twa_graph_ptr>(rightVoid);
+    output_aborter* aborter = nullptr;
+    unsigned left_state = left->get_init_state_number();
+    unsigned right_state = right->get_init_state_number();
+    if (SPOT_UNLIKELY(!(left->is_existential() && right->is_existential())))
+        throw std::runtime_error("product() does not support alternating automata");
+    if (SPOT_UNLIKELY(left->get_dict() != right->get_dict()))
+        throw std::runtime_error(
+            "product: left and right automata should "
+            "share their bdd_dict");
+
+    auto res = make_twa_graph(left->get_dict());
+    res->copy_ap_of(left);
+    res->copy_ap_of(right);
+
+    auto left_num = left->num_sets();
+    auto& left_acc = left->get_acceptance();
+    auto right_acc = right->get_acceptance() << left_num;
+    right_acc &= left_acc;
+
+    res->set_acceptance(left_num + right->num_sets(), right_acc);
+
+    auto merge_acc = [&](acc_cond::mark_t ml, acc_cond::mark_t mr) { return ml | (mr << left_num); };
     std::unordered_map<product_state, unsigned, product_state_hash> s2n;
     std::deque<std::pair<product_state, unsigned>> todo;
 
@@ -38,14 +66,9 @@ static void product_main(const const_twa_graph_ptr& left, const const_twa_graph_
     };
 
     res->set_init_state(new_state(left_state, right_state));
-    if (res->acc().is_f())
-        // Do not bother doing any work if the resulting acceptance is
-        // false.
-        return;
     while (!todo.empty()) {
         if (aborter && aborter->too_large(res)) {
             res = nullptr;
-            return;
         }
         auto top = todo.front();
         todo.pop_front();
@@ -59,35 +82,6 @@ static void product_main(const const_twa_graph_ptr& left, const const_twa_graph_
                 // If right is deterministic, we can abort immediately!
             }
     }
-}
-
-enum acc_op { and_acc, or_acc, xor_acc, xnor_acc };
-
-static twa_graph_ptr product_aux(const const_twa_graph_ptr& left, const const_twa_graph_ptr& right, unsigned left_state, unsigned right_state, acc_op aop,
-                                 const output_aborter* aborter) {
-    if (SPOT_UNLIKELY(!(left->is_existential() && right->is_existential())))
-        throw std::runtime_error("product() does not support alternating automata");
-    if (SPOT_UNLIKELY(left->get_dict() != right->get_dict()))
-        throw std::runtime_error(
-            "product: left and right automata should "
-            "share their bdd_dict");
-
-    auto res = make_twa_graph(left->get_dict());
-    res->copy_ap_of(left);
-    res->copy_ap_of(right);
-
-    auto left_num = left->num_sets();
-    auto& left_acc = left->get_acceptance();
-    auto right_acc = right->get_acceptance() << left_num;
-    right_acc &= left_acc;
-
-    res->set_acceptance(left_num + right->num_sets(), right_acc);
-
-    product_main(
-        left, right, left_state, right_state, res, [&](acc_cond::mark_t ml, acc_cond::mark_t mr) { return ml | (mr << left_num); }, aborter);
-
-    if (!res)  // aborted
-        return nullptr;
 
     if (res->acc().is_f()) {
         assert(res->num_edges() == 0);
@@ -113,17 +107,8 @@ static twa_graph_ptr product_aux(const const_twa_graph_ptr& left, const const_tw
             res->prop_terminal(true);
         res->prop_state_acc(left->prop_state_acc() && right->prop_state_acc());
     }
-    return res;
-}
+    return std::static_pointer_cast<void*>(res);
 
-twa_graph_ptr product(const const_twa_graph_ptr& left, const const_twa_graph_ptr& right, unsigned left_state, unsigned right_state,
-                      const output_aborter* aborter) {
-    return product_aux(left, right, left_state, right_state, and_acc, aborter);
-}
-
-twa_graph_ptr product(const const_twa_graph_ptr& left, const const_twa_graph_ptr& right, const output_aborter* aborter) {
-    return product(left, right, left->get_init_state_number(), right->get_init_state_number(), aborter);
 }
 }  // namespace spothelper
 }  // namespace storm
-#endif

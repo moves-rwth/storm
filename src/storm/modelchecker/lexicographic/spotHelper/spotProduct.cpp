@@ -19,6 +19,7 @@
 
 namespace storm {
 namespace spothelper {
+
 template<typename SparseModelType, typename ValueType>
 std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm::logic::MultiObjectiveFormula const& formula,
                                                                            CheckFormulaCallback const& formulaChecker, SparseModelType const& model,
@@ -66,7 +67,8 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
             continue;
         } else {
             // create a product of the the new automaton and the already existing product automaton
-            productAutomaton = storm::spothelper::product(aut, productAutomaton);
+            auto resultProduct = storm::spothelper::product(aut, productAutomaton);
+            productAutomaton = static_cast<twa_graph_ptr>(resultProduct);
         }
     }
     acceptanceConditions.push_back(countAccept);
