@@ -56,7 +56,7 @@ find_library( GUROBI_LIBRARY
         gurobi45
               PATHS "$ENV{GUROBI_HOME}/lib"
 
-                    "/Library/gurobi950/mca64/lib"
+                    "/Library/gurobi950/mac64/lib"
                     "/Library/gurobi912/mac64/lib"
                     "/Library/gurobi911/mac64/lib"
                     "/Library/gurobi900/mac64/lib"
