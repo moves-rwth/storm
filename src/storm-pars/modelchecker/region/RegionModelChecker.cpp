@@ -416,7 +416,7 @@ namespace storm {
 
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setUseOptimisticOrder(bool optimistic){
-            assert (useMonotonicity && useBounds);
+            assert (!optimistic || useMonotonicity && useBounds);
             this->useOptimisticOrder = optimistic;
         }
 

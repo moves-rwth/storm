@@ -57,7 +57,7 @@ namespace storm {
             }
 
             bool MonotonicitySettings::isOptimisticOrderSet() const {
-                STORM_LOG_ASSERT(this->isUsePLABoundsSet(), "Cannot create an optimistic order without pla bounds");
+                STORM_LOG_ASSERT(!this->getOption(optimisticOrder).getHasOptionBeenSet() || this->isUsePLABoundsSet(), "Cannot create an optimistic order without pla bounds");
                 return this->getOption(optimisticOrder).getHasOptionBeenSet();
             }
 
