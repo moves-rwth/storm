@@ -270,7 +270,7 @@ storm::storage::SparseMatrix<ValueType> const& transitions, uint64_t& counter) {
     // exhausive dfs
     if (visited.get(currentState)) {
         if (++counter % 1000000 == 0) {
-            std::cout << "\t\t checked " << counter << " paths" << std::endl;
+            std::cout << "\t\t checked " << counter << " paths\n";
         }
         return currentValue;
     } else {
@@ -399,7 +399,7 @@ std::vector<typename ModelType::ValueType> DeterministicSchedsObjectiveHelper<Mo
                     numChoices += modelTransitions.getRowGroupSize(stateChoices.first);
                 }
                 std::cout << "Checking a mec with " << mecStates.getNumberOfSetBits() << " states " << numChoices << " choices and " << numTransitions << "
-            transitions." << std::endl; lpath = storm::utility::one<ValueType>() / getExpVisitsUpperBoundForMec(mecStates, modelTransitions);
+            transitions.\n"; lpath = storm::utility::one<ValueType>() / getExpVisitsUpperBoundForMec(mecStates, modelTransitions);
             }*/
             // We multiply the smallest transition probabilities occurring at each state and MEC-Choice
             // as well as the smallest 'exit' probability
@@ -459,10 +459,10 @@ std::vector<typename ModelType::ValueType> DeterministicSchedsObjectiveHelper<Mo
                     numChoices += modelTransitions.getRowGroupSize(stateChoices.first);
                 }
                 std::cout << "Checking a mec with " << mecStates.getNumberOfSetBits() << " states " << numChoices << " choices and " << numTransitions << "
-            transitions." << std::endl; lpath = storm::utility::one<ValueType>(); for (auto const& stateChoices : mec) { storm::storage::BitVector visited =
+            transitions.\n"; lpath = storm::utility::one<ValueType>(); for (auto const& stateChoices : mec) { storm::storage::BitVector visited =
             ~mecStates; uint64_t counter = 0; ValueType lpathOld = lpath; lpath = std::min(lpath, getLpathDfs(stateChoices.first,
             storm::utility::one<ValueType>(), visited, mecStates, modelTransitions, counter)); if (lpathOld > lpath) { std::cout << "\tnew lpath is " <<
-            storm::utility::convertNumber<double>(lpath) << ". checked " << counter << " paths." << std::endl;
+            storm::utility::convertNumber<double>(lpath) << ". checked " << counter << " paths.\n";
                     }
                 }
             }*/

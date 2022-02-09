@@ -20,9 +20,9 @@ void PathCounterexample<ValueType>::addPath(std::vector<storage::sparse::state_t
 
 template<typename ValueType>
 void PathCounterexample<ValueType>::writeToStream(std::ostream& out) const {
-    out << "Shortest path counterexample with k = " << shortestPaths.size() << " paths: " << std::endl;
+    out << "Shortest path counterexample with k = " << shortestPaths.size() << " paths: \n";
     for (size_t i = 0; i < shortestPaths.size(); ++i) {
-        out << i + 1 << "-shortest path: " << std::endl;
+        out << i + 1 << "-shortest path: \n";
         for (auto it = shortestPaths[i].rbegin(); it != shortestPaths[i].rend(); ++it) {
             out << "\tstate " << *it;
             if (model->hasStateValuations()) {
@@ -30,7 +30,7 @@ void PathCounterexample<ValueType>::writeToStream(std::ostream& out) const {
             }
             out << ": {";
             storm::utility::outputFixedWidth(out, model->getLabelsOfState(*it), 0);
-            out << "}" << std::endl;
+            out << "}\n";
         }
     }
 }

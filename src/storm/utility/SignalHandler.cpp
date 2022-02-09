@@ -36,7 +36,7 @@ void signalHandler(int signal) {
     if (!isTerminate()) {
         // First time we get an abort signal
         // We give the program a number of seconds to print results obtained so far before termination
-        std::cerr << "ERROR: The program received signal " << signal << " and will be aborted in " << maxWaitTime << "s." << std::endl;
+        std::cerr << "ERROR: The program received signal " << signal << " and will be aborted in " << maxWaitTime << "s.\n";
         SignalInformation::infos().setTerminate(true);
         // Remember original signal such that the program returns the correct original signal
         SignalInformation::infos().setErrorCode(signal);
@@ -46,13 +46,13 @@ void signalHandler(int signal) {
         // Second time we get a signal
         // We now definitely have to terminate as fast as possible
         if (SignalInformation::infos().getErrorCode() == SIGXCPU) {
-            std::cerr << "TIMEOUT." << std::endl;
+            std::cerr << "TIMEOUT.\n";
         } else if (SignalInformation::infos().getErrorCode() == ENOMEM) {
-            std::cerr << "OUT OF MEMORY." << std::endl;
+            std::cerr << "OUT OF MEMORY.\n";
         } else if (SignalInformation::infos().getErrorCode() == SIGABRT || SignalInformation::infos().getErrorCode() == SIGINT) {
-            std::cerr << "ABORT." << std::endl;
+            std::cerr << "ABORT.\n";
         } else {
-            std::cerr << "Received signal " << signal << std::endl;
+            std::cerr << "Received signal " << signal << '\n';
         }
         quickest_exit(SignalInformation::infos().getErrorCode());
     }
@@ -70,26 +70,26 @@ void installSignalHandler() {
 
     // CPU Limit
     if (sigaction(SIGXCPU, &sa, nullptr) == -1) {
-        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+        std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
     // Memory out
     if (sigaction(ENOMEM, &sa, nullptr) == -1) {
-        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+        std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
     if (sigaction(SIGSEGV, &sa, nullptr) == -1) {
-        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+        std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
     if (sigaction(SIGABRT, &sa, nullptr) == -1) {
-        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+        std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
     if (sigaction(SIGINT, &sa, nullptr) == -1) {
-        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+        std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
     if (sigaction(SIGTERM, &sa, nullptr) == -1) {
-        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+        std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
     if (sigaction(SIGALRM, &sa, nullptr) == -1) {
-        std::cerr << "FATAL: Installing a signal handler failed." << std::endl;
+        std::cerr << "FATAL: Installing a signal handler failed.\n";
     }
 }
 

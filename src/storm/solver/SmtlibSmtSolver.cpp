@@ -245,7 +245,7 @@ bool SmtlibSmtSolver::isNeedsRestart() const {
 
 void SmtlibSmtSolver::writeCommand(std::string smt2Command, bool expectSuccess) {
     if (isCommandFileOpen) {
-        commandFile << smt2Command << std::endl;
+        commandFile << smt2Command << '\n';
     }
 
 #ifndef WINDOWS

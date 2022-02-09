@@ -301,8 +301,8 @@ bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDis
             }
 
             if (!distribution.equals(quotientDistributions[choice])) {
-                std::cout << "the distributions for choice " << choice << " of state " << state << " do not match." << std::endl;
-                std::cout << "is: " << quotientDistributions[choice] << " but should be " << distribution << std::endl;
+                std::cout << "the distributions for choice " << choice << " of state " << state << " do not match.\n";
+                std::cout << "is: " << quotientDistributions[choice] << " but should be " << distribution << '\n';
                 exit(-1);
             }
 
@@ -310,16 +310,16 @@ bool NondeterministicModelBisimulationDecomposition<ModelType>::checkQuotientDis
             bool less2 = quotientDistributions[choice].less(distribution, this->comparator);
 
             if (distribution.equals(quotientDistributions[choice]) && (less1 || less2)) {
-                std::cout << "mismatch of equality and less for " << std::endl;
-                std::cout << quotientDistributions[choice] << " vs " << distribution << std::endl;
+                std::cout << "mismatch of equality and less for \n";
+                std::cout << quotientDistributions[choice] << " vs " << distribution << '\n';
                 exit(-1);
             }
         }
 
         for (auto choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1] - 1; ++choice) {
             if (orderedQuotientDistributions[choice + 1]->less(*orderedQuotientDistributions[choice], this->comparator)) {
-                std::cout << "choice " << (choice + 1) << " is less than predecessor" << std::endl;
-                std::cout << *orderedQuotientDistributions[choice] << " should be less than " << *orderedQuotientDistributions[choice + 1] << std::endl;
+                std::cout << "choice " << (choice + 1) << " is less than predecessor\n";
+                std::cout << *orderedQuotientDistributions[choice] << " should be less than " << *orderedQuotientDistributions[choice + 1] << '\n';
                 exit(-1);
             }
         }
@@ -331,25 +331,25 @@ template<typename ModelType>
 bool NondeterministicModelBisimulationDecomposition<ModelType>::printDistributions(uint_fast64_t state) const {
     std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
     for (auto choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-        std::cout << quotientDistributions[choice] << std::endl;
+        std::cout << quotientDistributions[choice] << '\n';
     }
     return true;
 }
 
 template<typename ModelType>
 bool NondeterministicModelBisimulationDecomposition<ModelType>::checkBlockStable(bisimulation::Block<BlockDataType> const& newBlock) const {
-    std::cout << "checking stability of new block " << newBlock.getId() << " of size " << newBlock.getNumberOfStates() << std::endl;
+    std::cout << "checking stability of new block " << newBlock.getId() << " of size " << newBlock.getNumberOfStates() << '\n';
     for (auto stateIt1 = this->partition.begin(newBlock), stateIte1 = this->partition.end(newBlock); stateIt1 != stateIte1; ++stateIt1) {
         for (auto stateIt2 = this->partition.begin(newBlock), stateIte2 = this->partition.end(newBlock); stateIt2 != stateIte2; ++stateIt2) {
             bool less1 = quotientDistributionsLess(*stateIt1, *stateIt2);
             bool less2 = quotientDistributionsLess(*stateIt2, *stateIt1);
             if (less1 || less2) {
-                std::cout << "the partition is not stable for the states " << *stateIt1 << " and " << *stateIt2 << std::endl;
-                std::cout << "less1 " << less1 << " and less2 " << less2 << std::endl;
+                std::cout << "the partition is not stable for the states " << *stateIt1 << " and " << *stateIt2 << '\n';
+                std::cout << "less1 " << less1 << " and less2 " << less2 << '\n';
 
-                std::cout << "distributions of state " << *stateIt1 << std::endl;
+                std::cout << "distributions of state " << *stateIt1 << '\n';
                 this->printDistributions(*stateIt1);
-                std::cout << "distributions of state " << *stateIt2 << std::endl;
+                std::cout << "distributions of state " << *stateIt2 << '\n';
                 this->printDistributions(*stateIt2);
                 exit(-1);
             }
@@ -364,12 +364,12 @@ bool NondeterministicModelBisimulationDecomposition<ModelType>::checkDistributio
     for (auto stateIt1 = this->partition.begin(block), stateIte1 = this->partition.end(block); stateIt1 != stateIte1; ++stateIt1) {
         for (auto stateIt2 = this->partition.begin() + block.getEndIndex(), stateIte2 = this->partition.begin() + end; stateIt2 != stateIte2; ++stateIt2) {
             if (!quotientDistributionsLess(*stateIt1, *stateIt2)) {
-                std::cout << "distributions are not less, even though they should be!" << std::endl;
+                std::cout << "distributions are not less, even though they should be!\n";
                 exit(-3);
             } else {
-                std::cout << "less:" << std::endl;
+                std::cout << "less:\n";
                 this->printDistributions(*stateIt1);
-                std::cout << "and" << std::endl;
+                std::cout << "and\n";
                 this->printDistributions(*stateIt2);
             }
         }

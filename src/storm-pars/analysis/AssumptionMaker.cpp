@@ -54,7 +54,6 @@ namespace storm {
                     result.insert(assumption);
                     STORM_LOG_ASSERT (createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues).second != AssumptionStatus::VALID, "Assumption " << val1 << " > " << val2  << " cannot be valid as " << val2 << " == " << val1 << " holds.");
                     STORM_LOG_ASSERT (createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues).second != AssumptionStatus::VALID, "Assumption " << val2 << " > " << val1  << " cannot be valid as " << val2 << " == " << val1 << " holds.");
-
                     STORM_LOG_INFO("Assumption " << *(assumption.first) << " is valid" << std::endl);
                     return result;
                 }

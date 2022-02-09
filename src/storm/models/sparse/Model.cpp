@@ -403,10 +403,10 @@ std::size_t Model<ValueType, RewardModelType>::hash() const {
 
 template<typename ValueType, typename RewardModelType>
 void Model<ValueType, RewardModelType>::printModelInformationHeaderToStream(std::ostream& out) const {
-    out << "-------------------------------------------------------------- " << std::endl;
-    out << "Model type: \t" << this->getType() << " (sparse)" << std::endl;
-    out << "States: \t" << this->getNumberOfStates() << std::endl;
-    out << "Transitions: \t" << this->getNumberOfTransitions() << std::endl;
+    out << "-------------------------------------------------------------- \n";
+    out << "Model type: \t" << this->getType() << " (sparse)\n";
+    out << "States: \t" << this->getNumberOfStates() << '\n';
+    out << "Transitions: \t" << this->getNumberOfTransitions() << '\n';
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -418,9 +418,9 @@ void Model<ValueType, RewardModelType>::printModelInformationFooterToStream(std:
     if (this->hasChoiceLabeling()) {
         this->getChoiceLabeling().printLabelingInformationToStream(out);
     } else {
-        out << "none" << std::endl;
+        out << "none\n";
     }
-    out << "-------------------------------------------------------------- " << std::endl;
+    out << "-------------------------------------------------------------- \n";
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -435,9 +435,9 @@ void Model<ValueType, RewardModelType>::printRewardModelsInformationToStream(std
                               rewardModelNames.push_back(nameRewardModelPair.first);
                           }
                       });
-        out << "Reward Models:  " << boost::join(rewardModelNames, ", ") << std::endl;
+        out << "Reward Models:  " << boost::join(rewardModelNames, ", ") << '\n';
     } else {
-        out << "Reward Models:  none" << std::endl;
+        out << "Reward Models:  none\n";
     }
 }
 
@@ -446,7 +446,7 @@ void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream
                                                          storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue,
                                                          std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring,
                                                          std::vector<std::string> const* colors, std::vector<uint_fast64_t>*, bool finalizeOutput) const {
-    outStream << "digraph model {" << std::endl;
+    outStream << "digraph model {\n";
 
     // Write all states to the stream.
     for (uint_fast64_t state = 0, highestStateIndex = this->getNumberOfStates() - 1; state <= highestStateIndex; ++state) {
@@ -499,13 +499,13 @@ void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream
                 }
                 outStream << " ]";
             }
-            outStream << ";" << std::endl;
+            outStream << ";\n";
         }
     }
 
     // If this methods has not been called from a derived class, we want to close the digraph here.
     if (finalizeOutput) {
-        outStream << "}" << std::endl;
+        outStream << "}\n";
     }
 }
 

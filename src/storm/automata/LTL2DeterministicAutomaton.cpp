@@ -75,7 +75,7 @@ std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daExtern
     if (pid == 0) {
         // we are in the child process
         if (execlp(ltl2daTool.c_str(), ltl2daTool.c_str(), prefixLtl.c_str(), "da.hoa", NULL) < 0) {
-            std::cerr << "ERROR: exec failed: " << strerror(errno) << std::endl;
+            std::cerr << "ERROR: exec failed: " << strerror(errno) << '\n';
             std::exit(1);
         }
         // never reached

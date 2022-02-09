@@ -20,7 +20,7 @@ storm::storage::SymbolicModelDescription const& HighLevelCounterexample::getMode
 }
 
 void HighLevelCounterexample::writeToStream(std::ostream& out) const {
-    out << "High-level counterexample: " << std::endl;
+    out << "High-level counterexample: \n";
     out << model;
 }
 

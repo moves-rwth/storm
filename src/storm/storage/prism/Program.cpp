@@ -2354,43 +2354,43 @@ std::ostream& operator<<(std::ostream& out, Program::ModelType const& type) {
 }
 
 std::ostream& operator<<(std::ostream& stream, Program const& program) {
-    stream << program.getModelType() << std::endl;
+    stream << program.getModelType() << '\n';
     for (auto const& constant : program.getConstants()) {
-        stream << constant << std::endl;
+        stream << constant << '\n';
     }
-    stream << std::endl;
+    stream << '\n';
 
     for (auto const& player : program.getPlayers()) {
-        stream << player << std::endl;
+        stream << player << '\n';
     }
 
     for (auto const& variable : program.getGlobalBooleanVariables()) {
-        stream << "global " << variable << std::endl;
+        stream << "global " << variable << '\n';
     }
     for (auto const& variable : program.getGlobalIntegerVariables()) {
-        stream << "global " << variable << std::endl;
+        stream << "global " << variable << '\n';
     }
-    stream << std::endl;
+    stream << '\n';
 
     for (auto const& formula : program.getFormulas()) {
-        stream << formula << std::endl;
+        stream << formula << '\n';
     }
-    stream << std::endl;
+    stream << '\n';
 
     for (auto const& module : program.getModules()) {
-        stream << module << std::endl;
+        stream << module << '\n';
     }
 
     for (auto const& rewardModel : program.getRewardModels()) {
-        stream << rewardModel << std::endl;
+        stream << rewardModel << '\n';
     }
 
     for (auto const& label : program.getLabels()) {
-        stream << label << std::endl;
+        stream << label << '\n';
     }
 
     if (program.hasInitialConstruct()) {
-        stream << program.getInitialConstruct() << std::endl;
+        stream << program.getInitialConstruct() << '\n';
     }
 
     if (program.specifiesSystemComposition()) {

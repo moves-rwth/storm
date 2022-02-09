@@ -294,7 +294,7 @@ namespace storm {
             for (auto const& res : regionCheckResult->getRegionResults()) {
 
                 if (!onlyConclusiveResults || res.second == storm::modelchecker::RegionResult::AllViolated || res.second == storm::modelchecker::RegionResult::AllSat) {
-                    filestream << res.second << ": " << res.first << std::endl;
+                    filestream << res.second << ": " << res.first << '\n';
                 }
             }
         }

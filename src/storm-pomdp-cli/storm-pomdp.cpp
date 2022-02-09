@@ -55,21 +55,21 @@ namespace storm {
                         STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                         uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
                         pomdp = selfLoopEliminator.transform();
-                        STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
+                        STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination.\n");
                         preprocessingPerformed = true;
                     } else {
-                        STORM_PRINT_AND_LOG("Not eliminating self-loop choices as it does not preserve the formula." << std::endl);
+                        STORM_PRINT_AND_LOG("Not eliminating self-loop choices as it does not preserve the formula.\n");
                     }
                 }
                 if (pomdpSettings.isQualitativeReductionSet() && formulaInfo.isNonNestedReachabilityProbability()) {
                     storm::analysis::QualitativeAnalysisOnGraphs<ValueType> qualitativeAnalysis(*pomdp);
                     STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
                     storm::storage::BitVector prob0States = qualitativeAnalysis.analyseProb0(formula.asProbabilityOperatorFormula());
-                    std::cout << prob0States << std::endl;
-                    STORM_PRINT_AND_LOG(" done. " << prob0States.getNumberOfSetBits() << " states found." << std::endl);
+                    std::cout << prob0States << '\n';
+                    STORM_PRINT_AND_LOG(" done. " << prob0States.getNumberOfSetBits() << " states found.\n");
                     STORM_PRINT_AND_LOG("Computing states with probability 1 ...");
                     storm::storage::BitVector  prob1States = qualitativeAnalysis.analyseProb1(formula.asProbabilityOperatorFormula());
-                    STORM_PRINT_AND_LOG(" done. " << prob1States.getNumberOfSetBits() << " states found." << std::endl);
+                    STORM_PRINT_AND_LOG(" done. " << prob1States.getNumberOfSetBits() << " states found.\n");
                     storm::pomdp::transformer::KnownProbabilityTransformer<ValueType> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<ValueType>();
                     pomdp = kpt.transform(*pomdp, prob0States, prob1States);
                     // Update formulaInfo to changes from Preprocessing
@@ -172,9 +172,9 @@ namespace storm {
                         } else {
                             bool result = memlessSearch.analyzeForInitialStates(lookahead);
                             if (result) {
-                                STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target." << std::endl);
+                                STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target.\n");
                             } else {
-                                STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target ." << std::endl);
+                                STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target .\n");
                             }
                         }
                     } else if (qualSettings.getMemlessSearchMethod() == "iterative") {
@@ -196,7 +196,7 @@ namespace storm {
 
                         if (qualSettings.isPrintWinningRegionSet()) {
                             search.getLastWinningRegion().print();
-                            std::cout << std::endl;
+                            std::cout << '\n';
                         }
                         if (qualSettings.isExportWinningRegionSet()) {
                             std::size_t hash = pomdp.hash();
@@ -221,11 +221,9 @@ namespace storm {
 
                             if (search.getLastWinningRegion().isWinning(initialObservation,
                                                                         offset)) {
-                                STORM_PRINT_AND_LOG("Initial state is safe!"
-                                                            << std::endl);
+                                STORM_PRINT_AND_LOG("Initial state is safe!\n");
                             } else {
-                                STORM_PRINT_AND_LOG("Initial state may not be safe."
-                                                            << std::endl);
+                                STORM_PRINT_AND_LOG("Initial state may not be safe.\n");
                             }
                         } else {
                             STORM_LOG_WARN("Output for multiple initial states is incomplete");
@@ -233,7 +231,7 @@ namespace storm {
 
                         if (coreSettings.isShowStatisticsSet()) {
                             STORM_PRINT_AND_LOG("#STATS Number of belief support states: "
-                                                        << search.getLastWinningRegion().beliefSupportStates() << std::endl);
+                                                        << search.getLastWinningRegion().beliefSupportStates() << '\n');
                             if (qualSettings.computeExpensiveStats()) {
                                 auto wbss = search.getLastWinningRegion().computeNrWinningBeliefs();
                                 STORM_PRINT_AND_LOG(
@@ -277,7 +275,7 @@ namespace storm {
                         STORM_PRINT_AND_LOG("\nResult: ")
                     }
                     printResult(result.lowerBound, result.upperBound);
-                    STORM_PRINT_AND_LOG(std::endl);
+                    STORM_PRINT_AND_LOG('\n');
                     analysisPerformed = true;
                 }
                 if (pomdpSettings.isQualitativeAnalysisSet()) {
@@ -297,9 +295,9 @@ namespace storm {
                             STORM_PRINT_AND_LOG("\nResult: ")
                         }
                         printResult(result.getMin(), result.getMax());
-                        STORM_PRINT_AND_LOG(std::endl);
+                        STORM_PRINT_AND_LOG('\n');
                     } else {
-                        STORM_PRINT_AND_LOG("\nResult: Not available." << std::endl);
+                        STORM_PRINT_AND_LOG("\nResult: Not available.\n");
                     }
                     analysisPerformed = true;
                 }
@@ -317,10 +315,10 @@ namespace storm {
                 if (pomdpSettings.getMemoryBound() > 1) {
                     STORM_PRINT_AND_LOG("Computing the unfolding for memory bound " << pomdpSettings.getMemoryBound() << " and memory pattern '" << storm::storage::toString(pomdpSettings.getMemoryPattern()) << "' ...");
                     storm::storage::PomdpMemory memory = storm::storage::PomdpMemoryBuilder().build(pomdpSettings.getMemoryPattern(), pomdpSettings.getMemoryBound());
-                    std::cout << memory.toString() << std::endl;
+                    std::cout << memory.toString() << '\n';
                     storm::transformer::PomdpMemoryUnfolder<ValueType> memoryUnfolder(*pomdp, memory);
                     pomdp = memoryUnfolder.transform();
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done.\n");
                     pomdp->printModelInformationToStream(std::cout);
                     transformationPerformed = true;
                     memoryUnfolded = true;
@@ -334,8 +332,8 @@ namespace storm {
                     uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
                     storm::transformer::GlobalPomdpMecChoiceEliminator<ValueType> mecChoiceEliminator(*pomdp);
                     pomdp = mecChoiceEliminator.transform(formula);
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
-                    STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through MEC choice elimination." << std::endl);
+                    STORM_PRINT_AND_LOG(" done.\n");
+                    STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through MEC choice elimination.\n");
                     pomdp->printModelInformationToStream(std::cout);
                     transformationPerformed = true;
                 }
@@ -349,7 +347,7 @@ namespace storm {
                         pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, false);
                     }
                     pomdp->printModelInformationToStream(std::cout);
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done.\n");
                     transformationPerformed = true;
                 }
         
@@ -358,12 +356,12 @@ namespace storm {
                     storm::transformer::ApplyFiniteSchedulerToPomdp<ValueType> toPMCTransformer(*pomdp);
                     std::string transformMode = transformSettings.getFscApplicationTypeString();
                     auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done.\n");
                     pmc->printModelInformationToStream(std::cout);
                     if (transformSettings.allowPostSimplifications()) {
                         STORM_PRINT_AND_LOG("Simplifying pMC...");
                         pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-                        STORM_PRINT_AND_LOG(" done." << std::endl);
+                        STORM_PRINT_AND_LOG(" done.\n");
                         pmc->printModelInformationToStream(std::cout);
                     }
                     STORM_PRINT_AND_LOG("Exporting pMC...");
@@ -375,11 +373,11 @@ namespace storm {
                         parameterNames.push_back(parameter.name());
                     }
                     storm::api::exportSparseModelAsDrn(pmc, pomdpSettings.getExportToParametricFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done.\n");
                     transformationPerformed = true;
                 }
                 if (transformationPerformed && !memoryUnfolded) {
-                    STORM_PRINT_AND_LOG("Implicitly assumed restriction to memoryless schedulers for at least one transformation." << std::endl);
+                    STORM_PRINT_AND_LOG("Implicitly assumed restriction to memoryless schedulers for at least one transformation.\n");
                 }
                 return transformationPerformed;
             }
@@ -390,7 +388,7 @@ namespace storm {
                 
                 auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(symbolicInput, mpi);
                 if (!model) {
-                    STORM_PRINT_AND_LOG("No input model given." << std::endl);
+                    STORM_PRINT_AND_LOG("No input model given.\n");
                     return;
                 }
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException, "Expected a POMDP in sparse representation.");
@@ -404,14 +402,14 @@ namespace storm {
                 std::shared_ptr<storm::logic::Formula const> formula;
                 if (!symbolicInput.properties.empty()) {
                     formula = symbolicInput.properties.front().getRawFormula();
-                    STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'" << std::endl);
+                    STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'\n");
                     STORM_LOG_WARN_COND(symbolicInput.properties.size() == 1, "There is currently no support for multiple properties. All other properties will be ignored.");
                 }
             
                 if (pomdpSettings.isAnalyzeUniqueObservationsSet()) {
-                    STORM_PRINT_AND_LOG("Analyzing states with unique observation ..." << std::endl);
+                    STORM_PRINT_AND_LOG("Analyzing states with unique observation ...\n");
                     storm::analysis::UniqueObservationStates<ValueType> uniqueAnalysis(*pomdp);
-                    std::cout << uniqueAnalysis.analyse() << std::endl;
+                    std::cout << uniqueAnalysis.analyse() << '\n';
                 }
             
                 if (formula) {
@@ -422,20 +420,20 @@ namespace storm {
                     // Note that formulaInfo contains state-based information which potentially needs to be updated during preprocessing
                     if (performPreprocessing<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
-                        STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << "." << std::endl);
+                        STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << ".\n");
                         pomdp->printModelInformationToStream(std::cout);
                     }
 
                     sw.restart();
                     if (performTransformation<ValueType, DdType>(pomdp, *formula)) {
                         sw.stop();
-                        STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "s." << std::endl);
+                        STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "s.\n");
                     }
                     
                     sw.restart();
                     if (performAnalysis<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
-                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s." << std::endl);
+                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
                     }
                     
 

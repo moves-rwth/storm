@@ -793,11 +793,11 @@ void JsonExporter::toStream(storm::jani::Model const& janiModel, std::vector<sto
     if (compact) {
         // Dump without line breaks/indents
         STORM_LOG_INFO("Producing compact json output... " << janiModel.getName() << ".");
-        os << exporter.finalize().dump() << std::endl;
+        os << exporter.finalize().dump() << '\n';
     } else {
         // Dump with line breaks and indention with 4 spaces
         STORM_LOG_INFO("Producing json output... " << janiModel.getName() << ".");
-        os << exporter.finalize().dump(4) << std::endl;
+        os << exporter.finalize().dump(4) << '\n';
     }
     STORM_LOG_INFO("Conversion completed " << janiModel.getName() << ".");
 }

@@ -134,7 +134,7 @@ namespace storm {
         }
 
         void Order::addBetween(uint_fast64_t state, Node *above, Node *below) {
-            STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin() << std::endl);
+            STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin() << '\n');
 
             STORM_LOG_ASSERT (above != below, "Cannot add between the same nodes");
             if(above == nullptr){
@@ -231,7 +231,7 @@ namespace storm {
         }
 
         bool Order::mergeNodes(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2) {
-            STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << std::endl);
+            STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << '\n');
 
             // Merges node2 into node 1
             // everything above n2 also above n1
@@ -609,7 +609,7 @@ namespace storm {
 
         void Order::toDotOutput() const {
             // Graphviz Output start
-            STORM_PRINT("Dot Output:" << std::endl << "digraph model {" << std::endl);
+            STORM_PRINT("Dot Output:\n" << "digraph model {\n");
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(sufficientForState);
@@ -645,12 +645,12 @@ namespace storm {
                 }
             }
             // Graphviz Output end
-            STORM_PRINT("}" << std::endl);
+            STORM_PRINT("}\n");
         }
 
         void Order::dotOutputToFile(std::ostream &dotOutfile) const {
             // Graphviz Output start
-            dotOutfile << "Dot Output:" << std::endl << "digraph model {" << std::endl;
+            dotOutfile << "Dot Output:\n" << "digraph model {\n";
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
@@ -692,7 +692,7 @@ namespace storm {
             }
 
             // Graphviz Output end
-            dotOutfile << "}" << std::endl;
+            dotOutfile << "}\n";
         }
 
         /*** Private methods ***/

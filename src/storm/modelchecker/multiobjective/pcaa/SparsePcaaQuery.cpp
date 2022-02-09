@@ -23,7 +23,7 @@ namespace multiobjective {
 template<class SparseModelType, typename GeometryValueType>
 SparsePcaaQuery<SparseModelType, GeometryValueType>::~SparsePcaaQuery() {
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Pareto Curve Approximation Algorithm terminated after " << this->refinementSteps.size() << " refinement steps." << std::endl);
+        STORM_PRINT_AND_LOG("Pareto Curve Approximation Algorithm terminated after " << this->refinementSteps.size() << " refinement steps.\n");
     }
 }
 

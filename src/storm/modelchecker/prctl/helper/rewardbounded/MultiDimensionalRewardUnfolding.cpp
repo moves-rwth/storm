@@ -407,7 +407,7 @@ EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<Valu
         epochModel.epochMatrixChanged = true;
         if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
             if (storm::utility::graph::hasCycle(epochModel.epochMatrix)) {
-                std::cout << "Epoch model for epoch " << epochManager.toString(epoch) << " is cyclic." << std::endl;
+                std::cout << "Epoch model for epoch " << epochManager.toString(epoch) << " is cyclic.\n";
             }
         }
     } else {
@@ -497,15 +497,15 @@ EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<Valu
 
     currentEpoch = epoch;
     /*
-    std::cout << "Epoch model for epoch " << storm::utility::vector::toString(epoch) << std::endl;
-    std::cout << "Matrix: " << std::endl << epochModel.epochMatrix << std::endl;
-    std::cout << "ObjectiveRewards: " << storm::utility::vector::toString(epochModel.objectiveRewards[0]) << std::endl;
-    std::cout << "steps: " << epochModel.stepChoices << std::endl;
+    std::cout << "Epoch model for epoch " << storm::utility::vector::toString(epoch) << '\n';
+    std::cout << "Matrix: \n" << epochModel.epochMatrix << '\n';
+    std::cout << "ObjectiveRewards: " << storm::utility::vector::toString(epochModel.objectiveRewards[0]) << '\n';
+    std::cout << "steps: " << epochModel.stepChoices << '\n';
     std::cout << "step solutions: ";
     for (int i = 0; i < epochModel.stepSolutions.size(); ++i) {
         std::cout << "   " << epochModel.stepSolutions[i].weightedValue;
     }
-    std::cout << std::endl;
+    std::cout << '\n';
     */
     return epochModel;
 }
@@ -513,7 +513,7 @@ EpochModel<ValueType, SingleObjectiveMode>& MultiDimensionalRewardUnfolding<Valu
 template<typename ValueType, bool SingleObjectiveMode>
 void MultiDimensionalRewardUnfolding<ValueType, SingleObjectiveMode>::setCurrentEpochClass(Epoch const& epoch) {
     EpochClass epochClass = epochManager.getEpochClass(epoch);
-    // std::cout << "Setting epoch class for epoch " << epochManager.toString(epoch) << std::endl;
+    // std::cout << "Setting epoch class for epoch " << epochManager.toString(epoch) << '\n';
     auto productObjectiveRewards = productModel->computeObjectiveRewards(epochClass, objectives);
 
     storm::storage::BitVector stepChoices(productModel->getProduct().getTransitionMatrix().getRowCount(), false);

@@ -245,10 +245,10 @@ std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType
         result.push_back(resultPoint);
     }
     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        std::cout << "Number of checked epochs: " << numCheckedEpochs << std::endl;
-        std::cout << "Number of required precision refinements: " << numPrecisionRefinements << std::endl;
-        std::cout << "Time for epoch exploration: " << swExploration << " seconds." << std::endl;
-        std::cout << "\tTime for epoch model analysis: " << swEpochAnalysis << " seconds." << std::endl;
+        std::cout << "Number of checked epochs: " << numCheckedEpochs << '\n';
+        std::cout << "Number of required precision refinements: " << numPrecisionRefinements << '\n';
+        std::cout << "Time for epoch exploration: " << swExploration << " seconds.\n";
+        std::cout << "\tTime for epoch model analysis: " << swEpochAnalysis << " seconds.\n";
     }
     return result;
 }

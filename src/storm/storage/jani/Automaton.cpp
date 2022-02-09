@@ -575,18 +575,18 @@ void Automaton::restrictToEdges(storm::storage::FlatSet<uint_fast64_t> const& ed
 }
 
 void Automaton::writeDotToStream(std::ostream& outStream, std::vector<std::string> const& actionNames) const {
-    outStream << "\tsubgraph " << name << " {" << std::endl;
+    outStream << "\tsubgraph " << name << " {\n";
 
     // Write all locations to the stream.
     uint64_t locIndex = 0;
     for (auto const& loc : locations) {
-        outStream << "\t" << name << "_s" << locIndex << "[ label=\"" << loc.getName() << "\"];" << std::endl;
+        outStream << "\t" << name << "_s" << locIndex << "[ label=\"" << loc.getName() << "\"];\n";
         ++locIndex;
     }
     // Write for each edge an node to the stream;
     uint64_t edgeIndex = 0;
     for (auto const& edge : edges) {
-        outStream << "\t" << name << "_e" << edgeIndex << "[ label=\"\" , shape=circle, width=.2, style=filled, fillcolor=\"black\"];" << std::endl;
+        outStream << "\t" << name << "_e" << edgeIndex << "[ label=\"\" , shape=circle, width=.2, style=filled, fillcolor=\"black\"];\n";
         ++edgeIndex;
 
         // Silencing unused variable warning.
@@ -597,14 +597,14 @@ void Automaton::writeDotToStream(std::ostream& outStream, std::vector<std::strin
     edgeIndex = 0;
     for (auto const& edge : edges) {
         outStream << "\t" << name << "_s" << edge.getSourceLocationIndex() << " -> " << name << "_e" << edgeIndex << " [label=\""
-                  << actionNames.at(edge.getActionIndex()) << "\"];" << std::endl;
+                  << actionNames.at(edge.getActionIndex()) << "\"];\n";
         for (auto const& edgeDest : edge.getDestinations()) {
-            outStream << "\t" << name << "_e" << edgeIndex << " -> " << name << "_s" << edgeDest.getLocationIndex() << ";" << std::endl;
+            outStream << "\t" << name << "_e" << edgeIndex << " -> " << name << "_s" << edgeDest.getLocationIndex() << ";\n";
         }
         ++edgeIndex;
     }
 
-    outStream << "\t}" << std::endl;
+    outStream << "\t}\n";
 }
 }  // namespace jani
 }  // namespace storm

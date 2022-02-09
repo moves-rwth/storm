@@ -507,11 +507,9 @@ class ArrayExpressionEliminationVisitor : public storm::expressions::ExpressionV
         ArrayAccessIndices arrayAccessIndices;
         auto res = boost::any_cast<ResultType>(expression.accept(*this, &arrayAccessIndices));
         if (!res.isArrayOutOfBounds()) {
-            STORM_LOG_ASSERT(!containsArrayExpression(res.expr()->toExpression()),
-                             "Expression still contains array expressions. Before: " << std::endl
-                                                                                     << expression << std::endl
-                                                                                     << "After:" << std::endl
-                                                                                     << res.expr()->toExpression());
+            STORM_LOG_ASSERT(!containsArrayExpression(res.expr()->toExpression()), "Expression still contains array expressions. Before: \n"
+                                                                                       << expression << "\nAfter:\n"
+                                                                                       << res.expr()->toExpression());
             res.expr() = res.expr()->simplify();
         }
 

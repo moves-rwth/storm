@@ -48,9 +48,9 @@ void handleGSPNExportSettings(storm::gspn::GSPN const& gspn,
     }
 
     if (exportSettings.isDisplayStatsSet()) {
-        std::cout << "============GSPN Statistics==============" << std::endl;
+        std::cout << "============GSPN Statistics==============\n";
         gspn.writeStatsToStream(std::cout);
-        std::cout << "=========================================" << std::endl;
+        std::cout << "=========================================\n";
     }
 
     if (exportSettings.isWriteStatsToFileSet()) {

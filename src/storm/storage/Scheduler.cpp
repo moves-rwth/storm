@@ -180,18 +180,17 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
     widthOfStates = std::max(widthOfStates, (uint_fast64_t)12);
     uint_fast64_t numOfSkippedStatesWithUniqueChoice = 0;
 
-    out << "___________________________________________________________________" << std::endl;
+    out << "___________________________________________________________________\n";
     out << (isPartialScheduler() ? "Partially" : "Fully") << " defined ";
     out << (isMemorylessScheduler() ? "memoryless " : "");
     out << (isDeterministicScheduler() ? "deterministic" : "randomized") << " scheduler";
     if (!isMemorylessScheduler()) {
         out << " with " << getNumberOfMemoryStates() << " memory states";
     }
-    out << ":" << std::endl;
+    out << ":\n";
     STORM_LOG_WARN_COND(!(skipUniqueChoices && model == nullptr), "Can not skip unique choices if the model is not given.");
     out << std::setw(widthOfStates) << "model state:"
-        << "    " << (isMemorylessScheduler() ? "" : " memory:     ") << "choice(s)" << (isMemorylessScheduler() ? "" : "     memory updates:     ")
-        << std::endl;
+        << "    " << (isMemorylessScheduler() ? "" : " memory:     ") << "choice(s)" << (isMemorylessScheduler() ? "" : "     memory updates:     ") << '\n';
     for (uint_fast64_t state = 0; state < schedulerChoices.front().size(); ++state) {
         // Check whether the state is skipped
         if (skipUniqueChoices && model != nullptr && model->getTransitionMatrix().getRowGroupSize(state) == 1) {
@@ -289,13 +288,13 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
                 }
             }
 
-            out << std::endl;
+            out << '\n';
         }
     }
     if (numOfSkippedStatesWithUniqueChoice > 0) {
-        out << "Skipped " << numOfSkippedStatesWithUniqueChoice << " deterministic states with unique choice." << std::endl;
+        out << "Skipped " << numOfSkippedStatesWithUniqueChoice << " deterministic states with unique choice.\n";
     }
-    out << "___________________________________________________________________" << std::endl;
+    out << "___________________________________________________________________\n";
 }
 
 template<>

@@ -124,25 +124,25 @@ std::string SimpleValuation::toString(bool pretty) const {
         return toPrettyString(allVariables);
     } else {
         std::stringstream sstr;
-        sstr << "[" << std::endl;
-        sstr << getManager() << std::endl;
+        sstr << "[\n";
+        sstr << getManager() << '\n';
         if (!booleanValues.empty()) {
             for (auto element : booleanValues) {
                 sstr << element << " ";
             }
-            sstr << std::endl;
+            sstr << '\n';
         }
         if (!integerValues.empty()) {
             for (auto const& element : integerValues) {
                 sstr << element << " ";
             }
-            sstr << std::endl;
+            sstr << '\n';
         }
         if (!rationalValues.empty()) {
             for (auto const& element : rationalValues) {
                 sstr << element << " ";
             }
-            sstr << std::endl;
+            sstr << '\n';
         }
         sstr << "]";
         return sstr.str();
@@ -166,7 +166,7 @@ typename SimpleValuation::Json SimpleValuation::toJson() const {
 }
 
 std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation) {
-    out << valuation.toString(false) << std::endl;
+    out << valuation.toString(false) << '\n';
     return out;
 }
 

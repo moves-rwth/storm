@@ -653,7 +653,7 @@ typename ProductModel<ValueType>::MemoryState ProductModel<ValueType>::transform
     }
 
     //  std::cout << "Transformed memory state " << memoryStateManager.toString(memoryState) << " at epoch class " << epochClass << " with predecessor " <<
-    //  memoryStateManager.toString(predecessorMemoryState) << " to " << memoryStateManager.toString(memoryStatePrime) << std::endl;
+    //  memoryStateManager.toString(predecessorMemoryState) << " to " << memoryStateManager.toString(memoryStatePrime) << '\n';
 
     return memoryStatePrime;
 }
