@@ -7,7 +7,7 @@
 // Load streaming operator from CARL
 #include <carl/io/streamingOperators.h>
 namespace l3pp {
-    using carl::operator<<;
+using carl::operator<<;
 }
 #endif
 

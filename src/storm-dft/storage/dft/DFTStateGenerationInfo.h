@@ -178,27 +178,27 @@ namespace storm {
             }
 
             friend std::ostream& operator<<(std::ostream& os, DFTStateGenerationInfo const& info) {
-                os << "StateGenerationInfo:" << std::endl;
-                os << "Length of state vector: " << info.stateIndexSize << std::endl;
-                os << "Id to state index:" << std::endl;
+                os << "StateGenerationInfo:\n";
+                os << "Length of state vector: " << info.stateIndexSize << '\n';
+                os << "Id to state index:\n";
                 for (size_t id = 0; id < info.mIdToStateIndex.size(); ++id) {
-                    os << id << " -> " << info.getStateIndex(id) << std::endl;
+                    os << id << " -> " << info.getStateIndex(id) << '\n';
                 }
-                os << "Spare usage index with usage InfoBits of size " << info.mUsageInfoBits << ":" << std::endl;
+                os << "Spare usage index with usage InfoBits of size " << info.mUsageInfoBits << ":\n";
                 for (auto pair : info.mSpareUsageIndex) {
-                    os << pair.first << " -> " << pair.second << std::endl;
+                    os << pair.first << " -> " << pair.second << '\n';
                 }
-                os << "Spare activation index:" << std::endl;
+                os << "Spare activation index:\n";
                 for (auto pair : info.mSpareActivationIndex) {
-                    os << pair.first << " -> " << pair.second << std::endl;
+                    os << pair.first << " -> " << pair.second << '\n';
                 }
-                os << "Symmetries:" << std::endl;
+                os << "Symmetries:\n";
                 for (auto pair : info.mSymmetries) {
                     os << "Length: " << pair.first << ", starting indices: ";
                     for (size_t index : pair.second) {
                         os << index << ", ";
                     }
-                    os << std::endl;
+                    os << '\n';
                 }
                 return os;
             }

@@ -1,0 +1,44 @@
+name: apply-code-format
+
+on: [ workflow_dispatch ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      # apply the formatting twice as a workaround for a clang-format bug
+      - uses: DoozyX/clang-format-lint-action@v0.13
+        with:
+          source: './src'
+          clangFormatVersion: 12
+          style: file
+          inplace: True
+      - uses: DoozyX/clang-format-lint-action@v0.13
+        with:
+          source: './src'
+          clangFormatVersion: 12
+          style: file
+          inplace: True
+      - name: Commit Formatting
+        run: |
+          git config user.name 'Auto Format'
+          git config user.email 'dev@stormchecker.org'
+          if [ -z "$(git status --porcelain)" ]
+          then
+          echo "Code did not change"
+          else
+          git commit -am "Applied code formatting"
+          git rev-parse HEAD >> .git-blame-ignore-revs
+          git commit -am "Add code formatting commit to .git-blame-ignore-revs"
+          fi
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v3
+        with:
+          branch: ci/apply-code-format
+          delete-branch: true
+          title: 'Code formatting'
+          body: |
+            Auto-generated pull request triggered by the `apply-code-format` workflow.

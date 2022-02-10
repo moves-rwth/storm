@@ -8,11 +8,12 @@
 //#include "storm-parsers/parser/FormulaParser.h"
 //#include "storm/storage/expressions/ExpressionEvaluator.h"
 //
-//namespace storm {
+// namespace storm {
 //    namespace builder {
 //
 //        template<typename ValueType>
-//        storm::models::sparse::MarkovAutomaton<ValueType> ExplicitGspnModelBuilder<ValueType>::translateGspn(storm::gspn::GSPN const& gspn, std::string const& formula) {
+//        storm::models::sparse::MarkovAutomaton<ValueType> ExplicitGspnModelBuilder<ValueType>::translateGspn(storm::gspn::GSPN const& gspn, std::string const&
+//        formula) {
 //            // set the given gspn and compute the limits of the net
 //            this->gspn = gspn;
 //            computeCapacities(gspn);
@@ -45,7 +46,7 @@
 //                // create new row group for the current marking
 //                builder.newRowGroup(markings.getValue(*currentBitvector));
 //
-//                std::cout << "work on: " << *currentBitvector << std::endl;
+//                std::cout << "work on: " << *currentBitvector << '\n';
 //
 //                auto enabledImmediateTransitions = getEnabledImmediateTransition(currentMarking);
 //                if (!enabledImmediateTransitions.empty()) {
@@ -61,7 +62,7 @@
 //                        markovianStates.set(currentRowIndex, 1);
 //
 //                        auto accRate = getAccumulatedRate(enabledTimedTransitions);
-//                        std::cout << "\t\tacc. rate: " << accRate << std::endl;
+//                        std::cout << "\t\tacc. rate: " << accRate << '\n';
 //                        exitRates.push_back(accRate);
 //
 //                        addRowForTimedTransitions(enabledTimedTransitions, currentMarking, accRate);
@@ -89,8 +90,8 @@
 //            storm::models::sparse::StateLabeling labeling(markings.size());
 //            storm::expressions::ExpressionEvaluator<double> expressionEvaluator(*expressionManager);
 //
-//            std::cout << std::endl;
-//            std::cout << "build labeling:" << std::endl;
+//            std::cout << '\n';
+//            std::cout << "build labeling:\n";
 //            for (auto& atomicFormula : atomicFormulas) {
 //                std::cout << atomicFormula;
 //                auto label = atomicFormula->toString();
@@ -116,17 +117,18 @@
 //        }
 //
 //        template<typename ValueType>
-//        void ExplicitGspnModelBuilder<ValueType>::addRowForPartitions(std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>> const& partitions, storm::gspn::Marking const& currentMarking) {
+//        void ExplicitGspnModelBuilder<ValueType>::addRowForPartitions(std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>>
+//        const& partitions, storm::gspn::Marking const& currentMarking) {
 //            for (auto& partition : partitions) {
-//                std::cout << "\tnew partition:" << std::endl;
+//                std::cout << "\tnew partition:\n";
 //                auto accWeight = getAccumulatedWeight(partition);
-//                std::cout << "\t\tacc. weight: " << accWeight << std::endl;
+//                std::cout << "\t\tacc. weight: " << accWeight << '\n';
 //
 //                std::map<uint_fast64_t , double, storm::builder::ExplicitGspnModelBuilder<ValueType>::cmpByIndex> weights;
 //                for (auto& trans : partition) {
-//                    std::cout << "\t\ttransname: " << trans.getName() << std::endl;
+//                    std::cout << "\t\ttransname: " << trans.getName() << '\n';
 //                    auto newMarking = trans.fire(currentMarking);
-//                    std::cout << "\t\t\t target marking: " << *newMarking.getBitVector() << std::endl;
+//                    std::cout << "\t\t\t target marking: " << *newMarking.getBitVector() << '\n';
 //
 //                    findOrAddBitvectorToMarkings(*newMarking.getBitVector());
 //
@@ -144,12 +146,13 @@
 //        }
 //
 //        template<typename ValueType>
-//        void ExplicitGspnModelBuilder<ValueType>::addRowForTimedTransitions(std::vector<std::shared_ptr<storm::gspn::TimedTransition<double>>> const& enabledTimedTransitions, storm::gspn::Marking const& currentMarking, double const& accRate) {
+//        void ExplicitGspnModelBuilder<ValueType>::addRowForTimedTransitions(std::vector<std::shared_ptr<storm::gspn::TimedTransition<double>>> const&
+//        enabledTimedTransitions, storm::gspn::Marking const& currentMarking, double const& accRate) {
 //            std::map<uint_fast64_t , double, storm::builder::ExplicitGspnModelBuilder<ValueType>::cmpByIndex> rates;
 //            for (auto& trans : enabledTimedTransitions) {
-//                std::cout << "\t\ttransname: " << trans.getName() << std::endl;
+//                std::cout << "\t\ttransname: " << trans.getName() << '\n';
 //                auto newMarking = trans.fire(currentMarking);
-//                std::cout << "\t\t\t target marking: " << *newMarking.getBitVector() << std::endl;
+//                std::cout << "\t\t\t target marking: " << *newMarking.getBitVector() << '\n';
 //
 //                findOrAddBitvectorToMarkings(*newMarking.getBitVector());
 //
@@ -167,15 +170,17 @@
 //        }
 //
 //        template<typename ValueType>
-//        void ExplicitGspnModelBuilder<ValueType>::addValuesToBuilder(std::map<uint_fast64_t , double, storm::builder::ExplicitGspnModelBuilder<ValueType>::cmpByIndex> const& values) {
+//        void ExplicitGspnModelBuilder<ValueType>::addValuesToBuilder(std::map<uint_fast64_t , double,
+//        storm::builder::ExplicitGspnModelBuilder<ValueType>::cmpByIndex> const& values) {
 //            for (auto& it : values) {
-//                std::cout << "\t\tadd value \"" << it.second << "\" to " << getBitvector(it.first) << std::endl;
+//                std::cout << "\t\tadd value \"" << it.second << "\" to " << getBitvector(it.first) << '\n';
 //                builder.addNextValue(currentRowIndex, it.first, it.second);
 //            }
 //        }
 //
 //        template<typename ValueType>
-//        std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>> ExplicitGspnModelBuilder<ValueType>::partitonEnabledImmediateTransitions(
+//        std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>>
+//        ExplicitGspnModelBuilder<ValueType>::partitonEnabledImmediateTransitions(
 //                storm::gspn::Marking const& marking,
 //                std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> const& enabledImmediateTransitions) {
 //            decltype(partitonEnabledImmediateTransitions(marking, enabledImmediateTransitions)) result;
@@ -200,7 +205,8 @@
 //        }
 //
 //        template<typename ValueType>
-//        double ExplicitGspnModelBuilder<ValueType>::getAccumulatedWeight(std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> const& vector) const {
+//        double ExplicitGspnModelBuilder<ValueType>::getAccumulatedWeight(std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> const& vector)
+//        const {
 //            double result = 0;
 //
 //            for (auto &trans : vector) {
@@ -312,7 +318,7 @@
 //                storm::gspn::Marking marking(gspn.getNumberOfPlaces(), numberOfBits, bitvector);
 //                for (auto i = 0; i < marking.getNumberOfPlaces(); i++) {
 //                    if (marking.getNumberOfTokensAt(i) > 0) {
-//                        std::cout << i << std::endl;
+//                        std::cout << i << '\n';
 //                        labeling.addLabelToState(idToName.at(i), i);
 //                    }
 //                }

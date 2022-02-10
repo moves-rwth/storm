@@ -5,36 +5,37 @@
  *      Author: Manuel Sascha Weiand
  */
 
-#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
+#include "test/storm_gtest.h"
 
 #include <vector>
 
+#include "storm-parsers/parser/MarkovAutomatonParser.h"
 #include "storm-parsers/parser/MarkovAutomatonSparseTransitionParser.h"
 #include "storm-parsers/util/cstring.h"
-#include "storm-parsers/parser/MarkovAutomatonParser.h"
-#include "storm/settings/SettingMemento.h"
-#include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/FileIoException.h"
+#include "storm/exceptions/WrongFormatException.h"
+#include "storm/settings/SettingMemento.h"
 
 #define STATE_COUNT 6ul
 #define CHOICE_COUNT 7ul
 
 TEST(MarkovAutomatonSparseTransitionParserTest, NonExistingFile) {
-
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(
+        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"),
+        storm::exceptions::FileIoException);
 }
 
 TEST(MarkovAutomatonSparseTransitionParserTest, BasicParsing) {
-
     // The file that will be used for the test.
     std::string filename = STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra";
 
     // Execute the parser.
-    typename storm::parser::MarkovAutomatonSparseTransitionParser<>::Result result = storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(filename);
+    typename storm::parser::MarkovAutomatonSparseTransitionParser<>::Result result =
+        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(filename);
 
     // Build the actual transition matrix.
     storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build(0, 0));
@@ -112,7 +113,8 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
     std::string filename = STORM_TEST_RESOURCES_DIR "/tra/ma_whitespaces.tra";
 
     // Execute the parser.
-    typename storm::parser::MarkovAutomatonSparseTransitionParser<>::Result result = storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(filename);
+    typename storm::parser::MarkovAutomatonSparseTransitionParser<>::Result result =
+        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(filename);
 
     // Build the actual transition matrix.
     storm::storage::SparseMatrix<double> transitionMatrix(result.transitionMatrixBuilder.build());
@@ -190,7 +192,8 @@ TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
     std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableBuildSettings().overrideDontFixDeadlocksSet(false);
 
     // Parse a Markov Automaton transition file with the fixDeadlocks Flag set and test if it works.
-    typename storm::parser::MarkovAutomatonSparseTransitionParser<>::Result result = storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra");
+    typename storm::parser::MarkovAutomatonSparseTransitionParser<>::Result result =
+        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra");
 
     // Test if the result is consistent with the parsed Markov Automaton.
     storm::storage::SparseMatrix<double> resultMatrix(result.transitionMatrixBuilder.build());
@@ -208,5 +211,7 @@ TEST(MarkovAutomatonSparseTransitionParserTest, DontFixDeadlocks) {
     // Try to parse a Markov Automaton transition file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
     std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableBuildSettings().overrideDontFixDeadlocksSet(true);
 
-    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra"), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(
+        storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra"),
+        storm::exceptions::WrongFormatException);
 }

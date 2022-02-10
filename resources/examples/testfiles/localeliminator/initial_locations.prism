@@ -1,0 +1,17 @@
+dtmc
+
+module main
+
+    x: [0..2] init 2;
+    y: [-1..1];
+    z: [0..1];
+    a: bool init true;
+    b: bool init false;
+    c: bool;
+
+    // For this test, we only care about the initial states, so the
+    // remaining behaviour doesn't matter. We only need to use every
+    // variable so it isn't eliminated during conversion to Jani.
+    [] x=0 | y=0 | z=0 | a | b | c -> true;
+
+endmodule

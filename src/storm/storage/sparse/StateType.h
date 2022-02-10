@@ -4,12 +4,11 @@
 #include <cstdint>
 
 namespace storm {
-    namespace storage {
-        namespace sparse {
-            typedef uint_fast64_t state_type;
-        }
-    }
+namespace storage {
+namespace sparse {
+typedef uint_fast64_t state_type;
 }
-
+}  // namespace storage
+}  // namespace storm
 
 #endif /* STORM_STORAGE_SPARSE_STATETYPE_H_ */

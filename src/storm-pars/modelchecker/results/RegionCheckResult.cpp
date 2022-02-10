@@ -60,9 +60,9 @@ namespace storm {
         template<typename ValueType>
         std::ostream& RegionCheckResult<ValueType>::writeToStream(std::ostream& out) const {
             writeCondensedToStream(out);
-            out << std::endl << "Region results: " << std::endl;
+            out << "\nRegion results: \n";
             for (auto const& res : this->regionResults) {
-                out << res.first.toString() << ": \t" << res.second << std::endl;
+                out << res.first.toString() << ": \t" << res.second << '\n';
             }
             return out;
         }
@@ -73,16 +73,16 @@ namespace storm {
             double unsatPercent = storm::utility::convertNumber<double>(unsatFraction) * 100.0;
             auto oneHundred = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(100.0);
             auto one = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1.0);
-            out << "  Fraction of satisfied area: " << satPercent << "%" << std::endl;
-            out << "Fraction of unsatisfied area: " << unsatPercent << "%" << std::endl;
-            out << "            Unknown fraction: " << (100.0 - satPercent - unsatPercent) << "%" << std::endl;
-            out << "     Total number of regions: " << regionResults.size() << std::endl;
+            out << "  Fraction of satisfied area: " << satPercent << "%\n";
+            out << "Fraction of unsatisfied area: " << unsatPercent << "%\n";
+            out << "            Unknown fraction: " << (100.0 - satPercent - unsatPercent) << "%\n";
+            out << "     Total number of regions: " << regionResults.size() << '\n';
             std::map<storm::modelchecker::RegionResult, uint_fast64_t> counters;
             for (auto const& res : this->regionResults) {
                 ++counters[res.second];
             }
             for (auto const& counter : counters) {
-                out << std::setw(28) << counter.first << ": " << counter.second << std::endl;
+                out << std::setw(28) << counter.first << ": " << counter.second << '\n';
             }
             return out;
         }

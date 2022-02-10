@@ -35,16 +35,16 @@ namespace storm {
 
         template <typename ValueType>
         void IterativePolicySearch<ValueType>::Statistics::print() const {
-            STORM_PRINT_AND_LOG("#STATS Total time: " << totalTimer << std::endl);
-            STORM_PRINT_AND_LOG("#STATS SAT Calls: " << satCalls << std::endl);
-            STORM_PRINT_AND_LOG("#STATS SAT Calls time: " << smtCheckTimer << std::endl);
-            STORM_PRINT_AND_LOG("#STATS Outer iterations: " << outerIterations << std::endl);
-            STORM_PRINT_AND_LOG("#STATS Solver initialization time: " << initializeSolverTimer << std::endl);
-            STORM_PRINT_AND_LOG("#STATS Obtain partial scheduler time: " << evaluateExtensionSolverTime << std::endl );
-            STORM_PRINT_AND_LOG("#STATS Update solver to extend partial scheduler time: " << encodeExtensionSolverTime << std::endl);
-            STORM_PRINT_AND_LOG("#STATS Update solver with new scheduler time: " << updateNewStrategySolverTime << std::endl);
-            STORM_PRINT_AND_LOG("#STATS Winning regions update time: " << winningRegionUpdatesTimer << std::endl);
-            STORM_PRINT_AND_LOG("#STATS Graph search time: " << graphSearchTime << std::endl);
+            STORM_PRINT_AND_LOG("#STATS Total time: " << totalTimer << '\n');
+            STORM_PRINT_AND_LOG("#STATS SAT Calls: " << satCalls << '\n');
+            STORM_PRINT_AND_LOG("#STATS SAT Calls time: " << smtCheckTimer << '\n');
+            STORM_PRINT_AND_LOG("#STATS Outer iterations: " << outerIterations << '\n');
+            STORM_PRINT_AND_LOG("#STATS Solver initialization time: " << initializeSolverTimer << '\n');
+            STORM_PRINT_AND_LOG("#STATS Obtain partial scheduler time: " << evaluateExtensionSolverTime << '\n' );
+            STORM_PRINT_AND_LOG("#STATS Update solver to extend partial scheduler time: " << encodeExtensionSolverTime << '\n');
+            STORM_PRINT_AND_LOG("#STATS Update solver with new scheduler time: " << updateNewStrategySolverTime << '\n');
+            STORM_PRINT_AND_LOG("#STATS Winning regions update time: " << winningRegionUpdatesTimer << '\n');
+            STORM_PRINT_AND_LOG("#STATS Graph search time: " << graphSearchTime << '\n');
         }
 
         template <typename ValueType>
@@ -898,7 +898,7 @@ namespace storm {
                     std::cout << " " << state;
                 }
             }
-            std::cout << std::endl;
+            std::cout << '\n';
         }
 
         template<typename ValueType>
@@ -923,7 +923,7 @@ namespace storm {
                 std::string filepath = options.getExportSATCallsPath() + "call_" + std::to_string(iteration) + ".smt2";
                 std::ofstream filestream;
                 storm::utility::openFile(filepath, filestream);
-                filestream << smtSolver->getSmtLibString() << std::endl;
+                filestream << smtSolver->getSmtLibString() << '\n';
                 storm::utility::closeFile(filestream);
             }
 

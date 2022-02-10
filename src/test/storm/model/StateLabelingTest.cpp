@@ -1,13 +1,9 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
-
+#include "test/storm_gtest.h"
 
 #include "storm/models/sparse/StateLabeling.h"
 
-
-
 TEST(StateLabelingTest, RemoveLabel) {
-
     storm::models::sparse::StateLabeling labeling(10);
     EXPECT_EQ(10ul, labeling.getNumberOfItems());
     EXPECT_EQ(0ul, labeling.getNumberOfLabels());

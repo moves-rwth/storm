@@ -77,28 +77,28 @@ namespace storm {
 
         public:
             DFT(DFTElementVector const &elements, DFTElementPointer const &tle);
-            
+
             DFTStateGenerationInfo buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const;
-            
+
             size_t generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const;
 
             size_t performStateGenerationInfoDFS(DFTStateGenerationInfo& generationInfo, std::queue<size_t>& visitQueue, storm::storage::BitVector& visited, size_t stateIndex) const;
-        
+
             DFT<ValueType> optimize() const;
-            
+
             void copyElements(std::vector<size_t> elements, storm::builder::DFTBuilder<ValueType> builder) const;
 
             void setDynamicBehaviorInfo();
-            
+
             size_t stateBitVectorSize() const {
                 // Ensure multiple of 64
                 return (mStateVectorSize / 64 + (mStateVectorSize % 64 != 0)) * 64;
             }
-            
+
             size_t nrElements() const {
                 return mElements.size();
             }
-            
+
             size_t nrBasicElements() const {
                 return mNrOfBEs;
             }
@@ -106,19 +106,19 @@ namespace storm {
             size_t nrDynamicElements() const;
 
             size_t nrStaticElements() const;
-            
+
             size_t getTopLevelIndex() const {
                 return mTopLevelIndex;
             }
-            
-            DFTElementType topLevelType() const {
-                return mElements[getTopLevelIndex()]->type();
+
+            DFTElementType getTopLevelType() const {
+                return getTopLevelElement()->type();
             }
-            
+
             size_t getMaxSpareChildCount() const {
                 return mMaxSpareChildCount;
             }
-            
+
             std::vector<size_t> getSpareIndices() const {
                 std::vector<size_t> indices;
                 for(auto const& elem : mElements) {
@@ -128,7 +128,7 @@ namespace storm {
                 }
                 return indices;
             }
-            
+
             std::vector<size_t> const& module(size_t representativeId) const {
                 if(representativeId == mTopLevelIndex) {
                     return mTopModule;
@@ -148,7 +148,7 @@ namespace storm {
                 STORM_LOG_ASSERT(isDependency(id), "Not a dependency.");
                 mDependencyInConflict.at(id) = false;
             }
-            
+
             std::vector<size_t> const& getDependencies() const {
                 return mDependencies;
             }
@@ -203,7 +203,7 @@ namespace storm {
             bool isDependency(size_t index) const {
                 return getElement(index)->isDependency();
             }
-            
+
             bool isRestriction(size_t index) const {
                 return getElement(index)->isRestriction();
             }
@@ -213,10 +213,10 @@ namespace storm {
                 return std::static_pointer_cast<DFTBE<ValueType> const>(mElements[index]);
             }
 
-            std::shared_ptr<DFTGate<ValueType> const> getTopLevelGate() const {
-                return getGate(mTopLevelIndex);
+            DFTElementCPointer getTopLevelElement() const {
+                return getElement(getTopLevelIndex());
             }
-            
+
             std::shared_ptr<DFTGate<ValueType> const> getGate(size_t index) const {
                 STORM_LOG_ASSERT(isGate(index), "Element is no gate.");
                 return std::static_pointer_cast<DFTGate<ValueType> const>(mElements[index]);
@@ -226,7 +226,7 @@ namespace storm {
                 STORM_LOG_ASSERT(isDependency(index), "Element is no dependency.");
                 return std::static_pointer_cast<DFTDependency<ValueType> const>(mElements[index]);
             }
-            
+
             std::shared_ptr<DFTRestriction<ValueType> const> getRestriction(size_t index) const {
                 STORM_LOG_ASSERT(isRestriction(index), "Element is no restriction.");
                 return std::static_pointer_cast<DFTRestriction<ValueType> const>(mElements[index]);
@@ -254,9 +254,9 @@ namespace storm {
             bool checkWellFormedness(bool validForAnalysis, std::ostream& stream) const;
 
             uint64_t maxRank() const;
-            
+
             std::vector<DFT<ValueType>> topModularisation() const;
-            
+
             bool isRepresentative(size_t id) const {
                 for (auto const& parent : getElement(id)->parents()) {
                     if (parent->isSpareGate()) {
@@ -278,15 +278,15 @@ namespace storm {
             bool hasFailed(DFTStatePointer const& state) const {
                 return state->hasFailed(mTopLevelIndex);
             }
-            
+
             bool hasFailed(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
                 return storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
             }
-            
+
             bool isFailsafe(DFTStatePointer const& state) const {
                 return state->isFailsafe(mTopLevelIndex);
             }
-            
+
             bool isFailsafe(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
                 return storm::storage::DFTState<ValueType>::isFailsafe(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
             }
@@ -310,9 +310,9 @@ namespace storm {
             }
 
             size_t getChild(size_t spareId, size_t nrUsedChild) const;
-            
+
             size_t getNrChild(size_t spareId, size_t childId) const;
-            
+
             std::string getElementsString() const;
 
             std::string getInfoString() const;
@@ -328,7 +328,7 @@ namespace storm {
             std::vector<size_t> getIndependentSubDftRoots(size_t index) const;
 
             DFTColouring<ValueType> colourDFT() const;
-            
+
             std::map<size_t, size_t> findBijection(size_t index1, size_t index2, DFTColouring<ValueType> const& colouring, bool sparesAsLeaves) const;
 
             DFTIndependentSymmetries findSymmetries(DFTColouring<ValueType> const& colouring) const;
@@ -336,7 +336,7 @@ namespace storm {
             void findSymmetriesHelper(std::vector<size_t> const& candidates, DFTColouring<ValueType> const& colouring, std::map<size_t, std::vector<std::vector<size_t>>>& result) const;
 
             std::vector<size_t> immediateFailureCauses(size_t index) const;
-            
+
             std::vector<size_t> findModularisationRewrite() const;
 
             void setElementLayoutInfo(size_t id, DFTLayoutInfo const& layoutInfo) {
@@ -390,7 +390,7 @@ namespace storm {
 
         private:
             std::tuple<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>> getSortedParentAndDependencyIds(size_t index) const;
-            
+
             bool elementIndicesCorrect() const {
                 for(size_t i = 0; i < mElements.size(); ++i) {
                     if(mElements[i]->id() != i) return false;
@@ -399,6 +399,6 @@ namespace storm {
             }
 
         };
-       
+
     }
 }
