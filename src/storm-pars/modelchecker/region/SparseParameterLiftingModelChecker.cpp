@@ -279,8 +279,11 @@ namespace storm {
             Valuation valuation;
             if (!initialValue) {
                 auto init = getGoodInitialPoint(env, region, dir, regionQueue.top().localMonRes);
-                STORM_LOG_INFO("Number of definitely monotone parameters:" << regionQueue.top().localMonRes->getGlobalMonotonicityResult()->getNumberOfMonotoneParameters());
-                STORM_LOG_INFO("Number of sufficient states:" << regionQueue.top().order->getNumberOfSufficientStates());
+                if (this->isUseMonotonicitySet()) {
+                    STORM_LOG_INFO("Number of definitely monotone parameters:"
+                                   << regionQueue.top().localMonRes->getGlobalMonotonicityResult()->getNumberOfMonotoneParameters());
+                    STORM_LOG_INFO("Number of sufficient states:" << regionQueue.top().order->getNumberOfSufficientStates());
+                }
                 value = storm::utility::convertNumber<ConstantType>(init.first);
                 valuation = std::move(init.second);
             } else {
