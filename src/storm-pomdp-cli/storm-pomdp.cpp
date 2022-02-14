@@ -369,9 +369,9 @@ namespace storm {
                         stateRewards[state + offset] = storm::utility::convertNumber<storm::RationalFunction>(constantPart);
                         stateRewards[state + offset + 1] = storm::RationalFunction(value0);
                         stateRewards[state + offset + 2] = storm::RationalFunction(0);
-
-                        smb.addNextValue(state + offset, state + 1, reward / value0);
-                        smb.addNextValue(state + offset, state + 2, storm::RationalFunction(1) - reward / value0);
+                        
+                        smb.addNextValue(state + offset, state + 1, newReward / value0);
+                        smb.addNextValue(state + offset, state + 2, storm::RationalFunction(1) - newReward / value0);
                         auto row = pMC->getTransitionMatrix().getRow(state);
                         for (auto const& entry : row) {
                             smb.addNextValue(state + offset + 1, entry.getColumn(), entry.getValue());
@@ -450,10 +450,7 @@ namespace storm {
                     auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                     STORM_PRINT_AND_LOG(" done.\n");
                     uint_fast64_t numberOfStates = pmc->getTransitionMatrix().getColumnCount();
-                    if (transformSettings.isConstantRewardsSet()) {
-                        pmc = makeRewardsConstant<ValueType, DdType>(pmc);
-                    }
-                    pmc->printModelInformationToStream(std::cout);
+
 
                     if (transformSettings.allowPostSimplifications()) {
                         STORM_PRINT_AND_LOG("Simplifying pMC...");
@@ -461,6 +458,10 @@ namespace storm {
                         STORM_PRINT_AND_LOG(" done.\n");
                         pmc->printModelInformationToStream(std::cout);
                     }
+                    if (transformSettings.isConstantRewardsSet()) {
+                        pmc = makeRewardsConstant<ValueType, DdType>(pmc);
+                    }
+                    pmc->printModelInformationToStream(std::cout);
                     STORM_PRINT_AND_LOG("Exporting pMC...");
                     storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
                     auto const& parameterSet = constraints.getVariables();
