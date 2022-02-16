@@ -146,6 +146,16 @@ namespace storm {
                 return this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble();
             }
 
+            bool RegionSettings::isAbsolutePrecisionSet() const {
+                auto str = this->getOption(extremumOptionName).getArgumentByName("precisiontype").getValueAsString();
+                if (str == "abs") {
+                    return true;
+                } else {
+                    assert(str == "rel");
+                    return false;
+                }
+            }
+
             bool RegionSettings::isExtremumSuggestionSet() const {
                 return this->getOption(extremumSuggestionOptionName).getHasOptionBeenSet();
             }
