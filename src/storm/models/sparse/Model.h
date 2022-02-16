@@ -49,6 +49,8 @@ class Model : public storm::models::Model<CValueType> {
     Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
     Model(ModelType modelType, storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
 
+    virtual ~Model() = default;
+
     /*!
      * Retrieves the backward transition relation of the model, i.e. a set of transitions between states
      * that correspond to the reversed transition relation of this model.

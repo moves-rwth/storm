@@ -126,7 +126,7 @@ namespace cpptempl
 	class Data
 	{
 	public:
-		virtual ~Data() {}
+		virtual ~Data() = default;
 		virtual bool empty() = 0 ;
 		virtual std::string getvalue();
 		virtual data_list& getlist();

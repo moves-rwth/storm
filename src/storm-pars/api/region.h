@@ -250,11 +250,11 @@ namespace storm {
          * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
          */
         template <typename ValueType>
-        std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
+        std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, bool absolutePrecision, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
             Environment env;
             bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, monotonicitySetting, monotoneParameters);
-            return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>());
+            return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), absolutePrecision);
         }
 
         template <typename ValueType>
@@ -275,12 +275,12 @@ namespace storm {
          * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
          */
         template <typename ValueType>
-        bool checkExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, ValueType const& suggestion, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
+        bool checkExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, bool absolutePrecision, ValueType const& suggestion, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
             Environment env;
             STORM_LOG_THROW(!monotonicitySetting.useOptimisticOrder, storm::exceptions::NotImplementedException, "Using optimistic order not yet implemented for checking extremal value");
             bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, monotonicitySetting, monotoneParameters);
-            return regionChecker->checkExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), suggestion);
+            return regionChecker->checkExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), absolutePrecision, suggestion);
         }
 
         template <typename ValueType>
