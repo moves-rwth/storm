@@ -798,14 +798,14 @@ namespace storm {
                     // TODO: hier eventueel checkExtremalValue van maken
                     if (regionSettings.isExtremumSuggestionSet()) {
                         ValueType suggestion = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumSuggestion());
-                        if (storm::api::checkExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, suggestion, monotonicitySettings, generateSplitEstimates, monotoneParameters)) {
+                        if (storm::api::checkExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, regionSettings.isAbsolutePrecisionSet(), suggestion, monotonicitySettings, generateSplitEstimates, monotoneParameters)) {
                             STORM_PRINT_AND_LOG(suggestion << " is the extremum ");
                         } else {
                             STORM_PRINT_AND_LOG(suggestion << " is NOT the extremum ");
                         }
 
                     } else {
-                        auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, monotonicitySettings, generateSplitEstimates, monotoneParameters);
+                        auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, regionSettings.isAbsolutePrecisionSet(), monotonicitySettings, generateSplitEstimates, monotoneParameters);
                         watch.stop();
                         std::stringstream valuationStr;
                         bool first = true;
