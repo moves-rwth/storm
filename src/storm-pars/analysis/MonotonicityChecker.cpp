@@ -38,6 +38,10 @@ namespace storm {
             if (ignore) {
                 return Monotonicity::Constant;
             }
+            if (succs.size() == 2 && order->compare(succs.at(0), succs.at(1)) == Order::NodeComparison::SAME) {
+                // It doesn't matter what we do, as it results to nodes at the same level in the order
+                return Monotonicity::Constant;
+            }
             auto succsSorted = order->sortStates(succs);
 
             uint_fast64_t succSize = succs.size();

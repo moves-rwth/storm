@@ -44,8 +44,29 @@ namespace storm {
             // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
 
             auto sortedSuccStates = this->sortStatesOrderAndMinMax(successors, order);
+
             if (sortedSuccStates.first.first != this->numberOfStates) {
-                return sortedSuccStates.first;
+                if (successors.size() == 2 && (successors.at(0) == currentState || successors.at(1) == currentState)) {
+                    // current state actually only has one real successor
+                    auto realSucc = successors.at(0) == currentState ? successors.at(1) : successors.at(0);
+                    ValueType reward = ValueType(0);
+                    if (rewardModel.hasStateActionRewards()) {
+                        reward = rewardModel.getStateActionReward(currentState);
+                    } else if (rewardModel.hasStateRewards()) {
+                        reward = rewardModel.getStateReward(currentState);
+                    } else {
+                        STORM_LOG_ASSERT(false, "Expecting reward");
+                    }
+
+                    if (reward.isZero()) {
+                        order->addToNode(currentState, order->getNode(realSucc));
+                    } else {
+                        order->addAbove(currentState, order->getNode(realSucc));
+                    }
+
+                } else {
+                    return sortedSuccStates.first;
+                }
             } else {
                 // We could order all successor states
                 ValueType reward = ValueType(0);
