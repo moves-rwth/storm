@@ -564,7 +564,6 @@ namespace storm {
                 }
                 std::shared_ptr<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>> castedPointerRewDtmc = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
                 if (castedPointerRewDtmc != nullptr) {
-                    assert (false);
                     res = castedPointerRewDtmc->extendOrder(order, region);
                 }
                 STORM_LOG_ASSERT(std::get<0>(res) != nullptr, "Unexpected order extender type");
