@@ -110,20 +110,20 @@ TYPED_TEST(SteadyStateCtmcCslModelCheckerTest, steadystatetest) {
     auto sortedVector = resultVector;
     std::sort(sortedVector.begin(), sortedVector.end());
     EXPECT_EQ(sortedVector[0], storm::utility::zero<ValueType>())
-        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_EQ(sortedVector[1], storm::utility::zero<ValueType>())
-        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_EQ(sortedVector[2], storm::utility::zero<ValueType>())
-        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[3], this->parseNumber("1/35"), this->precision())
-        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[4], this->parseNumber("2/35"), this->precision())
-        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[5], this->parseNumber("4/35"), this->precision())
-        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[6], this->parseNumber("1/5"), this->precision())
-        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
     EXPECT_NEAR(sortedVector[7], this->parseNumber("3/5"), this->precision())
-        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << std::endl;
+        << "Result of steady state computation is " << storm::utility::vector::toString(resultVector) << '\n';
 }
 }  // namespace

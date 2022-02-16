@@ -70,7 +70,7 @@ std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::com
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
     STORM_LOG_THROW(checkTask.isPlayerCoalitionSet(), storm::exceptions::InvalidPropertyException, "No player coalition was set.");
     auto coalitionStates = this->getModel().computeStatesOfCoalition(checkTask.getPlayerCoalition());
-    std::cout << "Found " << coalitionStates.getNumberOfSetBits() << " states in coalition." << std::endl;
+    std::cout << "Found " << coalitionStates.getNumberOfSetBits() << " states in coalition.\n";
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not implemented.");
 }
 

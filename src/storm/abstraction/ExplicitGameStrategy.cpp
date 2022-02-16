@@ -49,14 +49,14 @@ std::ostream& operator<<(std::ostream& out, ExplicitGameStrategy const& strategy
         if (choice == ExplicitGameStrategy::UNDEFINED) {
             undefinedStates.emplace_back(state);
         } else {
-            out << state << " -> " << choice << std::endl;
+            out << state << " -> " << choice << '\n';
         }
     }
     out << "undefined states: ";
     for (auto state : undefinedStates) {
         out << state << ", ";
     }
-    out << std::endl;
+    out << '\n';
 
     return out;
 }

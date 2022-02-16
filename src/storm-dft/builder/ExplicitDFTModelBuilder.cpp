@@ -179,7 +179,7 @@ namespace storm {
 
                     // Build transition matrix
                     modelComponents.transitionMatrix = matrixBuilder.builder.build(1, 1);
-                    STORM_LOG_TRACE("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
+                    STORM_LOG_TRACE("Transition matrix: \n" << modelComponents.transitionMatrix);
 
                     buildLabeling();
                     return;
@@ -248,7 +248,7 @@ namespace storm {
             // Build transition matrix
             modelComponents.transitionMatrix = matrixBuilder.builder.build(stateSize, stateSize);
             if (stateSize <= 15) {
-                STORM_LOG_TRACE("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
+                STORM_LOG_TRACE("Transition matrix: \n" << modelComponents.transitionMatrix);
             } else {
                 STORM_LOG_TRACE("Transition matrix: too big to print");
             }
@@ -311,7 +311,7 @@ namespace storm {
             }
             STORM_LOG_TRACE("New state remapping: " << matrixBuilder.stateRemapping);
             std::stringstream ss;
-            ss << "Index remapping:" << std::endl;
+            ss << "Index remapping:\n";
             for (auto tmp : indexRemapping) {
                 ss << tmp << " ";
             }
@@ -651,7 +651,7 @@ namespace storm {
                 }
 
                 if (model->getNumberOfStates() <= 15) {
-                    STORM_LOG_TRACE("Transition matrix: " << std::endl << model->getTransitionMatrix());
+                    STORM_LOG_TRACE("Transition matrix: \n" << model->getTransitionMatrix());
                 } else {
                     STORM_LOG_TRACE("Transition matrix: too big to print");
                 }
@@ -707,7 +707,7 @@ namespace storm {
             }
 
             if (model->getNumberOfStates() <= 15) {
-                STORM_LOG_TRACE("Transition matrix: " << std::endl << model->getTransitionMatrix());
+                STORM_LOG_TRACE("Transition matrix: \n" << model->getTransitionMatrix());
             } else {
                 STORM_LOG_TRACE("Transition matrix: too big to print");
             }
@@ -942,9 +942,9 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         void ExplicitDFTModelBuilder<ValueType, StateType>::printNotExplored() const {
-            std::cout << "states not explored:" << std::endl;
+            std::cout << "states not explored:\n";
             for (auto it : statesNotExplored) {
-                std::cout << it.first << " -> " << dft.getStateString(it.second.first) << std::endl;
+                std::cout << it.first << " -> " << dft.getStateString(it.second.first) << '\n';
             }
         }
 

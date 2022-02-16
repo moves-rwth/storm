@@ -100,12 +100,12 @@ std::ostream& SymbolicQualitativeCheckResult<Type>::writeToStream(std::ostream& 
             out << "true";
         }
     } else if (states == truthValues) {
-        out << "{true}" << std::endl;
+        out << "{true}\n";
     } else {
         if (truthValues.isZero()) {
-            out << "{false}" << std::endl;
+            out << "{false}\n";
         } else {
-            out << "{true, false}" << std::endl;
+            out << "{true, false}\n";
         }
     }
     return out;

@@ -33,7 +33,7 @@ namespace storm {
             * @param region The Region of the model's parameters.
             * @param useAssumptions Whether assumptions can be made.
             */
-           OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions = true);
+           OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula);
 
             /*!
              * Constructs a new OrderExtender.
@@ -43,17 +43,19 @@ namespace storm {
              * @param matrix The matrix of the considered model.
              * @param useAssumptions Whether assumptions can be made.
              */
-           OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool useAssumptions = true);
+           OrderExtender(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
             /*!
              * Creates an order based on the given formula.
              *
+             * @param region The region for the order.
+             * @param isOptimistic Boolean if optimistic order or normal order should be build
              * @param monRes The monotonicity result so far.
              * @return A triple with a pointer to the order and two states of which the current place in the order
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced but needed.
              */
-            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, bool isOptimistic, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
 
             /*!
              * Extends the order for the given region.
@@ -65,6 +67,7 @@ namespace storm {
              *         unplaced or needed.
              */
             virtual std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) = 0;
+
 
             /**
              * Initializes the min max values for a given region.
@@ -125,7 +128,6 @@ namespace storm {
              */
             bool isHope(std::shared_ptr<Order> order);
 
-
             /**
              * Returns all variables occuring at the outgoing transitions of states.
              *
@@ -160,9 +162,17 @@ namespace storm {
             std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(std::vector<uint_fast64_t> const& states, std::shared_ptr<Order> order);
 
         protected:
-            virtual std::shared_ptr<Order> getInitialOrder() = 0;
             void buildStateMap();
             std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortForFowardReasoning(uint_fast64_t currentState, std::shared_ptr<Order> order);
+            /*!
+             * Creates the initial order.
+             * The order is based on either the formula and model or the provided top/bottom states.
+             * These are provided when constructing the OrderExtender.
+             *
+             * @param isOptimistic bool ean whether the order should be optimistic or not
+             * @return pointer to the created order
+             */
+            virtual std::shared_ptr<Order> getInitialOrder(bool isOptimistic) = 0;
 
 
             // Order extension
@@ -176,7 +186,8 @@ namespace storm {
             std::pair<uint_fast64_t, bool> getNextState(std::shared_ptr<Order> order, uint_fast64_t stateNumber, bool done);
 
             // Order properties
-            std::shared_ptr<Order> initialOrder = nullptr;
+            boost::optional<storm::storage::BitVector> topStates;
+            boost::optional<storm::storage::BitVector> bottomStates;
             boost::optional<std::vector<ConstantType>> minValuesInit;
             boost::optional<std::vector<ConstantType>> maxValuesInit;
             std::map<std::shared_ptr<Order>, bool> usePLA;

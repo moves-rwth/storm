@@ -202,20 +202,20 @@ void ItemLabeling::setItems(std::string const& label, storage::BitVector&& label
 }
 
 void ItemLabeling::printLabelingInformationToStream(std::ostream& out) const {
-    out << this->getNumberOfLabels() << " labels" << std::endl;
+    out << this->getNumberOfLabels() << " labels\n";
     for (auto const& labelIndexPair : this->nameToLabelingIndexMap) {
-        out << "   * " << labelIndexPair.first << " -> " << this->labelings[labelIndexPair.second].getNumberOfSetBits() << " item(s)" << std::endl;
+        out << "   * " << labelIndexPair.first << " -> " << this->labelings[labelIndexPair.second].getNumberOfSetBits() << " item(s)\n";
     }
 }
 
 void ItemLabeling::printCompleteLabelingInformationToStream(std::ostream& out) const {
-    out << "Labels: \t" << this->getNumberOfLabels() << std::endl;
+    out << "Labels: \t" << this->getNumberOfLabels() << '\n';
     for (auto label : nameToLabelingIndexMap) {
         out << "Label '" << label.first << "': ";
         for (auto index : this->labelings[label.second]) {
             out << index << " ";
         }
-        out << std::endl;
+        out << '\n';
     }
 }
 

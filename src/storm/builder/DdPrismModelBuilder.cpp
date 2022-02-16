@@ -1438,7 +1438,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
     STORM_LOG_THROW(!program.hasUnboundedVariables(), storm::exceptions::InvalidArgumentException,
                     "Program contains unbounded variables which is not supported by the DD engine.");
 
-    STORM_LOG_TRACE("Building representation of program:" << std::endl << program << std::endl);
+    STORM_LOG_TRACE("Building representation of program:\n" << program << '\n');
 
     // Start by initializing the structure used for storing all information needed during the model generation.
     // In particular, this creates the meta variables used to encode the model.
@@ -1497,7 +1497,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBui
             storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();
             uint_fast64_t count = 0;
             for (auto it = deadlockStatesAdd.begin(), ite = deadlockStatesAdd.end(); it != ite && count < 3; ++it, ++count) {
-                STORM_LOG_INFO((*it).first.toPrettyString(generationInfo.rowMetaVariables) << std::endl);
+                STORM_LOG_INFO((*it).first.toPrettyString(generationInfo.rowMetaVariables) << '\n');
             }
 
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::CTMC) {

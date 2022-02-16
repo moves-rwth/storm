@@ -113,11 +113,11 @@ BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), buckets
 BitVector& BitVector::operator=(BitVector const& other) {
     // Only perform the assignment if the source and target are not identical.
     if (this != &other) {
-        bitCount = other.bitCount;
         if (buckets && bucketCount() != other.bucketCount()) {
             delete[] buckets;
             buckets = nullptr;
         }
+        bitCount = other.bitCount;
         if (!buckets) {
             buckets = new uint64_t[other.bucketCount()];
         }
@@ -856,7 +856,7 @@ storm::storage::BitVector BitVector::getAsBitVector(uint_fast64_t start, uint_fa
             STORM_LOG_ERROR("Getting from " << start << " with length " << length);
             std::stringstream stream;
             printBits(stream);
-            stream << std::endl;
+            stream << '\n';
             result.printBits(stream);
             STORM_LOG_ERROR(stream.str());
             STORM_LOG_ASSERT(false, "Getting of bits not correct.");
@@ -869,7 +869,7 @@ storm::storage::BitVector BitVector::getAsBitVector(uint_fast64_t start, uint_fa
                 STORM_LOG_ERROR("Getting from " << start << " with length " << length);
                 std::stringstream stream;
                 printBits(stream);
-                stream << std::endl;
+                stream << '\n';
                 original.printBits(stream);
                 STORM_LOG_ERROR(stream.str());
                 STORM_LOG_ASSERT(false, "Getting of bits not correct.");
@@ -949,7 +949,7 @@ void BitVector::setFromBitVector(uint_fast64_t start, BitVector const& other) {
             STORM_LOG_ERROR("Setting from " << start << " with length " << other.bitCount);
             std::stringstream stream;
             printBits(stream);
-            stream << std::endl;
+            stream << '\n';
             other.printBits(stream);
             STORM_LOG_ERROR(stream.str());
             STORM_LOG_ASSERT(false, "Setting of bits not correct.");
@@ -962,7 +962,7 @@ void BitVector::setFromBitVector(uint_fast64_t start, BitVector const& other) {
                 STORM_LOG_ERROR("Setting from " << start << " with length " << other.bitCount);
                 std::stringstream stream;
                 printBits(stream);
-                stream << std::endl;
+                stream << '\n';
                 original.printBits(stream);
                 STORM_LOG_ERROR(stream.str());
                 STORM_LOG_ASSERT(false, "Setting of bits not correct.");
@@ -1075,7 +1075,7 @@ void BitVector::printBits(std::ostream& out) const {
             out << tmp[63 - i];
         }
     }
-    out << std::endl;
+    out << '\n';
 }
 
 std::size_t FNV1aBitVectorHash::operator()(storm::storage::BitVector const& bv) const {

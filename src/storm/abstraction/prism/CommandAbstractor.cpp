@@ -554,15 +554,15 @@ std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> Command
         result.second.push_back(relevantUpdatePredicates.second);
     }
 
-    //                std::cout << "relevant predicates for command " << command.get().getGlobalIndex() << std::endl;
-    //                std::cout << "source predicates" << std::endl;
+    //                std::cout << "relevant predicates for command " << command.get().getGlobalIndex() << '\n';
+    //                std::cout << "source predicates\n";
     //                for (auto const& i : result.first) {
-    //                    std::cout << this->getAbstractionInformation().getPredicateByIndex(i) << std::endl;
+    //                    std::cout << this->getAbstractionInformation().getPredicateByIndex(i) << '\n';
     //                }
     //                for (uint64_t i = 0; i < result.second.size(); ++i) {
-    //                    std::cout << "destination " << i << std::endl;
+    //                    std::cout << "destination " << i << '\n';
     //                    for (auto const& j : result.second[i]) {
-    //                        std::cout << this->getAbstractionInformation().getPredicateByIndex(j) << std::endl;
+    //                        std::cout << this->getAbstractionInformation().getPredicateByIndex(j) << '\n';
     //                    }
     //                }
 

@@ -132,7 +132,7 @@ namespace storm {
                     storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
                 // TODO change to this, results in an "undefined reference" error atm
                 this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(
-                    &statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+                    statesWithProbability01.second, statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
             }
         }
 
@@ -173,7 +173,7 @@ namespace storm {
                 STORM_LOG_THROW(!statesWithProbability01.first.empty(), storm::exceptions::InvalidPropertyException, "There should be state with probability of reaching goal of 0");
                 STORM_LOG_THROW(!statesWithProbability01.second.empty(), storm::exceptions::InvalidPropertyException, "There should be state with probability of reaching goal of 1");
                 this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(
-                    &statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+                    statesWithProbability01.second, statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
             }
         }
 
@@ -214,7 +214,7 @@ namespace storm {
             if (RegionModelChecker<ValueType>::isUseMonotonicitySet()) {
                 storm::storage::BitVector topStates(this->parametricModel->getNumberOfStates(), false);
                 this->orderExtender = std::make_shared<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(
-                    &topStates, &targetStates, this->parametricModel->getTransitionMatrix(), this->parametricModel->getUniqueRewardModel());
+                    topStates, targetStates, this->parametricModel->getTransitionMatrix(), this->parametricModel->getUniqueRewardModel());
             }
         }
 
@@ -551,7 +551,7 @@ namespace storm {
         template<typename SparseModelType, typename ConstantType>
         std::shared_ptr<storm::analysis::Order>
         SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) {
-
+            STORM_LOG_ASSERT (order != nullptr, "Cannot extend a non-existing nullptr");
             if (this->orderExtender) {
                 std::tuple<std::shared_ptr<storm::analysis::Order>, uint_fast64_t, uint_fast64_t> res = {nullptr, 0,0};
                 std::shared_ptr<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>> castedPointerReachDtmc = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
@@ -575,6 +575,36 @@ namespace storm {
                 STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             }
             return order;
+        }
+
+        template<typename SparseModelType, typename ConstantType>
+        std::shared_ptr<storm::analysis::Order>
+        SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInitialOrder(storm::storage::ParameterRegion<ValueType> region, bool isOptimistic) {
+            if (this->orderExtender) {
+                std::tuple<std::shared_ptr<storm::analysis::Order>, uint_fast64_t, uint_fast64_t> res = {nullptr, 0,0};
+                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>> castedPointerReachDtmc = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerReachDtmc != nullptr) {
+                    res = castedPointerReachDtmc->toOrder(region, isOptimistic);
+                }
+                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>> castedPointerReachMdp = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerReachMdp != nullptr) {
+                    assert (false);
+                    res = castedPointerReachMdp->toOrder(region, isOptimistic);
+                }
+                std::shared_ptr<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>> castedPointerRewDtmc = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerRewDtmc != nullptr) {
+                    res = castedPointerRewDtmc->toOrder(region, isOptimistic);
+                }
+                STORM_LOG_ASSERT(std::get<0>(res) != nullptr, "Unexpected order extender type");
+                std::shared_ptr<storm::analysis::Order> order = std::get<0>(res);
+                if (std::get<1>(res) != order->getNumberOfStates()) {
+                    this->orderExtender->setUnknownStates(order, std::get<1>(res), std::get<2>(res));
+                }
+                return order;
+            } else {
+                STORM_LOG_WARN("Extending order not possible");
+                return nullptr;
+            }
         }
 
         template <typename SparseModelType, typename ConstantType>

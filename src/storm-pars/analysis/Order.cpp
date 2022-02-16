@@ -7,9 +7,9 @@
 
 namespace storm {
     namespace analysis {
-        Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
+        Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool isOptimistic) {
             STORM_LOG_ASSERT(bottomStates->getNumberOfSetBits() > 0, "Expecting order to contain at least one bottom state");
-            init(numberOfStates, decomposition);
+            init(numberOfStates, decomposition, isOptimistic);
             this->numberOfAddedStates = 0;
             this->onlyInitialOrder = true;
             if(!topStates->empty()){
@@ -39,8 +39,8 @@ namespace storm {
             }
         }
 
-        Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
-            init(numberOfStates, decomposition);
+        Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool isOptimistic) {
+            init(numberOfStates, decomposition, isOptimistic);
 
             this->onlyInitialOrder = true;
             this->sufficientForState.set(topState);
@@ -63,8 +63,9 @@ namespace storm {
             }
         }
 
-        Order::Order(){
+        Order::Order() {
             this->invalid = false;
+            this->optimistic = true;
         }
 
         /*** Modifying the order ***/
@@ -76,7 +77,7 @@ namespace storm {
             } else {
                 addBetween(state, top, bottom);
             }
-            addStateToHandle(state);
+//            addStateToHandle(state);
         }
 
         void Order::addAbove(uint_fast64_t state, Node *node) {
@@ -133,7 +134,7 @@ namespace storm {
         }
 
         void Order::addBetween(uint_fast64_t state, Node *above, Node *below) {
-            STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin() << std::endl);
+            STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin() << '\n');
 
             STORM_LOG_ASSERT (above != below, "Cannot add between the same nodes");
             if(above == nullptr){
@@ -186,6 +187,10 @@ namespace storm {
         }
 
         void Order::addRelationNodes(Order::Node *above, Order::Node * below, bool allowMerge) {
+            if (above == below) {
+                this->invalid = true;
+                return;
+            }
             if (compare(above, below) == BELOW) {
                 if (allowMerge) {
                     mergeNodes(above, below);
@@ -226,7 +231,7 @@ namespace storm {
         }
 
         bool Order::mergeNodes(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2) {
-            STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << std::endl);
+            STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << '\n');
 
             // Merges node2 into node 1
             // everything above n2 also above n1
@@ -272,13 +277,12 @@ namespace storm {
 
         /*** Checking on the order ***/
 
-        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis){
+        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis) {
             return  compare(getNode(state1), getNode(state2), hypothesis);
         }
 
         Order::NodeComparison Order::compareFast(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis) const {
-            auto res = compareFast(getNode(state1), getNode(state2), hypothesis);
-            return res;
+            return compareFast(getNode(state1), getNode(state2), hypothesis);
         }
 
         Order::NodeComparison Order::compareFast(Node* node1, Node* node2, NodeComparison hypothesis) const {
@@ -559,6 +563,7 @@ namespace storm {
             copiedOrder->sufficientForState = storm::storage::BitVector(sufficientForState);
             copiedOrder->numberOfAddedStates = this->numberOfAddedStates;
             copiedOrder->doneBuilding = this->doneBuilding;
+            copiedOrder->setOptimistic(this->isOptimistic());
 
             auto seenStates = storm::storage::BitVector(numberOfStates, false);
             //copy nodes
@@ -604,7 +609,7 @@ namespace storm {
 
         void Order::toDotOutput() const {
             // Graphviz Output start
-            STORM_PRINT("Dot Output:" << std::endl << "digraph model {" << std::endl);
+            STORM_PRINT("Dot Output:\n" << "digraph model {\n");
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(sufficientForState);
@@ -640,12 +645,12 @@ namespace storm {
                 }
             }
             // Graphviz Output end
-            STORM_PRINT("}" << std::endl);
+            STORM_PRINT("}\n");
         }
 
         void Order::dotOutputToFile(std::ostream &dotOutfile) const {
             // Graphviz Output start
-            dotOutfile << "Dot Output:" << std::endl << "digraph model {" << std::endl;
+            dotOutfile << "Dot Output:\n" << "digraph model {\n";
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
@@ -687,12 +692,13 @@ namespace storm {
             }
 
             // Graphviz Output end
-            dotOutfile << "}" << std::endl;
+            dotOutfile << "}\n";
         }
 
         /*** Private methods ***/
 
-        void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool doneBuilding) {
+        void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool isOptimistic, bool doneBuilding) {
+            this->optimistic = isOptimistic;
             this->numberOfStates = numberOfStates;
             this->invalid = false;
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
@@ -851,14 +857,23 @@ namespace storm {
             mdpScheduler.get()[state] = action;
         }
 
-        uint64_t Order::getActionAtState(uint_fast64_t state) {
-            assert(mdpScheduler != boost::none);
-            return mdpScheduler.get()[state];
+        uint64_t Order::getActionAtState(uint_fast64_t state) const {
+            STORM_LOG_ASSERT (mdpScheduler != boost::none, "Expecting the mdp scheduler to exist");
+            STORM_LOG_ASSERT (mdpScheduler->size() > state, "Cannot get action for a state which is outside the mdpscheduler range");
+            return mdpScheduler->at(state);
         }
 
-        bool Order::isActionSetAtState(uint_fast64_t state){
-            if (mdpScheduler == boost::none) return false;
-            return mdpScheduler.get()[state] != std::numeric_limits<uint64_t>::max();
+        bool Order::isActionSetAtState(uint_fast64_t state) const {
+            if (mdpScheduler == boost::none || (mdpScheduler->size() > state)) return false;
+            return mdpScheduler->at(state) != std::numeric_limits<uint64_t>::max();
+        }
+
+        bool Order::isOptimistic() const {
+           return optimistic;
+        }
+
+        void Order::setOptimistic(bool isOptimistic) {
+            this->optimistic = isOptimistic;
         }
     }
 }

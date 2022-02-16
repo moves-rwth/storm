@@ -6,12 +6,12 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType, typename ConstantType>
-        ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool useAssumptions) : OrderExtender<ValueType, ConstantType>(model, formula, useAssumptions) {
+        ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula) : OrderExtender<ValueType, ConstantType>(model, formula) {
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
         }
 
         template<typename ValueType, typename ConstantType>
-        ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool useAssumptions) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, useAssumptions) {
+        ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
         }
 
@@ -28,65 +28,90 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder() {
-            if (this->initialOrder == nullptr) {
-                STORM_LOG_ASSERT (this->model != nullptr, "Can't get initial order if model is not specified");
+        std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder(bool isOptimistic) {
+            std::shared_ptr<Order> order;
+            if (this->bottomStates == boost::none || this->topStates == boost::none) {
+                STORM_LOG_ASSERT(this->model != nullptr, "Can't get initial order if model is not specified");
                 // STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
                 modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*(this->model));
                 storage::BitVector phiStates;
                 storage::BitVector psiStates;
-                STORM_LOG_ASSERT (this->formula->isProbabilityOperatorFormula(), "Can't get initial order if formula is not a probability operator formula");
+                STORM_LOG_ASSERT(this->formula->isProbabilityOperatorFormula(), "Can't get initial order if formula is not a probability operator formula");
                 if (this->formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
-                    phiStates = propositionalChecker.check(
-                                                        this->formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-                    psiStates = propositionalChecker.check(
-                                                        this->formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                    phiStates = propositionalChecker.check(this->formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getLeftSubformula())
+                                    ->asExplicitQualitativeCheckResult()
+                                    .getTruthValuesVector();
+                    psiStates = propositionalChecker.check(this->formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula().getRightSubformula())
+                                    ->asExplicitQualitativeCheckResult()
+                                    .getTruthValuesVector();
                 } else {
-                    STORM_LOG_ASSERT (this->formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula(), "Expecting formula to be until or eventually formula");
+                    STORM_LOG_ASSERT(this->formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula(),
+                                     "Expecting formula to be until or eventually formula");
                     phiStates = storage::BitVector(this->numberOfStates, true);
-                    psiStates = propositionalChecker.check(
-                                                        this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                    psiStates = propositionalChecker.check(this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())
+                                    ->asExplicitQualitativeCheckResult()
+                                    .getTruthValuesVector();
                 }
                 // Get the maybeStates
-                std::pair<storage::BitVector, storage::BitVector> statesWithProbability01 = utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
-                storage::BitVector topStates = statesWithProbability01.second;
-                storage::BitVector bottomStates = statesWithProbability01.first;
+                std::pair<storage::BitVector, storage::BitVector> statesWithProbability01 =
+                    utility::graph::performProb01(this->model->getBackwardTransitions(), phiStates, psiStates);
+                this->topStates = std::move(statesWithProbability01.second);
+                this->bottomStates = std::move(statesWithProbability01.first);
 
-                STORM_LOG_THROW(topStates.begin() != topStates.end(), exceptions::NotSupportedException,"Formula yields to no 1 states");
-                STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), exceptions::NotSupportedException,"Formula yields to no zero states");
-                auto& matrix = this->model->getTransitionMatrix();
-                std::vector<uint64_t> firstStates;
-
-                storm::storage::BitVector subStates (topStates.size(), true);
-                for (auto state : topStates) {
-                    firstStates.push_back(state);
-                    subStates.set(state, false);
-                }
-                for (auto state : bottomStates) {
-                    firstStates.push_back(state);
-                    subStates.set(state, false);
-                }
-                this->cyclic = storm::utility::graph::hasCycle(matrix, subStates);
-                storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
-                if (this->cyclic) {
-                    storm::storage::StronglyConnectedComponentDecompositionOptions options;
-                    options.forceTopologicalSort();
-                    decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
-                }
-                auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(true), firstStates);
-                this->initialOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
-                this->buildStateMap();
+                STORM_LOG_THROW(this->topStates->begin() != this->topStates->end(), exceptions::NotSupportedException, "Formula yields to no 1 states");
+                STORM_LOG_THROW(this->bottomStates->begin() != this->bottomStates->end(), exceptions::NotSupportedException, "Formula yields to no zero states");
             }
 
-            if (!this->minValues.empty() && !this->maxValues.empty()) {
-                this->continueExtending[this->initialOrder] = true;
-                this->usePLA[this->initialOrder] = true;
-                addInitialStatesMinMax(this->initialOrder);
+            storm::storage::StronglyConnectedComponentDecompositionOptions options;
+            options.forceTopologicalSort();
+
+            this->numberOfStates = this->matrix.getColumnCount();
+            std::vector<uint64_t> firstStates;
+
+            storm::storage::BitVector subStates (this->topStates->size(), true);
+            for (auto state : (this->topStates.get())) {
+                firstStates.push_back(state);
+                subStates.set(state, false);
+            }
+            for (auto state : (this->bottomStates.get())) {
+                firstStates.push_back(state);
+                subStates.set(state, false);
+            }
+            this->cyclic = storm::utility::graph::hasCycle(this->matrix, subStates);
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
+            if (this->cyclic) {
+                decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);
+            }
+
+            auto statesSorted = storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates);
+            order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
+            this->buildStateMap();
+
+            if (this->minValuesInit) {
+                this->minValues[order] = this->minValuesInit.get();
+            }
+
+            if (this->maxValuesInit) {
+                this->maxValues[order] = this->maxValuesInit.get();
+            }
+
+            if (this->minValuesInit && this->maxValuesInit) {
+                this->continueExtending[order] = true;
+                this->usePLA[order] = true;
+                addInitialStatesMinMax(order);
+                for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
+                    auto& successors = this->getSuccessors(i);
+                    for (uint_fast64_t succ1 = 0; succ1 <successors.size(); ++succ1) {
+                        for (uint_fast64_t succ2 = succ1 + 1; succ2 < successors.size(); ++succ2) {
+                            this->addStatesBasedOnMinMax(order, succ1, succ2);
+                        }
+                    }
+                }
             } else {
-                this->usePLA[this->initialOrder] = false;
+                this->usePLA[order] = false;
             }
 
-            return this->initialOrder;
+            return order;
         }
 
         template <typename ValueType, typename ConstantType>
@@ -137,7 +162,7 @@ namespace storm {
             STORM_LOG_ASSERT (this->cyclic, "Needs cyclic model for forward reasoning");
 
             std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
-            uint_fast64_t s1= sorted.first.second;
+            uint_fast64_t s1= sorted.first.first;
             uint_fast64_t s2 = sorted.first.second;
             std::vector<uint_fast64_t>& statesSorted = sorted.second;
             if (s1 == this->numberOfStates) {

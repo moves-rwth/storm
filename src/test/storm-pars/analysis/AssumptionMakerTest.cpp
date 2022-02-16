@@ -38,8 +38,8 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     ASSERT_EQ(193ul, model->getNumberOfStates());
     ASSERT_EQ(383ul, model->getNumberOfTransitions());
 
-    auto *extender = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(model, formulas[0]);
-    auto criticalTuple = extender->toOrder(region, nullptr);
+    storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>* extender = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(model, formulas[0]);
+    auto criticalTuple = extender->toOrder(region, false);
     ASSERT_EQ(183ul, std::get<1>(criticalTuple));
     ASSERT_EQ(186ul, std::get<2>(criticalTuple));
 
@@ -95,7 +95,7 @@ TEST(AssumptionMakerTest, Simple1) {
     options.forceTopologicalSort();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted, false));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
@@ -147,7 +147,7 @@ TEST(AssumptionMakerTest, Casestudy1) {
     options.forceTopologicalSort();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted, false));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);

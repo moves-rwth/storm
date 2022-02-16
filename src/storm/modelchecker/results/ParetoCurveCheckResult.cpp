@@ -59,14 +59,14 @@ typename ParetoCurveCheckResult<ValueType>::polytope_type const& ParetoCurveChec
 
 template<typename ValueType>
 std::ostream& ParetoCurveCheckResult<ValueType>::writeToStream(std::ostream& out) const {
-    out << std::endl;
+    out << '\n';
     if (hasUnderApproximation()) {
-        out << "Underapproximation of achievable values: " << underApproximation->toString() << std::endl;
+        out << "Underapproximation of achievable values: " << underApproximation->toString() << '\n';
     }
     if (hasOverApproximation()) {
-        out << "Overapproximation of achievable values: " << overApproximation->toString() << std::endl;
+        out << "Overapproximation of achievable values: " << overApproximation->toString() << '\n';
     }
-    out << points.size() << " Pareto optimal points found:" << std::endl;
+    out << points.size() << " Pareto optimal points found:\n";
     for (auto const& p : points) {
         out << "   (";
         for (auto it = p.begin(); it != p.end(); ++it) {
@@ -87,7 +87,7 @@ std::ostream& ParetoCurveCheckResult<ValueType>::writeToStream(std::ostream& out
             }
             out << " )";
         }
-        out << std::endl;
+        out << '\n';
     }
     return out;
 }

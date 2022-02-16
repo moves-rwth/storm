@@ -24,7 +24,7 @@ inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<Da
             }
             filestream << *columnIt;
         }
-        filestream << std::endl;
+        filestream << '\n';
     }
 
     if (header2) {
@@ -34,7 +34,7 @@ inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<Da
             }
             filestream << *columnIt;
         }
-        filestream << std::endl;
+        filestream << '\n';
     }
 
     for (auto const& row : data) {
@@ -44,7 +44,7 @@ inline void exportDataToCSVFile(std::string filepath, std::vector<std::vector<Da
             }
             filestream << *columnIt;
         }
-        filestream << std::endl;
+        filestream << '\n';
     }
     storm::utility::closeFile(filestream);
 }
@@ -68,7 +68,7 @@ inline void outputFixedWidth(std::ostream& stream, Container const& output, size
         stream << s;
         curLength += s.length();
         if (maxWidth > 0 && curLength >= maxWidth) {
-            stream << std::endl;
+            stream << '\n';
             curLength = 0;
         }
     }

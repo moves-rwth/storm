@@ -71,7 +71,7 @@ namespace storm {
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-                    STORM_PRINT_AND_LOG("Progress (solved fraction) :" << std::endl <<  "0% [");
+                    STORM_PRINT_AND_LOG("Progress (solved fraction) :\n" <<  "0% [");
                     while (displayedProgress < storm::utility::one<CoefficientType>() - thresholdAsCoefficient) {
                         STORM_PRINT_AND_LOG(" ");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
@@ -80,7 +80,7 @@ namespace storm {
                         STORM_PRINT_AND_LOG("-");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
                     }
-                    STORM_PRINT_AND_LOG("] 100%" << std::endl << "   [");
+                    STORM_PRINT_AND_LOG("] 100%\n" << "   [");
                     displayedProgress = storm::utility::zero<CoefficientType>();
                 }
 
@@ -174,7 +174,7 @@ namespace storm {
                         }
                     }
                     monWatch.stop();
-                    STORM_PRINT(std::endl << "Time for orderBuilding and monRes initialization: " << monWatch << "." << std::endl << std::endl);
+                    STORM_PRINT("\nTime for orderBuilding and monRes initialization: " << monWatch << ".\n\n");
                 }
                 bool useSameOrder = useMonotonicity && order->getDoneBuilding();
                 bool useSameLocalMonotonicityResult = useSameOrder && localMonotonicityResult->isDone();
@@ -309,13 +309,13 @@ namespace storm {
                         STORM_PRINT_AND_LOG("-");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
                     }
-                    STORM_PRINT_AND_LOG("]" << std::endl);
+                    STORM_PRINT_AND_LOG("]\n");
                     
-                    STORM_PRINT_AND_LOG("Region Refinement Statistics:" << std::endl);
-                    STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions." << std::endl);
+                    STORM_PRINT_AND_LOG("Region Refinement Statistics:\n");
+                    STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions.\n");
 
                     if (useMonotonicity) {
-                        STORM_PRINT_AND_LOG("    " << numberOfRegionsKnownThroughMonotonicity << " regions where discovered with help of monotonicity." << std::endl);
+                        STORM_PRINT_AND_LOG("    " << numberOfRegionsKnownThroughMonotonicity << " regions where discovered with help of monotonicity.\n");
 
                     }
                 }
@@ -331,13 +331,13 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision) {
+        std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing extremal values is not supported for this region model checker.");
             return std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>();
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, ParametricType const& valueToCheck) {
+        bool RegionModelChecker<ParametricType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, ParametricType const& valueToCheck) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Checking extremal values is not supported for this region model checker.");
             return false;
         }
@@ -364,24 +364,37 @@ namespace storm {
         }
 
         template <typename ParametricType>
+        std::shared_ptr<storm::analysis::Order>
+        RegionModelChecker<ParametricType>::getInitialOrder(storm::storage::ParameterRegion<ParametricType> region, bool isOptimistic) {
+            STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
+            // Does nothing
+            return nullptr;
+        }
+
+        template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
             STORM_LOG_WARN("Setting constant entries fo local monotonicity result not implemented");
             // Does nothing
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() const{
+        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() const {
             return useMonotonicity;
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isUseBoundsSet() {
+        bool RegionModelChecker<ParametricType>::isUseBoundsSet() const {
             return useBounds;
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isOnlyGlobalSet() {
+        bool RegionModelChecker<ParametricType>::isOnlyGlobalSet() const {
             return useOnlyGlobal;
+        }
+
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::isUseOptimisticOrderSet() const {
+            return useOptimisticOrder;
         }
 
         template <typename ParametricType>
@@ -399,6 +412,12 @@ namespace storm {
         void RegionModelChecker<ParametricType>::setUseOnlyGlobal(bool global) {
             assert (!global || useMonotonicity);
             this->useOnlyGlobal = global;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setUseOptimisticOrder(bool optimistic){
+            assert (!optimistic || useMonotonicity && useBounds);
+            this->useOptimisticOrder = optimistic;
         }
 
         template <typename ParametricType>

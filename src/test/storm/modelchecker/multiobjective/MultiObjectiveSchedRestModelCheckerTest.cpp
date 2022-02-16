@@ -82,7 +82,7 @@ std::string toString(std::vector<Point> pointset, bool asDouble) {
                 s << pi;
             }
         }
-        s << "]" << std::endl;
+        s << "]\n";
     }
     return s.str();
 }
@@ -112,14 +112,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
@@ -127,14 +127,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, steps) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 }
 
@@ -171,14 +171,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -190,14 +190,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
@@ -205,14 +205,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -228,14 +228,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -251,14 +251,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, mecs) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 }
 
@@ -295,14 +295,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -313,14 +313,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
@@ -328,14 +328,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -351,14 +351,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -369,14 +369,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
@@ -384,14 +384,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env = getGoalDeterministicEnvironment();
@@ -404,14 +404,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
@@ -419,14 +419,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -437,14 +437,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
@@ -452,14 +452,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -470,14 +470,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
@@ -485,14 +485,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     ++formulaIndex;
@@ -503,14 +503,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 
     env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
@@ -518,14 +518,14 @@ TEST(MultiObjectiveSchedRestModelCheckerTest, compromise) {
     ASSERT_TRUE(result->isParetoCurveCheckResult());
     actual = result->asExplicitParetoCurveCheckResult<storm::RationalNumber>().getPoints();
     missingPoints = setMinus(expected, actual);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the expected solution are missing:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
     incorrectPoints = setMinus(actual, expected);
-    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:" << std::endl
-                                         << "Expected:" << std::endl
-                                         << toString(expected, true) << "Actual:" << std::endl
+    EXPECT_TRUE(incorrectPoints.empty()) << "Some points of the returned solution are not expected:\n"
+                                         << "Expected:\n"
+                                         << toString(expected, true) << "Actual:\n"
                                          << toString(actual, true);
 }
 }  // namespace

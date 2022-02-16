@@ -182,7 +182,7 @@ void GreatSpnEditorProjectParser::traverseConstantOrTemplateElement(xercesc::DOM
             } else if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("INTEGER") == 0) {
                 type = manager->getIntegerType();
             } else {
-                STORM_PRINT_AND_LOG("Unknown consttype: " << storm::adapters::XMLtoString(attr->getNodeValue()) << std::endl);
+                STORM_PRINT_AND_LOG("Unknown consttype: " << storm::adapters::XMLtoString(attr->getNodeValue()) << '\n');
             }
         } else if (name.compare("value") == 0) {
             valueStr = storm::adapters::XMLtoString(attr->getNodeValue());

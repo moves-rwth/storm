@@ -92,7 +92,7 @@ void JaniGSPNBuilder::addEdges(storm::jani::Automaton& automaton, uint64_t locId
         for (auto const& transId : partition.transitions) {
             auto const& trans = gspn.getImmediateTransitions()[transId];
             if (trans.noWeightAttached()) {
-                std::cout << "ERROR -- no weights attached at transition" << std::endl;
+                std::cout << "ERROR -- no weights attached at transition\n";
                 continue;
             }
             storm::expressions::Expression destguard = expressionManager->boolean(true);

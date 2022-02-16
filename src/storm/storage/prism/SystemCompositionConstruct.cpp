@@ -13,9 +13,9 @@ Composition const& SystemCompositionConstruct::getSystemComposition() const {
 }
 
 std::ostream& operator<<(std::ostream& stream, SystemCompositionConstruct const& systemCompositionConstruct) {
-    stream << "system" << std::endl;
-    stream << "\t" << systemCompositionConstruct.getSystemComposition() << std::endl;
-    stream << "endsystem" << std::endl;
+    stream << "system\n";
+    stream << "\t" << systemCompositionConstruct.getSystemComposition() << '\n';
+    stream << "endsystem\n";
     return stream;
 }
 

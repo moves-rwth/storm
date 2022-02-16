@@ -51,9 +51,9 @@ TEST(MonotonicityCheckerTest, Simple1_larger_region) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
-    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
+    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto order = std::get<0>(orderExtender.toOrder(region, nullptr));
+    auto order = std::get<0>(orderExtender.toOrder(region, false));
     // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
@@ -96,9 +96,9 @@ TEST(MonotonicityCheckerTest, Simple1_small_region) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
-    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
+    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto order = std::get<0>(orderExtender.toOrder(region, nullptr));
+    auto order = std::get<0>(orderExtender.toOrder(region, false));
     // TODO: this shouldn't be necessary, check orderextender
 //    order->addRelation(1,2);
     // monchecker
@@ -144,9 +144,9 @@ TEST(MonotonicityCheckerTest, Casestudy1) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
-    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
+    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto res =orderExtender.extendOrder(nullptr, region);
+    auto res = orderExtender.toOrder(region, false);
     auto order = std::get<0>(res);
     ASSERT_TRUE(order->getDoneBuilding());
 
@@ -193,9 +193,9 @@ TEST(MonotonicityCheckerTest, Casestudy2) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
-    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
+    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto res =orderExtender.extendOrder(nullptr, region);
+    auto res = orderExtender.toOrder(region, false);
     auto order = std::get<0>(res);
     order->addRelation(1,3);
     order->addRelation(3,2);
@@ -244,9 +244,10 @@ TEST(MonotonicityCheckerTest, Casestudy3) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
     // OrderExtender
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
-    auto orderExtender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
-    auto res =orderExtender.extendOrder(nullptr, region);
+    storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>* extender = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, matrix);
+
+    auto res = extender->toOrder(region, false);
     auto order = std::get<0>(res);
     ASSERT_TRUE(order->getDoneBuilding());
 

@@ -4,12 +4,12 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType, typename ConstantType>
-    ReachabilityOrderExtenderMdp<ValueType, ConstantType>::ReachabilityOrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool prMax, bool useAssumptions) : ReachabilityOrderExtender<ValueType, ConstantType>(model, formula, useAssumptions) {
+    ReachabilityOrderExtenderMdp<ValueType, ConstantType>::ReachabilityOrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool prMax) : ReachabilityOrderExtender<ValueType, ConstantType>(model, formula) {
             this->prMax = prMax;
         }
 
         template<typename ValueType, typename ConstantType>
-        ReachabilityOrderExtenderMdp<ValueType, ConstantType>::ReachabilityOrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax, bool useAssumptions) : ReachabilityOrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, useAssumptions) {
+        ReachabilityOrderExtenderMdp<ValueType, ConstantType>::ReachabilityOrderExtenderMdp(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax) : ReachabilityOrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->prMax = prMax;
         }
 
@@ -27,13 +27,10 @@ namespace storm {
 
                 template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_ASSERT(!(assumption != nullptr && order == nullptr), "Can't deal with assumptions for non-existing order");
+            STORM_LOG_ASSERT (order != nullptr, "Order should be provided");
             if (assumption != nullptr) {
                 STORM_LOG_INFO("Handling assumption " << *assumption << std::endl);
                 this->handleAssumption(order, assumption);
-            }
-            if (order == nullptr) {
-                order = this->getInitialOrder();
             }
 
             auto currentStateMode = this->getNextState(order, this->numberOfStates, false);

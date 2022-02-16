@@ -201,8 +201,8 @@ void SettingsManager::setFromConfigurationFile(std::string const& configFilename
                 // If the option was already set from the command line, we issue a warning and ignore the
                 // settings from the configuration file.
                 STORM_LOG_WARN("The option '" << option->getLongName() << "' of module '" << option->getModuleName()
-                                              << "' has been set in the configuration file '" << configFilename << "', but was overwritten on the command line."
-                                              << std::endl);
+                                              << "' has been set in the configuration file '" << configFilename
+                                              << "', but was overwritten on the command line.\n");
             } else {
                 // If, however, the option has not been set yet, we try to assign values ot its arguments
                 // based on the argument strings.
@@ -215,7 +215,7 @@ void SettingsManager::setFromConfigurationFile(std::string const& configFilename
 }
 
 void SettingsManager::printHelp(std::string const& filter) const {
-    STORM_PRINT("usage: " << executableName << " [options]" << std::endl << std::endl);
+    STORM_PRINT("usage: " << executableName << " [options]\n\n");
 
     if (filter == "frequent" || filter == "all") {
         bool includeAdvanced = (filter == "all");
@@ -249,19 +249,19 @@ void SettingsManager::printHelp(std::string const& filter) const {
         }
         if (!includeAdvanced) {
             if (numHidden == 1) {
-                STORM_PRINT(numHidden << " hidden option." << std::endl);
+                STORM_PRINT(numHidden << " hidden option.\n");
             } else {
-                STORM_PRINT(numHidden << " hidden options." << std::endl);
+                STORM_PRINT(numHidden << " hidden options.\n");
             }
             if (!invisibleModules.empty()) {
                 if (invisibleModules.size() == 1) {
-                    STORM_PRINT(invisibleModules.size() << " hidden module (" << boost::join(invisibleModules, ", ") << ")." << std::endl);
+                    STORM_PRINT(invisibleModules.size() << " hidden module (" << boost::join(invisibleModules, ", ") << ").\n");
                 } else {
-                    STORM_PRINT(invisibleModules.size() << " hidden modules (" << boost::join(invisibleModules, ", ") << ")." << std::endl);
+                    STORM_PRINT(invisibleModules.size() << " hidden modules (" << boost::join(invisibleModules, ", ") << ").\n");
                 }
             }
-            STORM_PRINT(std::endl << "Type '" + executableName + " --help modulename' to display all options of a specific module." << std::endl);
-            STORM_PRINT("Type '" + executableName + " --help all' to display a complete list of options." << std::endl);
+            STORM_PRINT("\nType '" + executableName + " --help modulename' to display all options of a specific module.\n");
+            STORM_PRINT("Type '" + executableName + " --help all' to display a complete list of options.\n");
         }
     } else {
         // Create a regular expression from the input hint.
@@ -288,7 +288,7 @@ void SettingsManager::printHelp(std::string const& filter) const {
         std::string optionList = getHelpForSelection(matchingModuleNames, matchingOptionNames,
                                                      "Matching modules for filter '" + filter + "':", "Matching options for filter '" + filter + "':");
         if (optionList.empty()) {
-            STORM_PRINT("Filter '" << filter << "' did not match any modules or options." << std::endl);
+            STORM_PRINT("Filter '" << filter << "' did not match any modules or options.\n");
         } else {
             STORM_PRINT(optionList);
         }
@@ -333,7 +333,7 @@ std::string SettingsManager::getHelpForSelection(std::vector<std::string> const&
     uint_fast64_t maxLength = std::max(maxLengthModules, maxLengthOptions);
     if (selectedModuleNames.size() > 0) {
         if (modulesHeader != "") {
-            stream << modulesHeader << std::endl;
+            stream << modulesHeader << '\n';
         }
         for (auto const& matchingModuleName : selectedModuleNames) {
             stream << getHelpForModule(matchingModuleName, maxLength, true);
@@ -343,10 +343,10 @@ std::string SettingsManager::getHelpForSelection(std::vector<std::string> const&
     // Print the matching options.
     if (matchingOptions.size() > 0) {
         if (optionsHeader != "") {
-            stream << optionsHeader << std::endl;
+            stream << optionsHeader << '\n';
         }
         for (auto const& option : matchingOptions) {
-            stream << std::setw(maxLength) << std::left << *option << std::endl;
+            stream << std::setw(maxLength) << std::left << *option << '\n';
         }
     }
     return stream.str();
@@ -374,8 +374,7 @@ std::string SettingsManager::getHelpForModule(std::string const& moduleName, uin
         if (!includeAdvanced) {
             displayedModuleName += " (" + std::to_string(numOfOptions) + "/" + std::to_string(moduleIterator->second.size()) + " shown)";
         }
-        stream << "##### Module " << displayedModuleName << " " << std::string(std::min(maxLength, maxLength - displayedModuleName.length() - 14), '#')
-               << std::endl;
+        stream << "##### Module " << displayedModuleName << " " << std::string(std::min(maxLength, maxLength - displayedModuleName.length() - 14), '#') << '\n';
 
         // Save the flags for std::cout so we can manipulate them and be sure they will be restored as soon as this
         // stream goes out of scope.
@@ -383,10 +382,10 @@ std::string SettingsManager::getHelpForModule(std::string const& moduleName, uin
 
         for (auto const& option : moduleIterator->second) {
             if (includeAdvanced || !option->getIsAdvanced()) {
-                stream << std::setw(maxLength) << std::left << *option << std::endl;
+                stream << std::setw(maxLength) << std::left << *option << '\n';
             }
         }
-        stream << std::endl;
+        stream << '\n';
     }
     return stream.str();
 }

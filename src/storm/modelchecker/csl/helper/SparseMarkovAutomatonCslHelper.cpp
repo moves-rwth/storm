@@ -632,8 +632,7 @@ std::vector<ValueType> computeBoundedUntilProbabilitiesImca(Environment const& e
 
     // (2) Compute the number of steps we need to make for the interval.
     uint64_t numberOfSteps = static_cast<uint64_t>(std::ceil((upperBound - lowerBound) / delta));
-    STORM_LOG_INFO("Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [" << lowerBound << ", " << upperBound << "]."
-                                 << std::endl);
+    STORM_LOG_INFO("Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [" << lowerBound << ", " << upperBound << "].\n");
 
     // (3) Compute the non-goal states and initialize two vectors
     // * vProbabilistic holds the probability values of probabilistic non-goal states.
@@ -659,7 +658,7 @@ std::vector<ValueType> computeBoundedUntilProbabilitiesImca(Environment const& e
 
         // Compute the number of steps to reach the target interval.
         numberOfSteps = static_cast<uint64_t>(std::ceil(lowerBound / delta));
-        STORM_LOG_INFO("Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [0, " << lowerBound << "]." << std::endl);
+        STORM_LOG_INFO("Performing " << numberOfSteps << " iterations (delta=" << delta << ") for interval [0, " << lowerBound << "].\n");
 
         // Compute the bounded reachability for interval [0, b-a].
         computeBoundedReachabilityProbabilitiesImca(env, dir, transitionMatrix, exitRateVector, storm::storage::BitVector(numberOfStates), markovianStates,

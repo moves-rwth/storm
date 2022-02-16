@@ -68,8 +68,8 @@ namespace storm {
              * The returned value v corresponds to the value at the returned valuation.
              * The actual maximum (minimum) lies in the interval [v, v+precision] ([v-precision, v])
              */
-            virtual std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision);
-            virtual bool checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, ParametricType const& valueToCheck);
+            virtual std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision);
+            virtual bool checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, ParametricType const& valueToCheck);
 
             /*!
              * Returns true if region split estimation (a) was enabled when model and check task have been specified and (b) is supported by this region model checker.
@@ -84,15 +84,19 @@ namespace storm {
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
 
+            virtual std::shared_ptr<storm::analysis::Order> getInitialOrder(storm::storage::ParameterRegion<ParametricType> region, bool isOptimistic);
+
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
             bool isUseMonotonicitySet() const;
-            bool isUseBoundsSet();
-            bool isOnlyGlobalSet();
+            bool isUseBoundsSet() const;
+            bool isOnlyGlobalSet() const;
+            bool isUseOptimisticOrderSet() const;
 
             void setUseMonotonicity(bool monotonicity = true);
             void setUseBounds(bool bounds = true);
             void setUseOnlyGlobal(bool global = true);
+            void setUseOptimisticOrder(bool optimistic = true);
 
             void setMonotoneParameters(std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneParameters);
 
@@ -100,6 +104,7 @@ namespace storm {
             bool useMonotonicity = false;
             bool useOnlyGlobal = false;
             bool useBounds = false;
+            bool useOptimisticOrder = false;
 
         protected:
 

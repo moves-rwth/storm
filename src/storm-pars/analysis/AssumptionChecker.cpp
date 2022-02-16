@@ -328,7 +328,7 @@ namespace storm {
             bool addVar2 = false;
 
             // Check if the order for all states is known, if this is the case and we find an satisfiable instantion our assumption is invalid.
-            bool orderKnown;
+            bool orderKnown = true;
 
             // Start creating expression for order of states
             // We need a new manager as the one from the assumption is const.
@@ -380,22 +380,20 @@ namespace storm {
                             if (minValues[itr2->getColumn()] > maxValues[itr1->getColumn()]) {
                                 if (!order->contains(itr1->getColumn())) {
                                     order->add(itr1->getColumn());
-                                    order->addStateToHandle(itr1->getColumn());
                                 }
                                 if (!order->contains(itr2->getColumn())) {
                                     order->add(itr2->getColumn());
-                                    order->addStateToHandle(itr2->getColumn());
                                 }
                                 order->addRelation(itr2->getColumn(), itr1->getColumn());
                                 comp = Order::NodeComparison::BELOW;
                             } else if (minValues[itr1->getColumn()] > maxValues[itr2->getColumn()]) {
                                 if (!order->contains(itr1->getColumn())) {
                                     order->add(itr1->getColumn());
-                                    order->addStateToHandle(itr1->getColumn());
+//                                    order->addStateToHandle(itr1->getColumn());
                                 }
                                 if (!order->contains(itr2->getColumn())) {
                                     order->add(itr2->getColumn());
-                                    order->addStateToHandle(itr2->getColumn());
+//                                    order->addStateToHandle(itr2->getColumn());
                                 }
                                 order->addRelation(itr1->getColumn(), itr2->getColumn());
                                 comp = Order::NodeComparison::ABOVE;
@@ -498,12 +496,12 @@ namespace storm {
             solver::Z3SmtSolver s(*manager);
             s.add(exprOrderSucc);
             s.add(exprBounds);
-            s.setTimeout(100);
+            s.setTimeout(1000);
             // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
             // when this is not the case, the order is invalid
             // however, it could be that the sat solver didn't finish in time, in that case we just continue.
             if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
-                STORM_LOG_ASSERT(false, "The order of successors plus the bounds should be satisfiable, probably the order is invalid");
+                STORM_LOG_ASSERT(order->isOptimistic(), "The order of successors plus the bounds should be satisfiable, probably the order is invalid");
                 return AssumptionStatus::INVALID;
             }
 
@@ -514,12 +512,11 @@ namespace storm {
             if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
                 exprToCheck = expr1 <= expr2;
             } else {
-                assert (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal);
                 exprToCheck = expr1 != expr2;
             }
 
             s.add(exprToCheck);
-            auto smtRes = s.check();
+            solver::SmtSolver::CheckResult smtRes = s.check();
             if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
                 // If it is unsatisfiable the original assumtpion should be valid
                 return AssumptionStatus::VALID;

@@ -9,17 +9,17 @@ template<storm::dd::DdType Type, typename ValueType>
 void explicitExportSymbolicModel(std::string const& filename, std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> symbolicModel) {
     std::ofstream filestream;
     storm::utility::openFile(filename, filestream);
-    filestream << "// storm exported dd" << std::endl;
-    filestream << "%transitions" << std::endl;
+    filestream << "// storm exported dd\n";
+    filestream << "%transitions\n";
     storm::utility::closeFile(filestream);
     symbolicModel->getTransitionMatrix().exportToText(filename);
     storm::utility::openFile(filename, filestream, true, true);
-    filestream << "%initial" << std::endl;
+    filestream << "%initial\n";
     storm::utility::closeFile(filestream);
     symbolicModel->getInitialStates().template toAdd<ValueType>().exportToText(filename);
     for (auto const& label : symbolicModel->getLabels()) {
         storm::utility::openFile(filename, filestream, true, true);
-        filestream << std::endl << "%label " << label << std::endl;
+        filestream << "\n%label " << label << '\n';
         storm::utility::closeFile(filestream);
         symbolicModel->getStates(label).template toAdd<ValueType>().exportToText(filename);
     }

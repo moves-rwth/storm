@@ -144,7 +144,7 @@ TEST(BitVectorDeathTest, GetSetAssertion) {
     EXPECT_DEATH_IF_SUPPORTED(vector.set(32), "");
 #endif
 #else
-    std::cerr << "WARNING: Not testing GetSetAssertions, as they are disabled in release mode." << std::endl;
+    std::cerr << "WARNING: Not testing GetSetAssertions, as they are disabled in release mode.\n";
     SUCCEED();
 #endif
 }
@@ -593,4 +593,11 @@ TEST(BitVectorTest, Expand) {
     vector2.expandSize();
     ASSERT_EQ(128ul, vector2.size());
     ASSERT_EQ(2ul, vector2.getNumberOfSetBits());
+}
+
+TEST(BitVectorTest, Assignment) {
+    storm::storage::BitVector v1(10), v2(100000);
+    v1 = v2;
+    v1.set(9999);
+    ASSERT_TRUE(v1.get(9999));
 }

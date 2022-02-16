@@ -243,15 +243,13 @@ void BisimulationDecomposition<ModelType, BlockDataType>::computeBisimulationDec
         std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);
         std::chrono::milliseconds quotientBuildTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(quotientBuildTime);
         std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-        std::cout << std::endl;
-        std::cout << "Time breakdown:" << std::endl;
-        std::cout << "    * time for initial partition: " << initialPartitionTimeInMilliseconds.count() << "ms" << std::endl;
-        std::cout << "    * time for partitioning: " << refinementTimeInMilliseconds.count() << "ms" << std::endl;
-        std::cout << "    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms" << std::endl;
-        std::cout << "    * time for building quotient: " << quotientBuildTimeInMilliseconds.count() << "ms" << std::endl;
-        std::cout << "------------------------------------------" << std::endl;
-        std::cout << "    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl;
-        std::cout << std::endl;
+        std::cout << "\nTime breakdown:\n";
+        std::cout << "    * time for initial partition: " << initialPartitionTimeInMilliseconds.count() << "ms\n";
+        std::cout << "    * time for partitioning: " << refinementTimeInMilliseconds.count() << "ms\n";
+        std::cout << "    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms\n";
+        std::cout << "    * time for building quotient: " << quotientBuildTimeInMilliseconds.count() << "ms\n";
+        std::cout << "------------------------------------------\n";
+        std::cout << "    * total time: " << totalTimeInMilliseconds.count() << "ms\n\n";
     }
 }
 
@@ -282,7 +280,7 @@ void BisimulationDecomposition<ModelType, BlockDataType>::performPartitionRefine
         refinePartitionBasedOnSplitter(*splitter, splitterQueue);
 
         if (storm::utility::resources::isTerminate()) {
-            std::cout << "Performed " << iterations << " iterations of partition refinement before abort." << std::endl;
+            std::cout << "Performed " << iterations << " iterations of partition refinement before abort.\n";
             STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted in bisimulation computation.");
             break;
         }

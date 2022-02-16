@@ -88,10 +88,10 @@ bool TopologicalCudaMinMaxLinearEquationSolver<ValueType>::internalSolveEquation
 
     // For testing only
     if (sizeof(ValueType) == sizeof(double)) {
-        // std::cout << "<<< Using CUDA-DOUBLE Kernels >>>" << std::endl;
+        // std::cout << "<<< Using CUDA-DOUBLE Kernels >>>\n";
         STORM_LOG_INFO("<<< Using CUDA-DOUBLE Kernels >>>");
     } else {
-        // std::cout << "<<< Using CUDA-FLOAT Kernels >>>" << std::endl;
+        // std::cout << "<<< Using CUDA-FLOAT Kernels >>>\n";
         STORM_LOG_INFO("<<< Using CUDA-FLOAT Kernels >>>");
     }
 
@@ -112,7 +112,7 @@ bool TopologicalCudaMinMaxLinearEquationSolver<ValueType>::internalSolveEquation
     std::vector<std::pair<bool, storm::storage::StateBlock>> sccDecomposition;
     if (__USE_CUDAFORSTORM_OPT && (gpuSizeOfCompleteSystem < cudaFreeMemory)) {
         // Dummy output for SCC Times
-        // std::cout << "Computing the SCC Decomposition took 0ms" << std::endl;
+        // std::cout << "Computing the SCC Decomposition took 0ms\n";
 
 #ifdef STORM_HAVE_CUDA
         STORM_LOG_THROW(resetCudaDevice(), storm::exceptions::InvalidStateException, "Could not reset CUDA Device, can not use CUDA Equation Solver.");
@@ -262,7 +262,7 @@ bool TopologicalCudaMinMaxLinearEquationSolver<ValueType>::internalSolveEquation
                     << "The useGpu Flag of a SCC was set, but this version of storm does not support CUDA acceleration. Internal Error!";
 #endif
             } else {
-                // std::cout << "WARNING: Using CPU based TopoSolver! (double)" << std::endl;
+                // std::cout << "WARNING: Using CPU based TopoSolver! (double)\n";
                 STORM_LOG_INFO("Performance Warning: Using CPU based TopoSolver! (double)");
                 localIterations = 0;
                 converged = false;
@@ -316,8 +316,7 @@ bool TopologicalCudaMinMaxLinearEquationSolver<ValueType>::internalSolveEquation
             }
         }
 
-        // std::cout << "Used a total of " << globalIterations << " iterations with a maximum of " << localIterations << " iterations in a single block." <<
-        // std::endl;
+        // std::cout << "Used a total of " << globalIterations << " iterations with a maximum of " << localIterations << " iterations in a single block.\n"
 
         // Check if the solver converged and issue a warning otherwise.
         if (converged) {
