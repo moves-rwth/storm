@@ -197,10 +197,36 @@ namespace storm {
             STORM_LOG_INFO("Doing Forward reasoning");
             STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
+            auto& successors = this->getSuccessors(currentState);
+            if (successors.size() == 2 && (successors.at(0) == currentState || successors.at(1) == currentState)) {
+                // current state actually only has one real successor
+                auto realSucc = successors.at(0) == currentState ? successors.at(1) : successors.at(0);
+                ValueType reward = ValueType(0);
+                if (rewardModel.hasStateActionRewards()) {
+                    reward = rewardModel.getStateActionReward(currentState);
+                } else if (rewardModel.hasStateRewards()) {
+                    reward = rewardModel.getStateReward(currentState);
+                } else {
+                    STORM_LOG_ASSERT(false, "Expecting reward");
+                }
+
+                if (reward.isZero()) {
+                    if (!order->contains(realSucc)) {
+                        order->add(realSucc);
+                    }
+                    order->addToNode(currentState, order->getNode(realSucc));
+                } else {
+                    if (!order->contains(realSucc)) {
+                        order->add(realSucc);
+                    }
+                    order->addAbove(currentState, order->getNode(realSucc));
+                }
+                return {this->numberOfStates, this->numberOfStates};
+            }
 
             if (this->usePLA[order]) {
                 // try to sort stuff with assumptions, done here so the order of succs doesn't matter
-                for (auto& succ : this->getSuccessors(currentState)) {
+                for (auto& succ : successors) {
                     if (order->compare(succ, currentState) == Order::NodeComparison::UNKNOWN) {
                         auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region, this->minValues[order], this->maxValues[order]);
                         if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {

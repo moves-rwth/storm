@@ -175,10 +175,10 @@ namespace storm {
                         // If the state is kept and we should consider it
                         // we check if the outgoing transitions in the new transition matrix are constant, and the reward is 0
                         if (consideredStates[state] && newTransitionMatrixRound1.getRowGroupSize(newStateNumber) == 1 && storm::utility::isZero(actionRewards[sparseMatrix.getRowGroupIndices()[state-nrEliminated]])) {
-                            selectedStatesRound2.set(newStateNumber, true);
+//                            selectedStatesRound2.set(newStateNumber, true);
                             for (auto const& entry : newTransitionMatrixRound1.getRowGroup(newStateNumber)) {
                                 if (!storm::utility::isConstant(entry.getValue())) {
-                                    selectedStatesRound2.set(newStateNumber, false);
+//                                    selectedStatesRound2.set(newStateNumber, false);
                                     break;
                                 }
                             }
