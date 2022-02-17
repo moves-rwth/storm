@@ -40,11 +40,11 @@ namespace storm {
             bool addedSomething = false;
             auto& successors = this->getSuccessors(currentState);
 
-            if (successors.size() == 2 && rewardHack(order, currentState, successors.at(0), successors.at(1))) {
-                STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
-                STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
-                return std::make_pair(this->numberOfStates, this->numberOfStates);
-            }
+//            if (successors.size() == 2 && rewardHack(order, currentState, successors.at(0), successors.at(1))) {
+//                STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
+//                STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
+//                return std::make_pair(this->numberOfStates, this->numberOfStates);
+//            }
 
             // We sort the states, and then apply min/max comparison.
             // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
@@ -198,7 +198,16 @@ namespace storm {
             this->continueExtending[order] = true;
 
             for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
-                order->addStateToHandle(i);
+                auto& successors = this->getSuccessors(i);
+                if (successors.size() == 2) {
+                    rewardHack(order, i, successors.at(0), successors.at(1));
+                }
+            }
+
+            for (uint_fast64_t i : order->getBottom()->states) {
+                for (auto& entry : transposeMatrix.getRow(i)) {
+                    order->addStateToHandle(entry.getColumn());
+                }
             }
             return order;
         }
@@ -248,11 +257,11 @@ namespace storm {
             STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
             auto& successors = this->getSuccessors(currentState);
-            if (successors.size() == 2 && rewardHack(order, currentState, successors.at(0), successors.at(1))) {
-                STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
-                STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
-                return std::make_pair(this->numberOfStates, this->numberOfStates);
-            }
+//            if (successors.size() == 2 && rewardHack(order, currentState, successors.at(0), successors.at(1))) {
+//                STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
+//                STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
+//                return std::make_pair(this->numberOfStates, this->numberOfStates);
+//            }
 
             if (successors.size() == 2 && (successors.at(0) == currentState || successors.at(1) == currentState)) {
                 // current state actually only has one real successor
