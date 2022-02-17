@@ -796,6 +796,7 @@ namespace storm {
         }
 
         std::pair<uint_fast64_t, bool> Order::getNextStateNumber() {
+            assert (statesToHandle.empty());
             while (!statesSorted.empty()) {
                 auto state = statesSorted.back();
                 statesSorted.pop_back();
@@ -807,10 +808,14 @@ namespace storm {
         }
 
         std::pair<uint_fast64_t, bool> Order::getStateToHandle() {
-            assert (existsStateToHandle());
-            auto state = statesToHandle.back();
-            statesToHandle.pop_back();
-            return {state, false};
+            while (!statesToHandle.empty()) {
+                auto state = statesToHandle.back();
+                statesToHandle.pop_back();
+                if (!(sufficientForState[state] && contains(state))) {
+                    return {state, false};
+                }
+            }
+            return getNextStateNumber();
         }
 
         bool Order::existsStateToHandle() {

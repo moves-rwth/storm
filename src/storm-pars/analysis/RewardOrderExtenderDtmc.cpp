@@ -197,11 +197,8 @@ namespace storm {
             }
             this->continueExtending[order] = true;
 
-            for (auto& state : order->getBottom()->states) {
-                // add states that directly go to the bottom state to the states to handle
-                for (auto& entry : transposeMatrix.getRow(state)) {
-                    order->addStateToHandle(entry.getColumn());
-                }
+            for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
+                order->addStateToHandle(i);
             }
             return order;
         }
@@ -218,6 +215,9 @@ namespace storm {
                         order->add(succ1);
                         order->addStateToHandle(succ1);
                     }
+                    if (!order->contains(succ0)) {
+                        order->addStateToHandle(succ1);
+                    }
                     this->handleOneSuccessor(order, succ0, currentState);
                     order->addAbove(currentState, order->getNode(succ1));
                     return false;
@@ -231,6 +231,9 @@ namespace storm {
                     if (!order->contains(succ0)) {
                         order->add(succ0);
                         order->addStateToHandle(succ0);
+                    }
+                    if (!order->contains(succ1)) {
+                        order->addStateToHandle(succ1);
                     }
                     this->handleOneSuccessor(order, succ1, currentState);
                     order->addAbove(currentState, order->getNode(succ0));
@@ -402,6 +405,9 @@ namespace storm {
                 std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
 
                 if (successors.size() == 1) {
+                    if (!currentStateMode.second && !order->contains(successors[0])) {
+                        order->add(successors[0]);
+                    }
                     STORM_LOG_ASSERT (order->contains(successors[0]), "Expecting order to contain successor of state " << currentState);
                     this->handleOneSuccessor(order, currentState, successors[0]);
                 } else if (!successors.empty()) {
@@ -433,6 +439,9 @@ namespace storm {
                             this->checkParOnStateMonRes(currentState, order, param, region, monRes);
                         }
                     }
+                    for (auto& entry : transposeMatrix.getRow(currentState)) {
+                        order->addStateToHandle(entry.getColumn());
+                    }
                     // Get the next state
                     currentStateMode = this->getNextState(order, currentState, true);
                 } else {
@@ -447,6 +456,9 @@ namespace storm {
                         if (!order->contains(currentState)) {
                             // State is not parametric, so we hope that just adding it between =) and =( will help us
                             order->add(currentState);
+                        }
+                        for (auto& entry : transposeMatrix.getRow(currentState)) {
+                            order->addStateToHandle(entry.getColumn());
                         }
                         currentStateMode = this->getNextState(order, currentState, true);
                         continue;

@@ -147,6 +147,8 @@ namespace storm {
                     order->addToNode(val1, n2);
                 } else {
                     order->add(val1);
+                    order->addStateToHandle(val1);
+
                     order->addToNode(val2, order->getNode(val1));
                 }
             } else {
@@ -164,6 +166,8 @@ namespace storm {
                     }
                 } else {
                     order->add(val1);
+                    order->addStateToHandle(val1);
+
                     order->addBetween(val2, order->getNode(val1), order->getBottom());
                 }
             }
@@ -179,6 +183,8 @@ namespace storm {
                     result.push_back(state);
                     if (!order->contains(state)) {
                         order->add(state);
+                        order->addStateToHandle(state);
+
                     }
                 } else {
                     bool added = false;
@@ -188,6 +194,7 @@ namespace storm {
                             if (!order->contains(state)) {
                                 // This can only happen if *itr refers to top/bottom state
                                 order->add(state);
+                                order->addStateToHandle(state);
                             }
                             // insert at current pointer (while keeping other values)
                             result.insert(result.begin() + index, state);
@@ -253,9 +260,13 @@ namespace storm {
                     // state 1 will probably be larger than state2
                     if (!order->contains(state1)) {
                         order->add(state1);
+                        order->addStateToHandle(state1);
+
                     }
                     if (!order->contains(state2)) {
                         order->add(state2);
+                        order->addStateToHandle(state2);
+
                     }
                     STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
                     STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
@@ -268,9 +279,11 @@ namespace storm {
                     // state2 will probably be larger than state1
                     if (!order->contains(state1)) {
                         order->add(state1);
+                        order->addStateToHandle(state1);
                     }
                     if (!order->contains(state2)) {
                         order->add(state2);
+                        order->addStateToHandle(state2);
                     }
                     STORM_LOG_ASSERT(order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
                     STORM_LOG_ASSERT(order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
@@ -287,9 +300,13 @@ namespace storm {
                     // state 1 will always be larger than state2
                     if (!order->contains(state1)) {
                         order->add(state1);
+                        order->addStateToHandle(state1);
+
                     }
                     if (!order->contains(state2)) {
                         order->add(state2);
+                        order->addStateToHandle(state2);
+
                     }
                     STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
                     STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
@@ -302,9 +319,13 @@ namespace storm {
                     // state2 will always be larger than state1
                     if (!order->contains(state1)) {
                         order->add(state1);
+                        order->addStateToHandle(state1);
+
                     }
                     if (!order->contains(state2)) {
                         order->add(state2);
+                        order->addStateToHandle(state2);
+
                     }
                     STORM_LOG_ASSERT(order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
                     STORM_LOG_ASSERT(order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
@@ -423,7 +444,7 @@ namespace storm {
             if (done && currentState != numberOfStates) {
                 order->setSufficientForState(currentState);
             }
-            if (cyclic && order->existsStateToHandle()) {
+            if (order->existsStateToHandle()) {
                 return order->getStateToHandle();
             }
             if (currentState == numberOfStates) {
