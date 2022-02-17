@@ -209,6 +209,53 @@ namespace storm {
                     order->addStateToHandle(entry.getColumn());
                 }
             }
+
+            for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
+                auto& successorsI = this->getSuccessors(i);
+                if (successorsI.size() == 2) {
+                    for (uint_fast64_t j = i + 1; j < this->numberOfStates; ++j) {
+                        auto& successorsJ = this->getSuccessors(j);
+                        bool checkReward = false;
+
+                        if (successorsI[0] == successorsJ[0] && successorsI[1] == successorsJ[1]) {
+                            checkReward = this->matrix.getRow(i).begin()->getValue() == this->matrix.getRow(j).begin()->getValue();
+                        }
+
+                        if (checkReward) {
+                            // check welke reward t grootste is
+
+                            ValueType rewardI = ValueType(0);
+                            ValueType rewardJ = ValueType(0);
+                            if (rewardModel.hasStateActionRewards()) {
+                                rewardI = rewardModel.getStateActionReward(i);
+                                rewardJ = rewardModel.getStateActionReward(j);
+                            } else if (rewardModel.hasStateRewards()) {
+                                rewardI = rewardModel.getStateReward(i);
+                                rewardJ = rewardModel.getStateReward(j);
+                            } else {
+                                STORM_LOG_ASSERT(false, "Expecting reward");
+                            }
+
+                            if (!order->contains(i)) {
+                                order->add(i);
+                                order->addStateToHandle(i);
+                            }
+                            if (!order->contains(j)) {
+                                order->add(j);
+                                order->addStateToHandle(j);
+                            }
+                            if (rewardI.constantPart() > rewardJ.constantPart()) {
+                                order->addAbove(i, order->getNode(j));
+                            } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                                order->addAbove(j, order->getNode(i));
+                            } else {
+                                order->addRelation(i, j, true);
+                            }
+
+                        }
+                    }
+                }
+            }
             return order;
         }
 
