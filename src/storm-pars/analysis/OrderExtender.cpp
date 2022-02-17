@@ -491,11 +491,12 @@ namespace storm {
                     } else if (compareRes == Order::NodeComparison::UNKNOWN && !oneUnknown) {
                         // We miss state in the result.
                         s1 = state;
-                        s2 = *itr;
                         oneUnknown = true;
                         added = true;
                         break;
                     } else if (compareRes == Order::NodeComparison::UNKNOWN && oneUnknown) {
+                        s1=state;
+                        s2 = *itr;
                         unknown = true;
                         added = true;
                         break;

@@ -40,6 +40,27 @@ namespace storm {
             bool addedSomething = false;
             auto& successors = this->getSuccessors(currentState);
 
+            if (successors.size() == 2) {
+                if (this->getSuccessors(successors.at(0)).size() == 1 && this->getSuccessors(successors.at(0)).at(0) == currentState) {
+                    // We have curr --> succ0 and curr --> succ1 and succ0 --> curr
+                    if (!order->contains(currentState)) {
+                        order->add(currentState);
+                        order->addStateToHandle(currentState);
+                    }
+                    if (!order->contains(successors.at(1))) {
+                        order->add(successors.at(1));
+                        order->addStateToHandle(successors.at(1));
+                    }
+                    this->handleOneSuccessor(order, successors.at(0), currentState);
+                    order->addAbove(currentState, order->getNode(successors.at(1)));
+                    STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
+                    STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
+                    return std::make_pair(this->numberOfStates, this->numberOfStates);
+                }
+            }
+
+
+
             // We sort the states, and then apply min/max comparison.
             // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
 
@@ -157,7 +178,8 @@ namespace storm {
                 decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);
             }
 
-            auto statesSorted = storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates);
+            transposeMatrix = this->matrix.transpose();
+            auto statesSorted = storm::utility::graph::getTopologicalSort(transposeMatrix, firstStates);
 
             // Create Order
             std::shared_ptr<Order> order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
@@ -198,6 +220,40 @@ namespace storm {
             STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
             auto& successors = this->getSuccessors(currentState);
+            if (successors.size() == 2) {
+                if (this->getSuccessors(successors.at(0)).size() == 1 && this->getSuccessors(successors.at(0)).at(0) == currentState) {
+                    // We have curr --> succ0 and curr --> succ1 and succ0 --> curr
+                    if (!order->contains(currentState)) {
+                        order->add(currentState);
+                        order->addStateToHandle(currentState);
+                    }
+                    if (!order->contains(successors.at(1))) {
+                        order->add(successors.at(1));
+                        order->addStateToHandle(successors.at(1));
+                    }
+                    this->handleOneSuccessor(order, successors.at(0), currentState);
+                    order->addAbove(currentState, order->getNode(successors.at(1)));
+                    STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
+                    STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
+                    return std::make_pair(this->numberOfStates, this->numberOfStates);
+                }
+                if (this->getSuccessors(successors.at(1)).size() == 1 && this->getSuccessors(successors.at(1)).at(0) == currentState) {
+                    // We have curr --> succ0 and curr --> succ1 and succ1 --> curr
+                    if (!order->contains(currentState)) {
+                        order->add(currentState);
+                        order->addStateToHandle(currentState);
+                    }
+                    if (!order->contains(successors.at(0))) {
+                        order->add(successors.at(0));
+                        order->addStateToHandle(successors.at(0));
+                    }
+                    this->handleOneSuccessor(order, successors.at(1), currentState);
+                    order->addAbove(currentState, order->getNode(successors.at(0)));
+                    STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
+                    STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
+                    return std::make_pair(this->numberOfStates, this->numberOfStates);
+                }
+            }
             if (successors.size() == 2 && (successors.at(0) == currentState || successors.at(1) == currentState)) {
                 // current state actually only has one real successor
                 auto realSucc = successors.at(0) == currentState ? successors.at(1) : successors.at(0);
@@ -222,6 +278,17 @@ namespace storm {
                     order->addAbove(currentState, order->getNode(realSucc));
                 }
                 return {this->numberOfStates, this->numberOfStates};
+            } else if (successors.size() == 2 && (order->isBottomState(successors.at(0)) || order->isBottomState(successors.at(1)))) {
+                auto bottomState = order->isBottomState(successors.at(0)) ? successors.at(0) : successors.at(1);
+                auto otherState = order->isBottomState(successors.at(0)) ? successors.at(1) : successors.at(0);
+                // If there is only one transition going into bottomState (+ selfloop) we can do some normal forward reasoning
+                if (transposeMatrix.getRow(bottomState).getNumberOfEntries() == 2) {
+                    if (!order->contains(otherState)) {
+                        order->add(otherState);
+                        order->addStateToHandle(otherState);
+                    }
+                    order->addBetween(currentState, otherState, bottomState);
+                }
             }
 
             if (this->usePLA[order]) {
