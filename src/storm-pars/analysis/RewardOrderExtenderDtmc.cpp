@@ -40,26 +40,11 @@ namespace storm {
             bool addedSomething = false;
             auto& successors = this->getSuccessors(currentState);
 
-            if (successors.size() == 2) {
-                if (this->getSuccessors(successors.at(0)).size() == 1 && this->getSuccessors(successors.at(0)).at(0) == currentState) {
-                    // We have curr --> succ0 and curr --> succ1 and succ0 --> curr
-                    if (!order->contains(currentState)) {
-                        order->add(currentState);
-                        order->addStateToHandle(currentState);
-                    }
-                    if (!order->contains(successors.at(1))) {
-                        order->add(successors.at(1));
-                        order->addStateToHandle(successors.at(1));
-                    }
-                    this->handleOneSuccessor(order, successors.at(0), currentState);
-                    order->addAbove(currentState, order->getNode(successors.at(1)));
-                    STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
-                    STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
-                    return std::make_pair(this->numberOfStates, this->numberOfStates);
-                }
+            if (successors.size() == 2 && rewardHack(order, currentState, successors.at(0), successors.at(1))) {
+                STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
+                STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
+                return std::make_pair(this->numberOfStates, this->numberOfStates);
             }
-
-
 
             // We sort the states, and then apply min/max comparison.
             // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
@@ -211,7 +196,47 @@ namespace storm {
                 this->usePLA[order] = false;
             }
             this->continueExtending[order] = true;
+
+            for (auto& state : order->getBottom()->states) {
+                // add states that directly go to the bottom state to the states to handle
+                for (auto& entry : transposeMatrix.getRow(state)) {
+                    order->addStateToHandle(entry.getColumn());
+                }
+            }
             return order;
+        }
+
+        template<typename ValueType, typename ConstantType>
+        bool RewardOrderExtenderDtmc<ValueType, ConstantType>::rewardHack(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t succ0, uint_fast64_t succ1) {
+                if (this->getSuccessors(succ0).size() == 1 && this->getSuccessors(succ0).at(0) == currentState) {
+                    // We have curr --> succ0 and curr --> succ1 and succ0 --> curr
+                    if (!order->contains(currentState)) {
+                        order->add(currentState);
+                        order->addStateToHandle(currentState);
+                    }
+                    if (!order->contains(succ1)) {
+                        order->add(succ1);
+                        order->addStateToHandle(succ1);
+                    }
+                    this->handleOneSuccessor(order, succ0, currentState);
+                    order->addAbove(currentState, order->getNode(succ1));
+                    return false;
+                }
+                if (this->getSuccessors(succ1).size() == 1 && this->getSuccessors(succ1).at(0) == currentState) {
+                    // We have curr --> succ0 and curr --> succ1 and succ1 --> curr
+                    if (!order->contains(currentState)) {
+                        order->add(currentState);
+                        order->addStateToHandle(currentState);
+                    }
+                    if (!order->contains(succ0)) {
+                        order->add(succ0);
+                        order->addStateToHandle(succ0);
+                    }
+                    this->handleOneSuccessor(order, succ1, currentState);
+                    order->addAbove(currentState, order->getNode(succ0));
+                    return true;
+                }
+                return false;
         }
 
         template<typename ValueType, typename ConstantType>
@@ -220,40 +245,12 @@ namespace storm {
             STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
             auto& successors = this->getSuccessors(currentState);
-            if (successors.size() == 2) {
-                if (this->getSuccessors(successors.at(0)).size() == 1 && this->getSuccessors(successors.at(0)).at(0) == currentState) {
-                    // We have curr --> succ0 and curr --> succ1 and succ0 --> curr
-                    if (!order->contains(currentState)) {
-                        order->add(currentState);
-                        order->addStateToHandle(currentState);
-                    }
-                    if (!order->contains(successors.at(1))) {
-                        order->add(successors.at(1));
-                        order->addStateToHandle(successors.at(1));
-                    }
-                    this->handleOneSuccessor(order, successors.at(0), currentState);
-                    order->addAbove(currentState, order->getNode(successors.at(1)));
-                    STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
-                    STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
-                    return std::make_pair(this->numberOfStates, this->numberOfStates);
-                }
-                if (this->getSuccessors(successors.at(1)).size() == 1 && this->getSuccessors(successors.at(1)).at(0) == currentState) {
-                    // We have curr --> succ0 and curr --> succ1 and succ1 --> curr
-                    if (!order->contains(currentState)) {
-                        order->add(currentState);
-                        order->addStateToHandle(currentState);
-                    }
-                    if (!order->contains(successors.at(0))) {
-                        order->add(successors.at(0));
-                        order->addStateToHandle(successors.at(0));
-                    }
-                    this->handleOneSuccessor(order, successors.at(1), currentState);
-                    order->addAbove(currentState, order->getNode(successors.at(0)));
-                    STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
-                    STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
-                    return std::make_pair(this->numberOfStates, this->numberOfStates);
-                }
+            if (successors.size() == 2 && rewardHack(order, currentState, successors.at(0), successors.at(1))) {
+                STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
+                STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
+                return std::make_pair(this->numberOfStates, this->numberOfStates);
             }
+
             if (successors.size() == 2 && (successors.at(0) == currentState || successors.at(1) == currentState)) {
                 // current state actually only has one real successor
                 auto realSucc = successors.at(0) == currentState ? successors.at(1) : successors.at(0);
@@ -269,11 +266,13 @@ namespace storm {
                 if (reward.isZero()) {
                     if (!order->contains(realSucc)) {
                         order->add(realSucc);
+                        order->addStateToHandle(realSucc);
                     }
                     order->addToNode(currentState, order->getNode(realSucc));
                 } else {
                     if (!order->contains(realSucc)) {
                         order->add(realSucc);
+                        order->addStateToHandle(realSucc);
                     }
                     order->addAbove(currentState, order->getNode(realSucc));
                 }
@@ -355,6 +354,7 @@ namespace storm {
                     if (!order->contains(s1)) {
                         // It could be that s1 was not yet added, and could only be sorted because the other state was top/bottom, so we add it.
                         order->add(s1);
+                        order->addStateToHandle(s1);
                     }
                     // Relation between s1 and currState is still unknown, maybe we can find out
 
