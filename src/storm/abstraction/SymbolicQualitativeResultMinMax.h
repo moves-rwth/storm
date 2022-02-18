@@ -7,29 +7,29 @@
 #include "storm/abstraction/QualitativeResultMinMax.h"
 
 namespace storm {
-    namespace dd {
-        template<storm::dd::DdType Type>
-        class Bdd;
-    }
-    
-    namespace abstraction {
-        template<storm::dd::DdType Type>
-        class SymbolicQualitativeResult;
-        
-        template<storm::dd::DdType Type>
-        class SymbolicQualitativeResultMinMax : public QualitativeResultMinMax {
-        public:
-            SymbolicQualitativeResultMinMax() = default;
-            
-            virtual bool isSymbolic() const override;
-            
-            SymbolicQualitativeResult<Type> const& getProb0Min() const;
-            SymbolicQualitativeResult<Type> const& getProb1Min() const;
-            SymbolicQualitativeResult<Type> const& getProb0Max() const;
-            SymbolicQualitativeResult<Type> const& getProb1Max() const;
-            
-            virtual SymbolicQualitativeResult<Type> const& getProb0(storm::OptimizationDirection const& dir) const = 0;
-            virtual SymbolicQualitativeResult<Type> const& getProb1(storm::OptimizationDirection const& dir) const = 0;
-        };
-    }
+namespace dd {
+template<storm::dd::DdType Type>
+class Bdd;
 }
+
+namespace abstraction {
+template<storm::dd::DdType Type>
+class SymbolicQualitativeResult;
+
+template<storm::dd::DdType Type>
+class SymbolicQualitativeResultMinMax : public QualitativeResultMinMax {
+   public:
+    SymbolicQualitativeResultMinMax() = default;
+
+    virtual bool isSymbolic() const override;
+
+    SymbolicQualitativeResult<Type> const& getProb0Min() const;
+    SymbolicQualitativeResult<Type> const& getProb1Min() const;
+    SymbolicQualitativeResult<Type> const& getProb0Max() const;
+    SymbolicQualitativeResult<Type> const& getProb1Max() const;
+
+    virtual SymbolicQualitativeResult<Type> const& getProb0(storm::OptimizationDirection const& dir) const = 0;
+    virtual SymbolicQualitativeResult<Type> const& getProb1(storm::OptimizationDirection const& dir) const = 0;
+};
+}  // namespace abstraction
+}  // namespace storm

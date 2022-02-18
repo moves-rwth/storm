@@ -4,25 +4,26 @@
 #include "storm/solver/stateelimination/StateEliminator.h"
 
 namespace storm {
-    namespace solver {
-        namespace stateelimination {
-            
-            template<typename ValueType>
-            class NondeterministicModelStateEliminator : public StateEliminator<ValueType> {
-            public:
+namespace solver {
+namespace stateelimination {
 
-                NondeterministicModelStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions,  std::vector<ValueType>& rowValues);
+template<typename ValueType>
+class NondeterministicModelStateEliminator : public StateEliminator<ValueType> {
+   public:
+    NondeterministicModelStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix,
+                                         storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& rowValues);
 
-                // Instantiation of virtual methods.
-                virtual void updateValue(storm::storage::sparse::state_type const& row, ValueType const& loopProbability) override;
-                virtual void updatePredecessor(storm::storage::sparse::state_type const& predecessorRow, ValueType const& probability, storm::storage::sparse::state_type const& row) override;
-                
-            protected:
-                std::vector<ValueType>& rowValues;
-            };
-            
-        } // namespace stateelimination
-    } // namespace storage
-} // namespace storm
+    // Instantiation of virtual methods.
+    virtual void updateValue(storm::storage::sparse::state_type const& row, ValueType const& loopProbability) override;
+    virtual void updatePredecessor(storm::storage::sparse::state_type const& predecessorRow, ValueType const& probability,
+                                   storm::storage::sparse::state_type const& row) override;
 
-#endif // STORM_SOLVER_STATEELIMINATION_NONDETERMINISTICMODELSTATEELIMINATOR_H_
+   protected:
+    std::vector<ValueType>& rowValues;
+};
+
+}  // namespace stateelimination
+}  // namespace solver
+}  // namespace storm
+
+#endif  // STORM_SOLVER_STATEELIMINATION_NONDETERMINISTICMODELSTATEELIMINATOR_H_

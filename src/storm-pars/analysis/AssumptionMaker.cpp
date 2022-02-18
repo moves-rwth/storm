@@ -29,7 +29,7 @@ namespace storm {
                 if (assumption.second == AssumptionStatus::VALID) {
                     assert (createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues).second != AssumptionStatus::VALID
                             && createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues).second != AssumptionStatus::VALID);
-                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid" << std::endl);
+                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid\n");
                     return result;
                 }
             }
@@ -40,7 +40,7 @@ namespace storm {
                     result.clear();
                     result.insert(assumption);
                     assert (createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues).second != AssumptionStatus::VALID);
-                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid" << std::endl);
+                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid\n");
                     return result;
                 }
                 result.insert(assumption);
@@ -51,13 +51,13 @@ namespace storm {
                 if (assumption.second == AssumptionStatus::VALID) {
                     result.clear();
                     result.insert(assumption);
-                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid" << std::endl);
+                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid\n");
                     return result;
                 }
                 result.insert(assumption);
             }
                 assert (order->compare(val1, val2) == Order::UNKNOWN);
-            STORM_LOG_INFO("None of the assumptions is valid, number of possible assumptions:  " << result.size() << std::endl);
+            STORM_LOG_INFO("None of the assumptions is valid, number of possible assumptions:  " << result.size() << '\n');
             return result;
         }
 

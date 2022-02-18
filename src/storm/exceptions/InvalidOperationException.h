@@ -5,11 +5,11 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
-        
-        STORM_NEW_EXCEPTION(InvalidOperationException)
-        
-    } // namespace exceptions
-} // namespace storm
+namespace exceptions {
+
+STORM_NEW_EXCEPTION(InvalidOperationException)
+
+}  // namespace exceptions
+}  // namespace storm
 
 #endif /* STORM_EXCEPTIONS_INVALIDOPERATIONEXCEPTION_H_ */

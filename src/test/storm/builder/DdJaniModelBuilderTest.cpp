@@ -1,22 +1,22 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
-#include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
+#include "test/storm_gtest.h"
 
+#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Compositions.h"
 
-#include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm-parsers/parser/PrismParser.h"
 #include "storm-parsers/parser/JaniParser.h"
+#include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdJaniModelBuilder.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
+#include "storm-parsers/api/model_descriptions.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm-parsers/api/model_descriptions.h"
 
 TEST(DdJaniModelBuilderTest_Sylvan, Dtmc) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
@@ -121,7 +121,6 @@ TEST(DdJaniModelBuilderTest_Sylvan, Ctmc) {
 }
 
 TEST(DdJaniModelBuilderTest_Cudd, Ctmc) {
-
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
     storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
     storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double> builder;
@@ -571,11 +570,13 @@ TEST(DdJaniModelBuilderTest_Sylvan, Composition) {
     storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
 
     storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double> builder;
-    STORM_SILENT_EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel),
+                              storm::exceptions::WrongFormatException);
 
     modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition2.nm");
     janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
-    STORM_SILENT_EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel),
+                              storm::exceptions::WrongFormatException);
 }
 
 TEST(DdJaniModelBuilderTest_Cudd, Composition) {
@@ -583,11 +584,13 @@ TEST(DdJaniModelBuilderTest_Cudd, Composition) {
     storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
 
     storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double> builder;
-    STORM_SILENT_EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel),
+                              storm::exceptions::WrongFormatException);
 
     modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition2.nm");
     janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
-    STORM_SILENT_EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel),
+                              storm::exceptions::WrongFormatException);
 }
 
 TEST(DdJaniModelBuilderTest_Cudd, InputEnabling) {

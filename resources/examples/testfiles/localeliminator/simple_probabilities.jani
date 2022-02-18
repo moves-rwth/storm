@@ -1,0 +1,179 @@
+{
+    "actions": [],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "c <- 1",
+                                    "ref": "c",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 / 3)",
+                                "exp": {
+                                    "left": 1,
+                                    "op": "/",
+                                    "right": 3
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "c <- 3",
+                                    "ref": "c",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(2 / 3)",
+                                "exp": {
+                                    "left": 2,
+                                    "op": "/",
+                                    "right": 3
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(c = 0)",
+                        "exp": {
+                            "left": "c",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "c <- 2",
+                                    "ref": "c",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 / 4)",
+                                "exp": {
+                                    "left": 1,
+                                    "op": "/",
+                                    "right": 4
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "c <- 3",
+                                    "ref": "c",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(3 / 4)",
+                                "exp": {
+                                    "left": 3,
+                                    "op": "/",
+                                    "right": 4
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(c = 1)",
+                        "exp": {
+                            "left": "c",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(c = 2)",
+                        "exp": {
+                            "left": "c",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(c = 3)",
+                        "exp": {
+                            "left": "c",
+                            "op": "=",
+                            "right": 3
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "main",
+            "variables": []
+        }
+    ],
+    "constants": [],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "simple_probabilities",
+    "properties": [],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "main"
+            }
+        ]
+    },
+    "type": "dtmc",
+    "variables": [
+        {
+            "initial-value": 0,
+            "name": "c",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 3
+            }
+        }
+    ]
+}

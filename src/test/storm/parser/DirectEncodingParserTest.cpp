@@ -1,13 +1,14 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/DirectEncodingParser.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 TEST(DirectEncodingParserTest, DtmcParsing) {
-    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.drn");
+    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr =
+        storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.drn");
 
     // Test if parsed correctly.
     ASSERT_EQ(storm::models::ModelType::Dtmc, modelPtr->getType());
@@ -22,7 +23,8 @@ TEST(DirectEncodingParserTest, DtmcParsing) {
 }
 
 TEST(DirectEncodingParserTest, MdpParsing) {
-    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.drn");
+    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr =
+        storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.drn");
 
     // Test if parsed correctly.
     ASSERT_EQ(storm::models::ModelType::Mdp, modelPtr->getType());
@@ -43,7 +45,8 @@ TEST(DirectEncodingParserTest, MdpParsing) {
 }
 
 TEST(DirectEncodingParserTest, CtmcParsing) {
-    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.drn");
+    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr =
+        storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.drn");
 
     // Test if parsed correctly.
     ASSERT_EQ(storm::models::ModelType::Ctmc, modelPtr->getType());
@@ -63,7 +66,8 @@ TEST(DirectEncodingParserTest, CtmcParsing) {
 }
 
 TEST(DirectEncodingParserTest, MarkovAutomatonParsing) {
-    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr = storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.drn");
+    std::shared_ptr<storm::models::sparse::Model<double>> modelPtr =
+        storm::parser::DirectEncodingParser<double>::parseModel(STORM_TEST_RESOURCES_DIR "/ma/jobscheduler.drn");
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> ma = modelPtr->as<storm::models::sparse::MarkovAutomaton<double>>();
 
     // Test if parsed correctly.
@@ -83,4 +87,3 @@ TEST(DirectEncodingParserTest, MarkovAutomatonParsing) {
     ASSERT_TRUE(modelPtr->hasLabel("one_job_finished"));
     ASSERT_EQ(6ul, modelPtr->getStates("one_job_finished").getNumberOfSetBits());
 }
-

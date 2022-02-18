@@ -4,10 +4,9 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
-        
-        STORM_NEW_EXCEPTION(InvalidModelException)
-        
-    } // namespace exceptions
-} // namespace storm
+namespace exceptions {
 
+STORM_NEW_EXCEPTION(InvalidModelException)
+
+}  // namespace exceptions
+}  // namespace storm

@@ -123,11 +123,11 @@ namespace pomdp {
             } else if(winningRegion[observation].empty()) {
                 loosingObservations.push_back(observation);
             } else {
-                std::cout << "***** observation" << observation << std::endl;
+                std::cout << "***** observation" << observation << '\n';
                 for (auto const& support : winningSupport) {
                     std::cout << " " << support;
                 }
-                std::cout << std::endl;
+                std::cout << '\n';
             }
             observation++;
         }
@@ -319,9 +319,9 @@ namespace pomdp {
     void WinningRegion::storeToFile(std::string const& path, std::string const& preamble, bool append) const {
         std::ofstream file;
         storm::utility::openFile(path, file, append);
-        file << ":preamble" << std::endl;
-        file << preamble << std::endl;
-        file << ":winningregion" << std::endl;
+        file << ":preamble\n";
+        file << preamble << '\n';
+        file << ":winningregion\n";
         bool firstLine = true;
         for (auto const& i : observationSizes) {
             if(!firstLine) {
@@ -331,13 +331,13 @@ namespace pomdp {
             }
             file << i;
         }
-        file << std::endl;
+        file << '\n';
         for (auto const& obsWr : winningRegion) {
             for (auto const& bv : obsWr) {
                 bv.store(file);
                 file << ";";
             }
-            file << std::endl;
+            file << '\n';
         }
         storm::utility::closeFile(file);
     }
@@ -364,7 +364,7 @@ namespace pomdp {
                 if (line == ":winningregion") {
                     state = 2; // get sizes
                 } else {
-                    preamblestream << line << std::endl;
+                    preamblestream << line << '\n';
                 }
             } else if (state == 2) {
                 std::vector<std::string> entries;

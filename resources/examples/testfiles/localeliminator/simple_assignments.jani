@@ -1,0 +1,185 @@
+{
+    "actions": [],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "c <- 1",
+                                    "ref": "c",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "x <- 2",
+                                    "ref": "x",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "y <- 3",
+                                    "ref": "y",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "z <- 4",
+                                    "ref": "z",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(c = 0)",
+                        "exp": {
+                            "left": "c",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "c <- 2",
+                                    "ref": "c",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "x <- (x + 1)",
+                                    "ref": "x",
+                                    "value": {
+                                        "left": "x",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "y <- 5",
+                                    "ref": "y",
+                                    "value": 5
+                                },
+                                {
+                                    "comment": "w <- 2",
+                                    "ref": "w",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(c = 1)",
+                        "exp": {
+                            "left": "c",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(c = 2)",
+                        "exp": {
+                            "left": "c",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "main",
+            "variables": []
+        }
+    ],
+    "constants": [],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "simple_assignments",
+    "properties": [],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "main"
+            }
+        ]
+    },
+    "type": "dtmc",
+    "variables": [
+        {
+            "initial-value": 0,
+            "name": "c",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 2
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "x",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 5
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "y",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 5
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "z",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 5
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "w",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 5
+            }
+        }
+    ]
+}

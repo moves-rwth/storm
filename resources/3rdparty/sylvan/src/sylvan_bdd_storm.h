@@ -1,3 +1,5 @@
+#include "sylvan.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

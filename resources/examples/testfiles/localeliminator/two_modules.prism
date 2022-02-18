@@ -1,0 +1,15 @@
+dtmc
+
+module a
+
+    x: [0..1];
+    [act] x=0 -> 1: (x'=1);
+
+endmodule
+
+module b
+
+    y: [0..1];
+    [act] y=0 -> 1: (y'=1);
+
+endmodule

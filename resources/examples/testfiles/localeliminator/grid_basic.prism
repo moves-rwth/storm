@@ -1,0 +1,13 @@
+dtmc
+
+module main
+    x: [0..500];
+    y: [0..500];
+    x_odd: [0..1];
+    y_odd: [0..1];
+
+    [] true -> 0.25: (x'=mod(x+1, 500))   & (x_odd'=1-x_odd)
+             + 0.25: (x'=mod(x+499, 500)) & (x_odd'=1-x_odd)
+             + 0.25: (y'=mod(y+1, 500))   & (y_odd'=1-y_odd)
+             + 0.25: (y'=mod(y+499, 500)) & (y_odd'=1-y_odd);
+endmodule

@@ -1,14 +1,14 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #ifdef STORM_HAVE_GUROBI
-#include "storm/solver/GurobiLpSolver.h"
-#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidAccessException.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/solver/GurobiLpSolver.h"
 #include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/Variable.h"
 
 TEST(GurobiLpSolver, LPOptimizeMax) {
     storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
@@ -19,12 +19,12 @@ TEST(GurobiLpSolver, LPOptimizeMax) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
@@ -52,12 +52,12 @@ TEST(GurobiLpSolver, LPOptimizeMin) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addBoundedContinuousVariable("z", 1, 5.7, -1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x <= solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
@@ -85,12 +85,12 @@ TEST(GurobiLpSolver, MILPOptimizeMax) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedIntegerVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
@@ -118,12 +118,12 @@ TEST(GurobiLpSolver, MILPOptimizeMin) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedIntegerVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addBoundedContinuousVariable("z", 0, 5, -1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x <= solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
@@ -151,13 +151,13 @@ TEST(GurobiLpSolver, LPInfeasible) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.addConstraint("", y > solver.getConstant(7)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
@@ -181,13 +181,13 @@ TEST(GurobiLpSolver, MILPInfeasible) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.addConstraint("", y > solver.getConstant(7)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
@@ -211,11 +211,11 @@ TEST(GurobiLpSolver, LPUnbounded) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y - z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
@@ -239,11 +239,11 @@ TEST(GurobiLpSolver, MILPUnbounded) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y - z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
@@ -262,14 +262,14 @@ TEST(GurobiLpSolver, Incremental) {
     storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x, y, z;
     ASSERT_NO_THROW(x = solver.addUnboundedContinuousVariable("x", 1));
-    
+
     solver.push();
     ASSERT_NO_THROW(solver.addConstraint("", x <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.optimize());
     // max x s.t. x<=12
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(12.0, solver.getContinuousValue(x));
-    
+
     solver.push();
     ASSERT_NO_THROW(y = solver.addUnboundedContinuousVariable("y"));
     ASSERT_NO_THROW(solver.addConstraint("", y <= solver.getConstant(6)));
@@ -279,13 +279,13 @@ TEST(GurobiLpSolver, Incremental) {
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(6.0, solver.getContinuousValue(x));
     EXPECT_EQ(6.0, solver.getContinuousValue(y));
-    
+
     solver.pop();
     ASSERT_NO_THROW(solver.optimize());
     // max x s.t. x<=12
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(12.0, solver.getContinuousValue(x));
-    
+
     solver.push();
     ASSERT_NO_THROW(y = solver.addUnboundedContinuousVariable("y", 10));
     ASSERT_NO_THROW(solver.addConstraint("", y <= solver.getConstant(20)));
@@ -295,13 +295,13 @@ TEST(GurobiLpSolver, Incremental) {
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(-20, solver.getContinuousValue(x));
     EXPECT_EQ(20, solver.getContinuousValue(y));
-    
+
     solver.pop();
     ASSERT_NO_THROW(solver.optimize());
     // max x s.t. x<=12
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(12.0, solver.getContinuousValue(x));
-    
+
     solver.push();
     ASSERT_NO_THROW(z = solver.addUnboundedIntegerVariable("z"));
     ASSERT_NO_THROW(solver.addConstraint("", z <= solver.getConstant(6)));
@@ -311,7 +311,7 @@ TEST(GurobiLpSolver, Incremental) {
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(6.0, solver.getContinuousValue(x));
     EXPECT_EQ(6, solver.getIntegerValue(z));
-    
+
     solver.pop();
     solver.pop();
     // max x s.t. true

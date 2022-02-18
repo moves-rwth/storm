@@ -41,23 +41,20 @@ class SftToBddTransformator {
 
     /**
      * Transform a sft into a BDD
-     * representing the function of the toplevel gate.
+     * representing the function of the toplevel event.
      *
      * \exception storm::exceptions::NotSupportedException
      * The given DFT is not a SFT
      *
-     * \return The translated Bdd of the toplevel gate
+     * \return The translated Bdd of the toplevel event
      */
     Bdd const& transformTopLevel() {
-        auto const tlName{dft->getTopLevelGate()->name()};
+        auto const tlName{dft->getTopLevelElement()->name()};
         if (relevantEventBdds.empty()) {
-            relevantEventBdds[tlName] =
-                translate(std::static_pointer_cast<
-                          storm::storage::DFTElement<ValueType> const>(
-                    dft->getTopLevelGate()));
+            relevantEventBdds[tlName] = translate(dft->getTopLevelElement());
         }
         // else relevantEventBdds is not empty and we maintain the invariant
-        // that the toplevel gate is in there
+        // that the toplevel event is in there
         STORM_LOG_ASSERT(relevantEventBdds.count(tlName) == 1,
                          "Not all relevantEvents where transformed into BDDs.");
 
@@ -76,10 +73,8 @@ class SftToBddTransformator {
      */
     std::map<std::string, Bdd> const& transformRelevantEvents() {
         if (relevantEventBdds.empty()) {
-            relevantEventBdds[dft->getTopLevelGate()->name()] =
-                translate(std::static_pointer_cast<
-                          storm::storage::DFTElement<ValueType> const>(
-                    dft->getTopLevelGate()));
+            relevantEventBdds[dft->getTopLevelElement()->name()] =
+                translate(dft->getTopLevelElement());
         }
 
         // we maintain the invariant that if relevantEventBdds is not empty

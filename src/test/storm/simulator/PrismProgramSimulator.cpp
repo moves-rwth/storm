@@ -1,7 +1,7 @@
-#include "test/storm_gtest.h"
 #include "storm/simulator/PrismProgramSimulator.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/environment/Environment.h"
+#include "test/storm_gtest.h"
 
 TEST(PrismProgramSimulatorTest, KnuthYaoDieTest) {
     storm::Environment env;

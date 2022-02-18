@@ -5,11 +5,11 @@
 #include "storm/exceptions/ExceptionMacros.h"
 
 namespace storm {
-    namespace exceptions {
-        
-        STORM_NEW_EXCEPTION(OptionUnificationException)
-        
-    } // namespace exceptions
-} // namespace storm
+namespace exceptions {
+
+STORM_NEW_EXCEPTION(OptionUnificationException)
+
+}  // namespace exceptions
+}  // namespace storm
 
 #endif /* STORM_EXCEPTIONS_OPTIONUNIFICATIONEXCEPTION_H_ */

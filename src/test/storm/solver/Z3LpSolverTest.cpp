@@ -1,17 +1,17 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #ifdef STORM_HAVE_Z3_OPTIMIZE
-#include "storm/storage/expressions/Variable.h"
-#include "storm/solver/Z3LpSolver.h"
-#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidAccessException.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/settings/SettingsManager.h"
+#include "storm/solver/Z3LpSolver.h"
+#include "storm/storage/expressions/Variable.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 
-#include "storm/storage/expressions/Expressions.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/storage/expressions/Expressions.h"
 
 #include <cmath>
 
@@ -24,12 +24,12 @@ TEST(Z3LpSolver, LPOptimizeMax) {
     ASSERT_NO_THROW(y = solver.addLowerBoundedContinuousVariable("y", 0, 2));
     ASSERT_NO_THROW(z = solver.addLowerBoundedContinuousVariable("z", 0, 1));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.addConstraint("", x + y + z <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.addConstraint("", solver.getConstant(0.5) * y + z - x == solver.getConstant(5)));
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
@@ -129,11 +129,11 @@ TEST(Z3LpSolver, MILPOptimizeMin) {
     ASSERT_NO_THROW(solver.addConstraint("", y - x <= solver.getConstant(5.5)));
     ASSERT_NO_THROW(solver.update());
 
-    if (storm::test::z3AtLeastVersion(4,8,8)) {
+    if (storm::test::z3AtLeastVersion(4, 8, 8)) {
         // TODO: z3 v4.8.8 is known to be broken here. Check if this is fixed in future versions >4.8.8
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
-    
+
     ASSERT_NO_THROW(solver.optimize());
     ASSERT_TRUE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
@@ -256,14 +256,14 @@ TEST(Z3LpSolver, Incremental) {
     storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x, y, z;
     ASSERT_NO_THROW(x = solver.addUnboundedContinuousVariable("x", 1));
-    
+
     solver.push();
     ASSERT_NO_THROW(solver.addConstraint("", x <= solver.getConstant(12)));
     ASSERT_NO_THROW(solver.optimize());
     // max x s.t. x<=12
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(12.0, solver.getContinuousValue(x));
-    
+
     solver.push();
     ASSERT_NO_THROW(y = solver.addUnboundedContinuousVariable("y"));
     ASSERT_NO_THROW(solver.addConstraint("", y <= solver.getConstant(6)));
@@ -273,14 +273,14 @@ TEST(Z3LpSolver, Incremental) {
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(6.0, solver.getContinuousValue(x));
     EXPECT_EQ(6.0, solver.getContinuousValue(y));
-    
+
     solver.pop();
     ASSERT_NO_THROW(solver.optimize());
     // max x s.t. x<=12
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(12.0, solver.getContinuousValue(x));
-    
-    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+
+    if (!storm::test::z3AtLeastVersion(4, 8, 5)) {
         GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
     solver.push();
@@ -292,7 +292,7 @@ TEST(Z3LpSolver, Incremental) {
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(-20, solver.getContinuousValue(x));
     EXPECT_EQ(20, solver.getContinuousValue(y));
-    
+
     solver.pop();
     ASSERT_NO_THROW(solver.optimize());
     // max x s.t. x<=12
@@ -300,7 +300,7 @@ TEST(Z3LpSolver, Incremental) {
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(12.0, solver.getContinuousValue(x));
-    
+
     solver.push();
     ASSERT_NO_THROW(z = solver.addUnboundedIntegerVariable("z"));
     ASSERT_NO_THROW(solver.addConstraint("", z <= solver.getConstant(6)));
@@ -310,7 +310,7 @@ TEST(Z3LpSolver, Incremental) {
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(6.0, solver.getContinuousValue(x));
     EXPECT_EQ(6, solver.getIntegerValue(z));
-    
+
     solver.pop();
     solver.pop();
     // max x s.t. true
@@ -319,6 +319,5 @@ TEST(Z3LpSolver, Incremental) {
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
 }
-
 
 #endif

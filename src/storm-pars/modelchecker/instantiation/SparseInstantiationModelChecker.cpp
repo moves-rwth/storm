@@ -31,6 +31,11 @@ namespace storm {
         bool SparseInstantiationModelChecker<SparseModelType, ConstantType>::getInstantiationsAreGraphPreserving() const {
             return instantiationsAreGraphPreserving;
         }
+
+        template <typename SparseModelType, typename ConstantType>
+        SparseModelType const& SparseInstantiationModelChecker<SparseModelType, ConstantType>::getOriginalModel() const {
+            return parametricModel;
+        }
         
         template class SparseInstantiationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
         template class SparseInstantiationModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>, double>;

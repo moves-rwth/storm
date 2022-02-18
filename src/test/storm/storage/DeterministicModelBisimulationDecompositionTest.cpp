@@ -1,13 +1,14 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/FormulaParser.h"
-#include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
+#include "test/storm_gtest.h"
 
 TEST(DeterministicModelBisimulationDecomposition, Die) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/die.tra", STORM_TEST_RESOURCES_DIR "/lab/die.lab", "", "");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
+        storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/die.tra", STORM_TEST_RESOURCES_DIR "/lab/die.lab", "", "");
 
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
@@ -48,7 +49,7 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
 
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
-    
+
     typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *formula);
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim4(*dtmc, options2);
@@ -60,7 +61,8 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
 }
 
 TEST(DeterministicModelBisimulationDecomposition, Crowds) {
-    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/crowds5_5.tra", STORM_TEST_RESOURCES_DIR "/lab/crowds5_5.lab", "", "");
+    std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
+        storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/crowds5_5.tra", STORM_TEST_RESOURCES_DIR "/lab/crowds5_5.lab", "", "");
 
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();

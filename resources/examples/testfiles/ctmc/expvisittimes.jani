@@ -1,0 +1,860 @@
+{
+    "actions": [],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s + 1) / ((s + 1) + (s + 2)))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": 1
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": 1
+                                        },
+                                        "op": "+",
+                                        "right": {
+                                            "left": 2,
+                                            "op": "+",
+                                            "right": "s"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s + 2) / ((s + 1) + (s + 2)))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": 2
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": 1
+                                        },
+                                        "op": "+",
+                                        "right": {
+                                            "left": 2,
+                                            "op": "+",
+                                            "right": "s"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 0)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "((s + 1) + (s + 2))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "+",
+                                "right": 1
+                            },
+                            "op": "+",
+                            "right": {
+                                "left": 2,
+                                "op": "+",
+                                "right": "s"
+                            }
+                        }
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 0",
+                                    "ref": "s",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s + 3) / (((s + 3) + (s + 33/10)) + 18/5))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": 3
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": {
+                                                "left": 3.6,
+                                                "op": "+",
+                                                "right": 3
+                                            },
+                                            "op": "+",
+                                            "right": 3.3
+                                        },
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": "s"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s + 33/10) / (((s + 3) + (s + 33/10)) + 18/5))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": 3.3
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": {
+                                                "left": 3.6,
+                                                "op": "+",
+                                                "right": 3
+                                            },
+                                            "op": "+",
+                                            "right": 3.3
+                                        },
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": "s"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(18/5 / (((s + 3) + (s + 33/10)) + 18/5))",
+                                "exp": {
+                                    "left": 3.6,
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": {
+                                                "left": 3.6,
+                                                "op": "+",
+                                                "right": 3
+                                            },
+                                            "op": "+",
+                                            "right": 3.3
+                                        },
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": "s"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 1)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "(((s + 3) + (s + 33/10)) + 18/5)",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": 3.6,
+                                    "op": "+",
+                                    "right": 3
+                                },
+                                "op": "+",
+                                "right": 3.3
+                            },
+                            "op": "+",
+                            "right": {
+                                "left": "s",
+                                "op": "+",
+                                "right": "s"
+                            }
+                        }
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(s / (s + (s + 1)))",
+                                "exp": {
+                                    "left": "s",
+                                    "op": "/",
+                                    "right": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": 1
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 4",
+                                    "ref": "s",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s + 1) / (s + (s + 1)))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": 1
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": 1
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 2)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 2
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "(s + (s + 1))",
+                        "exp": {
+                            "left": "s",
+                            "op": "+",
+                            "right": {
+                                "left": "s",
+                                "op": "+",
+                                "right": 1
+                            }
+                        }
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(s / ((s + (s + 2)) + (s - 2)))",
+                                "exp": {
+                                    "left": "s",
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": {
+                                                "left": "s",
+                                                "op": "-",
+                                                "right": 2
+                                            },
+                                            "op": "+",
+                                            "right": 2
+                                        },
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": "s"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 4",
+                                    "ref": "s",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s + 2) / ((s + (s + 2)) + (s - 2)))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": 2
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": {
+                                                "left": "s",
+                                                "op": "-",
+                                                "right": 2
+                                            },
+                                            "op": "+",
+                                            "right": 2
+                                        },
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": "s"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 5",
+                                    "ref": "s",
+                                    "value": 5
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s - 2) / ((s + (s + 2)) + (s - 2)))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "-",
+                                        "right": 2
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": {
+                                                "left": "s",
+                                                "op": "-",
+                                                "right": 2
+                                            },
+                                            "op": "+",
+                                            "right": 2
+                                        },
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": "s"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 3)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 3
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "((s + (s + 2)) + (s - 2))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "-",
+                                    "right": 2
+                                },
+                                "op": "+",
+                                "right": 2
+                            },
+                            "op": "+",
+                            "right": {
+                                "left": "s",
+                                "op": "+",
+                                "right": "s"
+                            }
+                        }
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 6",
+                                    "ref": "s",
+                                    "value": 6
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(s / s)",
+                                "exp": {
+                                    "left": "s",
+                                    "op": "/",
+                                    "right": "s"
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 4)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 4
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "s",
+                        "exp": "s"
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(s / (s + (s / 2)))",
+                                "exp": {
+                                    "left": "s",
+                                    "op": "/",
+                                    "right": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "/",
+                                            "right": 2
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 7",
+                                    "ref": "s",
+                                    "value": 7
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s / 2) / (s + (s / 2)))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "/",
+                                        "right": 2
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": "s",
+                                        "op": "+",
+                                        "right": {
+                                            "left": "s",
+                                            "op": "/",
+                                            "right": 2
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 5)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 5
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "(s + (s / 2))",
+                        "exp": {
+                            "left": "s",
+                            "op": "+",
+                            "right": {
+                                "left": "s",
+                                "op": "/",
+                                "right": 2
+                            }
+                        }
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 8",
+                                    "ref": "s",
+                                    "value": 8
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(s / s)",
+                                "exp": {
+                                    "left": "s",
+                                    "op": "/",
+                                    "right": "s"
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 6)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 6
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "s",
+                        "exp": "s"
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 7",
+                                    "ref": "s",
+                                    "value": 7
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(s / s)",
+                                "exp": {
+                                    "left": "s",
+                                    "op": "/",
+                                    "right": "s"
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 7)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 7
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "s",
+                        "exp": "s"
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 9",
+                                    "ref": "s",
+                                    "value": 9
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(s / s)",
+                                "exp": {
+                                    "left": "s",
+                                    "op": "/",
+                                    "right": "s"
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 8)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 8
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "s",
+                        "exp": "s"
+                    }
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 6",
+                                    "ref": "s",
+                                    "value": 6
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(s / ((s + (s - 2)) + 1))",
+                                "exp": {
+                                    "left": "s",
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": {
+                                                "left": "s",
+                                                "op": "-",
+                                                "right": 2
+                                            }
+                                        },
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 8",
+                                    "ref": "s",
+                                    "value": 8
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "((s - 2) / ((s + (s - 2)) + 1))",
+                                "exp": {
+                                    "left": {
+                                        "left": "s",
+                                        "op": "-",
+                                        "right": 2
+                                    },
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": {
+                                                "left": "s",
+                                                "op": "-",
+                                                "right": 2
+                                            }
+                                        },
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 9",
+                                    "ref": "s",
+                                    "value": 9
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 / ((s + (s - 2)) + 1))",
+                                "exp": {
+                                    "left": 1,
+                                    "op": "/",
+                                    "right": {
+                                        "left": {
+                                            "left": "s",
+                                            "op": "+",
+                                            "right": {
+                                                "left": "s",
+                                                "op": "-",
+                                                "right": 2
+                                            }
+                                        },
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 9)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 9
+                        }
+                    },
+                    "location": "l",
+                    "rate": {
+                        "comment": "((s + (s - 2)) + 1)",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "+",
+                                "right": {
+                                    "left": "s",
+                                    "op": "-",
+                                    "right": 2
+                                }
+                            },
+                            "op": "+",
+                            "right": 1
+                        }
+                    }
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "main",
+            "variables": []
+        }
+    ],
+    "constants": [],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "expvisittimes",
+    "properties": [],
+    "restrict-initial": {
+        "exp": {
+            "left": "s",
+            "op": "<",
+            "right": 3
+        }
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "main"
+            }
+        ]
+    },
+    "type": "ctmc",
+    "variables": [
+        {
+            "name": "s",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 9
+            }
+        }
+    ]
+}

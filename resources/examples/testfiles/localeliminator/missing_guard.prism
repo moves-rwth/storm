@@ -1,0 +1,19 @@
+dtmc
+
+module main
+
+    s: [0..3]; // The main state variable.
+    x: [0..1]; // Only used to cause (s=1) to have an incomplete guard.
+
+    // s_0 has two transitions, one to s_1 (which has a missing guard) and
+    // one to s_3. If we eliminate s_1, the missing guard is propagated to
+    // s_0 and s_3 is no longer reachable.
+    [] s=0 -> 0.5: (s'=1) + 0.5: (s'=3);
+
+    // s_1 has no outgoing edges for x=0
+    [] s=1 & x=1 -> 1: (s'=2);
+    
+    // s_2 and s_3 are sink states:
+    [] s=2 -> true;
+    [] s=3 -> true;
+endmodule

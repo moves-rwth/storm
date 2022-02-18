@@ -42,7 +42,7 @@ void processOptions() {
     // Show statistics about DFT (number of gates, etc.)
     if (dftIOSettings.isShowDftStatisticsSet()) {
         dft->writeStatsToStream(std::cout);
-        std::cout << std::endl;
+        std::cout << '\n';
     }
 
     // Export to json

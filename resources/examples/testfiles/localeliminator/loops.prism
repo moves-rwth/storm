@@ -1,0 +1,29 @@
+dtmc
+
+module main
+
+    s: [0..6];
+    x: [0..1];
+
+    // No loop
+    [] s=0 -> 1: (s'=1);
+
+    // Loop
+    [] s=1 -> 0.5: (s'=1) + 0.5: (s'=2);
+
+    // Loop
+    [] s=2 -> 0.5: (s'=2) & (x'=1) + 0.5: (s'=3);
+
+    // No loop
+    [] s=3 -> 0.5: (s'=4) + 0.5: (s'=5);
+
+    // Loop
+    [] s=4 -> 0.25: (s'=4) + 0.25: (s'=4) & (x'=1) + 0.5: (s'=5);
+
+    // Loop
+    [] s=5 & x=0 -> 1: (s'=6) ;
+    [] s=5 & x=1 -> 0.5: (s'=5) + 0.5: (s'=6);
+
+    // s=6 doesn't have any outgoing edges. It therefore does not have a loop
+
+endmodule

@@ -169,8 +169,8 @@ namespace storm {
 
             // Build DFT
             storm::storage::DFT<ValueType> dft = builder.build();
-            STORM_LOG_DEBUG("DFT Elements:" << std::endl << dft.getElementsString());
-            STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
+            STORM_LOG_DEBUG("DFT Elements:\n" << dft.getElementsString());
+            STORM_LOG_DEBUG("Spare Modules:\n" << dft.getSpareModulesString());
             return dft;
         }
 
