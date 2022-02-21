@@ -33,7 +33,6 @@ namespace storm {
                 STORM_LOG_THROW((variableWithUpperBoundary != upperBoundaries.end()), storm::exceptions::InvalidArgumentException, "Could not create region. No upper boundary specified for Variable " << variableWithLowerBoundary.first);
                 STORM_LOG_THROW((variableWithLowerBoundary.second<=variableWithUpperBoundary->second), storm::exceptions::InvalidArgumentException, "Could not create region. The lower boundary for " << variableWithLowerBoundary.first << " is larger then the upper boundary");
                 this->variables.insert(variableWithLowerBoundary.first);
-                this->sortedOnDifference.insert({variableWithLowerBoundary.second - variableWithUpperBoundary->second, variableWithLowerBoundary.first});
             }
             for (auto const& variableWithBoundary : this->upperBoundaries) {
                 STORM_LOG_THROW((this->variables.find(variableWithBoundary.first) != this->variables.end()), storm::exceptions::InvalidArgumentException, "Could not create region. No lower boundary specified for Variable " << variableWithBoundary.first);
@@ -47,8 +46,12 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        std::multimap<typename ParameterRegion<ParametricType>::CoefficientType , typename ParameterRegion<ParametricType>::VariableType> const& ParameterRegion<ParametricType>::getVariablesSorted() const {
-            return this->sortedOnDifference;
+        std::multimap<typename ParameterRegion<ParametricType>::CoefficientType , typename ParameterRegion<ParametricType>::VariableType> ParameterRegion<ParametricType>::getVariablesSorted() const {
+                std::multimap<typename ParameterRegion<ParametricType>::CoefficientType , typename ParameterRegion<ParametricType>::VariableType> res;
+                for (auto& var : this->variables) {
+                    res.insert({this->getUpperBoundary(var) - this->getLowerBoundary(var), var});
+                }
+                return res;
         }
 
         template<typename ParametricType>

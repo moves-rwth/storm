@@ -543,7 +543,7 @@ namespace storm {
 
                 valuationCenter[var] = region.getLowerBoundary(var);
                 // TODO: make cmdline argument or 1/precision
-                int numberOfSamples = 50;
+                int numberOfSamples = 10;
                 auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / (numberOfSamples - 1);
 
                 while (valuationCenter[var] <= region.getUpperBoundary(var)) {
