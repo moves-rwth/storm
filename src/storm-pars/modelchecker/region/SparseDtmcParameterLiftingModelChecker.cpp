@@ -600,9 +600,8 @@ namespace storm {
                 if (castedPointerRewDtmc != nullptr) {
                     res = castedPointerRewDtmc->toOrder(region, isOptimistic);
                 }
-                STORM_LOG_ASSERT(std::get<0>(res) != nullptr, "Unexpected order extender type");
                 std::shared_ptr<storm::analysis::Order> order = std::get<0>(res);
-                if (std::get<1>(res) != order->getNumberOfStates()) {
+                if (order != nullptr && std::get<1>(res) != order->getNumberOfStates()) {
                     this->orderExtender->setUnknownStates(order, std::get<1>(res), std::get<2>(res));
                 }
                 return order;

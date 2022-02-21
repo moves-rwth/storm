@@ -84,7 +84,11 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, bool isOptimistic, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            return extendOrder(getInitialOrder(isOptimistic), region, monRes, nullptr);
+            auto order = getInitialOrder(isOptimistic);
+            if (order == nullptr) {
+                return {nullptr, numberOfStates, numberOfStates};
+            }
+            return extendOrder(order, region, monRes, nullptr);
         }
 
         template<typename ValueType, typename ConstantType>
