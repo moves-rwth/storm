@@ -263,13 +263,21 @@ namespace storm {
                     orderExtender->setMinMaxValues(minBound, maxBound);
                 }
                 auto order = this->getInitialOrder(region, this->isUseOptimisticOrderSet());
-                auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
-                storm::utility::Stopwatch monotonicityWatch(true);
-                this->extendLocalMonotonicityResult(region, order, monRes);
-                monotonicityWatch.stop();
-                STORM_LOG_INFO("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
+                if (order != nullptr) {
+                    auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(
+                        new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
+                    storm::utility::Stopwatch monotonicityWatch(true);
+                    this->extendLocalMonotonicityResult(region, order, monRes);
+                    monotonicityWatch.stop();
+                    STORM_LOG_INFO("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
 
-                regionQueue.emplace(region, order, monRes, initBound);
+                    regionQueue.emplace(region, order, monRes, initBound);
+                } else {
+                    this->setUseMonotonicity(false);
+                    this->setUseBounds(false);
+                    this->setUseOptimisticOrder(false);
+                    regionQueue.emplace(region, nullptr, nullptr, initBound);
+                }
             } else {
                 regionQueue.emplace(region, nullptr, nullptr, initBound);
             }

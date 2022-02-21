@@ -147,6 +147,10 @@ namespace storm {
                 this->bottomStates = propositionalChecker.check(this->formula->asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
             }
 
+            if (this->bottomStates->getNumberOfSetBits() == 0) {
+                return nullptr;
+            }
+
             std::vector<uint64_t> firstStates;
             storm::storage::BitVector subStates (this->bottomStates->size(), true);
 
