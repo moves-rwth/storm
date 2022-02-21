@@ -373,7 +373,6 @@ namespace storm {
                         solver->setInitialScheduler(std::move(maxSchedChoices.get()));
                 }
 
-
                 if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
                     // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
                     std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
@@ -635,8 +634,8 @@ namespace storm {
                             auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
                             if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
                                 monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
-                                if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
-                                    // TODO: Skip for now?
+                                if (monotonicity == Monotonicity::Unknown ) {
+                                    // We skip it
                                 } else {
                                     localMonotonicityResult->setMonotonicity(state, var, monotonicity);
                                 }

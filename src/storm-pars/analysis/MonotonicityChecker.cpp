@@ -45,38 +45,35 @@ namespace storm {
             auto succsSorted = order->sortStates(succs);
 
             uint_fast64_t succSize = succs.size();
-            if (succsSorted[succSize - 1] == matrix.getColumnCount()) {
-                // Maybe we can still do something
-                // If one is decreasing and all others increasing, and this one is above all others or vice versa
-                if (checkAllow) {
-                    if (statesIncr.size() == 1 && statesDecr.size() > 1) {
-                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
-                        if (comp.first) {
-                            // All decreasing states are above the increasing state, therefore decreasing
-                            return Monotonicity::Decr;
-                        } else if (comp.second) {
-                            // All decreasing states are below the increasing state, therefore increasing
-                            return Monotonicity::Incr;
-                        }
-                    } else if (statesDecr.size() == 1 && statesIncr.size() > 1) {
-                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
-                        if (comp.first) {
-                            // All increasing states are below the decreasing state, therefore increasing
-                            return Monotonicity::Incr;
-                        } else if (comp.second) {
-                            // All increasing states are above the decreasing state, therefore decreasing
-                            return Monotonicity::Decr;
-                        }
-                    }
-                }
-
-                return Monotonicity::Unknown;
-            }
-
             if (succSize == 2) {
                 // In this case we can ignore the last entry, as this will have a probability of 1 - the other
                 succSize = 1;
             }
+//            if (succsSorted[succSize - 1] == matrix.getColumnCount()) {
+//                // Maybe we can still do something
+//                // If one is decreasing and all others increasing, and this one is above all others or vice versa
+//                if (checkAllow) {
+//                    if (statesIncr.size() == 1 && statesDecr.size() > 1) {
+//                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
+//                        if (comp.first) {
+//                            // All decreasing states are above the increasing state, therefore decreasing
+//                            return Monotonicity::Decr;
+//                        } else if (comp.second) {
+//                            // All decreasing states are below the increasing state, therefore increasing
+//                            return Monotonicity::Incr;
+//                        }
+//                    } else if (statesDecr.size() == 1 && statesIncr.size() > 1) {
+//                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
+//                        if (comp.first) {
+//                            // All increasing states are below the decreasing state, therefore increasing
+//                            return Monotonicity::Incr;
+//                        } else if (comp.second) {
+//                            // All increasing states are above the decreasing state, therefore decreasing
+//                            return Monotonicity::Decr;
+//                        }
+//                    }
+//                }
+//            }
 
             // First check as long as it stays constant and either incr or decr
             bool allowedToSwap = true;

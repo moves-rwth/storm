@@ -167,6 +167,8 @@ namespace storm {
 
             auto vertices = getVerticesOfRegion(consideredVariables);
 
+            bool first = true;
+            bool zero = true;
             for (auto const &vertex : vertices) {
                 //The resulting subregion is the smallest region containing vertex and splittingPoint.
                 Valuation subLower, subUpper;
@@ -188,7 +190,11 @@ namespace storm {
                 ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
                 subRegion.setSplitThreshold(this->getSplitThreshold());
 
-                if (!storm::utility::isZero(subRegion.area())) {
+                if (first) {
+                     zero = storm::utility::isZero(subRegion.area());
+                     first = false;
+                }
+                if (!zero) {
                     regionVector.push_back(std::move(subRegion));
                 }
             }
