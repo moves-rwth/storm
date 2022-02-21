@@ -91,7 +91,7 @@ namespace storm {
             if (regionSettings.isRegionSet()) {
                 result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model, splittingThreshold);
             } else if (regionSettings.isRegionBoundSet()) {
-                result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model, splittingThreshold);
+                result = storm::api::createRegion<ValueType>(regionSettings.getRegionLowerBound(), regionSettings.getRegionUpperBound(), *model, splittingThreshold);
             }
             return result;
         }

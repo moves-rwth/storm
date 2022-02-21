@@ -58,6 +58,11 @@ namespace storm {
         }
 
         template <typename ValueType>
+        storm::storage::ParameterRegion<ValueType> createRegion(double lowerBound, double upperBound, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
+            return storm::parser::ParameterRegionParser<ValueType>().createRegion(lowerBound, upperBound, consideredVariables, splittingThreshold);
+        }
+
+        template <typename ValueType>
         std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
@@ -83,6 +88,20 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
             }
             return std::vector<storm::storage::ParameterRegion<ValueType>>({createRegion<ValueType>(inputString, modelParameters, splittingThreshold)});
+        }
+
+        template <typename ValueType>
+        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(double lowerBound, double upperBound, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
+            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
+            if (model.isSparseModel()) {
+                auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
+                modelParameters = storm::models::sparse::getProbabilityParameters(sparseModel);
+                auto rewParameters = storm::models::sparse::getRewardParameters(sparseModel);
+                modelParameters.insert(rewParameters.begin(), rewParameters.end());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
+            }
+            return std::vector<storm::storage::ParameterRegion<ValueType>>({createRegion<ValueType>(lowerBound, upperBound, modelParameters, splittingThreshold)});
         }
 
         template <typename ValueType>

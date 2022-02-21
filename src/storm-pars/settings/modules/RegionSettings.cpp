@@ -34,7 +34,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regioninput", "The region(s) given in format a<=x<=b,c<=y<=d seperated by ';'. Can also be a file.").build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionBoundOptionName, false, "Sets the region bound considered for analysis.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regionbound", "The bound for the region result for all variables: 0+bound <= var <=1-bound").build()).build());
+                                    .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("lowerBound", "The lower bound of the region").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build())
+                                    .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("upperBound", "The upper bound of the region").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
 
                 std::vector<std::string> hypotheses = {"unknown", "allsat", "allviolated"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, hypothesisOptionName, false, "Sets a hypothesis for region analysis. If given, the region(s) are only analyzed w.r.t. that hypothesis.").setShortName(hypothesisShortOptionName)
@@ -78,8 +79,12 @@ namespace storm {
                 return this->getOption(regionBoundOptionName).getHasOptionBeenSet();
             }
 
-            std::string RegionSettings::getRegionBoundString() const {
-                return this->getOption(regionBoundOptionName).getArgumentByName("regionbound").getValueAsString();
+            double RegionSettings::getRegionLowerBound() const {
+                return this->getOption(regionBoundOptionName).getArgumentByName("lowerBound").getValueAsDouble();
+            }
+
+            double RegionSettings::getRegionUpperBound() const {
+                return this->getOption(regionBoundOptionName).getArgumentByName("upperBound").getValueAsDouble();
             }
 
             bool RegionSettings::isHypothesisSet() const {

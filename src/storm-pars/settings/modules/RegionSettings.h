@@ -37,9 +37,13 @@ namespace storm {
                 bool isRegionBoundSet() const;
 
                 /*!
-                 * Retrieves the region definition string
+                 * Retrieves the lowerbound of the region
                  */
-                std::string getRegionBoundString() const;
+                double getRegionLowerBound() const;
+                /*!
+                 * Retrieves the upperbound of the region
+                 */
+                double getRegionUpperBound() const;
 				/*!
 				 * Retrieves whether region(s) were declared
 				 */

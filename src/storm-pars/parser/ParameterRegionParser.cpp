@@ -82,6 +82,27 @@ namespace storm {
             }
             return res;
         }
+        template<typename ParametricType>
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::createRegion(double lowerBound, double upperBound, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
+            Valuation lowerBoundaries;
+            Valuation upperBoundaries;
+            std::vector<std::string> parameterBoundaries;
+            STORM_LOG_THROW(0 < lowerBound, storm::exceptions::WrongFormatException, "Lowerbound must be above 0 " << lowerBound << " is not.");
+            STORM_LOG_THROW(1 > upperBound, storm::exceptions::WrongFormatException, "Upperbound must be below 1 " << lowerBound << " is not.");
+            STORM_LOG_THROW(lowerBound < upperBound, storm::exceptions::WrongFormatException, "Lowerbound must be below upperbound");
+
+            CoefficientType lowerB = storm::utility::convertNumber<CoefficientType>(lowerBound);
+            CoefficientType upperB = storm::utility::convertNumber<CoefficientType>(upperBound);
+            for (auto const& v : consideredVariables) {
+                lowerBoundaries.emplace(std::make_pair(v, lowerB));
+                upperBoundaries.emplace(std::make_pair(v, upperB));
+            }
+            auto res = storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+            if (splittingThreshold) {
+                res.setSplitThreshold(splittingThreshold.get());
+            }
+            return res;
+        }
 
         template<typename ParametricType>
         std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
