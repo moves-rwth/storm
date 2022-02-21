@@ -708,7 +708,7 @@ namespace storm {
                 } else {
                     STORM_LOG_INFO("Splitting based on sorting");
 
-                    auto &sortedOnDifference = region.getVariablesSorted();
+                    auto sortedOnDifference = region.getVariablesSorted();
                     for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
                         if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
                             consideredVariables.insert(itr->second);
@@ -733,7 +733,7 @@ namespace storm {
                     }
                 }
                 if (consideredVariables.size() == 0) {
-                    auto &sortedOnDifference = region.getVariablesSorted();
+                    auto sortedOnDifference = region.getVariablesSorted();
                     for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
                         consideredVariables.insert(itr->second);
                     }
