@@ -142,13 +142,13 @@ TEST(RewardOrderExtenderTest, RewardTest2) {
 
     // s4 check
     extender.extendByBackwardReasoning(order, region, 4);
+    order->toDotOutput();
     EXPECT_EQ(order->compare(4, 5), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(4, 6), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(4, 7), storm::analysis::Order::NodeComparison::ABOVE);
 
     // s3 check
     extender.extendByBackwardReasoning(order, region, 3);
-
     EXPECT_EQ(order->compare(3, 5), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(3, 6), storm::analysis::Order::NodeComparison::UNKNOWN);
     EXPECT_EQ(order->compare(3, 7), storm::analysis::Order::NodeComparison::ABOVE);
@@ -165,19 +165,13 @@ TEST(RewardOrderExtenderTest, RewardTest2) {
 
     // s1 check
     extender.extendByBackwardReasoning(order, region, 1);
-    EXPECT_EQ(order->compare(1, 2), storm::analysis::Order::NodeComparison::UNKNOWN);
+    EXPECT_EQ(order->compare(1, 2), storm::analysis::Order::NodeComparison::BELOW);
     EXPECT_EQ(order->compare(1, 3), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(1, 4), storm::analysis::Order::NodeComparison::UNKNOWN);
     EXPECT_EQ(order->compare(1, 5), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(1, 6), storm::analysis::Order::NodeComparison::UNKNOWN);
     EXPECT_EQ(order->compare(1, 7), storm::analysis::Order::NodeComparison::ABOVE);
 
-    // s1 and s2 cannot be ordered so s0 cannot be added to the order
-    auto res = extender.extendByBackwardReasoning(order, region, 0);
-
-    EXPECT_TRUE(res.first != res.second);
-    EXPECT_TRUE(res.first == 1 || res.first == 2);
-    EXPECT_TRUE(res.second == 1 || res.second == 2);
 }
 
 TEST(RewardOrderExtenderTest, RewardTest3) {
