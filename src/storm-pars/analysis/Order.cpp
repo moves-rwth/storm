@@ -612,7 +612,7 @@ namespace storm {
             STORM_PRINT("Dot Output:\n" << "digraph model {\n");
 
             // Vertices of the digraph
-            storm::storage::BitVector stateCoverage = storm::storage::BitVector(sufficientForState);
+            storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates);
             for (auto i = 0; i < numberOfStates; ++i) {
                 if (nodes[i] != nullptr) {
                     stateCoverage.set(i);
@@ -800,7 +800,7 @@ namespace storm {
             while (!statesSorted.empty()) {
                 auto state = statesSorted.back();
                 statesSorted.pop_back();
-                if (!(sufficientForState[state] && contains(state))) {
+                if (!sufficientForState[state] || !contains(state)) {
                     return {state, true};
                 }
             }
@@ -811,7 +811,7 @@ namespace storm {
             while (!statesToHandle.empty()) {
                 auto state = statesToHandle.back();
                 statesToHandle.pop_back();
-                if (!(sufficientForState[state] && contains(state))) {
+                if (!sufficientForState[state] || !contains(state)) {
                     return {state, false};
                 }
             }
@@ -819,14 +819,14 @@ namespace storm {
         }
 
         bool Order::existsStateToHandle() {
-            while (!statesToHandle.empty() && sufficientForState[statesToHandle.back()]) {
+            while (!statesToHandle.empty() && contains(statesToHandle.back()) && sufficientForState[statesToHandle.back()]) {
                 statesToHandle.pop_back();
             }
             return !statesToHandle.empty();
         }
 
         void Order::addStateToHandle(uint_fast64_t state) {
-            if (!sufficientForState[state]) {
+            if (!sufficientForState[state] || !contains(state)) {
                 statesToHandle.push_back(state);
             }
         }
