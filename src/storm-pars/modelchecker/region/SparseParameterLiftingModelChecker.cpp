@@ -282,7 +282,7 @@ namespace storm {
                 if (this->isUseMonotonicitySet()) {
                     STORM_LOG_INFO("Number of definitely monotone parameters:"
                                    << regionQueue.top().localMonRes->getGlobalMonotonicityResult()->getNumberOfMonotoneParameters());
-                    STORM_LOG_INFO("Number of sufficient states:" << regionQueue.top().order->getNumberOfSufficientStates());
+                    STORM_PRINT("Number of sufficient states:" << regionQueue.top().order->getNumberOfSufficientStates());
                 }
                 value = storm::utility::convertNumber<ConstantType>(init.first);
                 valuation = std::move(init.second);
@@ -371,7 +371,7 @@ namespace storm {
                             }
 
                             // Check whether this region contains a new 'good' value and set this value
-                            auto point = useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
+                            auto point = useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()), possibleMonotoneIncrParameters, possibleMonotoneDecrParameters) : currRegion.getCenterPoint();
                             auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                             if (!value || (minimize ? currValue <= value.get() : currValue >= value.get())) {
                                 value = currValue;
@@ -567,11 +567,13 @@ namespace storm {
                     valuationCenter[var] += stepSize;
                 }
                 if (monIncr) {
-                    possibleMonotoneParameters.insert(var);
+                    this->possibleMonotoneParameters.insert(var);
                     possibleMonotoneIncrParameters.insert(var);
+                    this->possibleMonotoneIncrParameters.insert(var);
                 } else if (monDecr) {
-                    possibleMonotoneParameters.insert(var);
+                    this->possibleMonotoneParameters.insert(var);
                     possibleMonotoneDecrParameters.insert(var);
+                    this->possibleMonotoneDecrParameters.insert(var);
                 } else {
                     possibleNotMonotoneParameters.insert(var);
                 }

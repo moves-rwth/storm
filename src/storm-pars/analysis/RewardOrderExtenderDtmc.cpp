@@ -535,6 +535,7 @@ namespace storm {
                         }
                     }
                 }
+
                 STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Expecting all successor states to be sorted");
             }
 
