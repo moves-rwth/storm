@@ -304,7 +304,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveScc(storm::Environme
         if (this->hasInitialScheduler()) {
             std::vector<uint_fast64_t> sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
             // As we removed the entries where the choice was fixed, we need to change the scheduler.
-            // We set the scheduler to 0 for those states.
+            // We set the scheduler to 0 for those states, as there is only one possible choice left.
             storm::utility::vector::setVectorValues<uint_fast64_t>(sccInitChoices, choiceFixedForStateSCC, 0);
             this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
         }
