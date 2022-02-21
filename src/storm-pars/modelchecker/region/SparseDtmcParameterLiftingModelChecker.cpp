@@ -485,6 +485,12 @@ namespace storm {
                             useRegionSplitEstimates = true;
                         }
                     }
+                } else {
+                    if (deltaLower[p] > deltaUpper[p]) {
+                        regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]));
+                    } else {
+                        regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
+                    }
                 }
             }
             // large regionsplitestimate implies that parameter p occurs as p and 1-p at least once
