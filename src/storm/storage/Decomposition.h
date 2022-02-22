@@ -27,6 +27,11 @@ class Decomposition {
     Decomposition();
 
     /*!
+     * Default (virtual) deconstructor
+     */
+    virtual ~Decomposition() = default;
+
+    /*!
      * Creates a decomposition by copying the given decomposition.
      *
      * @param other The decomposition to copy.
