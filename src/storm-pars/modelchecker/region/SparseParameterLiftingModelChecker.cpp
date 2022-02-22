@@ -236,7 +236,7 @@ namespace storm {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation Valuation;
             STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Getting extremal values at the initial state requires a model with a single initial state.");
-            bool const useMonotonicity = this->isUseMonotonicitySet();
+            bool useMonotonicity = this->isUseMonotonicitySet();
             bool const minimize = storm::solver::minimize(dir);
 
             // Comparator for the region queue
@@ -274,6 +274,7 @@ namespace storm {
                     regionQueue.emplace(region, order, monRes, initBound);
                 } else {
                     this->setUseMonotonicity(false);
+                    useMonotonicity = false;
                     this->setUseBounds(false);
                     this->setUseOptimisticOrder(false);
                     regionQueue.emplace(region, nullptr, nullptr, initBound);

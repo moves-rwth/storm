@@ -24,6 +24,8 @@ namespace storm {
             this->matrix = model->getTransitionMatrix();
             this->numberOfStates = this->model->getNumberOfStates();
             this->formula = formula;
+            this->bottomStates = boost::none;
+            this->topStates = boost::none;
         }
 
         template <typename ValueType, typename ConstantType>
