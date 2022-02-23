@@ -334,7 +334,7 @@ namespace storm {
                                                 || (!minimize && currBound.get() > value.get() + storm::utility::convertNumber<ConstantType>(precision));
                         } else {
                             lookAtRegion = (minimize && (currBound.get() * (1 + storm::utility::convertNumber<ConstantType>(precision)) < value.get()))
-                                            || (!minimize && (currBound.get() * (1 + storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
+                                            || (!minimize && (currBound.get() * (1 - storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
                         }
                         if (lookAtRegion) {
                             if (useMonotonicity) {
