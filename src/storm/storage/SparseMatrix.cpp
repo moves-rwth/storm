@@ -793,6 +793,37 @@ void SparseMatrix<ValueType>::makeRowGroupingTrivial() {
 }
 
 template<typename ValueType>
+SparseMatrix<ValueType> SparseMatrix<ValueType>::getSquareMatrix() {
+    if (trivialRowGrouping) {
+        return SparseMatrix<ValueType>(*this);
+    } else {
+        index_type entries = 0;
+        std::vector<std::map<index_type, ValueType>> matrixEntries(this->getRowGroupCount());
+        for (index_type i = 0; i < this->getRowGroupCount(); ++i) {
+            rows rowGroupRows = this->getRowGroup(i);
+            for (auto row = rowGroupRows.begin(); row != rowGroupRows.end(); ++row) {
+                if (matrixEntries[i].find(row->getColumn()) != matrixEntries[i].end()) {
+                    matrixEntries[i][row->getColumn()] += row->getValue();
+                } else {
+                    matrixEntries[i][row->getColumn()] = row->getValue();
+                    entries++;
+                }
+            }
+        }
+
+
+        // columnCount will be equal to rowcount
+        SparseMatrixBuilder<ValueType> matrixBuilder(this->getRowGroupCount(), this->getColumnCount(), entries);
+        for (index_type i = 0; i < this->getRowGroupCount(); ++i) {
+            for (auto& entry : matrixEntries[i]) {
+                matrixBuilder.addNextValue(i, entry.first, entry.second);
+            }
+        }
+        return matrixBuilder.build();
+    }
+}
+
+template<typename ValueType>
 storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint) const {
     storm::storage::BitVector res(this->getRowCount(), false);
     for (auto group : groupConstraint) {

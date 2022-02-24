@@ -627,6 +627,11 @@ class SparseMatrix {
     void makeRowGroupingTrivial();
 
     /*!
+     * Creates a new square matrix by merging the entries in a rowgroup (adding the entries)
+     */
+    SparseMatrix getSquareMatrix();
+
+    /*!
      * Returns the indices of the rows that belong to one of the selected row groups.
      *
      * @param groups the selected row groups
