@@ -213,6 +213,5 @@ namespace storm {
 
         template class ReachabilityOrderExtender<RationalFunction, double>;
         template class ReachabilityOrderExtender<RationalFunction, RationalNumber>;
-
     }
 }

@@ -422,55 +422,39 @@ namespace storm {
             auto itr = statesSorted.begin();
             while (itr != statesSorted.end()) {
                 auto state = *itr;
-                std::vector<uint_fast64_t> successors;
-                if (this->stateMap[state].size() == 1){
-                    successors = this->stateMap[state][0];
-                    if (!order->isActionSetAtState(state)){
+                if (this->stateMap[state].size() == 1 && !order->isActionSetAtState(state)) {
                         order->addToMdpScheduler(state, 0);
-                    }
-                } else if (order->isActionSetAtState(state)) {
-                    successors = this->stateMap[state][order->getActionAtState(state)];
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Insufficient scheduler to continue extending order.");
                 }
                 bool all = true;
-                for (uint_fast64_t i = 0; i < successors.size(); ++i) {
-                    auto state1 = successors[i];
-                    for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
-                        auto state2 = successors[j];
-                        if (min[state1] > max[state2]) {
-                            if (!order->contains(state1)) {
-                                order->add(state1);
+                if (order->isActionSetAtState(state)) {
+                    // We only need to check for the successors belonging to the corresponding action
+                    auto& successors = this->stateMap[state][order->getActionAtState(state)];
+                    for (uint_fast64_t i = 0; i < successors.size(); ++i) {
+                        auto state1 = successors[i];
+                        for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
+                            auto state2 = successors[j];
+                            all &= this->addStatesBasedOnMinMax(order, state1, state2) != Order::NodeComparison::UNKNOWN;
+                        }
+                    }
+                } else {
+                    // We need to check for all possible successors
+                    std::vector<uint_fast64_t> successors;
+                    for (auto& succs : this->stateMap[state]) {
+                        for (auto succ : succs) {
+                            if (std::find(successors.begin(), successors.end(), succ) == successors.end()) {
+                                successors.push_back(succ);
                             }
-                            if (!order->contains(state2)) {
-                                order->add(state2);
-                            }
-                            order->addRelation(state1, state2);
-                        } else if (min[state2] > max[state1]) {
-                            if (!order->contains(state1)) {
-                                order->add(state1);
-                            }
-                            if (!order->contains(state2)) {
-                                order->add(state2);
-                            }
-                            order->addRelation(state2, state1);
-                        } else if (min[state1] == max[state2] && max[state1] == min[state2]) {
-                            if (!order->contains(state1) && !order->contains(state2)) {
-                                order->add(state1);
-                                order->addToNode(state2, order->getNode(state1));
-                            } else if (!order->contains(state1)) {
-                                order->addToNode(state1, order->getNode(state2));
-                            } else if (!order->contains(state2)) {
-                                order->addToNode(state2, order->getNode(state1));
-                            } else {
-                                order->merge(state1, state2);
-                                assert (!order->isInvalid());
-                            }
-                        } else {
-                            all = false;
+                        }
+                    }
+                    for (uint_fast64_t i = 0; i < successors.size(); ++i) {
+                        auto state1 = successors[i];
+                        for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
+                            auto state2 = successors[j];
+                            all &= this->addStatesBasedOnMinMax(order, state1, state2) != Order::NodeComparison::UNKNOWN;
                         }
                     }
                 }
+
                 if (all) {
                     STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
                     order->setSufficientForState(state);

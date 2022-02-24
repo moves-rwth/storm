@@ -13,8 +13,6 @@ namespace storm {
             // intentionally left empty
         }
 
-
-
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtenderDtmc<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
             STORM_LOG_ASSERT (order != nullptr, "Order should be provided");
@@ -97,62 +95,30 @@ namespace storm {
             }
             return std::make_tuple(order, this->numberOfStates, this->numberOfStates);
         }
+
         template<typename ValueType, typename ConstantType>
         void ReachabilityOrderExtenderDtmc<ValueType, ConstantType>::addInitialStatesMinMax(std::shared_ptr<Order> order) {
             // Add the states that can be ordered based on min/max values
-            if (this->usePLA[order]) {
-                auto &min = this->minValues[order];
-                auto &max = this->maxValues[order];
-                // Try to make the order as complete as possible based on pla results
-                auto &statesSorted = order->getStatesSorted();
-                auto itr = statesSorted.begin();
-                while (itr != statesSorted.end()) {
-                    auto state = *itr;
-                    auto &successors = this->stateMap[state][0];
-                    bool all = true;
-                    for (uint_fast64_t i = 0; i < successors.size(); ++i) {
-                        auto state1 = successors[i];
-                        for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
-                            auto state2 = successors[j];
-                            if (min[state1] > max[state2]) {
-                                if (!order->contains(state1)) {
-                                    order->add(state1);
-                                }
-                                if (!order->contains(state2)) {
-                                    order->add(state2);
-                                }
-                                order->addRelation(state1, state2);
-                            } else if (min[state2] > max[state1]) {
-                                if (!order->contains(state1)) {
-                                    order->add(state1);
-                                }
-                                if (!order->contains(state2)) {
-                                    order->add(state2);
-                                }
-                                order->addRelation(state2, state1);
-                            } else if (min[state1] == max[state2] && max[state1] == min[state2]) {
-                                if (!order->contains(state1) && !order->contains(state2)) {
-                                    order->add(state1);
-                                    order->addToNode(state2, order->getNode(state1));
-                                } else if (!order->contains(state1)) {
-                                    order->addToNode(state1, order->getNode(state2));
-                                } else if (!order->contains(state2)) {
-                                    order->addToNode(state2, order->getNode(state1));
-                                } else {
-                                    order->merge(state1, state2);
-                                    STORM_LOG_ASSERT (!order->isInvalid(), "Something went wrong, an invalid order was created based on min/max values");
-                                }
-                            } else {
-                                all = false;
-                            }
-                        }
+            assert (this->usePLA[order]);
+            // Try to make the order as complete as possible based on pla results
+            auto &statesSorted = order->getStatesSorted();
+            auto itr = statesSorted.begin();
+            while (itr != statesSorted.end()) {
+                auto state = *itr;
+                auto &successors = this->stateMap[state][0];
+                bool all = true;
+                for (uint_fast64_t i = 0; i < successors.size(); ++i) {
+                    auto state1 = successors[i];
+                    for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
+                        auto state2 = successors[j];
+                        all &= this->addStatesBasedOnMinMax(order, state1, state2) != Order::NodeComparison::UNKNOWN;
                     }
-                    if (all) {
-                        STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
-                        order->setSufficientForState(state);
-                    }
-                    ++itr;
                 }
+                if (all) {
+                    STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
+                    order->setSufficientForState(state);
+                }
+                ++itr;
             }
         }
 

@@ -23,7 +23,6 @@ namespace storm {
                 std::shared_ptr<Order> getInitialOrder(bool isOptimistic) override;
                 std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
                 std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
-
         };
     }
 }
