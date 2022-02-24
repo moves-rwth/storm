@@ -320,7 +320,7 @@ namespace storm {
                                             || (!minimize && currBound.get() > value.get() + storm::utility::convertNumber<ConstantType>(precision));
                     } else if (!investigateBounds && !absolutePrecision){
                         investigateBounds = (minimize && (currBound.get() * (1 + storm::utility::convertNumber<ConstantType>(precision)) < value.get()))
-                                            || (!minimize && (currBound.get() * (1 + storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
+                                            || (!minimize && (currBound.get() * (1 - storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
                     }
 
                     if (investigateBounds) {
@@ -334,7 +334,7 @@ namespace storm {
                                                 || (!minimize && currBound.get() > value.get() + storm::utility::convertNumber<ConstantType>(precision));
                         } else {
                             lookAtRegion = (minimize && (currBound.get() * (1 + storm::utility::convertNumber<ConstantType>(precision)) < value.get()))
-                                            || (!minimize && (currBound.get() * (1 + storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
+                                            || (!minimize && (currBound.get() * (1 - storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
                         }
                         if (lookAtRegion) {
                             if (useMonotonicity) {
@@ -380,7 +380,7 @@ namespace storm {
                                                || (!minimize && currBound.get() > value.get() + storm::utility::convertNumber<ConstantType>(precision));
                             } else {
                                 splitRegion = (minimize && (currBound.get() * (1 + storm::utility::convertNumber<ConstantType>(precision)) < value.get()))
-                                            || (!minimize && (currBound.get() * (1 + storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
+                                            || (!minimize && (currBound.get() * (1 - storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
                             }
                             if (splitRegion) {
                                 // We will split the region in this case, but first we set the bounds to extend the order for the new regions.
