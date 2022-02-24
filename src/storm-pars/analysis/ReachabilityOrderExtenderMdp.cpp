@@ -37,12 +37,21 @@ namespace storm {
             while (currentStateMode.first != this->numberOfStates) {
                 STORM_LOG_ASSERT (currentStateMode.first < this->numberOfStates, "Unexpected state number");
                 auto& currentState = currentStateMode.first;
+
+                if (currentStateMode.second) {
+                    STORM_LOG_INFO("Currently considering state: " << currentState << " based on topological sorting");
+                } else {
+                    STORM_LOG_INFO("Currently considering state: " << currentState << " based on statesToHandle (not topological approach)");
+                }
+
                 std::vector<uint_fast64_t> successors;
                 std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
                 bool skip = false;
                 if(!order->isActionSetAtState(currentState)) {
                     if (this->stateMap[currentState].size() == 1) {
+                        // If there is only one action, we set the scheduler to this action.
                         order->addToMdpScheduler(currentState, 0);
+                        assert (order->isActionSetAtState(currentState));
                     } else {
                         result = extendByBackwardReasoning(order, region, currentState);
                         skip = true;
@@ -138,25 +147,25 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
             // Finding the best action for the current state
-            STORM_PRINT("Looking for best action for state " << currentState << std::endl);
+            STORM_LOG_INFO("Looking for best action for state " << currentState << std::endl);
             uint64_t  bestAct = 0;
             if (order->isTopState(currentState)) {
                 // in this case the state should be absorbing so we just take action 0
                 order->addToMdpScheduler(currentState, bestAct);
                 order->addToNode(currentState, order->getTop());
-                STORM_PRINT("   State is top state + thus absorbing. Take action 0." << std::endl);
+                STORM_LOG_INFO("   State is top state + thus absorbing. Take action 0." << std::endl);
                 return {this->numberOfStates, this->numberOfStates};
             }
             if (order->isBottomState(currentState)) {
                 // in this case the state should be absorbing so we just take action 0
                 order->addToMdpScheduler(currentState, bestAct);
                 order->addToNode(currentState, order->getBottom());
-                STORM_PRINT("   State is bottom state + thus absorbing. Take action 0." << std::endl);
+                STORM_LOG_INFO("   State is bottom state + thus absorbing. Take action 0." << std::endl);
                 return {this->numberOfStates, this->numberOfStates};
             }
             if (this->stateMap[currentState].size() == 1){
                 // if we only have one possible action, we already know which one we take.
-                STORM_PRINT("   Only one Action available, take it." << std::endl);
+                STORM_LOG_INFO("   Only one Action available, take it." << std::endl);
                 order->addToMdpScheduler(currentState, bestAct);
             } else {
                 // note that succs in this function mean potential succs
@@ -171,7 +180,7 @@ namespace storm {
                 }
                 auto nrOfSuccs = orderedSuccs.size();
                 if (prMax) {
-                    STORM_PRINT("   Interested in PrMax." << std::endl);
+                    STORM_LOG_INFO("   Interested in PrMax." << std::endl);
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[0];
                         boost::optional<storm::RationalFunction> bestFunc;
@@ -189,7 +198,7 @@ namespace storm {
                             }
                             index++;
                         }
-                        STORM_PRINT("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                        STORM_LOG_INFO("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                     } else {
                         // more than 2 succs
                         // Check for the simple case
@@ -229,7 +238,7 @@ namespace storm {
                                 std::cout << std::endl;*/
 
                                 bestAct = candidates[0];
-                                STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                                STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                             } else {
                                 STORM_LOG_WARN("No best action found. Take action 0 as default.");
                             }
@@ -237,7 +246,7 @@ namespace storm {
                     }
                 } else {
                     // We are interested in PrMin
-                    STORM_PRINT("   Interested in PrMin." << std::endl);
+                    STORM_LOG_INFO("   Interested in PrMin." << std::endl);
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[1];
                         boost::optional<storm::RationalFunction> bestFunc;
@@ -255,7 +264,7 @@ namespace storm {
                             }
                             index++;
                         }
-                        STORM_PRINT("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                        STORM_LOG_INFO("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
 
                     } else {
                         // more than 2 succs
@@ -291,7 +300,7 @@ namespace storm {
                             }
                             if (candidates.size() == 1) {
                                 bestAct = candidates [0];
-                                STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                                STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                             } else {
                                 STORM_LOG_WARN("No best action found. Take action 0 as default.");
                             }
