@@ -869,7 +869,7 @@ namespace storm {
         }
 
         bool Order::isActionSetAtState(uint_fast64_t state) const {
-            if (mdpScheduler == boost::none || (mdpScheduler->size() > state)) return false;
+            if (mdpScheduler == boost::none || (state >= mdpScheduler->size())) return false;
             return mdpScheduler->at(state) != std::numeric_limits<uint64_t>::max();
         }
 
