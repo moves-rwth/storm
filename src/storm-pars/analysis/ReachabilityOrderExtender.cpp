@@ -83,8 +83,16 @@ namespace storm {
                 decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);
             }
 
-            auto statesSorted = storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates);
-            order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
+            if (this->matrix.getColumnCount() == this->matrix.getRowCount()) {
+                auto statesSorted = storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates);
+                order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
+            } else {
+                auto squareMatrix = this->matrix.getSquareMatrix();
+                std::cout << squareMatrix << std::endl;
+                auto statesSorted = storm::utility::graph::getTopologicalSort(squareMatrix.transpose(), firstStates);
+                order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
+
+            }
             this->buildStateMap();
 
             if (this->minValuesInit) {
