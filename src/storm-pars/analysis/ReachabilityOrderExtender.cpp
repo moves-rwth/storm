@@ -88,7 +88,6 @@ namespace storm {
                 order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
             } else {
                 auto squareMatrix = this->matrix.getSquareMatrix();
-                std::cout << squareMatrix << std::endl;
                 auto statesSorted = storm::utility::graph::getTopologicalSort(squareMatrix.transpose(), firstStates);
                 order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
 
