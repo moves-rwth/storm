@@ -26,10 +26,8 @@ namespace storm {
 
             private:
 
-                storm::storage::BitVector gatherPotentialSuccs(uint64_t state);
-
-                // Determines which choice to take, and then calls its parents extendByBackwardReasoning
-                std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
+                std::vector<uint_fast64_t> gatherPotentialSuccessors(uint64_t state);
+                bool findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state);
 
                 /*!
                  * Compares two rational functions
@@ -44,7 +42,7 @@ namespace storm {
 
                 storage::BitVector getHitSuccs(uint64_t state, uint64_t action, std::vector<uint64_t> orderedSuccs);
 
-                std::pair<bool, uint64_t> simpleCaseCheck(uint64_t state, std::vector<uint64_t> orderedSuccs);
+                std::pair<bool, uint64_t> simpleActionCheck(uint64_t state, std::vector<uint64_t> orderedSuccs);
 
                 ReachabilityOrderExtenderMdp::ActionComparison actionSMTCompare(std::shared_ptr<Order> order, std::vector<uint64_t> const& orderedSuccs, storage::ParameterRegion<ValueType>& region, Rows action1, Rows action2);
 

@@ -14,22 +14,193 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        storm::storage::BitVector ReachabilityOrderExtenderMdp<ValueType, ConstantType>::gatherPotentialSuccs(uint64_t state) {
-            auto succs = this->stateMap[state];
-            auto res = storm::storage::BitVector(this->numberOfStates);
-            for (auto & act : succs) {
-                for (auto & succ : act) {
-                    res.set(succ, true);
+        std::vector<uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::gatherPotentialSuccessors(uint64_t state) {
+            std::vector<uint_fast64_t> successors;
+            for (auto& succs : this->stateMap[state]) {
+                for (auto succ : succs) {
+                    if (std::find(successors.begin(), successors.end(), succ) == successors.end()) {
+                        successors.push_back(succ);
+                    }
                 }
             }
-            return res;
+            return std::move(successors);
         }
 
-                template <typename ValueType, typename ConstantType>
+        template<typename ValueType, typename ConstantType>
+        bool ReachabilityOrderExtenderMdp<ValueType, ConstantType>::findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state) {
+            // Finding the best action for the current state
+            STORM_LOG_INFO("Looking for best action for state " << state << std::endl);
+            if (order->isActionSetAtState(state)) {
+                STORM_LOG_INFO("Best action for state " << state << " is already set." << std::endl);
+                return true;
+            }
+            if (order->isTopState(state)) {
+                // in this case the state should be absorbing so we just take action 0
+                STORM_LOG_INFO("   State is top state + thus absorbing. Take action 0." << std::endl);
+                order->addToMdpScheduler(state, 0);
+                return true;
+            }
+            if (order->isBottomState(state)) {
+                // in this case the state should be absorbing so we just take action 0
+                STORM_LOG_INFO("   State is bottom state + thus absorbing. Take action 0." << std::endl);
+                order->addToMdpScheduler(state, 0);
+                return true;
+
+            }
+            if (this->stateMap[state].size() == 1){
+                // if we only have one possible action, we already know which one we take.
+                STORM_LOG_INFO("   Only one Action available, take it." << std::endl);
+                order->addToMdpScheduler(state, 0);
+                return true;
+
+            }
+
+            // note that succs in this function mean potential succs
+            uint64_t bestAct = this->matrix.getRowCount();
+            auto potSuccs = gatherPotentialSuccessors(state);
+            auto orderedSuccs = order->sortStates(potSuccs);
+            // TODO We need assumptions if states could not be ordered
+            if (orderedSuccs.back() == this->numberOfStates){
+                STORM_LOG_WARN("Could not order potential successors. An error will occur.");
+                // The following commands are only for debugging with a very specific example
+                // order->mergeNodes(order->getNode(3), order->getNode(1));
+                // orderedSuccs = order->sortStates(&potSuccs);
+                return false;
+            }
+            auto nrOfSuccs = orderedSuccs.size();
+            if (prMax) {
+                STORM_LOG_INFO("   Interested in PrMax." << std::endl);
+                if (nrOfSuccs == 2) {
+                    uint64_t bestSucc = orderedSuccs[0];
+                    boost::optional<storm::RationalFunction> bestFunc;
+                    uint_fast64_t index = 0;
+                    auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
+                    while (index < numberOfOptionsForState) {
+                        auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + index);
+                        auto itr = row.begin();
+                        while (itr != row.end() && itr->getColumn() != bestSucc) {
+                            itr++;
+                        }
+                        if (!bestFunc || (itr != row.end() && isFunctionGreaterEqual(itr->getValue(), bestFunc.get(), region))) {
+                            bestFunc = itr->getValue();
+                            bestAct = index;
+                        }
+                        index++;
+                    }
+                    STORM_LOG_INFO("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                } else {
+                    // more than 2 succs
+                    // Check for the simple case
+                    auto simpleCheckResult = simpleActionCheck(state, orderedSuccs);
+                    if(simpleCheckResult.first == true) {
+                        bestAct = simpleCheckResult.second;
+                    } else {
+                        // else use SMT solver
+                        std::vector<uint64_t> candidates;
+                        uint_fast64_t index = 0;
+                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
+                        while (index < numberOfOptionsForState) {
+                            auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + index);
+                            bool in = true;
+                            for (uint_fast64_t i = 0; i < candidates.size(); i++){
+                                auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + candidates[i]);
+                                auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
+                                if(compRes == GEQ){
+                                    candidates.erase(candidates.begin()+i);
+                                } else if (compRes == LEQ) {
+                                    in = false;
+                                    // TODO put break; here?
+                                }
+                            }
+                            if (in) {
+                                candidates.push_back(index);
+                            }
+                            index++;
+                        }
+                        if (candidates.size() == 1) {
+                            bestAct = candidates[0];
+                            STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                        } else {
+                            assert (false);
+                            STORM_LOG_WARN("No best action found. Take action 0 as default.");
+                        }
+                    }
+                }
+            } else {
+                // We are interested in PrMin
+                STORM_LOG_INFO("   Interested in PrMin." << std::endl);
+                if (nrOfSuccs == 2) {
+                    uint64_t bestSucc = orderedSuccs[1];
+                    boost::optional<storm::RationalFunction> bestFunc;
+                    auto index = 0;
+                    auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
+                    while (index < numberOfOptionsForState) {
+                        auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[state]);
+                        auto itr = row.begin();
+                        while (itr != row.end() && itr->getColumn() != bestSucc) {
+                            itr++;
+                        }
+                        if (!bestFunc || (itr != row.end() && isFunctionGreaterEqual(bestFunc.get(), itr->getValue(), region))) {
+                            bestFunc = itr->getValue();
+                            bestAct = index;
+                        }
+                        index++;
+                    }
+                    STORM_LOG_INFO("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+
+                } else {
+                    // more than 2 succs
+                    // Check for the simple case
+                    // TODO do we need an extra vector for the reversed succs?
+                    std::vector<uint64_t> revOrderedSuccs = std::vector<uint64_t>(orderedSuccs);
+                    std::reverse(orderedSuccs.begin(), orderedSuccs.end());
+                    auto simpleCheckResult = simpleActionCheck(state, revOrderedSuccs);
+                    if(simpleCheckResult.first == true) {
+                        bestAct = simpleCheckResult.second;
+                    } else {
+                        // else use SMT solver
+                        std::vector<uint64_t> candidates;
+                        auto index = 0;
+                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
+                        while (index < numberOfOptionsForState) {
+                            auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + index);
+                            bool in = true;
+                            for (uint_fast64_t i = 0; i < candidates.size(); i++){
+                                auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + candidates[i]);
+                                auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
+                                if(compRes == LEQ){
+                                    candidates.erase(candidates.begin()+i);
+                                } else if (compRes == GEQ) {
+                                    in = false;
+                                    // TODO put break; here?
+                                }
+                            }
+                            if (in) {
+                                candidates.push_back(index);
+                            }
+                            index++;
+                        }
+                        if (candidates.size() == 1) {
+                            bestAct = candidates [0];
+                            STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                        } else {
+                            STORM_LOG_WARN("No best action found. Take action 0 as default.");
+                        }
+                    }
+
+                }
+            }
+            if (bestAct != this->matrix.getRowCount()) {
+                order->addToMdpScheduler(state, bestAct);
+                return true;
+            }
+            return false;
+        }
+
+        template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
             STORM_LOG_ASSERT (order != nullptr, "Order should be provided");
             if (assumption != nullptr) {
-                STORM_LOG_INFO("Handling assumption " << *assumption << std::endl);
                 this->handleAssumption(order, assumption);
             }
 
@@ -37,48 +208,18 @@ namespace storm {
             while (currentStateMode.first != this->numberOfStates) {
                 STORM_LOG_ASSERT (currentStateMode.first < this->numberOfStates, "Unexpected state number");
                 auto& currentState = currentStateMode.first;
-
-                if (currentStateMode.second) {
-                    STORM_LOG_INFO("Currently considering state: " << currentState << " based on topological sorting");
-                } else {
-                    STORM_LOG_INFO("Currently considering state: " << currentState << " based on statesToHandle (not topological approach)");
-                }
-
                 std::vector<uint_fast64_t> successors;
+                if (findBestAction(order, region, currentState)) {
+                    successors = this->getSuccessors(currentState, order->getActionAtState(currentState));
+                } else {
+                    successors = this->gatherPotentialSuccessors(currentState);
+                }
                 std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
-                bool skip = false;
-                if(!order->isActionSetAtState(currentState)) {
-                    if (this->stateMap[currentState].size() == 1) {
-                        // If there is only one action, we set the scheduler to this action.
-                        order->addToMdpScheduler(currentState, 0);
-                        assert (order->isActionSetAtState(currentState));
-                    } else {
-                        result = extendByBackwardReasoning(order, region, currentState);
-                        skip = true;
-                    }
-                }
-                if (order->isActionSetAtState(currentState)) {
-                    successors = this->stateMap[currentState][order->getActionAtState(currentState)];
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Insufficient scheduler to continue extending order.");
-                }
 
-                /*if (this->stateMap[currentState].size() == 1){
-                    successors = this->stateMap[currentState][0];
-                    if (!order->isActionSetAtState(currentState)){
-                        order->addToMdpScheduler(currentState, 0);
-                    }
-                } else if (order->isActionSetAtState(currentState)) {
-                    successors = this->stateMap[currentState][order->getActionAtState(currentState)];
-                } else {
-                    order->dotOutputToFile(std::cout);
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Insufficient scheduler to continue extending order.");
-                }*/
-
-                if (!skip && successors.size() == 1) {
+                if (successors.size() == 1) {
                     STORM_LOG_ASSERT (order->contains(successors[0]), "Expecting order to contain successor of state " << currentState);
                     this->handleOneSuccessor(order, currentState, successors[0]);
-                } else if (!skip && !successors.empty()) {
+                } else if (!successors.empty()) {
                     if (order->isOnlyInitialOrder()) {
                         order->add(currentState);
                         if (!order->isTrivial(currentState)) {
@@ -98,7 +239,7 @@ namespace storm {
                     STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Something went wrong while sorting states, number of states differs");
                     STORM_LOG_ASSERT (order->contains(currentState) && order->getNode(currentState) != nullptr, "Expecting order to contain the current State");
 
-                    if (monRes != nullptr && currentStateMode.second) {
+                    if (monRes != nullptr) {
                         for (auto& param : this->occuringVariablesAtState[currentState]) {
                             this->checkParOnStateMonRes(currentState, order, param, region, monRes);
                         }
@@ -142,179 +283,6 @@ namespace storm {
                 monRes->setDone();
             }
             return std::make_tuple(order, this->numberOfStates, this->numberOfStates);
-        }
-
-        template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
-            // Finding the best action for the current state
-            STORM_LOG_INFO("Looking for best action for state " << currentState << std::endl);
-            uint64_t  bestAct = 0;
-            if (order->isTopState(currentState)) {
-                // in this case the state should be absorbing so we just take action 0
-                order->addToMdpScheduler(currentState, bestAct);
-                order->addToNode(currentState, order->getTop());
-                STORM_LOG_INFO("   State is top state + thus absorbing. Take action 0." << std::endl);
-                return {this->numberOfStates, this->numberOfStates};
-            }
-            if (order->isBottomState(currentState)) {
-                // in this case the state should be absorbing so we just take action 0
-                order->addToMdpScheduler(currentState, bestAct);
-                order->addToNode(currentState, order->getBottom());
-                STORM_LOG_INFO("   State is bottom state + thus absorbing. Take action 0." << std::endl);
-                return {this->numberOfStates, this->numberOfStates};
-            }
-            if (this->stateMap[currentState].size() == 1){
-                // if we only have one possible action, we already know which one we take.
-                STORM_LOG_INFO("   Only one Action available, take it." << std::endl);
-                order->addToMdpScheduler(currentState, bestAct);
-            } else {
-                // note that succs in this function mean potential succs
-                auto potSuccs = gatherPotentialSuccs(currentState);
-                auto orderedSuccs = order->sortStates(&potSuccs);
-                // TODO We need assumptions if states could not be ordered
-                if (orderedSuccs.back() == this->numberOfStates){
-                    STORM_LOG_WARN("Could not order potential Successors. An error will occur.");
-                    // The following commands are only for debugging with a very specific example
-                    // order->mergeNodes(order->getNode(3), order->getNode(1));
-                    // orderedSuccs = order->sortStates(&potSuccs);
-                }
-                auto nrOfSuccs = orderedSuccs.size();
-                if (prMax) {
-                    STORM_LOG_INFO("   Interested in PrMax." << std::endl);
-                    if (nrOfSuccs == 2) {
-                        uint64_t bestSucc = orderedSuccs[0];
-                        boost::optional<storm::RationalFunction> bestFunc;
-                        uint_fast64_t index = 0;
-                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
-                        while (index < numberOfOptionsForState) {
-                            auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
-                            auto itr = row.begin();
-                            while (itr != row.end() && itr->getColumn() != bestSucc) {
-                                itr++;
-                            }
-                            if (!bestFunc || (itr != row.end() && isFunctionGreaterEqual(itr->getValue(), bestFunc.get(), region))) {
-                                bestFunc = itr->getValue();
-                                bestAct = index;
-                            }
-                            index++;
-                        }
-                        STORM_LOG_INFO("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-                    } else {
-                        // more than 2 succs
-                        // Check for the simple case
-                        auto simpleCheckResult = simpleCaseCheck(currentState, orderedSuccs);
-                        if(simpleCheckResult.first == true) {
-                            bestAct = simpleCheckResult.second;
-                        } else {
-                            // else use SMT solver
-                            std::vector<uint64_t> candidates;
-                            uint_fast64_t index = 0;
-                            auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
-                            while (index < numberOfOptionsForState) {
-                                auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
-                                bool in = true;
-                                for (uint_fast64_t i = 0; i < candidates.size(); i++){
-                                    auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
-                                    auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
-                                    if(compRes == GEQ){
-                                        candidates.erase(candidates.begin()+i);
-                                    } else if (compRes == LEQ) {
-                                        in = false;
-                                        // TODO put break; here?
-                                    }
-                                }
-                                if (in) {
-                                    candidates.push_back(index);
-                                }
-                                index++;
-                            }
-                            if (candidates.size() == 1) {
-
-                                /*auto bestRow = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[0]);
-                                std::cout << "Succs of best action " << candidates[0] << ": " << std::endl;
-                                for (auto x : bestRow){
-                                    std::cout << x.getColumn() << ", ";
-                                }
-                                std::cout << std::endl;*/
-
-                                bestAct = candidates[0];
-                                STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-                            } else {
-                                STORM_LOG_WARN("No best action found. Take action 0 as default.");
-                            }
-                        }
-                    }
-                } else {
-                    // We are interested in PrMin
-                    STORM_LOG_INFO("   Interested in PrMin." << std::endl);
-                    if (nrOfSuccs == 2) {
-                        uint64_t bestSucc = orderedSuccs[1];
-                        boost::optional<storm::RationalFunction> bestFunc;
-                        auto index = 0;
-                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
-                        while (index < numberOfOptionsForState) {
-                            auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState]);
-                            auto itr = row.begin();
-                            while (itr != row.end() && itr->getColumn() != bestSucc) {
-                                itr++;
-                            }
-                            if (!bestFunc || (itr != row.end() && isFunctionGreaterEqual(bestFunc.get(), itr->getValue(), region))) {
-                                bestFunc = itr->getValue();
-                                bestAct = index;
-                            }
-                            index++;
-                        }
-                        STORM_LOG_INFO("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-
-                    } else {
-                        // more than 2 succs
-                        // Check for the simple case
-                        // TODO do we need an extra vector for the reversed succs?
-                        std::vector<uint64_t> revOrderedSuccs = std::vector<uint64_t>(orderedSuccs);
-                        std::reverse(orderedSuccs.begin(), orderedSuccs.end());
-                        auto simpleCheckResult = simpleCaseCheck(currentState, revOrderedSuccs);
-                        if(simpleCheckResult.first == true) {
-                            bestAct = simpleCheckResult.second;
-                        } else {
-                            // else use SMT solver
-                            std::vector<uint64_t> candidates;
-                            auto index = 0;
-                            auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
-                            while (index < numberOfOptionsForState) {
-                                auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
-                                bool in = true;
-                                for (uint_fast64_t i = 0; i < candidates.size(); i++){
-                                    auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
-                                    auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
-                                    if(compRes == LEQ){
-                                        candidates.erase(candidates.begin()+i);
-                                    } else if (compRes == GEQ) {
-                                        in = false;
-                                        // TODO put break; here?
-                                    }
-                                }
-                                if (in) {
-                                    candidates.push_back(index);
-                                }
-                                index++;
-                            }
-                            if (candidates.size() == 1) {
-                                bestAct = candidates [0];
-                                STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-                            } else {
-                                STORM_LOG_WARN("No best action found. Take action 0 as default.");
-                            }
-                        }
-
-                    }
-                }
-                order->addToMdpScheduler(currentState, bestAct);
-            }
-
-            // Actual extending of the order here
-            std::vector<uint64_t> successors = this->stateMap[currentState][bestAct]; // Get actual succs
-            return ReachabilityOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(order, region, currentState); // Call Base Class function.
-
         }
 
         template<typename ValueType, typename ConstantType>
@@ -385,7 +353,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<bool, uint64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::simpleCaseCheck(uint64_t state, std::vector<uint64_t> orderedSuccs){
+        std::pair<bool, uint64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::simpleActionCheck(uint64_t state, std::vector<uint64_t> orderedSuccs){
             uint64_t noa = this->stateMap[state].size();
             uint64_t bestAct;
             std::vector<storage::BitVector> bitVecTable = std::vector<storage::BitVector>(noa);
@@ -438,14 +406,8 @@ namespace storm {
                     }
                 } else {
                     // We need to check for all possible successors
-                    std::vector<uint_fast64_t> successors;
-                    for (auto& succs : this->stateMap[state]) {
-                        for (auto succ : succs) {
-                            if (std::find(successors.begin(), successors.end(), succ) == successors.end()) {
-                                successors.push_back(succ);
-                            }
-                        }
-                    }
+                    std::vector<uint_fast64_t> successors = gatherPotentialSuccessors(state);
+
                     for (uint_fast64_t i = 0; i < successors.size(); ++i) {
                         auto state1 = successors[i];
                         for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
