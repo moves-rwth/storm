@@ -48,6 +48,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplifications) {
             auto mdp = parametricModel->template as<SparseModelType>();
+            this->monotonicityChecker = std::make_unique<storm::analysis::MonotonicityChecker<ValueType>>(mdp->getTransitionMatrix());
             specify_internal(env, mdp, checkTask, !allowModelSimplifications);
         }
 
@@ -105,12 +106,12 @@ namespace storm {
             resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
             storm::utility::vector::setVectorValues(resultsForNonMaybeStates, psiStates, storm::utility::one<ConstantType>());
             
-            // if there are maybestates, create the parameterLifter
+            // if there are maybeStates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the vector of one-step probabilities to go to target states.
                 std::vector<typename SparseModelType::ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates), maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates), maybeStates, false, this->isUseMonotonicitySet());
                 computePlayer1Matrix();
                 
                 applyPreviousResultAsHint = false;
@@ -147,12 +148,12 @@ namespace storm {
             resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
             storm::utility::vector::setVectorValues(resultsForNonMaybeStates, statesWithProbability01.second, storm::utility::one<ConstantType>());
             
-            // if there are maybestates, create the parameterLifter
+            // if there are maybeStates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the vector of one-step probabilities to go to target states.
                 std::vector<typename SparseModelType::ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), statesWithProbability01.second);
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates), maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates), maybeStates, false, this->isUseMonotonicitySet());
                 computePlayer1Matrix();
                 
                 // Check whether there is an EC consisting of maybestates
@@ -191,7 +192,7 @@ namespace storm {
             resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
             storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::infinity<ConstantType>());
             
-            // if there are maybestates, create the parameterLifter
+            // if there are maybeStates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the reward vector
                 STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel->hasRewardModel(checkTask.getRewardModel())) || (!checkTask.isRewardModelSet() && this->parametricModel->hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by the CheckTask is not available in the given model.");
@@ -204,7 +205,7 @@ namespace storm {
                 // As a maybeState does not have reward infinity, a choice leading to an infinity state will never be picked. Hence, we can unselect the corresponding rows
                 storm::storage::BitVector selectedRows = this->parametricModel->getTransitionMatrix().getRowFilter(maybeStates, ~infinityStates);
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, selectedRows, maybeStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, selectedRows, maybeStates, false, this->isUseMonotonicitySet());
                 computePlayer1Matrix(selectedRows);
                 
                 // Check whether there is an EC consisting of maybestates
@@ -237,7 +238,7 @@ namespace storm {
             typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel->getRewardModel(checkTask.getRewardModel()) : this->parametricModel->getUniqueRewardModel();
             std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
             
-            parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), maybeStates);
+            parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), maybeStates, false, this->isUseMonotonicitySet());
             computePlayer1Matrix();
 
             applyPreviousResultAsHint = false;
@@ -412,6 +413,91 @@ namespace storm {
             
             return result;
         }
+
+
+        template <typename SparseModelType, typename ConstantType>
+        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::extendLocalMonotonicityResult(storm::storage::ParameterRegion<ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
+            if (this->monotoneIncrParameters && !localMonotonicityResult->isFixedParametersSet()) {
+                for (auto & var : this->monotoneIncrParameters.get()) {
+                    localMonotonicityResult->setMonotoneIncreasing(var);
+                }
+                for (auto & var : this->monotoneDecrParameters.get()) {
+                    localMonotonicityResult->setMonotoneDecreasing(var);
+                }
+            }
+            auto state = order->getNextSufficientState(-1);
+            auto const variablesAtState = parameterLifter->getOccurringVariablesAtState();
+            while (state != order->getNumberOfStates()) {
+                if (localMonotonicityResult->getMonotonicity(state) == nullptr) {
+                    auto variables = variablesAtState[state];
+                    if (variables.size() == 0 || order->isBottomState(state) || order->isTopState(state)) {
+                        localMonotonicityResult->setConstant(state);
+                    } else {
+                        if (order->isActionSetAtState(state)) {
+                            for (auto const& var : variables) {
+                                auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                                if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
+                                    monotonicity = this->monotonicityChecker->checkLocalMonotonicity(order, state, var, region, order->getActionAtState(state));
+                                    localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                                }
+                            }
+                        } else {
+                            for (auto const& var : variables) {
+                                auto tempMonotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                                bool initialized = false;
+                                Monotonicity monotonicity;
+                                for (auto action = 0; action < this->parametricModel->getTransitionMatrix().getRowGroupSize(state); ++action) {
+                                    if (tempMonotonicity == Monotonicity::Unknown || tempMonotonicity == Monotonicity::Not) {
+                                        tempMonotonicity = this->monotonicityChecker->checkLocalMonotonicity(order, state, var, region, action);
+                                        if (!initialized) {
+                                            monotonicity = tempMonotonicity;
+                                            initialized = true;
+                                        } else if (monotonicity != tempMonotonicity) {
+                                            monotonicity = Monotonicity::Unknown;
+                                        }
+                                    }
+                                }
+                                localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                            }
+                        }
+                    }
+                } else {
+                    // Do nothing, we already checked this one
+                }
+                state = order->getNextSufficientState(state);
+            }
+            auto const statesAtVariable = parameterLifter->getOccuringStatesAtVariable();
+            bool allDone = true;
+            for (auto const & entry : statesAtVariable) {
+                auto states = entry.second;
+                auto var = entry.first;
+                bool done = true;
+                for (auto const& state : states) {
+                    done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != Monotonicity::Unknown;
+                    if (!done) {
+                        break;
+                    }
+                }
+
+                allDone &= done;
+                if (done) {
+                    localMonotonicityResult->getGlobalMonotonicityResult()->setDoneForVar(var);
+                }
+            }
+            if (allDone) {
+                localMonotonicityResult->setDone();
+                while (order->existsNextState()) {
+                    // Simply add the states we couldn't add sofar between =) and =( as we could find local monotonicity for all parametric states
+                    auto nextState = order->getNextStateNumber().second;
+                    if (!order->contains(nextState)) {
+                        order->add(nextState);
+                        order->setSufficientForState(nextState);
+                    }
+                }
+                assert (order->getDoneBuilding());
+            }
+        }
+
 
         template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
         template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;

@@ -96,6 +96,8 @@ namespace storm {
             std::set<VariableType> possibleMonotoneParameters;
             std::set<VariableType> possibleMonotoneIncrParameters;
             std::set<VariableType> possibleMonotoneDecrParameters;
+            std::unique_ptr<storm::analysis::MonotonicityChecker<ValueType>> monotonicityChecker;
+
 
         private:
             // store the current formula. Note that currentCheckTask only stores a reference to the formula.

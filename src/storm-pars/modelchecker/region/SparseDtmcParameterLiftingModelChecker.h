@@ -41,7 +41,7 @@ namespace storm {
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) override;
 
-            virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) override;
+            void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) override;
 
         protected:
                 
@@ -87,7 +87,6 @@ namespace storm {
 
             // Used for monotonicity
             bool useRegionSplitEstimates;
-            std::unique_ptr<storm::analysis::MonotonicityChecker<ValueType>> monotonicityChecker;
 
 
         };

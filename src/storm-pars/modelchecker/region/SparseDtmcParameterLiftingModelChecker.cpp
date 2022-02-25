@@ -55,7 +55,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplification) {
             auto dtmc = parametricModel->template as<SparseModelType>();
-            monotonicityChecker = std::make_unique<storm::analysis::MonotonicityChecker<ValueType>>(dtmc->getTransitionMatrix());
+            this->monotonicityChecker = std::make_unique<storm::analysis::MonotonicityChecker<ValueType>>(dtmc->getTransitionMatrix());
             specify_internal(env, dtmc, checkTask, generateRegionSplitEstimates, !allowModelSimplification);
             if (checkTask.isBoundSet()) {
                 thresholdTask = storm::utility::convertNumber<ConstantType>(checkTask.getBoundThreshold());
@@ -602,7 +602,7 @@ namespace storm {
                         for (auto const &var : variables) {
                             auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
                             if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
-                                monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
+                                monotonicity = this->monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
                                 if (monotonicity == Monotonicity::Unknown ) {
                                     // We skip it
                                 } else {

@@ -32,9 +32,20 @@ namespace storm {
             rowGroupToStateNumber = std::vector<uint_fast64_t>();
             uint_fast64_t newRowIndex = 0;
             uint_fast64_t countNonParam = 0;
+            uint_fast64_t stateNumber = 0;
+            uint_fast64_t startNextRow = pMatrix.getRowGroupSize(stateNumber);
             for (auto const& rowIndex : selectedRows) {
                 builder.newRowGroup(newRowIndex);
-                rowGroupToStateNumber.push_back(rowIndex);
+
+                bool newState = false;
+                while (startNextRow <= rowIndex) {
+                    stateNumber++;
+                    startNextRow += pMatrix.getRowGroupSize(stateNumber);
+                    newState = true;
+                }
+                if (newState) {
+                    rowGroupToStateNumber.push_back(rowIndex);
+                }
 
                 // Gather the occurring variables within this row and set which entries are non-constant
                 std::set<VariableType> occurringVariables;
@@ -113,9 +124,15 @@ namespace storm {
                 if (useMonotonicityInFuture) {
                     // Save the occuringVariables of a state, needed if we want to use monotonicity
                     for (auto& var : occurringVariables) {
-                        occuringStatesAtVariable[var].insert(rowIndex);
+                        occuringStatesAtVariable[var].insert(stateNumber);
                     }
-                    occurringVariablesAtState[rowIndex] = std::move(occurringVariables);
+                    if (occurringVariablesAtState[stateNumber].size() == 0) {
+                        occurringVariablesAtState[stateNumber] = std::move(occurringVariables);
+                    } else {
+                        for (auto& var : occurringVariables) {
+                            occurringVariablesAtState[stateNumber].insert(var);
+                        }
+                    }
                 }
             }
 
