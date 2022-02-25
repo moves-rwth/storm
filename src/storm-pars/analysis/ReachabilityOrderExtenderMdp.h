@@ -22,7 +22,7 @@ namespace storm {
                 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
 
             protected:
-                void addInitialStatesMinMax(std::shared_ptr<Order> order) override;
+                void addStatesMinMax(std::shared_ptr<Order> order) override;
 
             private:
 

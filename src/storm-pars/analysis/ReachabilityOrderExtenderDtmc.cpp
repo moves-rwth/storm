@@ -96,32 +96,6 @@ namespace storm {
             return std::make_tuple(order, this->numberOfStates, this->numberOfStates);
         }
 
-        template<typename ValueType, typename ConstantType>
-        void ReachabilityOrderExtenderDtmc<ValueType, ConstantType>::addInitialStatesMinMax(std::shared_ptr<Order> order) {
-            // Add the states that can be ordered based on min/max values
-            assert (this->usePLA[order]);
-            // Try to make the order as complete as possible based on pla results
-            auto &statesSorted = order->getStatesSorted();
-            auto itr = statesSorted.begin();
-            while (itr != statesSorted.end()) {
-                auto state = *itr;
-                auto &successors = this->stateMap[state][0];
-                bool all = true;
-                for (uint_fast64_t i = 0; i < successors.size(); ++i) {
-                    auto state1 = successors[i];
-                    for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
-                        auto state2 = successors[j];
-                        all &= this->addStatesBasedOnMinMax(order, state1, state2) != Order::NodeComparison::UNKNOWN;
-                    }
-                }
-                if (all) {
-                    STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
-                    order->setSufficientForState(state);
-                }
-                ++itr;
-            }
-        }
-
         template class ReachabilityOrderExtenderDtmc<RationalFunction, double>;
         template class ReachabilityOrderExtenderDtmc<RationalFunction, RationalNumber>;
 

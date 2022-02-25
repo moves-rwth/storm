@@ -184,6 +184,7 @@ namespace storm {
             virtual void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) = 0;
             void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
             std::pair<uint_fast64_t, bool> getNextState(std::shared_ptr<Order> order, uint_fast64_t stateNumber, bool done);
+            virtual void addStatesMinMax(std::shared_ptr<Order> order);
 
             // Order properties
             boost::optional<storm::storage::BitVector> topStates;

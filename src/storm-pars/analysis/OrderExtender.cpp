@@ -234,6 +234,13 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const {
             if (order->compareFast(state1, state2) != Order::UNKNOWN) {
+                if (!order->contains(state1)) {
+                    order->add(state1);
+                }
+                if (!order->contains(state2)) {
+                    order->add(state2);
+                }
+                assert (order->compareFast(state1, state2) != Order::UNKNOWN);
                 return order->compareFast(state1, state2);
             }
             STORM_LOG_ASSERT (minValues.find(order) != minValues.end() && maxValues.find(order) != maxValues.end(), "Cannot add states based on min max values if the minmax values are not initialized for this order");
@@ -577,6 +584,27 @@ namespace storm {
 
             STORM_LOG_ASSERT(s1!=s2 || s1 != this->numberOfStates || (statesSorted.size() == successors.size() + 1), "Expecting all states to be sorted, or s1 to at least contain a valid state number");
             return {{s1, s2}, std::move(statesSorted)};
+        }
+
+        template<typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
+            // Add the states that can be ordered based on min/max values
+            assert (this->usePLA[order]);
+            for (uint_fast64_t state = 0; state < this->numberOfStates; state++) {
+                auto& successors = this->getSuccessors(state);
+                bool allSorted = true;
+                for (uint_fast64_t i1 = 0; i1 <successors.size(); ++i1) {
+                    for (uint_fast64_t i2 = i1 + 1; i2 < successors.size(); ++i2) {
+                        auto succ1 = successors[i1];
+                        auto succ2 = successors[i2];
+                        allSorted &= this->addStatesBasedOnMinMax(order, succ1, succ2) != Order::NodeComparison::UNKNOWN;
+                    }
+                }
+                if (allSorted) {
+                    STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
+                    order->setSufficientForState(state);
+                }
+            }
         }
 
         template class OrderExtender<RationalFunction, double>;

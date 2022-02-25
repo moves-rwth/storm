@@ -130,7 +130,6 @@ namespace storm {
                         } else if (result == AssumptionStatus::INVALID && tempResult == AssumptionStatus::VALID) {
                             result = AssumptionStatus::UNKNOWN;
                         }
-
                         if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
                             break;
                         }
@@ -147,7 +146,6 @@ namespace storm {
                         } else if (result == AssumptionStatus::INVALID && tempResult == AssumptionStatus::VALID) {
                             result = AssumptionStatus::UNKNOWN;
                         }
-
                         if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
                             break;
                         }
@@ -354,7 +352,6 @@ namespace storm {
                 assert (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal);
                 exprToCheck = expr1 != expr2;
             }
-
             s.add(exprToCheck);
             auto smtRes = s.check();
             if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
@@ -574,11 +571,10 @@ namespace storm {
             }
             s.add(exprToCheck);
             solver::SmtSolver::CheckResult smtRes = s.check();
+
             if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
                 // If it is unsatisfiable the original assumtpion should be valid
                 return AssumptionStatus::VALID;
-            } else if (smtRes == solver::SmtSolver::CheckResult::Sat && orderKnown) {
-                return AssumptionStatus::INVALID;
             }
             return AssumptionStatus::UNKNOWN;
         }

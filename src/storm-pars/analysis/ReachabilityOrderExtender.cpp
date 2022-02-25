@@ -105,15 +105,7 @@ namespace storm {
             if (this->minValuesInit && this->maxValuesInit) {
                 this->continueExtending[order] = true;
                 this->usePLA[order] = true;
-                addInitialStatesMinMax(order);
-                for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
-                    auto& successors = this->getSuccessors(i);
-                    for (uint_fast64_t succ1 = 0; succ1 <successors.size(); ++succ1) {
-                        for (uint_fast64_t succ2 = succ1 + 1; succ2 < successors.size(); ++succ2) {
-                            this->addStatesBasedOnMinMax(order, succ1, succ2);
-                        }
-                    }
-                }
+                this->addStatesMinMax(order);
             } else {
                 this->usePLA[order] = false;
             }

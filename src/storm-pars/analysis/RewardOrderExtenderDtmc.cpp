@@ -186,20 +186,9 @@ namespace storm {
             }
 
             if (this->minValuesInit && this->maxValuesInit) {
+                this->continueExtending[order] = true;
                 this->usePLA[order] = true;
-
-                for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
-                    auto& successors = this->getSuccessors(i);
-                    bool allSorted = true;
-                    for (uint_fast64_t succ1 = 0; succ1 <successors.size(); ++succ1) {
-                        for (uint_fast64_t succ2 = succ1 + 1; succ2 < successors.size(); ++succ2) {
-                            allSorted = this->addStatesBasedOnMinMax(order, succ1, succ2) != Order::NodeComparison::UNKNOWN && allSorted;
-                        }
-                    }
-                    if (allSorted) {
-                        order->setSufficientForState(i);
-                    }
-                }
+                this->addStatesMinMax(order);
             } else {
                 this->usePLA[order] = false;
             }

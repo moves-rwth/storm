@@ -1,4 +1,5 @@
 #include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
+#include "storm-pars/api/region.h"
 
 namespace storm {
     namespace analysis {
@@ -378,27 +379,35 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        void ReachabilityOrderExtenderMdp<ValueType, ConstantType>::addInitialStatesMinMax(std::shared_ptr<Order> order) {
+        void ReachabilityOrderExtenderMdp<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
             auto &min = this->minValues[order];
             auto &max = this->maxValues[order];
-            // Try to make the order as complete as possible based on pla results
-            auto &statesSorted = order->getStatesSorted();
-            auto itr = statesSorted.begin();
-            while (itr != statesSorted.end()) {
-                auto state = *itr;
-                if (this->stateMap[state].size() == 1 && !order->isActionSetAtState(state)) {
-                        order->addToMdpScheduler(state, 0);
+
+            // Add the states that can be ordered based on min/max values
+            assert (this->usePLA[order]);
+            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> vars;
+            for (auto& entry : this->matrix) {
+                for (auto& var : entry.getValue().gatherVariables()) {
+                    vars.insert(var);
                 }
-                bool all = true;
-                if (order->isActionSetAtState(state)) {
-                    // We only need to check for the successors belonging to the corresponding action
-                    auto& successors = this->stateMap[state][order->getActionAtState(state)];
-                    for (uint_fast64_t i = 0; i < successors.size(); ++i) {
-                        auto state1 = successors[i];
-                        for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
-                            auto state2 = successors[j];
-                            all &= this->addStatesBasedOnMinMax(order, state1, state2) != Order::NodeComparison::UNKNOWN;
+            }
+            auto& states = order->getStatesSorted();
+            auto fakeRegion = storm::api::createRegion<ValueType>("0", vars);
+            for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
+                auto state = states[this->numberOfStates - i - 1];
+                if (findBestAction(order, fakeRegion, state)) {
+                    auto& successors = this->getSuccessors(state);
+                    bool allSorted = true;
+                    for (uint_fast64_t i1 = 0; i1 <successors.size(); ++i1) {
+                        for (uint_fast64_t i2 = i1 + 1; i2 < successors.size(); ++i2) {
+                            auto succ1 = successors[i1];
+                            auto succ2 = successors[i2];
+                            allSorted &= this->addStatesBasedOnMinMax(order, succ1, succ2) != Order::NodeComparison::UNKNOWN;
                         }
+                    }
+                    if (allSorted) {
+                        STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
+                        order->setSufficientForState(state);
                     }
                 } else {
                     // We need to check for all possible successors
@@ -408,16 +417,10 @@ namespace storm {
                         auto state1 = successors[i];
                         for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
                             auto state2 = successors[j];
-                            all &= this->addStatesBasedOnMinMax(order, state1, state2) != Order::NodeComparison::UNKNOWN;
+                            this->addStatesBasedOnMinMax(order, state1, state2);
                         }
                     }
                 }
-
-                if (all) {
-                    STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
-                    order->setSufficientForState(state);
-                }
-                ++itr;
             }
         }
 
