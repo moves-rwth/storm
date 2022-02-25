@@ -15,6 +15,9 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
+#include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
+#include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
 
 namespace storm {
     namespace modelchecker {
@@ -617,6 +620,37 @@ namespace storm {
             value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value), std::move(valuation));
+        }
+
+        template<typename SparseModelType, typename ConstantType>
+        std::shared_ptr<storm::analysis::Order>
+        SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInitialOrder(storm::storage::ParameterRegion<ValueType> region, bool isOptimistic) {
+            if (this->orderExtender) {
+                std::tuple<std::shared_ptr<storm::analysis::Order>, uint_fast64_t, uint_fast64_t> res = {nullptr, 0,0};
+                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>> castedPointerReachDtmc = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerReachDtmc != nullptr) {
+                    res = castedPointerReachDtmc->toOrder(region, isOptimistic);
+                }
+                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>> castedPointerReachMdp = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerReachMdp != nullptr) {
+                    res = castedPointerReachMdp->toOrder(region, isOptimistic);
+                }
+                std::shared_ptr<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>> castedPointerRewDtmc = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerRewDtmc != nullptr) {
+                    res = castedPointerRewDtmc->toOrder(region, isOptimistic);
+                }
+                std::shared_ptr<storm::analysis::Order> order = std::get<0>(res);
+                if (order->getNumberOfStates() == 1) {
+                    return nullptr;
+                }
+                if (order != nullptr && std::get<1>(res) != order->getNumberOfStates()) {
+                    this->orderExtender->setUnknownStates(order, std::get<1>(res), std::get<2>(res));
+                }
+                return order;
+            } else {
+                STORM_LOG_WARN("Extending order not possible");
+                return nullptr;
+            }
         }
 
         template class SparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;

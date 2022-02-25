@@ -20,6 +20,8 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         class SparseMdpParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
         public:
+            typedef typename SparseModelType::ValueType ValueType;
+
             SparseMdpParameterLiftingModelChecker();
             SparseMdpParameterLiftingModelChecker(std::unique_ptr<storm::solver::GameSolverFactory<ConstantType>>&& solverFactory);
             virtual ~SparseMdpParameterLiftingModelChecker() = default;

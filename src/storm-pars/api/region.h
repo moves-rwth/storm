@@ -166,8 +166,14 @@ namespace storm {
                     checker->setMonotoneParameters(monotoneParameters.get());
                 }
             } else if (consideredModel->isOfType(storm::models::ModelType::Mdp)) {
-                STORM_LOG_WARN_COND(!monotonicitySetting.useMonotonicity, "Usage of monotonicity not supported for this type of model, continuing without montonicity checking");
                 checker = std::make_shared<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ConstantType>>();
+                checker->setUseMonotonicity(monotonicitySetting.useMonotonicity);
+                checker->setUseOnlyGlobal(monotonicitySetting.useOnlyGlobalMonotonicity);
+                checker->setUseBounds(monotonicitySetting.useBoundsFromPLA);
+                checker->setUseOptimisticOrder(monotonicitySetting.useOptimisticOrder);
+                if (monotonicitySetting.useMonotonicity && monotoneParameters) {
+                    checker->setMonotoneParameters(monotoneParameters.get());
+                }
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }

@@ -23,6 +23,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         class SparseParameterLiftingModelChecker : public RegionModelChecker<typename SparseModelType::ValueType> {
         public:
+            typedef typename SparseModelType::ValueType ValueType;
             typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
             typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
@@ -63,6 +64,7 @@ namespace storm {
 
             SparseModelType const& getConsideredParametricModel() const;
             CheckTask<storm::logic::Formula, ConstantType> const& getCurrentCheckTask() const;
+            std::shared_ptr<storm::analysis::Order> getInitialOrder(storm::storage::ParameterRegion<ValueType> region, bool isOptimistic) override;
 
         protected:
             void specifyFormula(Environment const& env, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);

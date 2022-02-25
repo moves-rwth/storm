@@ -40,7 +40,6 @@ namespace storm {
             virtual std::map<VariableType, double> getRegionSplitEstimate() const override;
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) override;
-            virtual std::shared_ptr<storm::analysis::Order> getInitialOrder(storm::storage::ParameterRegion<ValueType> region, bool isOptimistic) override;
 
             virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) override;
 

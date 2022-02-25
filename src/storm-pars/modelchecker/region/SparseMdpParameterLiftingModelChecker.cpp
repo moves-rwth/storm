@@ -1,6 +1,7 @@
 #include "storm-pars/modelchecker/region/SparseMdpParameterLiftingModelChecker.h"
 #include "storm-pars/utility/parameterlifting.h"
 #include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -118,6 +119,13 @@ namespace storm {
             // We know some bounds for the results
             lowerResultBound = storm::utility::zero<ConstantType>();
             upperResultBound = storm::utility::one<ConstantType>();
+            if (this->isUseMonotonicitySet()) {
+                // For monotonicity checking
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+                    storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
+                this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>>(
+                    statesWithProbability01.second, statesWithProbability01.first, this->parametricModel->getTransitionMatrix(), storm::solver::maximize(checkTask.getOptimizationDirection()));
+            }
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -155,6 +163,13 @@ namespace storm {
             // We know some bounds for the results
             lowerResultBound = storm::utility::zero<ConstantType>();
             upperResultBound = storm::utility::one<ConstantType>();
+            if (this->isUseMonotonicitySet()) {
+                // For monotonicity checking
+                std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+                    storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
+                this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>>(
+                    statesWithProbability01.second, statesWithProbability01.first, this->parametricModel->getTransitionMatrix(), storm::solver::maximize(checkTask.getOptimizationDirection()));
+            }
         }
 
         template <typename SparseModelType, typename ConstantType>
