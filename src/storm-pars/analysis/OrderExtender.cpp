@@ -6,11 +6,9 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/graph.h"
 
 #include "storm-pars/api/region.h"
 #include "storm-pars/api/export.h"
-#include "storm-pars/analysis/MonotonicityHelper.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/api/verification.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -347,9 +345,44 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::ParameterRegion<ValueType> region,  std::shared_ptr<Order> order) {
-            if (model != nullptr) {
+            if (model != nullptr && model->isOfType(storm::models::ModelType::Dtmc)) {
                 // Use parameter lifting modelchecker to get initial min/max values for order creation
                 modelchecker::SparseDtmcParameterLiftingModelChecker<models::sparse::Dtmc<ValueType>, ConstantType> plaModelChecker;
+                std::unique_ptr<modelchecker::CheckResult> checkResult;
+                auto env = Environment();
+                boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTask;
+                if (this->formula->hasQuantitativeResult()) {
+                    checkTask  = storm::api::createTask<ValueType>(formula, false);
+                } else {
+                    storm::logic::OperatorInformation opInfo(boost::none, boost::none);
+                    if (formula->isProbabilityOperatorFormula()) {
+                        auto newFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
+                            formula->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), opInfo);
+                        checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
+                    } else {
+                        STORM_LOG_ASSERT(formula->isRewardOperatorFormula(), "Expecting formula to be reward formula");
+                        auto newFormula = std::make_shared<storm::logic::RewardOperatorFormula>(
+                            formula->asRewardOperatorFormula().getSubformula().asSharedPointer(), model->getUniqueRewardModelName(), opInfo);
+                        checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
+                    }
+                }
+                STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
+                plaModelChecker.specify(env, model, checkTask.get(), false, false);
+
+                modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+                modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+
+                if (order != nullptr) {
+                    minValues[order] = minCheck.getValueVector();
+                    maxValues[order] = maxCheck.getValueVector();
+                    usePLA[order] = true;
+                } else {
+                    minValuesInit = minCheck.getValueVector();
+                    maxValuesInit = maxCheck.getValueVector();
+                }
+            } else if (model != nullptr && model->isOfType(storm::models::ModelType::Mdp)) {
+                // Use parameter lifting modelchecker to get initial min/max values for order creation
+                modelchecker::SparseMdpParameterLiftingModelChecker<models::sparse::Mdp<ValueType>, ConstantType> plaModelChecker;
                 std::unique_ptr<modelchecker::CheckResult> checkResult;
                 auto env = Environment();
                 boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTask;

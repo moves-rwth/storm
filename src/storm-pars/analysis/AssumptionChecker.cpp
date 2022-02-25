@@ -572,7 +572,6 @@ namespace storm {
             } else {
                 exprToCheck = expr1 != expr2;
             }
-
             s.add(exprToCheck);
             solver::SmtSolver::CheckResult smtRes = s.check();
             if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
@@ -588,11 +587,13 @@ namespace storm {
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
             std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order,
             storage::ParameterRegion<ValueType> region) const {
+            std::cout << "Validating: " << *assumption << std::endl;
             auto var1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
             auto var2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
             std::vector<ConstantType> vals;
             return validateAssumption(var1, var2, assumption, order, region, vals, vals);
         }
+
         template<typename ValueType, typename ConstantType>
         void AssumptionChecker<ValueType, ConstantType>::setRewardModel(std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel) {
             this->rewardModel = rewardModel;

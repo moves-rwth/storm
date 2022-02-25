@@ -59,12 +59,8 @@ namespace storm {
             uint64_t bestAct = this->matrix.getRowCount();
             auto potSuccs = gatherPotentialSuccessors(state);
             auto orderedSuccs = order->sortStates(potSuccs);
-            // TODO We need assumptions if states could not be ordered
             if (orderedSuccs.back() == this->numberOfStates){
-                STORM_LOG_WARN("Could not order potential successors. An error will occur.");
-                // The following commands are only for debugging with a very specific example
-                // order->mergeNodes(order->getNode(3), order->getNode(1));
-                // orderedSuccs = order->sortStates(&potSuccs);
+                STORM_LOG_WARN("    No best action found, as the successors could not be ordered.");
                 return false;
             }
             auto nrOfSuccs = orderedSuccs.size();
