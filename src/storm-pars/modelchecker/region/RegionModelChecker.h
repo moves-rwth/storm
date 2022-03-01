@@ -114,7 +114,7 @@ namespace storm {
 
             virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
-            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> &region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum) const;
+            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> &region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum, bool minimize) const;
 
         };
 

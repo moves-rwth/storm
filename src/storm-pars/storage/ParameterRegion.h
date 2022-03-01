@@ -36,6 +36,12 @@ namespace storm {
             Valuation const& getLowerBoundaries() const;
             Valuation const& getUpperBoundaries() const;
 
+
+            void setLowerBoundary(VariableType const& variable, CoefficientType val);
+            void setLowerBoundary(const std::string varName, CoefficientType val);
+            void setUpperBoundary(VariableType const& variable, CoefficientType val);
+            void setUpperBoundary(const std::string varName, CoefficientType val);
+
             /*!
              * Returns a vector of all possible combinations of lower and upper bounds of the given variables.
              * The first entry of the returned vector will map every variable to its lower bound
@@ -56,6 +62,8 @@ namespace storm {
              * Returns the center point of this region
              */
             Valuation getCenterPoint() const;
+            Valuation getCenterPoint(std::set<VariableType> const& consideredVariables) const;
+            Valuation getSplittingPoint(std::set<VariableType> const& consideredVariables, std::set<VariableType> const& possiblyMonotoneIncrVars, std::set<VariableType> const& possiblyMonotoneDecrVars, bool minimize) const;
 
             void setSplitThreshold(uint_fast64_t splitThreshold);
             uint_fast64_t getSplitThreshold() const;

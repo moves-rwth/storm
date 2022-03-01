@@ -418,6 +418,7 @@ namespace storm {
              * @param sccNumber The considered state
              */
             void setSufficientForState(uint_fast64_t stateNumber);
+            void setDoneForState(uint_fast64_t stateNumber);
 
             /*!
              * Checks if this order has been marked as invalid
@@ -443,11 +444,14 @@ namespace storm {
             uint64_t getActionAtState(uint_fast64_t state) const;
 
             bool isActionSetAtState(uint_fast64_t state) const;
+            bool isSufficientForState(uint_fast64_t state) const;
 
             bool isOptimistic() const;
 
             void setOptimistic(bool isOptimistic);
+            void setChanged(bool changed);
 
+            bool getChanged() const;
            protected:
             //storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
 
@@ -498,6 +502,8 @@ namespace storm {
              */
             std::string nodeLabel(Node* n) const;
 
+
+
             //void nodeOutput();
 
 
@@ -537,12 +543,15 @@ namespace storm {
             std::vector<uint_fast64_t> statesSorted;
             // States whose successors can be ordered by this order
             storm::storage::BitVector sufficientForState;
+            // States whose successors can be ordered by this order, and state itself can be ordered by backward/forward reasoning
+            storm::storage::BitVector doneForState;
             // States that are their own SCC
             storm::storage::BitVector trivialStates;
             // States for Forward Reasoning
             std::vector<uint_fast64_t> statesToHandle;
 
             boost::optional<std::vector<uint64_t>> mdpScheduler;
+            bool changed;
 
         };
     }

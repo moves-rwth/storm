@@ -86,9 +86,6 @@ namespace storm {
 
             bool isFixedParametersSet() const;
 
-
-
-
         private:
             std::vector<std::shared_ptr<MonotonicityResult<VariableType>>> stateMonRes;
 

@@ -10,6 +10,7 @@
 
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
+#include "storm-pars/analysis/LocalMonotonicityResult.h"
 #include "storm-pars/analysis/MonotonicityChecker.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "AssumptionMaker.h"
@@ -126,7 +127,7 @@ namespace storm {
              * @param order Order for which we want to check.
              * @return true if the unknown states for this order can be sorted based on the min max values.
              */
-            bool isHope(std::shared_ptr<Order> order);
+            bool isHope(std::shared_ptr<Order> order) const;
 
             /**
              * Returns all variables occuring at the outgoing transitions of states.

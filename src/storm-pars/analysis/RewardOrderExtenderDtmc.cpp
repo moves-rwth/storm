@@ -22,7 +22,8 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         RewardOrderExtenderDtmc<ValueType, ConstantType>::RewardOrderExtenderDtmc(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix, storm::models::sparse::StandardRewardModel<ValueType> rewardModel) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->rewardModel = rewardModel;
-            this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
+            this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
+            for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
                 if (rewardModel.hasStateActionRewards()) {
                     STORM_LOG_ASSERT(rewardModel.getStateActionReward(i).isConstant(), "Expecting rewards to be constant");
                 } else if (rewardModel.hasStateRewards()) {
@@ -31,7 +32,6 @@ namespace storm {
                     STORM_LOG_ASSERT(false, "Expecting reward");
                 }
             }
-
         }
 
         template<typename ValueType, typename ConstantType>
@@ -40,17 +40,10 @@ namespace storm {
             bool addedSomething = false;
             auto& successors = this->getSuccessors(currentState);
 
-//            if (successors.size() == 2 && rewardHack(order, currentState, successors.at(0), successors.at(1))) {
-//                STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
-//                STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
-//                return std::make_pair(this->numberOfStates, this->numberOfStates);
-//            }
-
             // We sort the states, and then apply min/max comparison.
             // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
 
             auto sortedSuccStates = this->sortStatesOrderAndMinMax(successors, order);
-
             if (sortedSuccStates.first.first != this->numberOfStates) {
                 if (successors.size() == 2 && (successors.at(0) == currentState || successors.at(1) == currentState)) {
                     // current state actually only has one real successor
@@ -64,6 +57,10 @@ namespace storm {
                         STORM_LOG_ASSERT(false, "Expecting reward");
                     }
 
+                    if (!order->contains(realSucc)) {
+                        order->add(realSucc);
+                        order->addStateToHandle(realSucc);
+                    }
                     if (reward.isZero()) {
                         order->addToNode(currentState, order->getNode(realSucc));
                     } else {
@@ -101,11 +98,11 @@ namespace storm {
                             if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
                                 auto compare = this->addStatesBasedOnMinMax(order, currentState, succ);
                                 if (compare == Order::NodeComparison::UNKNOWN) {
-                                    auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region,
-                                                                                                        this->minValues[order], this->maxValues[order]);
-                                    if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
-                                        this->handleAssumption(order, assumptions.begin()->first);
-                                    }
+                                        auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region,
+                                                                                                            this->minValues[order], this->maxValues[order]);
+                                        if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
+                                            this->handleAssumption(order, assumptions.begin()->first);
+                                        }
                                 } else if (!order->contains(currentState)) {
                                     order->add(currentState);
                                 }
@@ -116,10 +113,10 @@ namespace storm {
                     } else {
                         for (uint_fast64_t succ : successors) {
                             if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
-                                auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region);
-                                if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
-                                    this->handleAssumption(order, assumptions.begin()->first);
-                                }
+                                    auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region);
+                                    if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
+                                        this->handleAssumption(order, assumptions.begin()->first);
+                                    }
                             } else if (!order->contains(currentState)) {
                                 order->add(currentState);
                             }
@@ -301,70 +298,32 @@ namespace storm {
             STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
             auto& successors = this->getSuccessors(currentState);
-//            if (successors.size() == 2 && rewardHack(order, currentState, successors.at(0), successors.at(1))) {
-//                STORM_LOG_ASSERT (order->contains(currentState), "Expecting order to contain state " << currentState);
-//                STORM_LOG_ASSERT (order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE, "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
-//                return std::make_pair(this->numberOfStates, this->numberOfStates);
-//            }
 
-            if (successors.size() == 2 && (successors.at(0) == currentState || successors.at(1) == currentState)) {
-                // current state actually only has one real successor
-                auto realSucc = successors.at(0) == currentState ? successors.at(1) : successors.at(0);
-                ValueType reward = ValueType(0);
-                if (rewardModel.hasStateActionRewards()) {
-                    reward = rewardModel.getStateActionReward(currentState);
-                } else if (rewardModel.hasStateRewards()) {
-                    reward = rewardModel.getStateReward(currentState);
-                } else {
-                    STORM_LOG_ASSERT(false, "Expecting reward");
-                }
-
-                if (reward.isZero()) {
-                    if (!order->contains(realSucc)) {
-                        order->add(realSucc);
-                        order->addStateToHandle(realSucc);
-                    }
-                    order->addToNode(currentState, order->getNode(realSucc));
-                } else {
-                    if (!order->contains(realSucc)) {
-                        order->add(realSucc);
-                        order->addStateToHandle(realSucc);
-                    }
-                    order->addAbove(currentState, order->getNode(realSucc));
-                }
+            if (successors.size() == 2 && this->extendByForwardReasoningOneSucc(order, region, currentState)) {
                 return {this->numberOfStates, this->numberOfStates};
-            } else if (successors.size() == 2 && (order->isBottomState(successors.at(0)) || order->isBottomState(successors.at(1)))) {
-                auto bottomState = order->isBottomState(successors.at(0)) ? successors.at(0) : successors.at(1);
-                auto otherState = order->isBottomState(successors.at(0)) ? successors.at(1) : successors.at(0);
-                // If there is only one transition going into bottomState (+ selfloop) we can do some normal forward reasoning
-                if (transposeMatrix.getRow(bottomState).getNumberOfEntries() == 2) {
-                    if (!order->contains(otherState)) {
-                        order->add(otherState);
-                        order->addStateToHandle(otherState);
-                    }
-                    order->addBetween(currentState, otherState, bottomState);
-                }
             }
 
-            if (this->usePLA[order]) {
-                // try to sort stuff with assumptions, done here so the order of succs doesn't matter
-                for (auto& succ : successors) {
-                    if (order->compare(succ, currentState) == Order::NodeComparison::UNKNOWN) {
-                        auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region, this->minValues[order], this->maxValues[order]);
-                        if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
-                            this->handleAssumption(order, assumptions.begin()->first);
-                            if (!order->contains(succ)) {
-                                for (auto& succSucc : this->getSuccessors(succ)) {
-                                    if (order->contains(succSucc)) {
-                                        order->addStateToHandle(succ);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+//            if (this->usePLA[order]) {
+//                // try to sort stuff with assumptions, done here so the order of succs doesn't matter
+//                for (auto& succ : successors) {
+//                    if (order->compare(succ, currentState) == Order::NodeComparison::UNKNOWN && !assumptionsCreated[currentState]) {
+//                        auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region, this->minValues[order], this->maxValues[order]);
+//                        if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
+//                            this->handleAssumption(order, assumptions.begin()->first);
+//                            if (!order->contains(succ)) {
+//                                for (auto& succSucc : this->getSuccessors(succ)) {
+//                                    if (order->contains(succSucc)) {
+//                                        order->addStateToHandle(succ);
+//                                        break;
+//                                    }
+//                                }
+//                            }
+//                        } else {
+//                            assumptionsCreated.set(currentState);
+//                        }
+//                    }
+//                }
+//            }
 
             std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
             uint_fast64_t s1= sorted.first.first;
@@ -416,23 +375,79 @@ namespace storm {
 
 
                     // We check if we can also sort something based on assumptions.
-                    if (this->usePLA[order]) {
-                        auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, s1, order, region, this->minValues[order], this->maxValues[order]);
-                        if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
-                            this->handleAssumption(order, assumptions.begin()->first);
+//                    if (!assumptionsCreated[currentState]) {
+                        if (this->usePLA[order]) {
+                            auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, s1, order, region, this->minValues[order],
+                                                                                                this->maxValues[order]);
+                            if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
+                                this->handleAssumption(order, assumptions.begin()->first);
+//                            } else {
+//                                assumptionsCreated.set(currentState);
+                            }
+                        } else {
+                            auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, s1, order, region);
+                            if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
+                                this->handleAssumption(order, assumptions.begin()->first);
+//                            } else {
+//                                assumptionsCreated.set(currentState);
+                            }
                         }
-                    } else {
-                        auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, s1, order, region);
-                        if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
-                            this->handleAssumption(order, assumptions.begin()->first);
-                        }
-                    }
+//                    }
                     STORM_LOG_ASSERT(order->sortStates(this->getSuccessors(currentState)).size() == this->getSuccessors(currentState).size(), "Expecting all successor states to be ordered");
                     return {s2, s2};
                 }
 
             }
             return {this->numberOfStates, this->numberOfStates};
+        }
+
+        template<typename ValueType, typename ConstantType>
+        bool RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByForwardReasoningOneSucc(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
+            STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
+
+            auto& successors = this->getSuccessors(currentState);
+            STORM_LOG_ASSERT(successors.size() == 2, "Expecting only two successors");
+
+            if (successors.at(0) == currentState || successors.at(1) == currentState) {
+                // current state actually only has one real successor
+                auto realSucc = successors.at(0) == currentState ? successors.at(1) : successors.at(0);
+                ValueType reward = ValueType(0);
+                if (rewardModel.hasStateActionRewards()) {
+                    reward = rewardModel.getStateActionReward(currentState);
+                } else if (rewardModel.hasStateRewards()) {
+                    reward = rewardModel.getStateReward(currentState);
+                } else {
+                    STORM_LOG_ASSERT(false, "Expecting reward");
+                }
+
+                if (reward.isZero()) {
+                    if (!order->contains(realSucc)) {
+                        order->add(realSucc);
+                        order->addStateToHandle(realSucc);
+                    }
+                    order->addToNode(currentState, order->getNode(realSucc));
+                } else {
+                    if (!order->contains(realSucc)) {
+                        order->add(realSucc);
+                        order->addStateToHandle(realSucc);
+                    }
+                    order->addAbove(currentState, order->getNode(realSucc));
+                }
+            } else if (order->isBottomState(successors.at(0)) || order->isBottomState(successors.at(1))) {
+                auto bottomState = order->isBottomState(successors.at(0)) ? successors.at(0) : successors.at(1);
+                auto otherState = order->isBottomState(successors.at(0)) ? successors.at(1) : successors.at(0);
+                // If there is only one transition going into bottomState (+ selfloop) we can do some normal forward reasoning
+                if (transposeMatrix.getRow(bottomState).getNumberOfEntries() == 2) {
+                    if (!order->contains(otherState)) {
+                        order->add(otherState);
+                        order->addStateToHandle(otherState);
+                    }
+                    order->addBetween(currentState, otherState, bottomState);
+                }
+            } else {
+                return false;
+            }
+            return true;
         }
 
         template <typename ValueType, typename ConstantType>
@@ -450,6 +465,7 @@ namespace storm {
 
                 if (currentStateMode.second) {
                     STORM_LOG_INFO("Currently considering state: " << currentState << " based on topological sorting");
+//                    assumptionsCreated.set(currentState, false);
                 } else {
                     STORM_LOG_INFO("Currently considering state: " << currentState << " based on statesToHandle (not topological approach)");
                 }

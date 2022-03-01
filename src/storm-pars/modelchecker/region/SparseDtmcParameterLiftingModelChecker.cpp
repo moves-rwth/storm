@@ -652,7 +652,7 @@ namespace storm {
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart(
                 storm::storage::ParameterRegion<ValueType> &region,
                 std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
-                storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum) const {
+                storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum, bool minimize) const {
             assert (regionVector.size() == 0);
 
             std::multimap<double, VariableType> sortedOnValues;
@@ -672,7 +672,7 @@ namespace storm {
                         consideredVariables.insert(itr->second);
                     }
                     assert (consideredVariables.size() > 0);
-                    region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);
+                    region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);
                 } else {
                     STORM_LOG_INFO("Splitting based on sorting");
 
@@ -683,7 +683,7 @@ namespace storm {
                         }
                     }
                     assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
-                    region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
+                    region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables));
                 }
             } else {
                 // split for pla
@@ -707,7 +707,7 @@ namespace storm {
                     }
                 }
                 assert (consideredVariables.size() > 0);
-                region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
+                region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables));
             }
         }
 

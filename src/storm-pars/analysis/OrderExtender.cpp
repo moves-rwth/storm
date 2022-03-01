@@ -93,18 +93,16 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         bool OrderExtender<ValueType, ConstantType>::extendWithAssumption(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
-//            if (useAssumptions) {
-                bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
-                assert(order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
-                auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region, this->minValues[order],
-                                                                                                this->maxValues[order])
-                                             : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
-                if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                    this->handleAssumption(order, assumptions.begin()->first);
-                    // Assumptions worked, we continue
-                    return true;
-                }
-//            }
+            bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
+            assert(order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
+            auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region, this->minValues[order],
+                                                                                            this->maxValues[order])
+                                         : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
+            if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                this->handleAssumption(order, assumptions.begin()->first);
+                // Assumptions worked, we continue
+                return true;
+            }
             return false;
         }
 
@@ -117,11 +115,11 @@ namespace storm {
                     order->add(currentState);
                 }
             }
-            if (this->cyclic && !order->isTrivial(currentState) && order->contains(currentState)) {
+            if (this->cyclic && !order->isSufficientForState(currentState) && !order->isTrivial(currentState) && order->contains(currentState)) {
                 // Try to extend the order for this scc
                 return extendByForwardReasoning(order, region, currentState);
             } else {
-                assert (order->isTrivial(currentState) || !order->contains(currentState));
+                assert (order->isTrivial(currentState) || !order->contains(currentState) || order->isSufficientForState(currentState));
                 // Do backward reasoning, all successor states must be in the order
                 return  extendByBackwardReasoning(order, region, currentState);
             }
@@ -444,7 +442,10 @@ namespace storm {
                 if (minValues && maxValues && unknownStatesMap.find(order) != unknownStatesMap.end()) {
                     auto& unknownStates = unknownStatesMap[order];
                     if (unknownStates.first != numberOfStates) {
-                        continueExtending[order] = minValues.get()[unknownStates.first] >= maxValues.get()[unknownStates.second] ||  minValues.get()[unknownStates.second] >= maxValues.get()[unknownStates.first];
+                        // only continue if the difference is large enough to be correct
+                        continueExtending[order] =
+                            (minValues.get()[unknownStates.first] > maxValues.get()[unknownStates.second] && (minValues.get()[unknownStates.first] - maxValues.get()[unknownStates.second]) > 0.000001)
+                            ||  (minValues.get()[unknownStates.second] > maxValues.get()[unknownStates.first] && ((minValues.get()[unknownStates.second] - maxValues.get()[unknownStates.first]) > 0.000001));
                     } else {
                         continueExtending[order] = true;
                     }
@@ -489,6 +490,7 @@ namespace storm {
         std::pair<uint_fast64_t, bool> OrderExtender<ValueType, ConstantType>::getNextState(std::shared_ptr<Order> order, uint_fast64_t currentState, bool done) {
             if (done && currentState != numberOfStates) {
                 order->setSufficientForState(currentState);
+                order->setDoneForState(currentState);
             }
             if (order->existsStateToHandle()) {
                 return order->getStateToHandle();
@@ -503,8 +505,15 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order) {
-            return continueExtending.find(order) != continueExtending.end() && continueExtending[order];
+        bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order) const {
+            if (order->getDoneBuilding()) {
+                return false;
+            }
+            if (order->getNumberOfSufficientStates() / order->getNumberOfStates()  < 0.5) {
+                // Less than 50% of the states is added
+                return continueExtending.find(order) != continueExtending.end() && continueExtending.at(order);
+            }
+            return false;
         }
 
         template<typename ValueType, typename ConstantType>
@@ -590,7 +599,9 @@ namespace storm {
         void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
             // Add the states that can be ordered based on min/max values
             assert (this->usePLA[order]);
-            for (uint_fast64_t state = 0; state < this->numberOfStates; state++) {
+            auto const & statesSorted = order->getStatesSorted();
+            for (auto i =0; i < statesSorted.size(); ++i) {
+                auto state = statesSorted.at(statesSorted.size() - i - 1);
                 auto& successors = this->getSuccessors(state);
                 bool allSorted = true;
                 for (uint_fast64_t i1 = 0; i1 <successors.size(); ++i1) {

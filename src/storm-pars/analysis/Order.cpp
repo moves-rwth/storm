@@ -15,6 +15,7 @@ namespace storm {
             if(!topStates->empty()){
                 for (auto const& i : *topStates) {
                     this->sufficientForState.set(i);
+                    this->doneForState.set(i);
                     this->bottom->statesAbove.set(i);
                     this->top->states.insert(i);
                     this->nodes[i] = top;
@@ -28,6 +29,7 @@ namespace storm {
 
             for (auto const& i : *bottomStates) {
                 this->sufficientForState.set(i);
+                this->doneForState.set(i);
                 this->bottom->states.insert(i);
                 this->nodes[i] = bottom;
                 numberOfAddedStates++;
@@ -37,6 +39,7 @@ namespace storm {
             if (numberOfAddedStates == numberOfStates) {
                 doneBuilding = sufficientForState.full();
             }
+            changed = true;
         }
 
         Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool isOptimistic) {
@@ -44,12 +47,14 @@ namespace storm {
 
             this->onlyInitialOrder = true;
             this->sufficientForState.set(topState);
+            this->doneForState.set(topState);
 
             this->bottom->statesAbove.set(topState);
             this->top->states.insert(topState);
             this->nodes[topState] = top;
 
             this->sufficientForState.set(bottomState);
+            this->doneForState.set(bottomState);
 
             this->bottom->states.insert(bottomState);
             this->nodes[bottomState] = bottom;
@@ -61,11 +66,13 @@ namespace storm {
             if (numberOfAddedStates == numberOfStates) {
                 doneBuilding = sufficientForState.full();
             }
+            changed = true;
         }
 
         Order::Order() {
             this->invalid = false;
             this->optimistic = true;
+            this->changed = false;
         }
 
         /*** Modifying the order ***/
@@ -561,9 +568,11 @@ namespace storm {
             copiedOrder->statesToHandle = std::vector<uint_fast64_t>(this->statesToHandle);
             copiedOrder->trivialStates = storm::storage::BitVector(trivialStates);
             copiedOrder->sufficientForState = storm::storage::BitVector(sufficientForState);
+            copiedOrder->doneForState = storm::storage::BitVector(doneForState);
             copiedOrder->numberOfAddedStates = this->numberOfAddedStates;
             copiedOrder->doneBuilding = this->doneBuilding;
             copiedOrder->setOptimistic(this->isOptimistic());
+            copiedOrder->setChanged(this->getChanged());
 
             auto seenStates = storm::storage::BitVector(numberOfStates, false);
             //copy nodes
@@ -602,6 +611,11 @@ namespace storm {
         /*** Setters ***/
         void Order::setSufficientForState(uint_fast64_t stateNumber) {
             sufficientForState.set(stateNumber);
+        }
+
+        void Order::setDoneForState(uint_fast64_t stateNumber) {
+            assert (sufficientForState[stateNumber] && contains(stateNumber));
+            doneForState.set(stateNumber);
         }
 
         /*** Output ***/
@@ -703,7 +717,7 @@ namespace storm {
             this->invalid = false;
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
             this->sufficientForState = storm::storage::BitVector(numberOfStates, false);
-            assert (sufficientForState.getNumberOfSetBits() == 0);
+            this->doneForState = storm::storage::BitVector(numberOfStates, false);
             if (decomposition.size() == 0) {
                 this->trivialStates = storm::storage::BitVector(numberOfStates, true);
             } else {
@@ -799,8 +813,8 @@ namespace storm {
             assert (statesToHandle.empty());
             while (!statesSorted.empty()) {
                 auto state = statesSorted.back();
-                statesSorted.pop_back();
-                if (!sufficientForState[state] || !contains(state)) {
+                 statesSorted.pop_back();
+                if (!doneForState[state]) {
                     return {state, true};
                 }
             }
@@ -811,7 +825,7 @@ namespace storm {
             while (!statesToHandle.empty()) {
                 auto state = statesToHandle.back();
                 statesToHandle.pop_back();
-                if (!sufficientForState[state] || !contains(state)) {
+                if (!doneForState[state]) {
                     return {state, false};
                 }
             }
@@ -873,12 +887,24 @@ namespace storm {
             return mdpScheduler->at(state) != std::numeric_limits<uint64_t>::max();
         }
 
+        bool Order::isSufficientForState(uint_fast64_t state) const {
+            return sufficientForState[state];
+        }
+
         bool Order::isOptimistic() const {
            return optimistic;
         }
 
         void Order::setOptimistic(bool isOptimistic) {
             this->optimistic = isOptimistic;
+        }
+
+        void Order::setChanged(bool changed) {
+            this->changed = changed;
+        }
+
+        bool Order::getChanged() const {
+            return changed;
         }
     }
 }

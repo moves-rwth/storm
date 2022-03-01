@@ -326,6 +326,9 @@ namespace storm {
                     auto localMonotonicityResult = regionQueue.top().localMonRes;
                     auto currBound = regionQueue.top().bound;
                     STORM_LOG_INFO("Currently looking at region: " << currRegion);
+                    if (value && currBound) {
+                        STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound.get() << ".");
+                    }
                     std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
 
                     // Check whether this region needs further investigation based on the bound of the parent region
@@ -343,6 +346,7 @@ namespace storm {
                         numberOfPLACalls++;
                         auto bounds = getBound(env, currRegion, dir, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                         currBound = bounds[*this->parametricModel->getInitialStates().begin()];
+
                         // Check whether this region needs further investigation based on the bound of this region
                         bool lookAtRegion;
                         if (absolutePrecision) {
@@ -355,19 +359,7 @@ namespace storm {
                         if (lookAtRegion) {
                             if (useMonotonicity) {
                                 // Continue extending order/monotonicity result
-                                bool changedOrder = false;
-                                if (!order->getDoneBuilding() && orderExtender->isHope(order)) {
-                                    if (numberOfCopiesOrder[order] != 1) {
-                                        numberOfCopiesOrder[order]--;
-                                        order = copyOrder(order);
-                                        numberOfOrderCopies++;
-                                    } else {
-                                        assert (numberOfCopiesOrder[order] == 1);
-                                    }
-                                    this->extendOrder(order, currRegion);
-                                    changedOrder = true;
-                                }
-                                if (changedOrder) {
+                                if (order->getChanged()) {
                                     assert(!localMonotonicityResult->isDone());
 
                                     if (numberOfCopiesMonRes[localMonotonicityResult] != 1) {
@@ -385,7 +377,7 @@ namespace storm {
                             // Check whether this region contains a new 'good' value and set this value
                             auto point = useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()), possibleMonotoneIncrParameters, possibleMonotoneDecrParameters) : currRegion.getCenterPoint();
                             auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                            if (!value || (minimize ? currValue <= value.get() : currValue >= value.get())) {
+                            if (!value || (minimize ? currValue < value.get() : currValue > value.get())) {
                                 value = currValue;
                                 valuation = point;
                             }
@@ -409,14 +401,31 @@ namespace storm {
                                         orderExtender->setMinMaxValues(getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), bounds, order);
                                     }
                                     boundsWatch.stop();
+                                    if (orderExtender && orderExtender->isHope(order)) {
+                                        if (numberOfCopiesOrder[order] != 1) {
+                                            // we only create a copy of the order if we extend it.
+                                            numberOfCopiesOrder[order]--;
+                                            order = copyOrder(order);
+                                            numberOfOrderCopies++;
+                                        } else {
+                                            assert (numberOfCopiesOrder[order] == 1);
+                                        }
+                                        auto numberOfStatesBefore = order->getNumberOfSufficientStates();
+                                        this->extendOrder(order, currRegion);
+                                        if (numberOfStatesBefore < order->getNumberOfSufficientStates()) {
+                                            order->setChanged(true);
+                                        } else {
+                                            order->setChanged(false);
+                                        }
+                                    }
                                 }
                                 // Now split the region
                                 if (useMonotonicity && !order->isOptimistic()) {
                                     this->splitSmart(currRegion, newRegions,
-                                                     *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
+                                                     *(localMonotonicityResult->getGlobalMonotonicityResult()), true, minimize);
                                 } else if (this->isRegionSplitEstimateSupported()) {
                                     auto empty = storm::analysis::MonotonicityResult<VariableType>();
-                                    this->splitSmart(currRegion, newRegions, empty, true);
+                                    this->splitSmart(currRegion, newRegions, empty, true, minimize);
                                 } else {
                                     currRegion.split(currRegion.getCenterPoint(), newRegions);
                                 }

@@ -154,7 +154,6 @@ namespace storm {
         template <typename VariableType>
         bool MonotonicityResult<VariableType>::existsMonotonicity() {
             if (!somewhereMonotonicity) {
-
                 for (auto itr : monotonicityResult) {
                     if (isDoneForVar(itr.first) && itr.second != MonotonicityResult<VariableType>::Monotonicity::Unknown && itr.second != MonotonicityResult<VariableType>::Monotonicity::Not) {
                         setSomewhereMonotonicity(true);

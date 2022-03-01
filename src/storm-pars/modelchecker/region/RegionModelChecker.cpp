@@ -230,7 +230,7 @@ namespace storm {
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
                                 // Only split in (non)monotone vars
                                 splitSmart(currentRegion, newRegions,
-                                           *(localMonotonicityResult->getGlobalMonotonicityResult()), false);
+                                           *(localMonotonicityResult->getGlobalMonotonicityResult()), false, false);
                                 assert (newRegions.size() != 0);
 
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
@@ -425,7 +425,7 @@ namespace storm {
         RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> &currentRegion,
                                                        std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
                                                        storm::analysis::MonotonicityResult<VariableType> &monRes,
-                                                       bool splitForExtremum) const {
+                                                       bool splitForExtremum, bool minimize) const {
             STORM_LOG_WARN("Smart splitting for this model checker not implemented");
             currentRegion.split(currentRegion.getCenterPoint(), regionVector);
         }
