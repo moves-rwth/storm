@@ -248,7 +248,7 @@ namespace storm {
                 if (printUpdateStopwatch.getTimeInSeconds() >= 15) {
                     printUpdateStopwatch.restart();
                     std::cout << "Currently at ";
-                    std::cout << currentValue << std::endl;
+                    std::cout << currentValue << '\n';
                 }
 
                 std::vector<VariableType<FunctionType>> miniBatch;
@@ -409,9 +409,9 @@ namespace storm {
             bool initialGuess = true;
             std::map<VariableType<FunctionType>, CoefficientType<FunctionType>> point;
             while (true) {
-                std::cout << "Trying out a new starting point" << std::endl;
+                std::cout << "Trying out a new starting point\n";
                 if (initialGuess) {
-                    std::cout << "Trying initial guess (p->0.5 for every parameter p or set start point)" << std::endl;
+                    std::cout << "Trying initial guess (p->0.5 for every parameter p or set start point)\n";
                 }
                 // Generate random starting point
                 for (auto const& param : this->parameters) {
@@ -434,7 +434,7 @@ namespace storm {
                 /* walk.clear(); */
 
                 stochasticWatch.start();
-                std::cout << "Starting at " << point << std::endl;
+                std::cout << "Starting at " << point << '\n';
                 ConstantType prob = stochasticGradientDescent(env, point);
                 stochasticWatch.stop();
 
@@ -455,19 +455,19 @@ namespace storm {
                 }
 
                 if (currentCheckTask->getBound().isSatisfied(bestValue)) {
-                    std::cout << "Aborting because the bound is satisfied" << std::endl;
+                    std::cout << "Aborting because the bound is satisfied\n";
                     break;
                 } else if (storm::utility::resources::isTerminate()) {
                     break;
                 } else {
                     if (constraintMethod == GradientDescentConstraintMethod::BARRIER_LOGARITHMIC) {
                         logarithmicBarrierTerm = logarithmicBarrierTerm / 10;
-                        std::cout << "Smaller term" << std::endl;
-                        std::cout << bestValue << std::endl;
-                        std::cout << logarithmicBarrierTerm << std::endl;
+                        std::cout << "Smaller term\n";
+                        std::cout << bestValue << '\n';
+                        std::cout << logarithmicBarrierTerm << '\n';
                         continue;
                     }
-                    std::cout << "Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << std::endl;
+                    std::cout << "Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << '\n';
                     continue;
                 }
             }
@@ -736,9 +736,9 @@ namespace storm {
                     std::cout << ",";
                 }
             }
-            std::cout << "]" << std::endl;
+            std::cout << "]\n";
             // Print value at last step for data collection
-            std::cout << storm::utility::convertNumber<double>(walk.at(walk.size() - 1).value) << std::endl;
+            std::cout << storm::utility::convertNumber<double>(walk.at(walk.size() - 1).value) << '\n';
         }
 
         template<typename FunctionType, typename ConstantType>

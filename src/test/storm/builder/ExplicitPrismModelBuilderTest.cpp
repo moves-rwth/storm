@@ -1,35 +1,34 @@
 #include <storm/generator/PrismNextStateGenerator.h>
-#include "test/storm_gtest.h"
 #include "storm-config.h"
-#include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-
+#include "test/storm_gtest.h"
 
 TEST(ExplicitPrismModelBuilderTest, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
-    
+
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(8607ul, model->getNumberOfStates());
     EXPECT_EQ(15113ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/nand-5-2.pm");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(1728ul, model->getNumberOfStates());
@@ -37,28 +36,27 @@ TEST(ExplicitPrismModelBuilderTest, Dtmc) {
 }
 
 TEST(ExplicitPrismModelBuilderTest, Ctmc) {
-
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/embedded2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/fms2.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/tandem5.sm", true);
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(66ul, model->getNumberOfStates());
@@ -70,12 +68,12 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(169ul, model->getNumberOfStates());
     EXPECT_EQ(436ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/leader3.nm");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(364ul, model->getNumberOfStates());
     EXPECT_EQ(654ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(272ul, model->getNumberOfStates());
@@ -85,40 +83,46 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(1038ul, model->getNumberOfStates());
     EXPECT_EQ(1282ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/firewire3-0.5.nm");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(4093ul, model->getNumberOfStates());
     EXPECT_EQ(5585ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-2.nm");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(37ul, model->getNumberOfStates());
     EXPECT_EQ(59ul, model->getNumberOfTransitions());
-    
+
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
     program = modelDescription.preprocess("N=-7").asPrismProgram();
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(9ul, model->getNumberOfStates());
     EXPECT_EQ(9ul, model->getNumberOfTransitions());
+
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/enumerate_init.prism");
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(36ul, model->getNumberOfStates());
+    EXPECT_EQ(66ul, model->getNumberOfTransitions());
+    EXPECT_EQ(36ul, model->getInitialStates().getNumberOfSetBits());
 }
 
 TEST(ExplicitPrismModelBuilderTest, Ma) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/simple.ma");
-    
+
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
     EXPECT_EQ(8ul, model->getNumberOfTransitions());
     ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
     EXPECT_EQ(4ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/hybrid_states.ma");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(5ul, model->getNumberOfStates());
     EXPECT_EQ(13ul, model->getNumberOfTransitions());
     ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
     EXPECT_EQ(5ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
-    
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ma/stream2.ma");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(12ul, model->getNumberOfStates());
@@ -165,12 +169,11 @@ TEST(ExplicitPrismModelBuilderTest, ExportExplicitLookup) {
     auto lookup = builder.exportExplicitStateLookup();
     auto svar = program.getModules()[0].getIntegerVariable("s").getExpressionVariable();
     auto dvar = program.getModules()[0].getIntegerVariable("d").getExpressionVariable();
-    auto & manager = program.getManager();
+    auto& manager = program.getManager();
     EXPECT_EQ(model->getNumberOfStates(), lookup.lookup({{svar, manager.integer(1)}, {dvar, manager.integer(2)}}));
     EXPECT_TRUE(model->getNumberOfStates() > lookup.lookup({{svar, manager.integer(7)}, {dvar, manager.integer(2)}}));
     EXPECT_EQ(1ul, model->getLabelsOfState(lookup.lookup({{svar, manager.integer(7)}, {dvar, manager.integer(2)}})).count("two"));
 }
-
 
 bool trivial_true_mask(storm::expressions::SimpleValuation const&, uint64_t) {
     return true;
@@ -189,8 +192,10 @@ TEST(ExplicitPrismModelBuilderTest, CallbackActionMask) {
     storm::generator::NextStateGeneratorOptions generatorOptions;
     generatorOptions.setBuildAllLabels();
     generatorOptions.setBuildChoiceLabels();
-    std::shared_ptr<storm::generator::StateValuationFunctionMask<double>> mask_object = std::make_shared<storm::generator::StateValuationFunctionMask<double>>(trivial_true_mask);
-    std::shared_ptr<storm::generator::PrismNextStateGenerator<double>> generator = std::make_shared<storm::generator::PrismNextStateGenerator<double>>(program, generatorOptions, mask_object);
+    std::shared_ptr<storm::generator::StateValuationFunctionMask<double>> mask_object =
+        std::make_shared<storm::generator::StateValuationFunctionMask<double>>(trivial_true_mask);
+    std::shared_ptr<storm::generator::PrismNextStateGenerator<double>> generator =
+        std::make_shared<storm::generator::PrismNextStateGenerator<double>>(program, generatorOptions, mask_object);
     auto builder = storm::builder::ExplicitModelBuilder<double>(generator);
 
     std::shared_ptr<storm::models::sparse::Model<double>> model = builder.build();

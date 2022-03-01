@@ -52,11 +52,11 @@ namespace storm {
                 }
             }
 
-            Json nodes = jsonInput.at("nodes");
+            Json const& nodes = jsonInput.at("nodes");
             // Start by building mapping from ids to their unique names
             std::map<std::string, std::string> nameMapping;
             std::set<std::string> names;
-            for (auto& element : nodes) {
+            for (auto const& element : nodes) {
                 Json data = element.at("data");
                 std::string id = data.at("id");
                 std::string uniqueName = generateUniqueName(data.at("name"));
@@ -66,14 +66,14 @@ namespace storm {
             }
 
             // Parse nodes
-            for (auto& element : nodes) {
+            for (auto const& element : nodes) {
                 STORM_LOG_TRACE("Parsing: " << element);
                 bool success = true;
-                Json data = element.at("data");
+                Json const& data = element.at("data");
                 std::string name = generateUniqueName(data.at("name"));
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
-                    for (std::string const& child : data.at("children")) {
+                    for (auto const &child : data.at("children")) {
                         STORM_LOG_THROW(nameMapping.find(child) != nameMapping.end(), storm::exceptions::WrongFormatException, "Child '" << child << "' was not defined.");
                         childNames.push_back(nameMapping.at(child));
                     }
@@ -159,8 +159,8 @@ namespace storm {
 
             // Build DFT
             storm::storage::DFT<ValueType> dft = builder.build();
-            STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
-            STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
+            STORM_LOG_DEBUG("Elements:\n" << dft.getElementsString());
+            STORM_LOG_DEBUG("Spare Modules:\n" << dft.getSpareModulesString());
             return dft;
 
         }

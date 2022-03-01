@@ -1,0 +1,9 @@
+toplevel "T";
+"T" and "E" "S2";
+"E" or "D" "S1";
+"S1" wsp "A" "C";
+"S2" wsp "B" "C";
+"A" lambda=2 dorm=1;
+"B" lambda=3 dorm=1;
+"C" lambda=5 dorm=0.5;
+"D" lambda=7 dorm=1;

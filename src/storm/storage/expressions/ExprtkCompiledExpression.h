@@ -5,21 +5,21 @@
 #include "storm/adapters/ExprttkAdapter.h"
 
 namespace storm {
-    namespace expressions {
-        
-        class ExprtkCompiledExpression : public CompiledExpression {
-        public:
-            typedef exprtk::expression<double> CompiledExpressionType;
+namespace expressions {
 
-            ExprtkCompiledExpression(CompiledExpressionType const& exprtkCompiledExpression);
-            
-            CompiledExpressionType const& getCompiledExpression() const;
+class ExprtkCompiledExpression : public CompiledExpression {
+   public:
+    typedef exprtk::expression<double> CompiledExpressionType;
 
-            virtual bool isExprtkCompiledExpression() const override;
-            
-        private:
-            CompiledExpressionType exprtkCompiledExpression;
-        };
-        
-    }
-}
+    ExprtkCompiledExpression(CompiledExpressionType const& exprtkCompiledExpression);
+
+    CompiledExpressionType const& getCompiledExpression() const;
+
+    virtual bool isExprtkCompiledExpression() const override;
+
+   private:
+    CompiledExpressionType exprtkCompiledExpression;
+};
+
+}  // namespace expressions
+}  // namespace storm

@@ -11,7 +11,7 @@
 //#include "storm/storage/gspn/ImmediateTransition.h"
 //#include "storm/storage/gspn/TimedTransition.h"
 //
-//namespace storm {
+// namespace storm {
 //    namespace builder {
 //
 //        /*!
@@ -36,7 +36,8 @@
 //             * @param partitions The partitioned immediate transitions.
 //             * @param currentMarking The current marking which is considered at the moment.
 //             */
-//            void addRowForPartitions(std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>> const& partitions, storm::gspn::Marking const& currentMarking);
+//            void addRowForPartitions(std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>> const& partitions,
+//            storm::gspn::Marking const& currentMarking);
 //
 //
 //            /*!
@@ -46,7 +47,8 @@
 //             * @param currentMarking The current marking which is considered at the moment.
 //             * @param accRate The sum of all rates of the enabled timed transisitons
 //             */
-//            void addRowForTimedTransitions(std::vector<std::shared_ptr<storm::gspn::TimedTransition<double>>> const& enabledTimedTransitions, storm::gspn::Marking const& currentMarking, double const& accRate);
+//            void addRowForTimedTransitions(std::vector<std::shared_ptr<storm::gspn::TimedTransition<double>>> const& enabledTimedTransitions,
+//            storm::gspn::Marking const& currentMarking, double const& accRate);
 //
 //            /*!
 //             * Struct for comparing unsigned integer for maps
@@ -77,7 +79,8 @@
 //             * @param enabledImmediateTransistions A vector of enabled immediate transitions.
 //             * @return The vector of vectors which is described above.
 //             */
-//            std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>> partitonEnabledImmediateTransitions(storm::gspn::Marking const& marking, std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> const& enabledImmediateTransitions);
+//            std::vector<std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>> partitonEnabledImmediateTransitions(storm::gspn::Marking
+//            const& marking, std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>> const& enabledImmediateTransitions);
 //
 //            /*!
 //             * Computes the accumulated weight of immediate transisions which are stored in a list.

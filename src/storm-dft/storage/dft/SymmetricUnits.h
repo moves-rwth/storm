@@ -5,9 +5,11 @@
 namespace storm {
     namespace storage {
         struct DFTIndependentSymmetries {
-            std::map<size_t, std::vector<std::vector<size_t>>> groups;
+            std::map<size_t, std::vector<std::vector<size_t>>> groups; // Symmetry groups: top level element of group -> symmetry
+            // Each symmetry is given by a list of the equivalence classes
+            // Each equivalence class is given by all symmetric elements
             
-            std::vector<size_t> sortedSymmetries;
+            std::vector<size_t> sortedSymmetries; // Top element of groups sorted by their size in increasing order
             
             bool existsInFirstSymmetry(size_t index, size_t value) {
                 for (std::vector<size_t> symmetry : groups[index]) {
@@ -45,7 +47,15 @@ namespace storm {
                 }
                 return -1;
             }
-            
+           
+            /**
+             * Apply symmetry given by parentSymmetry and index to childSymmetry to obtain new symmetry.
+             *
+             * @param parentSymmetry Symmetry to apply.
+             * @param childSymmetry Symmetry which should be changed according to parentSymmetry.
+             * @param index Index in parent symmetry to use.
+             * @return Child symmetry after applying the parent symmetry at the given index.
+             */
             std::vector<std::vector<size_t>> createSymmetry(std::vector<std::vector<size_t>> parentSymmetry, std::vector<std::vector<size_t>> childSymmetry, size_t index) {
                 std::vector<std::vector<size_t>> result;
                 for (std::vector<size_t> childSym : childSymmetry) {
@@ -55,6 +65,7 @@ namespace storm {
                         if (bijectionValue >= 0) {
                             symmetry.push_back(bijectionValue);
                         } else {
+                            STORM_LOG_ASSERT(result.empty(), "Returning inconsistent result.");
                             return result;
                         }
                     }
@@ -72,7 +83,7 @@ namespace storm {
                         // Is child
                         STORM_LOG_TRACE(currentRoot << " is child of " << parent);
                         children.insert(children.begin(), currentRoot);
-                        candidates.erase(candidates.begin()+i);
+                        candidates.erase(candidates.begin()+i); // Removing is okay as i is decremented
                     }
                 }
                 
@@ -81,11 +92,27 @@ namespace storm {
                     // Iterate over all possible symmetry groups
                     for (size_t index = 1; index < groups.at(parent).front().size(); ++index) {
                         std::vector<std::vector<size_t>> possibleSymmetry = createSymmetry(groups.at(parent), groups.at(children[i]), index);
-                        for (size_t j = i + 1; j < children.size(); ++j) {
+                        if (possibleSymmetry.empty()) {
+                            // No symmetry created
+                            break;
+                        }
+                        for (size_t j = 0; j < children.size(); /*manual increment*/) {
+                            if (j == i) {
+                                // Ignore identity
+                                ++j;
+                                continue;
+                            }
                             if (possibleSymmetry == groups.at(children[j])) {
                                 STORM_LOG_TRACE("Child " << children[j] << " ignored as created by symmetries " << parent << " and " << children[i]);
                                 groups.erase(children[j]);
                                 children.erase(children.begin() + j);
+                                // Update iterator
+                                if (i > j) {
+                                    --i;
+                                }
+                            } else {
+                                // Consider next element
+                                ++j;
                             }
                         }
                     }
@@ -124,12 +151,12 @@ namespace storm {
         
         inline std::ostream& operator<<(std::ostream& os, DFTIndependentSymmetries const& s)  {
             for(size_t index : s.sortedSymmetries) {
-                os << "Symmetry group for " << index << std::endl;
+                os << "Symmetry group for " << index << '\n';
                 for(auto const& eqClass : s.groups.at(index)) {
                     for(auto const& i : eqClass) {
                         os << i << " ";
                     }
-                    os << std::endl;
+                    os << '\n';
                 }
             }
             return os;

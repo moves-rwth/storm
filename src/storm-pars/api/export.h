@@ -18,15 +18,15 @@ namespace storm {
             filestream << "$Parameters: ";
             auto const& vars = constraintCollector.getVariables();
             std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::RationalFunctionVariable>(filestream, "; "));
-            filestream << std::endl;
+            filestream << '\n';
             if(result) {
-                filestream << "$Result: " << result->toString(false, true) << std::endl;
+                filestream << "$Result: " << result->toString(false, true) << '\n';
             }
-            filestream << "$Well-formed Constraints: " << std::endl;
+            filestream << "$Well-formed Constraints: \n";
             std::vector<std::string> stringConstraints;
             std::transform(constraintCollector.getWellformedConstraints().begin(), constraintCollector.getWellformedConstraints().end(), std::back_inserter(stringConstraints), [](carl::Formula<typename storm::Polynomial::PolyType> const& c) ->  std::string { return c.toString();});
             std::copy(stringConstraints.begin(), stringConstraints.end(), std::ostream_iterator<std::string>(filestream, "\n"));
-            filestream << "$Graph-preserving Constraints: " << std::endl;
+            filestream << "$Graph-preserving Constraints: \n";
             stringConstraints.clear();
             std::transform(constraintCollector.getGraphPreservingConstraints().begin(), constraintCollector.getGraphPreservingConstraints().end(), std::back_inserter(stringConstraints), [](carl::Formula<typename storm::Polynomial::PolyType> const& c) ->  std::string { return c.toString();});
             std::copy(stringConstraints.begin(), stringConstraints.end(), std::ostream_iterator<std::string>(filestream, "\n"));

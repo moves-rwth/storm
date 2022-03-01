@@ -10,7 +10,7 @@
 #include "environment/solver/TopologicalSolverEnvironment.h"
 #include "settings/modules/CoreSettings.h"
 #include "solver/GmmxxLinearEquationSolver.h"
-#include "solver/GmmxxMultiplier.h"
+#include "solver/multiplier/GmmxxMultiplier.h"
 #include "solver/SolverSelectionOptions.h"
 #include "solver/helper/SoundValueIterationHelper.h"
 #include "modelchecker/results/CheckResult.h"
@@ -262,13 +262,13 @@ namespace storm {
                 if(storm::utility::isConstant(parametricEntryIt->getValue())){
                     //Constant entries can be inserted directly
                     constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
-                    /* std::cout << "Setting constant entry" << std::endl; */
+                    /* std::cout << "Setting constant entry\n"; */
                 } else {
                     //insert the new function and store that the current constantMatrix entry needs to be set to the value of this function
                     auto functionsIt = functions.insert(std::make_pair(parametricEntryIt->getValue(), dummyValue)).first;
                     matrixMapping.emplace_back(std::make_pair(constantEntryIt, &(functionsIt->second)));
                     //Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
-                    /* std::cout << "Setting non-constant entry" << std::endl; */
+                    /* std::cout << "Setting non-constant entry\n"; */
                 }
                 ++constantEntryIt;
                 ++parametricEntryIt;

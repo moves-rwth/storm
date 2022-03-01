@@ -165,26 +165,24 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::printStatisticsToStream(std::ostream& stream) const {
-                stream << "##### Grid Approximation Statistics ######" << std::endl;
-                stream << "# Input model: " << std::endl;
+                stream << "##### Grid Approximation Statistics ######\n";
+                stream << "# Input model: \n";
                 pomdp().printModelInformationToStream(stream);
-                stream << "# Max. Number of states with same observation: " << pomdp().getMaxNrStatesWithSameObservation() << std::endl;
-
+                stream << "# Max. Number of states with same observation: " << pomdp().getMaxNrStatesWithSameObservation() << '\n';
                 if (statistics.beliefMdpDetectedToBeFinite) {
                     stream << "# Pre-computations detected that the belief MDP is finite." << std::endl;
                 }
                 if (statistics.aborted) {
-                    stream << "# Computation aborted early" << std::endl;
+                    stream << "# Computation aborted early\n";
                 }
 
-                stream << "# Total check time: " << statistics.totalTime << std::endl;
-
+                stream << "# Total check time: " << statistics.totalTime << '\n';
                 // Refinement information:
                 if (statistics.refinementSteps) {
-                    stream << "# Number of refinement steps: " << statistics.refinementSteps.get() << std::endl;
+                    stream << "# Number of refinement steps: " << statistics.refinementSteps.get() << '\n';
                 }
                 if (statistics.refinementFixpointDetected) {
-                    stream << "# Detected a refinement fixpoint." << std::endl;
+                    stream << "# Detected a refinement fixpoint.\n";
                 }
 
                 // The overapproximation MDP:
@@ -197,10 +195,10 @@ namespace storm {
                     if (statistics.overApproximationBuildAborted) {
                         stream << ">=";
                     }
-                    stream << statistics.overApproximationStates.get() << std::endl;
-                    stream << "# Maximal resolution for over-approximation: " << statistics.overApproximationMaxResolution.get() << std::endl;
-                    stream << "# Time spend for building the over-approx grid MDP(s): " << statistics.overApproximationBuildTime << std::endl;
-                    stream << "# Time spend for checking the over-approx grid MDP(s): " << statistics.overApproximationCheckTime << std::endl;
+                    stream << statistics.overApproximationStates.get() << '\n';
+                    stream << "# Maximal resolution for over-approximation: " << statistics.overApproximationMaxResolution.get() << '\n';
+                    stream << "# Time spend for building the over-approx grid MDP(s): " << statistics.overApproximationBuildTime << '\n';
+                    stream << "# Time spend for checking the over-approx grid MDP(s): " << statistics.overApproximationCheckTime << '\n';
                 }
 
                 // The underapproximation MDP:
@@ -213,7 +211,7 @@ namespace storm {
                     if (statistics.underApproximationBuildAborted) {
                         stream << ">=";
                     }
-                    stream << statistics.underApproximationStates.get() << std::endl;
+                    stream << statistics.underApproximationStates.get() << '\n';
                     if(statistics.nrClippingAttempts) {
                         stream << "# Clipping attempts (clipped states) for the under-approximation: ";
                         if (statistics.underApproximationBuildAborted) {
@@ -230,13 +228,13 @@ namespace storm {
                         stream << statistics.nrTruncatedStates.get() << std::endl;
                     }
                     if (statistics.underApproximationStateLimit) {
-                        stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.get() << std::endl;
+                        stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.get() << '\n';
                     }
-                    stream << "# Time spend for building the under-approx grid MDP(s): " << statistics.underApproximationBuildTime << std::endl;
-                    stream << "# Time spend for checking the under-approx grid MDP(s): " << statistics.underApproximationCheckTime << std::endl;
+                    stream << "# Time spend for building the under-approx grid MDP(s): " << statistics.underApproximationBuildTime << '\n';
+                    stream << "# Time spend for checking the under-approx grid MDP(s): " << statistics.underApproximationCheckTime << '\n';
                 }
 
-                stream << "##########################################" << std::endl;
+                stream << "##########################################\n";
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
@@ -263,7 +261,7 @@ namespace storm {
                     if (approx->hasComputedValues()) {
                         auto printInfo = [&approx]() {
                             std::stringstream str;
-                            str << "Explored and checked Over-Approximation MDP:" << std::endl;
+                            str << "Explored and checked Over-Approximation MDP:\n";
                             approx->getExploredMdp()->printModelInformationToStream(str);
                             return str.str();
                         };
@@ -303,7 +301,7 @@ namespace storm {
                     if (approx->hasComputedValues()) {
                         auto printInfo = [&approx]() {
                             std::stringstream str;
-                            str << "Explored and checked Under-Approximation MDP:" << std::endl;
+                            str << "Explored and checked Under-Approximation MDP:\n";
                             approx->getExploredMdp()->printModelInformationToStream(str);
                             return str.str();
                         };
@@ -342,7 +340,7 @@ namespace storm {
                     ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
                     if (betterBound) {
-                        STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                        STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'.\n");
                     }
                 }
 
@@ -374,7 +372,7 @@ namespace storm {
                     ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                     if (betterBound) {
-                        STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                        STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'.\n");
                     }
                 }
                 
@@ -472,7 +470,7 @@ namespace storm {
                         }
                     }
                     if (overApproxFixPoint && underApproxFixPoint) {
-                        STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations." << std::endl);
+                        STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations.\n");
                         statistics.refinementFixpointDetected = true;
                         break;
                     }

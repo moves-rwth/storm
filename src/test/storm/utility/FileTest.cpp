@@ -1,5 +1,5 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm/io/file.h"
 
@@ -15,7 +15,6 @@ TEST(FileTest, GetLine) {
         ++i;
     }
 }
-
 
 TEST(FileTest, GetLineEmpty) {
     std::stringstream stream;

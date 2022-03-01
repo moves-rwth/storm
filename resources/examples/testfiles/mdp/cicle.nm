@@ -1,0 +1,17 @@
+mdp 
+
+// Check property 
+// Pmax=? [ F ((x>=2) | (y>=2) | (z>=2)) ];
+
+module one
+    x: [0..2];
+    
+    [] x=0 -> (x'=0);
+    [] x=0 -> 0.5 : (x'=1) + 0.5 : (x'=2);
+    
+endmodule
+
+module two = one[x=y, y=z, z=x] endmodule
+module three = one[x=z, y=x, z=y] endmodule
+
+label "done" = ((x>=2) | (y>=2) | (z>=2));

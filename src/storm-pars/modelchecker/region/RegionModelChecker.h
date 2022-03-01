@@ -40,7 +40,7 @@ namespace storm {
              * @param initialResult encodes what is already known about this region
              * @param sampleVerticesOfRegion enables sampling of the vertices of the region in cases where AllSat/AllViolated could not be shown.
              */
-            virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false, std::shared_ptr<storm::analysis::Order> reachabilityOrder = nullptr, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = nullptr) = 0;
+            virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = nullptr) = 0;
             
              /*!
              * Analyzes the given regions.
@@ -68,8 +68,8 @@ namespace storm {
              * The returned value v corresponds to the value at the returned valuation.
              * The actual maximum (minimum) lies in the interval [v, v+precision] ([v-precision, v])
              */
-            virtual std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision);
-            virtual bool checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, ParametricType const& valueToCheck);
+            virtual std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision);
+            virtual bool checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, ParametricType const& valueToCheck);
 
             /*!
              * Returns true if region split estimation (a) was enabled when model and check task have been specified and (b) is supported by this region model checker.
@@ -82,7 +82,7 @@ namespace storm {
              */
             virtual std::map<VariableType, double> getRegionSplitEstimate() const;
 
-            virtual std::shared_ptr<storm::analysis::Order> extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
+            virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
 
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
@@ -109,7 +109,7 @@ namespace storm {
 
             virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
-            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> & region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const;
+            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> &region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum) const;
 
         };
 

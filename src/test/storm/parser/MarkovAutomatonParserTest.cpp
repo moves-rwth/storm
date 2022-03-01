@@ -1,19 +1,23 @@
-#include "test/storm_gtest.h"
 #include "storm-config.h"
+#include "test/storm_gtest.h"
 
 #include "storm-parsers/parser/MarkovAutomatonParser.h"
-#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 
 TEST(MarkovAutomatonParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(
+        storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(
+            STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"),
+        storm::exceptions::FileIoException);
 }
 
 TEST(MarkovAutomatonParserTest, BasicParsing) {
     // Get the parsing result.
-    storm::models::sparse::MarkovAutomaton<double> result = storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra", STORM_TEST_RESOURCES_DIR "/lab/ma_general.lab", STORM_TEST_RESOURCES_DIR "/rew/ma_general.state.rew");
+    storm::models::sparse::MarkovAutomaton<double> result = storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(
+        STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra", STORM_TEST_RESOURCES_DIR "/lab/ma_general.lab", STORM_TEST_RESOURCES_DIR "/rew/ma_general.state.rew");
 
     // Test sizes and counts.
     ASSERT_EQ(6ul, result.getNumberOfStates());
@@ -53,12 +57,16 @@ TEST(MarkovAutomatonParserTest, BasicParsing) {
 }
 
 TEST(MarkovAutomatonParserTest, MismatchedFiles) {
-
     // Test file combinations that do not match, i.e. differing number of states, transitions, etc.
 
     // The labeling file contains a label for a non existent state.
-    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra", STORM_TEST_RESOURCES_DIR "/lab/ma_mismatched.lab"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra",
+                                                                                           STORM_TEST_RESOURCES_DIR "/lab/ma_mismatched.lab"),
+                              storm::exceptions::OutOfRangeException);
 
     // The state reward file contains a reward for a non existent state.
-    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra", STORM_TEST_RESOURCES_DIR "/lab/ma_general.lab", STORM_TEST_RESOURCES_DIR "/rew/ma_mismatched.state.rew"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra",
+                                                                                           STORM_TEST_RESOURCES_DIR "/lab/ma_general.lab",
+                                                                                           STORM_TEST_RESOURCES_DIR "/rew/ma_mismatched.state.rew"),
+                              storm::exceptions::OutOfRangeException);
 }

@@ -71,7 +71,7 @@ namespace storm {
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-                    STORM_PRINT_AND_LOG("Progress (solved fraction) :" << std::endl <<  "0% [");
+                    STORM_PRINT_AND_LOG("Progress (solved fraction) :\n" <<  "0% [");
                     while (displayedProgress < storm::utility::one<CoefficientType>() - thresholdAsCoefficient) {
                         STORM_PRINT_AND_LOG(" ");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
@@ -80,7 +80,7 @@ namespace storm {
                         STORM_PRINT_AND_LOG("-");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
                     }
-                    STORM_PRINT_AND_LOG("] 100%" << std::endl << "   [");
+                    STORM_PRINT_AND_LOG("] 100%\n" << "   [");
                     displayedProgress = storm::utility::zero<CoefficientType>();
                 }
 
@@ -146,7 +146,7 @@ namespace storm {
                 if (useMonotonicity && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
                     storm::utility::Stopwatch monWatch(true);
 
-                    orders.emplace(extendOrder(env, nullptr, region));
+                    orders.emplace(extendOrder(nullptr, region));
                     assert (orders.front() != nullptr);
                     auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
                     extendLocalMonotonicityResult(region, orders.front(), monRes);
@@ -174,7 +174,7 @@ namespace storm {
                         }
                     }
                     monWatch.stop();
-                    STORM_PRINT(std::endl << "Time for orderBuilding and monRes initialization: " << monWatch << "." << std::endl << std::endl);
+                    STORM_PRINT("\nTime for orderBuilding and monRes initialization: " << monWatch << ".\n\n");
                 }
                 bool useSameOrder = useMonotonicity && order->getDoneBuilding();
                 bool useSameLocalMonotonicityResult = useSameOrder && localMonotonicityResult->isDone();
@@ -193,7 +193,7 @@ namespace storm {
                     if (!useSameOrder) {
                         order = orders.front();
                         if (!order->getDoneBuilding()) {
-                            extendOrder(env, order, currentRegion);
+                            extendOrder(order, currentRegion);
                         }
                     }
                     if (!useSameLocalMonotonicityResult) {
@@ -203,7 +203,7 @@ namespace storm {
                         }
                     }
 
-                    res = analyzeRegion(env, currentRegion, hypothesis, res, false, order, localMonotonicityResult);
+                    res = analyzeRegion(env, currentRegion, hypothesis, res, false, localMonotonicityResult);
 
                     switch (res) {
                         case RegionResult::AllSat:
@@ -229,7 +229,8 @@ namespace storm {
 
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
                                 // Only split in (non)monotone vars
-                                splitSmart(currentRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()), false);
+                                splitSmart(currentRegion, newRegions,
+                                           *(localMonotonicityResult->getGlobalMonotonicityResult()), false);
                                 assert (newRegions.size() != 0);
 
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
@@ -308,13 +309,13 @@ namespace storm {
                         STORM_PRINT_AND_LOG("-");
                         displayedProgress += storm::utility::convertNumber<CoefficientType>(0.01);
                     }
-                    STORM_PRINT_AND_LOG("]" << std::endl);
+                    STORM_PRINT_AND_LOG("]\n");
                     
-                    STORM_PRINT_AND_LOG("Region Refinement Statistics:" << std::endl);
-                    STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions." << std::endl);
+                    STORM_PRINT_AND_LOG("Region Refinement Statistics:\n");
+                    STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions.\n");
 
                     if (useMonotonicity) {
-                        STORM_PRINT_AND_LOG("    " << numberOfRegionsKnownThroughMonotonicity << " regions where discovered with help of monotonicity." << std::endl);
+                        STORM_PRINT_AND_LOG("    " << numberOfRegionsKnownThroughMonotonicity << " regions where discovered with help of monotonicity.\n");
 
                     }
                 }
@@ -330,13 +331,13 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision) {
+        std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing extremal values is not supported for this region model checker.");
             return std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>();
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, ParametricType const& valueToCheck) {
+        bool RegionModelChecker<ParametricType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, ParametricType const& valueToCheck) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Checking extremal values is not supported for this region model checker.");
             return false;
         }
@@ -354,7 +355,9 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        std::shared_ptr<storm::analysis::Order> RegionModelChecker<ParametricType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region) {
+        std::shared_ptr<storm::analysis::Order>
+        RegionModelChecker<ParametricType>::extendOrder(std::shared_ptr<storm::analysis::Order> order,
+                                                        storm::storage::ParameterRegion<ParametricType> region) {
             STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             // Does nothing
             return order;
@@ -399,7 +402,11 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> & currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const {
+        void
+        RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> &currentRegion,
+                                                       std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
+                                                       storm::analysis::MonotonicityResult<VariableType> &monRes,
+                                                       bool splitForExtremum) const {
             STORM_LOG_WARN("Smart splitting for this model checker not implemented");
             currentRegion.split(currentRegion.getCenterPoint(), regionVector);
         }

@@ -98,7 +98,7 @@ namespace storm {
                     builder.addDepElement("Failure_Trigger", failedBEs, storm::utility::one<ValueType>());
                 }
 
-                builder.setTopLevel(dft.getTopLevelGate()->name());
+                builder.setTopLevel(dft.getTopLevelElement()->name());
 
                 STORM_LOG_DEBUG("Transformation UniqueFailedBe complete");
                 return std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
@@ -223,7 +223,7 @@ namespace storm {
 
                 }
 
-                builder.setTopLevel(dft.getTopLevelGate()->name());
+                builder.setTopLevel(dft.getTopLevelElement()->name());
 
                 STORM_LOG_DEBUG("Transformation BinaryFDEPs complete");
                 return std::make_shared<storm::storage::DFT<ValueType>>(builder.build());

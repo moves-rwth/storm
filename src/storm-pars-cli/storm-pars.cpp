@@ -171,7 +171,7 @@ namespace storm {
                 storm::utility::Stopwatch eliminationWatch(true);
                 std::shared_ptr<storm::models::ModelBase> result;
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                    STORM_PRINT("Applying scc elimination" << std::endl);
+                    STORM_PRINT("Applying scc elimination\n");
                     auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
                     auto matrix = sparseModel->getTransitionMatrix();
                     auto backwardsTransitionMatrix = matrix.transpose();
@@ -227,7 +227,7 @@ namespace storm {
                     result = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates));
 
                     eliminationWatch.stop();
-                    STORM_PRINT(std::endl << "Time for scc elimination: " << eliminationWatch << "." << std::endl << std::endl);
+                    STORM_PRINT("\nTime for scc elimination: " << eliminationWatch << ".\n\n");
                     result->printModelInformationToStream(std::cout);
                 } else if (model->isOfType(storm::models::ModelType::Mdp)) {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Unable to perform SCC elimination for monotonicity analysis on MDP: Not mplemented");
@@ -266,7 +266,7 @@ namespace storm {
             }
 
             simplifyingWatch.stop();
-            STORM_PRINT(std::endl << "Time for model simplification: " << simplifyingWatch << "." << std::endl << std::endl);
+            STORM_PRINT("\nTime for model simplification: " << simplifyingWatch << ".\n\n");
             result->printModelInformationToStream(std::cout);
             return result;
         }
@@ -364,13 +364,13 @@ namespace storm {
             }
 
             if (result.changed) {
-                STORM_PRINT_AND_LOG(std::endl << "Time for model preprocessing: " << preprocessingWatch << "." << std::endl << std::endl);
+                STORM_PRINT_AND_LOG("\nTime for model preprocessing: " << preprocessingWatch << ".\n\n");
             }
             return result;
         }
 
         template<typename ValueType>
-        void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const& result, storm::jani::Property const& property, storm::utility::Stopwatch* watch = nullptr, storm::utility::parametric::Valuation<ValueType> const* valuation = nullptr) {
+        void printInitialStatesResult(std::unique_ptr<storm::modelchecker::CheckResult> const &result, utility::Stopwatch *watch = nullptr, const utility::parametric::Valuation <ValueType> *valuation = nullptr) {
             if (result) {
                 STORM_PRINT_AND_LOG("Result (initial states)");
                 if (valuation) {
@@ -398,23 +398,23 @@ namespace storm {
                     } else {
                         regionCheckResult->writeCondensedToStream(outStream);
                     }
-                    outStream << std::endl;
+                    outStream << '\n';
                     if (!regionSettings.isPrintNoIllustrationSet()) {
                         auto const* regionRefinementCheckResult = dynamic_cast<storm::modelchecker::RegionRefinementCheckResult<ValueType> const*>(regionCheckResult);
                         if (regionRefinementCheckResult != nullptr) {
                             regionRefinementCheckResult->writeIllustrationToStream(outStream);
                         }
                     }
-                    outStream << std::endl;
+                    outStream << '\n';
                     STORM_PRINT_AND_LOG(outStream.str());
                 } else {
-                    STORM_PRINT_AND_LOG(*result << std::endl);
+                    STORM_PRINT_AND_LOG(*result << '\n');
                 }
                 if (watch) {
-                    STORM_PRINT_AND_LOG("Time for model checking: " << *watch << "." << std::endl << std::endl);
+                    STORM_PRINT_AND_LOG("Time for model checking: " << *watch << ".\n\n");
                 }
             } else {
-                STORM_LOG_ERROR("Property is unsupported by selected engine/settings." << std::endl);
+                STORM_LOG_ERROR("Property is unsupported by selected engine/settings.\n");
             }
         }
 
@@ -425,7 +425,7 @@ namespace storm {
                 storm::utility::Stopwatch watch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result = verificationCallback(property.getRawFormula());
                 watch.stop();
-                printInitialStatesResult<ValueType>(result, property, &watch);
+                printInitialStatesResult<ValueType>(result, &watch);
                 postprocessingCallback(result);
             }
         }
@@ -474,7 +474,7 @@ namespace storm {
                         if (result) {
                             result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model.getInitialStates()));
                         }
-                        printInitialStatesResult<ValueType>(result, property, &valuationWatch, &valuation);
+                        printInitialStatesResult<ValueType>(result, &valuationWatch, &valuation);
 
                         for (uint64_t i = 0; i < parameters.size(); ++i) {
                             ++iterators[i];
@@ -496,7 +496,7 @@ namespace storm {
                 }
 
                 watch.stop();
-                STORM_PRINT_AND_LOG("Overall time for sampling all instances: " << watch << std::endl << std::endl);
+                STORM_PRINT_AND_LOG("Overall time for sampling all instances: " << watch << "\n\n");
             }
         }
 
@@ -583,7 +583,7 @@ namespace storm {
             for (auto const& entry : vars) {
                 std::cout << entry << " ";
             }
-            std::cout << std::endl;
+            std::cout << '\n';
 
             if (omittedParameters && !omittedParameters->empty()) {
                 std::cout << "Parameters ";
@@ -592,9 +592,9 @@ namespace storm {
                 }
                 std::cout << "are inconsequential.";
                 if (derSettings.areInconsequentialParametersOmitted()) {
-                    std::cout << " They will be omitted in the found instantiation." << std::endl;
+                    std::cout << " They will be omitted in the found instantiation.\n";
                 } else {
-                    std::cout << " They will be set to 0.5 in the found instantiation. To omit them, set the flag --omit-inconsequential-params." << std::endl;
+                    std::cout << " They will be set to 0.5 in the found instantiation. To omit them, set the flag --omit-inconsequential-params.\n";
                 }
             }
 
@@ -660,11 +660,11 @@ namespace storm {
                     std::cout << "Derivative w.r.t. " << parameter << ": ";
                     
                     auto result = modelChecker.check(Environment(), instantiation, parameter);
-                    std::cout << *result << std::endl;
+                    std::cout << *result << '\n';
                 }
                 return;
             } else if (derSettings.isFeasibleInstantiationSearchSet()) {
-                STORM_PRINT("Finding an extremum using Gradient Descent" << std::endl);
+                STORM_PRINT("Finding an extremum using Gradient Descent\n");
                 storm::utility::Stopwatch derivativeWatch(true);
                 storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(*dtmc, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, *constraintMethod, derSettings.isPrintJsonSet());
                 storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask(*formula);
@@ -683,7 +683,7 @@ namespace storm {
                 if (derSettings.isPrintJsonSet()) {
                     derivativeChecker.printRunAsJson();
                 } else {
-                    std::cout << "Found value " << instantiationAndValue.second << " at instantiation " << std::endl;
+                    std::cout << "Found value " << instantiationAndValue.second << " at instantiation \n";
                     bool isFirstLoop = true;
                     for (auto const& p : instantiationAndValue.first) {
                         if (!isFirstLoop) {
@@ -692,9 +692,9 @@ namespace storm {
                         isFirstLoop = false;
                         std::cout << p.first << "=" << p.second;
                     }
-                    std::cout << std::endl;
+                    std::cout << '\n';
                 }
-                std::cout << "Finished in " << derivativeWatch << std::endl;
+                std::cout << "Finished in " << derivativeWatch << '\n';
                 return;
             }
         }
@@ -768,7 +768,7 @@ namespace storm {
             }
 
             monotonicityWatch.stop();
-            STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
+            STORM_PRINT("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
             return;
         }
 
@@ -787,25 +787,25 @@ namespace storm {
                         STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
                                                                                      << *property.getRawFormula()
                                                                                      << " within region " << region
-                                                                                     << " and using monotonicity ..." << std::endl);
+                                                                                     << " and using monotonicity ...\n");
                     } else {
                         STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
                                                                                      << *property.getRawFormula()
                                                                                      << " within region " << region
-                                                                                     << "..." << std::endl);
+                                                                                     << "...\n");
                     }
                     storm::utility::Stopwatch watch(true);
                     // TODO: hier eventueel checkExtremalValue van maken
                     if (regionSettings.isExtremumSuggestionSet()) {
                         ValueType suggestion = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumSuggestion());
-                        if (storm::api::checkExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, suggestion, monotonicitySettings, generateSplitEstimates, monotoneParameters)) {
+                        if (storm::api::checkExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, regionSettings.isAbsolutePrecisionSet(), suggestion, monotonicitySettings, generateSplitEstimates, monotoneParameters)) {
                             STORM_PRINT_AND_LOG(suggestion << " is the extremum ");
                         } else {
                             STORM_PRINT_AND_LOG(suggestion << " is NOT the extremum ");
                         }
 
                     } else {
-                        auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, monotonicitySettings, generateSplitEstimates, monotoneParameters);
+                        auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, regionSettings.isAbsolutePrecisionSet(), monotonicitySettings, generateSplitEstimates, monotoneParameters);
                         watch.stop();
                         std::stringstream valuationStr;
                         bool first = true;
@@ -817,8 +817,8 @@ namespace storm {
                             }
                             valuationStr << v.first << "=" << v.second;
                         }
-                        STORM_PRINT_AND_LOG("Result at initial state: " << valueValuation.first << " ( approx. " << storm::utility::convertNumber<double>(valueValuation.first) << ") at [" << valuationStr.str() << "]." << std::endl)
-                        STORM_PRINT_AND_LOG("Time for model checking: " << watch << "." << std::endl);
+                        STORM_PRINT_AND_LOG("Result at initial state: " << valueValuation.first << " ( approx. " << storm::utility::convertNumber<double>(valueValuation.first) << ") at [" << valuationStr.str() << "].\n")
+                        STORM_PRINT_AND_LOG("Time for model checking: " << watch << ".\n");
                     }
                 }
             }
@@ -834,7 +834,7 @@ namespace storm {
             std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> verificationCallback;
             std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> postprocessingCallback;
 
-            STORM_PRINT_AND_LOG(std::endl);
+            STORM_PRINT_AND_LOG('\n');
             if (regionSettings.isHypothesisSet()) {
                 STORM_PRINT_AND_LOG("Checking hypothesis " << regionSettings.getHypothesis() << " on ");
             } else {
@@ -854,7 +854,7 @@ namespace storm {
             // Check the given set of regions with or without refinement
             if (regionSettings.isRefineSet()) {
                 STORM_LOG_THROW(regions.size() == 1, storm::exceptions::NotSupportedException, "Region refinement is not supported for multiple initial regions.");
-                STORM_PRINT_AND_LOG(" with iterative refinement until " << (1.0 - regionSettings.getCoverageThreshold()) * 100.0 << "% is covered." << (regionSettings.isDepthLimitSet() ? " Depth limit is " + std::to_string(regionSettings.getDepthLimit()) + "." : "") << std::endl);
+                STORM_PRINT_AND_LOG(" with iterative refinement until " << (1.0 - regionSettings.getCoverageThreshold()) * 100.0 << "% is covered." << (regionSettings.isDepthLimitSet() ? " Depth limit is " + std::to_string(regionSettings.getDepthLimit()) + "." : "") << '\n');
                 verificationCallback = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                     ValueType refinementThreshold = storm::utility::convertNumber<ValueType>(regionSettings.getCoverageThreshold());
                     boost::optional<uint64_t> optionalDepthLimit;
@@ -866,7 +866,7 @@ namespace storm {
                     return result;
                 };
             } else {
-                STORM_PRINT_AND_LOG("." << std::endl);
+                STORM_PRINT_AND_LOG(".\n");
                 verificationCallback = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                     std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::checkRegionsWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions, engine, regionSettings.getHypothesis());
                     return result;

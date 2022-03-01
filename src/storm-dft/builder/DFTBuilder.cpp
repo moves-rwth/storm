@@ -218,7 +218,7 @@ namespace storm {
                 }
                 else if(n->isDependency()) {
                     visited[n] = topoSortColour::GREY;
-                    for (DFTElementPointer const& c : std::static_pointer_cast<storm::storage::DFTDependency<ValueType>>(n)->dependentEvents()) {
+                    for (DFTBEPointer const& c : std::static_pointer_cast<storm::storage::DFTDependency<ValueType>>(n)->dependentEvents()) {
                         topoVisit(c, visited, L);
                     }
                     topoVisit(std::static_pointer_cast<storm::storage::DFTDependency<ValueType>>(n)->triggerEvent(), visited, L);

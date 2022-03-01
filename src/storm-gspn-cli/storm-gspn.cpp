@@ -1,47 +1,46 @@
+#include "storm-gspn/api/storm-gspn.h"
 #include "storm-gspn/builder/ExplicitGspnModelBuilder.h"
+#include "storm-gspn/builder/JaniGSPNBuilder.h"
 #include "storm-gspn/parser/GspnParser.h"
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm-gspn/storage/gspn/GspnBuilder.h"
-#include "storm-gspn/builder/JaniGSPNBuilder.h"
-#include "storm-gspn/api/storm-gspn.h"
 
-#include "storm/utility/macros.h"
 #include "storm/utility/initialize.h"
+#include "storm/utility/macros.h"
 
 #include "api/storm.h"
 
-#include "storm-parsers/api/storm-parsers.h"
 #include "storm-cli-utilities/cli.h"
+#include "storm-parsers/api/storm-parsers.h"
 
 #include "storm-parsers/parser/FormulaParser.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/JSONExporter.h"
 #include <fstream>
 #include <iostream>
 #include <string>
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/visitor/JSONExporter.h"
 
 #include <boost/algorithm/string.hpp>
 
 #include "storm/exceptions/FileIoException.h"
 
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm-gspn/settings/modules/GSPNSettings.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
+#include "storm-gspn/settings/modules/GSPNSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
-#include "storm-conv/settings/modules/JaniExportSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-
 
 /*!
  * Initialize the settings manager.
  */
 void initializeSettings() {
     storm::settings::mutableManager().setName("Storm-GSPN", "storm-gspn");
-    
+
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
     storm::settings::addModule<storm::settings::modules::IOSettings>();
@@ -53,13 +52,12 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::ResourceSettings>();
 }
 
-
-int main(const int argc, const char **argv) {
+int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
         storm::cli::printHeader("Storm-GSPN", argc, argv);
         initializeSettings();
-        
+
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
         if (!optionsCorrect) {
             return -1;
@@ -75,12 +73,12 @@ int main(const int argc, const char **argv) {
             // If no gspn file is given, nothing needs to be done.
             return 0;
         }
-        
+
         std::string constantDefinitionString = "";
         if (gspnSettings.isConstantsSet()) {
             constantDefinitionString = gspnSettings.getConstantDefinitionString();
         }
-        
+
         auto parser = storm::parser::GspnParser();
         auto gspn = parser.parse(gspnSettings.getGspnFilename(), constantDefinitionString);
 
@@ -90,14 +88,14 @@ int main(const int argc, const char **argv) {
         }
         boost::optional<std::set<std::string>> propertyFilter;
         storm::parser::FormulaParser formulaParser(gspn->getExpressionManager());
-        std::vector<storm::jani::Property> properties  = storm::api::parseProperties(formulaParser, formulaString, propertyFilter);
+        std::vector<storm::jani::Property> properties = storm::api::parseProperties(formulaParser, formulaString, propertyFilter);
         properties = storm::api::substituteConstantsInProperties(properties, gspn->getConstantsSubstitution());
-        
+
         if (!gspn->isValid()) {
             STORM_LOG_ERROR("The gspn is not valid.");
         }
-        
-        if(gspnSettings.isCapacitiesFileSet()) {
+
+        if (gspnSettings.isCapacitiesFileSet()) {
             auto capacities = storm::api::parseCapacitiesList(gspnSettings.getCapacitiesFilename(), *gspn);
             gspn->setCapacities(capacities);
         } else if (gspnSettings.isCapacitySet()) {
@@ -110,14 +108,14 @@ int main(const int argc, const char **argv) {
         }
 
         storm::api::handleGSPNExportSettings(*gspn, [&](storm::builder::JaniGSPNBuilder const&) { return properties; });
-        
+
         delete gspn;
         return 0;
-        
-//        // construct ma
-//        auto builder = storm::builder::ExplicitGspnModelBuilder<>();
-//        auto ma = builder.translateGspn(gspn, formula);
-//
+
+        //        // construct ma
+        //        auto builder = storm::builder::ExplicitGspnModelBuilder<>();
+        //        auto ma = builder.translateGspn(gspn, formula);
+        //
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();
         return 0;

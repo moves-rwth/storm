@@ -1,5 +1,5 @@
-#include "test/storm_gtest.h"
 #include "storm/settings/SettingsManager.h"
+#include "test/storm_gtest.h"
 
 int main(int argc, char **argv) {
     storm::settings::initializeAll("Storm (Functional) Testing Suite", "test");

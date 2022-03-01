@@ -19,7 +19,8 @@ using FormulaVector = DFTModularizer::FormulaVector;
 
 DFTModularizer::DFTModularizer(
     std::shared_ptr<storm::storage::DFT<ValueType>> dft)
-    : dft{std::move(dft)},
+    : dft{dft},
+      workDFT{dft},
       sylvanBddManager{std::make_shared<storm::storage::SylvanBddManager>()} {
     populateDfsCounters();
     populateElementInfos();
@@ -38,9 +39,7 @@ std::vector<ValueType> DFTModularizer::check(FormulaVector const &formulas,
 
     std::vector<ValueType> timepoints(timepointSet.begin(), timepointSet.end());
 
-    auto topLevelElement{
-        std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(
-            workDFT->getTopLevelGate())};
+    auto topLevelElement{workDFT->getTopLevelElement()};
     replaceDynamicModules(topLevelElement, timepoints);
 
     auto const subDFT{getSubDFT(topLevelElement)};
@@ -53,9 +52,7 @@ std::vector<ValueType> DFTModularizer::getProbabilitiesAtTimepoints(
     std::vector<ValueType> const &timepoints, size_t const chunksize) {
     workDFT = dft;
 
-    auto topLevelElement{
-        std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(
-            workDFT->getTopLevelGate())};
+    auto topLevelElement{workDFT->getTopLevelElement()};
     replaceDynamicModules(topLevelElement, timepoints);
 
     auto const subDFT{getSubDFT(topLevelElement)};
@@ -120,9 +117,7 @@ void DFTModularizer::populateDfsCounters() {
     // reset date
     lastDate = 0;
 
-    auto const topLevelElement{
-        std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(
-            dft->getTopLevelGate())};
+    auto const topLevelElement{workDFT->getTopLevelElement()};
     populateDfsCounters(topLevelElement);
 }
 
@@ -149,9 +144,7 @@ void DFTModularizer::populateElementInfos() {
         elementInfos[id] = ElementInfo{};
     }
 
-    auto const topLevelElement{
-        std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(
-            dft->getTopLevelGate())};
+    auto const topLevelElement{workDFT->getTopLevelElement()};
     populateElementInfos(topLevelElement);
 
     // free some space
@@ -211,7 +204,7 @@ void DFTModularizer::replaceDynamicModules(
         } else {
             auto const parent{std::static_pointer_cast<
                 storm::storage::DFTChildren<ValueType> const>(element)};
-            for (auto const child : parent->children()) {
+            for (auto const &child : parent->children()) {
                 replaceDynamicModules(child, timepoints);
             }
         }
@@ -245,7 +238,7 @@ void DFTModularizer::updateWorkDFT(
             builder.addBasicElementSamples(element->name(), activeSamples);
         }
     }
-    builder.setTopLevel(workDFT->getTopLevelGate()->name());
+    builder.setTopLevel(workDFT->getTopLevelElement()->name());
 
     workDFT = std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
 }

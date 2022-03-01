@@ -277,7 +277,7 @@ namespace {
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_Pmin) {
@@ -290,7 +290,7 @@ namespace {
         ValueType expected = this->parseNumber("3/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax) {
@@ -303,7 +303,7 @@ namespace {
         ValueType expected = this->parseNumber("7/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin) {
@@ -316,7 +316,7 @@ namespace {
         ValueType expected = this->parseNumber("3/10");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_Rmax) {
@@ -329,7 +329,7 @@ namespace {
         ValueType expected = this->parseNumber("29/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_Rmin) {
@@ -342,7 +342,7 @@ namespace {
         ValueType expected = this->parseNumber("19/50");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax) {
@@ -355,7 +355,7 @@ namespace {
         ValueType expected = this->parseNumber("29/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin) {
@@ -368,7 +368,7 @@ namespace {
         ValueType expected = this->parseNumber("19/30");
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, maze2_Rmin) {
@@ -382,7 +382,7 @@ namespace {
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
         // Use relative difference of bounds for this one
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, maze2_Rmax) {
@@ -407,7 +407,7 @@ namespace {
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
         // Use relative difference of bounds for this one
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax) {
@@ -432,7 +432,7 @@ namespace {
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
         // Use relative difference of bounds for this one
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     TYPED_TEST(BeliefExplorationTest, refuel_Pmin) {
@@ -446,7 +446,7 @@ namespace {
         EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
         // Use relative difference of bounds for this one
-        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
     
     

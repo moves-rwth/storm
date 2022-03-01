@@ -1,0 +1,14 @@
+dtmc
+
+module main
+
+    s: [0..5];
+
+    [] s=0 -> 1: (s'=1); // Not eliminable -- initial
+    [] s=1 -> 0.5: (s'=1) + 0.5: (s'=2); // Not eliminable -- loop
+    [] s=2 -> 1: (s'=3); // Eliminable
+    [] s=3 -> 1: (s'=4); // Eliminable
+    [] s=4 -> 0.5: (s'=4) + 0.5: (s'=5); // Not eliminable -- part of property
+    [] s=5 -> 1: (s'=5); // Not eliminable -- loop
+
+endmodule

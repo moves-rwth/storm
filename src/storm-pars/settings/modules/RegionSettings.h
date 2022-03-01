@@ -86,6 +86,8 @@ namespace storm {
 				 */
 				double getExtremumValuePrecision() const;
 
+				bool isAbsolutePrecisionSet() const;
+
                 bool isExtremumSuggestionSet() const;
 
                 double getExtremumSuggestion() const;
