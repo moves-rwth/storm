@@ -654,7 +654,7 @@ namespace storm {
                     res = castedPointerRewDtmc->toOrder(region, isOptimistic);
                 }
                 std::shared_ptr<storm::analysis::Order> order = std::get<0>(res);
-                if (order->getNumberOfStates() == 1) {
+                if (order == nullptr || order->getNumberOfStates() == 1) {
                     return nullptr;
                 }
                 if (order != nullptr && std::get<1>(res) != order->getNumberOfStates()) {
