@@ -400,7 +400,7 @@ namespace storm {
                     maxSchedChoices = solver->getSchedulerChoices();
                 }
                 if (isRegionSplitEstimateSupported()) {
-                    computeRegionSplitEstimates(x, solver->getSchedulerChoices(), region, dirForParameters);
+                    computeRegionSplitEstimates(x, solver->getSchedulerChoices(), region, dirForParameters, localMonotonicityResult == nullptr ? nullptr : localMonotonicityResult->getGlobalMonotonicityResult());
                 }
             }
 
@@ -416,7 +416,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<analysis::MonotonicityResult<VariableType>> monRes) {
             std::map<VariableType, double> deltaLower, deltaUpper;
             for (auto const& p : region.getVariables()) {
                 deltaLower.insert(std::make_pair(p, 0.0));
@@ -441,28 +441,32 @@ namespace storm {
                 do {
                     auto const& consideredParameters = checkUpperParameters ? optimalChoiceVal.getUpperParameters() : optimalChoiceVal.getLowerParameters();
                     for (auto const& p : consideredParameters) {
-                        // Find the 'best' choice that assigns the parameter to the other bound
-                        ConstantType bestValue = 0;
-                        bool foundBestValue = false;
-                        for (uint64_t choice = 0; choice < stateResults.size(); ++choice) {
-                            if (choice != optimalChoice) {
-                                auto const& otherBoundParsOfChoice = checkUpperParameters ? choiceValuations[rowOffset + choice].getLowerParameters() : choiceValuations[rowOffset + choice].getUpperParameters();
-                                if (otherBoundParsOfChoice.find(p) != otherBoundParsOfChoice.end()) {
-                                    ConstantType const& choiceValue = stateResults[choice];
-                                    if (!foundBestValue || (storm::solver::minimize(dirForParameters) ? choiceValue < bestValue : choiceValue > bestValue)) {
-                                        foundBestValue = true;
-                                        bestValue = choiceValue;
+                        if (monRes == nullptr || !monRes->isMonotone(p)) {
+                            // Find the 'best' choice that assigns the parameter to the other bound
+                            ConstantType bestValue = 0;
+                            bool foundBestValue = false;
+                            for (uint64_t choice = 0; choice < stateResults.size(); ++choice) {
+                                if (choice != optimalChoice) {
+                                    auto const& otherBoundParsOfChoice = checkUpperParameters ? choiceValuations[rowOffset + choice].getLowerParameters()
+                                                                                              : choiceValuations[rowOffset + choice].getUpperParameters();
+                                    if (otherBoundParsOfChoice.find(p) != otherBoundParsOfChoice.end()) {
+                                        ConstantType const& choiceValue = stateResults[choice];
+                                        if (!foundBestValue ||
+                                            (storm::solver::minimize(dirForParameters) ? choiceValue < bestValue : choiceValue > bestValue)) {
+                                            foundBestValue = true;
+                                            bestValue = choiceValue;
+                                        }
                                     }
                                 }
                             }
-                        }
-                        auto optimal = storm::utility::convertNumber<double>(stateResults[optimalChoice]);
-                        auto diff = optimal - storm::utility::convertNumber<double>(bestValue);
-                        if (foundBestValue) {
-                            if (checkUpperParameters) {
-                                deltaLower[p] += std::abs(diff);
-                            } else {
-                                deltaUpper[p] += std::abs(diff);
+                            auto optimal = storm::utility::convertNumber<double>(stateResults[optimalChoice]);
+                            auto diff = optimal - storm::utility::convertNumber<double>(bestValue);
+                            if (foundBestValue) {
+                                if (checkUpperParameters) {
+                                    deltaLower[p] += std::abs(diff);
+                                } else {
+                                    deltaUpper[p] += std::abs(diff);
+                                }
                             }
                         }
                     }
@@ -664,10 +668,12 @@ namespace storm {
                     for (auto &entry : regionSplitEstimates) {
                         if (entry.second != 0) {
                             if (this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()) {
+                                assert ((!monRes.isMonotone(entry.first)));
                                 sortedOnValues.insert({-entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)), entry.first});
-                            } else {
-                                assert (monResult.find(entry.first) ==monResult.end() || (monResult.find(entry.first)->second != Monotonicity::Incr && monResult.find(entry.first)->second != Monotonicity::Decr && monResult.find(entry.first)->second != Monotonicity::Constant));
+                            } else if (!monRes.isMonotone(entry.first)) {
                                 sortedOnValues.insert({-entry.second * std::pow(storm::utility::convertNumber<double>(region.getDifference(entry.first)), 2), entry.first});
+                            } else {
+                                assert (false);
                             }
                         }
                     }

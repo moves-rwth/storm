@@ -509,8 +509,8 @@ namespace storm {
             if (order->getDoneBuilding()) {
                 return false;
             }
-            if (order->getNumberOfSufficientStates() / order->getNumberOfStates()  < 0.5) {
-                // Less than 50% of the states is added
+            if (order->getNumberOfSufficientStates() / order->getNumberOfStates()  < 0.25) {
+                // Less than 25% of the states is added
                 return continueExtending.find(order) != continueExtending.end() && continueExtending.at(order);
             }
             return false;

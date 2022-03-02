@@ -282,23 +282,6 @@ namespace storm {
         void ParameterRegion<ParametricType>::split(Valuation const& splittingPoint, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
                                                     const std::set<VariableType> &consideredVariables, const std::set<VariableType> &possiblyMonotoneVariables) const {
             return split(splittingPoint, regionVector, consideredVariables);
-
-//            std::vector<storm::storage::ParameterRegion<ParametricType>> regionVectorTemp;
-//            this->split(splittingPoint, regionVectorTemp, consideredVariables);
-//            std::set<VariableType> monVars;
-//            for (auto& var : consideredVariables) {
-//                if (possiblyMonotoneVariables.find(var) != possiblyMonotoneVariables.end()) {
-//                    monVars.insert(var);
-//                }
-//            }
-//            // Split again in the monotone parameters
-//            if (monVars.size() > 0) {
-//                for (storm::storage::ParameterRegion<ParametricType>& region : regionVectorTemp) {
-//                    region.split(region.getCenterPoint(consideredVariables), regionVector, monVars);
-//                }
-//            } else {
-//                regionVector = std::move(regionVectorTemp);
-//            }
         }
 
         template<typename ParametricType>
