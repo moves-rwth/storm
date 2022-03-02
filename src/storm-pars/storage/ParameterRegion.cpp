@@ -233,6 +233,7 @@ namespace storm {
                                                     const std::set<VariableType> &consideredVariables) const {
 
             if (consideredVariables.size() == 1) {
+                // hack to make things faster
                 auto subRegion1 = ParameterRegion<ParametricType>(*this);
                 auto subRegion2 = ParameterRegion<ParametricType>(*this);
                 CoefficientType splittingValue = splittingPoint.find(*consideredVariables.begin())->second;

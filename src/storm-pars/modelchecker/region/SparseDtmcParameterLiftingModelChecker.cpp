@@ -656,18 +656,21 @@ namespace storm {
             assert (regionVector.size() == 0);
 
             std::multimap<double, VariableType> sortedOnValues;
+            auto monResult = monRes.getMonotonicityResult();
             std::set<VariableType> consideredVariables;
             if (splitForExtremum) {
                 if (regionSplitEstimationsEnabled && useRegionSplitEstimates) {
                     STORM_LOG_INFO("Splitting based on region split estimates");
                     for (auto &entry : regionSplitEstimates) {
-                        if (this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()) {
-                            sortedOnValues.insert({-(entry.second) * storm::utility::convertNumber<double>(region.getDifference(entry.first)), entry.first});
-                        } else {
-                            sortedOnValues.insert({-(entry.second ), entry.first});
+                        if (entry.second != 0) {
+                            if (this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()) {
+                                sortedOnValues.insert({-entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)), entry.first});
+                            } else {
+                                assert (monResult.find(entry.first) ==monResult.end() || (monResult.find(entry.first)->second != Monotonicity::Incr && monResult.find(entry.first)->second != Monotonicity::Decr && monResult.find(entry.first)->second != Monotonicity::Constant));
+                                sortedOnValues.insert({-entry.second * std::pow(storm::utility::convertNumber<double>(region.getDifference(entry.first)), 2), entry.first});
+                            }
                         }
                     }
-
                     for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
                         consideredVariables.insert(itr->second);
                     }
