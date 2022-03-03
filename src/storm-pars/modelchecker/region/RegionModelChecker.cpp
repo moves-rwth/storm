@@ -42,7 +42,7 @@ namespace storm {
             }
 
             template <typename ParametricType>
-            ParametricType RegionModelChecker<ParametricType>::getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+            ParametricType RegionModelChecker<ParametricType>::getBoundAtInitState([[maybe_unused]] Environment const& env, [[maybe_unused]] storm::storage::ParameterRegion<ParametricType> const& region, [[maybe_unused]] storm::solver::OptimizationDirection const& dirForParameters) {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The selected region model checker does not support this functionality.");
                 return storm::utility::zero<ParametricType>();
             }
@@ -326,18 +326,18 @@ namespace storm {
 
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult){
+        void RegionModelChecker<ParametricType>::extendLocalMonotonicityResult([[maybe_unused]] storm::storage::ParameterRegion<ParametricType> const& region, [[maybe_unused]] std::shared_ptr<storm::analysis::Order> order, [[maybe_unused]] std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult){
             STORM_LOG_WARN("Initializing local Monotonicity Results not implemented for RegionModelChecker.");
         }
 
         template <typename ParametricType>
-        std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision) {
+        std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue([[maybe_unused]] Environment const& env, [[maybe_unused]] storm::storage::ParameterRegion<ParametricType> const& region, [[maybe_unused]] storm::solver::OptimizationDirection const& dir, [[maybe_unused]] ParametricType const& precision, [[maybe_unused]] bool absolutePrecision) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing extremal values is not supported for this region model checker.");
             return std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>();
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, bool absolutePrecision, ParametricType const& valueToCheck) {
+        bool RegionModelChecker<ParametricType>::checkExtremalValue([[maybe_unused]] Environment const& env, [[maybe_unused]] storm::storage::ParameterRegion<ParametricType> const& region, [[maybe_unused]] storm::solver::OptimizationDirection const& dir, [[maybe_unused]] ParametricType const& precision, [[maybe_unused]] bool absolutePrecision, [[maybe_unused]] ParametricType const& valueToCheck) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Checking extremal values is not supported for this region model checker.");
             return false;
         }
@@ -357,14 +357,14 @@ namespace storm {
         template <typename ParametricType>
         std::shared_ptr<storm::analysis::Order>
         RegionModelChecker<ParametricType>::extendOrder(std::shared_ptr<storm::analysis::Order> order,
-                                                        storm::storage::ParameterRegion<ParametricType> region) {
+                                                        [[maybe_unused]] storm::storage::ParameterRegion<ParametricType> region) {
             STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             // Does nothing
             return order;
         }
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
+        void RegionModelChecker<ParametricType>::setConstantEntries([[maybe_unused]] std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
             STORM_LOG_WARN("Setting constant entries fo local monotonicity result not implemented");
             // Does nothing
         }
@@ -405,8 +405,8 @@ namespace storm {
         void
         RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> &currentRegion,
                                                        std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
-                                                       storm::analysis::MonotonicityResult<VariableType> &monRes,
-                                                       bool splitForExtremum) const {
+                                                       [[maybe_unused]] storm::analysis::MonotonicityResult<VariableType> &monRes,
+                                                       [[maybe_unused]] bool splitForExtremum) const {
             STORM_LOG_WARN("Smart splitting for this model checker not implemented");
             currentRegion.split(currentRegion.getCenterPoint(), regionVector);
         }

@@ -325,7 +325,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
+        void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples([[maybe_unused]]std::shared_ptr<models::sparse::Mdp<ValueType>> model, [[maybe_unused]] uint_fast64_t numberOfSamples) {
            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps");
         }
 

@@ -68,7 +68,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
+        AssumptionChecker<ValueType, ConstantType>::AssumptionChecker([[maybe_unused]] std::shared_ptr<logic::Formula const> formula, [[maybe_unused]] std::shared_ptr<models::sparse::Mdp<ValueType>> model, [[maybe_unused]] uint_fast64_t numberOfSamples) {
             STORM_LOG_THROW(false, exceptions::NotSupportedException, "Assumption checking for mdps not yet implemented");
         }
 

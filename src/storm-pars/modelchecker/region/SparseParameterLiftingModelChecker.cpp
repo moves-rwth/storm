@@ -483,12 +483,12 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(const CheckTask <logic::BoundedUntilFormula, ConstantType> &checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula([[maybe_unused]] const CheckTask <logic::BoundedUntilFormula, ConstantType> &checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(Environment const& env, CheckTask<logic::UntilFormula, ConstantType> const& checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula([[maybe_unused]] Environment const& env, [[maybe_unused]] CheckTask<logic::UntilFormula, ConstantType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
@@ -500,12 +500,12 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(Environment const& env, CheckTask<logic::EventuallyFormula, ConstantType> const& checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula([[maybe_unused]] Environment const& env, [[maybe_unused]] CheckTask<logic::EventuallyFormula, ConstantType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(const CheckTask <logic::CumulativeRewardFormula, ConstantType> &checkTask) {
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula([[maybe_unused]] const CheckTask <logic::CumulativeRewardFormula, ConstantType> &checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
