@@ -109,7 +109,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void RegionCheckResult<ValueType>::filter(QualitativeCheckResult const& filter) {
+        void RegionCheckResult<ValueType>::filter([[maybe_unused]] QualitativeCheckResult const& filter) {
             // Filtering has no effect as we only store the result w.r.t. a single state anyway.
             // Hence, this is intentionally left empty.
         }
