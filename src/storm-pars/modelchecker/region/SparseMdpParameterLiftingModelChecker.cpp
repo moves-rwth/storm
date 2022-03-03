@@ -498,6 +498,33 @@ namespace storm {
             }
         }
 
+        template <typename SparseModelType, typename ConstantType>
+        void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart(
+            storm::storage::ParameterRegion<ValueType> &region,
+            std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
+            storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum, bool minimize) const {
+            assert (regionVector.size() == 0);
+
+            std::multimap<double, VariableType> sortedOnValues;
+            auto monResult = monRes.getMonotonicityResult();
+            std::set<VariableType> consideredVariables;
+            STORM_LOG_INFO("Splitting based on region split estimates");
+            for (auto& var : region.getVariables()) {
+                if (!monRes.isMonotone(var)) {
+                    if (this->possibleMonotoneParameters.find(var) != this->possibleMonotoneParameters.end()) {
+                        assert ((!monRes.isMonotone(var)));
+                        sortedOnValues.insert({-storm::utility::convertNumber<double>(region.getDifference(var)), var});
+                    } else {
+                        sortedOnValues.insert({std::pow(storm::utility::convertNumber<double>(region.getDifference(var)), 2), var});
+                    }
+                }
+            }
+            for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                consideredVariables.insert(itr->second);
+            }
+            assert (consideredVariables.size() > 0);
+            region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);
+        }
 
         template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
         template class SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, storm::RationalNumber>;
