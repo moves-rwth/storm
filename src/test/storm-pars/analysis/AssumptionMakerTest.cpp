@@ -99,7 +99,7 @@ TEST(AssumptionMakerTest, Simple1) {
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
-    EXPECT_EQ(0ul, result.size());
+    EXPECT_EQ(3ul, result.size());
     assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0ul, result.size());

@@ -89,12 +89,12 @@
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("5").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("7").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, dummyOrder, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("7").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("5").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Equal));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, dummyOrder, region));
     }
 
     TEST(AssumptionCheckerReachabilityDtmcTest, Simple1) {
@@ -120,7 +120,7 @@
 
         // Create the region
         auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
-        auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.99999", vars);
+        auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);
 
         auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(dtmc->getTransitionMatrix());
 
@@ -143,18 +143,18 @@
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Equal));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         region = storm::api::parseRegion<storm::RationalFunction>("0.51 <= p <= 0.99", vars);
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
@@ -167,12 +167,12 @@
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Equal));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
     }
 
     TEST(AssumptionCheckerReachabilityDtmcTest, Casestudy1) {
@@ -228,12 +228,12 @@
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Equal));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         checker.initializeCheckingOnSamples(formulas[0], dtmc, region, 3);
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
@@ -246,12 +246,12 @@
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Equal));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
     }
 
     TEST(AssumptionCheckerReachabilityDtmcTest, Casestudy2) {
@@ -308,12 +308,12 @@
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Equal));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
     }
 
     TEST(AssumptionCheckerReachabilityDtmcTest, Casestudy3) {
@@ -368,12 +368,12 @@
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Equal));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         checker.initializeCheckingOnSamples(formulas[0], dtmc, region, 3);
 
@@ -387,10 +387,10 @@
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             storm::expressions::BinaryRelationExpression::RelationType::Greater));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
 
         assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(
             *expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("1").getExpression().getBaseExpressionPointer(),
             expressionManager->getVariable("2").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Equal));
-        EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order, region));
+        EXPECT_NE(storm::analysis::AssumptionStatus::VALID, checker.validateAssumption(assumption, order, region));
     }

@@ -583,7 +583,6 @@ namespace storm {
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
             std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order,
             storage::ParameterRegion<ValueType> region) const {
-            std::cout << "Validating: " << *assumption << std::endl;
             auto var1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
             auto var2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
             std::vector<ConstantType> vals;
