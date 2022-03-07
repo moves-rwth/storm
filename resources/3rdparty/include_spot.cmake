@@ -24,7 +24,7 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
 
     # download and install shipped Spot
     ExternalProject_Add(spot
-        URL http://www.lrde.epita.fr/dload/spot/spot-2.9.6.tar.gz # When updating, also change version output below
+        URL http://www.lrde.epita.fr/dload/spot/spot-2.10.4.tar.gz # When updating, also change version output below
         DOWNLOAD_NO_PROGRESS TRUE
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
@@ -44,7 +44,7 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
     set(STORM_HAVE_SPOT ON)
     set(STORM_SHIPPED_SPOT ON)
 
-    message(STATUS "Storm - Using shipped version of Spot 2.9.6 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
+    message(STATUS "Storm - Using shipped version of Spot 2.10.4 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
 
 endif()
 
