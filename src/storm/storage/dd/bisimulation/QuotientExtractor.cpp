@@ -29,7 +29,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
-#include <sparsepp/spp.h>
+#include <parallel_hashmap/phmap.h>
 
 namespace storm {
 namespace dd {
@@ -153,7 +153,7 @@ class InternalRepresentativeComputer<storm::dd::DdType::CUDD> : public InternalR
     }
 
     ::DdManager* ddman;
-    spp::sparse_hash_map<DdNode const*, bool> visitedNodes;
+    phmap::flat_hash_map<DdNode const*, bool> visitedNodes;
 };
 
 template<>
@@ -234,7 +234,7 @@ class InternalRepresentativeComputer<storm::dd::DdType::Sylvan> : public Interna
         }
     }
 
-    spp::sparse_hash_map<BDD, bool> visitedNodes;
+    phmap::flat_hash_map<BDD, bool> visitedNodes;
 };
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
@@ -672,7 +672,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::CUDD, ValueType> : publ
     ::DdManager* ddman;
 
     // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
-    spp::sparse_hash_map<DdNode const*, uint64_t> blockToOffset;
+    phmap::flat_hash_map<DdNode const*, uint64_t> blockToOffset;
 };
 
 template<typename ValueType, typename ExportValueType>
@@ -895,7 +895,7 @@ class InternalSparseQuotientExtractor<storm::dd::DdType::Sylvan, ValueType, Expo
     }
 
     // A mapping from blocks (stored in terms of a DD node) to the offset of the corresponding block.
-    spp::sparse_hash_map<BDD, uint64_t> blockToOffset;
+    phmap::flat_hash_map<BDD, uint64_t> blockToOffset;
 };
 
 template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
