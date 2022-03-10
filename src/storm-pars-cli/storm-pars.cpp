@@ -634,7 +634,7 @@ namespace storm {
 
                 derivative::SparseDerivativeInstantiationModelChecker<ValueType, storm::RationalNumber> modelChecker(*dtmc);
 
-                // TODO Make Initial State flexible
+                // TODO @Jip Make Initial State flexible
                 uint_fast64_t initialState;           
                 const storm::storage::BitVector initialVector = dtmc->getStates("init");
                 for (uint_fast64_t x : initialVector) {
@@ -911,6 +911,7 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyPropertiesWithSymbolicEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
             if (samples.empty()) {
+                // TODO @Jip the result parameter in the post-processing callback produces an unused parameter warning during compilation
                 verifyProperties<ValueType>(input.properties,
                                             [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                                                 std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithDdEngine<DdType, ValueType>(model, storm::api::createTask<ValueType>(formula, true));
