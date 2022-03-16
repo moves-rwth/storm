@@ -65,21 +65,21 @@ namespace storm {
                 return true;
             }
 
-            void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
+            void extendSpareModule([[maybe_unused]] std::set<size_t>& elementsInSpareModule) const override {
                 // Do nothing
             }
 
-            bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+            bool checkDontCareAnymore([[maybe_unused]] storm::storage::DFTState<ValueType>& state, [[maybe_unused]] DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 return false;
             }
 
 
         protected:
-            void fail(DFTState <ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+            void fail(DFTState <ValueType>& state, [[maybe_unused]] DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 state.markAsInvalid();
             }
 
-            void failsafe(DFTState <ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+            void failsafe([[maybe_unused]] DFTState <ValueType>& state, [[maybe_unused]] DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 // Do nothing
             }
         };

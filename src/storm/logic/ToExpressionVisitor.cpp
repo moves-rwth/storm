@@ -38,7 +38,7 @@ boost::any ToExpressionVisitor::visit(BinaryBooleanStateFormula const& f, boost:
     return boost::any();
 }
 
-boost::any ToExpressionVisitor::visit(BinaryBooleanPathFormula const& f, boost::any const& data) const {
+boost::any ToExpressionVisitor::visit([[maybe_unused]] BinaryBooleanPathFormula const& f, [[maybe_unused]] boost::any const& data) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }
 
@@ -126,7 +126,7 @@ boost::any ToExpressionVisitor::visit(UnaryBooleanStateFormula const& f, boost::
     return boost::any();
 }
 
-boost::any ToExpressionVisitor::visit(UnaryBooleanPathFormula const& f, boost::any const& data) const {
+boost::any ToExpressionVisitor::visit([[maybe_unused]] UnaryBooleanPathFormula const& f, [[maybe_unused]] boost::any const& data) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
 }
 

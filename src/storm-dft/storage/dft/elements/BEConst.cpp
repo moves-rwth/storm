@@ -4,7 +4,7 @@ namespace storm {
     namespace storage {
 
         template <typename ValueType>
-        ValueType BEConst<ValueType>::getUnreliability(ValueType time) const {
+        ValueType BEConst<ValueType>::getUnreliability([[maybe_unused]] ValueType time) const {
             return failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
         }
 

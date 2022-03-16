@@ -176,7 +176,7 @@ namespace storm {
             }
 
             template<>
-            SimulationResult DFTTraceSimulator<storm::RationalFunction>::simulateCompleteTrace(double timebound) {
+            SimulationResult DFTTraceSimulator<storm::RationalFunction>::simulateCompleteTrace([[maybe_unused]]double timebound) {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Simulation not support for parametric DFTs.");
             } 
 

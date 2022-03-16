@@ -56,7 +56,7 @@ boost::any RewardModelNameSubstitutionVisitor::visit(BoundedUntilFormula const& 
     }
 }
 
-boost::any RewardModelNameSubstitutionVisitor::visit(CumulativeRewardFormula const& f, boost::any const& data) const {
+boost::any RewardModelNameSubstitutionVisitor::visit(CumulativeRewardFormula const& f, [[maybe_unused]] boost::any const& data) const {
     std::vector<TimeBound> bounds;
     std::vector<TimeBoundReference> timeBoundReferences;
     for (uint64_t i = 0; i < f.getDimension(); ++i) {

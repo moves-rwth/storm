@@ -800,7 +800,7 @@ void printCounterexample(std::shared_ptr<storm::counterexamples::Counterexample>
 }
 
 template<typename ValueType>
-void generateCounterexamples(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
+void generateCounterexamples([[maybe_unused]] std::shared_ptr<storm::models::ModelBase> const& model, [[maybe_unused]] SymbolicInput const& input) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Counterexample generation is not supported for this data-type.");
 }
 

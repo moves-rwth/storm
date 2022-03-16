@@ -174,8 +174,8 @@ namespace storm {
                 }
             }
 
-            uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<RationalFunction> const &dft,
-                                                              bool useSMT, uint_fast64_t timeout) {
+            uint64_t FailureBoundFinder::getLeastFailureBound([[maybe_unused]] storm::storage::DFT<RationalFunction> const &dft,
+                                                              [[maybe_unused]] bool useSMT, uint_fast64_t timeout) {
                 if (useSMT) {
                     STORM_LOG_WARN("SMT encoding does not support rational functions");
                 }
@@ -224,7 +224,7 @@ namespace storm {
 
             uint64_t
             FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<RationalFunction> const &dft, bool useSMT,
-                                                     uint_fast64_t timeout) {
+                                                     [[maybe_unused]] uint_fast64_t timeout) {
                 if (useSMT) {
                     STORM_LOG_WARN("SMT encoding does not support rational functions");
                 }

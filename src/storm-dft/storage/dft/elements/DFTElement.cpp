@@ -8,7 +8,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+        bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, [[maybe_unused]] DFTStateSpaceGenerationQueues<ValueType>& queues) const {
             if (!this->mAllowDC) {
                 return false;
             }
@@ -74,7 +74,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<size_t> DFTElement<ValueType>::independentSubDft(bool blockParents, bool sparesAsLeaves) const {
+        std::vector<size_t> DFTElement<ValueType>::independentSubDft([[maybe_unused]] bool blockParents, [[maybe_unused]] bool sparesAsLeaves) const {
             std::vector<size_t> res;
             res.push_back(this->id());
             return res;

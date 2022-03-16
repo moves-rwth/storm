@@ -126,7 +126,7 @@ boost::any RewardAccumulationEliminationVisitor::visit(EventuallyFormula const& 
     return std::static_pointer_cast<Formula>(std::make_shared<EventuallyFormula>(subformula, f.getContext()));
 }
 
-boost::any RewardAccumulationEliminationVisitor::visit(RewardOperatorFormula const& f, boost::any const& data) const {
+boost::any RewardAccumulationEliminationVisitor::visit(RewardOperatorFormula const& f, [[maybe_unused]] boost::any const& data) const {
     std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, f.getOptionalRewardModelName()));
     return std::static_pointer_cast<Formula>(std::make_shared<RewardOperatorFormula>(subformula, f.getOptionalRewardModelName(), f.getOperatorInformation()));
 }

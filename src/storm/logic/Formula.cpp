@@ -549,7 +549,7 @@ void Formula::gatherReferencedRewardModels(std::set<std::string>&) const {
     return;
 }
 
-void Formula::gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const {
+void Formula::gatherUsedVariables([[maybe_unused]] std::set<storm::expressions::Variable>& usedVariables) const {
     return;
 }
 

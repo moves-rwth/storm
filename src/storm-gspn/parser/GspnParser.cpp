@@ -12,7 +12,7 @@
 namespace storm {
 namespace parser {
 
-storm::gspn::GSPN* GspnParser::parse(std::string const& filename, std::string const& constantDefinitions) {
+storm::gspn::GSPN* GspnParser::parse(std::string const& filename, [[maybe_unused]] std::string const& constantDefinitions) {
 #ifdef STORM_HAVE_XERCES
     // initialize xercesc
     try {

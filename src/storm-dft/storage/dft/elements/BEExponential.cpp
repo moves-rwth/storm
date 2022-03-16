@@ -12,7 +12,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        ValueType BEExponential<ValueType>::getUnreliability(ValueType time) const {
+        ValueType BEExponential<ValueType>::getUnreliability([[maybe_unused]] ValueType time) const {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing cumulative failure probability not supported for this data type.");
         }
 

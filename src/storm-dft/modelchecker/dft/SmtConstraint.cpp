@@ -269,13 +269,13 @@ namespace storm {
             virtual ~IsTrue() {
             }
 
-            std::string toSmtlib2(std::vector<std::string> const &varNames) const override {
+            std::string toSmtlib2([[maybe_unused]] std::vector<std::string> const &varNames) const override {
                 std::stringstream sstr;
                 sstr << (value ? "true" : "false");
                 return sstr.str();
             }
 
-            storm::expressions::Expression toExpression(std::vector<std::string> const &varNames,
+            storm::expressions::Expression toExpression([[maybe_unused]] std::vector<std::string> const &varNames,
                                                         std::shared_ptr<storm::expressions::ExpressionManager> manager) const override {
                 return manager->boolean(value);
             }

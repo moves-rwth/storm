@@ -1378,7 +1378,7 @@ std::shared_ptr<storm::storage::sparse::ChoiceOrigins> JaniNextStateGenerator<Va
 }
 
 template<typename ValueType, typename StateType>
-storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
+storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels([[maybe_unused]] CompressedState const& state) const {
     STORM_LOG_WARN("There are no observation labels in JANI currenty");
     return storm::storage::BitVector(0);
 }

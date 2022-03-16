@@ -125,7 +125,7 @@ namespace storm {
                 return this->probability() == otherDEP.probability();
             }
 
-            void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
+            void extendSpareModule([[maybe_unused]] std::set<size_t>& elementsInSpareModule) const override {
                 // Do nothing
             }
 

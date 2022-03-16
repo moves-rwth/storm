@@ -46,10 +46,10 @@ namespace storm {
                 }
             }
 
-            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+            void checkFailsafe([[maybe_unused]] storm::storage::DFTState<ValueType>& state, [[maybe_unused]] DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
             }
 
-            bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+            bool checkDontCareAnymore([[maybe_unused]] storm::storage::DFTState<ValueType>& state, [[maybe_unused]] DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 // Actually, it doesnt matter what we return here..
                 return false;
             }

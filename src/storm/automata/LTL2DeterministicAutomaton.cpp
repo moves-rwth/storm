@@ -20,7 +20,7 @@
 namespace storm {
 namespace automata {
 
-std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot(storm::logic::Formula const& f, bool dnf) {
+std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2daSpot([[maybe_unused]] storm::logic::Formula const& f, [[maybe_unused]] bool dnf) {
 #ifdef STORM_HAVE_SPOT
     std::string prefixLtl = f.toPrefixString();
 

@@ -57,7 +57,7 @@ namespace storm {
 
             template<>
             std::vector<std::pair<uint64_t, uint64_t>> FDEPConflictFinder<storm::RationalFunction>::getDependencyConflicts(storm::storage::DFT<storm::RationalFunction> const& dft,
-                                                                                                                           bool useSMT, uint_fast64_t timeout) {
+                                                                                                                           bool useSMT, [[maybe_unused]] uint_fast64_t timeout) {
                 if (useSMT) {
                     STORM_LOG_WARN("SMT encoding for rational functions is not supported");
                 }

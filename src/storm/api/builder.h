@@ -72,13 +72,13 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool, bool) {
+    [[maybe_unused]] storm::storage::SymbolicModelDescription const& model, [[maybe_unused]] std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool, bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
 }
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(
-    storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool, bool) {
+    [[maybe_unused]] storm::storage::SymbolicModelDescription const& model, [[maybe_unused]] std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool, bool) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
 }
 
@@ -158,10 +158,10 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> buildS
 }
 
 template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile,
-                                                                            boost::optional<std::string> const& stateRewardsFile = boost::none,
-                                                                            boost::optional<std::string> const& transitionRewardsFile = boost::none,
-                                                                            boost::optional<std::string> const& choiceLabelingFile = boost::none) {
+std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel([[maybe_unused]] std::string const& transitionsFile, [[maybe_unused]] std::string const& labelingFile,
+                                                                            [[maybe_unused]] boost::optional<std::string> const& stateRewardsFile = boost::none,
+                                                                            [[maybe_unused]] boost::optional<std::string> const& transitionRewardsFile = boost::none,
+                                                                            [[maybe_unused]] boost::optional<std::string> const& choiceLabelingFile = boost::none) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exact or parametric models with explicit input are not supported.");
 }
 

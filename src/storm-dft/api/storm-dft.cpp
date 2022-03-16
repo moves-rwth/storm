@@ -177,21 +177,21 @@ namespace storm {
 
         template<>
         void analyzeDFTBdd(
-                std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const &dft,
-                bool const exportToDot,
-                std::string const &filename,
-                bool const calculateMttf,
-                double const mttfPrecision,
-                double const mttfStepsize,
-                std::string const mttfAlgorithmName,
-                bool const calculateMCS,
-                bool const calculateProbability,
-                bool const useModularisation,
-                std::string const importanceMeasureName,
-                std::vector<double> const &timepoints,
-                std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                std::vector<std::string> const& additionalRelevantEventNames,
-                size_t const chunksize) {
+                [[maybe_unused]] std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const &dft,
+                [[maybe_unused]] bool const exportToDot,
+                [[maybe_unused]] std::string const &filename,
+                [[maybe_unused]] bool const calculateMttf,
+                [[maybe_unused]] double const mttfPrecision,
+                [[maybe_unused]] double const mttfStepsize,
+                [[maybe_unused]] std::string const mttfAlgorithmName,
+                [[maybe_unused]] bool const calculateMCS,
+                [[maybe_unused]] bool const calculateProbability,
+                [[maybe_unused]] bool const useModularisation,
+                [[maybe_unused]] std::string const importanceMeasureName,
+                [[maybe_unused]] std::vector<double> const &timepoints,
+                [[maybe_unused]] std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                [[maybe_unused]] std::vector<std::string> const& additionalRelevantEventNames,
+                [[maybe_unused]] size_t const chunksize) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");
         }
 
@@ -201,7 +201,7 @@ namespace storm {
         }
 
         template<>
-        void exportDFTToJsonFile(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+        void exportDFTToJsonFile([[maybe_unused]] storm::storage::DFT<storm::RationalFunction> const& dft, [[maybe_unused]] std::string const& file) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
         }
 
@@ -213,7 +213,7 @@ namespace storm {
         }
 
         template<>
-        std::string exportDFTToJsonString(storm::storage::DFT<storm::RationalFunction> const& dft) {
+        std::string exportDFTToJsonString([[maybe_unused]] storm::storage::DFT<storm::RationalFunction> const& dft) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
         }
 
@@ -225,7 +225,7 @@ namespace storm {
         }
 
         template<>
-        void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const &dft, std::string const &file) {
+        void exportDFTToSMT([[maybe_unused]] storm::storage::DFT<storm::RationalFunction> const &dft, [[maybe_unused]] std::string const &file) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to SMT does not support this data type.");
         }
 
@@ -244,7 +244,7 @@ namespace storm {
 
         template<>
         void
-        analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const &dft, bool printOutput) {
+        analyzeDFTSMT([[maybe_unused]] storm::storage::DFT<storm::RationalFunction> const &dft, [[maybe_unused]] bool printOutput) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Analysis by SMT not supported for this data type.");
         }
@@ -297,7 +297,7 @@ namespace storm {
         }
 
         template<>
-        std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<storm::RationalFunction> const& dft) {
+        std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN([[maybe_unused]] storm::storage::DFT<storm::RationalFunction> const& dft) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation to GSPN not supported for this data type.");
         }
 

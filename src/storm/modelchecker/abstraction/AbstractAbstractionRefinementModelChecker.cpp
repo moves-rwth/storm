@@ -89,7 +89,7 @@ std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractAbstractionRefinementModelChecker<ModelType>::computeReachabilityRewards(
-    Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+    Environment const& env, [[maybe_unused]] storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
     this->setCheckTask(checkTask.template substituteFormula<storm::logic::Formula>(checkTask.getFormula()));
     return performAbstractionRefinement(env);
 }
