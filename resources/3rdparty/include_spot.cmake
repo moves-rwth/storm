@@ -11,12 +11,8 @@ if(STORM_USE_SPOT_SYSTEM)
     endif()
 
     if (SPOT_FOUND)
-        if("${SPOT_VERSION}" VERSION_LESS "2.10.0")
-        	message(STATUS "Storm - Using system version of Spot ${SPOT_VERSION} (include: ${SPOT_INCLUDE_DIR}, library: ${SPOT_LIBRARIES}).")
-        	set(STORM_HAVE_SPOT ON)
-		else()
-			message( WARNING "Storm - System version of Spot ${SPOT_VERSION} is incompatible with this version of Storm. To use spot, consider updating your Storm version or setting cmake options STORM_USE_SPOT_SYSTEM=OFF and STORM_USE_SPOT_SHIPPED=ON." )
-		endif()
+        message(STATUS "Storm - Using system version of Spot ${SPOT_VERSION} (include: ${SPOT_INCLUDE_DIR}, library: ${SPOT_LIBRARIES}).")
+        set(STORM_HAVE_SPOT ON)
     elseif(NOT STORM_USE_SPOT_SHIPPED)
         message (WARNING "Storm - Could not find Spot. Model checking of LTL formulas (beyond PCTL) will not be supported. You may want to set cmake option STORM_USE_SPOT_SHIPPED to install Spot automatically. If you already installed Spot, consider setting cmake option SPOT_ROOT. Unset STORM_USE_SPOT_SYSTEM to silence this warning.")
     endif()
@@ -28,7 +24,7 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
 
     # download and install shipped Spot
     ExternalProject_Add(spot
-        URL http://www.lrde.epita.fr/dload/spot/spot-2.9.6.tar.gz # When updating, also change version output below
+        URL http://www.lrde.epita.fr/dload/spot/spot-2.10.4.tar.gz # When updating, also change version output below
         DOWNLOAD_NO_PROGRESS TRUE
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
@@ -48,7 +44,7 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
     set(STORM_HAVE_SPOT ON)
     set(STORM_SHIPPED_SPOT ON)
 
-    message(STATUS "Storm - Using shipped version of Spot 2.9.6 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
+    message(STATUS "Storm - Using shipped version of Spot 2.10.4 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
 
 endif()
 
