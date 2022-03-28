@@ -8,7 +8,7 @@
 
 #include "storm/storage/dd/sylvan/utility.h"
 
-#include <sparsepp/spp.h>
+#include <parallel_hashmap/phmap.h>
 
 namespace storm {
 namespace dd {
