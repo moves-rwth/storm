@@ -593,17 +593,17 @@ void Model<ValueType, RewardModelType>::writeJsonToStream(std::ostream& outStrea
 }
 
 template<>
-void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::writeJsonToStream(std::ostream& outStream) const {
+void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::writeJsonToStream([[maybe_unused]] std::ostream& outStream) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Json export not implemented for this model type.");
 }
 
 template<>
-void Model<float>::writeJsonToStream(std::ostream& outStream) const {
+void Model<float>::writeJsonToStream([[maybe_unused]] std::ostream& outStream) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Json export not implemented for this model type.");
 }
 
 template<typename ValueType, typename RewardModelType>
-std::string Model<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
+std::string Model<ValueType, RewardModelType>::additionalDotStateInfo([[maybe_unused]] uint64_t state) const {
     return "";
 }
 

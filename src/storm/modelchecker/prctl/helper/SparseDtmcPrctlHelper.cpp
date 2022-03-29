@@ -46,8 +46,8 @@ namespace helper {
 
 template<>
 std::map<storm::storage::sparse::state_type, storm::RationalFunction> SparseDtmcPrctlHelper<storm::RationalFunction>::computeRewardBoundedValues(
-    Environment const& env, storm::models::sparse::Dtmc<storm::RationalFunction> const& model,
-    std::shared_ptr<storm::logic::OperatorFormula const> rewardBoundedFormula) {
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::models::sparse::Dtmc<storm::RationalFunction> const& model,
+    [[maybe_unused]] std::shared_ptr<storm::logic::OperatorFormula const> rewardBoundedFormula) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The specified property is not supported by this value type.");
     return std::map<storm::storage::sparse::state_type, storm::RationalFunction>();
 }
@@ -428,9 +428,9 @@ std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMatrix<Val
 }
 
 template<>
-std::vector<storm::RationalFunction> computeUpperRewardBounds(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
-                                                              std::vector<storm::RationalFunction> const& rewards,
-                                                              std::vector<storm::RationalFunction> const& oneStepTargetProbabilities) {
+std::vector<storm::RationalFunction> computeUpperRewardBounds([[maybe_unused]] storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
+                                                              [[maybe_unused]] std::vector<storm::RationalFunction> const& rewards,
+                                                              [[maybe_unused]] std::vector<storm::RationalFunction> const& oneStepTargetProbabilities) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing upper reward bounds is not supported for rational functions.");
 }
 

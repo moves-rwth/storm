@@ -63,7 +63,7 @@ StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizon
 }
 
 template<class SparseMdpModelType>
-void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Environment const& env, std::vector<ValueType> const& weightVector,
+void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase([[maybe_unused]] Environment const& env, std::vector<ValueType> const& weightVector,
                                                                           std::vector<ValueType>& weightedRewardVector) {
     // Allocate some memory so this does not need to happen for each time epoch
     std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(this->transitionMatrix.getRowGroupCount());

@@ -419,7 +419,7 @@ bool Model<Type, ValueType>::hasParameters() const {
 }
 
 template<storm::dd::DdType Type, typename ValueType>
-void Model<Type, ValueType>::addParameters(std::set<storm::RationalFunctionVariable> const& parameters) {
+void Model<Type, ValueType>::addParameters([[maybe_unused]] std::set<storm::RationalFunctionVariable> const& parameters) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This value type does not support parameters.");
 }
 

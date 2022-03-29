@@ -320,7 +320,7 @@ std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::c
 
 template<>
 std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>::checkQuantileFormula(
-    Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask) {
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Quantiles for parametric models are not implemented.");
 }
 

@@ -282,7 +282,7 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
 
 template<class SparseMaModelType>
 template<typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
-VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant(std::vector<ValueType> const& weightVector) const {
+VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant([[maybe_unused]] std::vector<ValueType> const& weightVector) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
 }
 
@@ -311,7 +311,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitize(SubModel& MS
 
 template<class SparseMaModelType>
 template<typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
-void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitize(SubModel& subModel, VT const& digitizationConstant) const {
+void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitize([[maybe_unused]] SubModel& subModel, [[maybe_unused]] VT const& digitizationConstant) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
 }
 
@@ -345,7 +345,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(Ti
 
 template<class SparseMaModelType>
 template<typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
-void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds(TimeBoundMap& upperTimeBounds, VT const& digitizationConstant) {
+void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::digitizeTimeBounds([[maybe_unused]] TimeBoundMap& upperTimeBounds, [[maybe_unused]] VT const& digitizationConstant) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
 }
 
@@ -408,7 +408,7 @@ StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environmen
 template<class SparseMaModelType>
 template<typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
 std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData>
-StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environment const& env, SubModel const& PS, bool acyclic) const {
+StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver([[maybe_unused]] Environment const& env, [[maybe_unused]] SubModel const& PS, [[maybe_unused]] bool acyclic) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
 }
 

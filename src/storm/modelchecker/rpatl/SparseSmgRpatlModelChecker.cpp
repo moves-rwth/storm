@@ -59,13 +59,13 @@ std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::che
 
 template<typename SparseSmgModelType>
 std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::computeLongRunAverageProbabilities(
-    Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not implemented.");
 }
 
 template<typename SparseSmgModelType>
 std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::computeLongRunAverageRewards(
-    Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
+    [[maybe_unused]] Environment const& env, storm::logic::RewardMeasureType rewardMeasureType,
     CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
     STORM_LOG_THROW(checkTask.isPlayerCoalitionSet(), storm::exceptions::InvalidPropertyException, "No player coalition was set.");
