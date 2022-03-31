@@ -170,7 +170,7 @@ namespace storm {
                 pomdp().printModelInformationToStream(stream);
                 stream << "# Max. Number of states with same observation: " << pomdp().getMaxNrStatesWithSameObservation() << '\n';
                 if (statistics.beliefMdpDetectedToBeFinite) {
-                    stream << "# Pre-computations detected that the belief MDP is finite." << std::endl;
+                    stream << "# Pre-computations detected that the belief MDP is finite.\n";
                 }
                 if (statistics.aborted) {
                     stream << "# Computation aborted early\n";
@@ -217,15 +217,15 @@ namespace storm {
                         if (statistics.underApproximationBuildAborted) {
                             stream << ">=";
                         }
-                        stream << statistics.nrClippingAttempts.get() << " (" << statistics.nrClippedStates.get() << ")" << std::endl;
-                        stream << "# Total clipping preprocessing time: " << statistics.clippingPreTime << std::endl;
-                        stream << "# Total clipping time: " << statistics.clipWatch << std::endl;
+                        stream << statistics.nrClippingAttempts.get() << " (" << statistics.nrClippedStates.get() << ")\n";
+                        stream << "# Total clipping preprocessing time: " << statistics.clippingPreTime << "\n";
+                        stream << "# Total clipping time: " << statistics.clipWatch << "\n";
                     } else if (statistics.nrTruncatedStates){
                         stream << "# Truncated states for the under-approximation: ";
                         if (statistics.underApproximationBuildAborted) {
                             stream << ">=";
                         }
-                        stream << statistics.nrTruncatedStates.get() << std::endl;
+                        stream << statistics.nrTruncatedStates.get() << "\n";
                     }
                     if (statistics.underApproximationStateLimit) {
                         stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.get() << '\n';
@@ -290,7 +290,7 @@ namespace storm {
                             heuristicParameters.sizeThreshold = std::numeric_limits<uint64_t>::max();
                         } else {
                             heuristicParameters.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
-                            STORM_PRINT_AND_LOG("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << "." << std::endl)
+                            STORM_PRINT_AND_LOG("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << ".\n")
                         }
                     }
                     // If we clip and compute rewards
@@ -795,16 +795,16 @@ namespace storm {
                 statistics.underApproximationBuildTime.start();
                 if(useBeliefClipping){
                     if(options.useGridClipping){
-                        STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs" << std::endl)
+                        STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n")
                     } else {
                         STORM_PRINT_AND_LOG("Use Belief Clipping with threshold "
                                                     << storm::utility::to_string(heuristicParameters.clippingThreshold)
-                                                    << std::endl);
+                                                    << "\n");
                     }
                     statistics.nrClippingAttempts = 0;
                     statistics.nrClippedStates = 0;
                     if(options.disableClippingReduction){
-                        STORM_PRINT_AND_LOG("Disable clipping candidate set reduction" << std::endl);
+                        STORM_PRINT_AND_LOG("Disable clipping candidate set reduction \n");
                     }
                 }
                 bool fixPoint = true;
@@ -843,9 +843,9 @@ namespace storm {
                     }
                     if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
                         printUpdateStopwatch.restart();
-                        STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued" <<  std::endl)
+                        STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n")
                         if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && useBeliefClipping){
-                            STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.get() << " ##### " << "Clipped States: " << statistics.nrClippedStates.get() << std::endl);
+                            STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.get() << " ##### " << "Clipped States: " << statistics.nrClippedStates.get() << "\n");
                         }
                     }
 
@@ -959,7 +959,7 @@ namespace storm {
                 underApproximation->finishExploration();
                 statistics.underApproximationBuildTime.stop();
                 printUpdateStopwatch.stop();
-                STORM_PRINT_AND_LOG("Finished exploring Underapproximation MDP." << std::endl << "Start analysis..." << std::endl);
+                STORM_PRINT_AND_LOG("Finished exploring Underapproximation MDP.\n Start analysis...\n");
                 statistics.underApproximationCheckTime.start();
                 underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.underApproximationCheckTime.stop();

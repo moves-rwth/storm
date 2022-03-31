@@ -20,7 +20,7 @@ namespace storm {
 
             template <typename ValueType>
             std::vector<ValueType> PomdpParametricTransformationModelChecker<ValueType>::computeValuesForFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& formulaInfo, uint64_t memoryBound, storm::storage::PomdpMemoryPattern memoryPattern, double gdEpsilon, uint64_t maxInstantiations){
-                STORM_PRINT_AND_LOG("Parametric Preprocessing with memory bound " << memoryBound << " -- Gradient Descent (Eps: " << gdEpsilon << " / Instantiations: " << maxInstantiations << ")" << std::endl);
+                STORM_PRINT_AND_LOG("Parametric Preprocessing with memory bound " << memoryBound << " -- Gradient Descent (Eps: " << gdEpsilon << " / Instantiations: " << maxInstantiations << ")\n");
                 // Apply memory structure to POMDP
                 STORM_LOG_ERROR_COND(memoryBound > 0, "Invalid memory bound" << memoryBound << "for transformation from POMDP to pMC. Memory bound needs to be positive!");
                 STORM_PRINT_AND_LOG("Compute values in POMDP by transformation to pMC.");
@@ -30,20 +30,20 @@ namespace storm {
                     storm::storage::PomdpMemory memory = storm::storage::PomdpMemoryBuilder().build(memoryPattern, memoryBound);
                     storm::transformer::PomdpMemoryUnfolder<ValueType> memoryUnfolder(pomdp, memory);
                     memPomdp = memoryUnfolder.transform(false);
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done.\n");
                 }
 
                 STORM_PRINT_AND_LOG("Simplification POMDP...");
                 auto transformResult = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*memPomdp, true);
                 memPomdp = transformResult.transformedPomdp;
-                STORM_PRINT_AND_LOG(" done." << std::endl);
+                STORM_PRINT_AND_LOG(" done.\n");
                 memPomdp->printModelInformationToStream(std::cout);
                 STORM_PRINT_AND_LOG("Transforming POMDP to pMC...");
                 storm::transformer::ApplyFiniteSchedulerToPomdp<ValueType> toPMCTransformer(*memPomdp);
 
                 //TODO make mode a setting?
                 auto pmc = toPMCTransformer.transform(storm::transformer::PomdpFscApplicationMode::STANDARD);
-                STORM_PRINT_AND_LOG(" done." << std::endl);
+                STORM_PRINT_AND_LOG(" done.\n");
 
                 storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>> simplifier(*(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
                 if (!simplifier.simplify(formula)){
@@ -99,7 +99,7 @@ namespace storm {
                 resStr << "Parametric Preprocessing Result: ";
                 resStr << (formulaInfo.maximize() ? "≥ " : "≤ ");
                 resStr << pomdpSchedulerResult[0];
-                STORM_PRINT_AND_LOG(resStr.str() << std::endl);
+                STORM_PRINT_AND_LOG(resStr.str() << "\n");
 
                 std::vector<ValueType> result(pomdp.getNumberOfStates());
 
