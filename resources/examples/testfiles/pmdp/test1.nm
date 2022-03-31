@@ -28,3 +28,5 @@ module test
 
 endmodule
 
+label "done" = s=5;
+

@@ -47,6 +47,7 @@ namespace storm {
             std::shared_ptr<Order> getInitialOrder(bool isOptimistic) override;
             std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
             std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order,storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) override;
+            bool findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state) override;
 
            private:
             // There is only one interesting successor, as the other one is either the current state, or a bottom state

@@ -38,8 +38,7 @@ namespace storm {
         std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
             STORM_LOG_INFO("Doing backward reasoning");
             bool addedSomething = false;
-            auto& successors = this->getSuccessors(currentState);
-
+            std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
             // We sort the states, and then apply min/max comparison.
             // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
 
@@ -192,7 +191,7 @@ namespace storm {
             this->continueExtending[order] = true;
 
             for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
-                auto& successors = this->getSuccessors(i);
+                auto& successors = this->getSuccessors(i, order).second;
                 if (successors.size() == 2) {
                     rewardHack(order, i, successors.at(0), successors.at(1));
                 }
@@ -205,10 +204,10 @@ namespace storm {
             }
 
             for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
-                auto& successorsI = this->getSuccessors(i);
+                auto& successorsI = this->getSuccessors(i, order).second;
                 if (successorsI.size() == 2) {
                     for (uint_fast64_t j = i + 1; j < this->numberOfStates; ++j) {
-                        auto& successorsJ = this->getSuccessors(j);
+                        auto& successorsJ = this->getSuccessors(j, order).second;
                         bool checkReward = false;
 
                         if (successorsI[0] == successorsJ[0] && successorsI[1] == successorsJ[1]) {
@@ -255,40 +254,43 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         bool RewardOrderExtenderDtmc<ValueType, ConstantType>::rewardHack(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t succ0, uint_fast64_t succ1) {
-                if (this->getSuccessors(succ0).size() == 1 && this->getSuccessors(succ0).at(0) == currentState) {
-                    // We have curr --> succ0 and curr --> succ1 and succ0 --> curr
-                    if (!order->contains(currentState)) {
-                        order->add(currentState);
-                        order->addStateToHandle(currentState);
-                    }
-                    if (!order->contains(succ1)) {
-                        order->add(succ1);
-                        order->addStateToHandle(succ1);
-                    }
-                    if (!order->contains(succ0)) {
-                        order->addStateToHandle(succ1);
-                    }
-                    this->handleOneSuccessor(order, succ0, currentState);
-                    order->addAbove(currentState, order->getNode(succ1));
-                    return false;
+            auto& successors0 = this->getSuccessors(succ0, order).second;
+            if (successors0.size() == 1 && successors0.at(0) == currentState) {
+                // We have curr --> succ0 and curr --> succ1 and succ0 --> curr
+                if (!order->contains(currentState)) {
+                    order->add(currentState);
+                    order->addStateToHandle(currentState);
                 }
-                if (this->getSuccessors(succ1).size() == 1 && this->getSuccessors(succ1).at(0) == currentState) {
-                    // We have curr --> succ0 and curr --> succ1 and succ1 --> curr
-                    if (!order->contains(currentState)) {
-                        order->add(currentState);
-                        order->addStateToHandle(currentState);
-                    }
-                    if (!order->contains(succ0)) {
-                        order->add(succ0);
-                        order->addStateToHandle(succ0);
-                    }
-                    if (!order->contains(succ1)) {
-                        order->addStateToHandle(succ1);
-                    }
-                    this->handleOneSuccessor(order, succ1, currentState);
-                    order->addAbove(currentState, order->getNode(succ0));
-                    return true;
+                if (!order->contains(succ1)) {
+                    order->add(succ1);
+                    order->addStateToHandle(succ1);
                 }
+                if (!order->contains(succ0)) {
+                    order->addStateToHandle(succ1);
+                }
+                this->handleOneSuccessor(order, succ0, currentState);
+                order->addAbove(currentState, order->getNode(succ1));
+                return false;
+            }
+            auto& successors1 = this->getSuccessors(succ1, order).second;
+
+            if (successors1.size() == 1 && successors1.at(0) == currentState) {
+                // We have curr --> succ0 and curr --> succ1 and succ1 --> curr
+                if (!order->contains(currentState)) {
+                    order->add(currentState);
+                    order->addStateToHandle(currentState);
+                }
+                if (!order->contains(succ0)) {
+                    order->add(succ0);
+                    order->addStateToHandle(succ0);
+                }
+                if (!order->contains(succ1)) {
+                    order->addStateToHandle(succ1);
+                }
+                this->handleOneSuccessor(order, succ1, currentState);
+                order->addAbove(currentState, order->getNode(succ0));
+                return true;
+            }
                 return false;
         }
 
@@ -297,34 +299,11 @@ namespace storm {
             STORM_LOG_INFO("Doing Forward reasoning");
             STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
-            auto& successors = this->getSuccessors(currentState);
+            std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
 
             if (successors.size() == 2 && this->extendByForwardReasoningOneSucc(order, region, currentState)) {
                 return {this->numberOfStates, this->numberOfStates};
             }
-
-//            if (this->usePLA[order]) {
-//                // try to sort stuff with assumptions, done here so the order of succs doesn't matter
-//                for (auto& succ : successors) {
-//                    if (order->compare(succ, currentState) == Order::NodeComparison::UNKNOWN && !assumptionsCreated[currentState]) {
-//                        auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region, this->minValues[order], this->maxValues[order]);
-//                        if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
-//                            this->handleAssumption(order, assumptions.begin()->first);
-//                            if (!order->contains(succ)) {
-//                                for (auto& succSucc : this->getSuccessors(succ)) {
-//                                    if (order->contains(succSucc)) {
-//                                        order->addStateToHandle(succ);
-//                                        break;
-//                                    }
-//                                }
-//                            }
-//                        } else {
-//                            assumptionsCreated.set(currentState);
-//                        }
-//                    }
-//                }
-//            }
-
             std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
             uint_fast64_t s1= sorted.first.first;
             uint_fast64_t s2 = sorted.first.second;
@@ -339,7 +318,7 @@ namespace storm {
                 } else {
                     return {s1, s2};
                 }
-            } else if (statesSorted.size() == (this->getSuccessors(currentState).size() + 1)) {
+            } else if (statesSorted.size() == (this->getSuccessors(currentState, order).second.size() + 1)) {
                 // Everything is sorted, so no need to sort stuff
                 assert (s1 == this->numberOfStates && s2 == this->numberOfStates);
                 return {s1, s2};
@@ -358,7 +337,7 @@ namespace storm {
                     // TODO: make use of forward reasoning and do backward as last solution
                     return extendByBackwardReasoning(order, region, currentState);
                 } else {
-                    for (uint_fast64_t state :this->getSuccessors(currentState)) {
+                    for (uint_fast64_t state :this->getSuccessors(currentState, order).second) {
                         // Find a state to which we cannot order s1, it should be one of the successors
                        if (state != s1 && order->compare(s1, state) == Order::UNKNOWN) {
                            // Problem is with comparing
@@ -393,7 +372,7 @@ namespace storm {
                             }
                         }
 //                    }
-                    STORM_LOG_ASSERT(order->sortStates(this->getSuccessors(currentState)).size() == this->getSuccessors(currentState).size(), "Expecting all successor states to be ordered");
+                    STORM_LOG_ASSERT(order->sortStates(this->getSuccessors(currentState, order).second).size() == this->getSuccessors(currentState, order).second.size(), "Expecting all successor states to be ordered");
                     return {s2, s2};
                 }
 
@@ -405,7 +384,7 @@ namespace storm {
         bool RewardOrderExtenderDtmc<ValueType, ConstantType>::extendByForwardReasoningOneSucc(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
             STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
-            auto& successors = this->getSuccessors(currentState);
+            std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
             STORM_LOG_ASSERT(successors.size() == 2, "Expecting only two successors");
 
             if (successors.at(0) == currentState || successors.at(1) == currentState) {
@@ -470,7 +449,7 @@ namespace storm {
                     STORM_LOG_INFO("Currently considering state: " << currentState << " based on statesToHandle (not topological approach)");
                 }
 
-                auto const & successors = this->getSuccessors(currentState);
+                auto const & successors = this->getSuccessors(currentState, order).second;
                 std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
 
                 if (successors.size() == 1) {
@@ -576,6 +555,10 @@ namespace storm {
             }
         }
 
+        template<typename ValueType, typename ConstantType>
+        bool RewardOrderExtenderDtmc<ValueType, ConstantType>::findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state) {
+            return true;
+        }
 
         template class RewardOrderExtenderDtmc<RationalFunction, double>;
         template class RewardOrderExtenderDtmc<RationalFunction, RationalNumber>;

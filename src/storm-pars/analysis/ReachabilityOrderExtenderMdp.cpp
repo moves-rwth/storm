@@ -5,26 +5,17 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType, typename ConstantType>
-    ReachabilityOrderExtenderMdp<ValueType, ConstantType>::ReachabilityOrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool prMax) : ReachabilityOrderExtender<ValueType, ConstantType>(model, formula) {
-            this->prMax = prMax;
+        ReachabilityOrderExtenderMdp<ValueType, ConstantType>::ReachabilityOrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool prMax) : ReachabilityOrderExtender<ValueType, ConstantType>(model, formula) {
+            if (formula->isProbabilityOperatorFormula()) {
+                this->prMax = storm::solver::maximize(formula->asProbabilityOperatorFormula().getOptimalityType());
+            } else {
+                assert (false);
+            }
         }
 
         template<typename ValueType, typename ConstantType>
         ReachabilityOrderExtenderMdp<ValueType, ConstantType>::ReachabilityOrderExtenderMdp(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax) : ReachabilityOrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->prMax = prMax;
-        }
-
-        template<typename ValueType, typename ConstantType>
-        std::vector<uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::gatherPotentialSuccessors(uint64_t state) {
-            std::vector<uint_fast64_t> successors;
-            for (auto& succs : this->stateMap[state]) {
-                for (auto succ : succs) {
-                    if (std::find(successors.begin(), successors.end(), succ) == successors.end()) {
-                        successors.push_back(succ);
-                    }
-                }
-            }
-            return std::move(successors);
         }
 
         template<typename ValueType, typename ConstantType>
@@ -37,16 +28,15 @@ namespace storm {
             }
             if (order->isTopState(state)) {
                 // in this case the state should be absorbing so we just take action 0
-                STORM_LOG_INFO("   State is top state + thus absorbing. Take action 0." << std::endl);
+                STORM_LOG_INFO("   State is top state, thus absorbing. Take action 0." << std::endl);
                 order->addToMdpScheduler(state, 0);
                 return true;
             }
             if (order->isBottomState(state)) {
                 // in this case the state should be absorbing so we just take action 0
-                STORM_LOG_INFO("   State is bottom state + thus absorbing. Take action 0." << std::endl);
+                STORM_LOG_INFO("   State is bottom state, thus absorbing. Take action 0." << std::endl);
                 order->addToMdpScheduler(state, 0);
                 return true;
-
             }
             if (this->stateMap[state].size() == 1){
                 // if we only have one possible action, we already know which one we take.
@@ -58,8 +48,8 @@ namespace storm {
 
             // note that succs in this function mean potential succs
             uint64_t bestAct = this->matrix.getRowCount();
-            auto potSuccs = gatherPotentialSuccessors(state);
-            auto orderedSuccs = order->sortStates(potSuccs);
+            auto& successors = this->getSuccessors(state, order).second;
+            auto orderedSuccs = order->sortStates(successors);
             if (orderedSuccs.back() == this->numberOfStates){
                 STORM_LOG_WARN("    No best action found, as the successors could not be ordered.");
                 return false;
@@ -194,93 +184,89 @@ namespace storm {
             return false;
         }
 
-        template <typename ValueType, typename ConstantType>
-        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_ASSERT (order != nullptr, "Order should be provided");
-            if (assumption != nullptr) {
-                this->handleAssumption(order, assumption);
-            }
-
-            auto currentStateMode = this->getNextState(order, this->numberOfStates, false);
-            while (currentStateMode.first != this->numberOfStates) {
-                STORM_LOG_ASSERT (currentStateMode.first < this->numberOfStates, "Unexpected state number");
-                auto& currentState = currentStateMode.first;
-                std::vector<uint_fast64_t> successors;
-                if (findBestAction(order, region, currentState)) {
-                    successors = this->getSuccessors(currentState, order->getActionAtState(currentState));
-                } else {
-                    successors = this->gatherPotentialSuccessors(currentState);
-                }
-                std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
-
-                if (successors.size() == 1) {
-                    STORM_LOG_ASSERT (order->contains(successors[0]), "Expecting order to contain successor of state " << currentState);
-                    this->handleOneSuccessor(order, currentState, successors[0]);
-                } else if (!successors.empty()) {
-                    if (order->isOnlyInitialOrder()) {
-                        order->add(currentState);
-                        if (!order->isTrivial(currentState)) {
-                            // This state is part of an scc, therefore, we could do forward reasoning here
-                            result = this->extendByForwardReasoning(order, region, currentState);
-                        } else {
-                            result = {this->numberOfStates, this->numberOfStates};
-                        }
-                    } else {
-                        result = this->extendNormal(order, region, currentState);
-                    }
-                }
-
-                if (result.first == this->numberOfStates) {
-                    // We did extend the order
-                    STORM_LOG_ASSERT (result.second == this->numberOfStates, "Expecting both parts of result to contain the number of states");
-                    STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Something went wrong while sorting states, number of states differs");
-                    STORM_LOG_ASSERT (order->contains(currentState) && order->getNode(currentState) != nullptr, "Expecting order to contain the current State");
-
-                    if (monRes != nullptr) {
-                        for (auto& param : this->occuringVariablesAtState[currentState]) {
-                            this->checkParOnStateMonRes(currentState, order, param, region, monRes);
-                        }
-                    }
-                    // Get the next state
-                    currentStateMode = this->getNextState(order, currentState, true);
-                } else {
-                    STORM_LOG_ASSERT (result.first < this->numberOfStates && result.second < this->numberOfStates, "Expecting both result numbers to correspond to states");
-                    STORM_LOG_ASSERT (order->compare(result.first, result.second) == Order::UNKNOWN && order->compare(result.second, result.first) == Order::UNKNOWN, "Expecting relation between the two states to be unknown");
-                    // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
-                    if (currentStateMode.second && this->extendWithAssumption(order, region, result.first, result.second)) {
-                        continue;
-                    }
-                    // We couldn't extend the order
-                    if (this->nonParametricStates.find(currentState) != this->nonParametricStates.end()) {
-                        if (!order->contains(currentState)) {
-                            // State is not parametric, so we hope that just adding it between =) and =( will help us
-                            order->add(currentState);
-                        }
-                        currentStateMode = this->getNextState(order, currentState, true);
-                        continue;
-                    } else {
-                        if (!currentStateMode.second) {
-                            // The state was based on statesToHandle, so it is not bad if we cannot continue with this.
-                            currentStateMode = this->getNextState(order, currentState, false);
-                            continue;
-                        } else {
-                            // The state was based on the topological sorting, so we need to return, but first add this state to the states Sorted as we are not done with it
-                            order->addStateSorted(currentState);
-                            this->continueExtending[order] = false;
-                            return {order, result.first, result.second};
-                        }
-                    }
-                }
-                STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Expecting all successor states to be sorted");
-            }
-
-            STORM_LOG_ASSERT (order->getDoneBuilding(), "Expecting to have a final order");
-            if (monRes != nullptr) {
-                // monotonicity result for the in-build checking of monotonicity
-                monRes->setDone();
-            }
-            return std::make_tuple(order, this->numberOfStates, this->numberOfStates);
-        }
+//        template <typename ValueType, typename ConstantType>
+//        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+//            STORM_LOG_ASSERT (order != nullptr, "Order should be provided");
+//            if (assumption != nullptr) {
+//                this->handleAssumption(order, assumption);
+//            }
+//
+//            auto currentStateMode = this->getNextState(order, this->numberOfStates, false);
+//            while (currentStateMode.first != this->numberOfStates) {
+//                STORM_LOG_ASSERT (currentStateMode.first < this->numberOfStates, "Unexpected state number");
+//                auto& currentState = currentStateMode.first;
+//                std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
+//                std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
+//
+//                order->toDotOutput();
+//                if (successors.size() == 1) {
+//                    STORM_LOG_ASSERT (order->contains(successors[0]), "Expecting order to contain successor of state " << currentState);
+//                    this->handleOneSuccessor(order, currentState, successors[0]);
+//                } else if (!successors.empty()) {
+//                    if (order->isOnlyInitialOrder()) {
+//                        order->add(currentState);
+//                        if (!order->isTrivial(currentState)) {
+//                            // This state is part of an scc, therefore, we could do forward reasoning here
+//                            result = this->extendByForwardReasoning(order, region, currentState);
+//                        } else {
+//                            result = {this->numberOfStates, this->numberOfStates};
+//                        }
+//                    } else {
+//                        result = this->extendNormal(order, region, currentState);
+//                    }
+//                }
+//
+//                if (result.first == this->numberOfStates) {
+//                    // We did extend the order
+//                    STORM_LOG_ASSERT (result.second == this->numberOfStates, "Expecting both parts of result to contain the number of states");
+//                    STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Something went wrong while sorting states, number of states differs");
+//                    STORM_LOG_ASSERT (order->contains(currentState) && order->getNode(currentState) != nullptr, "Expecting order to contain the current State");
+//
+//                    if (monRes != nullptr) {
+//                        for (auto& param : this->occuringVariablesAtState[currentState]) {
+//                            this->checkParOnStateMonRes(currentState, order, param, region, monRes);
+//                        }
+//                    }
+//                    // Get the next state
+//                    currentStateMode = this->getNextState(order, currentState, true);
+//                } else {
+//                    STORM_LOG_ASSERT (result.first < this->numberOfStates && result.second < this->numberOfStates, "Expecting both result numbers to correspond to states");
+//                    STORM_LOG_ASSERT (order->compare(result.first, result.second) == Order::UNKNOWN && order->compare(result.second, result.first) == Order::UNKNOWN, "Expecting relation between the two states to be unknown");
+//                    // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
+//                    if (currentStateMode.second && this->extendWithAssumption(order, region, result.first, result.second)) {
+//                        continue;
+//                    }
+//                    // We couldn't extend the order
+//                    if (this->nonParametricStates.find(currentState) != this->nonParametricStates.end()) {
+//                        if (!order->contains(currentState)) {
+//                            // State is not parametric, so we hope that just adding it between =) and =( will help us
+//                            order->add(currentState);
+//                        }
+//                        currentStateMode = this->getNextState(order, currentState, true);
+//                        continue;
+//                    } else {
+//                        if (!currentStateMode.second) {
+//                            // The state was based on statesToHandle, so it is not bad if we cannot continue with this.
+//                            currentStateMode = this->getNextState(order, currentState, false);
+//                            continue;
+//                        } else {
+//                            // The state was based on the topological sorting, so we need to return, but first add this state to the states Sorted as we are not done with it
+//                            order->addStateSorted(currentState);
+//                            this->continueExtending[order] = false;
+//                            return {order, result.first, result.second};
+//                        }
+//                    }
+//                }
+//                STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Expecting all successor states to be sorted");
+//            }
+//
+//            STORM_LOG_ASSERT (order->getDoneBuilding(), "Expecting to have a final order");
+//            if (monRes != nullptr) {
+//                // monotonicity result for the in-build checking of monotonicity
+//                monRes->setDone();
+//            }
+//            return std::make_tuple(order, this->numberOfStates, this->numberOfStates);
+//        }
 
         template<typename ValueType, typename ConstantType>
         bool ReachabilityOrderExtenderMdp<ValueType, ConstantType>::isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2, storage::ParameterRegion<ValueType> region) {
@@ -376,52 +362,6 @@ namespace storm {
             if ((candidate & others).empty()) return std::make_pair(true, bestAct);
             else return std::make_pair(false, 0);
 
-        }
-
-        template<typename ValueType, typename ConstantType>
-        void ReachabilityOrderExtenderMdp<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
-            auto &min = this->minValues[order];
-            auto &max = this->maxValues[order];
-
-            // Add the states that can be ordered based on min/max values
-            assert (this->usePLA[order]);
-            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> vars;
-            for (auto& entry : this->matrix) {
-                for (auto& var : entry.getValue().gatherVariables()) {
-                    vars.insert(var);
-                }
-            }
-            auto& states = order->getStatesSorted();
-            auto fakeRegion = storm::api::createRegion<ValueType>("0", vars);
-            for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
-                auto state = states[this->numberOfStates - i - 1];
-                if (findBestAction(order, fakeRegion, state)) {
-                    auto& successors = this->getSuccessors(state);
-                    bool allSorted = true;
-                    for (uint_fast64_t i1 = 0; i1 <successors.size(); ++i1) {
-                        for (uint_fast64_t i2 = i1 + 1; i2 < successors.size(); ++i2) {
-                            auto succ1 = successors[i1];
-                            auto succ2 = successors[i2];
-                            allSorted &= this->addStatesBasedOnMinMax(order, succ1, succ2) != Order::NodeComparison::UNKNOWN;
-                        }
-                    }
-                    if (allSorted) {
-                        STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
-                        order->setSufficientForState(state);
-                    }
-                } else {
-                    // We need to check for all possible successors
-                    std::vector<uint_fast64_t> successors = gatherPotentialSuccessors(state);
-
-                    for (uint_fast64_t i = 0; i < successors.size(); ++i) {
-                        auto state1 = successors[i];
-                        for (uint_fast64_t j = i + 1; j < successors.size(); ++j) {
-                            auto state2 = successors[j];
-                            this->addStatesBasedOnMinMax(order, state1, state2);
-                        }
-                    }
-                }
-            }
         }
 
         template<typename ValueType, typename ConstantType>

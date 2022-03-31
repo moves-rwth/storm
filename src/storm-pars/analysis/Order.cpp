@@ -397,6 +397,7 @@ namespace storm {
         }
 
         std::vector<uint_fast64_t> Order::sortStates(std::vector<uint_fast64_t> const& states) {
+            assert (states.size() > 0);
             uint_fast64_t numberOfStatesToSort = states.size();
             std::vector<uint_fast64_t> result;
             // Go over all states
@@ -877,7 +878,9 @@ namespace storm {
         }
 
         uint64_t Order::getActionAtState(uint_fast64_t state) const {
-            STORM_LOG_ASSERT (mdpScheduler != boost::none, "Expecting the mdp scheduler to exist");
+            if (mdpScheduler == boost::none) {
+                return 0;
+            }
             STORM_LOG_ASSERT (mdpScheduler->size() > state, "Cannot get action for a state which is outside the mdpscheduler range");
             return mdpScheduler->at(state);
         }

@@ -19,15 +19,11 @@ namespace storm {
 
                 ReachabilityOrderExtenderMdp(storm::storage::BitVector& topStates,  storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax);
 
-                std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
 
             protected:
-                void addStatesMinMax(std::shared_ptr<Order> order) override;
+                bool findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state) override;
 
             private:
-
-                std::vector<uint_fast64_t> gatherPotentialSuccessors(uint64_t state);
-                bool findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state);
 
                 /*!
                  * Compares two rational functions

@@ -110,7 +110,7 @@ namespace storm {
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState)  {
             // when it is cyclic and the current state is part of an SCC we do forwardreasoning
             if (this->cyclic && !order->isTrivial(currentState) && !order->contains(currentState)) {
-                auto& successors = this->getSuccessors(currentState);
+                std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
                 if (successors.size() == 2 && (successors[0] == currentState || successors[1] == currentState)) {
                     order->add(currentState);
                 }
@@ -527,10 +527,29 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        std::vector<uint_fast64_t> const& OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, uint_fast64_t choiceNumber) {
-            STORM_LOG_ASSERT(stateMap.size() > state && stateMap[state].size() > choiceNumber, "Cannot get successors for state " << state<< " at choice " << choiceNumber << ". Index out of bounds.");
-            return stateMap[state][choiceNumber];
+        std::pair<bool, std::vector<uint_fast64_t>&> OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, std::shared_ptr<Order> order) {
+            bool res = true;
+            if (this->stateMap[state].size() == 1) {
+                assert (stateMap[state][0].size() > 0);
+                return {res, stateMap[state][0]};
+            }
+            if (order->isActionSetAtState(state)) {
+                assert (stateMap[state][order->getActionAtState(state)].size() > 0);
+                return {res, stateMap[state][order->getActionAtState(state)]};
+            }
+            std::vector<uint_fast64_t> successors;
+            for (auto& succs : this->stateMap[state]) {
+                res &= succs.size() > 1;
+                for (auto succ : succs) {
+                    if (std::find(successors.begin(), successors.end(), succ) == successors.end()) {
+                        successors.push_back(succ);
+                    }
+                }
+            }
+            assert (successors.size() > 0);
+            return {res, successors};
         }
+
         template<typename ValueType, typename ConstantType>
         std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> OrderExtender<ValueType, ConstantType>::sortForFowardReasoning(
             uint_fast64_t currentState, std::shared_ptr<Order> order) {
@@ -543,7 +562,7 @@ namespace storm {
             bool unknown = false;
             uint_fast64_t s1 = this->numberOfStates;
             uint_fast64_t s2 = this->numberOfStates;
-            auto const& successors = this->getSuccessors(currentState);
+            std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
             for (auto& state : successors) {
                 unknown = false;
                 bool added = false;
@@ -597,12 +616,23 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
+            auto &min = this->minValues[order];
+            auto &max = this->maxValues[order];
+
             // Add the states that can be ordered based on min/max values
             assert (this->usePLA[order]);
-            auto const & statesSorted = order->getStatesSorted();
-            for (auto i =0; i < statesSorted.size(); ++i) {
-                auto state = statesSorted.at(statesSorted.size() - i - 1);
-                auto& successors = this->getSuccessors(state);
+            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> vars;
+            for (auto& entry : this->matrix) {
+                for (auto& var : entry.getValue().gatherVariables()) {
+                    vars.insert(var);
+                }
+            }
+            auto& states = order->getStatesSorted();
+            auto fakeRegion = storm::api::createRegion<ValueType>("0", vars);
+            for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
+                auto state = states[this->numberOfStates - i - 1];
+                findBestAction(order, fakeRegion, state);
+                auto& successors = this->getSuccessors(state, order).second;
                 bool allSorted = true;
                 for (uint_fast64_t i1 = 0; i1 <successors.size(); ++i1) {
                     for (uint_fast64_t i2 = i1 + 1; i2 < successors.size(); ++i2) {
@@ -617,6 +647,7 @@ namespace storm {
                 }
             }
         }
+
 
         template class OrderExtender<RationalFunction, double>;
         template class OrderExtender<RationalFunction, RationalNumber>;
