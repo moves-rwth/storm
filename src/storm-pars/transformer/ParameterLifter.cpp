@@ -126,11 +126,11 @@ namespace storm {
                     for (auto& var : occurringVariables) {
                         occuringStatesAtVariable[var].insert(stateNumber);
                     }
-                    if (occurringVariablesAtState[stateNumber].size() == 0) {
-                        occurringVariablesAtState[stateNumber] = std::move(occurringVariables);
+                    if (occurringVariablesAtState[rowIndex].size() == 0) {
+                        occurringVariablesAtState[rowIndex] = std::move(occurringVariables);
                     } else {
                         for (auto& var : occurringVariables) {
-                            occurringVariablesAtState[stateNumber].insert(var);
+                            occurringVariablesAtState[rowIndex].insert(var);
                         }
                     }
                 }
