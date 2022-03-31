@@ -33,7 +33,7 @@ namespace storm {
             uint_fast64_t newRowIndex = 0;
             uint_fast64_t countNonParam = 0;
             uint_fast64_t stateNumber = 0;
-            uint_fast64_t startNextRow = pMatrix.getRowGroupSize(stateNumber);
+            uint_fast64_t startNextRow = 0;
             for (auto const& rowIndex : selectedRows) {
                 builder.newRowGroup(newRowIndex);
 
@@ -192,6 +192,7 @@ namespace storm {
 
         template<typename ParametricType, typename ConstantType>
         uint_fast64_t ParameterLifter<ParametricType, ConstantType>::getOriginalStateNumber(uint_fast64_t newState) const {
+            STORM_LOG_ASSERT(newState <= rowGroupToStateNumber.size(), "Getting the original state number for a non-existing state");
             return rowGroupToStateNumber[newState];
         }
 
