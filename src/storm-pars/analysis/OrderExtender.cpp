@@ -616,6 +616,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
+            auto transposeMatrix = this->matrix.transpose();
             auto &min = this->minValues[order];
             auto &max = this->maxValues[order];
 
@@ -641,9 +642,14 @@ namespace storm {
                         allSorted &= this->addStatesBasedOnMinMax(order, succ1, succ2) != Order::NodeComparison::UNKNOWN;
                     }
                 }
-                if (allSorted) {
+                if (allSorted && successors.size() > 1 || (successors.size() == 1 && state != *(successors.begin()))) {
                     STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
                     order->setSufficientForState(state);
+                    for (auto& entry : transposeMatrix.getRow(state)) {
+                        if (!order->isSufficientForState(entry.getColumn())) {
+                            order->addStateToHandle(entry.getColumn());
+                        }
+                    }
                 }
             }
         }

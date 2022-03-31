@@ -97,6 +97,47 @@ namespace storm {
                             if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
                                 auto compare = this->addStatesBasedOnMinMax(order, currentState, succ);
                                 if (compare == Order::NodeComparison::UNKNOWN) {
+                                    // check if r(s) > (1-P(s,sj)) * (max(sj) - min(s1))
+                                    // for |successors| == 2 check if r(s) > P (s,s1)*(min(s2)-max(s1))
+                                    // s1 is lowest in order
+                                    // succ == sj == s2
+                                    auto s1 = *(successors.begin());
+                                    ValueType function;
+                                    for (auto& entry : this->matrix.getRow(currentState)) {
+                                        if (entry.getColumn() == succ) {
+                                            function = entry.getValue();
+                                            break;
+                                        }
+                                    }
+                                    if (function.gatherVariables().size() == 1) {
+                                        std::map<VariableType, CoefficientType> val1, val2;
+                                        auto& var = *(function.gatherVariables().begin());
+                                        val1.insert({var, region.getLowerBoundary(var)});
+                                        val2.insert({var, region.getUpperBoundary(var)});
+                                        CoefficientType res1 = function.evaluate(val1);
+                                        CoefficientType res2 = function.evaluate(val2);
+                                        if (res2 < res1) {
+                                            std::swap(res1, res2);
+                                        }
+                                        if (storm::utility::convertNumber<ConstantType>(reward.constantPart()) >  storm::utility::convertNumber<ConstantType>(res2) * (this->maxValues[order][succ] - this->minValues[order][s1])) {
+                                            if (!order->contains(succ)) {
+                                                order->add(succ);
+                                            }
+                                            order->addAbove(currentState, order->getNode(succ));
+                                            compare = Order::NodeComparison::ABOVE;
+                                        } else if (successors.size() == 2 && succ == *(successors.begin())) {
+                                            if (storm::utility::convertNumber<ConstantType>(reward.constantPart()) < storm::utility::convertNumber<ConstantType>(res1) * (this->minValues[order][succ] - this->maxValues[order][s1])) {
+                                                if (!order->contains(currentState)) {
+                                                    order->add(currentState);
+                                                }
+                                                order->addAbove(succ, order->getNode(currentState));
+                                                compare = Order::NodeComparison::BELOW;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (compare == Order::NodeComparison::UNKNOWN) {
                                         auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region,
                                                                                                             this->minValues[order], this->maxValues[order]);
                                         if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
