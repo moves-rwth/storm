@@ -124,7 +124,7 @@ namespace storm {
                 if (useMonotonicityInFuture) {
                     // Save the occuringVariables of a state, needed if we want to use monotonicity
                     for (auto& var : occurringVariables) {
-                        occuringStatesAtVariable[var].insert(stateNumber);
+                        occuringStatesAtVariable[var].insert(rowIndex);
                     }
                     if (occurringVariablesAtState[rowIndex].size() == 0) {
                         occurringVariablesAtState[rowIndex] = std::move(occurringVariables);

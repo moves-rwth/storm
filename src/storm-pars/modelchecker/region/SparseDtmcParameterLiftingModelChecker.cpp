@@ -627,7 +627,7 @@ namespace storm {
                 auto var = entry.first;
                 bool done = true;
                 for (auto const& state : states) {
-                    done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != Monotonicity::Unknown;
+                    done &= order->isSufficientForState(state) && localMonotonicityResult->getMonotonicity(state, var) != Monotonicity::Unknown;
                     if (!done) {
                         break;
                     }
