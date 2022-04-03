@@ -20,8 +20,6 @@
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 #include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ModelCheckerSettings.h"
 
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/QuantileHelper.h"
@@ -72,32 +70,24 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
                                           .setMultiDimensionalBoundedUntilFormulasAllowed(true)
                                           .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
                                           .setRewardAccumulationAllowed(true);
-        if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles())) {
+        auto lexObjectiveFragment = storm::logic::lexObjective()
+                                        .setHOAPathFormulasAllowed(true)
+                                        .setCumulativeRewardFormulasAllowed(true)
+                                        .setTimeBoundedCumulativeRewardFormulasAllowed(true)
+                                        .setStepBoundedCumulativeRewardFormulasAllowed(true)
+                                        .setRewardBoundedCumulativeRewardFormulasAllowed(true)
+                                        .setTimeBoundedUntilFormulasAllowed(true)
+                                        .setStepBoundedUntilFormulasAllowed(true)
+                                        .setRewardBoundedUntilFormulasAllowed(true)
+                                        .setMultiDimensionalBoundedUntilFormulasAllowed(true)
+                                        .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
+                                        .setRewardAccumulationAllowed(true);
+
+        if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) || formula.isInFragment(lexObjectiveFragment)) {
             if (requiresSingleInitialState) {
                 *requiresSingleInitialState = true;
             }
             return true;
-        } else {
-            auto lexObjectiveFragment = storm::logic::lexObjective()
-                                            .setHOAPathFormulasAllowed(true)
-                                            .setCumulativeRewardFormulasAllowed(true)
-                                            .setTimeBoundedCumulativeRewardFormulasAllowed(true)
-                                            .setStepBoundedCumulativeRewardFormulasAllowed(true)
-                                            .setRewardBoundedCumulativeRewardFormulasAllowed(true)
-                                            .setTimeBoundedUntilFormulasAllowed(true)
-                                            .setStepBoundedUntilFormulasAllowed(true)
-                                            .setRewardBoundedUntilFormulasAllowed(true)
-                                            .setMultiDimensionalBoundedUntilFormulasAllowed(true)
-                                            .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
-                                            .setRewardAccumulationAllowed(true);
-            auto modelCheckerSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
-            bool lex = modelCheckerSettings.isUseLex();
-            if (lex && formula.isInFragment(lexObjectiveFragment)) {
-                if (requiresSingleInitialState) {
-                    *requiresSingleInitialState = true;
-                }
-                return true;
-            }
         }
     }
     return false;

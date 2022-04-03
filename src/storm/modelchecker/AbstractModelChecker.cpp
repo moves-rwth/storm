@@ -13,6 +13,7 @@
 #include "storm/utility/macros.h"
 
 #include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/logic/FormulaInformation.h"
 #include "storm/models/ModelRepresentation.h"
@@ -34,9 +35,6 @@
 
 #include <boost/core/typeinfo.hpp>
 #include <storm/models/symbolic/MarkovAutomaton.h>
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ModelCheckerSettings.h"
 
 namespace storm {
 namespace modelchecker {
@@ -278,12 +276,11 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
     } else if (stateFormula.isGameFormula()) {
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
     } else if (stateFormula.isMultiObjectiveFormula()) {
-        auto modelCheckerSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
-        bool lex = modelCheckerSettings.isUseLex();
-        if (lex)
+        if (env.modelchecker().multi().isLexicographicModelCheckingSet()) {
             return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
-        else
+        } else {
             return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+        }
     } else if (stateFormula.isQuantileFormula()) {
         return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));
     }
