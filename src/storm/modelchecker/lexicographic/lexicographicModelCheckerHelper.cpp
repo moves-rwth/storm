@@ -198,18 +198,24 @@ template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 bool lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::isAcceptingStreettConditions(
     storm::storage::MaximalEndComponent const& scc, std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
     storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType model) {
-    bool ret = true;
-    std::vector<uint_fast64_t> states;
-    for (auto const& state : scc) {
-        states.push_back(state.first);
+    // initialize the states and choices we have to consider for mec decomposition
+    storm::storage::BitVector mecStates = storm::storage::BitVector(model.getNumberOfStates(), false);
+    std::for_each(scc.begin(), scc.end(), [&mecStates](auto const& state) { mecStates.set(state.first); });
+    auto mecChoices = model.getTransitionMatrix().getRowFilter(mecStates, mecStates);
+    // catch the simple case where there are no mecs
+    if (mecChoices.empty()) {
+        return false;
     }
-    storm::storage::BitVector mecStates = storm::storage::BitVector(model.getNumberOfStates(), states);
+    // get easy access to incoming transitions of a state
+    auto incomingChoicesMatrix = model.getTransitionMatrix().transpose();
+    auto incomingStatesMatrix = model.getBackwardTransitions();
     bool changedSomething = true;
     while (changedSomething) {
         // iterate until there is no change
         changedSomething = false;
         // decompose the MEC, if possible
-        auto subMecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(model, mecStates);
+        auto subMecDecomposition =
+            storm::storage::MaximalEndComponentDecomposition<ValueType>(model.getTransitionMatrix(), incomingStatesMatrix, mecStates, mecChoices);
         // iterate over all sub-MECs in the big MEC
         for (storm::storage::MaximalEndComponent const& mec : subMecDecomposition) {
             // iterate over all Streett-pairs
@@ -230,7 +236,8 @@ bool lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministi
                             // remove the state from the set of states in this EC
                             mecStates.set(state, false);
                             // remove all incoming transitions to this state
-                            model.removeIncomingTransitions(state);
+                            auto incChoices = incomingChoicesMatrix.getRow(state);
+                            std::for_each(incChoices.begin(), incChoices.end(), [&mecChoices](auto const& entry) { mecChoices.set(entry.getColumn(), false); });
                             changedSomething = true;
                         }
                     }
@@ -239,7 +246,8 @@ bool lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministi
         }
     }
     // decompose one last time
-    auto subMecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(model, mecStates);
+    auto subMecDecomposition =
+        storm::storage::MaximalEndComponentDecomposition<ValueType>(model.getTransitionMatrix(), incomingStatesMatrix, mecStates, mecChoices);
     if (subMecDecomposition.empty()) {
         // there are no more ECs in this set of states
         return false;
