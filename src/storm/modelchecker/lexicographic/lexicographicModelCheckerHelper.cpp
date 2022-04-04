@@ -305,7 +305,6 @@ MDPSparseModelCheckingHelperReturnType<ValueType> lexicographicModelCheckerHelpe
     storm::storage::BitVector i(transitionMatrix.getColumnCount(), newInitalStates);
 
     ModelCheckerHint hint;
-    storm::solver::SolveGoal<ValueType> testGoal = storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i);
     MDPSparseModelCheckingHelperReturnType<ValueType> ret = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(
         env, storm::solver::SolveGoal<ValueType>(storm::solver::OptimizationDirection::Maximize, i), transitionMatrix, transitionMatrix.transpose(true),
         phiStates, psiStates, false, true, hint);
