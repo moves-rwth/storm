@@ -133,13 +133,6 @@ class Model : public storm::models::Model<CValueType> {
     storm::storage::SparseMatrix<ValueType>& getTransitionMatrix();
 
     /*!
-     * Removes all incoming transitions to a state.
-     *
-     * @param state Index of the state of  which all incoming transitions should be removed.
-     */
-    void removeIncomingTransitions(storm::storage::sparse::state_type state);
-
-    /*!
      * Retrieves the reward models.
      *
      * @return A mapping from reward model names to the reward models.
