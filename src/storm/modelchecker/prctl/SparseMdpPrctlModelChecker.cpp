@@ -9,6 +9,7 @@
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/LexicographicCheckResult.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -412,7 +413,7 @@ std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::che
         return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
     };
     auto ret = lexicographic::check(env, this->getModel(), checkTask, formulaChecker);
-    std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(ret.values)));
+    std::unique_ptr<CheckResult> result(new LexicographicCheckResult<ValueType>(ret.values, *this->getModel().getInitialStates().begin()));
     return result;
 }
 

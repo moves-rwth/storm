@@ -5,7 +5,7 @@
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/LexicographicCheckResult.h"
 #include "test/storm_gtest.h"
 
 TEST(LexicographicModelCheckingTest, prob_sched1) {
@@ -32,10 +32,10 @@ TEST(LexicographicModelCheckingTest, prob_sched1) {
         tasks[0].setOnlyInitialStatesRelevant(true);
         auto result = checker.checkLexObjectiveFormula(env, tasks[0]);
         ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult = result->asExplicitQuantitativeCheckResult<double>();
-        EXPECT_NEAR(1.0, quantitativeResult[0], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        EXPECT_NEAR(0.5, quantitativeResult[1], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        EXPECT_NEAR(0, quantitativeResult[2], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        auto& lexResult = result->asLexicographicCheckResult<double>().getInitialStateValue();
+        EXPECT_NEAR(1.0, lexResult[0], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(0.5, lexResult[1], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(0, lexResult[2], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
     }
 #else
     GTEST_SKIP();
@@ -65,11 +65,11 @@ TEST(LexicographicModelCheckingTest, prob_sched2) {
     {
         tasks[0].setOnlyInitialStatesRelevant(true);
         auto result = checker.checkLexObjectiveFormula(env, tasks[0]);
-        ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult = result->asExplicitQuantitativeCheckResult<double>();
-        EXPECT_NEAR(0.5, quantitativeResult[0], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        EXPECT_NEAR(1, quantitativeResult[1], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
-        EXPECT_NEAR(0, quantitativeResult[2], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        ASSERT_TRUE(result->isLexicographicCheckResult());
+        auto const& lexResult = result->asLexicographicCheckResult<double>().getInitialStateValue();
+        EXPECT_NEAR(0.5, lexResult[0], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(1, lexResult[1], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
+        EXPECT_NEAR(0, lexResult[2], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
     }
 #else
     GTEST_SKIP();
