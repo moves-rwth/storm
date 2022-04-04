@@ -197,7 +197,7 @@ const storm::storage::BitVector& getStreettSet(storm::automata::AcceptanceCondit
 template<typename SparseModelType, typename ValueType, bool Nondeterministic>
 bool lexicographicModelCheckerHelper<SparseModelType, ValueType, Nondeterministic>::isAcceptingStreettConditions(
     storm::storage::MaximalEndComponent const& scc, std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
-    storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType model) {
+    storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType const& model) {
     // initialize the states and choices we have to consider for mec decomposition
     storm::storage::BitVector mecStates = storm::storage::BitVector(model.getNumberOfStates(), false);
     std::for_each(scc.begin(), scc.end(), [&mecStates](auto const& state) { mecStates.set(state.first); });
