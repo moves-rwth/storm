@@ -1,5 +1,6 @@
 #include "LexicographicCheckResult.h"
 
+#include "storm/adapters/RationalNumberAdapter.h/"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/macros.h"
@@ -71,6 +72,9 @@ std::ostream& LexicographicCheckResult<ValueType>::writeToStream(std::ostream& o
     }
     out << '\n';
 }
+
+template class LexicographicCheckResult<double>;
+template class LexicographicCheckResult<storm::RationalNumber>;
 
 }  // namespace modelchecker
 }  // namespace storm
