@@ -653,10 +653,10 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart(
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::(
                 storm::storage::ParameterRegion<ValueType> &region,
                 std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
-                storm::analysis::MonotonicityResult<VariableType> &monRes, bool disableOptimisation, bool minimize) const {
+                storm::analysis::MonotonicityResult<VariableType> &monRes, bool minimize) const {
             assert (regionVector.size() == 0);
 
             std::multimap<double, VariableType> sortedOnValues;
@@ -680,7 +680,11 @@ namespace storm {
                     consideredVariables.insert(itr->second);
                 }
                 assert (consideredVariables.size() > 0);
-                region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);
+                if (disableOptimisation) {
+                    region.split(region.getCenterPoint(consideredVariables), regionVector);
+                } else {
+                    region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);
+                }
             } else {
                 STORM_LOG_INFO("Splitting based on sorting");
 
@@ -691,7 +695,13 @@ namespace storm {
                     }
                 }
                 assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
-                region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables));
+                if (this->isDisableOptimizationSet()) {
+                    region.split(region.getCenterPoint(consideredVariables), regionVector);
+                } else {
+                    region.split(
+                        region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize),
+                        regionVector, std::move(consideredVariables));
+                }
             }
         }
 

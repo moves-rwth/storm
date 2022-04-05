@@ -378,7 +378,7 @@ namespace storm {
                             }
 
                             // Check whether this region contains a new 'good' value and set this value
-                            auto point = useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()), possibleMonotoneIncrParameters, possibleMonotoneDecrParameters) : currRegion.getCenterPoint();
+                            auto point = useMonotonicity && this->isDisableOptimizationSet() ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : (useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()), possibleMonotoneIncrParameters, possibleMonotoneDecrParameters) : currRegion.getCenterPoint());
                             auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                             if (!value || (minimize ? currValue < value.get() : currValue > value.get())) {
                                 value = currValue;
@@ -425,10 +425,10 @@ namespace storm {
                                 // Now split the region
                                 if (useMonotonicity) {
                                     this->splitSmart(currRegion, newRegions,
-                                                     *(localMonotonicityResult->getGlobalMonotonicityResult()), true, minimize);
+                                                     *(localMonotonicityResult->getGlobalMonotonicityResult()), minimize);
                                 } else if (this->isRegionSplitEstimateSupported()) {
                                     auto empty = storm::analysis::MonotonicityResult<VariableType>();
-                                    this->splitSmart(currRegion, newRegions, empty, true, minimize);
+                                    this->splitSmart(currRegion, newRegions, empty, minimize);
                                 } else {
                                     currRegion.split(currRegion.getCenterPoint(), newRegions);
                                 }
