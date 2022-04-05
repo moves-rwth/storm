@@ -31,7 +31,7 @@ TEST(LexicographicModelCheckingTest, prob_sched1) {
     {
         tasks[0].setOnlyInitialStatesRelevant(true);
         auto result = checker.checkLexObjectiveFormula(env, tasks[0]);
-        ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+        ASSERT_TRUE(result->isLexicographicCheckResult());
         auto& lexResult = result->asLexicographicCheckResult<double>().getInitialStateValue();
         EXPECT_NEAR(1.0, lexResult[0], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
         EXPECT_NEAR(0.5, lexResult[1], storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()));
