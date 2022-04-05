@@ -44,14 +44,12 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
     uint countAccept = 0;
     // iterate over all subformulae
     for (const std::shared_ptr<const storm::logic::Formula>& subFormula : formula.getSubformulas()) {
-        // get the formula in the right format (necessary?)
-        storm::logic::StateFormula const& newFormula = (*subFormula).asStateFormula();
-        storm::logic::ProbabilityOperatorFormula const& newFormula2 = (*subFormula).asProbabilityOperatorFormula();
-        storm::logic::Formula const& newFormula3 = newFormula2.getSubformula();
-        storm::logic::PathFormula const& formulaFinal = newFormula3.asPathFormula();
+        // get the formula in the right format
+        STORM_LOG_ASSERT(subFormula->isProbabilityOperatorFormula(), "subformula " << *subFormula << " has unexpected type.");
+        auto const& pathFormula = subFormula->asProbabilityOperatorFormula().getSubformula().asPathFormula();
 
         // get map of state-expressions to propositions
-        std::shared_ptr<storm::logic::Formula> ltlFormula1 = storm::logic::ExtractMaximalStateFormulasVisitor::extract(formulaFinal, extracted);
+        std::shared_ptr<storm::logic::Formula> ltlFormula1 = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
 
         // parse the formula in spot-format
         std::string prefixLtl = ltlFormula1->toPrefixString();
