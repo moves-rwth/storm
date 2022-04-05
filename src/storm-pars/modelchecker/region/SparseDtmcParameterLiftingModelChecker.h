@@ -60,7 +60,7 @@ namespace storm {
             
             virtual void reset() override;
 
-            virtual void splitSmart(storm::storage::ParameterRegion<ValueType> &region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum, bool minimize) const override;
+            virtual void splitSmart(storm::storage::ParameterRegion<ValueType> &region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> &monRes, bool disableOptimisation, bool minimize) const override;
 
         private:
             storm::storage::BitVector maybeStates;

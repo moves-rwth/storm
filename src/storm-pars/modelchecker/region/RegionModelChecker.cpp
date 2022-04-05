@@ -425,7 +425,7 @@ namespace storm {
         RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> &currentRegion,
                                                        std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
                                                        storm::analysis::MonotonicityResult<VariableType> &monRes,
-                                                       bool splitForExtremum, bool minimize) const {
+                                                       bool disableOptimisation, bool minimize) const {
             STORM_LOG_WARN("Smart splitting for this model checker not implemented");
             currentRegion.split(currentRegion.getCenterPoint(), regionVector);
         }

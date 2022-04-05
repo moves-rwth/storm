@@ -502,7 +502,7 @@ namespace storm {
         void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart(
             storm::storage::ParameterRegion<ValueType> &region,
             std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
-            storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum, bool minimize) const {
+            storm::analysis::MonotonicityResult<VariableType> &monRes, bool disableOptimization, bool minimize) const {
             assert (regionVector.size() == 0);
 
             std::multimap<double, VariableType> sortedOnValues;

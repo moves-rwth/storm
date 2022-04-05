@@ -52,7 +52,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult = nullptr) override;
                 
             virtual void reset() override;
-            virtual void splitSmart(storm::storage::ParameterRegion<ValueType> &region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> &monRes, bool splitForExtremum, bool minimize) const override;
+            virtual void splitSmart(storm::storage::ParameterRegion<ValueType> &region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> &monRes, bool disableOptimisation, bool minimize) const override;
 
 
            private:
