@@ -13,8 +13,7 @@
 #include "spot/twaalgos/translate.hh"
 #endif
 
-namespace storm {
-namespace spothelper {
+namespace storm::modelchecker::helper::lexicographic::spothelper {
 
 typedef std::pair<unsigned, unsigned> product_state;
 
@@ -178,5 +177,4 @@ template std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProd
     storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker,
     storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted,
     std::vector<uint>& acceptanceConditions);
-}  // namespace spothelper
-}  // namespace storm
+}  // namespace storm::modelchecker::helper::lexicographic::spothelper
