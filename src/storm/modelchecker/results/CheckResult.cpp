@@ -190,6 +190,8 @@ template ExplicitQuantitativeCheckResult<double>& CheckResult::asExplicitQuantit
 template ExplicitQuantitativeCheckResult<double> const& CheckResult::asExplicitQuantitativeCheckResult() const;
 template ExplicitParetoCurveCheckResult<double>& CheckResult::asExplicitParetoCurveCheckResult();
 template ExplicitParetoCurveCheckResult<double> const& CheckResult::asExplicitParetoCurveCheckResult() const;
+template LexicographicCheckResult<double>& CheckResult::asLexicographicCheckResult();
+template LexicographicCheckResult<double> const& CheckResult::asLexicographicCheckResult() const;
 
 template SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>& CheckResult::asSymbolicQualitativeCheckResult();
 template SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD> const& CheckResult::asSymbolicQualitativeCheckResult() const;
@@ -228,6 +230,10 @@ template ExplicitQuantitativeCheckResult<storm::RationalFunction> const& CheckRe
 
 template ExplicitParetoCurveCheckResult<storm::RationalNumber>& CheckResult::asExplicitParetoCurveCheckResult();
 template ExplicitParetoCurveCheckResult<storm::RationalNumber> const& CheckResult::asExplicitParetoCurveCheckResult() const;
+
+template LexicographicCheckResult<storm::RationalNumber>& CheckResult::asLexicographicCheckResult();
+template LexicographicCheckResult<storm::RationalNumber> const& CheckResult::asLexicographicCheckResult() const;
+
 #endif
 }  // namespace modelchecker
 }  // namespace storm
