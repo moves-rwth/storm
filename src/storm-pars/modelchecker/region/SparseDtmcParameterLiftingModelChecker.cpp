@@ -653,7 +653,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::(
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart(
                 storm::storage::ParameterRegion<ValueType> &region,
                 std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
                 storm::analysis::MonotonicityResult<VariableType> &monRes, bool minimize) const {
@@ -680,7 +680,7 @@ namespace storm {
                     consideredVariables.insert(itr->second);
                 }
                 assert (consideredVariables.size() > 0);
-                if (disableOptimisation) {
+                if (this->isDisableOptimizationSet()) {
                     region.split(region.getCenterPoint(consideredVariables), regionVector);
                 } else {
                     region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);

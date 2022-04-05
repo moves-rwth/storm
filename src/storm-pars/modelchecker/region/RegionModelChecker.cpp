@@ -398,6 +398,11 @@ namespace storm {
         }
 
         template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::isDisableOptimizationSet() const {
+            return disableOptimization;
+        }
+
+        template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setUseMonotonicity(bool monotonicity) {
             this->useMonotonicity = monotonicity;
         }
@@ -418,6 +423,11 @@ namespace storm {
         void RegionModelChecker<ParametricType>::setUseOptimisticOrder(bool optimistic){
             assert (!optimistic || useMonotonicity && useBounds);
             this->useOptimisticOrder = optimistic;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setDisableOptimization(bool disableOptimization){
+            this->disableOptimization = disableOptimization;
         }
 
         template <typename ParametricType>

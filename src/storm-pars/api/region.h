@@ -32,13 +32,14 @@ namespace storm {
 
     namespace api {
         struct MonotonicitySetting {
-            MonotonicitySetting(bool a, bool b, bool c, bool d) { useMonotonicity = a; useOnlyGlobalMonotonicity = b; useBoundsFromPLA = c; useOptimisticOrder = d;}
-            MonotonicitySetting() { useMonotonicity = false; useOnlyGlobalMonotonicity = false; useBoundsFromPLA = false; useOptimisticOrder = false;}
+            MonotonicitySetting(bool a, bool b, bool c, bool d, bool e) { useMonotonicity = a; useOnlyGlobalMonotonicity = b; useBoundsFromPLA = c; useOptimisticOrder = d; disableOptimization = e;}
+            MonotonicitySetting() { useMonotonicity = false; useOnlyGlobalMonotonicity = false; useBoundsFromPLA = false; useOptimisticOrder = false; disableOptimization = false;}
 
             bool useMonotonicity;
             bool useOnlyGlobalMonotonicity;
             bool useBoundsFromPLA;
             bool useOptimisticOrder;
+            bool disableOptimization;
         };
 
         template <typename ValueType>
@@ -162,6 +163,7 @@ namespace storm {
                 checker->setUseOnlyGlobal(monotonicitySetting.useOnlyGlobalMonotonicity);
                 checker->setUseBounds(monotonicitySetting.useBoundsFromPLA);
                 checker->setUseOptimisticOrder(monotonicitySetting.useOptimisticOrder);
+                checker->setDisableOptimization(monotonicitySetting.disableOptimization);
                 if (monotonicitySetting.useMonotonicity && monotoneParameters) {
                     checker->setMonotoneParameters(monotoneParameters.get());
                 }
@@ -171,6 +173,7 @@ namespace storm {
                 checker->setUseOnlyGlobal(monotonicitySetting.useOnlyGlobalMonotonicity);
                 checker->setUseBounds(monotonicitySetting.useBoundsFromPLA);
                 checker->setUseOptimisticOrder(monotonicitySetting.useOptimisticOrder);
+                checker->setDisableOptimization(monotonicitySetting.disableOptimization);
                 if (monotonicitySetting.useMonotonicity && monotoneParameters) {
                     checker->setMonotoneParameters(monotoneParameters.get());
                 }

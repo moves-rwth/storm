@@ -30,6 +30,7 @@ namespace storm {
                  */
                 bool isSccEliminationSet() const;
                 bool isOptimisticOrderSet() const;
+                bool isDisableOptimizationSet() const;
 
                 /*!
                  * Retrieves whether a dot output of the reachability orders should be given
@@ -82,6 +83,7 @@ namespace storm {
                 const static std::string monotoneParameters;
                 const static std::string monSolution;
                 const static std::string monSolutionShortName;
+                const static std::string disableOptimization;
 
             };
 
