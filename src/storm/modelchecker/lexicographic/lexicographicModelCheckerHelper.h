@@ -1,7 +1,3 @@
-//
-// Created by steffi on 05.11.21.
-//
-
 #pragma once
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 

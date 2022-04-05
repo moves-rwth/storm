@@ -1,7 +1,3 @@
-//
-// Created by steffi on 18.11.21.
-//
-
 #pragma once
 
 #include "storm/automata/DeterministicAutomaton.h"

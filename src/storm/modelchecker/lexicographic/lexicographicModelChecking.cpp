@@ -1,6 +1,3 @@
-//
-// Created by steffi on 04.11.21.
-//
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Mdp.h"

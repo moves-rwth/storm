@@ -1,6 +1,3 @@
-//
-// Created by Steffi on 18.11.21.
-//
 #include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/NotSupportedException.h"

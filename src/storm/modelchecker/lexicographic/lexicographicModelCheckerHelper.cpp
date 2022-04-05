@@ -1,8 +1,3 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "misc-throw-by-value-catch-by-reference"
-//
-// Created by steffi on 05.11.21.
-//
 #include "storm/modelchecker/lexicographic/lexicographicModelCheckerHelper.h"
 #include "storm//modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/automata/APSet.h"
