@@ -94,12 +94,12 @@ bool AcyclicLinearEquationSolver<ValueType>::internalSolveEquations(Environment 
 }
 
 template<typename ValueType>
-LinearEquationSolverProblemFormat AcyclicLinearEquationSolver<ValueType>::getEquationProblemFormat(storm::Environment const& env) const {
+LinearEquationSolverProblemFormat AcyclicLinearEquationSolver<ValueType>::getEquationProblemFormat([[maybe_unused]] storm::Environment const& env) const {
     return LinearEquationSolverProblemFormat::FixedPointSystem;
 }
 
 template<typename ValueType>
-LinearEquationSolverRequirements AcyclicLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
+LinearEquationSolverRequirements AcyclicLinearEquationSolver<ValueType>::getRequirements([[maybe_unused]] Environment const& env) const {
     // Return the requirements of the underlying solver
     LinearEquationSolverRequirements requirements;
     requirements.requireAcyclic();

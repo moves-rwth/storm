@@ -32,7 +32,7 @@ namespace storm {
         };
 
         template<typename ValueType>
-        std::shared_ptr<RawPolynomialCache> getCache(storm::models::sparse::Pomdp<ValueType> const& model) {
+        std::shared_ptr<RawPolynomialCache> getCache([[maybe_unused]] storm::models::sparse::Pomdp<ValueType> const& model) {
             return std::make_shared<RawPolynomialCache>();
         }
 

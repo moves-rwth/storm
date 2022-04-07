@@ -6,7 +6,7 @@ namespace storm {
 namespace parser {
 
 template<typename ValueType>
-void ValueParser<ValueType>::addParameter(std::string const& parameter) {
+void ValueParser<ValueType>::addParameter([[maybe_unused]] std::string const& parameter) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build (Have you checked storm-pars?).");
 }
 

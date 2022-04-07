@@ -98,7 +98,7 @@ bool EliminationLinearEquationSolver<ValueType>::internalSolveEquations(Environm
 }
 
 template<typename ValueType>
-LinearEquationSolverProblemFormat EliminationLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
+LinearEquationSolverProblemFormat EliminationLinearEquationSolver<ValueType>::getEquationProblemFormat([[maybe_unused]] Environment const& env) const {
     return LinearEquationSolverProblemFormat::FixedPointSystem;
 }
 

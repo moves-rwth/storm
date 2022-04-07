@@ -235,7 +235,7 @@ bool TopologicalLinearEquationSolver<ValueType>::solveScc(storm::Environment con
 }
 
 template<typename ValueType>
-LinearEquationSolverProblemFormat TopologicalLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
+LinearEquationSolverProblemFormat TopologicalLinearEquationSolver<ValueType>::getEquationProblemFormat([[maybe_unused]] Environment const& env) const {
     return LinearEquationSolverProblemFormat::FixedPointSystem;
 }
 

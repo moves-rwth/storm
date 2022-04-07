@@ -153,7 +153,7 @@ void LpMinMaxLinearEquationSolver<ValueType>::clearCache() const {
 
 template<typename ValueType>
 MinMaxLinearEquationSolverRequirements LpMinMaxLinearEquationSolver<ValueType>::getRequirements(
-    Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] boost::optional<storm::solver::OptimizationDirection> const& direction, [[maybe_unused]] bool const& hasInitialScheduler) const {
     MinMaxLinearEquationSolverRequirements requirements;
 
     // In case we need to retrieve a scheduler, the solution has to be unique

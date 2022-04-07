@@ -64,12 +64,12 @@ storm::dd::Add<DdType, ValueType> SymbolicLinearEquationSolver<DdType, ValueType
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-LinearEquationSolverProblemFormat SymbolicLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat(Environment const& env) const {
+LinearEquationSolverProblemFormat SymbolicLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat([[maybe_unused]] Environment const& env) const {
     return LinearEquationSolverProblemFormat::EquationSystem;
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-LinearEquationSolverRequirements SymbolicLinearEquationSolver<DdType, ValueType>::getRequirements(Environment const& env) const {
+LinearEquationSolverRequirements SymbolicLinearEquationSolver<DdType, ValueType>::getRequirements([[maybe_unused]] Environment const& env) const {
     // Return empty requirements by default.
     return LinearEquationSolverRequirements();
 }

@@ -262,9 +262,9 @@ void GmmxxMultiplier<ValueType>::multAddReduceHelper(std::vector<uint64_t> const
 
 template<>
 template<typename Compare, bool backwards>
-void GmmxxMultiplier<storm::RationalFunction>::multAddReduceHelper(std::vector<uint64_t> const& rowGroupIndices, std::vector<storm::RationalFunction> const& x,
-                                                                   std::vector<storm::RationalFunction> const* b, std::vector<storm::RationalFunction>& result,
-                                                                   std::vector<uint64_t>* choices) const {
+void GmmxxMultiplier<storm::RationalFunction>::multAddReduceHelper([[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices, [[maybe_unused]] std::vector<storm::RationalFunction> const& x,
+                                                                   [[maybe_unused]] std::vector<storm::RationalFunction> const* b, [[maybe_unused]] std::vector<storm::RationalFunction>& result,
+                                                                   [[maybe_unused]] std::vector<uint64_t>* choices) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported for this data type.");
 }
 
@@ -394,11 +394,11 @@ void GmmxxMultiplier<ValueType>::multAddReduceParallel(storm::solver::Optimizati
 }
 
 template<>
-void GmmxxMultiplier<storm::RationalFunction>::multAddReduceParallel(storm::solver::OptimizationDirection const& dir,
-                                                                     std::vector<uint64_t> const& rowGroupIndices,
-                                                                     std::vector<storm::RationalFunction> const& x,
-                                                                     std::vector<storm::RationalFunction> const* b,
-                                                                     std::vector<storm::RationalFunction>& result, std::vector<uint64_t>* choices) const {
+void GmmxxMultiplier<storm::RationalFunction>::multAddReduceParallel([[maybe_unused]] storm::solver::OptimizationDirection const& dir,
+                                                                     [[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices,
+                                                                     [[maybe_unused]] std::vector<storm::RationalFunction> const& x,
+                                                                     [[maybe_unused]] std::vector<storm::RationalFunction> const* b,
+                                                                     [[maybe_unused]] std::vector<storm::RationalFunction>& result, [[maybe_unused]] std::vector<uint64_t>* choices) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
 }
 

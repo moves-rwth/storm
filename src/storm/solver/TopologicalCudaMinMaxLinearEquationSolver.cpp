@@ -49,7 +49,7 @@ void TopologicalCudaMinMaxLinearEquationSolver<ValueType>::setMatrix(storm::stor
 }
 
 template<class ValueType>
-void TopologicalCudaMinMaxLinearEquationSolver<ValueType>::setSchedulerFixedForRowGroup(storm::storage::BitVector&& states) {
+void TopologicalCudaMinMaxLinearEquationSolver<ValueType>::setSchedulerFixedForRowGroup([[maybe_unused]] storm::storage::BitVector&& states) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "Setting fixed choices for scheduler not implemented for TopologicalCudaMinMaxLinearEquationSolver");
 }

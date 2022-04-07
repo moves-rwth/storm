@@ -205,7 +205,7 @@ storm::expressions::Variable Z3LpSolver<ValueType>::addBinaryVariable(std::strin
 }
 
 template<typename ValueType>
-void Z3LpSolver<ValueType>::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
+void Z3LpSolver<ValueType>::addConstraint([[maybe_unused]] std::string const& name, storm::expressions::Expression const& constraint) {
     STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
     STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException,
                     "Illegal constraint uses inequality operator.");
@@ -370,7 +370,7 @@ void Z3LpSolver<ValueType>::setMaximalMILPGap(ValueType const&, bool) {
 }
 
 template<typename ValueType>
-ValueType Z3LpSolver<ValueType>::getMILPGap(bool relative) const {
+ValueType Z3LpSolver<ValueType>::getMILPGap([[maybe_unused]] bool relative) const {
     // Since the solver is precise, the milp gap is always zero.
     return storm::utility::zero<ValueType>();
 }

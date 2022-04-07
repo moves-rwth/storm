@@ -34,7 +34,7 @@ SymbolicEliminationLinearEquationSolver<DdType, ValueType>::SymbolicEliminationL
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations(Environment const& env,
+storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType, ValueType>::solveEquations([[maybe_unused]] Environment const& env,
                                                                                                              storm::dd::Add<DdType, ValueType> const& x,
                                                                                                              storm::dd::Add<DdType, ValueType> const& b) const {
     storm::dd::DdManager<DdType>& ddManager = x.getDdManager();
@@ -84,7 +84,7 @@ storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-LinearEquationSolverProblemFormat SymbolicEliminationLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat(Environment const& env) const {
+LinearEquationSolverProblemFormat SymbolicEliminationLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat([[maybe_unused]] Environment const& env) const {
     return LinearEquationSolverProblemFormat::FixedPointSystem;
 }
 

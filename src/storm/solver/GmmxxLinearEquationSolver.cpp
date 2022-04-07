@@ -130,7 +130,7 @@ bool GmmxxLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
 }
 
 template<typename ValueType>
-LinearEquationSolverProblemFormat GmmxxLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
+LinearEquationSolverProblemFormat GmmxxLinearEquationSolver<ValueType>::getEquationProblemFormat([[maybe_unused]] Environment const& env) const {
     return LinearEquationSolverProblemFormat::EquationSystem;
 }
 

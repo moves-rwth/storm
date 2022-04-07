@@ -113,7 +113,7 @@ std::string MathsatSmtSolver::MathsatModelReference::toString() const {
 
 #endif
 
-MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manager, Options const& options)
+MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manager, [[maybe_unused]] Options const& options)
     : SmtSolver(manager)
 #ifdef STORM_HAVE_MSAT
       ,
@@ -172,7 +172,7 @@ void MathsatSmtSolver::pop() {
 #endif
 }
 
-void MathsatSmtSolver::pop(uint_fast64_t n) {
+void MathsatSmtSolver::pop([[maybe_unused]] uint_fast64_t n) {
 #ifdef STORM_HAVE_MSAT
     SmtSolver::pop(n);
 #else
@@ -188,7 +188,7 @@ void MathsatSmtSolver::reset() {
 #endif
 }
 
-void MathsatSmtSolver::add(storm::expressions::Expression const& e) {
+void MathsatSmtSolver::add([[maybe_unused]] storm::expressions::Expression const& e) {
 #ifdef STORM_HAVE_MSAT
     msat_term expression = expressionAdapter->translateExpression(e);
     msat_assert_formula(env, expression);
@@ -222,7 +222,7 @@ SmtSolver::CheckResult MathsatSmtSolver::check() {
 #endif
 }
 
-SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::set<storm::expressions::Expression> const& assumptions) {
+SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions([[maybe_unused]] std::set<storm::expressions::Expression> const& assumptions) {
 #ifdef STORM_HAVE_MSAT
     lastCheckAssumptions = true;
     std::vector<msat_term> mathSatAssumptions;
@@ -250,7 +250,7 @@ SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::set<storm::ex
 }
 
 #ifndef WINDOWS
-SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions(std::initializer_list<storm::expressions::Expression> const& assumptions) {
+SmtSolver::CheckResult MathsatSmtSolver::checkWithAssumptions([[maybe_unused]] std::initializer_list<storm::expressions::Expression> const& assumptions) {
 #ifdef STORM_HAVE_MSAT
     lastCheckAssumptions = true;
     std::vector<msat_term> mathSatAssumptions;
@@ -327,7 +327,7 @@ storm::expressions::SimpleValuation MathsatSmtSolver::convertMathsatModelToValua
 }
 #endif
 
-std::vector<storm::expressions::SimpleValuation> MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable> const& important) {
+std::vector<storm::expressions::SimpleValuation> MathsatSmtSolver::allSat([[maybe_unused]] std::vector<storm::expressions::Variable> const& important) {
 #ifdef STORM_HAVE_MSAT
     std::vector<storm::expressions::SimpleValuation> valuations;
     this->allSat(important, [&valuations](storm::expressions::SimpleValuation const& valuation) -> bool {
@@ -419,8 +419,8 @@ class AllsatModelReferenceCallbackUserData {
 };
 #endif
 
-uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable> const& important,
-                                       std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
+uint_fast64_t MathsatSmtSolver::allSat([[maybe_unused]] std::vector<storm::expressions::Variable> const& important,
+                                       [[maybe_unused]] std::function<bool(storm::expressions::SimpleValuation&)> const& callback) {
 #ifdef STORM_HAVE_MSAT
     // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
     this->push();
@@ -445,8 +445,8 @@ uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable>
 #endif
 }
 
-uint_fast64_t MathsatSmtSolver::allSat(std::vector<storm::expressions::Variable> const& important,
-                                       std::function<bool(SmtSolver::ModelReference&)> const& callback) {
+uint_fast64_t MathsatSmtSolver::allSat([[maybe_unused]] std::vector<storm::expressions::Variable> const& important,
+                                       [[maybe_unused]] std::function<bool(SmtSolver::ModelReference&)> const& callback) {
 #ifdef STORM_HAVE_MSAT
     // Create a backtracking point, because MathSAT will modify the assertions stack during its AllSat procedure.
     this->push();
@@ -496,7 +496,7 @@ std::vector<storm::expressions::Expression> MathsatSmtSolver::getUnsatAssumption
 #endif
 }
 
-void MathsatSmtSolver::setInterpolationGroup(uint_fast64_t group) {
+void MathsatSmtSolver::setInterpolationGroup([[maybe_unused]] uint_fast64_t group) {
 #ifdef STORM_HAVE_MSAT
     auto groupIter = this->interpolationGroups.find(group);
     if (groupIter == this->interpolationGroups.end()) {
@@ -510,7 +510,7 @@ void MathsatSmtSolver::setInterpolationGroup(uint_fast64_t group) {
 #endif
 }
 
-storm::expressions::Expression MathsatSmtSolver::getInterpolant(std::vector<uint_fast64_t> const& groupsA) {
+storm::expressions::Expression MathsatSmtSolver::getInterpolant([[maybe_unused]] std::vector<uint_fast64_t> const& groupsA) {
 #ifdef STORM_HAVE_MSAT
     STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException,
                     "Unable to generate interpolant, because the last check did not determine the formulas to be unsatisfiable.");

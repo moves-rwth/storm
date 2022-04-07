@@ -110,7 +110,7 @@ bool AcyclicMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Enviro
 
 template<typename ValueType>
 MinMaxLinearEquationSolverRequirements AcyclicMinMaxLinearEquationSolver<ValueType>::getRequirements(
-    Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] boost::optional<storm::solver::OptimizationDirection> const& direction, [[maybe_unused]] bool const& hasInitialScheduler) const {
     // Return the requirements of the underlying solver
     MinMaxLinearEquationSolverRequirements requirements;
     requirements.requireAcyclic();
