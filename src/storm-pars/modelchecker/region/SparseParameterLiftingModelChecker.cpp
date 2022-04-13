@@ -380,6 +380,14 @@ namespace storm {
                             // Check whether this region contains a new 'good' value and set this value
                             auto point = useMonotonicity && this->isDisableOptimizationSet() ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : (useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()), possibleMonotoneIncrParameters, possibleMonotoneDecrParameters) : currRegion.getCenterPoint());
                             auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                            if (useMonotonicity && !this->isDisableOptimizationSet()) {
+                                auto point2 = currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                                auto currValue2 =  getInstantiationChecker().check(env, point2)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                                if (currValue2 > currValue) {
+                                    currValue = currValue2;
+                                    point = point2;
+                                }
+                            }
                             if (!value || (minimize ? currValue < value.get() : currValue > value.get())) {
                                 value = currValue;
                                 valuation = point;
