@@ -202,7 +202,7 @@ namespace storm {
                     } else {
                         result.insert(typename Valuation::value_type(variable, this->getLowerBoundary(variable) + 3 * (this->getUpperBoundary(variable) - this->getLowerBoundary(variable) ) / 4));
                     }
-                } else if (possiblyMonotoneDecrVars.find(variable) != possiblyMonotoneIncrVars.end()) {
+                } else if (possiblyMonotoneDecrVars.find(variable) != possiblyMonotoneDecrVars.end()) {
                     if (minimize) {
                         result.insert(typename Valuation::value_type(variable, this->getLowerBoundary(variable) + 3 * (this->getUpperBoundary(variable) - this->getLowerBoundary(variable) ) / 4));
                     } else {
