@@ -681,7 +681,7 @@ namespace storm {
                 }
                 assert (consideredVariables.size() > 0);
                 if (this->isDisableOptimizationSet()) {
-                    region.split(region.getCenterPoint(consideredVariables), regionVector);
+                    region.split(region.getCenterPoint(consideredVariables), regionVector, consideredVariables);
                 } else {
                     region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);
                 }
@@ -696,7 +696,7 @@ namespace storm {
                 }
                 assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
                 if (this->isDisableOptimizationSet()) {
-                    region.split(region.getCenterPoint(consideredVariables), regionVector);
+                    region.split(region.getCenterPoint(consideredVariables), regionVector, consideredVariables);
                 } else {
                     region.split(
                         region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize),

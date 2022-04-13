@@ -146,8 +146,12 @@ namespace storm {
         template<typename ParametricType>
         std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const {
             std::size_t const numOfVariables = consideredVariables.size();
+            if (numOfVariables > std::numeric_limits<std::size_t>::digits) {
+                std::cout << " Hoi" << std::endl;
+            }
             STORM_LOG_THROW(numOfVariables <= std::numeric_limits<std::size_t>::digits, storm::exceptions::OutOfRangeException, "Number of variables " << numOfVariables << " is too high.");
             std::size_t const numOfVertices = std::pow(2, numOfVariables);
+            STORM_LOG_THROW(numOfVertices <= std::numeric_limits<std::size_t>::digits, storm::exceptions::OutOfRangeException, "Number of variables " << numOfVariables << " is too high.");
             std::vector<Valuation> resultingVector(numOfVertices);
             
             for (uint_fast64_t vertexId = 0; vertexId < numOfVertices; ++vertexId) {
