@@ -403,7 +403,7 @@ namespace storm {
                             }
                             if (splitRegion) {
                                 // We will split the region in this case, but first we set the bounds to extend the order for the new regions.
-                                if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding() && orderExtender && (this->isDisableOptimizationSet() || order->getNumberOfSufficientStates()/order->getNumberOfStates() < 0.25)) {
+                                if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding() && orderExtender && (this->isDisableOptimizationSet() || storm::utility::convertNumber<double>(order->getNumberOfSufficientStates())/storm::utility::convertNumber<double>(order->getNumberOfStates()) < 0.25)) {
                                     boundsWatch.start();
                                     numberOfPLACallsBounds++;
                                     if (minimize) {
