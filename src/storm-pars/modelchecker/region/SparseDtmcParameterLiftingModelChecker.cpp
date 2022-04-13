@@ -680,11 +680,11 @@ namespace storm {
                     consideredVariables.insert(itr->second);
                 }
                 assert (consideredVariables.size() > 0);
-                if (this->isDisableOptimizationSet()) {
+//                if (this->isDisableOptimizationSet()) {
                     region.split(region.getCenterPoint(consideredVariables), regionVector, consideredVariables);
-                } else {
-                    region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);
-                }
+//                } else {
+//                    region.split(region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize), regionVector, std::move(consideredVariables), this->possibleMonotoneParameters);
+//                }
             } else {
                 STORM_LOG_INFO("Splitting based on sorting");
 
@@ -695,13 +695,13 @@ namespace storm {
                     }
                 }
                 assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
-                if (this->isDisableOptimizationSet()) {
+//                if (this->isDisableOptimizationSet()) {
                     region.split(region.getCenterPoint(consideredVariables), regionVector, consideredVariables);
-                } else {
-                    region.split(
-                        region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize),
-                        regionVector, std::move(consideredVariables));
-                }
+//                } else {
+//                    region.split(
+//                        region.getSplittingPoint(consideredVariables, this->possibleMonotoneIncrParameters, this->possibleMonotoneDecrParameters, minimize),
+//                        regionVector, std::move(consideredVariables));
+//                }
             }
         }
 
