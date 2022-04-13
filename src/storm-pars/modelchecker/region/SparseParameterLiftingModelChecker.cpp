@@ -256,14 +256,23 @@ namespace storm {
                 if (this->isUseBoundsSet()) {
                     numberOfPLACallsBounds++;
                     numberOfPLACallsBounds++;
-                    auto minBound = getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                    auto maxBound = getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                    ExplicitQuantitativeCheckResult<ConstantType> minBound;
+                    ExplicitQuantitativeCheckResult<ConstantType> maxBound;
+                    // Order of setting bounds is important as this influences the regionsplitestimates
+                    if (minimize) {
+                        maxBound = getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                        minBound = getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+
+                    } else {
+                        minBound = getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                        maxBound = getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                    }
                     if (minimize) {
                         initBound = minBound[*this->parametricModel->getInitialStates().begin()];
                     } else {
                         initBound = maxBound[*this->parametricModel->getInitialStates().begin()];
                     }
-                    orderExtender->setMinMaxValues(minBound, maxBound);
+                    orderExtender->setMinMaxValues(minBound.getValueVector(), maxBound.getValueVector());
                 }
                 auto order = this->getInitialOrder(region, this->isUseOptimisticOrderSet());
                 if (order != nullptr) {
@@ -402,16 +411,25 @@ namespace storm {
                                             || (!minimize && (currBound.get() * (1 - storm::utility::convertNumber<ConstantType>(precision)) > value.get()));
                             }
                             if (splitRegion) {
-                                // We will split the region in this case, but first we set the bounds to extend the order for the new regions.
+                                // Split the region, has to be done before getting bounds, as otherwise the regionsplitestimates change
+                                if (useMonotonicity) {
+                                    this->splitSmart(currRegion, newRegions,
+                                                     *(localMonotonicityResult->getGlobalMonotonicityResult()), minimize);
+                                } else if (this->isRegionSplitEstimateSupported()) {
+                                    auto empty = storm::analysis::MonotonicityResult<VariableType>();
+                                    this->splitSmart(currRegion, newRegions, empty, minimize);
+                                } else {
+                                    currRegion.split(currRegion.getCenterPoint(), newRegions);
+                                }
+
+                                // We set the bounds to extend the order for the new regions.
                                 if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding() && orderExtender && (this->isDisableOptimizationSet() || storm::utility::convertNumber<double>(order->getNumberOfSufficientStates())/storm::utility::convertNumber<double>(order->getNumberOfStates()) < 0.25)) {
-                                    boundsWatch.start();
                                     numberOfPLACallsBounds++;
                                     if (minimize) {
                                         orderExtender->setMinMaxValues(bounds, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), order);
                                     } else {
                                         orderExtender->setMinMaxValues(getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector(), bounds, order);
                                     }
-                                    boundsWatch.stop();
                                     if (orderExtender->isHope(order)) {
                                         if (numberOfCopiesOrder[order] != 1) {
                                             // we only create a copy of the order if we extend it.
@@ -429,16 +447,6 @@ namespace storm {
                                             order->setChanged(false);
                                         }
                                     }
-                                }
-                                // Now split the region
-                                if (useMonotonicity) {
-                                    this->splitSmart(currRegion, newRegions,
-                                                     *(localMonotonicityResult->getGlobalMonotonicityResult()), minimize);
-                                } else if (this->isRegionSplitEstimateSupported()) {
-                                    auto empty = storm::analysis::MonotonicityResult<VariableType>();
-                                    this->splitSmart(currRegion, newRegions, empty, minimize);
-                                } else {
-                                    currRegion.split(currRegion.getCenterPoint(), newRegions);
                                 }
                             }
                         }
