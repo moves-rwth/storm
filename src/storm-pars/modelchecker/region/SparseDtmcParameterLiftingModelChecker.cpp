@@ -666,15 +666,15 @@ namespace storm {
                 STORM_LOG_INFO("Splitting based on region split estimates");
                 for (auto &entry : regionSplitEstimates) {
                     if (entry.second != 0) {
-                        sortedOnValues.insert({-entry.second, entry.first});
-//                        if (this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()) {
-//                            assert ((!monRes.isMonotone(entry.first)));
-//                            sortedOnValues.insert({-entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)), entry.first});
-//                        } else if (!monRes.isMonotone(entry.first)) {
-//                            sortedOnValues.insert({-entry.second * std::pow(storm::utility::convertNumber<double>(region.getDifference(entry.first)), 2), entry.first});
-//                        } else {
-//                            assert (false);
-//                        }
+//                        sortedOnValues.insert({-entry.second, entry.first});
+                        if (this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()) {
+                            assert ((!monRes.isMonotone(entry.first)));
+                            sortedOnValues.insert({-entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)), entry.first});
+                        } else if (!monRes.isMonotone(entry.first)) {
+                            sortedOnValues.insert({-entry.second * std::pow(storm::utility::convertNumber<double>(region.getDifference(entry.first)), 2), entry.first});
+                        } else {
+                            assert (false);
+                        }
                     }
                 }
                 for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
