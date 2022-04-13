@@ -666,7 +666,7 @@ namespace storm {
                 STORM_LOG_INFO("Splitting based on region split estimates");
                 for (auto &entry : regionSplitEstimates) {
                     if (entry.second != 0) {
-                        sortedOnValues.insert({-entry.second, entry.first});
+                        sortedOnValues.insert({entry.second, entry.first});
 //                        if (this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()) {
 //                            assert ((!monRes.isMonotone(entry.first)));
 //                            sortedOnValues.insert({-entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)), entry.first});
