@@ -214,6 +214,21 @@ class SparseDoubleTopologicalSoundValueIterationEnvironment {
     }
 };
 
+class SparseDoubleLPEnvironment {
+   public:
+    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
+    static const MdpEngine engine = MdpEngine::PrismSparse;
+    static const bool isExact = false;
+    typedef double ValueType;
+    typedef storm::models::sparse::Mdp<ValueType> ModelType;
+    static storm::Environment createEnvironment() {
+        storm::Environment env;
+        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::LinearProgramming);
+        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+        return env;
+    }
+};
+
 class SparseRationalPolicyIterationEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
@@ -519,6 +534,7 @@ typedef ::testing::Types<SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironme
                          JaniSparseDoubleValueIterationEnvironment, JitSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment,
                          SparseDoubleSoundValueIterationEnvironment, SparseDoubleOptimisticValueIterationEnvironment,
                          SparseDoubleTopologicalValueIterationEnvironment, SparseDoubleTopologicalSoundValueIterationEnvironment,
+                         SparseDoubleLPEnvironment,
                          SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment,
                          HybridCuddDoubleValueIterationEnvironment, HybridSylvanDoubleValueIterationEnvironment, HybridCuddDoubleSoundValueIterationEnvironment,
                          HybridCuddDoubleOptimisticValueIterationEnvironment, HybridSylvanRationalPolicyIterationEnvironment,
