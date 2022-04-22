@@ -847,7 +847,7 @@ class ArrayVariableReplacer : public JaniTraverser {
         }
     }
 
-    void traverse(Constant& constant, boost::any const& data) override {
+    void traverse(Constant& constant, [[maybe_unused]] boost::any const& data) override {
         // There are no array constants in the JANI standard.
         // Still, we might have some constant array expressions with (constant) array access here.
         if (constant.isDefined()) {
@@ -881,7 +881,7 @@ class ArrayVariableReplacer : public JaniTraverser {
         }
     }
 
-    void traverse(JaniType& type, boost::any const& data) override {
+    void traverse(JaniType& type, [[maybe_unused]] boost::any const& data) override {
         STORM_LOG_ASSERT(!type.isArrayType(), "did not expect any array variable declarations at this point.");
         if (type.isBoundedType()) {
             auto& boundedType = type.asBoundedType();
@@ -915,7 +915,7 @@ class ArrayVariableReplacer : public JaniTraverser {
         edgeDestination.setProbability(arrayExprEliminator.eliminate(edgeDestination.getProbability()));
     }
 
-    virtual void traverse(OrderedAssignments& orderedAssignments, boost::any const& data) override {
+    virtual void traverse([[maybe_unused]] OrderedAssignments& orderedAssignments, boost::any const& data) override {
         // Replace array occurrences in LValues and assigned expressions.
         std::vector<Assignment> newAssignments;
         if (!orderedAssignments.empty()) {

@@ -199,7 +199,7 @@ typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value
 
 template<typename ValueType, typename StateType>
 typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, StateType>::type sample(
-    boost::container::flat_map<StateType, storm::RationalFunction> const& distr, storm::RationalFunction const& quantile) {
+    [[maybe_unused]] boost::container::flat_map<StateType, storm::RationalFunction> const& distr, [[maybe_unused]] storm::RationalFunction const& quantile) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "We cannot sample from parametric distributions.");
 }
 

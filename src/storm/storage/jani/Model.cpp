@@ -963,7 +963,7 @@ class CompositionSimplificationVisitor : public CompositionVisitor {
         return boost::any_cast<std::shared_ptr<Composition>>(oldComposition.accept(*this, boost::any()));
     }
 
-    virtual boost::any visit(AutomatonComposition const& composition, boost::any const& data) override {
+    virtual boost::any visit(AutomatonComposition const& composition, [[maybe_unused]] boost::any const& data) override {
         std::string name = composition.getAutomatonName();
         if (automatonToCopiesMap.count(name) != 0) {
             auto& copies = automatonToCopiesMap[name];

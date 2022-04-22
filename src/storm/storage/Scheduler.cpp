@@ -298,8 +298,8 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
 }
 
 template<>
-void Scheduler<float>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<float>> model, bool skipUniqueChoices,
-                                         bool skipDontCareStates) const {
+void Scheduler<float>::printJsonToStream([[maybe_unused]] std::ostream& out, [[maybe_unused]] std::shared_ptr<storm::models::sparse::Model<float>> model, [[maybe_unused]] bool skipUniqueChoices,
+                                         [[maybe_unused]] bool skipDontCareStates) const {
     STORM_LOG_THROW(isMemorylessScheduler(), storm::exceptions::NotImplementedException, "Json export of schedulers not implemented for this value type.");
 }
 

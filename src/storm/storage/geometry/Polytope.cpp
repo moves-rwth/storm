@@ -205,16 +205,16 @@ std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::downwardClosure() cons
 }
 
 template<typename ValueType>
-std::vector<storm::expressions::Variable> Polytope<ValueType>::declareVariables(storm::expressions::ExpressionManager& manager,
-                                                                                std::string const& namePrefix) const {
+std::vector<storm::expressions::Variable> Polytope<ValueType>::declareVariables([[maybe_unused]] storm::expressions::ExpressionManager& manager,
+                                                                                [[maybe_unused]] std::string const& namePrefix) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented for this polytope implementation.");
     std::vector<storm::expressions::Variable> result;
     return result;
 }
 
 template<typename ValueType>
-std::vector<storm::expressions::Expression> Polytope<ValueType>::getConstraints(storm::expressions::ExpressionManager const& manager,
-                                                                                std::vector<storm::expressions::Variable> const& variables) const {
+std::vector<storm::expressions::Expression> Polytope<ValueType>::getConstraints([[maybe_unused]] storm::expressions::ExpressionManager const& manager,
+                                                                                [[maybe_unused]] std::vector<storm::expressions::Variable> const& variables) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented for this polytope implementation.");
     std::vector<storm::expressions::Expression> result;
     return result;

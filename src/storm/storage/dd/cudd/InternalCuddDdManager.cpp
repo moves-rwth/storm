@@ -146,7 +146,7 @@ InternalAdd<DdType::CUDD, ValueType> InternalDdManager<DdType::CUDD>::getConstan
 }
 
 template<>
-InternalAdd<DdType::CUDD, storm::RationalNumber> InternalDdManager<DdType::CUDD>::getConstant(storm::RationalNumber const& value) const {
+InternalAdd<DdType::CUDD, storm::RationalNumber> InternalDdManager<DdType::CUDD>::getConstant([[maybe_unused]] storm::RationalNumber const& value) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 

@@ -352,7 +352,7 @@ boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boos
     return opDecl;
 }
 
-boost::any FormulaToJaniJson::visit(storm::logic::GameFormula const& f, boost::any const& data) const {
+boost::any FormulaToJaniJson::visit([[maybe_unused]] storm::logic::GameFormula const& f, [[maybe_unused]] boost::any const& data) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Conversion of game formulas to Jani is not supported.");
 }
 

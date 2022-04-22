@@ -292,7 +292,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkAtomicExpress
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkAtomicLabelFormula([[maybe_unused]] Environment const& env,
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkAtomicLabelFormula(Environment const& env,
                                                                                       CheckTask<storm::logic::AtomicLabelFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
@@ -326,7 +326,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkBinaryBoolean
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkBooleanLiteralFormula(
-    [[maybe_unused]] Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) {
+    Environment const& env, CheckTask<storm::logic::BooleanLiteralFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }

@@ -131,7 +131,7 @@ InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ceil(
 }
 
 template<typename ValueType>
-InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn(size_t precision) const {
+InternalAdd<DdType::CUDD, storm::RationalNumber> InternalAdd<DdType::CUDD, ValueType>::sharpenKwekMehlhorn([[maybe_unused]] size_t precision) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
 }
 
@@ -197,8 +197,8 @@ bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd<DdTy
 }
 
 template<>
-bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision(InternalAdd<DdType::CUDD, storm::RationalNumber> const& other,
-                                                                            storm::RationalNumber const& precision, bool relative) const {
+bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision([[maybe_unused]] InternalAdd<DdType::CUDD, storm::RationalNumber> const& other,
+                                                                            [[maybe_unused]] storm::RationalNumber const& precision, [[maybe_unused]] bool relative) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
@@ -260,7 +260,7 @@ InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(ValueTyp
 }
 
 template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greater(storm::RationalNumber const& value) const {
+InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greater([[maybe_unused]] storm::RationalNumber const& value) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
@@ -270,7 +270,7 @@ InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(V
 }
 
 template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greaterOrEqual(storm::RationalNumber const& value) const {
+InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::greaterOrEqual([[maybe_unused]] storm::RationalNumber const& value) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
@@ -280,7 +280,7 @@ InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(ValueType c
 }
 
 template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::less(storm::RationalNumber const& value) const {
+InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::less([[maybe_unused]] storm::RationalNumber const& value) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
@@ -290,7 +290,7 @@ InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(Valu
 }
 
 template<>
-InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::lessOrEqual(storm::RationalNumber const& value) const {
+InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, storm::RationalNumber>::lessOrEqual([[maybe_unused]] storm::RationalNumber const& value) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
@@ -868,9 +868,9 @@ DdNode* InternalAdd<DdType::CUDD, ValueType>::fromVectorRec(::DdManager* manager
 }
 
 template<>
-DdNode* InternalAdd<DdType::CUDD, storm::RationalNumber>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel,
-                                                                        uint_fast64_t maxLevel, std::vector<storm::RationalNumber> const& values,
-                                                                        Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
+DdNode* InternalAdd<DdType::CUDD, storm::RationalNumber>::fromVectorRec([[maybe_unused]] ::DdManager* manager, [[maybe_unused]] uint_fast64_t& currentOffset, [[maybe_unused]] uint_fast64_t currentLevel,
+                                                                        [[maybe_unused]] uint_fast64_t maxLevel, [[maybe_unused]] std::vector<storm::RationalNumber> const& values,
+                                                                        [[maybe_unused]] Odd const& odd, [[maybe_unused]] std::vector<uint_fast64_t> const& ddVariableIndices) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
 }
 

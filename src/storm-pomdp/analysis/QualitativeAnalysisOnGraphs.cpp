@@ -79,7 +79,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0Min([[maybe_unused]] storm::logic::UntilFormula const& formula) const {
+        storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0Min(storm::logic::UntilFormula const& formula) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Prob0 analysis is currently not implemented for minimizing properties.");
         }
 
