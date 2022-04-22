@@ -18,11 +18,11 @@ std::pair<IntegerType, IntegerType> findRational(IntegerType const& alpha, Integ
 
     if (alphaDivBetaPair.first == gammaDivDeltaPair.first && !storm::utility::isZero(alphaDivBetaPair.second)) {
         std::pair<IntegerType, IntegerType> subresult = findRational(delta, gammaDivDeltaPair.second, beta, alphaDivBetaPair.second);
-        auto result = std::make_pair(alphaDivBetaPair.first * subresult.first + subresult.second, subresult.first);
+        std::pair<IntegerType, IntegerType> result(alphaDivBetaPair.first * subresult.first + subresult.second, subresult.first);
 
         return result;
     } else {
-        auto result = std::make_pair(
+        std::pair<IntegerType, IntegerType> result(
             storm::utility::isZero(alphaDivBetaPair.second) ? alphaDivBetaPair.first : alphaDivBetaPair.first + storm::utility::one<IntegerType>(),
             storm::utility::one<IntegerType>());
         return result;

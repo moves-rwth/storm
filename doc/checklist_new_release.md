@@ -9,25 +9,18 @@ Note that in most cases a simultaneous release of [carl](https://github.com/smtr
    * Set release month
 
 2. Update used carl version:
-   * Update `GIT_TAG` in `resources/3rdparty/carl/CMakeLists.txt`
    * Maybe update `CARL_MINVERSION` in `resources/3rdparty/CMakeLists.txt`
 
 3. Check that storm builds without errors and all tests are successful:
    * [Github Actions](https://github.com/moves-rwth/storm/actions/) should run successfully.
-   * Invoke the script `doc/scripts/test_build_configurations.py` to build and check different CMake configurations.
 
 4. Set new storm version:
    * Set new storm version in `version.cmake`
 
-5. Set new tag in Git:
+5. Set new tag in Git (assuming that the new version is X.Y.Z and that the remote "origin" is the github repo):
    ```console
-   git tag -a new_version
-   git push origin new_version
-   ```
-   Next we push the tag to GitHub. This step requires the GitHub repo to to be configured as a remote.
-   ```console
-   git remote add github https://github.com/moves-rwth/storm.git
-   git push github new_version
+   git tag -a X.Y.Z -m "Storm version X.Y.Z"
+   git push origin X.Y.Z
    ```
    The new tag should now be visible on [GitHub](https://github.com/moves-rwth/storm/tags).
 

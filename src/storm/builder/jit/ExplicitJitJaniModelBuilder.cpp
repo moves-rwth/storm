@@ -138,7 +138,7 @@ ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBui
 #else
     gmpIncludeDirectory = "";
 #endif
-    sparseppIncludeDirectory = STORM_BUILD_DIR "/include/resources/3rdparty/sparsepp/";
+    parallelHashmapIncludeDirectory = STORM_BUILD_DIR "/include/resources/3rdparty/parallel_hashmap/";
 
     // Register all transient variables as transient.
     for (auto const& variable : this->model.getGlobalVariables().getTransientVariables()) {
@@ -290,7 +290,7 @@ bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkCompilerFlags
     try {
         std::string emptyProgram = R"(
 #include <cstdint>
-                    
+
                     int main() {
                         return 0;
                     }
@@ -324,7 +324,7 @@ bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkBoostAvailabl
     try {
         std::string program = R"(
 #include <boost/optional.hpp>
-                    
+
                     int main() {
                         return 0;
                     }
@@ -359,7 +359,7 @@ bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkBoostDllAvail
     try {
         std::string program = R"(
 #include <boost/dll/alias.hpp>
-                    
+
                     int main() {
                         return 0;
                     }
@@ -395,7 +395,7 @@ bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkStormHeadersA
         std::string program = R"(
 #include "storm-config.h"
 #include "storm/builder/RewardModelInformation.h"
-                    
+
                     int main() {
                         return 0;
                     }
@@ -429,7 +429,7 @@ bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::checkCarlAvailable
     try {
         std::string program = R"(
 #include "storm/adapters/RationalFunctionAdapter.h"
-                        
+
                     int main() {
                         return 0;
                     }
@@ -1791,11 +1791,11 @@ template<typename ValueType, typename RewardModelType>
 std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourceCodeFromSkeleton(cpptempl::data_map& modelData) {
     std::string sourceTemplate = R"(
 #define NDEBUG
-                
+
 {% if expl_progress %}
 #define EXPL_PROGRESS
 {% endif %}
-                
+
 #include <boost/dll/alias.hpp>
 #include <chrono>
 #include <cmath>
@@ -1804,31 +1804,31 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
 #include <queue>
 #include <unordered_map>
 #include <vector>
-                
+
 {% if exact %}
 #include "storm/adapters/RationalNumberAdapter.h"
 {% endif %}
 {% if parametric %}
 #include "storm/adapters/RationalFunctionAdapter.h"
 {% endif %}
-                
-#include <sparsepp/spp.h>
-                
+
+#include <parallel_hashmap/phmap.h>
+
 #include "storm/builder/RewardModelInformation.h"
 #include "storm/builder/jit/JitModelBuilderInterface.h"
 #include "storm/builder/jit/ModelComponentsBuilder.h"
 #include "storm/builder/jit/StateBehaviour.h"
 #include "storm/builder/jit/StateSet.h"
-                
+
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/constants.h"
-                
+
                 namespace storm {
                     namespace builder {
                         namespace jit {
-                            
+
                             typedef uint32_t IndexType;
-                            
+
                             {% if double %}
                             typedef double ValueType;
                             {% endif %}
@@ -1838,7 +1838,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                             {% if parametric %}
                             typedef storm::RationalFunction ValueType;
                             {% endif %}
-                            
+
                             struct StateType {
                                 // Boolean variables.
                                 {% for variable in nontransient_variables.boolean %}bool {$variable.name} : 1;
@@ -1857,7 +1857,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 {% for variable in nontransient_variables.locations %}uint64_t {$variable.name} : {$variable.numberOfBits};
                                 {% endfor %}
                             };
-                            
+
                             bool operator==(StateType const& first, StateType const& second) {
                                 bool result = true;
                                 {% for variable in nontransient_variables.boolean %}result &= !(first.{$variable.name} ^ second.{$variable.name});
@@ -1872,7 +1872,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 {% endfor %}
                                 return result;
                             }
-                            
+
                             std::ostream& operator<<(std::ostream& out, StateType const& in) {
                                 out << "<";
                                 {% for variable in nontransient_variables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", " << std::noboolalpha;
@@ -1888,12 +1888,12 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 out << ">";
                                 return out;
                             }
-                            
+
                             struct TransientVariables {
                                 TransientVariables() {
                                     reset();
                                 }
-                                
+
                                 void reset() {
                                     {% for variable in transient_variables.boolean %}{$variable.name} = {$variable.init};
                                     {% endfor %}
@@ -1904,7 +1904,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                     {% for variable in transient_variables.real %}{$variable.name} = {$variable.init};
                                     {% endfor %}
                                 }
-                                
+
                                 // Boolean variables.
                                 {% for variable in transient_variables.boolean %}bool {$variable.name} : 1;
                                 {% endfor %}
@@ -1928,7 +1928,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 {% endfor %}
                                 {% endif %}
                             };
-                            
+
                             std::ostream& operator<<(std::ostream& out, TransientVariables const& in) {
                                 out << "<";
                                 {% for variable in transient_variables.boolean %}out << "{$variable.name}=" << std::boolalpha << in.{$variable.name} << ", " << std::noboolalpha;
@@ -1942,13 +1942,13 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 out << ">";
                                 return out;
                             }
-                            
+
                             {% if exploration_checks %}
                             struct VariableWrites {
                                 VariableWrites() {
                                     reset();
                                 }
-                                
+
                                 void reset() {
                                     {% for variable in nontransient_variables.boolean %}{$variable.name} = false;
                                     {% endfor %}
@@ -1969,7 +1969,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                     {% for variable in transient_variables.real %}{$variable.name} = false;
                                     {% endfor %}
                                 }
-                                
+
                                 // Boolean variables.
                                 {% for variable in nontransient_variables.boolean %}bool {$variable.name} : 1;
                                 {% endfor %}
@@ -1996,44 +1996,44 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 {% endfor %}
                             };
                             {% endif %}
-                            
+
                         }
                     }
                 }
-                
+
                 namespace std {
                     template <>
                     struct hash<storm::builder::jit::StateType> {
                         std::size_t operator()(storm::builder::jit::StateType const& in) const {
                             // Note: this is faster than viewing the struct as a bit field and taking hash_combine of the bytes.
                             std::size_t seed = 0;
-                            {% for variable in nontransient_variables.boolean %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.boolean %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in nontransient_variables.boundedInteger %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.boundedInteger %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in nontransient_variables.unboundedInteger %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.unboundedInteger %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in nontransient_variables.real %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.real %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
-                            {% for variable in nontransient_variables.locations %}spp::hash_combine(seed, in.{$variable.name});
+                            {% for variable in nontransient_variables.locations %}seed = phmap::HashState().combine(seed, in.{$variable.name});
                             {% endfor %}
                             return seed;
                         }
                     };
                 }
-                
+
                 namespace storm {
                     namespace builder {
                         namespace jit {
-                            
+
                             static bool model_is_deterministic() {
                                 return {$deterministic_model};
                             }
-                            
+
                             static bool model_is_discrete_time() {
                                 return {$discrete_time_model};
                             }
-                            
+
                             static bool perform_exploration_checks() {
                                 {% if exploration_checks %}
                                 return true;
@@ -2042,11 +2042,11 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 return false;
                                 {% endif %}
                             }
-                            
+
                             {% if parametric %}
                             {% for parameter in parameters %}static storm::RationalFunction {$parameter.name};
                             {% endfor %}
-                            
+
                             void initialize_parameters(std::vector<storm::RationalFunction> const& parameters) {
 #ifndef NDEBUG
                                 std::cout << "initializing parameters\n";
@@ -2055,7 +2055,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 {% endfor %}
                             }
                             {% endif %}
-                            
+
                             // Non-synchronizing edges.
                             {% for edge in nonsynch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in, TransientVariables const& transientIn) {
                                 if ({$edge.guard}) {
@@ -2063,11 +2063,11 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 }
                                 return false;
                             }
-                            
+
                             static ValueType edge_rate_{$edge.name}(StateType const& in) {
                                 return {$edge.rate};
                             }
-                            
+
                             static void edge_perform_{$edge.name}(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for assignment in edge.transient_assignments %}transientOut.{$assignment.variable} = {$assignment.value};
                                 {% if exploration_checks %}
@@ -2079,7 +2079,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 {% endif %}
                                 {% endfor %}
                             }
-                            
+
                             {% for destination in edge.destinations %}
                             static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
@@ -2095,13 +2095,13 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 }
                                 {% endfor %}
                             }
-                            
+
                             static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for level in destination.levels %}
                                 destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out {% if exploration_checks %}, variableWrites {% endif %});
                                 {% endfor %}
                             }
-                            
+
                             static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
                                     {% for assignment in level.non_transient_assignments %}out.{$assignment.variable} = {$assignment.value};
@@ -2125,7 +2125,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 }
                                 {% endfor %}
                             }
-                            
+
                             static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for level in destination.levels %}
                                 destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out, transientIn, transientOut {% if exploration_checks %}, variableWrites {% endif %});
@@ -2136,7 +2136,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 return {$destination.probability};
                             }
                             {% endfor %}{% endfor %}
-                            
+
                             // Synchronizing edges.
                             {% for edge in synch_edges %}static bool edge_enabled_{$edge.name}(StateType const& in, TransientVariables const& transientIn) {
                                 if ({$edge.guard}) {
@@ -2144,11 +2144,11 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 }
                                 return false;
                             }
-                            
+
                             static ValueType edge_rate_{$edge.name}(StateType const& in) {
                                 return {$edge.rate};
                             }
-                            
+
                             static void edge_perform_{$edge.name}(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for assignment in edge.transient_assignments %}transientOut.{$assignment.variable} = {$assignment.value};
                                 {% if exploration_checks %}
@@ -2160,7 +2160,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 {% endif %}
                                 {% endfor %}
                             }
-                            
+
                             {% for destination in edge.destinations %}
                             static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
@@ -2176,13 +2176,13 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 }
                                 {% endfor %}
                             }
-                            
+
                             static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for level in destination.levels %}
                                 destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out {% if exploration_checks %}, variableWrites {% endif %});
                                 {% endfor %}
                             }
-                            
+
                             static void destination_perform_level_{$edge.name}_{$destination.name}(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for level in destination.levels %}if (level == {$level.index}) {
                                     {% for assignment in level.non_transient_assignments %}out.{$assignment.variable} = {$assignment.value};
@@ -2206,62 +2206,62 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 }
                                 {% endfor %}
                             }
-                            
+
                             static void destination_perform_{$edge.name}_{$destination.name}(StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for level in destination.levels %}
                                 destination_perform_level_{$edge.name}_{$destination.name}({$level.index}, in, out, transientIn, transientOut {% if exploration_checks %}, variableWrites {% endif %});
                                 {% endfor %}
                             }
-                            
+
                             static ValueType destination_probability_{$edge.name}_{$destination.name}(StateType const& in) {
                                 return {$destination.probability};
                             }
                             {% endfor %}{% endfor %}
-                            
+
                             typedef ValueType (*DestinationProbabilityFunctionPtr)(StateType const&);
                             typedef void (*DestinationLevelFunctionPtr)(int_fast64_t, StateType const&, StateType&, TransientVariables const&, TransientVariables& {% if exploration_checks %}, VariableWrites& {% endif %});
                             typedef void (*DestinationFunctionPtr)(StateType const&, StateType&, TransientVariables const&, TransientVariables& {% if exploration_checks %}, VariableWrites& {% endif %});
                             typedef void (*DestinationWithoutTransientLevelFunctionPtr)(int_fast64_t, StateType const&, StateType& {% if exploration_checks %}, VariableWrites& {% endif %});
                             typedef void (*DestinationWithoutTransientFunctionPtr)(StateType const&, StateType& {% if exploration_checks %}, VariableWrites& {% endif %});
-                            
+
                             class Destination {
                             public:
                                 Destination() : mLowestLevel(0), mHighestLevel(0), destinationProbabilityFunction(nullptr), destinationLevelFunction(nullptr), destinationFunction(nullptr), destinationWithoutTransientLevelFunction(nullptr), destinationWithoutTransientFunction(nullptr) {
                                     // Intentionally left empty.
                                 }
-                                
+
                                 Destination(int_fast64_t lowestLevel, int_fast64_t highestLevel, DestinationProbabilityFunctionPtr destinationProbabilityFunction, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction, DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction, DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction) : mLowestLevel(lowestLevel), mHighestLevel(highestLevel), destinationProbabilityFunction(destinationProbabilityFunction), destinationLevelFunction(destinationLevelFunction), destinationFunction(destinationFunction), destinationWithoutTransientLevelFunction(destinationWithoutTransientLevelFunction), destinationWithoutTransientFunction(destinationWithoutTransientFunction) {
                                     // Intentionally left empty.
                                 }
-                                
+
                                 int_fast64_t lowestLevel() const {
                                     return mLowestLevel;
                                 }
-                                
+
                                 int_fast64_t highestLevel() const {
                                     return mHighestLevel;
                                 }
-                                
+
                                 ValueType probability(StateType const& in) const {
                                     return destinationProbabilityFunction(in);
                                 }
-                                
+
                                 void perform(int_fast64_t level, StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) const {
                                     destinationLevelFunction(level, in, out, transientIn, transientOut {% if exploration_checks %}, variableWrites {% endif %});
                                 }
-                                
+
                                 void perform(StateType const& in, StateType& out, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) const {
                                     destinationFunction(in, out, transientIn, transientOut {% if exploration_checks %}, variableWrites {% endif %});
                                 }
-                                
+
                                 void perform(int_fast64_t level, StateType const& in, StateType& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) const {
                                     destinationWithoutTransientLevelFunction(level, in, out {% if exploration_checks %}, variableWrites {% endif %});
                                 }
-                                
+
                                 void perform(StateType const& in, StateType& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) const {
                                     destinationWithoutTransientFunction(in, out {% if exploration_checks %}, variableWrites {% endif %});
                                 }
-                                
+
                             private:
                                 int_fast64_t mLowestLevel;
                                 int_fast64_t mHighestLevel;
@@ -2271,62 +2271,62 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction;
                                 DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction;
                             };
-                            
+
                             typedef bool (*EdgeEnabledFunctionPtr)(StateType const&, TransientVariables const& transientIn);
                             typedef ValueType (*EdgeRateFunctionPtr)(StateType const&);
                             typedef void (*EdgeTransientFunctionPtr)(StateType const&, TransientVariables const& transientIn, TransientVariables& out {% if exploration_checks %}, VariableWrites& variableWrites {% endif %});
-                            
+
                             class Edge {
                             public:
                                 typedef std::vector<Destination> ContainerType;
-                                
+
                                 Edge() : edgeEnabledFunction(nullptr), edgeRateFunction(nullptr), edgeTransientFunction(nullptr) {
                                     // Intentionally left empty.
                                 }
-                                
+
                                 Edge(EdgeEnabledFunctionPtr edgeEnabledFunction, EdgeRateFunctionPtr edgeRateFunction, EdgeTransientFunctionPtr edgeTransientFunction = nullptr) : edgeEnabledFunction(edgeEnabledFunction), edgeRateFunction(edgeRateFunction), edgeTransientFunction(edgeTransientFunction) {
                                     // Intentionally left empty.
                                 }
-                                
+
                                 bool isEnabled(StateType const& in, TransientVariables const& transientIn) const {
                                     return edgeEnabledFunction(in, transientIn);
                                 }
-                                
+
                                 void addDestination(Destination const& destination) {
                                     destinations.push_back(destination);
                                 }
-                                
+
                                 void addDestination(int_fast64_t lowestLevel, int_fast64_t highestLevel, DestinationProbabilityFunctionPtr destinationProbabilityFunction, DestinationLevelFunctionPtr destinationLevelFunction, DestinationFunctionPtr destinationFunction, DestinationWithoutTransientLevelFunctionPtr destinationWithoutTransientLevelFunction, DestinationWithoutTransientFunctionPtr destinationWithoutTransientFunction) {
                                     destinations.emplace_back(lowestLevel, highestLevel, destinationProbabilityFunction, destinationLevelFunction, destinationFunction, destinationWithoutTransientLevelFunction, destinationWithoutTransientFunction);
                                 }
-                                
+
                                 std::vector<Destination> const& getDestinations() const {
                                     return destinations;
                                 }
-                                
+
                                 ContainerType::const_iterator begin() const {
                                     return destinations.begin();
                                 }
-                                
+
                                 ContainerType::const_iterator end() const {
                                     return destinations.end();
                                 }
-                                
+
                                 ValueType rate(StateType const& in) const {
                                     return edgeRateFunction(in);
                                 }
-                                
+
                                 void perform(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) const {
                                     edgeTransientFunction(in, transientIn, transientOut {% if exploration_checks %}, variableWrites {% endif %});
                                 }
-                                
+
                             private:
                                 EdgeEnabledFunctionPtr edgeEnabledFunction;
                                 EdgeRateFunctionPtr edgeRateFunction;
                                 EdgeTransientFunctionPtr edgeTransientFunction;
                                 ContainerType destinations;
                             };
-                            
+
                             void locations_perform(StateType const& in, TransientVariables const& transientIn, TransientVariables& transientOut {% if exploration_checks %}, VariableWrites& variableWrites {% endif %}) {
                                 {% for location in locations %}if ({$location.guard}) {
                                     {% for assignment in location.assignments %}transientOut.{$assignment.variable} = {$assignment.value};
@@ -2341,7 +2341,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 }
                                 {% endfor %}
                             }
-                            
+
                             class JitBuilder : public JitModelBuilderInterface<IndexType, ValueType> {
                             public:
                                 JitBuilder(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder) : JitModelBuilderInterface(modelComponentsBuilder), timeOfStart(std::chrono::high_resolution_clock::now()), timeOfLastMessage(std::chrono::high_resolution_clock::now()), numberOfExploredStates(0), numberOfExploredStatesSinceLastMessage(0) {
@@ -2367,7 +2367,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                     modelComponentsBuilder.registerRewardModel(RewardModelInformation("{$reward.name}", {$reward.location_rewards}, {$reward.edge_rewards} || {$reward.destination_rewards}, false));
                                     {% endfor %}
                                 }
-                                
+
                                 virtual storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>* build() override {
 #ifndef NDEBUG
                                     std::cout << "starting building process\n";
@@ -2376,7 +2376,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
 #ifndef NDEBUG
                                     std::cout << "finished building process with " << stateIds.size() << " states\n";
 #endif
-                                    
+
 #ifndef NDEBUG
                                     std::cout << "building labeling\n";
 #endif
@@ -2384,10 +2384,10 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
 #ifndef NDEBUG
                                     std::cout << "finished building labeling\n";
 #endif
-                                    
+
                                     return this->modelComponentsBuilder.build(stateIds.size());
                                 }
-                                
+
                                 void label() {
                                     uint64_t labelCount = 0;
                                     {% for label in labels %}this->modelComponentsBuilder.registerLabel("{$label.name}", stateIds.size());
@@ -2395,7 +2395,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                     {% endfor %}
                                     this->modelComponentsBuilder.registerLabel("init", stateIds.size());
                                     this->modelComponentsBuilder.registerLabel("deadlock", stateIds.size());
-                                    
+
                                     for (auto const& stateEntry : stateIds) {
                                         auto const& in = stateEntry.first;
                                         {% for label in labels %}if ({$label.predicate}) {
@@ -2403,45 +2403,45 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                         }
                                         {% endfor %}
                                     }
-                                    
+
                                     for (auto const& state : initialStates) {
                                         auto stateIt = stateIds.find(state);
                                         if (stateIt != stateIds.end()) {
                                             this->modelComponentsBuilder.addLabel(stateIt->second, labelCount);
                                         }
                                     }
-                                    
+
                                     for (auto const& stateId : deadlockStates) {
                                         this->modelComponentsBuilder.addLabel(stateId, labelCount + 1);
                                     }
                                 }
-                                
+
                                 void explore(std::vector<StateType> const& initialStates) {
                                     for (auto const& state : initialStates) {
                                         explore(state);
                                     }
                                 }
-                                
+
                                 void explore(StateType const& initialState) {
                                     StateSet<StateType> statesToExplore;
                                     getOrAddIndex(initialState, statesToExplore);
-                                    
+
                                     StateBehaviour<IndexType, ValueType> behaviour;
-                                    
+
                                     while (!statesToExplore.empty()) {
                                         StateType currentState = statesToExplore.get();
                                         IndexType currentIndex = getIndex(currentState);
-                                        
+
                                         if (!isTerminalState(currentState)) {
 #ifndef NDEBUG
                                             std::cout << "Exploring state " << currentState << ", id " << currentIndex << '\n';
 #endif
-                                            
+
                                             behaviour.setExpanded();
-                                            
+
                                             {% if exploration_checks %}VariableWrites variableWrites;
                                             {% endif %}
-                                            
+
                                             // Perform transient location assignments.
                                             TransientVariables transientIn;
                                             TransientVariables transientOut;
@@ -2449,10 +2449,10 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                             {% for reward in location_rewards %}
                                             behaviour.addStateReward(transientOut.{$reward.variable});
                                             {% endfor %}
-                                            
+
                                             // Explore all edges that do not take part in synchronization vectors.
                                             exploreNonSynchronizingEdges(currentState, transientOut, behaviour, statesToExplore);
-                                            
+
                                             // Explore all edges that participate in synchronization vectors.
                                             exploreSynchronizingEdges(currentState, transientOut, behaviour, statesToExplore);
                                         }
@@ -2466,7 +2466,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
 
                                         this->addStateBehaviour(currentIndex, behaviour);
                                         behaviour.clear();
-                                        
+
 #ifdef EXPL_PROGRESS
                                         ++numberOfExploredStatesSinceLastMessage;
                                         ++numberOfExploredStates;
@@ -2483,7 +2483,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
 #endif
                                     }
                                 }
-                                
+
                                 bool isTerminalState(StateType const& in) const {
                                     {% for expression in terminalExpressions %}if ({$expression}) {
                                         return true;
@@ -2491,7 +2491,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                     {% endfor %}
                                     return false;
                                 }
-                                
+
                                 void exploreNonSynchronizingEdges(StateType const& in, TransientVariables const& transientIn, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for edge in nonsynch_edges %}{
 #ifndef NDEBUG
@@ -2533,17 +2533,17 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                     }
                                     {% endfor %}
                                 }
-                                
+
                                 {% for vector in synch_vectors %}{$vector.functions}
                                 {% endfor %}
-                                
+
                                 void exploreSynchronizingEdges(StateType const& state, TransientVariables const& transientIn, StateBehaviour<IndexType, ValueType>& behaviour, StateSet<StateType>& statesToExplore) {
                                     {% for vector in synch_vectors %}{
                                         exploreSynchronizationVector_{$vector.index}(state, transientIn, behaviour, statesToExplore);
                                     }
                                     {% endfor %}
                                 }
-                                
+
                                 IndexType getOrAddIndex(StateType const& state, StateSet<StateType>& statesToExplore) {
                                     auto it = stateIds.find(state);
                                     if (it != stateIds.end()) {
@@ -2555,7 +2555,7 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                         return newIndex;
                                     }
                                 }
-                                
+
                                 IndexType getIndex(StateType const& state) const {
                                     auto it = stateIds.find(state);
                                     if (it != stateIds.end()) {
@@ -2564,22 +2564,22 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                         return stateIds.at(state);
                                     }
                                 }
-                                
+
                                 void addStateBehaviour(IndexType const& stateId, StateBehaviour<IndexType, ValueType>& behaviour) {
                                     if (behaviour.empty() && behaviour.isExpanded()) {
                                         deadlockStates.push_back(stateId);
                                     }
-                                    
+
                                     JitModelBuilderInterface<IndexType, ValueType>::addStateBehaviour(stateId, behaviour);
                                 }
-                                
+
                                 static JitModelBuilderInterface<IndexType, ValueType>* create(ModelComponentsBuilder<IndexType, ValueType>& modelComponentsBuilder) {
                                     return new JitBuilder(modelComponentsBuilder);
                                 }
-                                
+
                             private:
                                 // State storage.
-                                spp::sparse_hash_map<StateType, IndexType> stateIds;
+                                phmap::flat_hash_map<StateType, IndexType> stateIds;
                                 std::vector<StateType> initialStates;
                                 std::vector<IndexType> deadlockStates;
 
@@ -2588,14 +2588,14 @@ std::string ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::createSourc
                                 {% endfor %}
                                 {% for edge in synch_edges %}Edge edge_{$edge.name};
                                 {% endfor %}
-                                
+
                                 // Statistics.
                                 std::chrono::high_resolution_clock::time_point timeOfStart;
                                 std::chrono::high_resolution_clock::time_point timeOfLastMessage;
                                 uint64_t numberOfExploredStates;
                                 uint64_t numberOfExploredStatesSinceLastMessage;
                             };
-                            
+
                             BOOST_DLL_ALIAS(storm::builder::jit::JitBuilder::create, create_builder)
                             {% if parametric %}
                             BOOST_DLL_ALIAS(storm::builder::jit::initialize_parameters, initialize_parameters)
@@ -2616,7 +2616,7 @@ boost::filesystem::path ExplicitJitJaniModelBuilder<ValueType, RewardModelType>:
     std::string dynamicLibraryFilename = boost::filesystem::absolute(dynamicLibraryPath).string();
     std::string includes = "";
     for (std::string const& dir :
-         {stormIncludeDirectory, sparseppIncludeDirectory, boostIncludeDirectory, carlIncludeDirectory, clnIncludeDirectory, gmpIncludeDirectory}) {
+         {stormIncludeDirectory, parallelHashmapIncludeDirectory, boostIncludeDirectory, carlIncludeDirectory, clnIncludeDirectory, gmpIncludeDirectory}) {
         if (dir != "") {
             includes += " -I" + dir;
         }

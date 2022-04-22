@@ -247,7 +247,7 @@ namespace storm {
                     subexprreachSwitch.push_back(followVarExpressions[pomdp.getObservation(state)]);
                     subexprreachNoSwitch.push_back(followVarExpressions[pomdp.getObservation(state)]);
                     for (auto const &entries : pomdp.getTransitionMatrix().getRow(rowindex)) {
-                        if (pomdp.getObservation(entries.getColumn() == pomdp.getObservation(state))) {
+                        if (pomdp.getObservation(entries.getColumn()) == pomdp.getObservation(state)) {
                             subexprreachSwitch.push_back(continuationVarExpressions.at(entries.getColumn()));
                         } else {
                             subexprreachSwitch.push_back(reachVarExpressions.at(entries.getColumn()));

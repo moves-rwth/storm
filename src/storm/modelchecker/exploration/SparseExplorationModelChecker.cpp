@@ -601,7 +601,7 @@ void SparseExplorationModelChecker<ModelType, StateType>::collapseMec(storm::sto
         std::pair<ValueType, ValueType> stateBounds = getLowestBounds(explorationInformation.getOptimizationDirection());
         for (auto const& action : leavingActions) {
             explorationInformation.moveActionToBackOfMatrix(action);
-            std::pair<ValueType, ValueType> const& actionBounds = bounds.getBoundsForAction(action);
+            std::pair<ValueType, ValueType> actionBounds = bounds.getBoundsForAction(action);
             bounds.initializeBoundsForNextAction(actionBounds);
             stateBounds = combineBounds(explorationInformation.getOptimizationDirection(), stateBounds, actionBounds);
         }
