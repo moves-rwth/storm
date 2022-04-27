@@ -1,7 +1,3 @@
-//
-// Created by steffi on 18.11.21.
-//
-
 #pragma once
 
 #include "storm/automata/DeterministicAutomaton.h"
@@ -10,8 +6,7 @@
 #include "storm/logic/MultiObjectiveFormula.h"
 #include "storm/storage/BitVector.h"
 
-namespace storm {
-namespace spothelper {
+namespace storm::modelchecker::helper::lexicographic::spothelper {
 typedef std::function<storm::storage::BitVector(storm::logic::Formula const&)> CheckFormulaCallback;
 
 /**
@@ -32,5 +27,4 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
                                                                            CheckFormulaCallback const& formulaChecker, SparseModelType const& model,
                                                                            storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted,
                                                                            std::vector<uint>& acceptanceConditions);
-}  // namespace spothelper
-}  // namespace storm
+}  // namespace storm::modelchecker::helper::lexicographic::spothelper

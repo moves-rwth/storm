@@ -11,12 +11,14 @@ if(STORM_USE_SPOT_SYSTEM)
     endif()
 
     if (SPOT_FOUND)
-        if("${SPOT_VERSION}" VERSION_LESS "2.10.0")
-        	message(STATUS "Storm - Using system version of Spot ${SPOT_VERSION} (include: ${SPOT_INCLUDE_DIR}, library: ${SPOT_LIBRARIES}).")
-        	set(STORM_HAVE_SPOT ON)
-		else()
-			message( WARNING "Storm - System version of Spot ${SPOT_VERSION} is incompatible with this version of Storm. To use spot, consider updating your Storm version or setting cmake options STORM_USE_SPOT_SYSTEM=OFF and STORM_USE_SPOT_SHIPPED=ON." )
-		endif()
+        get_filename_component(SPOT_LIB_DIR ${SPOT_LIBRARIES} DIRECTORY)
+        find_library(BUDDY_LIBRARY NAMES libbddx bddx PATHS ${SPOT_LIB_DIR} NO_DEFAULT_PATH)
+        if(NOT BUDDY_LIBRARY)
+            message(FATAL_ERROR "Storm - Did not find BUDDY library that should ship with spot. To work around this, you may disable the system version Spot with '-DSTORM_USE_SPOT_SYSTEM=OFF'.")
+        endif()
+        set(SPOT_LIBRARIES "${SPOT_LIBRARIES};${BUDDY_LIBRARY}")
+        message(STATUS "Storm - Using system version of Spot ${SPOT_VERSION} (include: ${SPOT_INCLUDE_DIR}, library: ${SPOT_LIBRARIES}).")
+        set(STORM_HAVE_SPOT ON)
     elseif(NOT STORM_USE_SPOT_SHIPPED)
         message (WARNING "Storm - Could not find Spot. Model checking of LTL formulas (beyond PCTL) will not be supported. You may want to set cmake option STORM_USE_SPOT_SHIPPED to install Spot automatically. If you already installed Spot, consider setting cmake option SPOT_ROOT. Unset STORM_USE_SPOT_SYSTEM to silence this warning.")
     endif()
@@ -28,7 +30,7 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
 
     # download and install shipped Spot
     ExternalProject_Add(spot
-        URL http://www.lrde.epita.fr/dload/spot/spot-2.9.6.tar.gz # When updating, also change version output below
+        URL http://www.lrde.epita.fr/dload/spot/spot-2.10.4.tar.gz # When updating, also change version output below
         DOWNLOAD_NO_PROGRESS TRUE
         DOWNLOAD_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
         SOURCE_DIR ${STORM_3RDPARTY_BINARY_DIR}/spot_src
@@ -45,10 +47,11 @@ if(STORM_USE_SPOT_SHIPPED AND NOT STORM_HAVE_SPOT)
     set(SPOT_INCLUDE_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/include/")
     set(SPOT_DIR "${STORM_3RDPARTY_BINARY_DIR}/spot/")
     set(SPOT_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libspot${DYNAMIC_EXT})
+    set(SPOT_LIBRARIES "${SPOT_LIBRARIES};${STORM_3RDPARTY_BINARY_DIR}/spot/lib/libbddx${DYNAMIC_EXT}")
     set(STORM_HAVE_SPOT ON)
     set(STORM_SHIPPED_SPOT ON)
 
-    message(STATUS "Storm - Using shipped version of Spot 2.9.6 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
+    message(STATUS "Storm - Using shipped version of Spot 2.10.4 (include: ${SPOT_INCLUDE_DIR}, library ${SPOT_LIBRARIES}).")
 
 endif()
 

@@ -1,6 +1,3 @@
-//
-// Created by steffi on 04.11.21.
-//
 #include "storm/environment/Environment.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/models/sparse/Mdp.h"
@@ -42,12 +39,7 @@ helper::MDPSparseModelCheckingHelperReturnType<ValueType> check(Environment cons
 
     // solve the reachability query
     // That is: solve reachability for the lexicographic highest condition, restrict the model to optimal actions, repeat
-    helper::MDPSparseModelCheckingHelperReturnType<ValueType> return_result = lMC.lexReachability(mecs, mecLexArrays, completeProductModel, model);
-    STORM_PRINT("Lexicographic result for all conditions: " << std::endl);
-    for (auto const& v : return_result.values) {
-        STORM_PRINT(" - " << v << std::endl);
-    }
-    return return_result;
+    return lMC.lexReachability(mecs, mecLexArrays, completeProductModel, model);
 }
 
 template helper::MDPSparseModelCheckingHelperReturnType<double> check<storm::models::sparse::Mdp<double>, double>(

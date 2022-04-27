@@ -45,9 +45,11 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("depth-limit", "If given, limits the number of times a region is refined.").setDefaultValueInteger(-1).makeOptional().build()).build());
                 
                 std::vector<std::string> directions = {"min", "max"};
+                std::vector<std::string> precisiontype = {"rel", "abs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, extremumOptionName, false, "Computes the extremum within the region.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("direction", "The optimization direction").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator(directions)).build())
-                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("precision", "The desired precision").setDefaultValueDouble(0.05).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("precision", "The desired precision").setDefaultValueDouble(0.05).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("precisiontype", "The desired precision type.").setDefaultValueString("rel").makeOptional().addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator(precisiontype)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, extremumSuggestionOptionName, false, "Checks whether the provided value is indeed the extremum")
                                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("extremum-suggestion", "The provided value for the extremum").addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
@@ -142,6 +144,16 @@ namespace storm {
                     STORM_LOG_WARN("Reset precision for solver to " << prec << " this is sufficient for extremum value precision of " << (prec)*10 << '\n');
                 }
                 return this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble();
+            }
+
+            bool RegionSettings::isAbsolutePrecisionSet() const {
+                auto str = this->getOption(extremumOptionName).getArgumentByName("precisiontype").getValueAsString();
+                if (str == "abs") {
+                    return true;
+                } else {
+                    assert(str == "rel");
+                    return false;
+                }
             }
 
             bool RegionSettings::isExtremumSuggestionSet() const {

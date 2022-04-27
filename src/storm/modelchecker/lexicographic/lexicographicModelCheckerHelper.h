@@ -1,7 +1,3 @@
-//
-// Created by steffi on 05.11.21.
-//
-
 #pragma once
 #include "storm/modelchecker/helper/SingleValueModelCheckerHelper.h"
 
@@ -75,9 +71,6 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
                                                                       SparseModelType const& originalMdp);
 
    private:
-    storm::logic::MultiObjectiveFormula const& formula;
-    storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
-
     static std::map<std::string, storm::storage::BitVector> computeApSets(std::map<std::string, std::shared_ptr<storm::logic::Formula const>> const& extracted,
                                                                           CheckFormulaCallback const& formulaChecker);
 
@@ -101,7 +94,7 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
      */
     bool isAcceptingStreettConditions(storm::storage::MaximalEndComponent const& scc,
                                       std::vector<storm::automata::AcceptanceCondition::acceptance_expr::ptr> const& acceptancePairs,
-                                      storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType model);
+                                      storm::automata::AcceptanceCondition::ptr const& acceptance, productModelType const& model);
 
     /*!
      * For a given objective, iterates over the MECs and finds the corresponding sink state
@@ -145,6 +138,9 @@ class lexicographicModelCheckerHelper : public helper::SingleValueModelCheckerHe
     std::pair<storm::storage::SparseMatrix<ValueType>, std::map<uint, uint_fast64_t>> addSinkStates(
         storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecs,
         std::shared_ptr<storm::transformer::DAProduct<SparseModelType>> const& productModel);
+
+    storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
+    storm::logic::MultiObjectiveFormula const& formula;
 };
 
 }  // namespace lexicographic

@@ -1,6 +1,3 @@
-//
-// Created by Steffi on 18.11.21.
-//
 #include "storm/modelchecker/lexicographic/spotHelper/spotProduct.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -16,8 +13,7 @@
 #include "spot/twaalgos/translate.hh"
 #endif
 
-namespace storm {
-namespace spothelper {
+namespace storm::modelchecker::helper::lexicographic::spothelper {
 
 typedef std::pair<unsigned, unsigned> product_state;
 
@@ -44,14 +40,12 @@ std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProduct(storm
     uint countAccept = 0;
     // iterate over all subformulae
     for (const std::shared_ptr<const storm::logic::Formula>& subFormula : formula.getSubformulas()) {
-        // get the formula in the right format (necessary?)
-        storm::logic::StateFormula const& newFormula = (*subFormula).asStateFormula();
-        storm::logic::ProbabilityOperatorFormula const& newFormula2 = (*subFormula).asProbabilityOperatorFormula();
-        storm::logic::Formula const& newFormula3 = newFormula2.getSubformula();
-        storm::logic::PathFormula const& formulaFinal = newFormula3.asPathFormula();
+        // get the formula in the right format
+        STORM_LOG_ASSERT(subFormula->isProbabilityOperatorFormula(), "subformula " << *subFormula << " has unexpected type.");
+        auto const& pathFormula = subFormula->asProbabilityOperatorFormula().getSubformula().asPathFormula();
 
         // get map of state-expressions to propositions
-        std::shared_ptr<storm::logic::Formula> ltlFormula1 = storm::logic::ExtractMaximalStateFormulasVisitor::extract(formulaFinal, extracted);
+        std::shared_ptr<storm::logic::Formula> ltlFormula1 = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
 
         // parse the formula in spot-format
         std::string prefixLtl = ltlFormula1->toPrefixString();
@@ -183,5 +177,4 @@ template std::shared_ptr<storm::automata::DeterministicAutomaton> ltl2daSpotProd
     storm::logic::MultiObjectiveFormula const& formula, CheckFormulaCallback const& formulaChecker,
     storm::models::sparse::Mdp<storm::RationalNumber> const& model, storm::logic::ExtractMaximalStateFormulasVisitor::ApToFormulaMap& extracted,
     std::vector<uint>& acceptanceConditions);
-}  // namespace spothelper
-}  // namespace storm
+}  // namespace storm::modelchecker::helper::lexicographic::spothelper

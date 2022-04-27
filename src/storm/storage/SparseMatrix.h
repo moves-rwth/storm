@@ -1166,13 +1166,6 @@ class SparseMatrix {
     iterator end();
 
     /*!
-     * Remove all incoming transitions to this state.
-     *
-     * @param state Index of the state
-     */
-    void removeIncomingTransitions(index_type state);
-
-    /*!
      * Returns a copy of the matrix with the chosen internal data type
      */
     template<typename NewValueType>

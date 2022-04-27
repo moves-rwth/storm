@@ -21,6 +21,9 @@ class ExplicitQuantitativeCheckResult;
 template<typename ValueType>
 class ExplicitParetoCurveCheckResult;
 
+template<typename ValueType>
+class LexicographicCheckResult;
+
 template<storm::dd::DdType Type>
 class SymbolicQualitativeCheckResult;
 
@@ -55,6 +58,7 @@ class CheckResult {
     virtual bool isQuantitative() const;
     virtual bool isQualitative() const;
     virtual bool isParetoCurveCheckResult() const;
+    virtual bool isLexicographicCheckResult() const;
     virtual bool isExplicitQualitativeCheckResult() const;
     virtual bool isExplicitQuantitativeCheckResult() const;
     virtual bool isExplicitParetoCurveCheckResult() const;
@@ -87,6 +91,12 @@ class CheckResult {
 
     template<typename ValueType>
     ExplicitParetoCurveCheckResult<ValueType> const& asExplicitParetoCurveCheckResult() const;
+
+    template<typename ValueType>
+    LexicographicCheckResult<ValueType>& asLexicographicCheckResult();
+
+    template<typename ValueType>
+    LexicographicCheckResult<ValueType> const& asLexicographicCheckResult() const;
 
     template<storm::dd::DdType Type>
     SymbolicQualitativeCheckResult<Type>& asSymbolicQualitativeCheckResult();
