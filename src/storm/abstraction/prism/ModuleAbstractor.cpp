@@ -48,7 +48,7 @@ storm::expressions::Expression const& ModuleAbstractor<DdType, ValueType>::getGu
 
 template<storm::dd::DdType DdType, typename ValueType>
 uint64_t ModuleAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
-    return commands[player1Choice].getNumberOfUpdates(player1Choice);
+    return commands[player1Choice].getNumberOfUpdates();
 }
 
 template<storm::dd::DdType DdType, typename ValueType>

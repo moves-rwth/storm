@@ -94,7 +94,7 @@ storm::expressions::Expression const& CommandAbstractor<DdType, ValueType>::getG
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-uint64_t CommandAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
+uint64_t CommandAbstractor<DdType, ValueType>::getNumberOfUpdates() const {
     return command.get().getNumberOfUpdates();
 }
 
