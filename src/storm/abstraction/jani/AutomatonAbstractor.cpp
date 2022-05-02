@@ -55,7 +55,7 @@ storm::expressions::Expression const& AutomatonAbstractor<DdType, ValueType>::ge
 
 template<storm::dd::DdType DdType, typename ValueType>
 uint64_t AutomatonAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
-    return edges[player1Choice].getNumberOfUpdates(player1Choice);
+    return edges[player1Choice].getNumberOfUpdates();
 }
 
 template<storm::dd::DdType DdType, typename ValueType>

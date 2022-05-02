@@ -95,7 +95,7 @@ storm::expressions::Expression const& EdgeAbstractor<DdType, ValueType>::getGuar
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-uint64_t EdgeAbstractor<DdType, ValueType>::getNumberOfUpdates(uint64_t player1Choice) const {
+uint64_t EdgeAbstractor<DdType, ValueType>::getNumberOfUpdates() const {
     return edge.get().getNumberOfDestinations();
 }
 

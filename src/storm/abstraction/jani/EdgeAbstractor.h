@@ -77,7 +77,7 @@ class EdgeAbstractor {
     /*!
      * Retrieves the number of updates of this edge.
      */
-    uint64_t getNumberOfUpdates(uint64_t player1Choice) const;
+    uint64_t getNumberOfUpdates() const;
 
     /*!
      * Retrieves a mapping from variables to expressions that define their updates wrt. to the given
