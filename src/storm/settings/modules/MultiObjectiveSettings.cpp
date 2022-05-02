@@ -18,6 +18,7 @@ const std::string MultiObjectiveSettings::maxStepsOptionName = "maxsteps";
 const std::string MultiObjectiveSettings::schedulerRestrictionOptionName = "purescheds";
 const std::string MultiObjectiveSettings::printResultsOptionName = "printres";
 const std::string MultiObjectiveSettings::encodingOptionName = "encoding";
+const std::string MultiObjectiveSettings::lexicographicOptionName = "lex";
 
 MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> methods = {"pcaa", "constraintbased"};
@@ -82,6 +83,10 @@ MultiObjectiveSettings::MultiObjectiveSettings() : ModuleSettings(moduleName) {
                                          .setDefaultValueString("auto")
                                          .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(encodingTypes))
                                          .build())
+                        .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, lexicographicOptionName, false,
+                                                   "If set, lexicographic model checking instead of normal multi objective is performed.")
                         .build());
 }
 
@@ -175,6 +180,10 @@ bool MultiObjectiveSettings::isFlowEncodingSet() const {
 
 bool MultiObjectiveSettings::isAutoEncodingSet() const {
     return this->getOption(encodingOptionName).getArgumentByName("type").getValueAsString() == "auto";
+}
+
+bool MultiObjectiveSettings::isLexicographicModelCheckingSet() const {
+    return this->getOption(lexicographicOptionName).getHasOptionBeenSet();
 }
 
 bool MultiObjectiveSettings::check() const {
