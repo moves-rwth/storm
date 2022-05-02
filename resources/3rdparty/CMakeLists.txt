@@ -55,7 +55,7 @@ ExternalProject_Add(
         GIT_TAG 0fd6b4f71dd85b2009ee4d1aeb296e2c11fc9d68
         SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.9
-		#PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen.patch
+		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen.patch
         UPDATE_COMMAND ""
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
