@@ -73,11 +73,10 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
     /**
      * Called by the parser for each "State: ..." item [multiple].
      * @param id the identifier for this state
-     * @param info an optional string providing additional information about the state (empty pointer if not provided)
      * @param labelExpr an optional boolean expression over labels (state-labeled) (empty pointer if not provided)
      * @param accSignature an optional list of acceptance set indizes (state-labeled acceptance) (empty pointer if not provided)
      */
-    virtual void addState(unsigned int id, std::shared_ptr<std::string> info, label_expr::ptr labelExpr, std::shared_ptr<int_list> accSignature) {
+    virtual void addState(unsigned int id, label_expr::ptr labelExpr, std::shared_ptr<int_list> accSignature) {
         if (accSignature) {
             for (unsigned int accSet : *accSignature) {
                 acceptance->getAcceptanceSet(accSet).set(id);
@@ -165,10 +164,10 @@ class HOAConsumerDA : public HOAConsumerDAHeader {
     }
 
     /**
-     * Called by the parser to notify the consumer that the definition for state `stateId`
+     * Called by the parser to notify the consumer that the definition for the current state
      * has ended [multiple].
      */
-    virtual void notifyEndOfState(unsigned int stateId) {
+    virtual void notifyEndOfState() {
         helper->endOfState();
     }
 
