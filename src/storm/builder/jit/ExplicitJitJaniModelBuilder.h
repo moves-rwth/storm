@@ -206,8 +206,8 @@ class ExplicitJitJaniModelBuilder {
     /// The include directory of carl.
     std::string carlIncludeDirectory;
 
-    /// The include directory of sparsepp.
-    std::string sparseppIncludeDirectory;
+    /// The include directory of parallel hashmap.
+    std::string parallelHashmapIncludeDirectory;
 
     /// The include directory for cln
     std::string clnIncludeDirectory;

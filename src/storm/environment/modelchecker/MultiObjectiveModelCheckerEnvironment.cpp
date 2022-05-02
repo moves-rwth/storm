@@ -42,6 +42,7 @@ MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
     }
 
     printResults = multiobjectiveSettings.isPrintResultsSet();
+    useLexicographicModelChecking = multiobjectiveSettings.isLexicographicModelCheckingSet();
 }
 
 MultiObjectiveModelCheckerEnvironment::~MultiObjectiveModelCheckerEnvironment() {
@@ -158,5 +159,13 @@ bool MultiObjectiveModelCheckerEnvironment::isPrintResultsSet() const {
 
 void MultiObjectiveModelCheckerEnvironment::setPrintResults(bool value) {
     printResults = value;
+}
+
+bool MultiObjectiveModelCheckerEnvironment::isLexicographicModelCheckingSet() const {
+    return useLexicographicModelChecking;
+}
+
+void MultiObjectiveModelCheckerEnvironment::setLexicographicModelChecking(bool value) {
+    useLexicographicModelChecking = value;
 }
 }  // namespace storm

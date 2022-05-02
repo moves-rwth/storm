@@ -39,7 +39,7 @@ bool LpMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment
 
     // Set up the LP solver
     std::unique_ptr<storm::solver::LpSolver<ValueType>> solver = lpSolverFactory->create("");
-
+    solver->setOptimizationDirection(invert(dir));
     // Create a variable for each row group
     std::vector<storm::expressions::Expression> variableExpressions;
     variableExpressions.reserve(this->A->getRowGroupCount());

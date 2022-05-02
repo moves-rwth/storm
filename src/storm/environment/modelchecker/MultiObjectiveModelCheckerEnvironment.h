@@ -60,6 +60,9 @@ class MultiObjectiveModelCheckerEnvironment {
     bool isPrintResultsSet() const;
     void setPrintResults(bool value);
 
+    bool isLexicographicModelCheckingSet() const;
+    void setLexicographicModelChecking(bool value);
+
    private:
     storm::modelchecker::multiobjective::MultiObjectiveMethod method;
     boost::optional<std::string> plotPathUnderApprox, plotPathOverApprox, plotPathParetoPoints;
@@ -69,5 +72,6 @@ class MultiObjectiveModelCheckerEnvironment {
     boost::optional<uint64_t> maxSteps;
     boost::optional<storm::storage::SchedulerClass> schedulerRestriction;
     bool printResults;
+    bool useLexicographicModelChecking;
 };
 }  // namespace storm

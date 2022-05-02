@@ -13,6 +13,7 @@
 #include "storm/utility/macros.h"
 
 #include "storm/environment/Environment.h"
+#include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/logic/FormulaInformation.h"
 #include "storm/models/ModelRepresentation.h"
@@ -275,7 +276,11 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
     } else if (stateFormula.isGameFormula()) {
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
     } else if (stateFormula.isMultiObjectiveFormula()) {
-        return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+        if (env.modelchecker().multi().isLexicographicModelCheckingSet()) {
+            return this->checkLexObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+        } else {
+            return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(stateFormula.asMultiObjectiveFormula()));
+        }
     } else if (stateFormula.isQuantileFormula()) {
         return this->checkQuantileFormula(env, checkTask.substituteFormula(stateFormula.asQuantileFormula()));
     }
@@ -408,6 +413,13 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkUnaryBooleanS
         STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
     }
     return subResult;
+}
+
+template<typename ModelType>
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkLexObjectiveFormula(
+    Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
+    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
+                    "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }
 
 template<typename ModelType>

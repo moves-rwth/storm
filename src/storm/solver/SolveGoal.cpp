@@ -42,6 +42,12 @@ SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection, sto
 }
 
 template<typename ValueType>
+SolveGoal<ValueType>::SolveGoal(OptimizationDirection optimizationDirection, storm::storage::BitVector const& relevantValues)
+    : optimizationDirection(optimizationDirection), relevantValueVector(relevantValues) {
+    // Intentionally left empty.
+}
+
+template<typename ValueType>
 bool SolveGoal<ValueType>::hasDirection() const {
     return static_cast<bool>(optimizationDirection);
 }
