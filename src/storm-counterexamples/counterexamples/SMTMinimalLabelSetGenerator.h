@@ -2108,8 +2108,8 @@ class SMTMinimalLabelSetGenerator {
         }
     };
 
-    static CexInput precompute(Environment const& env, storm::storage::SymbolicModelDescription const& symbolicModel,
-                               storm::models::sparse::Model<T> const& model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    static CexInput precompute(Environment const& env, storm::models::sparse::Model<T> const& model,
+                               std::shared_ptr<storm::logic::Formula const> const& formula) {
         CexInput result;
         STORM_LOG_THROW(formula->isProbabilityOperatorFormula() || formula->isRewardOperatorFormula(), storm::exceptions::InvalidPropertyException,
                         "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");
