@@ -199,9 +199,9 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
         filterInitialStates(abstractModel, result);
 
         // Check whether the answer can be given after the quantitative solution.
-        if (checkForResultAfterQuantitativeCheck(abstractModel, true, result.first->asQuantitativeCheckResult<ValueType>())) {
+        if (checkForResultAfterQuantitativeCheck(true, result.first->asQuantitativeCheckResult<ValueType>())) {
             result.second = nullptr;
-        } else if (checkForResultAfterQuantitativeCheck(abstractModel, false, result.second->asQuantitativeCheckResult<ValueType>())) {
+        } else if (checkForResultAfterQuantitativeCheck(false, result.second->asQuantitativeCheckResult<ValueType>())) {
             result.first = nullptr;
         }
     }
@@ -210,8 +210,7 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 }
 
 template<typename ModelType>
-bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQuantitativeCheck(storm::models::Model<ValueType> const& abstractModel,
-                                                                                                bool lowerBounds,
+bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQuantitativeCheck(bool lowerBounds,
                                                                                                 QuantitativeCheckResult<ValueType> const& quantitativeResult) {
     bool result = false;
     if (checkTask->isBoundSet()) {
@@ -362,7 +361,7 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 template<typename ModelType>
 std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
     Environment const& env, storm::models::symbolic::Dtmc<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
+    [[maybe_unused]] storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
     storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
     std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
     storm::dd::Bdd<DdType> maybe;
@@ -405,7 +404,7 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 template<typename ModelType>
 std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
     Environment const& env, storm::models::symbolic::Mdp<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
+    [[maybe_unused]] storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
     storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
     std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
     storm::dd::Bdd<DdType> maybeMin;
@@ -469,7 +468,8 @@ std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAb
 template<typename ModelType>
 std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> AbstractAbstractionRefinementModelChecker<ModelType>::computeQuantitativeResult(
     Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
-    storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
+    [[maybe_unused]] storm::abstraction::SymbolicStateSet<DdType> const& constraintStates,
+    [[maybe_unused]] storm::abstraction::SymbolicStateSet<DdType> const& targetStates,
     storm::abstraction::SymbolicQualitativeResultMinMax<DdType> const& qualitativeResults) {
     std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>> result;
     storm::dd::Bdd<DdType> maybeMin;
@@ -571,7 +571,7 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
 
 template<typename ModelType>
 std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
-    Environment const& env, storm::models::symbolic::Dtmc<DdType, ValueType> const& abstractModel,
+    [[maybe_unused]] Environment const& env, storm::models::symbolic::Dtmc<DdType, ValueType> const& abstractModel,
     storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates) {
     STORM_LOG_DEBUG("Computing qualitative solution for DTMC.");
     std::unique_ptr<storm::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>> result =
@@ -599,7 +599,7 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
 
 template<typename ModelType>
 std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
-    Environment const& env, storm::models::symbolic::Mdp<DdType, ValueType> const& abstractModel,
+    [[maybe_unused]] Environment const& env, storm::models::symbolic::Mdp<DdType, ValueType> const& abstractModel,
     storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates) {
     STORM_LOG_DEBUG("Computing qualitative solution for MDP.");
     std::unique_ptr<storm::abstraction::SymbolicQualitativeMdpResultMinMax<DdType>> result =
@@ -735,7 +735,7 @@ std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstraction
 
 template<typename ModelType>
 std::unique_ptr<storm::abstraction::QualitativeResultMinMax> AbstractAbstractionRefinementModelChecker<ModelType>::computeQualitativeResult(
-    Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
+    [[maybe_unused]] Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
     storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates) {
     STORM_LOG_DEBUG("Computing qualitative solution for S2PG.");
     std::unique_ptr<storm::abstraction::SymbolicQualitativeGameResultMinMax<DdType>> result;

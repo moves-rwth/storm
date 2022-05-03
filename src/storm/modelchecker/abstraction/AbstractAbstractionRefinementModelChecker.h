@@ -182,7 +182,7 @@ class AbstractAbstractionRefinementModelChecker : public AbstractModelChecker<Mo
     void printBoundsInformation(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds);
     void printBoundsInformation(SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds,
                                 SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds);
-    bool checkForResultAfterQuantitativeCheck(storm::models::Model<ValueType> const& abstractModel, bool lowerBounds,
+    bool checkForResultAfterQuantitativeCheck(bool lowerBounds,
                                               QuantitativeCheckResult<ValueType> const& result);
     std::unique_ptr<CheckResult> computeReachabilityProbabilitiesHelper(
         Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
