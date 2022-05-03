@@ -634,13 +634,12 @@ namespace storm {
 
                 derivative::SparseDerivativeInstantiationModelChecker<ValueType, storm::RationalNumber> modelChecker(*dtmc);
 
-                // TODO @Jip Make Initial State flexible
-                uint_fast64_t initialState;           
+
                 const storm::storage::BitVector initialVector = dtmc->getStates("init");
-                for (uint_fast64_t x : initialVector) {
-                    initialState = x;
-                    break;
-                }
+                STORM_LOG_THROW(initialVector.size() == 0, storm::exceptions::IllegalArgumentException, "No initial state provided");
+                STORM_LOG_WARN_COND(initialVector.size() > 1, "More than one initial state provided, taking the first one with label init");
+                uint_fast64_t initialState = initialVector.getNextSetIndex(0);
+
                 
                 modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> referenceCheckTask(*formula);
                 std::shared_ptr<storm::logic::Formula> formulaWithoutBound;
@@ -911,7 +910,6 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         void verifyPropertiesWithSymbolicEngine(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, SampleInformation<ValueType> const& samples) {
             if (samples.empty()) {
-                // TODO @Jip the result parameter in the post-processing callback produces an unused parameter warning during compilation
                 verifyProperties<ValueType>(input.properties,
                                             [&model] (std::shared_ptr<storm::logic::Formula const> const& formula) {
                                                 std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithDdEngine<DdType, ValueType>(model, storm::api::createTask<ValueType>(formula, true));
@@ -920,9 +918,10 @@ namespace storm {
                                                 }
                                                 return result;
                                             },
-                                            [&model] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+                                            [&model] ([[maybe_unused]] std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
                                                 auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
                                                 if (parametricSettings.exportResultToFile() && model->isOfType(storm::models::ModelType::Dtmc)) {
+                                                    STORM_LOG_WARN("Exporting results not (yet) implemented");
                                                     //auto dtmc = model->template as<storm::models::symbolic::Dtmc<DdType, ValueType>>();
                                                     //boost::optional<ValueType> rationalFunction = result->asSymbolicQuantitativeCheckResult<DdType, ValueType>().sum();
                                                     //storm::api::exportParametricResultToFile(rationalFunction, storm::analysis::ConstraintCollector<ValueType>(*dtmc), parametricSettings.exportResultPath());

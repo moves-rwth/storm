@@ -576,6 +576,11 @@ bool PrismParser::isFreshRewardModelName(std::string const& rewardModelName) {
 }
 
 bool PrismParser::isFreshPlayerName(std::string const& playerName) {
+    for (storm::prism::Player& player : this->globalProgramInformation.players) {
+        if (player.getName() == playerName) {
+            return false;
+        }
+    }
     return true;
 }
 
