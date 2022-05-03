@@ -503,13 +503,12 @@ class MILPMinimalLabelSetGenerator {
      * choice that originates from the label in question.
      *
      * @param solver The MILP solver.
-     * @param mdp The MDP.
      * @param stateInformation The information about the states in the model.
      * @param choiceInformation The information about the choices in the model.
      * @param variableInformation A struct with information about the variables of the model.
      * @return The total number of constraints that were created.
      */
-    static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver<double>& solver, storm::models::sparse::Mdp<T> const& mdp,
+    static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver<double>& solver,
                                                   std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
                                                   StateInformation const& stateInformation, ChoiceInformation const& choiceInformation,
                                                   VariableInformation const& variableInformation) {
@@ -871,7 +870,7 @@ class MILPMinimalLabelSetGenerator {
         STORM_LOG_DEBUG("Asserted that policy is valid.");
 
         // Add constraints that assert the labels that belong to some taken choices are taken as well.
-        numberOfConstraints += assertChoicesImplyLabels(solver, mdp, labelSets, stateInformation, choiceInformation, variableInformation);
+        numberOfConstraints += assertChoicesImplyLabels(solver, labelSets, stateInformation, choiceInformation, variableInformation);
         STORM_LOG_DEBUG("Asserted that labels implied by choices are taken.");
 
         // Add constraints that encode that the reachability probability from states which do not pick any action
