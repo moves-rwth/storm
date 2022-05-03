@@ -132,7 +132,7 @@ template<typename ValueType>
 uint64_t IterationHelper<ValueType>::repeatedIterate(std::vector<ValueType>& x, const std::vector<ValueType>& b, ValueType precision, bool relative,
                                                      boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
                                                      boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    return repeatedIterateInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, precision, relative);
+    return repeatedIterateInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, precision, relative, schedulerFixedForRowgroup, scheduler);
 }
 
 template<typename ValueType>
@@ -191,9 +191,9 @@ typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::i
     storm::solver::OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew,
     boost::optional<storage::BitVector> const& schedulerFixedForRowgroup, boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
     if (minimize(dir)) {
-        return iterateUpperInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, takeMinOfOldAndNew);
+        return iterateUpperInternal<true, storm::solver::OptimizationDirection::Minimize>(x, b, takeMinOfOldAndNew, schedulerFixedForRowgroup, scheduler);
     } else {
-        return iterateUpperInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, takeMinOfOldAndNew);
+        return iterateUpperInternal<true, storm::solver::OptimizationDirection::Maximize>(x, b, takeMinOfOldAndNew, schedulerFixedForRowgroup, scheduler);
     }
 }
 
@@ -201,7 +201,7 @@ template<typename ValueType>
 typename IterationHelper<ValueType>::IterateResult IterationHelper<ValueType>::iterateUpper(
     std::vector<ValueType>& x, std::vector<ValueType> const& b, bool takeMinOfOldAndNew, boost::optional<storage::BitVector> const& schedulerFixedForRowgroup,
     boost::optional<std::vector<uint_fast64_t>> const& scheduler) {
-    return iterateUpperInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, takeMinOfOldAndNew);
+    return iterateUpperInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, takeMinOfOldAndNew, schedulerFixedForRowgroup, scheduler);
 }
 
 template<typename ValueType>
