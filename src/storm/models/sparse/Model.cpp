@@ -69,12 +69,15 @@ void Model<ValueType, RewardModelType>::assertValidityOfComponents(
             !rewardModel.second.hasTransitionRewards() || rewardModel.second.getTransitionRewardMatrix().isSubmatrixOf(this->getTransitionMatrix()),
             "The transition reward matrix is not a submatrix of the transition matrix, i.e. there are rewards for transitions that do not exist.");
     }
-    STORM_LOG_THROW(!this->hasChoiceLabeling() || this->getChoiceLabeling().getNumberOfItems() == choiceCount, storm::exceptions::IllegalArgumentException,
-                    "Invalid choice count of choice labeling (choices: " << choiceCount << " vs. labeling:" << this->getChoiceLabeling().getNumberOfItems() << ").");
-    STORM_LOG_THROW(!this->hasStateValuations() || this->getStateValuations().getNumberOfStates() == stateCount, storm::exceptions::IllegalArgumentException,
-                    "Invalid state count for state valuations (states: " << stateCount << " vs. valuations:" << this->getStateValuations().getNumberOfStates() << ")." );
-    STORM_LOG_THROW(!this->hasChoiceOrigins() || this->getChoiceOrigins()->getNumberOfChoices() == choiceCount, storm::exceptions::IllegalArgumentException,
-                    "Invalid choice count for choice origins. (choices: " << choiceCount << " vs. origins:" << this->getChoiceOrigins()->getNumberOfChoices()<< ").");
+    STORM_LOG_THROW(
+        !this->hasChoiceLabeling() || this->getChoiceLabeling().getNumberOfItems() == choiceCount, storm::exceptions::IllegalArgumentException,
+        "Invalid choice count of choice labeling (choices: " << choiceCount << " vs. labeling:" << this->getChoiceLabeling().getNumberOfItems() << ").");
+    STORM_LOG_THROW(
+        !this->hasStateValuations() || this->getStateValuations().getNumberOfStates() == stateCount, storm::exceptions::IllegalArgumentException,
+        "Invalid state count for state valuations (states: " << stateCount << " vs. valuations:" << this->getStateValuations().getNumberOfStates() << ").");
+    STORM_LOG_THROW(
+        !this->hasChoiceOrigins() || this->getChoiceOrigins()->getNumberOfChoices() == choiceCount, storm::exceptions::IllegalArgumentException,
+        "Invalid choice count for choice origins. (choices: " << choiceCount << " vs. origins:" << this->getChoiceOrigins()->getNumberOfChoices() << ").");
 
     // Branch on type of nondeterminism
     if (this->isOfType(ModelType::Dtmc) || this->isOfType(ModelType::Ctmc)) {
