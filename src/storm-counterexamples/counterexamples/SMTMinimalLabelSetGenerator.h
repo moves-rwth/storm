@@ -2236,7 +2236,7 @@ class SMTMinimalLabelSetGenerator {
 #ifdef STORM_HAVE_Z3
         std::cout << "\nGenerating minimal label counterexample for formula " << *formula << '\n';
         GeneratorStats stats;
-        CexInput prec = precompute(env, symbolicModel, model, formula);
+        CexInput prec = precompute(env, model, formula);
         if (prec.lowerBoundedFormula) {
             STORM_LOG_WARN("Generating counterexample for lower-bounded property. The resulting command set need not be minimal.");
         }
