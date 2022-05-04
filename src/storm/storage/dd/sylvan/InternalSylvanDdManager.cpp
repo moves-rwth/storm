@@ -57,12 +57,12 @@ uint_fast64_t findLargestPowerOfTwoFitting(uint_fast64_t number) {
 InternalDdManager<DdType::Sylvan>::InternalDdManager() {
     if (numberOfInstances == 0) {
         storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
+        size_t const task_deque_size = 1024 * 1024 * 16;
         if (settings.isNumberOfThreadsSet()) {
-            lace_init(settings.getNumberOfThreads(), 1024 * 1024 * 16);
+            lace_start(settings.getNumberOfThreads(), task_deque_size);
         } else {
-            lace_init(0, 1024 * 1024 * 16);
+            lace_start(0, task_deque_size);
         }
-        lace_startup(0, 0, 0);
 
         // Table/cache size computation taken from newer version of sylvan.
         uint64_t memorycap = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024;
@@ -121,7 +121,7 @@ InternalDdManager<DdType::Sylvan>::~InternalDdManager() {
         //                fclose(filePointer);
 
         sylvan::Sylvan::quitPackage();
-        lace_exit();
+        lace_stop();
     }
 }
 

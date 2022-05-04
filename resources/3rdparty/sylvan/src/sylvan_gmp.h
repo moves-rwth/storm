@@ -149,14 +149,14 @@ TASK_DECL_2(MTBDD, gmp_op_abs, MTBDD, size_t);
  * This is similar to the "and_exists" operation in BDDs.
  */
 TASK_DECL_3(MTBDD, gmp_and_abstract_plus, MTBDD, MTBDD, MTBDD);
-#define gmp_and_abstract_plus(a, b, vars) CALL(gmp_and_abstract_plus, a, b, vars)
+#define gmp_and_abstract_plus(a, b, vars) RUN(gmp_and_abstract_plus, a, b, vars)
 #define gmp_and_exists gmp_and_abstract_plus
 
 /**
  * Multiply <a> and <b>, and abstract variables <vars> by taking the maximum.
  */
 TASK_DECL_3(MTBDD, gmp_and_abstract_max, MTBDD, MTBDD, MTBDD);
-#define gmp_and_abstract_max(a, b, vars) CALL(gmp_and_abstract_max, a, b, vars)
+#define gmp_and_abstract_max(a, b, vars) RUN(gmp_and_abstract_max, a, b, vars)
 
 /**
  * Convert to a Boolean MTBDD, translate terminals >= value to 1 and to 0 otherwise;
@@ -176,13 +176,13 @@ TASK_DECL_2(MTBDD, gmp_op_strict_threshold, MTBDD*, MTBDD*);
  * Convert to a Boolean MTBDD, translate terminals >= value to 1 and to 0 otherwise;
  */
 TASK_DECL_2(MTBDD, gmp_threshold_d, MTBDD, double);
-#define gmp_threshold_d(dd, value) CALL(gmp_threshold_d, dd, value)
+#define gmp_threshold_d(dd, value) RUN(gmp_threshold_d, dd, value)
 
 /**
  * Convert to a Boolean MTBDD, translate terminals > value to 1 and to 0 otherwise;
  */
 TASK_DECL_2(MTBDD, gmp_strict_threshold_d, MTBDD, double);
-#define gmp_strict_threshold_d(dd, value) CALL(gmp_strict_threshold_d, dd, value)
+#define gmp_strict_threshold_d(dd, value) RUN(gmp_strict_threshold_d, dd, value)
 
 #ifdef __cplusplus
 }

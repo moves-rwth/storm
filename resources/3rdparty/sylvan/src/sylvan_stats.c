@@ -212,7 +212,6 @@ to_h(double size, char *buf)
 void
 sylvan_stats_report(FILE *target)
 {
-    LACE_ME;
     sylvan_stats_t totals;
     sylvan_stats_snapshot(&totals);
 

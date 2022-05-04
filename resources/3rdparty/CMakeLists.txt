@@ -547,7 +547,7 @@ ExternalProject_Add(
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DGMP_LOCATION=${GMP_LIB_LOCATION}  -DGMP_INCLUDE=${GMP_INCLUDE_DIR}  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DSYLVAN_PORTABLE=${STORM_PORTABLE} -DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS} -DBUILD_SHARED_LIBS=OFF -DSYLVAN_BUILD_TESTS=OFF
+        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DBUILD_SHARED_LIBS=OFF
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
@@ -555,7 +555,7 @@ ExternalProject_Add(
         LOG_CONFIGURE ON
         LOG_BUILD ON
         DEPENDS ${sylvan_dep}
-        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
+        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libSylvan${STATIC_EXT}
         BUILD_ALWAYS 1
 )
 # BUILD ALWAYS ON due to: https://stackoverflow.com/questions/46708124/cmake-doesnt-rebuild-externalproject-on-changes
@@ -563,7 +563,7 @@ ExternalProject_Add(
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
 set(Sylvan_INCLUDE_DIR "${source_dir}/src")
-set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
+set(Sylvan_LIBRARY "${binary_dir}/src/libSylvan${STATIC_EXT}")
 message(STATUS "Storm - Using shipped version of sylvan.")
 message(STATUS "Storm - Linking with sylvan.")
 add_imported_library(sylvan STATIC ${Sylvan_LIBRARY} ${Sylvan_INCLUDE_DIR})

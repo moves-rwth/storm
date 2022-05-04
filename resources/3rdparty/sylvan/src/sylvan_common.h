@@ -84,7 +84,7 @@ void sylvan_register_quit(quit_cb cb);
  * Return number of occupied buckets in nodes table and total number of buckets.
  */
 VOID_TASK_DECL_2(sylvan_table_usage, size_t*, size_t*);
-#define sylvan_table_usage(filled, total) (CALL(sylvan_table_usage, filled, total))
+#define sylvan_table_usage(filled, total) (RUN(sylvan_table_usage, filled, total))
 
 /**
  * GARBAGE COLLECTION
@@ -126,7 +126,7 @@ VOID_TASK_DECL_2(sylvan_table_usage, size_t*, size_t*);
  * Trigger garbage collection manually.
  */
 VOID_TASK_DECL_0(sylvan_gc);
-#define sylvan_gc() (CALL(sylvan_gc))
+#define sylvan_gc() (RUN(sylvan_gc))
 
 /**
  * Enable or disable garbage collection.
@@ -149,19 +149,19 @@ void sylvan_gc_disable(void);
  * Clear the operation cache.
  */
 VOID_TASK_DECL_0(sylvan_clear_cache);
-#define sylvan_clear_cache() CALL(sylvan_clear_cache)
+#define sylvan_clear_cache() RUN(sylvan_clear_cache)
 
 /**
  * Clear the nodes table (data part) and mark all nodes with the marking mechanisms.
  */
 VOID_TASK_DECL_0(sylvan_clear_and_mark);
-#define sylvan_clear_and_mark() CALL(sylvan_clear_and_mark)
+#define sylvan_clear_and_mark() RUN(sylvan_clear_and_mark)
 
 /**
  * Clear the nodes table (hash part) and rehash all marked nodes.
  */
 VOID_TASK_DECL_0(sylvan_rehash_all);
-#define sylvan_rehash_all() CALL(sylvan_rehash_all)
+#define sylvan_rehash_all() RUN(sylvan_rehash_all)
 
 /**
  * Callback type

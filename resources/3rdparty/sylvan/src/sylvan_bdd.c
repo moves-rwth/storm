@@ -2219,4 +2219,3 @@ sylvan_serialize_fromfile(FILE *in)
     }
 }
 
-#include "sylvan_bdd_storm.c"

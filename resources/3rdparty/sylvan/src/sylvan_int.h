@@ -32,6 +32,7 @@ namespace sylvan {
 
 #include <sylvan_cache.h>
 #include <sylvan_table.h>
+#include <sylvan_hash.h>
 
 #ifndef SYLVAN_INT_H
 #define SYLVAN_INT_H
@@ -99,6 +100,8 @@ static const uint64_t CACHE_MTBDD_LESS              = (53LL<<40);
 static const uint64_t CACHE_MTBDD_GEQ               = (54LL<<40);
 static const uint64_t CACHE_MTBDD_GREATER           = (55LL<<40);
 static const uint64_t CACHE_MTBDD_EVAL_COMPOSE      = (56LL<<40);
+
+// Probably added by Storm
 static const uint64_t CACHE_MTBDD_NONZERO_COUNT     = (57LL<<40);
 static const uint64_t CACHE_MTBDD_AND_EXISTS_RN     = (58LL<<40);
 static const uint64_t CACHE_MTBDD_MINIMUM_RN        = (59LL<<40);

@@ -1,6 +1,7 @@
 /* 
  * Copyright 2013-2016 Formal Methods and Tools, University of Twente
  * Copyright 2016-2017 Tom van Dijk, Johannes Kepler University Linz
+ * Copyright 2019-2021 Tom van Dijk, Formal Methods and Tools, University of Twente
  *
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -32,6 +33,7 @@
 #    define LACE_COUNT_STEALS  0
 #    define LACE_COUNT_SPLITS  0
 #    define LACE_USE_HWLOC     0
+#    define LACE_USE_MMAP      0
 #  endif
 #endif
 
@@ -43,24 +45,15 @@ extern "C" {
  * Using Lace.
  *
  * Optionally set the verbosity level with lace_set_verbosity.
- * Then call lace_init to initialize the system.
- * - lace_init(n_workers, deque_size);
+ * Optionally set the default program stack size of each worker thread with lace_set_stacksize.
+ *
+ * Then call lace_start to start Lace workers.
+ * - lace_start(n_workers, deque_size);
  *   set both parameters to 0 for reasonable defaults, using all available cores.
  *
- * You can create Worker threads yourself or let Lace create threads with lace_startup.
+ * After this, you can run tasks using the RUN(...)
  *
- * When creating threads yourself, call the following functions:
- *   - lace_init_worker to allocate and initialize the worker data structures
- *     this method returns when all workers have called lace_init_worker
- *   - lace_pin_worker (optional) to pin the thread and memory to a core
- * The main worker can now start its root task. All other workers:
- *   - lace_run_worker to perform work-stealing until the main worker calls lace_exit
- *
- * When letting Lace create threads with lace_startup
- * - Call lace_startup with a callback to create N threads.
- *   Returns after the callback has returned and all created threads are destroyed
- * - Call lace_startup without a callback to create N-1 threads.
- *   Returns control to the caller. When lace_exit is called, all created threads are terminated.
+ * Use lace_suspend and lace_resume to temporarily stop running, or lace_stop to completely stop Lace.
  */
 
 /**
@@ -89,110 +82,91 @@ LACE_TYPEDEF_CB(void, lace_startup_cb, void*);
 void lace_set_verbosity(int level);
 
 /**
- * Initialize Lace for <n_workers> workers with a deque size of <dqsize> per worker.
+ * Set the program stack size of Lace worker threads. (Not really needed, default is OK.)
+ */
+void lace_set_stacksize(size_t stacksize);
+
+/**
+ * Get the program stack size of Lace worker threads.
+ * If this returns 0, it uses the default...
+ */
+size_t lace_get_stacksize(void);
+
+/**
+ * Get the number of available PUs (hardware threads)
+ */
+unsigned int lace_get_pu_count(void);
+
+/**
+ * Start Lace with <n_workers> workers and a a task deque size of <dqsize> per worker.
  * If <n_workers> is set to 0, automatically detects available cores.
  * If <dqsize> is est to 0, uses a reasonable default value.
  */
-void lace_init(unsigned int n_workers, size_t dqsize);
+void lace_start(unsigned int n_workers, size_t dqsize);
 
 /**
- * Let Lace create worker threads.
- * If <stacksize> is set to 0, uses a reaonable default value.
- * If cb, arg are set to 0, then the current thread is initialized as the main Worker (Worker 0).
- *
- * If cb,arg are set, then the current thread is suspended. A new thread is made for Worker 0 and
- * the task cb with paremeter arg is called; when cb returns, Lace is exited automatically.
+ * Suspend all workers.
  */
-void lace_startup(size_t stacksize, lace_startup_cb, void* arg);
+void lace_suspend(void);
 
 /**
- * Initialize worker <worker>, allocating memory.
- * If <worker> is 0, then the current thread is the main worker.
+ * Resume all workers.
  */
-void lace_init_worker(unsigned int worker);
+void lace_resume(void);
 
 /**
- * Use hwloc to pin the current thread to a CPU and its allocated memory in the closest domain.
- * Call this *after* lace_init_worker and *before* lace_run_worker.
+ * Stop Lace.
  */
-void lace_pin_worker(void);
-
-/**
- * Perform work-stealing until lace_exit is called.
- */
-void lace_run_worker(void);
+void lace_stop(void);
 
 /**
  * Steal a random task.
+ * Only use this from inside a Lace task.
  */
 #define lace_steal_random() CALL(lace_steal_random)
 void lace_steal_random_CALL(WorkerP*, Task*);
 
 /**
  * Enter the Lace barrier. (all active workers must enter it before we can continue)
+ * Only run this from inside a Lace task.
  */
-void lace_barrier();
-
-/**
- * Suspend all workers except the current worker.
- * May only be used when all other workers are idle.
- */
-void lace_suspend();
-
-/**
- * Resume all workers.
- */
-void lace_resume();
-
-/**
- * When all other workers are suspended, some workers can be disabled using the following functions.
- * With set_workers, all workers 0..(N-1) are enabled and N..max are disabled.
- * You can never disable the current worker or reduce the number of workers below 1.
- * You cannot add workers.
- */
-void lace_set_workers(unsigned int workercount);
-
-/**
- * Disable a suspended worker.
- */
-void lace_disable_worker(unsigned int worker);
-
-/**
- * Enable a suspended worker.
- */
-void lace_enable_worker(unsigned int worker);
-
-/**
- * Retrieve the number of enabled/active workers.
- */
-unsigned int lace_enabled_workers();
+void lace_barrier(void);
 
 /**
  * Retrieve the number of Lace workers
  */
-unsigned int lace_workers();
-
-/**
- * Retrieve the default program stack size
- */
-size_t lace_default_stacksize();
+unsigned int lace_workers(void);
 
 /**
  * Retrieve the current worker data.
+ * Only run this from inside a Lace task.
+ * (Used by LACE_VARS)
  */
-WorkerP *lace_get_worker();
+WorkerP *lace_get_worker(void);
 
 /**
- * Retrieve the current head of the deque
+ * Retrieve the current head of the deque of the worker.
+ * (Used by LACE_VARS)
  */
 Task *lace_get_head(WorkerP *);
 
 /**
- * Exit Lace.
- * This function is automatically called when lace_startup is called with a callback.
- * This function must be called to exit Lace when lace_startup is called without a callback.
+ * Helper function to call from outside Lace threads.
  */
-void lace_exit();
+void lace_run_task(Task *task);
+
+/**
+ * Helper function to start a new task execution (task frame) on a given task.
+ * Only when the task is done, do workers continue with the previous task frame.
+ */
+void lace_run_newframe(Task *task);
+
+/**
+ * Helper function to make all run a given task together.
+ * They all start the task in a lace_barrier and complete it with a lace barrier.
+ * Meaning they all start together, and all end together.
+ */
+void lace_run_together(Task *task);
 
 /**
  * Create a pointer to a Tasks main function.
@@ -220,19 +194,24 @@ void lace_exit();
 #define SPAWN(f, ...)     ( WRAP(f##_SPAWN, ##__VA_ARGS__), __lace_dq_head++ )
 
 /**
- * Directly execute a task.
+ * Directly execute a task from inside a Lace thread.
  */
 #define CALL(f, ...)      ( WRAP(f##_CALL, ##__VA_ARGS__) )
 
 /**
+ * Directly execute a task from outside Lace threads.
+ */
+#define RUN(f, ...)    ( f##_RUN ( __VA_ARGS__ ) )
+
+/**
  * Signal all workers to interrupt their current tasks and instead perform (a personal copy of) the given task.
  */
-#define TOGETHER(f, ...)  ( WRAP(f##_TOGETHER, ##__VA_ARGS__) )
+#define TOGETHER(f, ...)  ( f##_TOGETHER ( __VA_ARGS__) )
 
 /**
  * Signal all workers to interrupt their current tasks and help the current thread with the given task.
  */
-#define NEWFRAME(f, ...)  ( WRAP(f##_NEWFRAME, ##__VA_ARGS__) )
+#define NEWFRAME(f, ...)  ( f##_NEWFRAME ( __VA_ARGS__) )
 
 /**
  * (Try to) steal a task from a random worker.
@@ -252,7 +231,7 @@ void lace_exit();
 /**
  * Initialize local variables __lace_worker and __lace_dq_head which are required for most Lace functionality.
  */
-#define LACE_ME WorkerP * __attribute__((unused)) __lace_worker = lace_get_worker(); Task * __attribute__((unused)) __lace_dq_head = lace_get_head(__lace_worker);
+#define LACE_VARS WorkerP * __attribute__((unused)) __lace_worker = lace_get_worker(); Task * __attribute__((unused)) __lace_dq_head = lace_get_head(__lace_worker);
 
 /**
  * Check if current tasks must be interrupted, and if so, interrupt.
@@ -281,10 +260,6 @@ void lace_yield(WorkerP *__lace_worker, Task *__lace_dq_head);
 #define LACE_TRNG (__lace_worker->rng = 2862933555777941757ULL * __lace_worker->rng + 3037000493ULL)
 
 /* Some flags that influence Lace behavior */
-
-#ifndef LACE_DEBUG_PROGRAMSTACK /* Write to stderr when 95% program stack reached */
-#define LACE_DEBUG_PROGRAMSTACK 0
-#endif
 
 #ifndef LACE_LEAP_RANDOM /* Use random leaping when leapfrogging fails */
 #define LACE_LEAP_RANDOM 1
@@ -449,7 +424,6 @@ typedef struct _WorkerP {
     Task *split;                // same as dq+ts.ts.split
     Task *end;                  // dq+dq_size
     Worker *_public;            // pointer to public Worker struct
-    size_t stack_trigger;       // for stack overflow detection
     uint64_t rng;               // my random seed (for lace_trng)
     uint32_t seed;              // my random seed (for lace_steal_random)
     uint16_t worker;            // what is my worker id?
@@ -469,40 +443,15 @@ typedef struct _WorkerP {
 #define LACE_BUSY     ((Worker*)1)
 #define LACE_NOWORK   ((Worker*)2)
 
-#if LACE_DEBUG_PROGRAMSTACK
-static inline void CHECKSTACK(WorkerP *w)
-{
-    if (w->stack_trigger != 0) {
-        register size_t rsp;
-        asm volatile("movq %%rsp, %0" : "+r"(rsp) : : "cc");
-        if (rsp < w->stack_trigger) {
-            fputs("Warning: program stack 95% used!\n", stderr);
-            w->stack_trigger = 0;
-        }
-    }
-}
-#else
-#define CHECKSTACK(w) {}
-#endif
-
 void lace_abort_stack_overflow(void) __attribute__((noreturn));
 
 typedef struct
 {
     Task *t;
-    uint8_t all;
-    char pad[64-sizeof(Task *)-sizeof(uint8_t)];
+    char pad[LINE_SIZE-sizeof(Task *)];
 } lace_newframe_t;
 
 extern lace_newframe_t lace_newframe;
-
-/**
- * Internal function to start participating on a task in a new frame
- * Usually, <root> is set to NULL and the task is copied from lace_newframe.t
- * It is possible to override the start task by setting <root>.
- */
-void lace_do_together(WorkerP *__lace_worker, Task *__lace_dq_head, Task *task);
-void lace_do_newframe(WorkerP *__lace_worker, Task *__lace_dq_head, Task *task);
 
 /**
  * Make all tasks of the current worker shared.
@@ -616,10 +565,10 @@ lace_steal(WorkerP *self, Task *__dq_head, Worker *victim)
            compiler will optimize extra memory accesses to victim->ts instead
            of comparing the local values ts.ts.tail and ts.ts.split, causing
            thieves to steal non existent tasks! */
-        register TailSplit ts;
+        TailSplit ts;
         ts.v = *(volatile uint64_t *)&victim->ts.v;
         if (ts.ts.tail < ts.ts.split) {
-            register TailSplit ts_new;
+            TailSplit ts_new;
             ts_new.v = ts.v;
             ts_new.ts.tail++;
             if (__sync_bool_compare_and_swap(&victim->ts.v, ts.v, ts_new.v)) {
@@ -800,28 +749,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head )                                   \
+RTYPE NAME##_NEWFRAME()                                                               \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
                                                                                       \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head )                                    \
+void NAME##_TOGETHER()                                                                \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
                                                                                       \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN()                                                                    \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+                                                                                      \
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -886,7 +845,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head );               
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head )                                       \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head );                                                \
 }                                                                                     \
                                                                                       \
@@ -950,28 +908,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head )                                    \
+void NAME##_NEWFRAME()                                                                \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
                                                                                       \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head )                                    \
+void NAME##_TOGETHER()                                                                \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
                                                                                       \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN()                                                                     \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+                                                                                      \
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1036,7 +1004,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head );                
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head )                                        \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head );                                                \
 }                                                                                     \
                                                                                       \
@@ -1103,28 +1070,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                    \
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1)                                                  \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1;                                                         \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                     \
+void NAME##_TOGETHER(ATYPE_1 arg_1)                                                   \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1;                                                         \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1)                                                       \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1;                                                         \
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1189,7 +1166,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1);      
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                        \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1);                                         \
 }                                                                                     \
                                                                                       \
@@ -1253,28 +1229,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                     \
+void NAME##_NEWFRAME(ATYPE_1 arg_1)                                                   \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1;                                                         \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                     \
+void NAME##_TOGETHER(ATYPE_1 arg_1)                                                   \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1;                                                         \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1)                                                        \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1;                                                         \
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1339,7 +1325,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1);       
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                         \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1);                                         \
 }                                                                                     \
                                                                                       \
@@ -1406,28 +1391,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)     \
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2)                                   \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)      \
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2)                                    \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2)                                        \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1492,7 +1487,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)         \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2);                                  \
 }                                                                                     \
                                                                                       \
@@ -1556,28 +1550,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)      \
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2)                                    \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)      \
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2)                                    \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2)                                         \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2;                                \
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1642,7 +1646,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)          \
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2);                                  \
 }                                                                                     \
                                                                                       \
@@ -1709,28 +1712,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                    \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                     \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                         \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1795,7 +1808,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3);                           \
 }                                                                                     \
                                                                                       \
@@ -1859,28 +1871,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                     \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                     \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)                          \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3;       \
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -1945,7 +1967,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3);                           \
 }                                                                                     \
                                                                                       \
@@ -2012,28 +2033,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)     \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)      \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)          \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2098,7 +2129,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4);                    \
 }                                                                                     \
                                                                                       \
@@ -2162,28 +2192,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)      \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)      \
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)           \
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4;\
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2248,7 +2288,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4);                    \
 }                                                                                     \
                                                                                       \
@@ -2315,28 +2354,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2401,7 +2450,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4, arg_5);             \
 }                                                                                     \
                                                                                       \
@@ -2465,28 +2513,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5;\
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2551,7 +2609,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4, arg_5);             \
 }                                                                                     \
                                                                                       \
@@ -2618,28 +2675,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-RTYPE NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+RTYPE NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+RTYPE NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
+    lace_run_task(&_t);                                                               \
+    return ((TD_##NAME *)t)->d.res;                                                   \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2704,7 +2771,6 @@ RTYPE NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4, arg_5, arg_6);      \
 }                                                                                     \
                                                                                       \
@@ -2768,28 +2834,38 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_NEWFRAME(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+void NAME##_NEWFRAME(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
-                                                                                      \
-    lace_do_newframe(w, __dq_head, &_t);                                              \
+    lace_run_newframe(&_t);                                                           \
     return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static inline __attribute__((unused))                                                 \
-void NAME##_TOGETHER(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+void NAME##_TOGETHER(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
     Task _t;                                                                          \
     TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
     t->f = &NAME##_WRAP;                                                              \
     t->thief = THIEF_TASK;                                                            \
      t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
+    lace_run_together(&_t);                                                           \
+}                                                                                     \
                                                                                       \
-    lace_do_together(w, __dq_head, &_t);                                              \
+static inline __attribute__((unused))                                                 \
+void NAME##_RUN(ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
+{                                                                                     \
+    Task _t;                                                                          \
+    TD_##NAME *t = (TD_##NAME *)&_t;                                                  \
+    t->f = &NAME##_WRAP;                                                              \
+    t->thief = THIEF_TASK;                                                            \
+     t->d.args.arg_1 = arg_1; t->d.args.arg_2 = arg_2; t->d.args.arg_3 = arg_3; t->d.args.arg_4 = arg_4; t->d.args.arg_5 = arg_5; t->d.args.arg_6 = arg_6;\
+    lace_run_task(&_t);                                                               \
+    return ;                                                                          \
 }                                                                                     \
                                                                                       \
 static __attribute__((noinline))                                                      \
@@ -2854,7 +2930,6 @@ void NAME##_WORK(WorkerP *__lace_worker, Task *__lace_dq_head , ATYPE_1, ATYPE_2
 /* NAME##_WORK is inlined in NAME##_CALL and the parameter __lace_in_task will disappear */\
 void NAME##_CALL(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, ATYPE_3 arg_3, ATYPE_4 arg_4, ATYPE_5 arg_5, ATYPE_6 arg_6)\
 {                                                                                     \
-    CHECKSTACK(w);                                                                    \
     return NAME##_WORK(w, __dq_head , arg_1, arg_2, arg_3, arg_4, arg_5, arg_6);      \
 }                                                                                     \
                                                                                       \

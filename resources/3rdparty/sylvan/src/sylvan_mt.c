@@ -75,7 +75,7 @@ _sylvan_hash_cb(uint64_t a, uint64_t b, uint64_t seed)
 {
     customleaf_t *c = sylvan_mt_from_node(a, b);
     if (c->hash_cb != NULL) return c->hash_cb(b, seed ^ a);
-    else return llmsset_hash(a, b, seed);
+    else return sylvan_tabhash16(a, b, seed);
 }
 
 static int
@@ -239,7 +239,7 @@ sylvan_mt_hash(uint32_t type, uint64_t value, uint64_t seed)
     assert(type < cl_registry_count);
     customleaf_t *c = cl_registry + type;
     if (c->hash_cb != NULL) return c->hash_cb(value, seed);
-    else return llmsset_hash((uint64_t)type, value, seed);
+    else return sylvan_tabhash16((uint64_t)type, value, seed);
 }
 
 int

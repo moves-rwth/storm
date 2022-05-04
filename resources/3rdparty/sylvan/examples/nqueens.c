@@ -109,11 +109,9 @@ main(int argc, char** argv)
     t_start = wctime();
 
     // Init Lace
-    lace_init(workers, 1000000); // auto-detect number of workers, use a 1,000,000 size task queue
-    lace_startup(0, NULL, NULL); // auto-detect program stack, do not use a callback for startup
+    lace_start(workers, 1000000); // auto-detect number of workers, use a 1,000,000 size task queue
 
     // Lace is initialized, now set local variables
-    LACE_ME;
 
     // Init Sylvan
     // Nodes table size of 1LL<<20 is 1048576 entries
@@ -324,5 +322,5 @@ main(int argc, char** argv)
     }
 
     sylvan_quit();
-    lace_exit();
+    lace_stop();
 }
