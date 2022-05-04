@@ -431,7 +431,7 @@ namespace storm {
                                     ExplorationHeuristicPointer heuristic;
                                     switch (usedHeuristic) {
                                         case storm::builder::ApproximationHeuristic::DEPTH:
-                                            heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic);
                                             break;
                                         case storm::builder::ApproximationHeuristic::PROBABILITY:
                                             heuristic = std::make_shared<DFTExplorationHeuristicProbability<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
@@ -466,8 +466,22 @@ namespace storm {
 
                                     explorationQueue.push(heuristic);
                                 } else if (!iter->second.second->isExpand()) {
+                                    bool changedPriority = false;
                                     double oldPriority = iter->second.second->getPriority();
-                                    if (iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass())) {
+                                    switch (usedHeuristic) {
+                                        case storm::builder::ApproximationHeuristic::DEPTH:
+                                            changedPriority = iter->second.second->updateHeuristicValues(*currentExplorationHeuristic,  /* next values are irrelevant */ stateProbabilityPair.second, stateProbabilityPair.second);
+                                            break;
+                                        case storm::builder::ApproximationHeuristic::PROBABILITY:
+                                            changedPriority = iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                        case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                                            changedPriority = iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
+                                            break;
+                                        default:
+                                            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
+                                    }
+                                    if (changedPriority) {
                                         // Update priority queue
                                         explorationQueue.update(iter->second.second, oldPriority);
                                     }
@@ -722,19 +736,12 @@ namespace storm {
                 STORM_LOG_ASSERT(matrixEntry->getColumn() == 0, "Transition has wrong target state.");
                 STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
 
-                ExplorationHeuristicPointer heuristic = it->second.second;
-                if (storm::utility::isInfinity(heuristic->getUpperBound())) {
-                    // Initialize bounds
-                    ValueType lowerBound = getLowerBound(it->second.first);
-                    ValueType upperBound = getUpperBound(it->second.first);
-                    heuristic->setBounds(lowerBound, upperBound);
-                }
-
                 // Change bound
+                // TODO: cache values inbetween iterations
                 if (lowerBound) {
-                    matrixEntry->setValue(it->second.second->getLowerBound());
+                    matrixEntry->setValue(getLowerBound(it->second.first));
                 } else {
-                    matrixEntry->setValue(it->second.second->getUpperBound());
+                    matrixEntry->setValue(getUpperBound(it->second.first));
                 }
             }
         }

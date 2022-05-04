@@ -43,8 +43,7 @@ namespace storm {
                      * Construct a new iterator.
                      * We either iterate over all failable BEs or over all dependencies (if dependency is true).
                      * For dependencies, we start with non-conflicting dependencies before iterating over conflicting ones.
-                     * For dependencies, we start with non-conflicting dependencies if they are present.
-                     * 
+                     *
                      * @param dependency Whether dependencies should be iterated (or BEs if false).
                      * @param conflicting Whether conflicting dependencies should be iterated (or non-conflicting if false).
                      * @param iterBE Iterator for BEs.

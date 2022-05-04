@@ -90,6 +90,9 @@ namespace storm {
             //Reserve space for failed spares
             ++mMaxSpareChildCount;
             mStateVectorSize = DFTStateGenerationInfo::getStateVectorSize(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
+
+            // Set relevant events: empty list corresponds to only setting the top-level event as relevant
+            setRelevantEvents({}, false);
         }
 
         template<typename ValueType>
@@ -488,14 +491,22 @@ namespace storm {
                 STORM_LOG_ASSERT(rewrites.size() > 1, "No rewritten elements.");
                 STORM_LOG_ASSERT(mElements[rewrites[1]]->hasParents(), "Rewritten elements has no parents.");
                 STORM_LOG_ASSERT(mElements[rewrites[1]]->parents().front()->isGate(), "Rewritten element has no parent gate.");
-                DFTGatePointer originalParent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[rewrites[1]]->parents().front());
+                DFTGatePointer originalParent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[rewrites[0]]);
+                STORM_LOG_ASSERT(std::find_if(mElements[rewrites[1]]->parents().begin(), mElements[rewrites[1]]->parents().end(),
+                                              [&originalParent](std::shared_ptr<DFTElement<ValueType>> const& p) { return p->id() == originalParent->id(); }) !=
+                                     mElements[rewrites[1]]->parents().end(),
+                                 "Rewritten element has not the same parent");
                 std::string newParentName = builder.getUniqueName(originalParent->name());
 
                 // Accumulate children names
                 std::vector<std::string> childrenNames;
                 for (size_t i = 1; i < rewrites.size(); ++i) {
-                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(),
+                    STORM_LOG_ASSERT(std::find_if(mElements[rewrites[i]]->parents().begin(), mElements[rewrites[i]]->parents().end(),
+                                                  [&originalParent](std::shared_ptr<DFTElement<ValueType>> const& p) {
+                                                      return p->id() == originalParent->id();
+                                                  }) != mElements[rewrites[i]]->parents().end(),
                                      "Children have not the same father for rewrite " << mElements[rewrites[i]]->name());
+
                     childrenNames.push_back(mElements[rewrites[i]]->name());
                 }
 
@@ -1176,16 +1187,49 @@ namespace storm {
             stream << "=========================================\n";
         }
 
+        std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunction> const& dft) {
+            std::set<storm::RationalFunctionVariable> result;
+            for (size_t i = 0; i < dft.nrElements(); ++i) {
+                std::shared_ptr<storm::storage::DFTElement<storm::RationalFunction> const> element = dft.getElement(i);
+                switch (element->type()) {
+                    case storm::storage::DFTElementType::BE: {
+                        auto be = std::static_pointer_cast<storm::storage::DFTBE<storm::RationalFunction> const>(element);
+                        if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
+                            auto beExp = std::static_pointer_cast<storm::storage::BEExponential<storm::RationalFunction> const>(element);
+                            beExp->activeFailureRate().gatherVariables(result);
+                            beExp->dormancyFactor().gatherVariables(result);
+                        }
+                        break;
+                    }
+                    case storm::storage::DFTElementType::PDEP: {
+                        auto dep = std::static_pointer_cast<storm::storage::DFTDependency<storm::RationalFunction> const>(element);
+                        dep->probability().gatherVariables(result);
+                        break;
+                    }
+                    case storm::storage::DFTElementType::AND:
+                    case storm::storage::DFTElementType::OR:
+                    case storm::storage::DFTElementType::VOT:
+                    case storm::storage::DFTElementType::PAND:
+                    case storm::storage::DFTElementType::POR:
+                    case storm::storage::DFTElementType::SPARE:
+                    case storm::storage::DFTElementType::SEQ:
+                    case storm::storage::DFTElementType::MUTEX:
+                        // Do nothing
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "DFT type '" << element->type() << "' not known.");
+                }
+            }
+            return result;
+        }
+
+
         // Explicitly instantiate the class.
         template
         class DFT<double>;
 
-#ifdef STORM_HAVE_CARL
-
         template
         class DFT<RationalFunction>;
-
-#endif
 
     }
 }
