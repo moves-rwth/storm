@@ -31,6 +31,7 @@ struct SubsystemBuilderOptions {
     bool buildActionMapping = false;
     bool buildKeptActions = true;
     bool fixDeadlocks = false;
+    bool makeRowGroupingTrivial = false;
 };
 
 /*
