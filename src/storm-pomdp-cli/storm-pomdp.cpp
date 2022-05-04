@@ -353,27 +353,26 @@ namespace storm {
                          *  b - p * a | b    | b - a     | b        | b - a | a    | 1 - p | p
                          */
                         auto vars = reward.gatherVariables();
-                        auto b = reward.constantPart();
+                        storm::RationalFunction::CoeffType b = reward.constantPart();
                         STORM_LOG_THROW(vars.size() == 1, storm::exceptions::NotImplementedException, "Making rewards constant for rewards with more than 1 parameter not implemented");
                         std::map<RationalFunctionVariable, RationalFunctionCoefficient> val0, val1;
                         val0[*vars.begin()] = 0;
                         val1[*vars.begin()] = 1;
-                        auto value0 = reward.evaluate(val0);
-                        auto value1 = reward.evaluate(val1);
+                        storm::RationalFunction::CoeffType value0 = reward.evaluate(val0);
+                        storm::RationalFunction::CoeffType value1 = reward.evaluate(val1);
                         if (value1 - b >= 0) {
-                            auto a = value1 - b;
+                            storm::RationalFunction::CoeffType a = value1 - b;
                             // Reward is b + p * a
                             stateRewards[state + offset] = storm::utility::convertNumber<storm::RationalFunction>(b);
                             stateRewards[state + offset + 1] = storm::utility::convertNumber<storm::RationalFunction>(a);
                             stateRewards[state + offset + 2] = storm::RationalFunction(0);
-
                             // probs are p and 1-p
                             storm::RationalFunction funcP = (reward - b) / a ;
                             smb.addNextValue(state + offset, state + 1, funcP);
                             smb.addNextValue(state + offset, state + 2, storm::RationalFunction(1) - funcP);
                         } else {
                             // Reward is b - p * a
-                            auto a = b - value1;
+                            storm::RationalFunction::CoeffType a = b - value1;
                             stateRewards[state + offset] = storm::utility::convertNumber<storm::RationalFunction>(value1);
                             stateRewards[state + offset + 1] = storm::utility::convertNumber<storm::RationalFunction>(a);
                             stateRewards[state + offset + 2] = storm::RationalFunction(0);
