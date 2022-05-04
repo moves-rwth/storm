@@ -113,11 +113,11 @@ BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), buckets
 BitVector& BitVector::operator=(BitVector const& other) {
     // Only perform the assignment if the source and target are not identical.
     if (this != &other) {
-        bitCount = other.bitCount;
         if (buckets && bucketCount() != other.bucketCount()) {
             delete[] buckets;
             buckets = nullptr;
         }
+        bitCount = other.bitCount;
         if (!buckets) {
             buckets = new uint64_t[other.bucketCount()];
         }

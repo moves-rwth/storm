@@ -5,6 +5,11 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
+Version 1.7.x
+-------------
+
+## Version 1.7.?
+- Developer: Storm is now built in C++17 mode
 
 Version 1.6.x
 -------------
