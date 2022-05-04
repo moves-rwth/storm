@@ -32,10 +32,15 @@ namespace storm {
     
     namespace api {
         struct MonotonicitySetting {
-            MonotonicitySetting(bool a = false, bool b = false, bool c = false) { useMonotonicity = a; useOnlyGlobalMonotonicity = b; useBoundsFromPLA = c;}
             bool useMonotonicity;
             bool useOnlyGlobalMonotonicity;
             bool useBoundsFromPLA;
+
+            explicit MonotonicitySetting(bool useMonotonicity = false, bool useOnlyGlobalMonotonicity = false, bool useBoundsFromPLA = false) {
+                this->useMonotonicity = useMonotonicity;
+                this->useOnlyGlobalMonotonicity = useOnlyGlobalMonotonicity;
+                this->useBoundsFromPLA = useBoundsFromPLA;
+            }
         };
 
         template <typename ValueType>
