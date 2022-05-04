@@ -12,10 +12,6 @@ namespace storm {
             }
 
             template<typename ParametricType, typename ConstantType>
-            DftInstantiator<ParametricType, ConstantType>::~DftInstantiator() {
-            }
-
-            template<typename ParametricType, typename ConstantType>
             std::shared_ptr<storm::storage::DFT<ConstantType>> DftInstantiator<ParametricType, ConstantType>::instantiate(storm::utility::parametric::Valuation<ParametricType> const& valuation){
                 storm::builder::DFTBuilder<ConstantType> builder = storm::builder::DFTBuilder<ConstantType>(true);
                 for (size_t i = 0; i < dft.nrElements(); ++i) {

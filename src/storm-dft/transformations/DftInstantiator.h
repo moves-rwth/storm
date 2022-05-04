@@ -25,7 +25,7 @@ namespace storm {
                 /*!
                  * Destructs the Instantiator
                  */
-                virtual ~DftInstantiator();
+                virtual ~DftInstantiator() = default;
 
                 /*!
                  * Evaluates the occurring parametric functions and retrieves the instantiated DFT.

@@ -91,7 +91,7 @@ namespace storm {
             ++mMaxSpareChildCount;
             mStateVectorSize = DFTStateGenerationInfo::getStateVectorSize(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
 
-            // Set TLE as relevant
+            // Set relevant events: empty list corresponds to only setting the top-level event as relevant
             setRelevantEvents({}, false);
         }
 
@@ -1187,7 +1187,6 @@ namespace storm {
             stream << "=========================================\n";
         }
 
-#ifdef STORM_HAVE_CARL
         std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunction> const& dft) {
             std::set<storm::RationalFunctionVariable> result;
             for (size_t i = 0; i < dft.nrElements(); ++i) {
@@ -1223,19 +1222,14 @@ namespace storm {
             }
             return result;
         }
-#endif
 
 
         // Explicitly instantiate the class.
         template
         class DFT<double>;
 
-#ifdef STORM_HAVE_CARL
-
         template
         class DFT<RationalFunction>;
-
-#endif
 
     }
 }

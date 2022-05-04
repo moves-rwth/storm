@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -31,7 +32,7 @@ namespace storm {
             virtual bool updateHeuristicValues(DFTExplorationHeuristic const& predecessor, ValueType rate, ValueType exitRate) = 0;
 
             virtual void setBounds(ValueType lowerBound, ValueType upperBound) {
-                STORM_LOG_ASSERT(false, "Not implemented.");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Should be handled by specialized heuristic.");
             }
 
             void markExpand() {
@@ -47,19 +48,19 @@ namespace storm {
             }
 
             virtual size_t getDepth() const {
-                STORM_LOG_ASSERT(false, "Not implemented.");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Should be handled by specialized heuristic.");
             }
 
             virtual ValueType getProbability() const {
-                STORM_LOG_ASSERT(false, "Not implemented.");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Should be handled by specialized heuristic.");
             }
 
             virtual ValueType getLowerBound() const {
-                STORM_LOG_ASSERT(false, "Not implemented.");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Should be handled by specialized heuristic.");
             }
 
             virtual ValueType getUpperBound() const {
-                STORM_LOG_ASSERT(false, "Not implemented.");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Should be handled by specialized heuristic.");
             }
 
             virtual double getPriority() const = 0;
