@@ -306,7 +306,7 @@ namespace storm {
 
             template<typename ValueType, storm::dd::DdType DdType>
             std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> makeRewardsConstant( std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> pMC) {
-                STORM_LOG_THROW(pMC->hasUniqueRewardModel(), storm::exceptions::IllegalArgumentException, "pMC need to have a rewqrad model");
+                STORM_LOG_THROW(pMC->hasUniqueRewardModel(), storm::exceptions::IllegalArgumentException, "pMC needs to have an unique reward model");
                 storm::storage::sparse::ModelComponents<storm::RationalFunction> modelComponents;
 
                 uint64_t nrStates = pMC->getTransitionMatrix().getColumnCount();
@@ -466,10 +466,12 @@ namespace storm {
                         STORM_PRINT_AND_LOG(" done.\n");
                         pmc->printModelInformationToStream(std::cout);
                     }
-                    if (transformSettings.isConstantRewardsSet()) {
+                    if (pmc->hasRewardModel() && pmc->transformSettings.isConstantRewardsSet()) {
+                        STORM_PRINT_AND_LOG("Ensuring constant rewards...");
                         pmc = makeRewardsConstant<ValueType, DdType>(pmc);
+                        STORM_PRINT_AND_LOG(" done.\n");
+                        pmc->printModelInformationToStream(std::cout);
                     }
-                    pmc->printModelInformationToStream(std::cout);
                     STORM_PRINT_AND_LOG("Exporting pMC...");
                     storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
                     auto const& parameterSet = constraints.getVariables();
