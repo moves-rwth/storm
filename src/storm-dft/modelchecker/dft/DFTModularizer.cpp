@@ -218,22 +218,40 @@ void DFTModularizer::replaceDynamicModules(
 std::shared_ptr<storm::storage::DFT<ValueType>> DFTModularizer::getSubDFT(
     DFTElementCPointer const element) {
     storm::builder::DFTBuilder<ValueType> builder{};
+    std::unordered_set<std::string> depInConflict;
     for (auto const id : workDFT->getIndependentSubDftRoots(element->id())) {
         auto const tmpElement{workDFT->getElement(id)};
         builder.copyElement(tmpElement);
+        // Remember dependency conflict
+        if (tmpElement->isDependency() && workDFT->isDependencyInConflict(tmpElement->id())) {
+            depInConflict.insert(tmpElement->name());
+        }
     }
     builder.setTopLevel(element->name());
-    return std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
+    auto dft = std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
+    // Update dependency conflicts
+    for (size_t id: dft->getDependencies()) {
+        // Set dependencies not in conflict
+        if (depInConflict.find(dft->getElement(id)->name()) == depInConflict.end()) {
+            dft->setDependencyNotInConflict(id);
+        }
+    }
+    return dft;
 }
 
 void DFTModularizer::updateWorkDFT(
     DFTElementCPointer const element,
     std::map<ValueType, ValueType> activeSamples) {
     storm::builder::DFTBuilder<ValueType> builder{};
+    std::unordered_set<std::string> depInConflict;
     for (auto const id : workDFT->getAllIds()) {
         auto const tmpElement{workDFT->getElement(id)};
         if (tmpElement->name() != element->name()) {
             builder.copyElement(tmpElement);
+            // Remember dependency conflict
+            if (tmpElement->isDependency() && workDFT->isDependencyInConflict(id)) {
+                depInConflict.insert(tmpElement->name());
+            }
         } else {
             builder.addBasicElementSamples(element->name(), activeSamples);
         }
@@ -241,6 +259,13 @@ void DFTModularizer::updateWorkDFT(
     builder.setTopLevel(workDFT->getTopLevelElement()->name());
 
     workDFT = std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
+    // Update dependency conflicts
+    for (size_t id: workDFT->getDependencies()) {
+        // Set dependencies not in conflict
+        if (depInConflict.find(workDFT->getElement(id)->name()) == depInConflict.end()) {
+            workDFT->setDependencyNotInConflict(id);
+        }
+    }
 }
 
 void DFTModularizer::analyseDynamic(DFTElementCPointer const element,

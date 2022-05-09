@@ -806,7 +806,9 @@ typename DeterministicSchedsLpChecker<ModelType, GeometryValueType>::Point Deter
             STORM_LOG_THROW(choiceFound, storm::exceptions::UnexpectedException, "No choice selected at state " << state);
         }
     }
-    auto inducedModel = model.applyScheduler(scheduler)->template as<ModelType>();
+    bool dropUnreachableStates = true;
+    bool preserveModelType = true;
+    auto inducedModel = model.applyScheduler(scheduler, dropUnreachableStates, preserveModelType)->template as<ModelType>();
     Point inducedPoint;
     for (uint64_t objIndex = 0; objIndex < objectiveHelper.size(); ++objIndex) {
         ValueType inducedValue = objectiveHelper[objIndex].evaluateOnModel(env, *inducedModel);
