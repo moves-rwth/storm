@@ -22,8 +22,7 @@ class DFTModularizer {
    public:
     using ValueType = double;
     using ElementId = size_t;
-    using DFTElementCPointer =
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
+    using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
     using FormulaCPointer = std::shared_ptr<storm::logic::Formula const>;
     using FormulaVector = std::vector<FormulaCPointer>;
 
@@ -39,15 +38,13 @@ class DFTModularizer {
      *
      * \note Does not work with events in dynamic modules.
      */
-    std::vector<ValueType> check(FormulaVector const &formulas,
-                                 size_t const chunksize = 0);
+    std::vector<ValueType> check(FormulaVector const &formulas, size_t const chunksize = 0);
 
     /**
      * \return
      * The Probabilities that the top level event fails at the given timepoints.
      */
-    std::vector<ValueType> getProbabilitiesAtTimepoints(
-        std::vector<ValueType> const &timepoints, size_t const chunksize = 0);
+    std::vector<ValueType> getProbabilitiesAtTimepoints(std::vector<ValueType> const &timepoints, size_t const chunksize = 0);
 
     /**
      * \return
@@ -66,8 +63,7 @@ class DFTModularizer {
     /**
      * \return All connected DFTElements of the given element
      */
-    static std::vector<DFTElementCPointer> getDecendants(
-        DFTElementCPointer const element);
+    static std::vector<DFTElementCPointer> getDecendants(DFTElementCPointer const element);
 
     /**
      * \return whether the given element is static i.e. not dynamic
@@ -132,20 +128,17 @@ class DFTModularizer {
     /**
      * Calculate dynamic Modules and replace them with BE's in workDFT
      */
-    void replaceDynamicModules(DFTElementCPointer const element,
-                               std::vector<ValueType> const &timepoints);
+    void replaceDynamicModules(DFTElementCPointer const element, std::vector<ValueType> const &timepoints);
     /**
      * \return DFT with the given element as the root
      */
-    std::shared_ptr<storm::storage::DFT<ValueType>> getSubDFT(
-        DFTElementCPointer const element);
+    std::shared_ptr<storm::storage::DFT<ValueType>> getSubDFT(DFTElementCPointer const element);
 
     /**
      * Update the workdDFT.
      * Replace the given element with a sample BE
      */
-    void updateWorkDFT(DFTElementCPointer const element,
-                       std::map<ValueType, ValueType> activeSamples);
+    void updateWorkDFT(DFTElementCPointer const element, std::map<ValueType, ValueType> activeSamples);
 
     /**
      * Analyse the dynamic module with the given element as the root.
@@ -153,8 +146,7 @@ class DFTModularizer {
      * \note
      * Updates the workDFT with the calculated probability
      */
-    void analyseDynamic(DFTElementCPointer const element,
-                        std::vector<ValueType> const &timepoints);
+    void analyseDynamic(DFTElementCPointer const element, std::vector<ValueType> const &timepoints);
 
     // don't reinitialize Sylvan BDD
     // temporary

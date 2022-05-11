@@ -1,16 +1,16 @@
 #include "BEConst.h"
 
 namespace storm {
-    namespace storage {
+namespace storage {
 
-        template <typename ValueType>
-        ValueType BEConst<ValueType>::getUnreliability(ValueType time) const {
-            return failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
-        }
+template<typename ValueType>
+ValueType BEConst<ValueType>::getUnreliability(ValueType time) const {
+    return failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+}
 
-        // Explicitly instantiate the class.
-        template class BEConst<double>;
-        template class BEConst<RationalFunction>;
+// Explicitly instantiate the class.
+template class BEConst<double>;
+template class BEConst<RationalFunction>;
 
-    } // namespace storage
-} // namespace storm
+}  // namespace storage
+}  // namespace storm
