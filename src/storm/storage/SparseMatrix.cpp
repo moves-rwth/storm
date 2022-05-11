@@ -202,25 +202,38 @@ void SparseMatrixBuilder<ValueType>::addNextValue(index_type row, index_type col
 
         // If we need to fix the row, do so now.
         if (fixCurrentRow) {
+            // TODO we fix this row directly after the out-of-order insertion, but the code does not exploit that fact.
+            STORM_LOG_TRACE("Fix row " << row << " as column " << column << " is added out-of-order.");
             // First, we sort according to columns.
             std::sort(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(),
                       [](storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
                           return a.getColumn() < b.getColumn();
                       });
 
-            // Then, we eliminate possible duplicate entries.
+            auto insertIt = columnsAndValues.begin() + rowIndications.back();
+            uint64_t elementsToRemove = 0;
+            for (auto it = insertIt + 1; it != columnsAndValues.end(); ++it) {
+                // Iterate over all entries in this last row and detect duplicates.
+                if (it->getColumn() == insertIt->getColumn()) {
+                    // This entry is a duplicate of the column. Update the previous entry.
+                    insertIt->setValue(insertIt->getValue() + it->getValue());
+                    elementsToRemove++;
+                } else {
+                    insertIt = it;
+                }
+            }
+            // Then, we eliminate those duplicate entries.
             auto it = std::unique(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(),
                                   [](storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
                                       return a.getColumn() == b.getColumn();
                                   });
 
-            // Finally, remove the superfluous elements.
-            std::size_t elementsToRemove = std::distance(it, columnsAndValues.end());
             if (elementsToRemove > 0) {
                 STORM_LOG_WARN("Unordered insertion into matrix builder caused duplicate entries.");
                 currentEntryCount -= elementsToRemove;
                 columnsAndValues.resize(columnsAndValues.size() - elementsToRemove);
             }
+            lastColumn = columnsAndValues.back().getColumn();
         }
     }
 
