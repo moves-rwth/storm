@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm-dft/storage/dft/SymmetricUnits.h"
+
 namespace storm {
     namespace storage {
         class DFTStateGenerationInfo {
