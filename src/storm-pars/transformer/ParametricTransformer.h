@@ -1,10 +1,16 @@
 #pragma once
-
+#include "storm/models/sparse/Dtmc.h"
+#include "storm/storage/sparse/ModelComponents.h"
+#include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/models/sparse/StateLabeling.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm {
 namespace transformer {
 template<typename ValueType, storm::dd::DdType DdType>
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> makeRewardsConstant(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const pMC) {
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> makeRewardsConstant(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> const pMC) {
         STORM_LOG_THROW(pMC->hasUniqueRewardModel(), storm::exceptions::IllegalArgumentException, "pMC needs to have an unique reward model");
         storm::storage::sparse::ModelComponents<storm::RationalFunction> modelComponents;
 
