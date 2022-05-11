@@ -1,5 +1,5 @@
-#include "storm-dft/modelchecker/dft/DFTModularizer.h"
 #include "storm-dft/utility/MTTFHelper.h"
+#include "storm-dft/modelchecker/dft/DFTModularizer.h"
 
 namespace {
 
@@ -10,8 +10,7 @@ namespace {
  * \note
  * Helperfunction for MTTFHelper
  */
-void linspace(std::vector<double> &buffer, double start,
-              double const stepsize) {
+void linspace(std::vector<double> &buffer, double start, double const stepsize) {
     for (size_t i{0}; i < buffer.size(); ++i) {
         buffer[i] = i * stepsize + start;
     }
@@ -23,17 +22,14 @@ namespace storm {
 namespace dft {
 namespace utility {
 
-double MTTFHelperProceeding(
-    std::shared_ptr<storm::storage::DFT<double>> const dft,
-    double const stepsize, double const precision) {
+double MTTFHelperProceeding(std::shared_ptr<storm::storage::DFT<double>> const dft, double const stepsize, double const precision) {
     constexpr size_t chunksize{1001};
     storm::modelchecker::DFTModularizer checker{dft};
 
     std::vector<double> timepoints{};
     timepoints.resize(chunksize);
     linspace(timepoints, 0.0, stepsize);
-    std::vector<double> probabilities{
-        checker.getProbabilitiesAtTimepoints(timepoints)};
+    std::vector<double> probabilities{checker.getProbabilitiesAtTimepoints(timepoints)};
 
     double delta{1.0};
     double rval{0.0};
@@ -67,9 +63,7 @@ double MTTFHelperProceeding(
     return rval;
 }
 
-double MTTFHelperVariableChange(
-    std::shared_ptr<storm::storage::DFT<double>> const dft,
-    double const stepsize) {
+double MTTFHelperVariableChange(std::shared_ptr<storm::storage::DFT<double>> const dft, double const stepsize) {
     constexpr size_t chunksize{1001};
     storm::modelchecker::DFTModularizer checker{dft};
 
@@ -81,8 +75,7 @@ double MTTFHelperVariableChange(
         timepoints[i] = x;
     }
 
-    std::vector<double> probabilities{
-        checker.getProbabilitiesAtTimepoints(timepoints, chunksize)};
+    std::vector<double> probabilities{checker.getProbabilitiesAtTimepoints(timepoints, chunksize)};
 
     double rval{0};
     for (size_t i{0}; i < probabilities.size(); ++i) {
