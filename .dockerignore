@@ -1,0 +1,53 @@
+Dockerfile
+#Git files
+.git
+.git-blame-ignore-revs
+.github
+.gitignore
+#The remainder is based on .gitignore
+#Third-Party libs
+resources/3rdparty/l3pp/.git/
+#Visual Studio files
+*.[Oo]bj
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.[Cc]ache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.sdf
+*.tlog
+*.lastbuildstate
+*.pdb
+*.idb
+*.opensdf
+*.unsuccessfulbuild
+ipch/
+obj/
+CMakeFiles/
+CPackConfig.cmake
+# The build Dir
+/*build*/
+build//CMakeLists.txt
+/*.vcxproj
+/*.filters
+/*.sln
+#Temp texteditor files
+*.orig
+*.*~
+nbproject/
+.DS_Store
+.idea
+.vscode
+*.out
