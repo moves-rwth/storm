@@ -41,4 +41,4 @@ jobs:
           delete-branch: true
           title: 'Code formatting'
           body: |
-            Auto-generated pull request triggered by the `apply-code-format` workflow.
+            Auto-generated pull request triggered by the `apply-code-format` workflow. Make sure to **merge** (and not rebase) this PR so that the added commit hash in `.git-blame-ignore-revs`  remains valid. 

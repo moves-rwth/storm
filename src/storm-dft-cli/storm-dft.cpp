@@ -1,20 +1,19 @@
 #include <boost/algorithm/string.hpp>
 
+#include "storm-cli-utilities/cli.h"
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/settings/DftSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm-parsers/api/storm-parsers.h"
 #include "storm/exceptions/UnmetRequirementException.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/utility/initialize.h"
-#include "storm-cli-utilities/cli.h"
-#include "storm-parsers/api/storm-parsers.h"
-
 
 /*!
  * Process commandline options and start computations.
@@ -103,7 +102,6 @@ void processOptions() {
         STORM_LOG_DEBUG("No FDEP conflicts found.");
     }
 
-
 #ifdef STORM_HAVE_Z3
     if (useSMT) {
         // Solve with SMT
@@ -114,10 +112,7 @@ void processOptions() {
 #endif
 
     // BDD Analysis
-    if(dftIOSettings.isExportToBddDot() ||
-            dftIOSettings.isAnalyzeWithBdds() ||
-            dftIOSettings.isMinimalCutSets() ||
-            dftIOSettings.isImportanceMeasureSet()) {
+    if (dftIOSettings.isExportToBddDot() || dftIOSettings.isAnalyzeWithBdds() || dftIOSettings.isMinimalCutSets() || dftIOSettings.isImportanceMeasureSet()) {
         bool const isImportanceMeasureSet{dftIOSettings.isImportanceMeasureSet()};
         bool const isMinimalCutSets{dftIOSettings.isMinimalCutSets()};
         bool const isMTTF{dftIOSettings.usePropExpectedTime()};
@@ -128,12 +123,12 @@ void processOptions() {
         bool const isTimebound{dftIOSettings.usePropTimebound()};
         bool const isTimepoints{dftIOSettings.usePropTimepoints()};
 
-        bool const probabilityAnalysis {ioSettings.isPropertySet() || !isImportanceMeasureSet};
+        bool const probabilityAnalysis{ioSettings.isPropertySet() || !isImportanceMeasureSet};
         size_t const chunksize{faultTreeSettings.getChunksize()};
         bool const isModularisation{faultTreeSettings.useModularisation()};
 
         std::vector<double> timepoints{};
-        if(isTimepoints) {
+        if (isTimepoints) {
             timepoints = dftIOSettings.getPropTimepoints();
         }
         if (isTimebound) {
@@ -141,41 +136,28 @@ void processOptions() {
         }
 
         std::string filename{""};
-        if(isExportToBddDot) {
+        if (isExportToBddDot) {
             filename = dftIOSettings.getExportBddDotFilename();
         }
 
         // gather manually inputted properties
-        std::vector<std::shared_ptr<storm::logic::Formula const>>
-            manuallyInputtedProperties;
-        if(ioSettings.isPropertySet()) {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> manuallyInputtedProperties;
+        if (ioSettings.isPropertySet()) {
             manuallyInputtedProperties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(ioSettings.getProperty()));
         }
 
         std::string importanceMeasureName{""};
-        if(isImportanceMeasureSet) {
+        if (isImportanceMeasureSet) {
             importanceMeasureName = dftIOSettings.getImportanceMeasure();
         }
 
-        auto const additionalRelevantEventNames {faultTreeSettings.getRelevantEvents()};
-        storm::api::analyzeDFTBdd<ValueType>(dft,
-                isExportToBddDot,
-                filename,
-                isMTTF,
-                mttfPrecision,
-                mttfStepsize,
-                mttfAlgorithm,
-                isMinimalCutSets,
-                probabilityAnalysis,
-                isModularisation,
-                importanceMeasureName,
-                timepoints,
-                manuallyInputtedProperties,
-                additionalRelevantEventNames,
-                chunksize);
+        auto const additionalRelevantEventNames{faultTreeSettings.getRelevantEvents()};
+        storm::api::analyzeDFTBdd<ValueType>(dft, isExportToBddDot, filename, isMTTF, mttfPrecision, mttfStepsize, mttfAlgorithm, isMinimalCutSets,
+                                             probabilityAnalysis, isModularisation, importanceMeasureName, timepoints, manuallyInputtedProperties,
+                                             additionalRelevantEventNames, chunksize);
 
         // don't perform other analysis if analyzeWithBdds is set
-        if(dftIOSettings.isAnalyzeWithBdds()) {
+        if (dftIOSettings.isAnalyzeWithBdds()) {
             return;
         }
     }
@@ -226,18 +208,16 @@ void processOptions() {
         props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     }
 
-
     // Set relevant event names
     std::vector<std::string> additionalRelevantEventNames;
     if (faultTreeSettings.areRelevantEventsSet()) {
-        //Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
+        // Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
         additionalRelevantEventNames = faultTreeSettings.getRelevantEvents();
     } else if (faultTreeSettings.isDisableDC()) {
         // All events are relevant
         additionalRelevantEventNames = {"all"};
     }
     storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames);
-
 
     // Analyze DFT
     // TODO allow building of state space even without properties
@@ -248,7 +228,9 @@ void processOptions() {
         if (faultTreeSettings.isApproximationErrorSet()) {
             approximationError = faultTreeSettings.getApproximationError();
         }
-        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents, faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(), transformationSettings.isChainEliminationSet(), transformationSettings.getLabelBehavior(), true);
+        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents,
+                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(),
+                                          transformationSettings.isChainEliminationSet(), transformationSettings.getLabelBehavior(), true);
     }
 }
 
@@ -269,7 +251,7 @@ int main(const int argc, const char** argv) {
         if (!storm::cli::parseOptions(argc, argv)) {
             return -1;
         }
-        
+
         // Start by setting some urgent options (log levels, resources, etc.)
         storm::cli::setUrgentOptions();
 
