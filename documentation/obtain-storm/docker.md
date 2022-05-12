@@ -24,7 +24,7 @@ Next you should start the Docker app and its tray icon should be visible.
 If you are running Windows, you may need to reboot your machine for the Docker installation to be completed and available using the command line.
 
 ## Download Docker Image
-Then you have to download the Docker image you want to use. All available images can be found on [DockerHub](https://hub.docker.com/r/movesrwth/storm/tags/){:target="_blank"}. Currently we offer the latest release and the most recent development versions of Storm. The most recent versions are built automatically each day and indicated by the suffix `travis`. Furthermore we also provide debug builds indicated by the suffix `-debug`.
+Then you have to download the Docker image you want to use. All available images can be found on [DockerHub](https://hub.docker.com/r/movesrwth/storm/tags/){:target="_blank"}. Currently we offer the latest release and the most recent development versions of Storm. The most recent versions are built automatically each day and indicated by the suffix `ci-release`. Furthermore we also provide debug builds indicated by the suffix `-debug`.
 
 Download the Storm container you want to use:
 
