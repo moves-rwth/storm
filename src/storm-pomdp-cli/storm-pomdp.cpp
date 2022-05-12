@@ -369,7 +369,7 @@ namespace storm {
                     }
                     if (pmc->hasRewardModel() && transformSettings.isConstantRewardsSet()) {
                         STORM_PRINT_AND_LOG("Ensuring constant rewards...");
-                        pmc = storm::transformer::makeRewardsConstant<ValueType, DdType>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
+                        pmc = storm::transformer::makeRewardsConstant(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
                         STORM_PRINT_AND_LOG(" done.\n");
                         pmc->printModelInformationToStream(std::cout);
                     }
