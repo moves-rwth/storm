@@ -8,7 +8,7 @@
 namespace storm {
 namespace transformer {
 
-std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeRewardsConstant(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> const pMC) {
+std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeRewardsConstant(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> const& pMC) {
     STORM_LOG_THROW(pMC->hasUniqueRewardModel(), storm::exceptions::IllegalArgumentException, "pMC needs to have an unique reward model");
     storm::storage::sparse::ModelComponents<storm::RationalFunction> modelComponents;
 
