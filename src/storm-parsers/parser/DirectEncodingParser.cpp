@@ -176,6 +176,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
             continue;
         }
         STORM_LOG_TRACE("Parsing line no " << lineNumber << " : " << line);
+        boost::trim_left(line);
         if (boost::starts_with(line, "state ")) {
             // New state
             if (firstState) {
@@ -300,7 +301,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                     STORM_LOG_TRACE("New label: '" << label << "'");
                 }
             }
-        } else if (boost::starts_with(boost::trim_left_copy(line), "action ")) {
+        } else if (boost::starts_with(line, "action ")) {
             // New action
             if (firstActionForState) {
                 firstActionForState = false;
@@ -308,7 +309,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                 ++row;
             }
             STORM_LOG_TRACE("New action: " << row);
-            line = boost::trim_left_copy(line).substr(7);  // Remove "\taction "
+            line = line.substr(7);
             std::string curString = line;
             size_t posEnd = line.find(" ");
             if (posEnd != std::string::npos) {
@@ -355,7 +356,6 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
 
         } else {
             // New transition
-            line = boost::trim_left_copy(line);
             size_t posColon = line.find(':');
             STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException,
                             "':' not found in '" << line << "' on line " << lineNumber << ".");
@@ -378,7 +378,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
     STORM_LOG_TRACE("Finished parsing");
 
     if (nonDeterministic) {
-        STORM_LOG_THROW(builder.getCurrentRowGroupCount() == nrChoices - 1, storm::exceptions::WrongFormatException,
+        STORM_LOG_THROW(nrChoices == 0 || builder.getCurrentRowGroupCount() == nrChoices - 1, storm::exceptions::WrongFormatException,
                         "Number of actions detected (" << builder.getCurrentRowGroupCount() << ") does not match number of actions declared (" << nrChoices
                                                        << ", in @nr_choices).");
     }
