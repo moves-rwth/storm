@@ -22,15 +22,15 @@ env:
   CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DSTORM_DEVELOPER=ON -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
   CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DSTORM_DEVELOPER=OFF -DSTORM_PORTABLE=ON -DSTORM_USE_SPOT_SHIPPED=ON"
 
-  CARL_CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON -DBUILD_ADDONS=ON -DBUILD_ADDON_PARSER=ON"
-  CARL_CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON -DBUILD_ADDONS=ON -DBUILD_ADDON_PARSER=ON"
+  CARL_CMAKE_DEBUG: "-DCMAKE_BUILD_TYPE=Debug -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON"
+  CARL_CMAKE_RELEASE: "-DCMAKE_BUILD_TYPE=Release -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON -DTHREAD_SAFE=ON"
 
 jobs:
   indepthTests:
     name: Indepth Tests (${{ matrix.cmakeArgs.name }})
     runs-on: ubuntu-latest
     env:
-      DISTRO: "ubuntu-21.10"
+      DISTRO: "ubuntu-22.04"
     strategy:
       matrix:
         cmakeArgs:
@@ -100,7 +100,7 @@ jobs:
     name: Build, Test and Deploy
     runs-on: ubuntu-latest
     env:
-      DISTRO: "ubuntu-21.10"
+      DISTRO: "ubuntu-22.04"
     strategy:
       matrix:
         debugOrRelease: ["debug", "release"]
