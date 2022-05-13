@@ -12,7 +12,7 @@ TEST(DftInstantiatorTest, InstantiateSimple) {
     carl::VariablePool::getInstance().clear();
 
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/and_param.dft";
-    std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> dft = storm::api::loadDFTGalileoFile<storm::RationalFunction>(file);
+    std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> dft = storm::dft::api::loadDFTGalileoFile<storm::RationalFunction>(file);
     EXPECT_EQ(3ul, dft->nrElements());
     EXPECT_EQ(2ul, dft->nrBasicElements());
 
@@ -40,7 +40,7 @@ TEST(DftInstantiatorTest, InstantiateSymmetry) {
     carl::VariablePool::getInstance().clear();
 
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/symmetry_param.dft";
-    std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> dft = storm::api::loadDFTGalileoFile<storm::RationalFunction>(file);
+    std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> dft = storm::dft::api::loadDFTGalileoFile<storm::RationalFunction>(file);
     EXPECT_EQ(7ul, dft->nrElements());
     EXPECT_EQ(4ul, dft->nrBasicElements());
 

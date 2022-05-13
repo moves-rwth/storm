@@ -17,7 +17,7 @@
 
 #include "storm-gspn/api/storm-gspn.h"
 
-namespace storm {
+namespace storm::dft {
 namespace api {
 
 /*!
@@ -285,4 +285,4 @@ std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::s
 std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace);
 
 }  // namespace api
-}  // namespace storm
+}  // namespace storm::dft

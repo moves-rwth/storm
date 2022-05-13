@@ -28,7 +28,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
     dft_results results;
 
     // Check well-formedness of DFT
-    auto wellFormedResult = storm::api::isWellFormed(origDft, true);
+    auto wellFormedResult = storm::dft::api::isWellFormed(origDft, true);
     STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed for analysis: " << wellFormedResult.second);
 
     // Optimizing DFT for modularisation

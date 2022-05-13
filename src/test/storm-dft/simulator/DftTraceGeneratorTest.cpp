@@ -69,15 +69,15 @@ class DftTraceGeneratorTest : public ::testing::Test {
     std::pair<std::shared_ptr<storm::storage::DFT<double>>, storm::storage::DFTStateGenerationInfo> prepareDFT(std::string const& file) {
         // Load, build and prepare DFT
         storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
-        std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::api::loadDFTGalileoFile<double>(file)));
-        EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
+        std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
+        EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 
         // Compute relevant events
         std::vector<std::string> relevantNames;
         if (!config.useDC) {
             relevantNames.push_back("all");
         }
-        storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<double>(*dft, {}, relevantNames);
+        storm::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<double>(*dft, {}, relevantNames);
         dft->setRelevantEvents(relevantEvents, false);
 
         // Find symmetries

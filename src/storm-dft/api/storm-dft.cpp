@@ -15,8 +15,9 @@
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 
-namespace storm {
+namespace storm::dft {
 namespace api {
+
 template<>
 void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
                    double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName, bool const calculateMCS,
@@ -269,4 +270,4 @@ std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::s
 }
 
 }  // namespace api
-}  // namespace storm
+}  // namespace storm::dft

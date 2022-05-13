@@ -8,7 +8,7 @@ namespace {
 
 TEST(DftTransformatorTest, UniqueConstantFailedTest) {
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/const_be_test.dft";
-    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::api::loadDFTGalileoFile<double>(file);
+    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
     auto dftTransformator = storm::transformations::dft::DftTransformator<double>();
     std::shared_ptr<storm::storage::DFT<double>> transformedDft = dftTransformator.transformUniqueFailedBe(*originalDft);
 
@@ -31,7 +31,7 @@ TEST(DftTransformatorTest, UniqueConstantFailedTest) {
 
 TEST(DftTransformatorTest, BinaryFDEPTest) {
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft";
-    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::api::loadDFTGalileoFile<double>(file);
+    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
     auto dftTransformator = storm::transformations::dft::DftTransformator<double>();
     std::shared_ptr<storm::storage::DFT<double>> transformedDft = dftTransformator.transformBinaryFDEPs(*originalDft);
 
@@ -42,7 +42,7 @@ TEST(DftTransformatorTest, BinaryFDEPTest) {
 
 TEST(DftTransformatorTest, PDEPTransformTest) {
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft";
-    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::api::loadDFTGalileoFile<double>(file);
+    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
     auto dftTransformator = storm::transformations::dft::DftTransformator<double>();
     std::shared_ptr<storm::storage::DFT<double>> transformedDft = dftTransformator.transformBinaryFDEPs(*originalDft);
 
