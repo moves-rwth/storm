@@ -57,7 +57,10 @@ uint_fast64_t findLargestPowerOfTwoFitting(uint_fast64_t number) {
 InternalDdManager<DdType::Sylvan>::InternalDdManager() {
     if (numberOfInstances == 0) {
         storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
-        size_t const task_deque_size = 1024 * 1024 * 16;
+        size_t const task_deque_size = 1024 * 1024;
+
+        // The default stacksize per worker is sometimes too large
+        lace_set_stacksize(1024 * 1024);  // 1 MiB
         if (settings.isNumberOfThreadsSet()) {
             lace_start(settings.getNumberOfThreads(), task_deque_size);
         } else {
