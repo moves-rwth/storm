@@ -22,7 +22,7 @@ class SftToBddTransformator {
 
     SftToBddTransformator(std::shared_ptr<storm::storage::DFT<ValueType>> dft,
                           std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::storage::SylvanBddManager>(),
-                          storm::utility::RelevantEvents relevantEvents = {})
+                          storm::dft::utility::RelevantEvents relevantEvents = {})
         : dft{std::move(dft)}, sylvanBddManager{std::move(sylvanBddManager)}, relevantEvents{relevantEvents} {
         // create Variables for the BEs
         for (auto const& i : this->dft->getBasicElements()) {
@@ -102,7 +102,7 @@ class SftToBddTransformator {
     std::vector<uint32_t> variables{};
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
     std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
-    storm::utility::RelevantEvents relevantEvents;
+    storm::dft::utility::RelevantEvents relevantEvents;
 
     /**
      * Translate a simple DFT element into a BDD.

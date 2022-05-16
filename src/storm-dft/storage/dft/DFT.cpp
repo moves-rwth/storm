@@ -1049,7 +1049,7 @@ size_t DFT<ValueType>::getIndex(std::string const& name) const {
 }
 
 template<typename ValueType>
-void DFT<ValueType>::setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents, bool const allowDCForRelevant) const {
+void DFT<ValueType>::setRelevantEvents(storm::dft::utility::RelevantEvents const& relevantEvents, bool const allowDCForRelevant) const {
     mRelevantEvents.clear();
     STORM_LOG_THROW(relevantEvents.checkRelevantNames(*this), storm::exceptions::InvalidArgumentException, "One of the relevant elements does not exist.");
     // Top level element is first element

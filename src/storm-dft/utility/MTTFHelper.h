@@ -2,8 +2,7 @@
 
 #include "storm-dft/storage/dft/DFT.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace utility {
 
 /**
@@ -20,5 +19,4 @@ double MTTFHelperProceeding(std::shared_ptr<storm::storage::DFT<double>> const d
 double MTTFHelperVariableChange(std::shared_ptr<storm::storage::DFT<double>> const dft, double const stepsize = 1e-6);
 
 }  // namespace utility
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

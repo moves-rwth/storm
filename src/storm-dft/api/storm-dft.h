@@ -130,10 +130,10 @@ bool computeDependencyConflicts(storm::storage::DFT<ValueType>& dft, bool useSMT
  * @return Relevant events.
  */
 template<typename ValueType>
-storm::utility::RelevantEvents computeRelevantEvents(storm::storage::DFT<ValueType> const& dft,
-                                                     std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                                                     std::vector<std::string> const& additionalRelevantEventNames) {
-    storm::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
+storm::dft::utility::RelevantEvents computeRelevantEvents(storm::storage::DFT<ValueType> const& dft,
+                                                          std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                                                          std::vector<std::string> const& additionalRelevantEventNames) {
+    storm::dft::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
     events.insertNamesFromProperties(properties.begin(), properties.end());
     return events;
 }
@@ -158,7 +158,7 @@ storm::utility::RelevantEvents computeRelevantEvents(storm::storage::DFT<ValueTy
 template<typename ValueType>
 typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(
     storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
-    bool allowModularisation = true, storm::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
+    bool allowModularisation = true, storm::dft::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
     double approximationError = 0.0, storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
     bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels,
     bool printOutput = false) {

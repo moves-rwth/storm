@@ -19,16 +19,20 @@
 #include "storm-dft/storage/dft/SymmetricUnits.h"
 
 // Forward declarations
-namespace storm::dft::builder {
+namespace storm::dft {
+
+namespace builder {
 template<typename T>
 class DFTBuilder;
-}
+}  // namespace builder
 
-namespace storm {
 namespace utility {
 class RelevantEvents;
-}
+}  // namespace utility
 
+}  // namespace storm::dft
+
+namespace storm {
 namespace storage {
 
 template<typename ValueType>
@@ -382,7 +386,7 @@ class DFT {
      * @param relevantEvents All elements which should be to relevant. All elements not occurring are set to irrelevant.
      * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
      */
-    void setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents, bool const allowDCForRelevant) const;
+    void setRelevantEvents(storm::dft::utility::RelevantEvents const& relevantEvents, bool const allowDCForRelevant) const;
 
     /*!
      * Get a string containing the list of all relevant events.

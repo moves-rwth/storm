@@ -22,7 +22,7 @@ namespace modelchecker {
 template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(
     storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred,
-    bool allowModularisation, storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
+    bool allowModularisation, storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
     storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
     totalTimer.start();
     dft_results results;
@@ -61,7 +61,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkHelper(
     storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
-    storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
+    storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
     storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
     STORM_LOG_TRACE("Check helper called");
     std::vector<storm::storage::DFT<ValueType>> dfts;
@@ -159,7 +159,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueType>::buildModelViaComposition(
     storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
-    storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant) {
+    storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant) {
     // TODO: use approximation?
     STORM_LOG_TRACE("Build model via composition");
     std::vector<storm::storage::DFT<ValueType>> dfts;
@@ -286,7 +286,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 
 template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkDFT(
-    storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, storm::utility::RelevantEvents const& relevantEvents,
+    storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, storm::dft::utility::RelevantEvents const& relevantEvents,
     bool allowDCForRelevant, double approximationError, storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains,
     storm::transformer::EliminationLabelBehavior labelBehavior) {
     explorationTimer.start();

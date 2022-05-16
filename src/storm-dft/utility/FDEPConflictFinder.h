@@ -1,8 +1,7 @@
 #include <vector>
 #include "storm-dft/storage/dft/DFT.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace utility {
 
 template<typename ValueType>
@@ -20,6 +19,6 @@ class FDEPConflictFinder {
     static std::vector<std::pair<uint64_t, uint64_t>> getDependencyConflicts(storm::storage::DFT<ValueType> const& dft, bool useSMT = false,
                                                                              uint_fast64_t timeout = 10);
 };
+
 }  // namespace utility
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

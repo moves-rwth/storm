@@ -10,7 +10,7 @@
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-dft/storage/dft/DFT.h"
 
-namespace storm {
+namespace storm::dft {
 namespace utility {
 
 class RelevantEvents {
@@ -202,4 +202,4 @@ class RelevantEvents {
 };
 
 }  // namespace utility
-}  // namespace storm
+}  // namespace storm::dft

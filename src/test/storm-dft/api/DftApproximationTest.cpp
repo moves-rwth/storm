@@ -57,7 +57,7 @@ class DftApproximationTest : public ::testing::Test {
         std::string property = "T=? [F \"failed\"]";
         std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
         typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results = storm::dft::api::analyzeDFT<double>(
-            *dft, properties, config.useSR, false, storm::utility::RelevantEvents(), false, errorBound, config.heuristic, false);
+            *dft, properties, config.useSR, false, storm::dft::utility::RelevantEvents(), false, errorBound, config.heuristic, false);
         return boost::get<storm::dft::modelchecker::DFTModelChecker<double>::approximation_result>(results[0]);
     }
 
@@ -69,7 +69,7 @@ class DftApproximationTest : public ::testing::Test {
         std::vector<std::shared_ptr<storm::logic::Formula const>> properties =
             storm::api::extractFormulasFromProperties(storm::api::parseProperties(propertyStream.str()));
         typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results = storm::dft::api::analyzeDFT<double>(
-            *dft, properties, config.useSR, false, storm::utility::RelevantEvents(), false, errorBound, config.heuristic, false);
+            *dft, properties, config.useSR, false, storm::dft::utility::RelevantEvents(), false, errorBound, config.heuristic, false);
         return boost::get<storm::dft::modelchecker::DFTModelChecker<double>::approximation_result>(results[0]);
     }
 

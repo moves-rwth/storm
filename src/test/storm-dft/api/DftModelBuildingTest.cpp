@@ -18,7 +18,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
 
     // Set relevant events (none)
-    storm::utility::RelevantEvents relevantEvents{};
+    storm::dft::utility::RelevantEvents relevantEvents{};
     dft->setRelevantEvents(relevantEvents, false);
     // Build model
     storm::dft::builder::ExplicitDFTModelBuilder<double> builder(*dft, symmetries);
@@ -28,7 +28,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     EXPECT_EQ(13ul, model->getNumberOfTransitions());
 
     // Set relevant events (all)
-    relevantEvents = storm::utility::RelevantEvents({"all"});
+    relevantEvents = storm::dft::utility::RelevantEvents({"all"});
     dft->setRelevantEvents(relevantEvents, false);
     // Build model
     storm::dft::builder::ExplicitDFTModelBuilder<double> builder2(*dft, symmetries);
@@ -38,7 +38,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     EXPECT_EQ(2305ul, model->getNumberOfTransitions());
 
     // Set relevant events (H)
-    relevantEvents = storm::utility::RelevantEvents({"H"});
+    relevantEvents = storm::dft::utility::RelevantEvents({"H"});
     dft->setRelevantEvents(relevantEvents, false);
     // Build model
     storm::dft::builder::ExplicitDFTModelBuilder<double> builder3(*dft, symmetries);
@@ -48,7 +48,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     EXPECT_EQ(25ul, model->getNumberOfTransitions());
 
     // Set relevant events (H, I)
-    relevantEvents = storm::utility::RelevantEvents({"H", "I"});
+    relevantEvents = storm::dft::utility::RelevantEvents({"H", "I"});
     dft->setRelevantEvents(relevantEvents, false);
     // Build model
     storm::dft::builder::ExplicitDFTModelBuilder<double> builder4(*dft, symmetries);
@@ -58,7 +58,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     EXPECT_EQ(33ul, model->getNumberOfTransitions());
 
     // Set relevant events (none)
-    relevantEvents = storm::utility::RelevantEvents{};
+    relevantEvents = storm::dft::utility::RelevantEvents{};
     dft->setRelevantEvents(relevantEvents, true);
     // Build model
     storm::dft::builder::ExplicitDFTModelBuilder<double> builder5(*dft, symmetries);
@@ -68,7 +68,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     EXPECT_EQ(13ul, model->getNumberOfTransitions());
 
     // Set relevant events (all)
-    relevantEvents = storm::utility::RelevantEvents({"all"});
+    relevantEvents = storm::dft::utility::RelevantEvents({"all"});
     dft->setRelevantEvents(relevantEvents, true);
     // Build model
     storm::dft::builder::ExplicitDFTModelBuilder<double> builder6(*dft, symmetries);
@@ -78,7 +78,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     EXPECT_EQ(13ul, model->getNumberOfTransitions());
 
     // Set relevant events (H, I)
-    relevantEvents = storm::utility::RelevantEvents({"H", "I"});
+    relevantEvents = storm::dft::utility::RelevantEvents({"H", "I"});
     dft->setRelevantEvents(relevantEvents, true);
     // Build model
     storm::dft::builder::ExplicitDFTModelBuilder<double> builder7(*dft, symmetries);

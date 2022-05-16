@@ -1,8 +1,8 @@
 #include "FailureBoundFinder.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace utility {
+
 uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
     STORM_LOG_DEBUG("Lower bound correction - try to correct bound " << std::to_string(bound));
     uint64_t boundCandidate = bound;
@@ -199,6 +199,6 @@ uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<RationalFu
 }
 
 class FailureBoundFinder;
+
 }  // namespace utility
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

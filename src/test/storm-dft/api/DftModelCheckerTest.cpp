@@ -85,7 +85,7 @@ class DftModelCheckerTest : public ::testing::Test {
         if (!config.useDC) {
             relevantNames.push_back("all");
         }
-        storm::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, properties, relevantNames);
+        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, properties, relevantNames);
 
         // Perform model checking
         typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results =

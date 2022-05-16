@@ -17,7 +17,7 @@ std::pair<double, double> simulateDft(std::string const& file, double timebound,
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 
     // Set relevant events
-    storm::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<double>(*dft, {}, {});
+    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<double>(*dft, {}, {});
     dft->setRelevantEvents(relevantEvents, false);
 
     // Find symmetries

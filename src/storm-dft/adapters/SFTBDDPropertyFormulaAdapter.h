@@ -31,7 +31,7 @@ class SFTBDDPropertyFormulaAdapter {
 
    public:
     SFTBDDPropertyFormulaAdapter(std::shared_ptr<storm::storage::DFT<ValueType>> dft, FormulaVector const &formulas,
-                                 storm::utility::RelevantEvents relevantEvents = {},
+                                 storm::dft::utility::RelevantEvents relevantEvents = {},
                                  std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::storage::SylvanBddManager>())
         : formulas{formulas} {
         checkForm(formulas);

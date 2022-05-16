@@ -18,8 +18,7 @@ void linspace(std::vector<double> &buffer, double start, double const stepsize) 
 
 }  // namespace
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace utility {
 
 double MTTFHelperProceeding(std::shared_ptr<storm::storage::DFT<double>> const dft, double const stepsize, double const precision) {
@@ -96,5 +95,4 @@ double MTTFHelperVariableChange(std::shared_ptr<storm::storage::DFT<double>> con
 }
 
 }  // namespace utility
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

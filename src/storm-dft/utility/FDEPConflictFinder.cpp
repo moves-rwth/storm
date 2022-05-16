@@ -2,8 +2,7 @@
 
 #include "storm-dft/modelchecker/DFTASFChecker.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace utility {
 
 template<>
@@ -87,6 +86,6 @@ std::vector<std::pair<uint64_t, uint64_t>> FDEPConflictFinder<storm::RationalFun
 template class FDEPConflictFinder<double>;
 
 template class FDEPConflictFinder<storm::RationalFunction>;
+
 }  // namespace utility
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

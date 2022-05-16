@@ -189,7 +189,7 @@ INSTANTIATE_TEST_SUITE_P(SFTs, SftBddTest, testing::ValuesIn(sftTestData), [](au
 TEST(TestBdd, AndOrRelevantEvents) {
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto manager = std::make_shared<storm::storage::SylvanBddManager>();
-    storm::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
+    storm::dft::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
     storm::dft::transformations::SftToBddTransformator<double> transformer{dft, manager, relevantEvents};
 
     auto const result = transformer.transformRelevantEvents();
@@ -205,7 +205,7 @@ TEST(TestBdd, AndOrRelevantEvents) {
 TEST(TestBdd, AndOrRelevantEventsChecked) {
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto manager{std::make_shared<storm::storage::SylvanBddManager>()};
-    storm::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
+    storm::dft::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
     auto transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<double>>(dft, manager, relevantEvents)};
 
     storm::dft::modelchecker::SFTBDDChecker checker{transformator};

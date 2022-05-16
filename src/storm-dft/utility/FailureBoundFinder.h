@@ -2,9 +2,9 @@
 #include "storm-dft/modelchecker/DFTASFChecker.h"
 #include "storm-dft/storage/dft/DFT.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace utility {
+
 class FailureBoundFinder {
    public:
     /**
@@ -55,6 +55,6 @@ class FailureBoundFinder {
      */
     static uint64_t correctUpperBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
 };
+
 }  // namespace utility
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft
