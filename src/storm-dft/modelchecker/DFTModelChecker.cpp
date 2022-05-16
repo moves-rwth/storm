@@ -291,7 +291,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
     storm::transformer::EliminationLabelBehavior labelBehavior) {
     explorationTimer.start();
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-    auto dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
+    auto dftIOSettings = storm::settings::getModule<storm::dft::settings::modules::DftIOSettings>();
 
     dft.setRelevantEvents(relevantEvents, allowDCForRelevant);
 

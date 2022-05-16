@@ -219,8 +219,8 @@ void analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const& dft, bool
 
 template<>
 std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<double> const& dft) {
-    storm::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
-    storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
+    storm::dft::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>();
+    storm::dft::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::dft::settings::modules::DftGspnSettings>();
 
     // Set Don't Care elements
     std::set<uint64_t> dontCareElements;
@@ -255,7 +255,7 @@ std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gsp
     auto properties = builder.getStandardProperties(model.get(), failedFormula, "Failed", "a failed state", true);
 
     // Export Jani to file
-    storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
+    storm::dft::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::dft::settings::modules::DftGspnSettings>();
     if (dftGspnSettings.isWriteToJaniSet()) {
         auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
         storm::api::exportJaniToFile(*model, properties, dftGspnSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());

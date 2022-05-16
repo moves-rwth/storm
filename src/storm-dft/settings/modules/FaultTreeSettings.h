@@ -4,14 +4,14 @@
 #include "storm-dft/builder/DftExplorationHeuristic.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
-namespace storm {
+namespace storm::dft {
 namespace settings {
 namespace modules {
 
 /*!
  * This class represents the settings for DFT model checking.
  */
-class FaultTreeSettings : public ModuleSettings {
+class FaultTreeSettings : public storm::settings::modules::ModuleSettings {
    public:
     /*!
      * Creates a new set of DFT settings.
@@ -200,4 +200,4 @@ class FaultTreeSettings : public ModuleSettings {
 
 }  // namespace modules
 }  // namespace settings
-}  // namespace storm
+}  // namespace storm::dft

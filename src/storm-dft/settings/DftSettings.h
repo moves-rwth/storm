@@ -2,10 +2,10 @@
 
 #include <string>
 
-namespace storm {
+namespace storm::dft {
 namespace settings {
 
 void initializeDftSettings(std::string const& name, std::string const& executableName);
 
-}
-}  // namespace storm
+}  // namespace settings
+}  // namespace storm::dft

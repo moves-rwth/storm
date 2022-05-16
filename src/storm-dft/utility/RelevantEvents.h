@@ -105,7 +105,7 @@ class RelevantEvents {
                     // length of "_dc" = 3
                     this->names.insert(label.substr(0, label.size() - 3));
                 } else if (label.find("_claimed_") != std::string::npos) {
-                    STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isAddLabelsClaiming(),
+                    STORM_LOG_THROW(storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isAddLabelsClaiming(),
                                     storm::exceptions::InvalidArgumentException,
                                     "Claiming labels will not be exported but are required for label '" << label << "'. Try setting --labels-claiming.");
                 } else {

@@ -224,7 +224,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
         }
     }
 
-    auto ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
+    auto ftSettings = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>();
     if (ftSettings.isMaxDepthSet()) {
         STORM_LOG_ASSERT(usedHeuristic == storm::dft::builder::ApproximationHeuristic::DEPTH, "MaxDepth requires 'depth' exploration heuristic.");
         approximationThreshold = ftSettings.getMaxDepth();
@@ -523,7 +523,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
 
 template<typename ValueType, typename StateType>
 void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
-    bool isAddLabelsClaiming = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isAddLabelsClaiming();
+    bool isAddLabelsClaiming = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isAddLabelsClaiming();
 
     // Build state labeling
     modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
@@ -605,7 +605,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
 
 template<typename ValueType, typename StateType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModel() {
-    if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isMaxDepthSet() && skippedStates.size() > 0) {
+    if (storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isMaxDepthSet() && skippedStates.size() > 0) {
         // Give skipped states separate label "skipped"
         modelComponents.stateLabeling.addLabel("skipped");
         for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {

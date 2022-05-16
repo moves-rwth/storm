@@ -20,10 +20,10 @@
  */
 template<typename ValueType>
 void processOptions() {
-    auto const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
-    auto const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
+    auto const& dftIOSettings = storm::settings::getModule<storm::dft::settings::modules::DftIOSettings>();
+    auto const& faultTreeSettings = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>();
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-    auto const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
+    auto const& dftGspnSettings = storm::settings::getModule<storm::dft::settings::modules::DftGspnSettings>();
     auto const& transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
 
     // Build DFT from given file
@@ -246,7 +246,7 @@ int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
         storm::cli::printHeader("Storm-dft", argc, argv);
-        storm::settings::initializeDftSettings("Storm-dft", "storm-dft");
+        storm::dft::settings::initializeDftSettings("Storm-dft", "storm-dft");
 
         storm::utility::Stopwatch totalTimer(true);
         if (!storm::cli::parseOptions(argc, argv)) {

@@ -14,7 +14,7 @@ DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storag
                                                                    storm::storage::DFTStateGenerationInfo const& stateGenerationInfo)
     : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), uniqueFailedState(false) {
     deterministicModel = !mDft.canHaveNondeterminism();
-    mTakeFirstDependency = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isTakeFirstDependency();
+    mTakeFirstDependency = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isTakeFirstDependency();
 }
 
 template<typename ValueType, typename StateType>
