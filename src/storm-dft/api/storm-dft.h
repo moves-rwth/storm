@@ -28,7 +28,7 @@ namespace api {
  */
 template<typename ValueType>
 std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileoFile(std::string const& file) {
-    return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTGalileoParser<ValueType>::parseDFT(file));
+    return std::make_shared<storm::storage::DFT<ValueType>>(storm::dft::parser::DFTGalileoParser<ValueType>::parseDFT(file));
 }
 
 /*!
@@ -39,7 +39,7 @@ std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileoFile(std::string c
  */
 template<typename ValueType>
 std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonString(std::string const& jsonString) {
-    return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTJsonParser<ValueType>::parseJsonFromString(jsonString));
+    return std::make_shared<storm::storage::DFT<ValueType>>(storm::dft::parser::DFTJsonParser<ValueType>::parseJsonFromString(jsonString));
 }
 
 /*!
@@ -50,7 +50,7 @@ std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonString(std::string co
  */
 template<typename ValueType>
 std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonFile(std::string const& file) {
-    return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTJsonParser<ValueType>::parseJsonFromFile(file));
+    return std::make_shared<storm::storage::DFT<ValueType>>(storm::dft::parser::DFTJsonParser<ValueType>::parseJsonFromFile(file));
 }
 
 /*!

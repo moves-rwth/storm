@@ -13,7 +13,7 @@
 #include "storm/io/file.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace parser {
 
 template<typename ValueType>
@@ -38,7 +38,7 @@ template<typename ValueType>
 storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json const& jsonInput) {
     // Init DFT builder and value parser
     storm::dft::builder::DFTBuilder<ValueType> builder;
-    ValueParser<ValueType> valueParser;
+    storm::parser::ValueParser<ValueType> valueParser;
 
     // Try to parse parameters
     if (jsonInput.find("parameters") != jsonInput.end()) {
@@ -187,5 +187,6 @@ std::string DFTJsonParser<ValueType>::parseJsonNumber(Json number) {
 // Explicitly instantiate the class.
 template class DFTJsonParser<double>;
 template class DFTJsonParser<RationalFunction>;
+
 }  // namespace parser
-}  // namespace storm
+}  // namespace storm::dft

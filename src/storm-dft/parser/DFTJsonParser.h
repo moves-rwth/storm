@@ -5,7 +5,8 @@
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm/adapters/JsonAdapter.h"
-namespace storm {
+
+namespace storm::dft {
 namespace parser {
 
 template<typename ValueType>
@@ -24,5 +25,6 @@ class DFTJsonParser {
 
     static std::string parseJsonNumber(Json number);
 };
+
 }  // namespace parser
-}  // namespace storm
+}  // namespace storm::dft

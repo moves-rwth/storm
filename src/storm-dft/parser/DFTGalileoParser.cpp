@@ -13,7 +13,7 @@
 #include "storm/io/file.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace parser {
 
 template<typename ValueType>
@@ -34,7 +34,7 @@ std::string DFTGalileoParser<ValueType>::parseName(std::string const& name) {
 template<typename ValueType>
 storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename, bool defaultInclusive) {
     storm::dft::builder::DFTBuilder<ValueType> builder(defaultInclusive);
-    ValueParser<ValueType> valueParser;
+    storm::parser::ValueParser<ValueType> valueParser;
     // Regular expression to detect comments
     // taken from: https://stackoverflow.com/questions/9449887/removing-c-c-style-comments-using-boostregex
     const std::regex commentRegex("(/\\*([^*]|(\\*+[^*/]))*\\*+/)|(//.*)");
@@ -179,7 +179,7 @@ storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::
 }
 
 template<typename ValueType>
-std::pair<bool, ValueType> DFTGalileoParser<ValueType>::parseValue(std::string name, std::string& line, ValueParser<ValueType>& valueParser) {
+std::pair<bool, ValueType> DFTGalileoParser<ValueType>::parseValue(std::string name, std::string& line, storm::parser::ValueParser<ValueType>& valueParser) {
     // Build regex for: name=(value)
     std::regex nameRegex(name + "\\s*=\\s*([^\\s]*)");
     std::smatch match;
@@ -212,7 +212,7 @@ std::pair<bool, size_t> DFTGalileoParser<ValueType>::parseNumber(std::string nam
 
 template<typename ValueType>
 bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std::string const& input, size_t lineNo,
-                                                    storm::dft::builder::DFTBuilder<ValueType>& builder, ValueParser<ValueType>& valueParser) {
+                                                    storm::dft::builder::DFTBuilder<ValueType>& builder, storm::parser::ValueParser<ValueType>& valueParser) {
     // Default values
     Distribution distribution = Distribution::None;
     ValueType firstValDistribution = storm::utility::zero<ValueType>();
@@ -385,4 +385,4 @@ template class DFTGalileoParser<double>;
 template class DFTGalileoParser<RationalFunction>;
 
 }  // namespace parser
-}  // namespace storm
+}  // namespace storm::dft

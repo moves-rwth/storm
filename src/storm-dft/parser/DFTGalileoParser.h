@@ -10,7 +10,7 @@
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-parsers/parser/ValueParser.h"
 
-namespace storm {
+namespace storm::dft {
 namespace parser {
 
 /*!
@@ -51,7 +51,7 @@ class DFTGalileoParser {
      * @return True iff the parsing and creation was successful.
      */
     static bool parseBasicElement(std::string const& name, std::string const& input, size_t lineNo, storm::dft::builder::DFTBuilder<ValueType>& builder,
-                                  ValueParser<ValueType>& valueParser);
+                                  storm::parser::ValueParser<ValueType>& valueParser);
 
     /*!
      * Parse argument of basic element of the form "name=value".
@@ -62,7 +62,7 @@ class DFTGalileoParser {
      *
      * @return Pair (success, value). Success is true iff the parsing was succesful. Then value contains the parsed value.
      */
-    static std::pair<bool, ValueType> parseValue(std::string name, std::string& line, ValueParser<ValueType>& valueParser);
+    static std::pair<bool, ValueType> parseValue(std::string name, std::string& line, storm::parser::ValueParser<ValueType>& valueParser);
 
     /*!
      * Parse argument of basic element of type number: "name=number".
@@ -76,5 +76,6 @@ class DFTGalileoParser {
 
     enum Distribution { None, Constant, Exponential, Erlang, Weibull, LogNormal };
 };
+
 }  // namespace parser
-}  // namespace storm
+}  // namespace storm::dft
