@@ -1,7 +1,6 @@
 #include "DFTTraceSimulator.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace simulator {
 
 template<typename ValueType>
@@ -185,6 +184,6 @@ SimulationResult DFTTraceSimulator<storm::RationalFunction>::simulateCompleteTra
 
 template class DFTTraceSimulator<double>;
 template class DFTTraceSimulator<storm::RationalFunction>;
+
 }  // namespace simulator
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

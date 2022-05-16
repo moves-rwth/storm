@@ -5,8 +5,7 @@
 
 #include "storm/utility/random.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace simulator {
 
 /*!
@@ -110,6 +109,6 @@ class DFTTraceSimulator {
     // Random number generator
     boost::mt19937& randomGenerator;
 };
+
 }  // namespace simulator
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft
