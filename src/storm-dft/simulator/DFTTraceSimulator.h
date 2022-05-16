@@ -102,7 +102,7 @@ class DFTTraceSimulator {
     storm::storage::DFTStateGenerationInfo const& stateGenerationInfo;
 
     // Generator for creating next state in DFT
-    storm::generator::DftNextStateGenerator<ValueType> generator;
+    storm::dft::generator::DftNextStateGenerator<ValueType> generator;
 
     // Current state
     DFTStatePointer state;

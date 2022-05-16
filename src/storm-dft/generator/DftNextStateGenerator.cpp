@@ -6,7 +6,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace generator {
 
 template<typename ValueType, typename StateType>
@@ -96,7 +96,7 @@ void DftNextStateGenerator<ValueType, StateType>::load(DFTStatePointer const& st
 }
 
 template<typename ValueType, typename StateType>
-StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
+storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
     STORM_LOG_DEBUG("Explore state: " << mDft.getStateString(state));
     // Initialization
     bool hasDependencies = state->getFailableElements().hasDependencies();
@@ -104,10 +104,11 @@ StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>:
 }
 
 template<typename ValueType, typename StateType>
-StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::exploreState(StateToIdCallback const& stateToIdCallback,
-                                                                                              bool exploreDependencies, bool takeFirstDependency) {
+storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::exploreState(StateToIdCallback const& stateToIdCallback,
+                                                                                                                bool exploreDependencies,
+                                                                                                                bool takeFirstDependency) {
     // Prepare the result, in case we return early.
-    StateBehavior<ValueType, StateType> result;
+    storm::generator::StateBehavior<ValueType, StateType> result;
 
     STORM_LOG_TRACE("Currently failable: " << state->getFailableElements().getCurrentlyFailableString());
     // size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
@@ -119,7 +120,7 @@ StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>:
     // - either no relevant event remains (i.e., all relevant events have failed already), or
     // - no BE can fail
     if (!state->hasOperationalRelevantEvent() || iterFailable == state->getFailableElements().end(!exploreDependencies)) {
-        Choice<ValueType, StateType> choice(0, true);
+        storm::generator::Choice<ValueType, StateType> choice(0, true);
         // Add self loop
         choice.addProbability(state->getId(), storm::utility::one<ValueType>());
         STORM_LOG_TRACE("Added self loop for " << state->getId());
@@ -129,7 +130,7 @@ StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>:
         return result;
     }
 
-    Choice<ValueType, StateType> choice(0, !exploreDependencies);
+    storm::generator::Choice<ValueType, StateType> choice(0, !exploreDependencies);
 
     // Let BE fail
     for (; iterFailable != state->getFailableElements().end(!exploreDependencies); ++iterFailable) {
@@ -327,7 +328,8 @@ void DftNextStateGenerator<ValueType, StateType>::propagateFailsafe(DFTStatePoin
 }
 
 template<typename ValueType, typename StateType>
-StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::createMergeFailedState(StateToIdCallback const& stateToIdCallback) {
+storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>::createMergeFailedState(
+    StateToIdCallback const& stateToIdCallback) {
     this->uniqueFailedState = true;
     // Introduce explicit fail state with id 0
     DFTStatePointer failedState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
@@ -336,11 +338,11 @@ StateBehavior<ValueType, StateType> DftNextStateGenerator<ValueType, StateType>:
     STORM_LOG_TRACE("Introduce fail state with id 0.");
 
     // Add self loop
-    Choice<ValueType, StateType> choice(0, true);
+    storm::generator::Choice<ValueType, StateType> choice(0, true);
     choice.addProbability(0, storm::utility::one<ValueType>());
 
     // No further exploration required
-    StateBehavior<ValueType, StateType> result;
+    storm::generator::StateBehavior<ValueType, StateType> result;
     result.addChoice(std::move(choice));
     result.setExpanded();
     return result;
@@ -352,4 +354,4 @@ template class DftNextStateGenerator<double>;
 template class DftNextStateGenerator<storm::RationalFunction>;
 #endif
 }  // namespace generator
-}  // namespace storm
+}  // namespace storm::dft

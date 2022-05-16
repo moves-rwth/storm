@@ -5,7 +5,7 @@
 
 #include "storm-dft/storage/dft/DFT.h"
 
-namespace storm {
+namespace storm::dft {
 namespace generator {
 
 /*!
@@ -34,9 +34,9 @@ class DftNextStateGenerator {
     /*!
      * Expand and explore current state.
      * @param stateToIdCallback  Callback function which adds new state and returns the corresponding id.
-     * @return  StateBehavior containing successor choices and distributions.
+     * @return StateBehavior containing successor choices and distributions.
      */
-    StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback);
+    storm::generator::StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback);
 
     /*!
      * Create unique failed state.
@@ -45,7 +45,7 @@ class DftNextStateGenerator {
      *
      * @return Behavior of state.
      */
-    StateBehavior<ValueType, StateType> createMergeFailedState(StateToIdCallback const& stateToIdCallback);
+    storm::generator::StateBehavior<ValueType, StateType> createMergeFailedState(StateToIdCallback const& stateToIdCallback);
 
     /*!
      * Create initial state.
@@ -96,7 +96,8 @@ class DftNextStateGenerator {
      * dependency is considered.
      * @return StateBehavior containing successor choices and distributions.
      */
-    StateBehavior<ValueType, StateType> exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies, bool takeFirstDependency);
+    storm::generator::StateBehavior<ValueType, StateType> exploreState(StateToIdCallback const& stateToIdCallback, bool exploreDependencies,
+                                                                       bool takeFirstDependency);
 
     // The dft used for the generation of next states.
     storm::storage::DFT<ValueType> const& mDft;
@@ -118,4 +119,4 @@ class DftNextStateGenerator {
 };
 
 }  // namespace generator
-}  // namespace storm
+}  // namespace storm::dft

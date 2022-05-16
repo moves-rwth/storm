@@ -300,7 +300,7 @@ class ExplicitDFTModelBuilder {
     size_t initialStateIndex = 0;
 
     // Next state generator for exploring the state space
-    storm::generator::DftNextStateGenerator<ValueType, StateType> generator;
+    storm::dft::generator::DftNextStateGenerator<ValueType, StateType> generator;
 
     // Structure for the components of the model.
     ModelComponents modelComponents;

@@ -103,7 +103,7 @@ TYPED_TEST_SUITE(DftTraceGeneratorTest, TestingTypes, );
 TYPED_TEST(DftTraceGeneratorTest, And) {
     auto pair = this->prepareDFT(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
     auto dft = pair.first;
-    storm::generator::DftNextStateGenerator<double> generator(*dft, pair.second);
+    storm::dft::generator::DftNextStateGenerator<double> generator(*dft, pair.second);
 
     // Start with initial state
     auto state = generator.createInitialState();
