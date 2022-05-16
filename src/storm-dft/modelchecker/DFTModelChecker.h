@@ -8,7 +8,7 @@
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/utility/RelevantEvents.h"
 
-namespace storm {
+namespace storm::dft {
 namespace modelchecker {
 
 /*!
@@ -165,5 +165,6 @@ class DFTModelChecker {
      */
     bool isApproximationSufficient(ValueType lowerBound, ValueType upperBound, double approximationError, bool relative);
 };
+
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

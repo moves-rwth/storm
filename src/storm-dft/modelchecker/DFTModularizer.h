@@ -7,7 +7,7 @@
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm/logic/Formula.h"
 
-namespace storm {
+namespace storm::dft {
 namespace modelchecker {
 
 /**
@@ -154,4 +154,4 @@ class DFTModularizer {
 };
 
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

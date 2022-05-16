@@ -11,9 +11,9 @@
 #include "storm/storage/expressions/Type.h"
 #include "storm/utility/bitoperations.h"
 
-namespace storm {
-
+namespace storm::dft {
 namespace modelchecker {
+
 DFTASFChecker::DFTASFChecker(storm::storage::DFT<ValueType> const &dft) : dft(dft) {
     // Intentionally left empty.
 }
@@ -692,4 +692,4 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkDependencyConflict(uin
 }
 
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

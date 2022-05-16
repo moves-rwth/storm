@@ -3,7 +3,7 @@
 namespace storm {
 namespace dft {
 namespace utility {
-uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
     STORM_LOG_DEBUG("Lower bound correction - try to correct bound " << std::to_string(bound));
     uint64_t boundCandidate = bound;
     uint64_t nrDepEvents = 0;
@@ -61,7 +61,7 @@ uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::modelcheck
     return boundCandidate + 1;
 }
 
-uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
     STORM_LOG_DEBUG("Upper bound correction - try to correct bound " << std::to_string(bound));
     uint64_t boundCandidate = bound;
     uint64_t nrDepEvents = 0;
@@ -117,7 +117,7 @@ uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<double> co
     if (useSMT) {
         STORM_LOG_TRACE("Compute lower bound for number of BE failures necessary for the DFT to fail");
 
-        storm::modelchecker::DFTASFChecker smtchecker(dft);
+        storm::dft::modelchecker::DFTASFChecker smtchecker(dft);
         smtchecker.toSolver();
 
         uint64_t bound = 0;
@@ -128,7 +128,7 @@ uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<double> co
             switch (tmp_res) {
                 case storm::solver::SmtSolver::CheckResult::Sat:
                     if (!dft.getDependencies().empty()) {
-                        return correctLowerBound(std::make_shared<storm::modelchecker::DFTASFChecker>(smtchecker), bound, timeout);
+                        return correctLowerBound(std::make_shared<storm::dft::modelchecker::DFTASFChecker>(smtchecker), bound, timeout);
                     } else {
                         return bound;
                     }
@@ -158,7 +158,7 @@ uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<RationalFu
 uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
     STORM_LOG_TRACE("Compute bound for number of BE failures such that the DFT always fails");
     if (useSMT) {
-        storm::modelchecker::DFTASFChecker smtchecker(dft);
+        storm::dft::modelchecker::DFTASFChecker smtchecker(dft);
         smtchecker.toSolver();
 
         if (smtchecker.checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {
@@ -172,7 +172,7 @@ uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<double> co
             switch (tmp_res) {
                 case storm::solver::SmtSolver::CheckResult::Sat:
                     if (!dft.getDependencies().empty()) {
-                        return correctUpperBound(std::make_shared<storm::modelchecker::DFTASFChecker>(smtchecker), bound, timeout);
+                        return correctUpperBound(std::make_shared<storm::dft::modelchecker::DFTASFChecker>(smtchecker), bound, timeout);
                     } else {
                         return bound;
                     }

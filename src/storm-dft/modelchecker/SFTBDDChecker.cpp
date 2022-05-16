@@ -7,7 +7,7 @@
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm/adapters/eigen.h"
 
-namespace storm {
+namespace storm::dft {
 namespace modelchecker {
 
 using ValueType = SFTBDDChecker::ValueType;
@@ -634,4 +634,4 @@ void SFTBDDChecker::recursiveMCS(Bdd const bdd, std::vector<uint32_t> &buffer, s
 }
 
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

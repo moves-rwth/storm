@@ -7,7 +7,7 @@ namespace {
 TEST(DftSmtTest, AndTest) {
     std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
-    storm::modelchecker::DFTASFChecker smtChecker(*dft);
+    storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
     smtChecker.toSolver();
     EXPECT_EQ(smtChecker.checkTleNeverFailed(), storm::solver::SmtSolver::CheckResult::Unsat);
@@ -16,7 +16,7 @@ TEST(DftSmtTest, AndTest) {
 TEST(DftSmtTest, PandTest) {
     std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/pand.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
-    storm::modelchecker::DFTASFChecker smtChecker(*dft);
+    storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
     smtChecker.toSolver();
     EXPECT_EQ(smtChecker.checkTleNeverFailed(), storm::solver::SmtSolver::CheckResult::Sat);
@@ -25,7 +25,7 @@ TEST(DftSmtTest, PandTest) {
 TEST(DftSmtTest, SpareTest) {
     std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare_two_modules.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
-    storm::modelchecker::DFTASFChecker smtChecker(*dft);
+    storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
     smtChecker.toSolver();
     EXPECT_EQ(smtChecker.checkTleFailsWithLeq(2), storm::solver::SmtSolver::CheckResult::Unsat);
@@ -35,7 +35,7 @@ TEST(DftSmtTest, SpareTest) {
 TEST(DftSmtTest, BoundTest) {
     std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare5.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
-    storm::modelchecker::DFTASFChecker smtChecker(*dft);
+    storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
     smtChecker.toSolver();
     EXPECT_EQ(storm::dft::utility::FailureBoundFinder::getLeastFailureBound(*dft, true, 30), uint64_t(2));
@@ -45,7 +45,7 @@ TEST(DftSmtTest, BoundTest) {
 TEST(DftSmtTest, FDEPBoundTest) {
     std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/fdep_bound.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft, false).first);
-    storm::modelchecker::DFTASFChecker smtChecker(*dft);
+    storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
     smtChecker.toSolver();
     EXPECT_EQ(storm::dft::utility::FailureBoundFinder::getLeastFailureBound(*dft, true, 30), uint64_t(1));

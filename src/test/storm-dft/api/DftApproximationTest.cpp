@@ -56,9 +56,9 @@ class DftApproximationTest : public ::testing::Test {
         EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
         std::string property = "T=? [F \"failed\"]";
         std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-        typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::dft::api::analyzeDFT<double>(
+        typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results = storm::dft::api::analyzeDFT<double>(
             *dft, properties, config.useSR, false, storm::utility::RelevantEvents(), false, errorBound, config.heuristic, false);
-        return boost::get<storm::modelchecker::DFTModelChecker<double>::approximation_result>(results[0]);
+        return boost::get<storm::dft::modelchecker::DFTModelChecker<double>::approximation_result>(results[0]);
     }
 
     std::pair<double, double> analyzeTimebound(std::string const& file, double timeBound, double errorBound) {
@@ -68,9 +68,9 @@ class DftApproximationTest : public ::testing::Test {
         propertyStream << "P=? [F<=" << timeBound << " \"failed\"]";
         std::vector<std::shared_ptr<storm::logic::Formula const>> properties =
             storm::api::extractFormulasFromProperties(storm::api::parseProperties(propertyStream.str()));
-        typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::dft::api::analyzeDFT<double>(
+        typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results = storm::dft::api::analyzeDFT<double>(
             *dft, properties, config.useSR, false, storm::utility::RelevantEvents(), false, errorBound, config.heuristic, false);
-        return boost::get<storm::modelchecker::DFTModelChecker<double>::approximation_result>(results[0]);
+        return boost::get<storm::dft::modelchecker::DFTModelChecker<double>::approximation_result>(results[0]);
     }
 
    private:

@@ -156,14 +156,14 @@ storm::utility::RelevantEvents computeRelevantEvents(storm::storage::DFT<ValueTy
  * @return Results.
  */
 template<typename ValueType>
-typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(
+typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(
     storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
     bool allowModularisation = true, storm::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
     double approximationError = 0.0, storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
     bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels,
     bool printOutput = false) {
-    storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
-    typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results =
+    storm::dft::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
+    typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results results =
         modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic,
                            eliminateChains, labelBehavior);
     if (printOutput) {

@@ -88,7 +88,7 @@ class DftModelCheckerTest : public ::testing::Test {
         storm::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, properties, relevantNames);
 
         // Perform model checking
-        typename storm::modelchecker::DFTModelChecker<double>::dft_results results =
+        typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results =
             storm::dft::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod, relevantEvents, false);
         return boost::get<double>(results[0]);
     }

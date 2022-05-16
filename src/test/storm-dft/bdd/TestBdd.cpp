@@ -63,10 +63,10 @@ class SftBddTest : public testing::TestWithParam<SftTestData> {
     void SetUp() override {
         auto const &param{TestWithParam::GetParam()};
         auto dft{storm::dft::api::loadDFTGalileoFile<double>(param.filepath)};
-        checker = std::make_shared<storm::modelchecker::SFTBDDChecker>(dft);
+        checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     }
 
-    std::shared_ptr<storm::modelchecker::SFTBDDChecker> checker;
+    std::shared_ptr<storm::dft::modelchecker::SFTBDDChecker> checker;
 };
 
 TEST_P(SftBddTest, bddHash) {
@@ -208,7 +208,7 @@ TEST(TestBdd, AndOrRelevantEventsChecked) {
     storm::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
     auto transformator{std::make_shared<storm::transformations::dft::SftToBddTransformator<double>>(dft, manager, relevantEvents)};
 
-    storm::modelchecker::SFTBDDChecker checker{transformator};
+    storm::dft::modelchecker::SFTBDDChecker checker{transformator};
 
     auto relevantEventsBdds = transformator->transformRelevantEvents();
 

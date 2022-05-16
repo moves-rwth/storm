@@ -16,7 +16,7 @@
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
 
-namespace storm {
+namespace storm::dft {
 namespace modelchecker {
 
 template<typename ValueType>
@@ -535,4 +535,4 @@ template class DFTModelChecker<storm::RationalFunction>;
 
 #endif
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

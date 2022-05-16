@@ -12,7 +12,7 @@
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm/storage/PairHash.h"
 
-namespace storm {
+namespace storm::dft {
 namespace modelchecker {
 
 /**
@@ -383,4 +383,4 @@ class SFTBDDChecker {
 };
 
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

@@ -1,8 +1,9 @@
 #include <storm/storage/expressions/Expression.h>
 #include <string>
 
-namespace storm {
+namespace storm::dft {
 namespace modelchecker {
+
 class SmtConstraint {
    public:
     virtual ~SmtConstraint() {}
@@ -34,5 +35,6 @@ class SmtConstraint {
    private:
     std::string descript;
 };
+
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

@@ -9,8 +9,9 @@
 #include "storm/solver/SmtSolver.h"
 #include "storm/utility/solver.h"
 
-namespace storm {
+namespace storm::dft {
 namespace modelchecker {
+
 class SpareAndChildPair {
    public:
     SpareAndChildPair(uint64_t spareIndex, uint64_t childIndex) : spareIndex(spareIndex), childIndex(childIndex) {}
@@ -214,5 +215,6 @@ class DFTASFChecker {
     std::vector<uint64_t> tmpTimePointVariables;
     uint64_t notFailed;
 };
+
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

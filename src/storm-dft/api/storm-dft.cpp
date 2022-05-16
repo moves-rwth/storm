@@ -33,7 +33,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool
     }
 
     if (useModularisation && calculateProbability) {
-        storm::modelchecker::DFTModularizer checker{dft};
+        storm::dft::modelchecker::DFTModularizer checker{dft};
         if (chunksize == 1) {
             for (auto const& timebound : timepoints) {
                 auto const probability{checker.getProbabilityAtTimebound(timebound)};
@@ -190,7 +190,7 @@ std::string exportDFTToJsonString(storm::storage::DFT<storm::RationalFunction> c
 
 template<>
 void exportDFTToSMT(storm::storage::DFT<double> const& dft, std::string const& file) {
-    storm::modelchecker::DFTASFChecker asfChecker(dft);
+    storm::dft::modelchecker::DFTASFChecker asfChecker(dft);
     asfChecker.convert();
     asfChecker.toFile(file);
 }
@@ -204,7 +204,7 @@ template<>
 void analyzeDFTSMT(storm::storage::DFT<double> const& dft, bool printOutput) {
     uint64_t solverTimeout = 10;
 
-    storm::modelchecker::DFTASFChecker smtChecker(dft);
+    storm::dft::modelchecker::DFTASFChecker smtChecker(dft);
     smtChecker.toSolver();
     // Removed bound computation etc. here
     smtChecker.setSolverTimeout(solverTimeout);

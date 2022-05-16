@@ -2,8 +2,7 @@
 #include <string>
 #include "DFTASFChecker.h"
 
-namespace storm {
-
+namespace storm::dft {
 namespace modelchecker {
 
 /*
@@ -704,5 +703,6 @@ class TrueCountIsConstantValue : public SmtConstraint {
     std::vector<uint64_t> varIndices;
     uint64_t value;
 };
+
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

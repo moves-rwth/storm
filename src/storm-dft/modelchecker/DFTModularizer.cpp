@@ -8,7 +8,7 @@
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
 
-namespace storm {
+namespace storm::dft {
 namespace modelchecker {
 
 using ValueType = DFTModularizer::ValueType;
@@ -48,7 +48,7 @@ std::vector<ValueType> DFTModularizer::getProbabilitiesAtTimepoints(std::vector<
     replaceDynamicModules(topLevelElement, timepoints);
 
     auto const subDFT{getSubDFT(topLevelElement)};
-    storm::modelchecker::SFTBDDChecker checker{subDFT, sylvanBddManager};
+    storm::dft::modelchecker::SFTBDDChecker checker{subDFT, sylvanBddManager};
     return checker.getProbabilitiesAtTimepoints(timepoints, chunksize);
 }
 
@@ -242,7 +242,7 @@ void DFTModularizer::analyseDynamic(DFTElementCPointer const element, std::vecto
     auto subDFT{getSubDFT(element)};
     subDFT->checkWellFormedness(true, std::cout);
 
-    storm::modelchecker::DFTModelChecker<ValueType> checker{true};
+    storm::dft::modelchecker::DFTModelChecker<ValueType> checker{true};
     std::stringstream propertyStream{};
 
     for (auto const timebound : timepoints) {
@@ -265,4 +265,4 @@ void DFTModularizer::analyseDynamic(DFTElementCPointer const element, std::vecto
 }
 
 }  // namespace modelchecker
-}  // namespace storm
+}  // namespace storm::dft

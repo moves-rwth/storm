@@ -9,10 +9,10 @@ namespace utility {
 template<>
 std::vector<std::pair<uint64_t, uint64_t>> FDEPConflictFinder<double>::getDependencyConflicts(storm::storage::DFT<double> const& dft, bool useSMT,
                                                                                               uint_fast64_t timeout) {
-    std::shared_ptr<storm::modelchecker::DFTASFChecker> smtChecker = nullptr;
+    std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtChecker = nullptr;
     if (useSMT) {
-        storm::modelchecker::DFTASFChecker checker(dft);
-        smtChecker = std::make_shared<storm::modelchecker::DFTASFChecker>(checker);
+        storm::dft::modelchecker::DFTASFChecker checker(dft);
+        smtChecker = std::make_shared<storm::dft::modelchecker::DFTASFChecker>(checker);
         smtChecker->toSolver();
     }
 

@@ -43,7 +43,7 @@ class FailureBoundFinder {
      * @param timeout timeout timeout for each query in seconds
      * @return the corrected bound
      */
-    static uint64_t correctLowerBound(std::shared_ptr<storm::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
+    static uint64_t correctLowerBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
 
     /**
      * Helper function for correction of bound for number of BEs such that the DFT always fails when dependencies are present
@@ -53,7 +53,7 @@ class FailureBoundFinder {
      * @param timeout timeout timeout for each query in seconds
      * @return the corrected bound
      */
-    static uint64_t correctUpperBound(std::shared_ptr<storm::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
+    static uint64_t correctUpperBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
 };
 }  // namespace utility
 }  // namespace dft
