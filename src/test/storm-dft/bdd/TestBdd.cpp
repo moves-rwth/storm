@@ -4,9 +4,9 @@
 #include <vector>
 
 #include "storm-config.h"
+#include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
-#include "storm-dft/modelchecker/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 #include "storm-parsers/api/properties.h"
