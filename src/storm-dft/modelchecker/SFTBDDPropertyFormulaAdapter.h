@@ -6,7 +6,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <memory>
 
-#include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
+#include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm/logic/AtomicLabelFormula.h"

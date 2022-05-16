@@ -1,5 +1,7 @@
 #include "FDEPConflictFinder.h"
 
+#include "storm-dft/modelchecker/DFTASFChecker.h"
+
 namespace storm {
 namespace dft {
 namespace utility {

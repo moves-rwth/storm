@@ -4,8 +4,8 @@
 #include <utility>
 #include <vector>
 
-#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
-#include "storm-dft/modelchecker/dft/DFTModelChecker.h"
+#include "storm-dft/modelchecker/DFTASFChecker.h"
+#include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
 #include "storm-dft/storage/dft/DftJsonExporter.h"

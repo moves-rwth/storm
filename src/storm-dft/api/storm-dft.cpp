@@ -7,9 +7,9 @@
 
 #include <memory>
 #include <vector>
-#include "storm-dft/modelchecker/dft/DFTModularizer.h"
-#include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
-#include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
+#include "storm-dft/modelchecker/DFTModularizer.h"
+#include "storm-dft/modelchecker/SFTBDDChecker.h"
+#include "storm-dft/modelchecker/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"

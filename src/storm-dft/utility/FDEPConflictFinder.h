@@ -1,5 +1,4 @@
 #include <vector>
-#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm-dft/storage/dft/DFT.h"
 
 namespace storm {

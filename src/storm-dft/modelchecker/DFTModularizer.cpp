@@ -1,10 +1,10 @@
 #include <sstream>
 
 #include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/modelchecker/dft/DFTModelChecker.h"
-#include "storm-dft/modelchecker/dft/DFTModularizer.h"
-#include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
-#include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
+#include "storm-dft/modelchecker/DFTModelChecker.h"
+#include "storm-dft/modelchecker/DFTModularizer.h"
+#include "storm-dft/modelchecker/SFTBDDChecker.h"
+#include "storm-dft/modelchecker/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
 

@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-#include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
+#include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm/adapters/eigen.h"
 
