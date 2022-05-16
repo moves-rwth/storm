@@ -223,10 +223,10 @@ void SparseMatrixBuilder<ValueType>::addNextValue(index_type row, index_type col
                 }
             }
             // Then, we eliminate those duplicate entries.
-            auto it = std::unique(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(),
-                                  [](storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
-                                      return a.getColumn() == b.getColumn();
-                                  });
+            std::unique(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(),
+                        [](storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
+                            return a.getColumn() == b.getColumn();
+                        });
 
             if (elementsToRemove > 0) {
                 STORM_LOG_WARN("Unordered insertion into matrix builder caused duplicate entries.");
