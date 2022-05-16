@@ -50,7 +50,7 @@ class DFTGalileoParser {
      *
      * @return True iff the parsing and creation was successful.
      */
-    static bool parseBasicElement(std::string const& name, std::string const& input, size_t lineNo, storm::builder::DFTBuilder<ValueType>& builder,
+    static bool parseBasicElement(std::string const& name, std::string const& input, size_t lineNo, storm::dft::builder::DFTBuilder<ValueType>& builder,
                                   ValueParser<ValueType>& valueParser);
 
     /*!

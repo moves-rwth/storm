@@ -195,16 +195,16 @@ void BucketPriorityQueue<PriorityType>::printSizes(std::ostream& out) const {
 }
 
 // Template instantiations
-template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristic<double>>;
-template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicDepth<double>>;
-template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicProbability<double>>;
-template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicBoundDifference<double>>;
+template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristic<double>>;
+template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicDepth<double>>;
+template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicProbability<double>>;
+template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicBoundDifference<double>>;
 
 #ifdef STORM_HAVE_CARL
-template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristic<storm::RationalFunction>>;
-template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicDepth<storm::RationalFunction>>;
-template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicProbability<storm::RationalFunction>>;
-template class BucketPriorityQueue<storm::builder::DFTExplorationHeuristicBoundDifference<storm::RationalFunction>>;
+template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristic<storm::RationalFunction>>;
+template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicDepth<storm::RationalFunction>>;
+template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicProbability<storm::RationalFunction>>;
+template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicBoundDifference<storm::RationalFunction>>;
 #endif
 }  // namespace storage
 }  // namespace storm

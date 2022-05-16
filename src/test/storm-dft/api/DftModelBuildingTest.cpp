@@ -21,7 +21,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     storm::utility::RelevantEvents relevantEvents{};
     dft->setRelevantEvents(relevantEvents, false);
     // Build model
-    storm::builder::ExplicitDFTModelBuilder<double> builder(*dft, symmetries);
+    storm::dft::builder::ExplicitDFTModelBuilder<double> builder(*dft, symmetries);
     builder.buildModel(0, 0.0);
     std::shared_ptr<storm::models::sparse::Model<double>> model = builder.getModel();
     EXPECT_EQ(8ul, model->getNumberOfStates());
@@ -31,7 +31,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     relevantEvents = storm::utility::RelevantEvents({"all"});
     dft->setRelevantEvents(relevantEvents, false);
     // Build model
-    storm::builder::ExplicitDFTModelBuilder<double> builder2(*dft, symmetries);
+    storm::dft::builder::ExplicitDFTModelBuilder<double> builder2(*dft, symmetries);
     builder2.buildModel(0, 0.0);
     model = builder2.getModel();
     EXPECT_EQ(512ul, model->getNumberOfStates());
@@ -41,7 +41,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     relevantEvents = storm::utility::RelevantEvents({"H"});
     dft->setRelevantEvents(relevantEvents, false);
     // Build model
-    storm::builder::ExplicitDFTModelBuilder<double> builder3(*dft, symmetries);
+    storm::dft::builder::ExplicitDFTModelBuilder<double> builder3(*dft, symmetries);
     builder3.buildModel(0, 0.0);
     model = builder3.getModel();
     EXPECT_EQ(12ul, model->getNumberOfStates());
@@ -51,7 +51,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     relevantEvents = storm::utility::RelevantEvents({"H", "I"});
     dft->setRelevantEvents(relevantEvents, false);
     // Build model
-    storm::builder::ExplicitDFTModelBuilder<double> builder4(*dft, symmetries);
+    storm::dft::builder::ExplicitDFTModelBuilder<double> builder4(*dft, symmetries);
     builder4.buildModel(0, 0.0);
     model = builder4.getModel();
     EXPECT_EQ(16ul, model->getNumberOfStates());
@@ -61,7 +61,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     relevantEvents = storm::utility::RelevantEvents{};
     dft->setRelevantEvents(relevantEvents, true);
     // Build model
-    storm::builder::ExplicitDFTModelBuilder<double> builder5(*dft, symmetries);
+    storm::dft::builder::ExplicitDFTModelBuilder<double> builder5(*dft, symmetries);
     builder5.buildModel(0, 0.0);
     model = builder5.getModel();
     EXPECT_EQ(8ul, model->getNumberOfStates());
@@ -71,7 +71,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     relevantEvents = storm::utility::RelevantEvents({"all"});
     dft->setRelevantEvents(relevantEvents, true);
     // Build model
-    storm::builder::ExplicitDFTModelBuilder<double> builder6(*dft, symmetries);
+    storm::dft::builder::ExplicitDFTModelBuilder<double> builder6(*dft, symmetries);
     builder6.buildModel(0, 0.0);
     model = builder6.getModel();
     EXPECT_EQ(8ul, model->getNumberOfStates());
@@ -81,7 +81,7 @@ TEST(DftModelBuildingTest, RelevantEvents) {
     relevantEvents = storm::utility::RelevantEvents({"H", "I"});
     dft->setRelevantEvents(relevantEvents, true);
     // Build model
-    storm::builder::ExplicitDFTModelBuilder<double> builder7(*dft, symmetries);
+    storm::dft::builder::ExplicitDFTModelBuilder<double> builder7(*dft, symmetries);
     builder7.buildModel(0, 0.0);
     model = builder7.getModel();
     EXPECT_EQ(8ul, model->getNumberOfStates());

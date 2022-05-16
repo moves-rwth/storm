@@ -37,7 +37,7 @@ storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromString(std
 template<typename ValueType>
 storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json const& jsonInput) {
     // Init DFT builder and value parser
-    storm::builder::DFTBuilder<ValueType> builder;
+    storm::dft::builder::DFTBuilder<ValueType> builder;
     ValueParser<ValueType> valueParser;
 
     // Try to parse parameters

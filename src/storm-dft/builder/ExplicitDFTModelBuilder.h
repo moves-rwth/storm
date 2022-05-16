@@ -18,7 +18,7 @@
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/storage/dft/SymmetricUnits.h"
 
-namespace storm {
+namespace storm::dft {
 namespace builder {
 
 /*!
@@ -163,7 +163,7 @@ class ExplicitDFTModelBuilder {
      * @param approximationHeuristic Heuristic used for exploring states.
      */
     void buildModel(size_t iteration, double approximationThreshold = 0.0,
-                    storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH);
+                    storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH);
 
     /*!
      * Get the built model.
@@ -287,7 +287,7 @@ class ExplicitDFTModelBuilder {
     std::shared_ptr<storm::storage::DFTStateGenerationInfo> stateGenerationInfo;
 
     // Heuristic used for approximation
-    storm::builder::ApproximationHeuristic usedHeuristic;
+    storm::dft::builder::ApproximationHeuristic usedHeuristic;
 
     // Current id for new state
     size_t newIndex = 0;
@@ -328,4 +328,4 @@ class ExplicitDFTModelBuilder {
 };
 
 }  // namespace builder
-}  // namespace storm
+}  // namespace storm::dft

@@ -438,7 +438,7 @@ std::vector<DFT<ValueType>> DFT<ValueType>::topModularisation() const {
 
     std::vector<DFT<ValueType>> res;
     for (auto const& subdft : subdfts) {
-        storm::builder::DFTBuilder<ValueType> builder;
+        storm::dft::builder::DFTBuilder<ValueType> builder;
 
         for (size_t id : subdft.second) {
             builder.copyElement(mElements[id]);
@@ -473,7 +473,7 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
     std::vector<std::vector<size_t>> rewriteIds;
     rewriteIds.push_back(modIdea);
 
-    storm::builder::DFTBuilder<ValueType> builder;
+    storm::dft::builder::DFTBuilder<ValueType> builder;
 
     // Accumulate elements which must be rewritten
     std::set<size_t> rewriteSet;

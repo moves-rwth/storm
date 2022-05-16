@@ -185,7 +185,7 @@ void DFTModularizer::replaceDynamicModules(DFTElementCPointer const element, std
 }
 
 std::shared_ptr<storm::storage::DFT<ValueType>> DFTModularizer::getSubDFT(DFTElementCPointer const element) {
-    storm::builder::DFTBuilder<ValueType> builder{};
+    storm::dft::builder::DFTBuilder<ValueType> builder{};
     std::unordered_set<std::string> depInConflict;
     for (auto const id : workDFT->getIndependentSubDftRoots(element->id())) {
         auto const tmpElement{workDFT->getElement(id)};
@@ -208,7 +208,7 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DFTModularizer::getSubDFT(DFTEle
 }
 
 void DFTModularizer::updateWorkDFT(DFTElementCPointer const element, std::map<ValueType, ValueType> activeSamples) {
-    storm::builder::DFTBuilder<ValueType> builder{};
+    storm::dft::builder::DFTBuilder<ValueType> builder{};
     std::unordered_set<std::string> depInConflict;
     for (auto const id : workDFT->getAllIds()) {
         auto const tmpElement{workDFT->getElement(id)};

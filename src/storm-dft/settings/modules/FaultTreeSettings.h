@@ -86,7 +86,7 @@ class FaultTreeSettings : public ModuleSettings {
      *
      * @return The heuristic to use.
      */
-    storm::builder::ApproximationHeuristic getApproximationHeuristic() const;
+    storm::dft::builder::ApproximationHeuristic getApproximationHeuristic() const;
 
     /*!
      * Retrieves whether the option to set a maximal exploration depth is set.

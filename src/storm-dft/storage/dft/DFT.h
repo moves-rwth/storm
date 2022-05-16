@@ -18,12 +18,13 @@
 #include "storm-dft/storage/dft/DFTStateGenerationInfo.h"
 #include "storm-dft/storage/dft/SymmetricUnits.h"
 
-namespace storm {
 // Forward declarations
-namespace builder {
+namespace storm::dft::builder {
 template<typename T>
 class DFTBuilder;
 }
+
+namespace storm {
 namespace utility {
 class RelevantEvents;
 }
@@ -87,7 +88,7 @@ class DFT {
 
     DFT<ValueType> optimize() const;
 
-    void copyElements(std::vector<size_t> elements, storm::builder::DFTBuilder<ValueType> builder) const;
+    void copyElements(std::vector<size_t> elements, storm::dft::builder::DFTBuilder<ValueType> builder) const;
 
     void setDynamicBehaviorInfo();
 

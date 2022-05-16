@@ -10,7 +10,7 @@
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/storage/dft/OrderDFTElementsById.h"
 
-namespace storm {
+namespace storm::dft {
 namespace builder {
 
 template<typename ValueType>
@@ -346,4 +346,4 @@ template class DFTBuilder<RationalFunction>;
 #endif
 
 }  // namespace builder
-}  // namespace storm
+}  // namespace storm::dft

@@ -144,14 +144,14 @@ double FaultTreeSettings::getApproximationError() const {
     return this->getOption(approximationErrorOptionName).getArgumentByName("error").getValueAsDouble();
 }
 
-storm::builder::ApproximationHeuristic FaultTreeSettings::getApproximationHeuristic() const {
+storm::dft::builder::ApproximationHeuristic FaultTreeSettings::getApproximationHeuristic() const {
     std::string heuristicAsString = this->getOption(approximationHeuristicOptionName).getArgumentByName("heuristic").getValueAsString();
     if (heuristicAsString == "depth") {
-        return storm::builder::ApproximationHeuristic::DEPTH;
+        return storm::dft::builder::ApproximationHeuristic::DEPTH;
     } else if (heuristicAsString == "probability") {
-        return storm::builder::ApproximationHeuristic::PROBABILITY;
+        return storm::dft::builder::ApproximationHeuristic::PROBABILITY;
     } else if (heuristicAsString == "bounddifference") {
-        return storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
+        return storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
 }
@@ -205,7 +205,7 @@ void FaultTreeSettings::finalize() {}
 bool FaultTreeSettings::check() const {
     // Ensure that disableDC and relevantEvents are not set at the same time
     STORM_LOG_THROW(!isDisableDC() || !areRelevantEventsSet(), storm::exceptions::InvalidSettingsException, "DisableDC and relevantSets can not both be set.");
-    STORM_LOG_THROW(!isMaxDepthSet() || getApproximationHeuristic() == storm::builder::ApproximationHeuristic::DEPTH,
+    STORM_LOG_THROW(!isMaxDepthSet() || getApproximationHeuristic() == storm::dft::builder::ApproximationHeuristic::DEPTH,
                     storm::exceptions::InvalidSettingsException, "Maximal depth requires approximation heuristic depth.");
     return true;
 }

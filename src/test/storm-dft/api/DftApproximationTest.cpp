@@ -8,7 +8,7 @@ namespace {
 
 // Configurations for DFT approximation
 struct DftAnalysisConfig {
-    storm::builder::ApproximationHeuristic heuristic;
+    storm::dft::builder::ApproximationHeuristic heuristic;
     bool useSR;
 };
 
@@ -17,7 +17,7 @@ class ApproxDepthConfig {
     typedef double ValueType;
 
     static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{storm::builder::ApproximationHeuristic::DEPTH, false};
+        return DftAnalysisConfig{storm::dft::builder::ApproximationHeuristic::DEPTH, false};
     }
 };
 
@@ -26,7 +26,7 @@ class ApproxProbabilityConfig {
     typedef double ValueType;
 
     static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{storm::builder::ApproximationHeuristic::PROBABILITY, false};
+        return DftAnalysisConfig{storm::dft::builder::ApproximationHeuristic::PROBABILITY, false};
     }
 };
 
@@ -35,7 +35,7 @@ class ApproxBoundDifferenceConfig {
     typedef double ValueType;
 
     static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE, false};
+        return DftAnalysisConfig{storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE, false};
     }
 };
 

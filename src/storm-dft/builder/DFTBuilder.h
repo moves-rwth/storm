@@ -10,13 +10,14 @@
 #include "storm-dft/storage/dft/elements/DFTRestriction.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-namespace storm {
-namespace storage {
+namespace storm::storage {
+
 // Forward declaration
 template<typename ValueType>
 class DFT;
-}  // namespace storage
+}  // namespace storm::storage
 
+namespace storm::dft {
 namespace builder {
 
 template<typename ValueType>
@@ -272,5 +273,6 @@ class DFTBuilder {
     // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
     bool porDefaultInclusive;
 };
+
 }  // namespace builder
-}  // namespace storm
+}  // namespace storm::dft

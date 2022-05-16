@@ -11,7 +11,7 @@ DftTransformator<ValueType>::DftTransformator() {}
 template<typename ValueType>
 std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::transformUniqueFailedBe(storm::storage::DFT<ValueType> const &dft) {
     STORM_LOG_DEBUG("Start transformation UniqueFailedBe");
-    storm::builder::DFTBuilder<ValueType> builder = storm::builder::DFTBuilder<ValueType>(true);
+    storm::dft::builder::DFTBuilder<ValueType> builder = storm::dft::builder::DFTBuilder<ValueType>(true);
     // NOTE: if probabilities for constant BEs are introduced, change this to vector of tuples (name, prob)
     std::vector<std::string> failedBEs;
 
@@ -102,7 +102,7 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::tra
 template<typename ValueType>
 std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::transformBinaryFDEPs(storm::storage::DFT<ValueType> const &dft) {
     STORM_LOG_DEBUG("Start transformation BinaryFDEPs");
-    storm::builder::DFTBuilder<ValueType> builder = storm::builder::DFTBuilder<ValueType>(true);
+    storm::dft::builder::DFTBuilder<ValueType> builder = storm::dft::builder::DFTBuilder<ValueType>(true);
 
     for (size_t i = 0; i < dft.nrElements(); ++i) {
         std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);

@@ -23,7 +23,7 @@ template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(
     storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred,
     bool allowModularisation, storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
-    storm::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
+    storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
     totalTimer.start();
     dft_results results;
 
@@ -62,7 +62,7 @@ template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkHelper(
     storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
     storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
-    storm::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
+    storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
     STORM_LOG_TRACE("Check helper called");
     std::vector<storm::storage::DFT<ValueType>> dfts;
     bool invResults = false;
@@ -211,7 +211,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 
             // Build a single CTMC
             STORM_LOG_DEBUG("Building Model from DFT with top level element " << ft.getElement(ft.getTopLevelIndex())->toString() << " ...");
-            storm::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries);
+            storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries);
             builder.buildModel(0, 0.0);
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
             explorationTimer.stop();
@@ -271,7 +271,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
         // Build a single CTMC
         STORM_LOG_DEBUG("Building Model...");
 
-        storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
+        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
         builder.buildModel(0, 0.0);
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
         if (printInfo) {
@@ -287,7 +287,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkDFT(
     storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, storm::utility::RelevantEvents const& relevantEvents,
-    bool allowDCForRelevant, double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains,
+    bool allowDCForRelevant, double approximationError, storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains,
     storm::transformer::EliminationLabelBehavior labelBehavior) {
     explorationTimer.start();
     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
@@ -312,7 +312,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
         approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
         std::vector<ValueType> newResult;
-        storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
+        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
 
         // TODO: compute approximation for all properties simultaneously?
         std::shared_ptr<const storm::logic::Formula> property = properties[0];
@@ -403,7 +403,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
         // Build a single Markov Automaton
         auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
         STORM_LOG_DEBUG("Building Model...");
-        storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
+        storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
         builder.buildModel(0, 0.0);
         std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
         if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {

@@ -159,7 +159,7 @@ template<typename ValueType>
 typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(
     storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
     bool allowModularisation = true, storm::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
-    double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
+    double approximationError = 0.0, storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
     bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels,
     bool printOutput = false) {
     storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
