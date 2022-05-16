@@ -16,7 +16,7 @@ TEST(DftInstantiatorTest, InstantiateSimple) {
     EXPECT_EQ(3ul, dft->nrElements());
     EXPECT_EQ(2ul, dft->nrBasicElements());
 
-    storm::transformations::dft::DftInstantiator<storm::RationalFunction, double> instantiator(*dft);
+    storm::dft::transformations::DftInstantiator<storm::RationalFunction, double> instantiator(*dft);
 
     std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
     storm::RationalFunctionVariable const& x = carl::VariablePool::getInstance().findVariableWithName("x");
@@ -44,7 +44,7 @@ TEST(DftInstantiatorTest, InstantiateSymmetry) {
     EXPECT_EQ(7ul, dft->nrElements());
     EXPECT_EQ(4ul, dft->nrBasicElements());
 
-    storm::transformations::dft::DftInstantiator<storm::RationalFunction, double> instantiator(*dft);
+    storm::dft::transformations::DftInstantiator<storm::RationalFunction, double> instantiator(*dft);
 
     std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
     storm::RationalFunctionVariable const& x = carl::VariablePool::getInstance().findVariableWithName("x");

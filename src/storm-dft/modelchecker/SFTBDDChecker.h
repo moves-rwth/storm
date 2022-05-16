@@ -27,7 +27,7 @@ class SFTBDDChecker {
     SFTBDDChecker(std::shared_ptr<storm::storage::DFT<ValueType>> dft,
                   std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::storage::SylvanBddManager>());
 
-    SFTBDDChecker(std::shared_ptr<storm::transformations::dft::SftToBddTransformator<ValueType>> transformator);
+    SFTBDDChecker(std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> transformator);
 
     /**
      * \return The internal DFT
@@ -42,7 +42,7 @@ class SFTBDDChecker {
     /**
      * \return The internal SftToBddTransformator
      */
-    std::shared_ptr<storm::transformations::dft::SftToBddTransformator<ValueType>> getTransformator() const noexcept;
+    std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> getTransformator() const noexcept;
 
     /**
      * Exports the Bdd that represents the top level event to a file
@@ -379,7 +379,7 @@ class SFTBDDChecker {
      */
     Bdd getTopLevelElementBdd();
 
-    std::shared_ptr<storm::transformations::dft::SftToBddTransformator<ValueType>> transformator;
+    std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> transformator;
 };
 
 }  // namespace modelchecker

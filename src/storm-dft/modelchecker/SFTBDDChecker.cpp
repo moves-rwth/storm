@@ -238,9 +238,9 @@ Eigen::ArrayXd const *recursiveBirnbaumFactors(size_t const chunksize, uint32_t 
 }  // namespace
 
 SFTBDDChecker::SFTBDDChecker(std::shared_ptr<storm::storage::DFT<ValueType>> dft, std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager)
-    : transformator{std::make_shared<storm::transformations::dft::SftToBddTransformator<ValueType>>(dft, sylvanBddManager)} {}
+    : transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<ValueType>>(dft, sylvanBddManager)} {}
 
-SFTBDDChecker::SFTBDDChecker(std::shared_ptr<storm::transformations::dft::SftToBddTransformator<ValueType>> transformator) : transformator{transformator} {}
+SFTBDDChecker::SFTBDDChecker(std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> transformator) : transformator{transformator} {}
 
 Bdd SFTBDDChecker::getTopLevelElementBdd() {
     return transformator->transformTopLevel();
@@ -253,7 +253,7 @@ std::shared_ptr<storm::storage::SylvanBddManager> SFTBDDChecker::getSylvanBddMan
     return transformator->getSylvanBddManager();
 }
 
-std::shared_ptr<storm::transformations::dft::SftToBddTransformator<ValueType>> SFTBDDChecker::getTransformator() const noexcept {
+std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> SFTBDDChecker::getTransformator() const noexcept {
     return transformator;
 }
 

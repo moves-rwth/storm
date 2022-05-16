@@ -1,9 +1,8 @@
 #include "DftTransformator.h"
 #include "storm/exceptions/NotImplementedException.h"
 
-namespace storm {
+namespace storm::dft {
 namespace transformations {
-namespace dft {
 
 template<typename ValueType>
 DftTransformator<ValueType>::DftTransformator() {}
@@ -243,6 +242,6 @@ template class DftTransformator<double>;
 template class DftTransformator<RationalFunction>;
 
 #endif
-}  // namespace dft
+
 }  // namespace transformations
-}  // namespace storm
+}  // namespace storm::dft

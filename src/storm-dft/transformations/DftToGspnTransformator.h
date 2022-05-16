@@ -4,9 +4,8 @@
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm-gspn/storage/gspn/GspnBuilder.h"
 
-namespace storm {
+namespace storm::dft {
 namespace transformations {
-namespace dft {
 
 /*!
  * Transformator for DFT -> GSPN.
@@ -248,6 +247,6 @@ class DftToGspnTransformator {
     static constexpr const char *STR_ACTIVATED = "_active";   // Name standard for place which indicates the activity.
     static constexpr const char *STR_DONTCARE = "_dontcare";  // Name standard for place which indicates Don't Care.
 };
-}  // namespace dft
+
 }  // namespace transformations
-}  // namespace storm
+}  // namespace storm::dft

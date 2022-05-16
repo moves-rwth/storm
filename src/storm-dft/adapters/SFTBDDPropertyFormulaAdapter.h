@@ -37,7 +37,7 @@ class SFTBDDPropertyFormulaAdapter {
         checkForm(formulas);
 
         relevantEvents.insertNamesFromProperties(formulas.begin(), formulas.end());
-        auto const transformator{std::make_shared<storm::transformations::dft::SftToBddTransformator<ValueType>>(dft, sylvanBddManager, relevantEvents)};
+        auto const transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<ValueType>>(dft, sylvanBddManager, relevantEvents)};
         checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(transformator);
     }
 
@@ -58,7 +58,7 @@ class SFTBDDPropertyFormulaAdapter {
     /**
      * \return The internal SftToBddTransformator
      */
-    std::shared_ptr<storm::transformations::dft::SftToBddTransformator<ValueType>> getTransformator() const noexcept {
+    std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> getTransformator() const noexcept {
         return checker->getTransformator();
     }
 

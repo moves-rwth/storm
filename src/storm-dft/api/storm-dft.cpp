@@ -232,7 +232,7 @@ std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::s
     }
 
     // Transform to GSPN
-    storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
+    storm::dft::transformations::DftToGspnTransformator<double> gspnTransformator(dft);
     auto priorities = gspnTransformator.computePriorities(dftGspnSettings.isExtendPriorities());
     gspnTransformator.transform(priorities, dontCareElements, !dftGspnSettings.isDisableSmartTransformation(), dftGspnSettings.isMergeDCFailed(),
                                 dftGspnSettings.isExtendPriorities());

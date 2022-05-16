@@ -12,7 +12,7 @@ namespace {
 // Helper functions
 std::pair<double, double> simulateDft(std::string const& file, double timebound, size_t noRuns) {
     // Load, build and prepare DFT
-    storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
+    storm::dft::transformations::DftTransformator<double> dftTransformator = storm::dft::transformations::DftTransformator<double>();
     std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 

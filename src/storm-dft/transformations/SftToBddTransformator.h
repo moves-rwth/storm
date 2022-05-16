@@ -9,9 +9,8 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/bitoperations.h"
 
-namespace storm {
+namespace storm::dft {
 namespace transformations {
-namespace dft {
 
 /**
  * Transformator for DFT -> BDD.
@@ -225,6 +224,5 @@ class SftToBddTransformator {
     }
 };
 
-}  // namespace dft
 }  // namespace transformations
-}  // namespace storm
+}  // namespace storm::dft

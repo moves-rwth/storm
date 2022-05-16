@@ -73,7 +73,7 @@ class DftModelCheckerTest : public ::testing::Test {
 
     double analyze(std::string const& file, std::string const& property) {
         // Load, build and prepare DFT
-        storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
+        storm::dft::transformations::DftTransformator<double> dftTransformator = storm::dft::transformations::DftTransformator<double>();
         std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
         EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 

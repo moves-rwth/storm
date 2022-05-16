@@ -78,7 +78,7 @@ std::pair<bool, std::string> isWellFormed(storm::storage::DFT<ValueType> const& 
 template<typename ValueType>
 std::shared_ptr<storm::storage::DFT<ValueType>> applyTransformations(storm::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP) {
     std::shared_ptr<storm::storage::DFT<ValueType>> transformedDFT = std::make_shared<storm::storage::DFT<ValueType>>(dft);
-    auto dftTransformator = storm::transformations::dft::DftTransformator<ValueType>();
+    auto dftTransformator = storm::dft::transformations::DftTransformator<ValueType>();
     if (uniqueBE) {
         transformedDFT = dftTransformator.transformUniqueFailedBe(*transformedDFT);
     }

@@ -2,9 +2,8 @@
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm/exceptions/NotImplementedException.h"
 
-namespace storm {
+namespace storm::dft {
 namespace transformations {
-namespace dft {
 
 template<typename ParametricType, typename ConstantType>
 DftInstantiator<ParametricType, ConstantType>::DftInstantiator(storm::storage::DFT<ParametricType> const &dft) : dft(dft) {}
@@ -114,6 +113,5 @@ void DftInstantiator<ParametricType, ConstantType>::checkValid() const {
 template class DftInstantiator<storm::RationalFunction, double>;
 
 #endif
-}  // namespace dft
 }  // namespace transformations
-}  // namespace storm
+}  // namespace storm::dft

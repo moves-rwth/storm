@@ -2,9 +2,8 @@
 #include <memory>
 #include "storm/exceptions/NotImplementedException.h"
 
-namespace storm {
+namespace storm::dft {
 namespace transformations {
-namespace dft {
 
 // Prevent some magic constants
 static constexpr const uint64_t defaultCapacity = 1;
@@ -1122,6 +1121,5 @@ template class DftToGspnTransformator<double>;
 // template class DftToGspnTransformator<storm::RationalFunction>;
 #endif
 
-}  // namespace dft
 }  // namespace transformations
-}  // namespace storm
+}  // namespace storm::dft

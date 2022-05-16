@@ -4,9 +4,8 @@
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace transformations {
-namespace dft {
 
 /*!
  * Transformator for DFT -> DFT.
@@ -28,6 +27,6 @@ class DftTransformator {
    private:
     std::vector<std::string> getChildrenVector(std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
 };
-}  // namespace dft
+
 }  // namespace transformations
-}  // namespace storm
+}  // namespace storm::dft
