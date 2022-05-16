@@ -223,7 +223,7 @@ TEST(TestBdd, AndOrRelevantEventsChecked) {
 TEST(TestBdd, AndOrFormulaFail) {
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto const props{storm::api::extractFormulasFromProperties(storm::api::parseProperties("P=? [F < 1 !\"F2_failed\"];"))};
-    storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
+    storm::dft::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
 
     STORM_SILENT_EXPECT_THROW(checker.check(), storm::exceptions::NotSupportedException);
 }
@@ -239,7 +239,7 @@ TEST(TestBdd, AndOrFormula) {
                                                                               "P=? [F  = 1 !\"F2_failed\"];"
                                                                               "P=? [F <= 1 \"F1_failed\"];"
                                                                               "P=? [F <= 1 \"F2_failed\"];"))};
-    storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
+    storm::dft::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
 
     auto const resultProbs{checker.check()};
     auto const result{checker.formulasToBdd()};

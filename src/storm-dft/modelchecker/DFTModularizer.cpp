@@ -25,10 +25,10 @@ DFTModularizer::DFTModularizer(std::shared_ptr<storm::storage::DFT<ValueType>> d
 
 std::vector<ValueType> DFTModularizer::check(FormulaVector const &formulas, size_t const chunksize) {
     workDFT = dft;
-    storm::adapters::SFTBDDPropertyFormulaAdapter::checkForm(formulas);
+    storm::dft::adapters::SFTBDDPropertyFormulaAdapter::checkForm(formulas);
     std::set<ValueType> timepointSet;
     for (auto const &formula : formulas) {
-        timepointSet.insert(storm::adapters::SFTBDDPropertyFormulaAdapter::getTimebound(formula));
+        timepointSet.insert(storm::dft::adapters::SFTBDDPropertyFormulaAdapter::getTimebound(formula));
     }
 
     std::vector<ValueType> timepoints(timepointSet.begin(), timepointSet.end());
@@ -37,7 +37,7 @@ std::vector<ValueType> DFTModularizer::check(FormulaVector const &formulas, size
     replaceDynamicModules(topLevelElement, timepoints);
 
     auto const subDFT{getSubDFT(topLevelElement)};
-    storm::adapters::SFTBDDPropertyFormulaAdapter checker{subDFT, formulas, {}, sylvanBddManager};
+    storm::dft::adapters::SFTBDDPropertyFormulaAdapter checker{subDFT, formulas, {}, sylvanBddManager};
     return checker.check(chunksize);
 }
 

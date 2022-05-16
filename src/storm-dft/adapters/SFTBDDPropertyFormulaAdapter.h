@@ -16,7 +16,7 @@
 #include "storm/logic/StateFormula.h"
 #include "storm/logic/UnaryBooleanStateFormula.h"
 
-namespace storm {
+namespace storm::dft {
 namespace adapters {
 
 class SFTBDDPropertyFormulaAdapter {
@@ -322,4 +322,4 @@ class SFTBDDPropertyFormulaAdapter {
 };
 
 }  // namespace adapters
-}  // namespace storm
+}  // namespace storm::dft
