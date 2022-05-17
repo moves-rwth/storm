@@ -8,7 +8,7 @@
 #include "storm-dft/storage/elements/DFTElementType.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 struct GateGroupToHash {
@@ -679,12 +679,12 @@ class DFTIsomorphismCheck {
 };
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft
 
 namespace std {
 template<typename ValueType>
-struct hash<storm::storage::BEColourClass<ValueType>> {
-    size_t operator()(storm::storage::BEColourClass<ValueType> const& bcc) const {
+struct hash<storm::dft::storage::BEColourClass<ValueType>> {
+    size_t operator()(storm::dft::storage::BEColourClass<ValueType> const& bcc) const {
         constexpr uint_fast64_t fivebitmask = (1ul << 6) - 1ul;
         constexpr uint_fast64_t eightbitmask = (1ul << 9) - 1ul;
         constexpr uint_fast64_t fortybitmask = (1ul << 41) - 1ul;

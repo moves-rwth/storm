@@ -32,7 +32,7 @@ std::string DFTGalileoParser<ValueType>::parseName(std::string const& name) {
 }
 
 template<typename ValueType>
-storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename, bool defaultInclusive) {
+storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename, bool defaultInclusive) {
     storm::dft::builder::DFTBuilder<ValueType> builder(defaultInclusive);
     storm::parser::ValueParser<ValueType> valueParser;
     // Regular expression to detect comments
@@ -172,7 +172,7 @@ storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::
     storm::utility::closeFile(file);
 
     // Build DFT
-    storm::storage::DFT<ValueType> dft = builder.build();
+    storm::dft::storage::DFT<ValueType> dft = builder.build();
     STORM_LOG_DEBUG("DFT Elements:\n" << dft.getElementsString());
     STORM_LOG_DEBUG("Spare Modules:\n" << dft.getSpareModulesString());
     return dft;

@@ -1,7 +1,7 @@
 #include "OrderDFTElementsById.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 template<typename ValueType>
@@ -30,5 +30,6 @@ template struct OrderElementsByRank<double>;
 template struct OrderElementsById<RationalFunction>;
 template struct OrderElementsByRank<RationalFunction>;
 #endif
+
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

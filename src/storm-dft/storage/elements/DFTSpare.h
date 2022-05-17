@@ -31,17 +31,18 @@ class DFTSpare : public DFTGate<ValueType> {
         return true;
     }
 
-    void fail(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void fail(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         DFTGate<ValueType>::fail(state, queues);
         state.finalizeUses(this->mId);
     }
 
-    void failsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void failsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         DFTGate<ValueType>::failsafe(state, queues);
         state.finalizeUses(this->mId);
     }
 
-    bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
+                              storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         // Check children as claiming shared children might make a difference
         for (std::shared_ptr<DFTElement<ValueType>> const& child : this->children()) {
             if (state.isOperational(child->id())) {
@@ -62,7 +63,7 @@ class DFTSpare : public DFTGate<ValueType> {
         return false;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (state.isOperational(this->mId)) {
             size_t uses = state.uses(this->mId);
             if (!state.isOperational(uses)) {
@@ -74,7 +75,7 @@ class DFTSpare : public DFTGate<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (state.isOperational(this->mId)) {
             if (state.isFailsafe(state.uses(this->mId))) {
                 this->failsafe(state, queues);

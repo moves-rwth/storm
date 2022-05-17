@@ -118,14 +118,15 @@ class DFTChildren : public DFTElement<ValueType> {
      * @param state Current state of DFT.
      * @param queues Propagation queue for failed.
      */
-    virtual void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
+    virtual void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
 
     /*!
      * Check failsafe status.
      * @param state Current state of DFT.
      * @param queues Propagation queue for failsafe.
      */
-    virtual void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
+    virtual void checkFailsafe(storm::dft::storage::DFTState<ValueType>& state,
+                               storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
 
     virtual std::string toString() const override {
         std::stringstream stream;
@@ -147,7 +148,7 @@ class DFTChildren : public DFTElement<ValueType> {
      * @param state Current state of DFT.
      * @return True iff failsafe child exists.
      */
-    bool hasFailsafeChild(storm::storage::DFTState<ValueType>& state) const {
+    bool hasFailsafeChild(storm::dft::storage::DFTState<ValueType>& state) const {
         for (auto const& child : mChildren) {
             if (state.isFailsafe(child->id())) {
                 return true;
@@ -161,7 +162,7 @@ class DFTChildren : public DFTElement<ValueType> {
      * @param state Current state of DFT.
      * @return True iff failed child exists.
      */
-    bool hasFailedChild(storm::storage::DFTState<ValueType>& state) const {
+    bool hasFailedChild(storm::dft::storage::DFTState<ValueType>& state) const {
         for (auto const& child : mChildren) {
             if (state.hasFailed(child->id())) {
                 return true;
@@ -170,9 +171,9 @@ class DFTChildren : public DFTElement<ValueType> {
         return false;
     }
 
-    virtual void fail(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
+    virtual void fail(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
 
-    virtual void failsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
+    virtual void failsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
 
    private:
     DFTElementVector mChildren;

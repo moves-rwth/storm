@@ -12,7 +12,7 @@
 #include "storm-dft/storage/DFTIsomorphism.h"
 #include "storm-dft/utility/RelevantEvents.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 template<typename ValueType>
@@ -243,7 +243,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
 }
 
 template<typename ValueType>
-DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const {
+DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::storage::DFTIndependentSymmetries const& symmetries) const {
     DFTStateGenerationInfo generationInfo(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
 
     // Generate Pre and Post info for restrictions, and mutexes
@@ -664,9 +664,9 @@ std::string DFT<ValueType>::getElementsWithStateString(DFTStatePointer const& st
         stream << "[" << elem->id() << "]";
         stream << *elem;
         if (elem->isDependency()) {
-            stream << "\t** " << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
+            stream << "\t** " << storm::dft::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
         } else {
-            stream << "\t** " << storm::storage::toChar(state->getElementState(elem->id()));
+            stream << "\t** " << storm::dft::storage::toChar(state->getElementState(elem->id()));
             if (elem->isSpareGate()) {
                 size_t useId = state->uses(elem->id());
                 if (useId == elem->id() || state->isActive(useId)) {
@@ -686,9 +686,9 @@ std::string DFT<ValueType>::getStateString(DFTStatePointer const& state) const {
     stream << "(" << state->getId() << ") ";
     for (auto const& elem : mElements) {
         if (elem->isDependency()) {
-            stream << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
+            stream << storm::dft::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
         } else {
-            stream << storm::storage::toChar(state->getElementState(elem->id()));
+            stream << storm::dft::storage::toChar(state->getElementState(elem->id()));
             if (elem->isSpareGate()) {
                 stream << "[";
                 size_t useId = state->uses(elem->id());
@@ -708,9 +708,9 @@ std::string DFT<ValueType>::getStateString(storm::storage::BitVector const& stat
     stream << "(" << id << ") ";
     for (auto const& elem : mElements) {
         if (elem->isDependency()) {
-            stream << storm::storage::toChar(DFTState<ValueType>::getDependencyState(status, stateGenerationInfo, elem->id())) << "[dep]";
+            stream << storm::dft::storage::toChar(DFTState<ValueType>::getDependencyState(status, stateGenerationInfo, elem->id())) << "[dep]";
         } else {
-            stream << storm::storage::toChar(DFTState<ValueType>::getElementState(status, stateGenerationInfo, elem->id()));
+            stream << storm::dft::storage::toChar(DFTState<ValueType>::getElementState(status, stateGenerationInfo, elem->id()));
             if (elem->isSpareGate()) {
                 stream << "[";
                 size_t useId = this->uses(status, stateGenerationInfo, elem->id());
@@ -1234,4 +1234,4 @@ template class DFT<double>;
 template class DFT<RationalFunction>;
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

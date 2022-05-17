@@ -2,8 +2,9 @@
 
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+
 enum class DFTElementState { Operational = 0, Failed = 2, Failsafe = 1, DontCare = 3 };
 
 inline std::ostream& operator<<(std::ostream& os, DFTElementState st) {
@@ -73,4 +74,4 @@ inline char toChar(DFTDependencyState st) {
 }
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

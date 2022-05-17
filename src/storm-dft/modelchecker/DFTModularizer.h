@@ -29,7 +29,7 @@ class DFTModularizer {
     /**
      * Calculates Modules
      */
-    DFTModularizer(std::shared_ptr<storm::storage::DFT<ValueType>> dft);
+    DFTModularizer(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft);
 
     /**
      * Calculate the properties specified by the formulas
@@ -57,8 +57,8 @@ class DFTModularizer {
     }
 
    private:
-    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
-    std::shared_ptr<storm::storage::DFT<ValueType>> workDFT{};
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft;
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> workDFT{};
 
     /**
      * \return All connected DFTElements of the given element
@@ -132,7 +132,7 @@ class DFTModularizer {
     /**
      * \return DFT with the given element as the root
      */
-    std::shared_ptr<storm::storage::DFT<ValueType>> getSubDFT(DFTElementCPointer const element);
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getSubDFT(DFTElementCPointer const element);
 
     /**
      * Update the workdDFT.
@@ -150,7 +150,7 @@ class DFTModularizer {
 
     // don't reinitialize Sylvan BDD
     // temporary
-    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager;
 };
 
 }  // namespace modelchecker

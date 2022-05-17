@@ -62,7 +62,7 @@ class RelevantEvents {
      * @param dft The DFT to count on.
      */
     template<typename ValueType>
-    size_t count(std::shared_ptr<storm::storage::DFT<ValueType>> const dft) const {
+    size_t count(std::shared_ptr<storm::dft::storage::DFT<ValueType>> const dft) const {
         if (this->allRelevant) {
             return dft->nrElements();
         }
@@ -152,7 +152,7 @@ class RelevantEvents {
      * @return True iff the relevant names are consistent with the given DFT.
      */
     template<typename ValueType>
-    bool checkRelevantNames(storm::storage::DFT<ValueType> const& dft) const {
+    bool checkRelevantNames(storm::dft::storage::DFT<ValueType> const& dft) const {
         for (std::string const& relevantName : this->names) {
             if (!dft.existsName(relevantName)) {
                 return false;

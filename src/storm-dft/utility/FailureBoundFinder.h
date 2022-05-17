@@ -15,9 +15,9 @@ class FailureBoundFinder {
      * @param timeout timeout for each query in seconds, defaults to 10 seconds
      * @return the minimal number
      */
-    static uint64_t getLeastFailureBound(storm::storage::DFT<double> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
+    static uint64_t getLeastFailureBound(storm::dft::storage::DFT<double> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
 
-    static uint64_t getLeastFailureBound(storm::storage::DFT<storm::RationalFunction> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
+    static uint64_t getLeastFailureBound(storm::dft::storage::DFT<storm::RationalFunction> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
 
     /**
      * Get the number of BE failures for which the TLE always fails (upper bound for number of failures to check).
@@ -27,9 +27,9 @@ class FailureBoundFinder {
      * @param timeout timeout for each query in seconds, defaults to 10 seconds
      * @return the number
      */
-    static uint64_t getAlwaysFailedBound(storm::storage::DFT<double> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
+    static uint64_t getAlwaysFailedBound(storm::dft::storage::DFT<double> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
 
-    static uint64_t getAlwaysFailedBound(storm::storage::DFT<storm::RationalFunction> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
+    static uint64_t getAlwaysFailedBound(storm::dft::storage::DFT<storm::RationalFunction> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
 
    private:
     /**

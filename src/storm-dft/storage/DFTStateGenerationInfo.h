@@ -2,8 +2,9 @@
 
 #include "storm-dft/storage/SymmetricUnits.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+
 class DFTStateGenerationInfo {
    private:
     const size_t mUsageInfoBits;
@@ -115,7 +116,7 @@ class DFTStateGenerationInfo {
     /**
      * Generate more symmetries by combining two symmetries
      */
-    void generateSymmetries(storm::storage::DFTIndependentSymmetries const& symmetries) {
+    void generateSymmetries(storm::dft::storage::DFTIndependentSymmetries const& symmetries) {
         // Iterate over possible children
         for (size_t i = 0; i < mSymmetries.size(); ++i) {
             size_t childStart = mSymmetries[i].second[0];
@@ -205,5 +206,6 @@ class DFTStateGenerationInfo {
         return os;
     }
 };
+
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

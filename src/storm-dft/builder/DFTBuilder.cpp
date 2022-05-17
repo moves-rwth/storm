@@ -17,7 +17,7 @@ template<typename ValueType>
 std::size_t DFTBuilder<ValueType>::mUniqueOffset = 0;
 
 template<typename ValueType>
-storm::storage::DFT<ValueType> DFTBuilder<ValueType>::build() {
+storm::dft::storage::DFT<ValueType> DFTBuilder<ValueType>::build() {
     // Build parent/child connections between elements
     for (auto& elem : mChildNames) {
         DFTGatePointer gate = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(elem.first);
@@ -101,7 +101,7 @@ storm::storage::DFT<ValueType> DFTBuilder<ValueType>::build() {
     }
 
     STORM_LOG_THROW(!mTopLevelIdentifier.empty(), storm::exceptions::WrongFormatException, "No top level element defined.");
-    storm::storage::DFT<ValueType> dft(elems, mElements[mTopLevelIdentifier]);
+    storm::dft::storage::DFT<ValueType> dft(elems, mElements[mTopLevelIdentifier]);
 
     // Set layout info
     for (auto& elem : mElements) {
@@ -109,7 +109,7 @@ storm::storage::DFT<ValueType> DFTBuilder<ValueType>::build() {
             dft.setElementLayoutInfo(elem.second->id(), mLayoutInfo.at(elem.first));
         } else {
             // Set default layout
-            dft.setElementLayoutInfo(elem.second->id(), storm::storage::DFTLayoutInfo());
+            dft.setElementLayoutInfo(elem.second->id(), storm::dft::storage::DFTLayoutInfo());
         }
     }
 
@@ -208,7 +208,8 @@ bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::topoVisit(DFTElementPointer const& n,
-                                      std::map<DFTElementPointer, topoSortColour, storm::storage::OrderElementsById<ValueType>>& visited, DFTElementVector& L) {
+                                      std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>>& visited,
+                                      DFTElementVector& L) {
     STORM_LOG_THROW(visited[n] != topoSortColour::GREY, storm::exceptions::WrongFormatException, "DFT is cyclic");
     if (visited[n] == topoSortColour::WHITE) {
         if (n->isGate()) {
@@ -237,7 +238,7 @@ void DFTBuilder<ValueType>::topoVisit(DFTElementPointer const& n,
 
 template<typename ValueType>
 std::vector<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>> DFTBuilder<ValueType>::topoSort() {
-    std::map<DFTElementPointer, topoSortColour, storm::storage::OrderElementsById<ValueType>> visited;
+    std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>> visited;
     for (auto const& e : mElements) {
         visited.insert(std::make_pair(e.second, topoSortColour::WHITE));
     }

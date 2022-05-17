@@ -18,9 +18,9 @@
 #include "storm-dft/storage/SymmetricUnits.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 
-// Forward declarations
 namespace storm::dft {
 
+// Forward declarations
 namespace builder {
 template<typename T>
 class DFTBuilder;
@@ -30,9 +30,6 @@ namespace utility {
 class RelevantEvents;
 }  // namespace utility
 
-}  // namespace storm::dft
-
-namespace storm {
 namespace storage {
 
 template<typename ValueType>
@@ -61,7 +58,7 @@ class DFT {
     using DFTElementVector = std::vector<DFTElementPointer>;
     using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
     using DFTGateVector = std::vector<DFTGatePointer>;
-    using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
+    using DFTStatePointer = std::shared_ptr<storm::dft::storage::DFTState<ValueType>>;
 
    private:
     DFTElementVector mElements;
@@ -84,7 +81,7 @@ class DFT {
    public:
     DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
 
-    DFTStateGenerationInfo buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const;
+    DFTStateGenerationInfo buildStateGenerationInfo(storm::dft::storage::DFTIndependentSymmetries const& symmetries) const;
 
     size_t generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const;
 
@@ -287,7 +284,7 @@ class DFT {
     }
 
     bool hasFailed(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
-        return storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
+        return storm::dft::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
     }
 
     bool isFailsafe(DFTStatePointer const& state) const {
@@ -295,7 +292,7 @@ class DFT {
     }
 
     bool isFailsafe(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
-        return storm::storage::DFTState<ValueType>::isFailsafe(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
+        return storm::dft::storage::DFTState<ValueType>::isFailsafe(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
     }
 
     /*!
@@ -308,7 +305,7 @@ class DFT {
      * @return Id of used child. Id of spare gate if no child is used.
      */
     size_t uses(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const {
-        size_t nrUsedChild = storm::storage::DFTState<ValueType>::usesIndex(state, stateGenerationInfo, id);
+        size_t nrUsedChild = storm::dft::storage::DFTState<ValueType>::usesIndex(state, stateGenerationInfo, id);
         if (nrUsedChild == getMaxSpareChildCount()) {
             return id;
         } else {
@@ -418,4 +415,4 @@ std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunct
 #endif
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

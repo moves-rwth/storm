@@ -5,7 +5,7 @@
 
 namespace {
 TEST(DftSmtTest, AndTest) {
-    std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
@@ -14,7 +14,7 @@ TEST(DftSmtTest, AndTest) {
 }
 
 TEST(DftSmtTest, PandTest) {
-    std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/pand.dft");
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/pand.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
@@ -23,7 +23,7 @@ TEST(DftSmtTest, PandTest) {
 }
 
 TEST(DftSmtTest, SpareTest) {
-    std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare_two_modules.dft");
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare_two_modules.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
@@ -33,7 +33,7 @@ TEST(DftSmtTest, SpareTest) {
 }
 
 TEST(DftSmtTest, BoundTest) {
-    std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare5.dft");
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare5.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
@@ -43,7 +43,7 @@ TEST(DftSmtTest, BoundTest) {
 }
 
 TEST(DftSmtTest, FDEPBoundTest) {
-    std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/fdep_bound.dft");
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/fdep_bound.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft, false).first);
     storm::dft::modelchecker::DFTASFChecker smtChecker(*dft);
     smtChecker.convert();
@@ -53,7 +53,8 @@ TEST(DftSmtTest, FDEPBoundTest) {
 }
 
 TEST(DftSmtTest, FDEPConflictTest) {
-    std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare_conflict_test.dft");
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft =
+        storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare_conflict_test.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     std::vector<bool> true_vector(10, true);
 
@@ -64,7 +65,8 @@ TEST(DftSmtTest, FDEPConflictTest) {
 }
 
 TEST(DftSmtTest, FDEPConflictSPARETest) {
-    std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare_conflict_test.dft");
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft =
+        storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/spare_conflict_test.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     std::vector<bool> true_vector(10, true);
 
@@ -75,7 +77,7 @@ TEST(DftSmtTest, FDEPConflictSPARETest) {
 }
 
 TEST(DftSmtTest, FDEPConflictSEQTest) {
-    std::shared_ptr<storm::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/seq_conflict_test.dft");
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/seq_conflict_test.dft");
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
     std::vector<bool> expected_dynamic_vector(dft->nrElements(), true);
     expected_dynamic_vector.at(dft->getTopLevelIndex()) = false;

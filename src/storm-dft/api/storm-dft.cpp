@@ -19,7 +19,7 @@ namespace storm::dft {
 namespace api {
 
 template<>
-void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
+void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
                    double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName, bool const calculateMCS,
                    bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
                    std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
@@ -61,7 +61,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool
                         "Try modularisation.");
     }
 
-    auto sylvanBddManager{std::make_shared<storm::storage::SylvanBddManager>()};
+    auto sylvanBddManager{std::make_shared<storm::dft::storage::SylvanBddManager>()};
     storm::dft::utility::RelevantEvents relevantEvents{additionalRelevantEventNames.begin(), additionalRelevantEventNames.end()};
     storm::dft::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, relevantEvents, sylvanBddManager};
     auto checker{adapter.getSFTBDDChecker()};
@@ -158,7 +158,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool
 }
 
 template<>
-void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const& dft, bool const exportToDot, std::string const& filename,
+void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> const& dft, bool const exportToDot, std::string const& filename,
                    bool const calculateMttf, double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName,
                    bool const calculateMCS, bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
                    std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
@@ -167,41 +167,41 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<storm::RationalFunction>>
 }
 
 template<>
-void exportDFTToJsonFile(storm::storage::DFT<double> const& dft, std::string const& file) {
-    storm::storage::DftJsonExporter<double>::toFile(dft, file);
+void exportDFTToJsonFile(storm::dft::storage::DFT<double> const& dft, std::string const& file) {
+    storm::dft::storage::DftJsonExporter<double>::toFile(dft, file);
 }
 
 template<>
-void exportDFTToJsonFile(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+void exportDFTToJsonFile(storm::dft::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
 }
 
 template<>
-std::string exportDFTToJsonString(storm::storage::DFT<double> const& dft) {
+std::string exportDFTToJsonString(storm::dft::storage::DFT<double> const& dft) {
     std::stringstream stream;
-    storm::storage::DftJsonExporter<double>::toStream(dft, stream);
+    storm::dft::storage::DftJsonExporter<double>::toStream(dft, stream);
     return stream.str();
 }
 
 template<>
-std::string exportDFTToJsonString(storm::storage::DFT<storm::RationalFunction> const& dft) {
+std::string exportDFTToJsonString(storm::dft::storage::DFT<storm::RationalFunction> const& dft) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
 }
 
 template<>
-void exportDFTToSMT(storm::storage::DFT<double> const& dft, std::string const& file) {
+void exportDFTToSMT(storm::dft::storage::DFT<double> const& dft, std::string const& file) {
     storm::dft::modelchecker::DFTASFChecker asfChecker(dft);
     asfChecker.convert();
     asfChecker.toFile(file);
 }
 
 template<>
-void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+void exportDFTToSMT(storm::dft::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to SMT does not support this data type.");
 }
 
 template<>
-void analyzeDFTSMT(storm::storage::DFT<double> const& dft, bool printOutput) {
+void analyzeDFTSMT(storm::dft::storage::DFT<double> const& dft, bool printOutput) {
     uint64_t solverTimeout = 10;
 
     storm::dft::modelchecker::DFTASFChecker smtChecker(dft);
@@ -213,12 +213,12 @@ void analyzeDFTSMT(storm::storage::DFT<double> const& dft, bool printOutput) {
 }
 
 template<>
-void analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const& dft, bool printOutput) {
+void analyzeDFTSMT(storm::dft::storage::DFT<storm::RationalFunction> const& dft, bool printOutput) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Analysis by SMT not supported for this data type.");
 }
 
 template<>
-std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<double> const& dft) {
+std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::dft::storage::DFT<double> const& dft) {
     storm::dft::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>();
     storm::dft::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::dft::settings::modules::DftGspnSettings>();
 
@@ -265,7 +265,7 @@ std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gsp
 }
 
 template<>
-std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<storm::RationalFunction> const& dft) {
+std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::dft::storage::DFT<storm::RationalFunction> const& dft) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation to GSPN not supported for this data type.");
 }
 

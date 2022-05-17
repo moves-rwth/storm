@@ -30,9 +30,9 @@ class SFTBDDPropertyFormulaAdapter {
     using FormulaVector = std::vector<FormulaCPointer>;
 
    public:
-    SFTBDDPropertyFormulaAdapter(std::shared_ptr<storm::storage::DFT<ValueType>> dft, FormulaVector const &formulas,
-                                 storm::dft::utility::RelevantEvents relevantEvents = {},
-                                 std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::storage::SylvanBddManager>())
+    SFTBDDPropertyFormulaAdapter(
+        std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, FormulaVector const &formulas, storm::dft::utility::RelevantEvents relevantEvents = {},
+        std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>())
         : formulas{formulas} {
         checkForm(formulas);
 
@@ -44,14 +44,14 @@ class SFTBDDPropertyFormulaAdapter {
     /**
      * \return The internal DFT
      */
-    std::shared_ptr<storm::storage::DFT<ValueType>> getDFT() const noexcept {
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const noexcept {
         return checker->getDFT();
     }
 
     /**
      * \return The internal sylvanBddManager
      */
-    std::shared_ptr<storm::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
         return checker->getSylvanBddManager();
     }
 

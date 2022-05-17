@@ -6,7 +6,7 @@
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 /**
@@ -154,4 +154,4 @@ class SylvanBddManager {
 };
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

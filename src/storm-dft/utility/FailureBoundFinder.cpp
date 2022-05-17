@@ -113,7 +113,7 @@ uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::dft::model
     return boundCandidate;
 }
 
-uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::getLeastFailureBound(storm::dft::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
     if (useSMT) {
         STORM_LOG_TRACE("Compute lower bound for number of BE failures necessary for the DFT to fail");
 
@@ -148,14 +148,14 @@ uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<double> co
     }
 }
 
-uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<RationalFunction> const &dft, bool useSMT, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::getLeastFailureBound(storm::dft::storage::DFT<RationalFunction> const &dft, bool useSMT, uint_fast64_t timeout) {
     if (useSMT) {
         STORM_LOG_WARN("SMT encoding does not support rational functions");
     }
     return 1;
 }
 
-uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::dft::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
     STORM_LOG_TRACE("Compute bound for number of BE failures such that the DFT always fails");
     if (useSMT) {
         storm::dft::modelchecker::DFTASFChecker smtchecker(dft);
@@ -191,7 +191,7 @@ uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<double> co
     }
 }
 
-uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<RationalFunction> const &dft, bool useSMT, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::dft::storage::DFT<RationalFunction> const &dft, bool useSMT, uint_fast64_t timeout) {
     if (useSMT) {
         STORM_LOG_WARN("SMT encoding does not support rational functions");
     }

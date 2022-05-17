@@ -13,7 +13,7 @@ namespace {
 std::pair<double, double> simulateDft(std::string const& file, double timebound, size_t noRuns) {
     // Load, build and prepare DFT
     storm::dft::transformations::DftTransformator<double> dftTransformator = storm::dft::transformations::DftTransformator<double>();
-    std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 
     // Set relevant events
@@ -22,8 +22,8 @@ std::pair<double, double> simulateDft(std::string const& file, double timebound,
 
     // Find symmetries
     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-    storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
-    storm::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
+    storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+    storm::dft::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
 
     // Init random number generator
     // storm::utility::setLogLevel(l3pp::LogLevel::TRACE);

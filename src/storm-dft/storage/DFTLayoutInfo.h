@@ -1,7 +1,8 @@
 #pragma once
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+
 struct DFTLayoutInfo {
     DFTLayoutInfo() : x(20.0), y(20.0){};
     DFTLayoutInfo(double x, double y) : x(x), y(y){};
@@ -11,5 +12,6 @@ struct DFTLayoutInfo {
     // y location
     double y;
 };
+
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

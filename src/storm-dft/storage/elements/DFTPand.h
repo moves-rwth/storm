@@ -44,7 +44,7 @@ class DFTPand : public DFTGate<ValueType> {
         return inclusive;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(isInclusive(), "Exclusive PAND not supported.");
         if (state.isOperational(this->mId)) {
             bool childOperationalBefore = false;
@@ -65,7 +65,7 @@ class DFTPand : public DFTGate<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(isInclusive(), "Exclusive PAND not supported.");
         STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
         if (state.isOperational(this->mId)) {

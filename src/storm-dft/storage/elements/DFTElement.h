@@ -393,7 +393,8 @@ class DFTElement {
      */
     virtual std::size_t nrChildren() const = 0;
 
-    virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
+    virtual bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
+                                      storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
 
     /**
      *  Computes the independent unit of this element, that is, all elements which are direct or indirect successors of an element.

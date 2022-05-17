@@ -28,14 +28,14 @@ class DFTOr : public DFTGate<ValueType> {
         return storm::dft::storage::elements::DFTElementType::OR;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(this->hasFailedChild(state), "No failed child.");
         if (state.isOperational(this->mId)) {
             this->fail(state, queues);
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         for (auto const& child : this->children()) {
             if (!state.isFailsafe(child->id())) {
                 return;

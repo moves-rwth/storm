@@ -1,18 +1,18 @@
 #pragma once
 #include <memory>
 
-namespace storm::dft::storage::elements {
+namespace storm::dft {
+namespace storage {
 
 // Forward declarations
+namespace elements {
+
 template<typename ValueType>
 class DFTGate;
 template<typename ValueType>
 class DFTElement;
 
-}  // namespace storm::dft::storage::elements
-
-namespace storm {
-namespace storage {
+}  // namespace elements
 
 template<typename ValueType>
 struct OrderElementsById {
@@ -30,4 +30,4 @@ struct OrderElementsByRank {
 };
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

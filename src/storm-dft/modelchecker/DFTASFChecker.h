@@ -42,7 +42,7 @@ class DFTASFChecker {
     using ValueType = double;
 
    public:
-    DFTASFChecker(storm::storage::DFT<ValueType> const&);
+    DFTASFChecker(storm::dft::storage::DFT<ValueType> const&);
 
     /**
      * Generate general variables and constraints for the DFT and store them in the corresponding maps and vectors
@@ -106,7 +106,7 @@ class DFTASFChecker {
     /**
      *  Get a reference to the DFT
      */
-    storm::storage::DFT<ValueType> const& getDFT() {
+    storm::dft::storage::DFT<ValueType> const& getDFT() {
         return dft;
     }
 
@@ -211,7 +211,7 @@ class DFTASFChecker {
      */
     void addMarkovianConstraints();
 
-    storm::storage::DFT<ValueType> const& dft;
+    storm::dft::storage::DFT<ValueType> const& dft;
     std::shared_ptr<storm::solver::SmtSolver> solver = nullptr;
     std::vector<std::string> varNames;
     std::unordered_map<uint64_t, uint64_t> timePointVariables;

@@ -6,10 +6,10 @@ namespace storm::dft {
 namespace transformations {
 
 template<typename ParametricType, typename ConstantType>
-DftInstantiator<ParametricType, ConstantType>::DftInstantiator(storm::storage::DFT<ParametricType> const &dft) : dft(dft) {}
+DftInstantiator<ParametricType, ConstantType>::DftInstantiator(storm::dft::storage::DFT<ParametricType> const &dft) : dft(dft) {}
 
 template<typename ParametricType, typename ConstantType>
-std::shared_ptr<storm::storage::DFT<ConstantType>> DftInstantiator<ParametricType, ConstantType>::instantiate(
+std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<ParametricType, ConstantType>::instantiate(
     storm::utility::parametric::Valuation<ParametricType> const &valuation) {
     storm::dft::builder::DFTBuilder<ConstantType> builder = storm::dft::builder::DFTBuilder<ConstantType>(true);
     for (size_t i = 0; i < dft.nrElements(); ++i) {
@@ -79,7 +79,7 @@ std::shared_ptr<storm::storage::DFT<ConstantType>> DftInstantiator<ParametricTyp
     }
 
     builder.setTopLevel(dft.getTopLevelElement()->name());
-    return std::make_shared<storm::storage::DFT<ConstantType>>(builder.build());
+    return std::make_shared<storm::dft::storage::DFT<ConstantType>>(builder.build());
 }
 
 template<typename ParametricType, typename ConstantType>

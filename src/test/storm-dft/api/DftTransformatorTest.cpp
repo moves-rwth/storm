@@ -8,9 +8,9 @@ namespace {
 
 TEST(DftTransformatorTest, UniqueConstantFailedTest) {
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/const_be_test.dft";
-    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
+    std::shared_ptr<storm::dft::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
     auto dftTransformator = storm::dft::transformations::DftTransformator<double>();
-    std::shared_ptr<storm::storage::DFT<double>> transformedDft = dftTransformator.transformUniqueFailedBe(*originalDft);
+    std::shared_ptr<storm::dft::storage::DFT<double>> transformedDft = dftTransformator.transformUniqueFailedBe(*originalDft);
 
     auto bes = transformedDft->getBasicElements();
     uint64_t constBeFailedCount = 0;
@@ -31,9 +31,9 @@ TEST(DftTransformatorTest, UniqueConstantFailedTest) {
 
 TEST(DftTransformatorTest, BinaryFDEPTest) {
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft";
-    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
+    std::shared_ptr<storm::dft::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
     auto dftTransformator = storm::dft::transformations::DftTransformator<double>();
-    std::shared_ptr<storm::storage::DFT<double>> transformedDft = dftTransformator.transformBinaryFDEPs(*originalDft);
+    std::shared_ptr<storm::dft::storage::DFT<double>> transformedDft = dftTransformator.transformBinaryFDEPs(*originalDft);
 
     uint64_t dependencyCount = transformedDft->getDependencies().size();
 
@@ -42,9 +42,9 @@ TEST(DftTransformatorTest, BinaryFDEPTest) {
 
 TEST(DftTransformatorTest, PDEPTransformTest) {
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft";
-    std::shared_ptr<storm::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
+    std::shared_ptr<storm::dft::storage::DFT<double>> originalDft = storm::dft::api::loadDFTGalileoFile<double>(file);
     auto dftTransformator = storm::dft::transformations::DftTransformator<double>();
-    std::shared_ptr<storm::storage::DFT<double>> transformedDft = dftTransformator.transformBinaryFDEPs(*originalDft);
+    std::shared_ptr<storm::dft::storage::DFT<double>> transformedDft = dftTransformator.transformBinaryFDEPs(*originalDft);
 
     uint64_t fdepCount = 0;
     uint64_t pdepCount = 0;

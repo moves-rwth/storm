@@ -7,11 +7,11 @@
 #include <storm/exceptions/InvalidArgumentException.h>
 #include <string>
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 template<typename ValueType>
-void DftJsonExporter<ValueType>::toFile(storm::storage::DFT<ValueType> const& dft, std::string const& filepath) {
+void DftJsonExporter<ValueType>::toFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& filepath) {
     std::ofstream stream;
     storm::utility::openFile(filepath, stream);
     toStream(dft, stream);
@@ -19,12 +19,12 @@ void DftJsonExporter<ValueType>::toFile(storm::storage::DFT<ValueType> const& df
 }
 
 template<typename ValueType>
-void DftJsonExporter<ValueType>::toStream(storm::storage::DFT<ValueType> const& dft, std::ostream& os) {
+void DftJsonExporter<ValueType>::toStream(storm::dft::storage::DFT<ValueType> const& dft, std::ostream& os) {
     os << translate(dft).dump(4) << '\n';
 }
 
 template<typename ValueType>
-typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translate(storm::storage::DFT<ValueType> const& dft) {
+typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translate(storm::dft::storage::DFT<ValueType> const& dft) {
     // Nodes
     Json jsonNodes;
     for (size_t i = 0; i < dft.nrElements(); ++i) {
@@ -129,4 +129,4 @@ template class DftJsonExporter<double>;
 template class DftJsonExporter<storm::RationalFunction>;
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

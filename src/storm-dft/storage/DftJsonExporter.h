@@ -5,7 +5,7 @@
 #include "storm-dft/storage/DFT.h"
 #include "storm/adapters/JsonAdapter.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 /**
@@ -20,14 +20,15 @@ class DftJsonExporter {
     using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
 
    public:
-    static void toFile(storm::storage::DFT<ValueType> const& dft, std::string const& filepath);
+    static void toFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& filepath);
 
-    static void toStream(storm::storage::DFT<ValueType> const& dft, std::ostream& os);
+    static void toStream(storm::dft::storage::DFT<ValueType> const& dft, std::ostream& os);
 
    private:
-    static Json translate(storm::storage::DFT<ValueType> const& dft);
+    static Json translate(storm::dft::storage::DFT<ValueType> const& dft);
 
     static Json translateNode(DFTElementCPointer const& element);
 };
+
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

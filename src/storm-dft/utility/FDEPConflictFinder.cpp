@@ -6,7 +6,7 @@ namespace storm::dft {
 namespace utility {
 
 template<>
-std::vector<std::pair<uint64_t, uint64_t>> FDEPConflictFinder<double>::getDependencyConflicts(storm::storage::DFT<double> const& dft, bool useSMT,
+std::vector<std::pair<uint64_t, uint64_t>> FDEPConflictFinder<double>::getDependencyConflicts(storm::dft::storage::DFT<double> const& dft, bool useSMT,
                                                                                               uint_fast64_t timeout) {
     std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtChecker = nullptr;
     if (useSMT) {
@@ -59,7 +59,7 @@ std::vector<std::pair<uint64_t, uint64_t>> FDEPConflictFinder<double>::getDepend
 
 template<>
 std::vector<std::pair<uint64_t, uint64_t>> FDEPConflictFinder<storm::RationalFunction>::getDependencyConflicts(
-    storm::storage::DFT<storm::RationalFunction> const& dft, bool useSMT, uint_fast64_t timeout) {
+    storm::dft::storage::DFT<storm::RationalFunction> const& dft, bool useSMT, uint_fast64_t timeout) {
     if (useSMT) {
         STORM_LOG_WARN("SMT encoding for rational functions is not supported");
     }

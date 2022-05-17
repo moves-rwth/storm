@@ -21,7 +21,7 @@ namespace modelchecker {
 
 template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(
-    storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred,
+    storm::dft::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred,
     bool allowModularisation, storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
     storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
     totalTimer.start();
@@ -32,7 +32,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
     STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed for analysis: " << wellFormedResult.second);
 
     // Optimizing DFT for modularisation
-    storm::storage::DFT<ValueType> dft = origDft;
+    storm::dft::storage::DFT<ValueType> dft = origDft;
     if (allowModularisation) {
         dft = origDft.optimize();
     }
@@ -60,11 +60,11 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
 template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkHelper(
-    storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
+    storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
     storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError,
     storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
     STORM_LOG_TRACE("Check helper called");
-    std::vector<storm::storage::DFT<ValueType>> dfts;
+    std::vector<storm::dft::storage::DFT<ValueType>> dfts;
     bool invResults = false;
     size_t nrK = 0;  // K out of M
     size_t nrM = 0;  // K out of M
@@ -158,11 +158,11 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueType>::buildModelViaComposition(
-    storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
+    storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
     storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant) {
     // TODO: use approximation?
     STORM_LOG_TRACE("Build model via composition");
-    std::vector<storm::storage::DFT<ValueType>> dfts;
+    std::vector<storm::dft::storage::DFT<ValueType>> dfts;
     bool isAnd = true;
 
     // Try modularisation
@@ -201,7 +201,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
             ft.setRelevantEvents(relevantEvents, allowDCForRelevant);
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-            storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+            storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
             if (symred) {
                 auto colouring = ft.colourDFT();
                 symmetries = ft.findSymmetries(colouring);
@@ -261,7 +261,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 
         // Find symmetries
         std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-        storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+        storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
         if (symred) {
             auto colouring = dft.colourDFT();
             symmetries = dft.findSymmetries(colouring);
@@ -286,7 +286,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
 
 template<typename ValueType>
 typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkDFT(
-    storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, storm::dft::utility::RelevantEvents const& relevantEvents,
+    storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, storm::dft::utility::RelevantEvents const& relevantEvents,
     bool allowDCForRelevant, double approximationError, storm::dft::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains,
     storm::transformer::EliminationLabelBehavior labelBehavior) {
     explorationTimer.start();
@@ -297,7 +297,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
     // Find symmetries
     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-    storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+    storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
     if (symred) {
         auto colouring = dft.colourDFT();
         symmetries = dft.findSymmetries(colouring);

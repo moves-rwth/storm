@@ -14,12 +14,12 @@ class DFTJsonParser {
     typedef typename storm::json<double> Json;
 
    public:
-    static storm::storage::DFT<ValueType> parseJsonFromString(std::string const& jsonString);
+    static storm::dft::storage::DFT<ValueType> parseJsonFromString(std::string const& jsonString);
 
-    static storm::storage::DFT<ValueType> parseJsonFromFile(std::string const& filename);
+    static storm::dft::storage::DFT<ValueType> parseJsonFromFile(std::string const& filename);
 
    private:
-    static storm::storage::DFT<ValueType> parseJson(Json const& jsonInput);
+    static storm::dft::storage::DFT<ValueType> parseJson(Json const& jsonInput);
 
     static std::string generateUniqueName(std::string const& name);
 

@@ -17,7 +17,7 @@ namespace storm::dft {
 namespace parser {
 
 template<typename ValueType>
-storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(std::string const& filename) {
+storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(std::string const& filename) {
     STORM_LOG_DEBUG("Parsing from JSON file");
     std::ifstream file;
     storm::utility::openFile(filename, file);
@@ -28,14 +28,14 @@ storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromFile(std::
 }
 
 template<typename ValueType>
-storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromString(std::string const& jsonString) {
+storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromString(std::string const& jsonString) {
     STORM_LOG_DEBUG("Parsing from JSON string");
     Json jsonInput = Json::parse(jsonString);
     return parseJson(jsonInput);
 }
 
 template<typename ValueType>
-storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json const& jsonInput) {
+storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json const& jsonInput) {
     // Init DFT builder and value parser
     storm::dft::builder::DFTBuilder<ValueType> builder;
     storm::parser::ValueParser<ValueType> valueParser;
@@ -159,7 +159,7 @@ storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json const& j
     }
 
     // Build DFT
-    storm::storage::DFT<ValueType> dft = builder.build();
+    storm::dft::storage::DFT<ValueType> dft = builder.build();
     STORM_LOG_DEBUG("Elements:\n" << dft.getElementsString());
     STORM_LOG_DEBUG("Spare Modules:\n" << dft.getSpareModulesString());
     return dft;

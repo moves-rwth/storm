@@ -70,16 +70,17 @@ class DFTRestriction : public DFTChildren<ValueType> {
         // Do nothing
     }
 
-    bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
+                              storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         return false;
     }
 
    protected:
-    void fail(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void fail(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         state.markAsInvalid();
     }
 
-    void failsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void failsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         // Do nothing
     }
 };

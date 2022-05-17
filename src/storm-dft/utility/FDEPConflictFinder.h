@@ -16,7 +16,7 @@ class FDEPConflictFinder {
      * @param timeout Timeout for each SMT query in seconds, defaults to 10 seconds.
      * @return A vector of pairs of indices. The indices in a pair refer to FDEPs which are conflicting.
      */
-    static std::vector<std::pair<uint64_t, uint64_t>> getDependencyConflicts(storm::storage::DFT<ValueType> const& dft, bool useSMT = false,
+    static std::vector<std::pair<uint64_t, uint64_t>> getDependencyConflicts(storm::dft::storage::DFT<ValueType> const& dft, bool useSMT = false,
                                                                              uint_fast64_t timeout = 10);
 };
 

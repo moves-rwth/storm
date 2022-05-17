@@ -42,7 +42,7 @@ class DFTVot : public DFTGate<ValueType> {
         return storm::dft::storage::elements::toString(this->type()) + " (" + std::to_string(mThreshold) + ")";
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (state.isOperational(this->mId)) {
             unsigned nrFailedChildren = 0;
             for (auto const& child : this->children()) {
@@ -57,7 +57,7 @@ class DFTVot : public DFTGate<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
         if (state.isOperational(this->mId)) {
             unsigned nrFailsafeChildren = 0;

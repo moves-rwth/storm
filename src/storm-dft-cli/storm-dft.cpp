@@ -27,7 +27,7 @@ void processOptions() {
     auto const& transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
 
     // Build DFT from given file
-    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft;
     if (dftIOSettings.isDftFileSet()) {
         STORM_LOG_DEBUG("Loading DFT from Galileo file " << dftIOSettings.getDftFilename());
         dft = storm::dft::api::loadDFTGalileoFile<ValueType>(dftIOSettings.getDftFilename());

@@ -20,9 +20,9 @@ class DftTransformator {
      */
     DftTransformator();
 
-    std::shared_ptr<storm::storage::DFT<ValueType>> transformUniqueFailedBe(storm::storage::DFT<ValueType> const &dft);
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformUniqueFailedBe(storm::dft::storage::DFT<ValueType> const &dft);
 
-    std::shared_ptr<storm::storage::DFT<ValueType>> transformBinaryFDEPs(storm::storage::DFT<ValueType> const &dft);
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformBinaryFDEPs(storm::dft::storage::DFT<ValueType> const &dft);
 
    private:
     std::vector<std::string> getChildrenVector(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);

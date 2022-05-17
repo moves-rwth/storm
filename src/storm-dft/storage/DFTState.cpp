@@ -3,7 +3,7 @@
 #include "storm-dft/storage/elements/DFTElements.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 template<typename ValueType>
@@ -99,7 +99,7 @@ void DFTState<ValueType>::construct() {
 
 template<typename ValueType>
 std::shared_ptr<DFTState<ValueType>> DFTState<ValueType>::copy() const {
-    return std::make_shared<storm::storage::DFTState<ValueType>>(*this);
+    return std::make_shared<storm::dft::storage::DFTState<ValueType>>(*this);
 }
 
 template<typename ValueType>
@@ -560,4 +560,4 @@ template class DFTState<RationalFunction>;
 #endif
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

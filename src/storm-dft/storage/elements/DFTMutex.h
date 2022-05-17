@@ -33,7 +33,7 @@ class DFTMutex : public DFTRestriction<ValueType> {
         return true;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(queues.failurePropagationDone(), "Failure propagation not finished.");
         bool childFailed = false;
         for (auto const& child : this->children()) {
@@ -49,9 +49,10 @@ class DFTMutex : public DFTRestriction<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {}
+    void checkFailsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {}
 
-    bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
+                              storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         // Actually, it doesnt matter what we return here..
         return false;
     }

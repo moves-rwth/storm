@@ -20,8 +20,8 @@ class SftToBddTransformator {
    public:
     using Bdd = sylvan::Bdd;
 
-    SftToBddTransformator(std::shared_ptr<storm::storage::DFT<ValueType>> dft,
-                          std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::storage::SylvanBddManager>(),
+    SftToBddTransformator(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft,
+                          std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>(),
                           storm::dft::utility::RelevantEvents relevantEvents = {})
         : dft{std::move(dft)}, sylvanBddManager{std::move(sylvanBddManager)}, relevantEvents{relevantEvents} {
         // create Variables for the BEs
@@ -86,22 +86,22 @@ class SftToBddTransformator {
     /**
      * \return The internal DFT
      */
-    std::shared_ptr<storm::storage::DFT<ValueType>> getDFT() const noexcept {
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const noexcept {
         return dft;
     }
 
     /**
      * \return The internal sylvanBddManager
      */
-    std::shared_ptr<storm::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
         return sylvanBddManager;
     }
 
    private:
     std::map<std::string, Bdd> relevantEventBdds{};
     std::vector<uint32_t> variables{};
-    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
-    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft;
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager;
     storm::dft::utility::RelevantEvents relevantEvents;
 
     /**

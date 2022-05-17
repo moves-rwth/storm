@@ -2,8 +2,9 @@
 
 #include "storm/storage/BitVector.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+
 class DFT;
 
 class DFTUnit {
@@ -14,7 +15,6 @@ class DFTUnit {
    public:
     DFTUnit(DFT const& dft, BitVector const& members);
 };
-}  // namespace storage
-}  // namespace storm
 
-#endif /* DFTUNIT_H */
+}  // namespace storage
+}  // namespace storm::dft

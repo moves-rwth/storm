@@ -15,7 +15,7 @@ template<typename ValueType, typename StateType = uint32_t>
 class DftNextStateGenerator {
     // TODO: inherit from NextStateGenerator
 
-    using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
+    using DFTStatePointer = std::shared_ptr<storm::dft::storage::DFTState<ValueType>>;
     using DFTElementPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>;
     using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
     using DFTRestrictionPointer = std::shared_ptr<storm::dft::storage::elements::DFTRestriction<ValueType>>;
@@ -23,7 +23,7 @@ class DftNextStateGenerator {
    public:
     typedef std::function<StateType(DFTStatePointer const&)> StateToIdCallback;
 
-    DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo);
+    DftNextStateGenerator(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo);
 
     bool isDeterministicModel() const;
     std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback);
@@ -76,7 +76,7 @@ class DftNextStateGenerator {
      * @param nextBE BE whose failure is propagated
      */
     void propagateFailure(DFTStatePointer newState, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& nextBE,
-                          storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
+                          storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
 
     /**
      * Propagate the failsafe state in a given state if the given BE fails
@@ -85,7 +85,7 @@ class DftNextStateGenerator {
      * @param nextBE BE whose failure is propagated
      */
     void propagateFailsafe(DFTStatePointer newState, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& nextBE,
-                           storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
+                           storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
 
    private:
     /*!
@@ -100,10 +100,10 @@ class DftNextStateGenerator {
                                                                        bool takeFirstDependency);
 
     // The dft used for the generation of next states.
-    storm::storage::DFT<ValueType> const& mDft;
+    storm::dft::storage::DFT<ValueType> const& mDft;
 
     // General information for the state generation.
-    storm::storage::DFTStateGenerationInfo const& mStateGenerationInfo;
+    storm::dft::storage::DFTStateGenerationInfo const& mStateGenerationInfo;
 
     // Current state
     DFTStatePointer state;

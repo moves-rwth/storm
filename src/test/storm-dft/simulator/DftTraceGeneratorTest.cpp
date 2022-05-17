@@ -66,10 +66,10 @@ class DftTraceGeneratorTest : public ::testing::Test {
         return config;
     }
 
-    std::pair<std::shared_ptr<storm::storage::DFT<double>>, storm::storage::DFTStateGenerationInfo> prepareDFT(std::string const& file) {
+    std::pair<std::shared_ptr<storm::dft::storage::DFT<double>>, storm::dft::storage::DFTStateGenerationInfo> prepareDFT(std::string const& file) {
         // Load, build and prepare DFT
         storm::dft::transformations::DftTransformator<double> dftTransformator = storm::dft::transformations::DftTransformator<double>();
-        std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
+        std::shared_ptr<storm::dft::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
         EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 
         // Compute relevant events
@@ -82,13 +82,13 @@ class DftTraceGeneratorTest : public ::testing::Test {
 
         // Find symmetries
         std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-        storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
+        storm::dft::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
         if (config.useSR) {
             auto colouring = dft->colourDFT();
             symmetries = dft->findSymmetries(colouring);
         }
         EXPECT_EQ(config.useSR && config.useDC, !symmetries.sortedSymmetries.empty());
-        storm::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
+        storm::dft::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
         return std::make_pair(dft, stateGenerationInfo);
     }
 

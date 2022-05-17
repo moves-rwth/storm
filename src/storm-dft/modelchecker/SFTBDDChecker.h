@@ -24,20 +24,20 @@ class SFTBDDChecker {
     using ValueType = double;
     using Bdd = sylvan::Bdd;
 
-    SFTBDDChecker(std::shared_ptr<storm::storage::DFT<ValueType>> dft,
-                  std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::storage::SylvanBddManager>());
+    SFTBDDChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft,
+                  std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>());
 
     SFTBDDChecker(std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> transformator);
 
     /**
      * \return The internal DFT
      */
-    std::shared_ptr<storm::storage::DFT<ValueType>> getDFT() const noexcept;
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const noexcept;
 
     /**
      * \return The internal sylvanBddManager
      */
-    std::shared_ptr<storm::storage::SylvanBddManager> getSylvanBddManager() const noexcept;
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const noexcept;
 
     /**
      * \return The internal SftToBddTransformator

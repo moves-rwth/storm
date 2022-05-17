@@ -4,7 +4,7 @@
 
 #include <cmath>
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 template<typename PriorityType>
@@ -206,5 +206,6 @@ template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicD
 template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicProbability<storm::RationalFunction>>;
 template class BucketPriorityQueue<storm::dft::builder::DFTExplorationHeuristicBoundDifference<storm::RationalFunction>>;
 #endif
+
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

@@ -2,8 +2,9 @@
 
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+
 struct DFTIndependentSymmetries {
     std::map<size_t, std::vector<std::vector<size_t>>> groups;  // Symmetry groups: top level element of group -> symmetry
     // Each symmetry is given by a list of the equivalence classes
@@ -164,4 +165,4 @@ inline std::ostream& operator<<(std::ostream& os, DFTIndependentSymmetries const
     return os;
 }
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

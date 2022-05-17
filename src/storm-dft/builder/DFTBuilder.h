@@ -43,7 +43,7 @@ class DFTBuilder {
     std::unordered_map<DFTDependencyPointer, std::vector<std::string>> mDependencyChildNames;
     std::vector<DFTDependencyPointer> mDependencies;
     std::vector<DFTRestrictionPointer> mRestrictions;
-    std::unordered_map<std::string, storm::storage::DFTLayoutInfo> mLayoutInfo;
+    std::unordered_map<std::string, storm::dft::storage::DFTLayoutInfo> mLayoutInfo;
 
    public:
     DFTBuilder(bool defaultInclusive = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive) {}
@@ -208,7 +208,7 @@ class DFTBuilder {
         if (!nameInUse(name)) {
             STORM_LOG_ERROR("Element with name '" << name << "' not found.");
         }
-        mLayoutInfo[name] = storm::storage::DFTLayoutInfo(x, y);
+        mLayoutInfo[name] = storm::dft::storage::DFTLayoutInfo(x, y);
     }
 
     bool setTopLevel(std::string const& tle) {
@@ -227,7 +227,7 @@ class DFTBuilder {
 
     std::string getUniqueName(std::string name);
 
-    storm::storage::DFT<ValueType> build();
+    storm::dft::storage::DFT<ValueType> build();
 
     /**
      * Copy element and insert it again in the builder.
@@ -261,7 +261,7 @@ class DFTBuilder {
 
     enum class topoSortColour { WHITE, BLACK, GREY };
 
-    void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, storm::storage::OrderElementsById<ValueType>>& visited,
+    void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>>& visited,
                    DFTElementVector& L);
 
     DFTElementVector topoSort();

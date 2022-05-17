@@ -7,9 +7,12 @@
 
 #include "storm-dft/storage/OrderDFTElementsById.h"
 
-namespace storm::dft::storage::elements {
+namespace storm::dft {
+namespace storage {
 
 // Forward declarations
+namespace elements {
+
 template<typename ValueType>
 class DFTGate;
 template<typename ValueType>
@@ -17,10 +20,7 @@ class DFTElement;
 template<typename ValueType>
 class DFTRestriction;
 
-}  // namespace storm::dft::storage::elements
-
-namespace storm {
-namespace storage {
+}  // namespace elements
 
 template<typename ValueType>
 class DFTStateSpaceGenerationQueues {
@@ -101,4 +101,4 @@ class DFTStateSpaceGenerationQueues {
 };
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

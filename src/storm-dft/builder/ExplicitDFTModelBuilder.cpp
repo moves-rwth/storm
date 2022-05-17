@@ -34,10 +34,10 @@ ExplicitDFTModelBuilder<ValueType, StateType>::MatrixBuilder::MatrixBuilder(bool
 }
 
 template<typename ValueType, typename StateType>
-ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft,
-                                                                       storm::storage::DFTIndependentSymmetries const& symmetries)
+ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft,
+                                                                       storm::dft::storage::DFTIndependentSymmetries const& symmetries)
     : dft(dft),
-      stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
+      stateGenerationInfo(std::make_shared<storm::dft::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
       generator(dft, *stateGenerationInfo),
       matrixBuilder(!generator.isDeterministicModel()),
       stateStorage(dft.stateBitVectorSize()),
@@ -124,13 +124,13 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
         // Initialize
         switch (usedHeuristic) {
             case storm::dft::builder::ApproximationHeuristic::DEPTH:
-                explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(dft.nrElements() + 1, 0, 0.9, false);
+                explorationQueue = storm::dft::storage::BucketPriorityQueue<ExplorationHeuristic>(dft.nrElements() + 1, 0, 0.9, false);
                 break;
             case storm::dft::builder::ApproximationHeuristic::PROBABILITY:
-                explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
+                explorationQueue = storm::dft::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
                 break;
             case storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
-                explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
+                explorationQueue = storm::dft::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
@@ -573,16 +573,17 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
         for (size_t id = 0; id < dft.nrElements(); ++id) {
             std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(id);
             if (element->isRelevant()) {
-                storm::storage::DFTElementState elementState = storm::storage::DFTState<ValueType>::getElementState(state, *stateGenerationInfo, element->id());
+                storm::dft::storage::DFTElementState elementState =
+                    storm::dft::storage::DFTState<ValueType>::getElementState(state, *stateGenerationInfo, element->id());
                 switch (elementState) {
-                    case storm::storage::DFTElementState::Failed:
+                    case storm::dft::storage::DFTElementState::Failed:
                         modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", stateId);
                         break;
-                    case storm::storage::DFTElementState::DontCare:
+                    case storm::dft::storage::DFTElementState::DontCare:
                         modelComponents.stateLabeling.addLabelToState(element->name() + "_dc", stateId);
                         break;
-                    case storm::storage::DFTElementState::Operational:
-                    case storm::storage::DFTElementState::Failsafe:
+                    case storm::dft::storage::DFTElementState::Operational:
+                    case storm::dft::storage::DFTElementState::Failsafe:
                         // do nothing
                         break;
                     default:

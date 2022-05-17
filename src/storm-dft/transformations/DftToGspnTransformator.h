@@ -18,7 +18,7 @@ class DftToGspnTransformator {
      *
      * @param dft DFT
      */
-    DftToGspnTransformator(storm::storage::DFT<ValueType> const &dft);
+    DftToGspnTransformator(storm::dft::storage::DFT<ValueType> const &dft);
 
     /*!
      * Transform the DFT to a GSPN.
@@ -212,7 +212,7 @@ class DftToGspnTransformator {
         return failedPlaces.at(dftElement->id());
     }
 
-    storm::storage::DFT<ValueType> const &mDft;
+    storm::dft::storage::DFT<ValueType> const &mDft;
     storm::gspn::GspnBuilder builder;
 
     // Transformation options

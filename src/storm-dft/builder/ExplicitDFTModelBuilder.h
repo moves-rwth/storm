@@ -26,7 +26,7 @@ namespace builder {
  */
 template<typename ValueType, typename StateType = uint32_t>
 class ExplicitDFTModelBuilder {
-    using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
+    using DFTStatePointer = std::shared_ptr<storm::dft::storage::DFTState<ValueType>>;
     using ExplorationHeuristic = DFTExplorationHeuristic<ValueType>;
     using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
@@ -153,7 +153,7 @@ class ExplicitDFTModelBuilder {
      * @param dft DFT.
      * @param symmetries Symmetries in the dft.
      */
-    ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries);
+    ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DFTIndependentSymmetries const& symmetries);
 
     /*!
      * Build model from DFT.
@@ -280,11 +280,11 @@ class ExplicitDFTModelBuilder {
     const StateType OFFSET_PSEUDO_STATE = std::numeric_limits<StateType>::max() / 2;
 
     // Dft
-    storm::storage::DFT<ValueType> const& dft;
+    storm::dft::storage::DFT<ValueType> const& dft;
 
     // General information for state generation
     // TODO: use const reference
-    std::shared_ptr<storm::storage::DFTStateGenerationInfo> stateGenerationInfo;
+    std::shared_ptr<storm::dft::storage::DFTStateGenerationInfo> stateGenerationInfo;
 
     // Heuristic used for approximation
     storm::dft::builder::ApproximationHeuristic usedHeuristic;
@@ -312,7 +312,7 @@ class ExplicitDFTModelBuilder {
     storm::storage::sparse::StateStorage<StateType> stateStorage;
 
     // A priority queue of states that still need to be explored.
-    storm::storage::BucketPriorityQueue<ExplorationHeuristic> explorationQueue;
+    storm::dft::storage::BucketPriorityQueue<ExplorationHeuristic> explorationQueue;
 
     // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
     std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;

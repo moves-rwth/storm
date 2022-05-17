@@ -84,7 +84,8 @@ class DFTBE : public DFTElement<ValueType> {
 
     void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override;
 
-    bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
+                              storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
             state.beNoLongerFailable(this->id());
             return true;

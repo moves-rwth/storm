@@ -44,7 +44,7 @@ class DFTPor : public DFTGate<ValueType> {
         return inclusive;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(isInclusive(), "Exclusive POR not supported.");
         if (state.isOperational(this->mId)) {
             auto childIter = this->children().begin();
@@ -64,7 +64,7 @@ class DFTPor : public DFTGate<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(isInclusive(), "Exclusive POR not supported.");
         // If first child is not failsafe, it could still fail.
         if (state.isFailsafe(this->children().front()->id())) {

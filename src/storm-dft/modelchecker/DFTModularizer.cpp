@@ -17,8 +17,8 @@ using DFTElementCPointer = DFTModularizer::DFTElementCPointer;
 using FormulaCPointer = DFTModularizer::FormulaCPointer;
 using FormulaVector = DFTModularizer::FormulaVector;
 
-DFTModularizer::DFTModularizer(std::shared_ptr<storm::storage::DFT<ValueType>> dft)
-    : dft{dft}, workDFT{dft}, sylvanBddManager{std::make_shared<storm::storage::SylvanBddManager>()} {
+DFTModularizer::DFTModularizer(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft)
+    : dft{dft}, workDFT{dft}, sylvanBddManager{std::make_shared<storm::dft::storage::SylvanBddManager>()} {
     populateDfsCounters();
     populateElementInfos();
 }
@@ -184,7 +184,7 @@ void DFTModularizer::replaceDynamicModules(DFTElementCPointer const element, std
     }
 }
 
-std::shared_ptr<storm::storage::DFT<ValueType>> DFTModularizer::getSubDFT(DFTElementCPointer const element) {
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> DFTModularizer::getSubDFT(DFTElementCPointer const element) {
     storm::dft::builder::DFTBuilder<ValueType> builder{};
     std::unordered_set<std::string> depInConflict;
     for (auto const id : workDFT->getIndependentSubDftRoots(element->id())) {
@@ -196,7 +196,7 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DFTModularizer::getSubDFT(DFTEle
         }
     }
     builder.setTopLevel(element->name());
-    auto dft = std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
+    auto dft = std::make_shared<storm::dft::storage::DFT<ValueType>>(builder.build());
     // Update dependency conflicts
     for (size_t id : dft->getDependencies()) {
         // Set dependencies not in conflict
@@ -224,7 +224,7 @@ void DFTModularizer::updateWorkDFT(DFTElementCPointer const element, std::map<Va
     }
     builder.setTopLevel(workDFT->getTopLevelElement()->name());
 
-    workDFT = std::make_shared<storm::storage::DFT<ValueType>>(builder.build());
+    workDFT = std::make_shared<storm::dft::storage::DFT<ValueType>>(builder.build());
     // Update dependency conflicts
     for (size_t id : workDFT->getDependencies()) {
         // Set dependencies not in conflict

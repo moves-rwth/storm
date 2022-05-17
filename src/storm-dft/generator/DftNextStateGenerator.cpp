@@ -10,8 +10,8 @@ namespace storm::dft {
 namespace generator {
 
 template<typename ValueType, typename StateType>
-DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::storage::DFT<ValueType> const& dft,
-                                                                   storm::storage::DFTStateGenerationInfo const& stateGenerationInfo)
+DftNextStateGenerator<ValueType, StateType>::DftNextStateGenerator(storm::dft::storage::DFT<ValueType> const& dft,
+                                                                   storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo)
     : mDft(dft), mStateGenerationInfo(stateGenerationInfo), state(nullptr), uniqueFailedState(false) {
     deterministicModel = !mDft.canHaveNondeterminism();
     mTakeFirstDependency = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isTakeFirstDependency();
@@ -24,7 +24,7 @@ bool DftNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
 
 template<typename ValueType, typename StateType>
 typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createInitialState() const {
-    return std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
+    return std::make_shared<storm::dft::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
 }
 
 template<typename ValueType, typename StateType>
@@ -52,7 +52,7 @@ std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialSt
     } else {
         initialState->letBEFail(constFailedBE, nullptr);
         // Propagate the constant failure to reach the real initial state
-        storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
+        storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
         propagateFailure(initialState, constFailedBE, queues);
 
         if (initialState->hasFailed(mDft.getTopLevelIndex()) && uniqueFailedState) {
@@ -86,7 +86,7 @@ template<typename ValueType, typename StateType>
 void DftNextStateGenerator<ValueType, StateType>::load(storm::storage::BitVector const& state) {
     // Load the state from bitvector
     size_t id = 0;  // TODO: set correct id
-    this->state = std::make_shared<storm::storage::DFTState<ValueType>>(state, mDft, mStateGenerationInfo, id);
+    this->state = std::make_shared<storm::dft::storage::DFTState<ValueType>>(state, mDft, mStateGenerationInfo, id);
 }
 
 template<typename ValueType, typename StateType>
@@ -251,7 +251,7 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
     newState->letBEFail(failedBE, triggeringDependency);
 
     // Propagate
-    storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
+    storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
     propagateFailure(newState, failedBE, queues);
 
     // Check whether transient failure lead to TLE failure
@@ -284,7 +284,7 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
 template<typename ValueType, typename StateType>
 void DftNextStateGenerator<ValueType, StateType>::propagateFailure(DFTStatePointer newState,
                                                                    std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& nextBE,
-                                                                   storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                                                                   storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
     // Propagate failure
     for (DFTGatePointer parent : nextBE->parents()) {
         if (newState->isOperational(parent->id())) {
@@ -315,7 +315,7 @@ void DftNextStateGenerator<ValueType, StateType>::propagateFailure(DFTStatePoint
 template<typename ValueType, typename StateType>
 void DftNextStateGenerator<ValueType, StateType>::propagateFailsafe(DFTStatePointer newState,
                                                                     std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& nextBE,
-                                                                    storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                                                                    storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
     // Propagate failsafe
     while (!queues.failsafePropagationDone()) {
         DFTGatePointer next = queues.nextFailsafePropagation();
@@ -335,7 +335,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
     StateToIdCallback const& stateToIdCallback) {
     this->uniqueFailedState = true;
     // Introduce explicit fail state with id 0
-    DFTStatePointer failedState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
+    DFTStatePointer failedState = std::make_shared<storm::dft::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
     size_t failedStateId = stateToIdCallback(failedState);
     STORM_LOG_ASSERT(failedStateId == 0, "Unique failed state has not id 0.");
     STORM_LOG_TRACE("Introduce fail state with id 0.");

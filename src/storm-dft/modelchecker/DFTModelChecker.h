@@ -52,8 +52,9 @@ class DFTModelChecker {
      * @param labelBehavior Behavior of labels of eliminated states
      * @return Model checking results for the given properties..
      */
-    dft_results check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true,
-                      storm::dft::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false, double approximationError = 0.0,
+    dft_results check(storm::dft::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true,
+                      bool allowModularisation = true, storm::dft::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
+                      double approximationError = 0.0,
                       storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
                       bool eliminateChains = false,
                       storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
@@ -98,7 +99,7 @@ class DFTModelChecker {
      * @param labelBehavior Behavior of labels of eliminated states
      * @return Model checking results (or in case of approximation two results for lower and upper bound)
      */
-    dft_results checkHelper(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
+    dft_results checkHelper(storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
                             storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant = false, double approximationError = 0.0,
                             storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
                             bool eliminateChains = false,
@@ -115,7 +116,7 @@ class DFTModelChecker {
      * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
      * @return CTMC representing the DFT
      */
-    std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::storage::DFT<ValueType> const& dft,
+    std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> buildModelViaComposition(storm::dft::storage::DFT<ValueType> const& dft,
                                                                                      property_vector const& properties, bool symred, bool allowModularisation,
                                                                                      storm::dft::utility::RelevantEvents const& relevantEvents,
                                                                                      bool allowDCForRelevant);
@@ -135,7 +136,7 @@ class DFTModelChecker {
      *
      * @return Model checking result
      */
-    dft_results checkDFT(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred,
+    dft_results checkDFT(storm::dft::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred,
                          storm::dft::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant, double approximationError = 0.0,
                          storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
                          bool eliminateChains = false,

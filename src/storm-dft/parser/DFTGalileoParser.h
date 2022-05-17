@@ -27,7 +27,7 @@ class DFTGalileoParser {
      *
      * @return DFT.
      */
-    static storm::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true);
+    static storm::dft::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true);
 
    private:
     /*!

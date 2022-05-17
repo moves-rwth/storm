@@ -9,7 +9,7 @@ namespace transformations {
 static constexpr const uint64_t defaultCapacity = 1;
 
 template<typename ValueType>
-DftToGspnTransformator<ValueType>::DftToGspnTransformator(storm::storage::DFT<ValueType> const &dft) : mDft(dft) {
+DftToGspnTransformator<ValueType>::DftToGspnTransformator(storm::dft::storage::DFT<ValueType> const &dft) : mDft(dft) {
     // Intentionally left empty.
 }
 

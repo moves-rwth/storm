@@ -9,8 +9,8 @@ namespace storage {
 namespace elements {
 
 template<typename ValueType>
-bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state,
-                                                 storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+bool DFTElement<ValueType>::checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
+                                                 storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
     if (!this->mAllowDC) {
         return false;
     }
