@@ -13,10 +13,10 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/math.h"
 
-#include "storm-dft/storage/DFTElements.h"
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/DFTStateGenerationInfo.h"
 #include "storm-dft/storage/SymmetricUnits.h"
+#include "storm-dft/storage/elements/DFTElements.h"
 
 // Forward declarations
 namespace storm::dft {
@@ -118,7 +118,7 @@ class DFT {
         return mTopLevelIndex;
     }
 
-    DFTElementType getTopLevelType() const {
+    storm::dft::storage::elements::DFTElementType getTopLevelType() const {
         return getTopLevelElement()->type();
     }
 
@@ -171,10 +171,10 @@ class DFT {
                     std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(elem);
                 if (be->canFail()) {
                     switch (be->beType()) {
-                        case storm::storage::BEType::CONSTANT:
+                        case storm::dft::storage::elements::BEType::CONSTANT:
                             result.push_back(be->id());
                             break;
-                        case storm::storage::BEType::EXPONENTIAL: {
+                        case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                             auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType>>(be);
                             if (!beExp->isColdBasicElement()) {
                                 result.push_back(be->id());

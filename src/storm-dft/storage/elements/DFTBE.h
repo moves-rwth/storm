@@ -22,15 +22,15 @@ class DFTBE : public DFTElement<ValueType> {
         // Intentionally empty
     }
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::BE;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::BE;
     }
 
     /*!
      * Get type of BE (constant, exponential, etc.).
      * @return BE type.
      */
-    virtual storm::storage::BEType beType() const = 0;
+    virtual storm::dft::storage::elements::BEType beType() const = 0;
 
     size_t nrChildren() const override {
         return 0;

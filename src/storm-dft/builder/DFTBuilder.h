@@ -5,8 +5,8 @@
 
 #include "storm/utility/macros.h"
 
-#include "storm-dft/storage/DFTElements.h"
 #include "storm-dft/storage/DFTLayoutInfo.h"
+#include "storm-dft/storage/elements/DFTElements.h"
 #include "storm-dft/storage/elements/DFTRestriction.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -49,47 +49,47 @@ class DFTBuilder {
     DFTBuilder(bool defaultInclusive = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive) {}
 
     bool addAndElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::AND);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::AND);
     }
 
     bool addOrElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::OR);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::OR);
     }
 
     bool addPandElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::PAND);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::PAND);
     }
 
     bool addPandElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
         bool tmpDefault = pandDefaultInclusive;
         pandDefaultInclusive = inclusive;
-        bool result = addStandardGate(name, children, storm::storage::DFTElementType::PAND);
+        bool result = addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::PAND);
         pandDefaultInclusive = tmpDefault;
         return result;
     }
 
     bool addPorElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::POR);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::POR);
     }
 
     bool addPorElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
         bool tmpDefault = porDefaultInclusive;
         porDefaultInclusive = inclusive;
-        bool result = addStandardGate(name, children, storm::storage::DFTElementType::POR);
+        bool result = addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::POR);
         pandDefaultInclusive = tmpDefault;
         return result;
     }
 
     bool addSpareElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::SPARE);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::SPARE);
     }
 
     bool addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children) {
-        return addRestriction(name, children, storm::storage::DFTElementType::SEQ);
+        return addRestriction(name, children, storm::dft::storage::elements::DFTElementType::SEQ);
     }
 
     bool addMutex(std::string const& name, std::vector<std::string> const& children) {
-        return addRestriction(name, children, storm::storage::DFTElementType::MUTEX);
+        return addRestriction(name, children, storm::dft::storage::elements::DFTElementType::MUTEX);
     }
 
     bool addDepElement(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
@@ -255,9 +255,9 @@ class DFTBuilder {
    private:
     unsigned computeRank(DFTElementPointer const& elem);
 
-    bool addStandardGate(std::string const& name, std::vector<std::string> const& children, storm::storage::DFTElementType tp);
+    bool addStandardGate(std::string const& name, std::vector<std::string> const& children, storm::dft::storage::elements::DFTElementType tp);
 
-    bool addRestriction(std::string const& name, std::vector<std::string> const& children, storm::storage::DFTElementType tp);
+    bool addRestriction(std::string const& name, std::vector<std::string> const& children, storm::dft::storage::elements::DFTElementType tp);
 
     enum class topoSortColour { WHITE, BLACK, GREY };
 

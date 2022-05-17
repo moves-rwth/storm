@@ -1,6 +1,6 @@
 #include "DFTElement.h"
 #include <set>
-#include "../DFTElements.h"
+#include "storm-dft/storage/elements/DFTElements.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 

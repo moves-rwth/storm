@@ -35,7 +35,7 @@ std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialSt
     size_t constFailedBeCounter = 0;
     std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> constFailedBE = nullptr;
     for (auto& be : mDft.getBasicElements()) {
-        if (be->beType() == storm::storage::BEType::CONSTANT) {
+        if (be->beType() == storm::dft::storage::elements::BEType::CONSTANT) {
             auto constBe = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
             if (constBe->failed()) {
                 constFailedBeCounter++;
@@ -256,7 +256,7 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
 
     // Check whether transient failure lead to TLE failure
     // TODO handle for all types of BEs.
-    if (failedBE->beType() == storm::storage::BEType::EXPONENTIAL) {
+    if (failedBE->beType() == storm::dft::storage::elements::BEType::EXPONENTIAL) {
         auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(failedBE);
         if (beExp->isTransient() && !newState->hasFailed(mDft.getTopLevelIndex())) {
             newState->markAsTransient();

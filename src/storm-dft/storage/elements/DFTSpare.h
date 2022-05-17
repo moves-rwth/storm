@@ -23,8 +23,8 @@ class DFTSpare : public DFTGate<ValueType> {
         // Intentionally left empty.
     }
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::SPARE;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::SPARE;
     }
 
     bool isSpareGate() const override {

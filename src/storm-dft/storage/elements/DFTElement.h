@@ -9,9 +9,9 @@
 #include <string>
 #include <vector>
 
-#include "storm-dft/storage/DFTElementType.h"
 #include "storm-dft/storage/DFTState.h"
 #include "storm-dft/storage/DFTStateSpaceGenerationQueues.h"
+#include "storm-dft/storage/elements/DFTElementType.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 
@@ -89,14 +89,14 @@ class DFTElement {
      * Get type.
      * @return Type.
      */
-    virtual storm::storage::DFTElementType type() const = 0;
+    virtual storm::dft::storage::elements::DFTElementType type() const = 0;
 
     /*!
      * Get type as string.
      * @return String with type information.
      */
     virtual std::string typestring() const {
-        return storm::storage::toString(this->type());
+        return storm::dft::storage::elements::toString(this->type());
     }
 
     /*!

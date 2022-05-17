@@ -24,8 +24,8 @@ class DFTAnd : public DFTGate<ValueType> {
         // Intentionally empty
     }
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::AND;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::AND;
     }
 
     void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {

@@ -1,6 +1,6 @@
 #include "DFTState.h"
 #include "storm-dft/storage/DFT.h"
-#include "storm-dft/storage/DFTElements.h"
+#include "storm-dft/storage/elements/DFTElements.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {
@@ -58,11 +58,11 @@ void DFTState<ValueType>::construct() {
             std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> be = mDft.getBasicElement(index);
             if (be->canFail()) {
                 switch (be->beType()) {
-                    case storm::storage::BEType::CONSTANT:
+                    case storm::dft::storage::elements::BEType::CONSTANT:
                         failableElements.addBE(be->id());
                         STORM_LOG_TRACE("Currently failable: " << *be);
                         break;
-                    case storm::storage::BEType::EXPONENTIAL: {
+                    case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                         auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                         if (!beExp->isColdBasicElement() || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index))) {
                             failableElements.addBE(be->id());
@@ -323,7 +323,7 @@ void DFTState<ValueType>::updateDontCareDependencies(size_t id) {
 template<typename ValueType>
 ValueType DFTState<ValueType>::getBERate(size_t id) const {
     STORM_LOG_ASSERT(mDft.isBasicElement(id), "Element is no BE.");
-    STORM_LOG_THROW(mDft.getBasicElement(id)->beType() == storm::storage::BEType::EXPONENTIAL, storm::exceptions::NotSupportedException,
+    STORM_LOG_THROW(mDft.getBasicElement(id)->beType() == storm::dft::storage::elements::BEType::EXPONENTIAL, storm::exceptions::NotSupportedException,
                     "BE of type '" << mDft.getBasicElement(id)->type() << "' is not supported.");
     auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(mDft.getBasicElement(id));
     if (mDft.hasRepresentant(id) && !isActive(mDft.getRepresentant(id))) {
@@ -382,10 +382,10 @@ void DFTState<ValueType>::propagateActivation(size_t representativeId) {
             std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> be = mDft.getBasicElement(elem);
             if (be->canFail()) {
                 switch (be->beType()) {
-                    case storm::storage::BEType::CONSTANT:
+                    case storm::dft::storage::elements::BEType::CONSTANT:
                         // Nothing to do
                         break;
-                    case storm::storage::BEType::EXPONENTIAL: {
+                    case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                         auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                         if (beExp->isColdBasicElement()) {
                             // Add to failable BEs

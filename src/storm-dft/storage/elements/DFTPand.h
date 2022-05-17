@@ -28,8 +28,8 @@ class DFTPand : public DFTGate<ValueType> {
         // Intentionally left empty.
     }
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::PAND;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::PAND;
     }
 
     std::string typestring() const override {

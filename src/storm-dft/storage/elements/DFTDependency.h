@@ -39,8 +39,8 @@ class DFTDependency : public DFTElement<ValueType> {
         // Intentionally left empty.
     };
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::PDEP;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::PDEP;
     }
 
     std::string typestring() const override {

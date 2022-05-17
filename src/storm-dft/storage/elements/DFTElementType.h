@@ -2,8 +2,9 @@
 
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * Element types in a DFT.
@@ -102,5 +103,6 @@ inline std::ostream& operator<<(std::ostream& os, BEType const& type) {
     return os << toString(type);
 }
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

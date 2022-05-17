@@ -16,7 +16,7 @@ TEST(DftTransformatorTest, UniqueConstantFailedTest) {
     uint64_t constBeFailedCount = 0;
     uint64_t constBeFailsafeCount = 0;
     for (auto &be : bes) {
-        if (be->beType() == storm::storage::BEType::CONSTANT) {
+        if (be->beType() == storm::dft::storage::elements::BEType::CONSTANT) {
             if (be->canFail()) {
                 ++constBeFailedCount;
             } else {

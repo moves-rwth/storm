@@ -105,9 +105,9 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
     // deal with all dynamic elements
     for (auto const& element : mElements) {
         switch (element->type()) {
-            case storage::DFTElementType::PAND:
-            case storage::DFTElementType::POR:
-            case storage::DFTElementType::MUTEX: {
+            case storm::dft::storage::elements::DFTElementType::PAND:
+            case storm::dft::storage::elements::DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::MUTEX: {
                 auto gate = std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ValueType>>(element);
                 dynamicBehaviorVector[gate->id()] = true;
                 for (auto const& child : gate->children()) {
@@ -119,7 +119,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
                 break;
             }
                 // TODO different cases
-            case storage::DFTElementType::SPARE: {
+            case storm::dft::storage::elements::DFTElementType::SPARE: {
                 auto spare = std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType>>(element);
 
                 // Iterate over all children (representatives of spare modules)
@@ -174,7 +174,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
                 }
                 break;
             }
-            case storage::DFTElementType::SEQ: {
+            case storm::dft::storage::elements::DFTElementType::SEQ: {
                 auto seq = std::static_pointer_cast<storm::dft::storage::elements::DFTSeq<ValueType>>(element);
                 // A SEQ only has dynamic behavior if not all children are BEs
                 if (!seq->allChildrenBEs()) {
@@ -199,9 +199,9 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
         elementQueue.pop();
         switch (currentElement->type()) {
             // Static Gates
-            case storage::DFTElementType::AND:
-            case storage::DFTElementType::OR:
-            case storage::DFTElementType::VOT: {
+            case storm::dft::storage::elements::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::VOT: {
                 // check all parents and if one has dynamic behavior, propagate it
                 dynamicBehaviorVector[currentElement->id()] = true;
                 auto gate = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(currentElement);
@@ -214,7 +214,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
                 break;
             }
                 // BEs
-            case storage::DFTElementType::BE: {
+            case storm::dft::storage::elements::DFTElementType::BE: {
                 auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(currentElement);
                 dynamicBehaviorVector[be->id()] = true;
                 // add all ingoing dependencies to queue
@@ -225,7 +225,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
                 }
                 break;
             }
-            case storage::DFTElementType::PDEP: {
+            case storm::dft::storage::elements::DFTElementType::PDEP: {
                 auto dep = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType>>(currentElement);
                 dynamicBehaviorVector[dep->id()] = true;
                 // add all ingoing dependencies to queue
@@ -515,20 +515,20 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
 
         // Add element inbetween parent and children
         switch (originalParent->type()) {
-            case DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::AND:
                 builder.addAndElement(newParentName, childrenNames);
                 break;
-            case DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::OR:
                 builder.addOrElement(newParentName, childrenNames);
                 break;
-            case DFTElementType::BE:
-            case DFTElementType::VOT:
-            case DFTElementType::PAND:
-            case DFTElementType::SPARE:
-            case DFTElementType::POR:
-            case DFTElementType::PDEP:
-            case DFTElementType::SEQ:
-            case DFTElementType::MUTEX:
+            case storm::dft::storage::elements::DFTElementType::BE:
+            case storm::dft::storage::elements::DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::PAND:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::PDEP:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::MUTEX:
                 // Other elements are not supported
             default:
                 STORM_LOG_ASSERT(false, "Dft type can not be rewritten.");
@@ -559,17 +559,17 @@ size_t DFT<ValueType>::nrDynamicElements() const {
     size_t noDyn = 0;
     for (auto const& elem : mElements) {
         switch (elem->type()) {
-            case DFTElementType::AND:
-            case DFTElementType::OR:
-            case DFTElementType::VOT:
-            case DFTElementType::BE:
+            case storm::dft::storage::elements::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::BE:
                 break;
-            case DFTElementType::PAND:
-            case DFTElementType::SPARE:
-            case DFTElementType::POR:
-            case DFTElementType::SEQ:
-            case DFTElementType::MUTEX:
-            case DFTElementType::PDEP:
+            case storm::dft::storage::elements::DFTElementType::PAND:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::MUTEX:
+            case storm::dft::storage::elements::DFTElementType::PDEP:
                 noDyn += 1;
                 break;
             default:
@@ -585,18 +585,18 @@ size_t DFT<ValueType>::nrStaticElements() const {
     size_t noStatic = 0;
     for (auto const& elem : mElements) {
         switch (elem->type()) {
-            case DFTElementType::AND:
-            case DFTElementType::OR:
-            case DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::VOT:
                 ++noStatic;
                 break;
-            case DFTElementType::BE:
-            case DFTElementType::PAND:
-            case DFTElementType::SPARE:
-            case DFTElementType::POR:
-            case DFTElementType::SEQ:
-            case DFTElementType::MUTEX:
-            case DFTElementType::PDEP:
+            case storm::dft::storage::elements::DFTElementType::BE:
+            case storm::dft::storage::elements::DFTElementType::PAND:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::MUTEX:
+            case storm::dft::storage::elements::DFTElementType::PDEP:
                 break;
             default:
                 STORM_LOG_ASSERT(false, "DFT element type " << elem->type() << " not known.");
@@ -984,7 +984,8 @@ void DFT<ValueType>::findSymmetriesHelper(std::vector<size_t> const& candidates,
 template<typename ValueType>
 std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
     for (auto const& e : mElements) {
-        if (e->isGate() && (e->type() == DFTElementType::AND || e->type() == DFTElementType::OR)) {
+        if (e->isGate() &&
+            (e->type() == storm::dft::storage::elements::DFTElementType::AND || e->type() == storm::dft::storage::elements::DFTElementType::OR)) {
             // suitable parent gate! - Lets check the independent submodules of the children
             auto const& children = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(e)->children();
             for (auto const& child : children) {
@@ -1110,32 +1111,32 @@ void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
     size_t noRestriction = 0;
     for (auto const& elem : mElements) {
         switch (elem->type()) {
-            case DFTElementType::BE:
+            case storm::dft::storage::elements::DFTElementType::BE:
                 ++noBE;
                 break;
-            case DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::AND:
                 ++noAnd;
                 break;
-            case DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::OR:
                 ++noOr;
                 break;
-            case DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::VOT:
                 ++noVot;
                 break;
-            case DFTElementType::PAND:
+            case storm::dft::storage::elements::DFTElementType::PAND:
                 ++noPand;
                 break;
-            case DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::POR:
                 ++noPor;
                 break;
-            case DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
                 ++noSpare;
                 break;
-            case DFTElementType::PDEP:
+            case storm::dft::storage::elements::DFTElementType::PDEP:
                 ++noDependency;
                 break;
-            case DFTElementType::SEQ:
-            case DFTElementType::MUTEX:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::MUTEX:
                 ++noRestriction;
                 break;
             default:
@@ -1196,28 +1197,28 @@ std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunct
     for (size_t i = 0; i < dft.nrElements(); ++i) {
         std::shared_ptr<storm::dft::storage::elements::DFTElement<storm::RationalFunction> const> element = dft.getElement(i);
         switch (element->type()) {
-            case storm::storage::DFTElementType::BE: {
+            case storm::dft::storage::elements::DFTElementType::BE: {
                 auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<storm::RationalFunction> const>(element);
-                if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
+                if (be->beType() == storm::dft::storage::elements::BEType::EXPONENTIAL) {
                     auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<storm::RationalFunction> const>(element);
                     beExp->activeFailureRate().gatherVariables(result);
                     beExp->dormancyFactor().gatherVariables(result);
                 }
                 break;
             }
-            case storm::storage::DFTElementType::PDEP: {
+            case storm::dft::storage::elements::DFTElementType::PDEP: {
                 auto dep = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<storm::RationalFunction> const>(element);
                 dep->probability().gatherVariables(result);
                 break;
             }
-            case storm::storage::DFTElementType::AND:
-            case storm::storage::DFTElementType::OR:
-            case storm::storage::DFTElementType::VOT:
-            case storm::storage::DFTElementType::PAND:
-            case storm::storage::DFTElementType::POR:
-            case storm::storage::DFTElementType::SPARE:
-            case storm::storage::DFTElementType::SEQ:
-            case storm::storage::DFTElementType::MUTEX:
+            case storm::dft::storage::elements::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::PAND:
+            case storm::dft::storage::elements::DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::MUTEX:
                 // Do nothing
                 break;
             default:

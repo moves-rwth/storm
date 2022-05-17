@@ -140,7 +140,8 @@ unsigned DFTBuilder<ValueType>::computeRank(DFTElementPointer const& elem) {
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addRestriction(std::string const& name, std::vector<std::string> const& children, storm::storage::DFTElementType tp) {
+bool DFTBuilder<ValueType>::addRestriction(std::string const& name, std::vector<std::string> const& children,
+                                           storm::dft::storage::elements::DFTElementType tp) {
     if (children.size() <= 1) {
         STORM_LOG_ERROR("Restrictions require at least two children");
     }
@@ -150,10 +151,10 @@ bool DFTBuilder<ValueType>::addRestriction(std::string const& name, std::vector<
     }
     DFTRestrictionPointer restr;
     switch (tp) {
-        case storm::storage::DFTElementType::SEQ:
+        case storm::dft::storage::elements::DFTElementType::SEQ:
             restr = std::make_shared<storm::dft::storage::elements::DFTSeq<ValueType>>(mNextId++, name);
             break;
-        case storm::storage::DFTElementType::MUTEX:
+        case storm::dft::storage::elements::DFTElementType::MUTEX:
             restr = std::make_shared<storm::dft::storage::elements::DFTMutex<ValueType>>(mNextId++, name);
             break;
         default:
@@ -168,7 +169,8 @@ bool DFTBuilder<ValueType>::addRestriction(std::string const& name, std::vector<
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children, storm::storage::DFTElementType tp) {
+bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children,
+                                            storm::dft::storage::elements::DFTElementType tp) {
     STORM_LOG_ASSERT(children.size() > 0, "No child for " << name);
     if (nameInUse(name)) {
         STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
@@ -176,24 +178,24 @@ bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector
     }
     DFTElementPointer element;
     switch (tp) {
-        case storm::storage::DFTElementType::AND:
+        case storm::dft::storage::elements::DFTElementType::AND:
             element = std::make_shared<storm::dft::storage::elements::DFTAnd<ValueType>>(mNextId++, name);
             break;
-        case storm::storage::DFTElementType::OR:
+        case storm::dft::storage::elements::DFTElementType::OR:
             element = std::make_shared<storm::dft::storage::elements::DFTOr<ValueType>>(mNextId++, name);
             break;
-        case storm::storage::DFTElementType::PAND:
+        case storm::dft::storage::elements::DFTElementType::PAND:
             element = std::make_shared<storm::dft::storage::elements::DFTPand<ValueType>>(mNextId++, name, pandDefaultInclusive);
             break;
-        case storm::storage::DFTElementType::POR:
+        case storm::dft::storage::elements::DFTElementType::POR:
             element = std::make_shared<storm::dft::storage::elements::DFTPor<ValueType>>(mNextId++, name, porDefaultInclusive);
             break;
-        case storm::storage::DFTElementType::SPARE:
+        case storm::dft::storage::elements::DFTElementType::SPARE:
             element = std::make_shared<storm::dft::storage::elements::DFTSpare<ValueType>>(mNextId++, name);
             break;
-        case storm::storage::DFTElementType::BE:
-        case storm::storage::DFTElementType::VOT:
-        case storm::storage::DFTElementType::PDEP:
+        case storm::dft::storage::elements::DFTElementType::BE:
+        case storm::dft::storage::elements::DFTElementType::VOT:
+        case storm::dft::storage::elements::DFTElementType::PDEP:
             // Handled separately
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type handled separately.");
         default:
@@ -257,22 +259,22 @@ template<typename ValueType>
 void DFTBuilder<ValueType>::copyElement(DFTElementCPointer element) {
     std::vector<std::string> children;
     switch (element->type()) {
-        case storm::storage::DFTElementType::BE:
+        case storm::dft::storage::elements::DFTElementType::BE:
             copyBE(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element));
             break;
-        case storm::storage::DFTElementType::AND:
-        case storm::storage::DFTElementType::OR:
-        case storm::storage::DFTElementType::PAND:
-        case storm::storage::DFTElementType::POR:
-        case storm::storage::DFTElementType::SPARE:
-        case storm::storage::DFTElementType::VOT: {
+        case storm::dft::storage::elements::DFTElementType::AND:
+        case storm::dft::storage::elements::DFTElementType::OR:
+        case storm::dft::storage::elements::DFTElementType::PAND:
+        case storm::dft::storage::elements::DFTElementType::POR:
+        case storm::dft::storage::elements::DFTElementType::SPARE:
+        case storm::dft::storage::elements::DFTElementType::VOT: {
             for (DFTElementPointer const& elem : std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType> const>(element)->children()) {
                 children.push_back(elem->name());
             }
             copyGate(std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType> const>(element), children);
             break;
         }
-        case storm::storage::DFTElementType::PDEP: {
+        case storm::dft::storage::elements::DFTElementType::PDEP: {
             auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(element);
             children.push_back(dependency->triggerEvent()->name());
             for (auto const& depEv : dependency->dependentEvents()) {
@@ -281,8 +283,8 @@ void DFTBuilder<ValueType>::copyElement(DFTElementCPointer element) {
             addDepElement(element->name(), children, dependency->probability());
             break;
         }
-        case storm::storage::DFTElementType::SEQ:
-        case storm::storage::DFTElementType::MUTEX: {
+        case storm::dft::storage::elements::DFTElementType::SEQ:
+        case storm::dft::storage::elements::DFTElementType::MUTEX: {
             for (DFTElementPointer const& elem :
                  std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<ValueType> const>(element)->children()) {
                 children.push_back(elem->name());
@@ -299,17 +301,17 @@ void DFTBuilder<ValueType>::copyElement(DFTElementCPointer element) {
 template<typename ValueType>
 void DFTBuilder<ValueType>::copyBE(DFTBECPointer be) {
     switch (be->beType()) {
-        case storm::storage::BEType::CONSTANT: {
+        case storm::dft::storage::elements::BEType::CONSTANT: {
             auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
             addBasicElementConst(beConst->name(), beConst->failed());
             break;
         }
-        case storm::storage::BEType::EXPONENTIAL: {
+        case storm::dft::storage::elements::BEType::EXPONENTIAL: {
             auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
             addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
             break;
         }
-        case storm::storage::BEType::SAMPLES: {
+        case storm::dft::storage::elements::BEType::SAMPLES: {
             auto beSamples = std::static_pointer_cast<storm::dft::storage::elements::BESamples<ValueType> const>(be);
             addBasicElementSamples(beSamples->name(), beSamples->activeSamples());
             break;
@@ -323,14 +325,14 @@ void DFTBuilder<ValueType>::copyBE(DFTBECPointer be) {
 template<typename ValueType>
 void DFTBuilder<ValueType>::copyGate(DFTGateCPointer gate, std::vector<std::string> const& children) {
     switch (gate->type()) {
-        case storm::storage::DFTElementType::AND:
-        case storm::storage::DFTElementType::OR:
-        case storm::storage::DFTElementType::PAND:
-        case storm::storage::DFTElementType::POR:
-        case storm::storage::DFTElementType::SPARE:
+        case storm::dft::storage::elements::DFTElementType::AND:
+        case storm::dft::storage::elements::DFTElementType::OR:
+        case storm::dft::storage::elements::DFTElementType::PAND:
+        case storm::dft::storage::elements::DFTElementType::POR:
+        case storm::dft::storage::elements::DFTElementType::SPARE:
             addStandardGate(gate->name(), children, gate->type());
             break;
-        case storm::storage::DFTElementType::VOT:
+        case storm::dft::storage::elements::DFTElementType::VOT:
             addVotElement(gate->name(), std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(gate)->threshold(), children);
             break;
         default:

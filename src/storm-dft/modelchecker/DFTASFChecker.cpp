@@ -35,13 +35,13 @@ void DFTASFChecker::convert() {
         varNames.push_back("t_" + element->name());
         timePointVariables.emplace(i, varNames.size() - 1);
         switch (element->type()) {
-            case storm::storage::DFTElementType::BE: {
+            case storm::dft::storage::elements::DFTElementType::BE: {
                 auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
                 switch (be->beType()) {
-                    case storm::storage::BEType::EXPONENTIAL:
+                    case storm::dft::storage::elements::BEType::EXPONENTIAL:
                         beVariables.push_back(varNames.size() - 1);
                         break;
-                    case storm::storage::BEType::CONSTANT: {
+                    case storm::dft::storage::elements::BEType::CONSTANT: {
                         STORM_LOG_WARN("Constant BEs are only experimentally supported in the SMT encoding");
                         // Constant BEs are initially either failed or failsafe, treat them differently
                         auto be = std::static_pointer_cast<storm::dft::storage::elements::BEConst<double> const>(element);
@@ -62,7 +62,7 @@ void DFTASFChecker::convert() {
                 }
                 break;
             }
-            case storm::storage::DFTElementType::SPARE: {
+            case storm::dft::storage::elements::DFTElementType::SPARE: {
                 auto spare = std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<double> const>(element);
                 for (auto const &spareChild : spare->children()) {
                     varNames.push_back("c_" + element->name() + "_" + spareChild->name());
@@ -70,7 +70,7 @@ void DFTASFChecker::convert() {
                 }
                 break;
             }
-            case storm::storage::DFTElementType::PDEP: {
+            case storm::dft::storage::elements::DFTElementType::PDEP: {
                 varNames.push_back("dep_" + element->name());
                 dependencyVariables.emplace(element->id(), varNames.size() - 1);
                 break;
@@ -148,31 +148,31 @@ void DFTASFChecker::convert() {
         }
 
         switch (element->type()) {
-            case storm::storage::DFTElementType::BE:
+            case storm::dft::storage::elements::DFTElementType::BE:
                 // BEs were already considered before
                 break;
-            case storm::storage::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::AND:
                 generateAndConstraint(i, childVarIndices, element);
                 break;
-            case storm::storage::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::OR:
                 generateOrConstraint(i, childVarIndices, element);
                 break;
-            case storm::storage::DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::VOT:
                 generateVotConstraint(i, childVarIndices, element);
                 break;
-            case storm::storage::DFTElementType::PAND:
+            case storm::dft::storage::elements::DFTElementType::PAND:
                 generatePandConstraint(i, childVarIndices, element);
                 break;
-            case storm::storage::DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::POR:
                 generatePorConstraint(i, childVarIndices, element);
                 break;
-            case storm::storage::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
                 generateSeqConstraint(childVarIndices, element);
                 break;
-            case storm::storage::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
                 generateSpareConstraint(i, childVarIndices, element);
                 break;
-            case storm::storage::DFTElementType::PDEP:
+            case storm::dft::storage::elements::DFTElementType::PDEP:
                 generatePdepConstraint(i, childVarIndices, element);
                 break;
             default:
@@ -208,7 +208,7 @@ void DFTASFChecker::convert() {
         std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(i);
         if (element->isBasicElement()) {
             auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
-            if (be->beType() == storm::storage::BEType::CONSTANT) {
+            if (be->beType() == storm::dft::storage::elements::BEType::CONSTANT) {
                 triggerConstraints.clear();
                 for (auto const &dependency : be->ingoingDependencies()) {
                     triggerConstraints.push_back(std::make_shared<IsConstantValue>(timePointVariables.at(dependency->triggerEvent()->id()), notFailed));

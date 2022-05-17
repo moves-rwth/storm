@@ -25,8 +25,8 @@ class BEExponential : public DFTBE<ValueType> {
         STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(failureRate), "Exponential failure rate should not be zero.");
     }
 
-    storm::storage::BEType beType() const override {
-        return storm::storage::BEType::EXPONENTIAL;
+    storm::dft::storage::elements::BEType beType() const override {
+        return storm::dft::storage::elements::BEType::EXPONENTIAL;
     }
 
     /*!

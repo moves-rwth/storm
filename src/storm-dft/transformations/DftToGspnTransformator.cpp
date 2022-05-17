@@ -38,7 +38,7 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
         // Set priority for PDEP and FDEP according to Monolithic MA semantics
         uint64_t dependency_priority = 2;
         for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-            if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP)
+            if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::PDEP)
                 priorities[i] = dependency_priority;
             else
                 priorities[i] = (-(mDft.getElement(i)->rank()) + mDft.maxRank()) * 2 + 5;
@@ -50,7 +50,7 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
         // Iterate over all elements of the DFT and sort them into the list
         std::list<size_t> elementList;
         for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-            if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP) {
+            if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::PDEP) {
                 // For dependencies, get the maximal number of dependent events
                 auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(mDft.getElement(i));
                 uint64_t nrDependentEvents = (dependency->dependentEvents()).size();
@@ -61,7 +61,7 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
             // Get the maximum number of children/ SPAREs need additional transitions
 
             u_int64_t nrChildren = mDft.getElement(i)->nrChildren();
-            if (mDft.getElement(i)->type() == storm::storage::DFTElementType::SPARE) {
+            if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::SPARE) {
                 nrChildren *= 4;
             }
             if (maxNrOfChildren < nrChildren) {
@@ -71,7 +71,8 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
             if (!elementList.empty()) {
                 std::list<size_t>::iterator it = elementList.begin();
                 // Make sure dependencies are always in the front
-                while ((mDft.getElement(*it)->rank()) < (mDft.getElement(i)->rank()) || mDft.getElement(*it)->type() == storm::storage::DFTElementType::PDEP) {
+                while ((mDft.getElement(*it)->rank()) < (mDft.getElement(i)->rank()) ||
+                       mDft.getElement(*it)->type() == storm::dft::storage::elements::DFTElementType::PDEP) {
                     it++;
                 }
                 elementList.insert(it, i);
@@ -115,33 +116,33 @@ void DftToGspnTransformator<ValueType>::translateGSPNElements() {
 
         // Check which type the element is and call the corresponding translate-function.
         switch (dftElement->type()) {
-            case storm::storage::DFTElementType::BE:
+            case storm::dft::storage::elements::DFTElementType::BE:
                 translateBE(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::AND:
                 translateAND(std::static_pointer_cast<storm::dft::storage::elements::DFTAnd<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::OR:
                 translateOR(std::static_pointer_cast<storm::dft::storage::elements::DFTOr<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::VOT:
                 translateVOT(std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::PAND:
+            case storm::dft::storage::elements::DFTElementType::PAND:
                 translatePAND(std::static_pointer_cast<storm::dft::storage::elements::DFTPand<ValueType> const>(dftElement),
                               std::static_pointer_cast<storm::dft::storage::elements::DFTPand<ValueType> const>(dftElement)->isInclusive());
                 break;
-            case storm::storage::DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::POR:
                 translatePOR(std::static_pointer_cast<storm::dft::storage::elements::DFTPor<ValueType> const>(dftElement),
                              std::static_pointer_cast<storm::dft::storage::elements::DFTPor<ValueType> const>(dftElement)->isInclusive());
                 break;
-            case storm::storage::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
                 translateSPARE(std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::PDEP:
+            case storm::dft::storage::elements::DFTElementType::PDEP:
                 translatePDEP(std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
                 translateSeq(std::static_pointer_cast<storm::dft::storage::elements::DFTSeq<ValueType> const>(dftElement));
                 break;
             default:
@@ -154,10 +155,10 @@ void DftToGspnTransformator<ValueType>::translateGSPNElements() {
 template<typename ValueType>
 void DftToGspnTransformator<ValueType>::translateBE(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> dftBE) {
     switch (dftBE->beType()) {
-        case storm::storage::BEType::CONSTANT:
+        case storm::dft::storage::elements::BEType::CONSTANT:
             translateBEConst(std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(dftBE));
             break;
-        case storm::storage::BEType::EXPONENTIAL:
+        case storm::dft::storage::elements::BEType::EXPONENTIAL:
             translateBEExponential(std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(dftBE));
             break;
         default:

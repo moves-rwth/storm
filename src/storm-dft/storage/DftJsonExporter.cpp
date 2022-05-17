@@ -43,7 +43,7 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
     Json nodeData;
     nodeData["id"] = std::to_string(element->id());
     nodeData["name"] = element->name();
-    std::string type = storm::storage::toString(element->type());
+    std::string type = storm::dft::storage::elements::toString(element->type());
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);
     nodeData["type"] = type;
 
@@ -58,7 +58,7 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
         nodeData["children"] = children;
 
         // Set threshold for voting gate
-        if (element->type() == storm::storage::DFTElementType::VOT) {
+        if (element->type() == storm::dft::storage::elements::DFTElementType::VOT) {
             nodeData["voting"] = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(element)->threshold();
         }
     } else if (element->isRestriction()) {
@@ -91,14 +91,14 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
             std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element);
         // Set BE specific data
         switch (be->beType()) {
-            case storm::storage::BEType::CONSTANT: {
+            case storm::dft::storage::elements::BEType::CONSTANT: {
                 auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
                 std::stringstream stream;
                 nodeData["distribution"] = "const";
                 nodeData["failed"] = beConst->failed();
                 break;
             }
-            case storm::storage::BEType::EXPONENTIAL: {
+            case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                 auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                 std::stringstream stream;
                 nodeData["distribution"] = "exp";

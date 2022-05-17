@@ -147,21 +147,21 @@ class SftToBddTransformator {
      * The given DFT is not a SFT
      */
     Bdd translate(std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const> gate) {
-        if (gate->type() == storm::storage::DFTElementType::AND) {
+        if (gate->type() == storm::dft::storage::elements::DFTElementType::AND) {
             // used only in conjunctions therefore neutral element -> 1
             auto tmpBdd{sylvanBddManager->getOne()};
             for (const std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>& child : gate->children()) {
                 tmpBdd &= translate(child);
             }
             return tmpBdd;
-        } else if (gate->type() == storm::storage::DFTElementType::OR) {
+        } else if (gate->type() == storm::dft::storage::elements::DFTElementType::OR) {
             // used only in disjunctions therefore neutral element -> 0
             auto tmpBdd{sylvanBddManager->getZero()};
             for (const std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>& child : gate->children()) {
                 tmpBdd |= translate(child);
             }
             return tmpBdd;
-        } else if (gate->type() == storm::storage::DFTElementType::VOT) {
+        } else if (gate->type() == storm::dft::storage::elements::DFTElementType::VOT) {
             return translate(std::dynamic_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(gate));
         }
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate of type \"" << gate->typestring() << "\" is not supported. Probably not a SFT.");

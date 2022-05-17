@@ -72,20 +72,20 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
     // Try modularisation
     if (allowModularisation) {
         switch (dft.getTopLevelType()) {
-            case storm::storage::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::AND:
                 STORM_LOG_TRACE("top modularisation called AND");
                 dfts = dft.topModularisation();
                 nrK = dfts.size();
                 nrM = dfts.size();
                 break;
-            case storm::storage::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::OR:
                 STORM_LOG_TRACE("top modularisation called OR");
                 dfts = dft.topModularisation();
                 nrK = 0;
                 nrM = dfts.size();
                 invResults = true;
                 break;
-            case storm::storage::DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::VOT:
                 STORM_LOG_TRACE("top modularisation called VOT");
                 dfts = dft.topModularisation();
                 nrK = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(dft.getTopLevelElement())->threshold();
@@ -168,19 +168,19 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
     // Try modularisation
     if (allowModularisation) {
         switch (dft.getTopLevelType()) {
-            case storm::storage::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::AND:
                 STORM_LOG_TRACE("top modularisation called AND");
                 dfts = dft.topModularisation();
                 STORM_LOG_TRACE("Modularisation into " << dfts.size() << " submodules.");
                 isAnd = true;
                 break;
-            case storm::storage::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::OR:
                 STORM_LOG_TRACE("top modularisation called OR");
                 dfts = dft.topModularisation();
                 STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
                 isAnd = false;
                 break;
-            case storm::storage::DFTElementType::VOT:
+            case storm::dft::storage::elements::DFTElementType::VOT:
                 // TODO enable modularisation for voting gate
                 break;
             default:

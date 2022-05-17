@@ -28,8 +28,8 @@ class DFTPor : public DFTGate<ValueType> {
         // Intentionally left empty.
     }
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::POR;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::POR;
     }
 
     std::string typestring() const override {

@@ -25,8 +25,8 @@ class DFTSeq : public DFTRestriction<ValueType> {
         // Intentionally left empty.
     }
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::SEQ;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::SEQ;
     }
 
     bool isSeqEnforcer() const override {

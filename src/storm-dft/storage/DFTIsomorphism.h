@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "storm-dft/storage/DFT.h"
-#include "storm-dft/storage/DFTElementType.h"
-#include "storm-dft/storage/DFTElements.h"
+#include "storm-dft/storage/elements/DFTElementType.h"
+#include "storm-dft/storage/elements/DFTElements.h"
 
 namespace storm {
 namespace storage {
@@ -18,7 +18,7 @@ struct GateGroupToHash {
     /**
      * Hash function, which ensures that the colours are sorted according to their rank.
      */
-    uint_fast64_t operator()(DFTElementType type, size_t nrChildren, size_t nrParents, size_t nrPDEPs, size_t rank) const {
+    uint_fast64_t operator()(storm::dft::storage::elements::DFTElementType type, size_t nrChildren, size_t nrParents, size_t nrPDEPs, size_t rank) const {
         // Sets first bit to 1
         uint_fast64_t groupHash = static_cast<uint_fast64_t>(1) << 63;
         // Assumes 5 bits for the rank,
@@ -40,7 +40,7 @@ struct RestrictionGroupToHash {
 
     static constexpr uint_fast64_t eightbitmask = (1 << 8) - 1;
 
-    uint_fast64_t operator()(DFTElementType type, size_t nrChildren, size_t rank) const {
+    uint_fast64_t operator()(storm::dft::storage::elements::DFTElementType type, size_t nrChildren, size_t rank) const {
         uint_fast64_t groupHash = static_cast<uint_fast64_t>(0);
         groupHash |= (static_cast<uint_fast64_t>(rank) & fivebitmask) << (62 - 5);
         groupHash |= (static_cast<uint_fast64_t>(nrChildren) & eightbitmask) << (62 - 5 - 8);
@@ -53,16 +53,16 @@ template<typename ValueType>
 struct BEColourClass {
     BEColourClass() = default;
 
-    BEColourClass(storm::storage::BEType type, ValueType active, ValueType passive, size_t parents)
+    BEColourClass(storm::dft::storage::elements::BEType type, ValueType active, ValueType passive, size_t parents)
         : type(type), nrParents(parents), aRate(active), pRate(passive) {
-        STORM_LOG_ASSERT(type == storm::storage::BEType::EXPONENTIAL, "Expected type EXPONENTIAL but got type " << type);
+        STORM_LOG_ASSERT(type == storm::dft::storage::elements::BEType::EXPONENTIAL, "Expected type EXPONENTIAL but got type " << type);
     }
 
-    BEColourClass(storm::storage::BEType type, bool fail, size_t parents) : type(type), nrParents(parents), failed(fail) {
-        STORM_LOG_ASSERT(type == storm::storage::BEType::CONSTANT, "Expected type CONSTANT but got type " << type);
+    BEColourClass(storm::dft::storage::elements::BEType type, bool fail, size_t parents) : type(type), nrParents(parents), failed(fail) {
+        STORM_LOG_ASSERT(type == storm::dft::storage::elements::BEType::CONSTANT, "Expected type CONSTANT but got type " << type);
     }
 
-    storm::storage::BEType type;
+    storm::dft::storage::elements::BEType type;
     size_t nrParents;
     ValueType aRate;
     ValueType pRate;
@@ -75,9 +75,9 @@ bool operator==(BEColourClass<ValueType> const& lhs, BEColourClass<ValueType> co
         return false;
     }
     switch (lhs.type) {
-        case storm::storage::BEType::EXPONENTIAL:
+        case storm::dft::storage::elements::BEType::EXPONENTIAL:
             return lhs.nrParents == rhs.nrParents && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
-        case storm::storage::BEType::CONSTANT:
+        case storm::dft::storage::elements::BEType::CONSTANT:
             return lhs.nrParents == rhs.nrParents && lhs.failed == rhs.failed;
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << lhs.type << "' is not known.");
@@ -268,12 +268,12 @@ class DFTColouring {
    protected:
     void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> const& be) {
         switch (be->beType()) {
-            case storm::storage::BEType::CONSTANT: {
+            case storm::dft::storage::elements::BEType::CONSTANT: {
                 auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
                 beColour[beConst->id()] = BEColourClass<ValueType>(beConst->beType(), beConst->failed(), beConst->nrParents());
                 break;
             }
-            case storm::storage::BEType::EXPONENTIAL: {
+            case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                 auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                 beColour[beExp->id()] = BEColourClass<ValueType>(beExp->beType(), beExp->activeFailureRate(), beExp->passiveFailureRate(), beExp->nrParents());
                 break;
@@ -294,13 +294,13 @@ class DFTColouring {
         // TODO this can be improved for n-ary dependencies.
         std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be = dep->dependentEvents()[0];
         switch (be->beType()) {
-            case storm::storage::BEType::CONSTANT: {
+            case storm::dft::storage::elements::BEType::CONSTANT: {
                 auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
                 depColour[dep->id()] = std::pair<ValueType, ValueType>(
                     dep->probability(), beConst->failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
                 break;
             }
-            case storm::storage::BEType::EXPONENTIAL: {
+            case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                 auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                 depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beExp->activeFailureRate());
                 break;
@@ -693,10 +693,10 @@ struct hash<storm::storage::BEColourClass<ValueType>> {
         groupHash |= (static_cast<uint_fast64_t>(bcc.type) & fivebitmask) << (62 - 5);
 
         switch (bcc.type) {
-            case storm::storage::BEType::CONSTANT:
+            case storm::dft::storage::elements::BEType::CONSTANT:
                 groupHash |= (static_cast<uint_fast64_t>(bcc.failed) & fortybitmask) << 8;
                 break;
-            case storm::storage::BEType::EXPONENTIAL:
+            case storm::dft::storage::elements::BEType::EXPONENTIAL:
                 groupHash |= ((hasher(bcc.aRate) ^ hasher(bcc.pRate)) & fortybitmask) << 8;
                 break;
             default:

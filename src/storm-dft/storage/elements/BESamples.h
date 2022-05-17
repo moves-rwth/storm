@@ -26,8 +26,8 @@ class BESamples : public DFTBE<ValueType> {
         STORM_LOG_ASSERT(this->canFail(), "At least one sample should have a non-zero probability.");
     }
 
-    storm::storage::BEType beType() const override {
-        return storm::storage::BEType::SAMPLES;
+    storm::dft::storage::elements::BEType beType() const override {
+        return storm::dft::storage::elements::BEType::SAMPLES;
     }
 
     /*!

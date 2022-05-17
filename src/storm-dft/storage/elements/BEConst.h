@@ -23,8 +23,8 @@ class BEConst : public DFTBE<ValueType> {
         // Intentionally empty
     }
 
-    storm::storage::BEType beType() const override {
-        return storm::storage::BEType::CONSTANT;
+    storm::dft::storage::elements::BEType beType() const override {
+        return storm::dft::storage::elements::BEType::CONSTANT;
     }
 
     /*!

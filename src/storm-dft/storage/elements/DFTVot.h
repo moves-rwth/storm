@@ -34,12 +34,12 @@ class DFTVot : public DFTGate<ValueType> {
         return mThreshold;
     }
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::VOT;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::VOT;
     }
 
     std::string typestring() const override {
-        return storm::storage::toString(this->type()) + " (" + std::to_string(mThreshold) + ")";
+        return storm::dft::storage::elements::toString(this->type()) + " (" + std::to_string(mThreshold) + ")";
     }
 
     void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {

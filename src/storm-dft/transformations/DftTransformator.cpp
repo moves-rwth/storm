@@ -17,10 +17,10 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::tra
     for (size_t i = 0; i < dft.nrElements(); ++i) {
         std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(i);
         switch (element->type()) {
-            case storm::storage::DFTElementType::BE: {
+            case storm::dft::storage::elements::DFTElementType::BE: {
                 auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element);
                 switch (be->beType()) {
-                    case storm::storage::BEType::CONSTANT: {
+                    case storm::dft::storage::elements::BEType::CONSTANT: {
                         auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(element);
                         if (beConst->canFail()) {
                             STORM_LOG_TRACE("Transform " + beConst->name() + " [BE (const failed)]");
@@ -30,7 +30,7 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::tra
                         builder.addBasicElementConst(beConst->name(), false);
                         break;
                     }
-                    case storm::storage::BEType::EXPONENTIAL: {
+                    case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                         auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(element);
                         builder.addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
                         break;
@@ -41,39 +41,39 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::tra
                 }
                 break;
             }
-            case storm::storage::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::AND:
                 builder.addAndElement(element->name(), getChildrenVector(element));
                 break;
-            case storm::storage::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::OR:
                 builder.addOrElement(element->name(), getChildrenVector(element));
                 break;
-            case storm::storage::DFTElementType::VOT: {
+            case storm::dft::storage::elements::DFTElementType::VOT: {
                 auto vot = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(element);
                 builder.addVotElement(vot->name(), vot->threshold(), getChildrenVector(vot));
                 break;
             }
-            case storm::storage::DFTElementType::PAND: {
+            case storm::dft::storage::elements::DFTElementType::PAND: {
                 auto pand = std::static_pointer_cast<storm::dft::storage::elements::DFTPand<ValueType> const>(element);
                 builder.addPandElement(pand->name(), getChildrenVector(pand), pand->isInclusive());
                 break;
             }
-            case storm::storage::DFTElementType::POR: {
+            case storm::dft::storage::elements::DFTElementType::POR: {
                 auto por = std::static_pointer_cast<storm::dft::storage::elements::DFTPor<ValueType> const>(element);
                 builder.addPandElement(por->name(), getChildrenVector(por), por->isInclusive());
                 break;
             }
-            case storm::storage::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
                 builder.addSpareElement(element->name(), getChildrenVector(element));
                 break;
-            case storm::storage::DFTElementType::PDEP: {
+            case storm::dft::storage::elements::DFTElementType::PDEP: {
                 auto dep = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(element);
                 builder.addDepElement(dep->name(), getChildrenVector(dep), dep->probability());
                 break;
             }
-            case storm::storage::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
                 builder.addSequenceEnforcer(element->name(), getChildrenVector(element));
                 break;
-            case storm::storage::DFTElementType::MUTEX:
+            case storm::dft::storage::elements::DFTElementType::MUTEX:
                 builder.addMutex(element->name(), getChildrenVector(element));
                 break;
             default:
@@ -106,15 +106,15 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::tra
     for (size_t i = 0; i < dft.nrElements(); ++i) {
         std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(i);
         switch (element->type()) {
-            case storm::storage::DFTElementType::BE: {
+            case storm::dft::storage::elements::DFTElementType::BE: {
                 auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element);
                 switch (be->beType()) {
-                    case storm::storage::BEType::CONSTANT: {
+                    case storm::dft::storage::elements::BEType::CONSTANT: {
                         auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(element);
                         builder.addBasicElementConst(beConst->name(), beConst->canFail());
                         break;
                     }
-                    case storm::storage::BEType::EXPONENTIAL: {
+                    case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                         auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(element);
                         builder.addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
                         break;
@@ -125,31 +125,31 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::tra
                 }
                 break;
             }
-            case storm::storage::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::AND:
                 builder.addAndElement(element->name(), getChildrenVector(element));
                 break;
-            case storm::storage::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::OR:
                 builder.addOrElement(element->name(), getChildrenVector(element));
                 break;
-            case storm::storage::DFTElementType::VOT: {
+            case storm::dft::storage::elements::DFTElementType::VOT: {
                 auto vot = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(element);
                 builder.addVotElement(vot->name(), vot->threshold(), getChildrenVector(vot));
                 break;
             }
-            case storm::storage::DFTElementType::PAND: {
+            case storm::dft::storage::elements::DFTElementType::PAND: {
                 auto pand = std::static_pointer_cast<storm::dft::storage::elements::DFTPand<ValueType> const>(element);
                 builder.addPandElement(pand->name(), getChildrenVector(pand), pand->isInclusive());
                 break;
             }
-            case storm::storage::DFTElementType::POR: {
+            case storm::dft::storage::elements::DFTElementType::POR: {
                 auto por = std::static_pointer_cast<storm::dft::storage::elements::DFTPor<ValueType> const>(element);
                 builder.addPorElement(por->name(), getChildrenVector(por), por->isInclusive());
                 break;
             }
-            case storm::storage::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
                 builder.addSpareElement(element->name(), getChildrenVector(element));
                 break;
-            case storm::storage::DFTElementType::PDEP: {
+            case storm::dft::storage::elements::DFTElementType::PDEP: {
                 auto dep = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(element);
                 auto children = getChildrenVector(dep);
                 if (!storm::utility::isOne(dep->probability())) {
@@ -197,10 +197,10 @@ std::shared_ptr<storm::storage::DFT<ValueType>> DftTransformator<ValueType>::tra
                 }
                 break;
             }
-            case storm::storage::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
                 builder.addSequenceEnforcer(element->name(), getChildrenVector(element));
                 break;
-            case storm::storage::DFTElementType::MUTEX:
+            case storm::dft::storage::elements::DFTElementType::MUTEX:
                 builder.addMutex(element->name(), getChildrenVector(element));
                 break;
             default:

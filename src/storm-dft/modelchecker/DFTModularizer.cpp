@@ -86,7 +86,7 @@ std::vector<DFTElementCPointer> DFTModularizer::getDecendants(DFTElementCPointer
 }
 
 bool DFTModularizer::isElementStatic(DFTElementCPointer const element) {
-    return storm::storage::isStaticGateType(element->type()) || element->isBasicElement();
+    return storm::dft::storage::elements::isStaticGateType(element->type()) || element->isBasicElement();
 }
 
 void DFTModularizer::populateDfsCounters() {

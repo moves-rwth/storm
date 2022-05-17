@@ -25,8 +25,8 @@ class DFTMutex : public DFTRestriction<ValueType> {
         // Intentionally left empty.
     }
 
-    storm::storage::DFTElementType type() const override {
-        return storm::storage::DFTElementType::MUTEX;
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::MUTEX;
     }
 
     bool isMutex() const override {
