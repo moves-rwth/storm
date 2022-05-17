@@ -2,8 +2,9 @@
 
 #include "DFTBE.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * BE with exponential failure rate.
@@ -24,8 +25,8 @@ class BEExponential : public DFTBE<ValueType> {
         STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(failureRate), "Exponential failure rate should not be zero.");
     }
 
-    BEType beType() const override {
-        return BEType::EXPONENTIAL;
+    storm::storage::BEType beType() const override {
+        return storm::storage::BEType::EXPONENTIAL;
     }
 
     /*!
@@ -96,5 +97,6 @@ class BEExponential : public DFTBE<ValueType> {
     bool mTransient;
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

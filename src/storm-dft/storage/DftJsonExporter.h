@@ -15,9 +15,9 @@ template<typename ValueType>
 class DftJsonExporter {
     typedef typename storm::json<double> Json;
 
-    using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
-    using DFTElementCPointer = std::shared_ptr<DFTElement<ValueType> const>;
-    using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+    using DFTElementPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>;
+    using DFTElementCPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>;
+    using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
 
    public:
     static void toFile(storm::storage::DFT<ValueType> const& dft, std::string const& filepath);

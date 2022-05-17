@@ -88,7 +88,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
             case storm::storage::DFTElementType::VOT:
                 STORM_LOG_TRACE("top modularisation called VOT");
                 dfts = dft.topModularisation();
-                nrK = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(dft.getTopLevelElement())->threshold();
+                nrK = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(dft.getTopLevelElement())->threshold();
                 nrM = dfts.size();
                 if (nrK <= nrM / 2) {
                     nrK -= 1;

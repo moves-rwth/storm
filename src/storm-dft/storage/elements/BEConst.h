@@ -2,8 +2,9 @@
 
 #include "DFTBE.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * BE which is either constant failed or constant failsafe.
@@ -22,8 +23,8 @@ class BEConst : public DFTBE<ValueType> {
         // Intentionally empty
     }
 
-    BEType beType() const override {
-        return BEType::CONSTANT;
+    storm::storage::BEType beType() const override {
+        return storm::storage::BEType::CONSTANT;
     }
 
     /*!
@@ -58,5 +59,6 @@ class BEConst : public DFTBE<ValueType> {
     bool mFailed;
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

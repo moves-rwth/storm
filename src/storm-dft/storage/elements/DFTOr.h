@@ -2,8 +2,9 @@
 
 #include "DFTGate.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * OR gate.
@@ -23,18 +24,18 @@ class DFTOr : public DFTGate<ValueType> {
         // Intentionally empty
     }
 
-    DFTElementType type() const override {
-        return DFTElementType::OR;
+    storm::storage::DFTElementType type() const override {
+        return storm::storage::DFTElementType::OR;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(this->hasFailedChild(state), "No failed child.");
         if (state.isOperational(this->mId)) {
             this->fail(state, queues);
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         for (auto const& child : this->children()) {
             if (!state.isFailsafe(child->id())) {
                 return;
@@ -45,5 +46,6 @@ class DFTOr : public DFTGate<ValueType> {
     }
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

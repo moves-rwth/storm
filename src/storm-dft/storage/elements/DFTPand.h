@@ -2,8 +2,9 @@
 
 #include "DFTGate.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * Priority AND (PAND) gate.
@@ -27,8 +28,8 @@ class DFTPand : public DFTGate<ValueType> {
         // Intentionally left empty.
     }
 
-    DFTElementType type() const override {
-        return DFTElementType::PAND;
+    storm::storage::DFTElementType type() const override {
+        return storm::storage::DFTElementType::PAND;
     }
 
     std::string typestring() const override {
@@ -43,7 +44,7 @@ class DFTPand : public DFTGate<ValueType> {
         return inclusive;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(isInclusive(), "Exclusive PAND not supported.");
         if (state.isOperational(this->mId)) {
             bool childOperationalBefore = false;
@@ -64,7 +65,7 @@ class DFTPand : public DFTGate<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(isInclusive(), "Exclusive PAND not supported.");
         STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
         if (state.isOperational(this->mId)) {
@@ -77,5 +78,6 @@ class DFTPand : public DFTGate<ValueType> {
     bool inclusive;
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

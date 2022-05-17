@@ -266,15 +266,15 @@ class DFTColouring {
     }
 
    protected:
-    void colourize(std::shared_ptr<const DFTBE<ValueType>> const& be) {
+    void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> const& be) {
         switch (be->beType()) {
             case storm::storage::BEType::CONSTANT: {
-                auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
+                auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
                 beColour[beConst->id()] = BEColourClass<ValueType>(beConst->beType(), beConst->failed(), beConst->nrParents());
                 break;
             }
             case storm::storage::BEType::EXPONENTIAL: {
-                auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                 beColour[beExp->id()] = BEColourClass<ValueType>(beExp->beType(), beExp->activeFailureRate(), beExp->passiveFailureRate(), beExp->nrParents());
                 break;
             }
@@ -284,24 +284,24 @@ class DFTColouring {
         }
     }
 
-    void colourize(std::shared_ptr<const DFTGate<ValueType>> const& gate) {
+    void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTGate<ValueType>> const& gate) {
         STORM_LOG_TRACE("Colour " << gate->id() << ": " << gate->type() << " " << gate->nrChildren() << " " << gate->rank() << ".");
         gateColour[gate->id()] = gateColourizer(gate->type(), gate->nrChildren(), gate->nrParents(), 0, gate->rank());
         STORM_LOG_TRACE("Coloured " << gate->id() << " with " << gateColour[gate->id()] << ".");
     }
 
-    void colourize(std::shared_ptr<const DFTDependency<ValueType>> const& dep) {
+    void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTDependency<ValueType>> const& dep) {
         // TODO this can be improved for n-ary dependencies.
-        std::shared_ptr<DFTBE<ValueType> const> be = dep->dependentEvents()[0];
+        std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be = dep->dependentEvents()[0];
         switch (be->beType()) {
             case storm::storage::BEType::CONSTANT: {
-                auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
+                auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
                 depColour[dep->id()] = std::pair<ValueType, ValueType>(
                     dep->probability(), beConst->failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
                 break;
             }
             case storm::storage::BEType::EXPONENTIAL: {
-                auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                 depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beExp->activeFailureRate());
                 break;
             }
@@ -311,7 +311,7 @@ class DFTColouring {
         }
     }
 
-    void colourize(std::shared_ptr<const DFTRestriction<ValueType>> const& restr) {
+    void colourize(std::shared_ptr<const storm::dft::storage::elements::DFTRestriction<ValueType>> const& restr) {
         restrictionColour[restr->id()] = restrColourizer(restr->type(), restr->nrChildren(), restr->rank());
     }
 };

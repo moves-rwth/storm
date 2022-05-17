@@ -63,42 +63,42 @@ class DftToGspnTransformator {
      *
      * @param dftBE The basic event.
      */
-    void translateBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
+    void translateBE(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> dftBE);
 
     /*!
      * Translate an exponential BE.
      *
      * @param dftBE The exponential Basic Event.
      */
-    void translateBEExponential(std::shared_ptr<storm::storage::BEExponential<ValueType> const> dftBE);
+    void translateBEExponential(std::shared_ptr<storm::dft::storage::elements::BEExponential<ValueType> const> dftBE);
 
     /*!
      * Translate a constant BE
      *
      * @param dftConst The constant Basic Event.
      */
-    void translateBEConst(std::shared_ptr<storm::storage::BEConst<ValueType> const> dftConst);
+    void translateBEConst(std::shared_ptr<storm::dft::storage::elements::BEConst<ValueType> const> dftConst);
 
     /*!
      * Translate a GSPN AND.
      *
      * @param dftAnd The AND gate.
      */
-    void translateAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd);
+    void translateAND(std::shared_ptr<storm::dft::storage::elements::DFTAnd<ValueType> const> dftAnd);
 
     /*!
      * Translate a GSPN OR.
      *
      * @param dftOr The OR gate.
      */
-    void translateOR(std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr);
+    void translateOR(std::shared_ptr<storm::dft::storage::elements::DFTOr<ValueType> const> dftOr);
 
     /*!
      * Translate a GSPN VOT.
      *
      * @param dftVot The VOT gate.
      */
-    void translateVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot);
+    void translateVOT(std::shared_ptr<storm::dft::storage::elements::DFTVot<ValueType> const> dftVot);
 
     /*!
      * Translate a GSPN PAND.
@@ -106,7 +106,7 @@ class DftToGspnTransformator {
      * @param dftPand The PAND gate.
      * @param inclusive Flag wether the PAND is inclusive (children are allowed to fail simultaneously and the PAND will fail nevertheless)
      */
-    void translatePAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand, bool inclusive = true);
+    void translatePAND(std::shared_ptr<storm::dft::storage::elements::DFTPand<ValueType> const> dftPand, bool inclusive = true);
 
     /*!
      * Translate a GSPN POR.
@@ -114,28 +114,28 @@ class DftToGspnTransformator {
      * @param dftPor The POR gate.
      * @param inclusive Flag wether the POR is inclusive (children are allowed to fail simultaneously and the POR will fail nevertheless)
      */
-    void translatePOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor, bool inclusive = true);
+    void translatePOR(std::shared_ptr<storm::dft::storage::elements::DFTPor<ValueType> const> dftPor, bool inclusive = true);
 
     /*!
      * Translate a GSPN SPARE.
      *
      * @param dftSpare The SPARE gate.
      */
-    void translateSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare);
+    void translateSPARE(std::shared_ptr<storm::dft::storage::elements::DFTSpare<ValueType> const> dftSpare);
 
     /*!
      * Translate a GSPN PDEP (FDEP is included with a probability of 1).
      *
      * @param dftDependency The PDEP gate.
      */
-    void translatePDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency);
+    void translatePDEP(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dftDependency);
 
     /*!
      * Translate a GSPN SEQ.
      *
      * @param dftSeq The SEQ gate.
      */
-    void translateSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq);
+    void translateSeq(std::shared_ptr<storm::dft::storage::elements::DFTSeq<ValueType> const> dftSeq);
 
     /*!
      * Check if the element is active intially.
@@ -144,7 +144,7 @@ class DftToGspnTransformator {
      *
      * @return True iff element is active initially.
      */
-    bool isActiveInitially(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
+    bool isActiveInitially(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dFTElement);
 
     /*!
      * Get the priority of the element.
@@ -154,7 +154,7 @@ class DftToGspnTransformator {
      *
      * @param dftElement The element whose priority shall be determined.
      */
-    uint64_t getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dFTElement);
+    uint64_t getFailPriority(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dFTElement);
 
     /*!
      * Add failed place for an element.
@@ -165,7 +165,7 @@ class DftToGspnTransformator {
      *
      * @return Id of added failed place.
      */
-    uint64_t addFailedPlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const &layoutInfo,
+    uint64_t addFailedPlace(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const &layoutInfo,
                             bool initialFailed = false);
 
     /*!
@@ -177,8 +177,8 @@ class DftToGspnTransformator {
      *
      * @return Id of added unavailable place.
      */
-    uint64_t addUnavailablePlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const &layoutInfo,
-                                 bool initialAvailable = true);
+    uint64_t addUnavailablePlace(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement,
+                                 storm::gspn::LayoutInfo const &layoutInfo, bool initialAvailable = true);
 
     /*!
      * Add disabled place for element.
@@ -188,7 +188,7 @@ class DftToGspnTransformator {
      *
      * @return Id of added disabled place.
      */
-    uint64_t addDisabledPlace(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBe, storm::gspn::LayoutInfo const &layoutInfo);
+    uint64_t addDisabledPlace(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> dftBe, storm::gspn::LayoutInfo const &layoutInfo);
 
     /*!
      * Add don't care place for element.
@@ -198,7 +198,8 @@ class DftToGspnTransformator {
      *
      * @return Id of added don't care place.
      */
-    uint64_t addDontcareTransition(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement, storm::gspn::LayoutInfo const &layoutInfo);
+    uint64_t addDontcareTransition(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement,
+                                   storm::gspn::LayoutInfo const &layoutInfo);
 
     /*!
      * Get failed place for element.
@@ -207,7 +208,7 @@ class DftToGspnTransformator {
      *
      * @return Id of failed place corresponding to the given element.
      */
-    uint64_t getFailedPlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
+    uint64_t getFailedPlace(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement) {
         return failedPlaces.at(dftElement->id());
     }
 

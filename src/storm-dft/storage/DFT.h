@@ -37,7 +37,8 @@ namespace storage {
 
 template<typename ValueType>
 struct DFTElementSort {
-    bool operator()(std::shared_ptr<DFTElement<ValueType>> const& a, std::shared_ptr<DFTElement<ValueType>> const& b) const {
+    bool operator()(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& a,
+                    std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& b) const {
         if (a->rank() == 0 && b->rank() == 0) {
             return a->isConstant();
         } else {
@@ -55,12 +56,12 @@ class DFTColouring;
  */
 template<typename ValueType>
 class DFT {
-    using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
-    using DFTElementCPointer = std::shared_ptr<DFTElement<ValueType> const>;
+    using DFTElementPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>;
+    using DFTElementCPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>;
     using DFTElementVector = std::vector<DFTElementPointer>;
-    using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+    using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
     using DFTGateVector = std::vector<DFTGatePointer>;
-    using DFTStatePointer = std::shared_ptr<DFTState<ValueType>>;
+    using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
 
    private:
     DFTElementVector mElements;
@@ -166,14 +167,15 @@ class DFT {
         std::vector<size_t> result;
         for (DFTElementPointer elem : mElements) {
             if (elem->isBasicElement()) {
-                std::shared_ptr<DFTBE<ValueType>> be = std::static_pointer_cast<DFTBE<ValueType>>(elem);
+                std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>> be =
+                    std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(elem);
                 if (be->canFail()) {
                     switch (be->beType()) {
                         case storm::storage::BEType::CONSTANT:
                             result.push_back(be->id());
                             break;
                         case storm::storage::BEType::EXPONENTIAL: {
-                            auto beExp = std::static_pointer_cast<BEExponential<ValueType>>(be);
+                            auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType>>(be);
                             if (!beExp->isColdBasicElement()) {
                                 result.push_back(be->id());
                             }
@@ -213,35 +215,35 @@ class DFT {
         return getElement(index)->isRestriction();
     }
 
-    std::shared_ptr<DFTBE<ValueType> const> getBasicElement(size_t index) const {
+    std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> getBasicElement(size_t index) const {
         STORM_LOG_ASSERT(isBasicElement(index), "Element is no BE.");
-        return std::static_pointer_cast<DFTBE<ValueType> const>(mElements[index]);
+        return std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(mElements[index]);
     }
 
     DFTElementCPointer getTopLevelElement() const {
         return getElement(getTopLevelIndex());
     }
 
-    std::shared_ptr<DFTGate<ValueType> const> getGate(size_t index) const {
+    std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const> getGate(size_t index) const {
         STORM_LOG_ASSERT(isGate(index), "Element is no gate.");
-        return std::static_pointer_cast<DFTGate<ValueType> const>(mElements[index]);
+        return std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType> const>(mElements[index]);
     }
 
-    std::shared_ptr<DFTDependency<ValueType> const> getDependency(size_t index) const {
+    std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> getDependency(size_t index) const {
         STORM_LOG_ASSERT(isDependency(index), "Element is no dependency.");
-        return std::static_pointer_cast<DFTDependency<ValueType> const>(mElements[index]);
+        return std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(mElements[index]);
     }
 
-    std::shared_ptr<DFTRestriction<ValueType> const> getRestriction(size_t index) const {
+    std::shared_ptr<storm::dft::storage::elements::DFTRestriction<ValueType> const> getRestriction(size_t index) const {
         STORM_LOG_ASSERT(isRestriction(index), "Element is no restriction.");
-        return std::static_pointer_cast<DFTRestriction<ValueType> const>(mElements[index]);
+        return std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<ValueType> const>(mElements[index]);
     }
 
-    std::vector<std::shared_ptr<DFTBE<ValueType>>> getBasicElements() const {
-        std::vector<std::shared_ptr<DFTBE<ValueType>>> elements;
+    std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>> getBasicElements() const {
+        std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>> elements;
         for (DFTElementPointer elem : mElements) {
             if (elem->isBasicElement()) {
-                elements.push_back(std::static_pointer_cast<DFTBE<ValueType>>(elem));
+                elements.push_back(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(elem));
             }
         }
         return elements;

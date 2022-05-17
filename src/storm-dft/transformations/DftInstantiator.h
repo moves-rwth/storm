@@ -39,7 +39,7 @@ class DftInstantiator {
    private:
     storm::storage::DFT<ParametricType> const& dft;
 
-    std::vector<std::string> getChildrenVector(std::shared_ptr<storm::storage::DFTElement<ParametricType> const> element);
+    std::vector<std::string> getChildrenVector(std::shared_ptr<storm::dft::storage::elements::DFTElement<ParametricType> const> element);
 };
 
 }  // namespace transformations

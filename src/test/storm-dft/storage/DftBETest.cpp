@@ -6,7 +6,7 @@
 namespace {
 
 TEST(DftBETest, FailureConstant) {
-    storm::storage::BEConst<double> be(0, "Test", true);
+    storm::dft::storage::elements::BEConst<double> be(0, "Test", true);
     EXPECT_TRUE(be.failed());
     EXPECT_TRUE(be.canFail());
 
@@ -15,7 +15,7 @@ TEST(DftBETest, FailureConstant) {
 }
 
 TEST(DftBETest, FailureExponential) {
-    storm::storage::BEExponential<double> be(0, "Test", 3, 0.5);
+    storm::dft::storage::elements::BEExponential<double> be(0, "Test", 3, 0.5);
 
     EXPECT_TRUE(be.canFail());
     EXPECT_EQ(1.5, be.passiveFailureRate());
@@ -37,7 +37,7 @@ TEST(DftBETest, FailureSamples) {
                                         {1.5, 0.9994964109502631},
                                         {1.75, 0.999999925546118},
                                         {2.0, 0.9999999999999873}};
-    storm::storage::BESamples<double> be(0, "Weibull", samples);
+    storm::dft::storage::elements::BESamples<double> be(0, "Weibull", samples);
 
     EXPECT_TRUE(be.canFail());
 

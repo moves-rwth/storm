@@ -35,8 +35,9 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
         } else if (elem->isSpareGate()) {
             // Build spare modules by setting representatives and representants
             ++mNrOfSpares;
-            mMaxSpareChildCount = std::max(mMaxSpareChildCount, std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children().size());
-            for (auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
+            mMaxSpareChildCount =
+                std::max(mMaxSpareChildCount, std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType>>(elem)->children().size());
+            for (auto const& spareReprs : std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType>>(elem)->children()) {
                 STORM_LOG_THROW(spareReprs->isGate() || spareReprs->isBasicElement(), storm::exceptions::WrongFormatException,
                                 "Child '" << spareReprs->name() << "' of spare '" << elem->name() << "' must be gate or BE.");
                 std::set<size_t> module = {spareReprs->id()};
@@ -107,7 +108,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
             case storage::DFTElementType::PAND:
             case storage::DFTElementType::POR:
             case storage::DFTElementType::MUTEX: {
-                auto gate = std::static_pointer_cast<storm::storage::DFTChildren<ValueType>>(element);
+                auto gate = std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ValueType>>(element);
                 dynamicBehaviorVector[gate->id()] = true;
                 for (auto const& child : gate->children()) {
                     // only enqueue static children
@@ -119,7 +120,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
             }
                 // TODO different cases
             case storage::DFTElementType::SPARE: {
-                auto spare = std::static_pointer_cast<storm::storage::DFTSpare<ValueType>>(element);
+                auto spare = std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType>>(element);
 
                 // Iterate over all children (representatives of spare modules)
                 for (auto const& child : spare->children()) {
@@ -174,7 +175,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
                 break;
             }
             case storage::DFTElementType::SEQ: {
-                auto seq = std::static_pointer_cast<storm::storage::DFTSeq<ValueType>>(element);
+                auto seq = std::static_pointer_cast<storm::dft::storage::elements::DFTSeq<ValueType>>(element);
                 // A SEQ only has dynamic behavior if not all children are BEs
                 if (!seq->allChildrenBEs()) {
                     dynamicBehaviorVector[seq->id()] = true;
@@ -203,7 +204,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
             case storage::DFTElementType::VOT: {
                 // check all parents and if one has dynamic behavior, propagate it
                 dynamicBehaviorVector[currentElement->id()] = true;
-                auto gate = std::static_pointer_cast<storm::storage::DFTGate<ValueType>>(currentElement);
+                auto gate = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(currentElement);
                 for (auto const& child : gate->children()) {
                     // only enqueue static children
                     if (!dynamicBehaviorVector.at(child->id())) {
@@ -214,7 +215,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
             }
                 // BEs
             case storage::DFTElementType::BE: {
-                auto be = std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(currentElement);
+                auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(currentElement);
                 dynamicBehaviorVector[be->id()] = true;
                 // add all ingoing dependencies to queue
                 for (auto const& dep : be->ingoingDependencies()) {
@@ -225,7 +226,7 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
                 break;
             }
             case storage::DFTElementType::PDEP: {
-                auto dep = std::static_pointer_cast<storm::storage::DFTDependency<ValueType>>(currentElement);
+                auto dep = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType>>(currentElement);
                 dynamicBehaviorVector[dep->id()] = true;
                 // add all ingoing dependencies to queue
                 auto trigger = dep->triggerEvent();
@@ -335,7 +336,7 @@ DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::
     // TODO symmetries in dependencies?
     // Consider dependencies
     for (size_t idDependency : getDependencies()) {
-        std::shared_ptr<DFTDependency<ValueType> const> dependency = getDependency(idDependency);
+        std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = getDependency(idDependency);
         visitQueue.push(dependency->id());
         visitQueue.push(dependency->triggerEvent()->id());
         STORM_LOG_THROW(dependency->dependentEvents().size() == 1, storm::exceptions::NotSupportedException,
@@ -399,7 +400,7 @@ size_t DFT<ValueType>::performStateGenerationInfoDFS(DFTStateGenerationInfo& gen
 
         // Insert children
         if (mElements[id]->isGate()) {
-            for (auto const& child : std::static_pointer_cast<DFTGate<ValueType>>(mElements[id])->children()) {
+            for (auto const& child : std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(mElements[id])->children()) {
                 visitQueue.push(child->id());
             }
         }
@@ -492,10 +493,11 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
         STORM_LOG_ASSERT(rewrites.size() > 1, "No rewritten elements.");
         STORM_LOG_ASSERT(mElements[rewrites[1]]->hasParents(), "Rewritten elements has no parents.");
         STORM_LOG_ASSERT(mElements[rewrites[1]]->parents().front()->isGate(), "Rewritten element has no parent gate.");
-        DFTGatePointer originalParent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[rewrites[0]]);
+        DFTGatePointer originalParent = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(mElements[rewrites[0]]);
         STORM_LOG_ASSERT(std::find_if(mElements[rewrites[1]]->parents().begin(), mElements[rewrites[1]]->parents().end(),
-                                      [&originalParent](std::shared_ptr<DFTElement<ValueType>> const& p) { return p->id() == originalParent->id(); }) !=
-                             mElements[rewrites[1]]->parents().end(),
+                                      [&originalParent](std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& p) {
+                                          return p->id() == originalParent->id();
+                                      }) != mElements[rewrites[1]]->parents().end(),
                          "Rewritten element has not the same parent");
         std::string newParentName = builder.getUniqueName(originalParent->name());
 
@@ -503,8 +505,9 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
         std::vector<std::string> childrenNames;
         for (size_t i = 1; i < rewrites.size(); ++i) {
             STORM_LOG_ASSERT(std::find_if(mElements[rewrites[i]]->parents().begin(), mElements[rewrites[i]]->parents().end(),
-                                          [&originalParent](std::shared_ptr<DFTElement<ValueType>> const& p) { return p->id() == originalParent->id(); }) !=
-                                 mElements[rewrites[i]]->parents().end(),
+                                          [&originalParent](std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& p) {
+                                              return p->id() == originalParent->id();
+                                          }) != mElements[rewrites[i]]->parents().end(),
                              "Children have not the same father for rewrite " << mElements[rewrites[i]]->name());
 
             childrenNames.push_back(mElements[rewrites[i]]->name());
@@ -787,7 +790,7 @@ bool DFT<ValueType>::checkWellFormedness(bool validForAnalysis, std::ostream& st
     if (validForAnalysis) {
         // Check that each dependency is binary
         for (size_t idDependency : this->getDependencies()) {
-            std::shared_ptr<DFTDependency<ValueType> const> dependency = this->getDependency(idDependency);
+            std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = this->getDependency(idDependency);
             if (dependency->dependentEvents().size() != 1) {
                 if (!wellformed) {
                     stream << '\n';
@@ -858,8 +861,10 @@ std::map<size_t, size_t> DFT<ValueType>::findBijection(size_t index1, size_t ind
             bool bijectionSpareCompatible = true;
             for (size_t elementId : isubdft1) {
                 if (getElement(elementId)->isSpareGate()) {
-                    std::shared_ptr<DFTSpare<ValueType>> spareLeft = std::static_pointer_cast<DFTSpare<ValueType>>(mElements[elementId]);
-                    std::shared_ptr<DFTSpare<ValueType>> spareRight = std::static_pointer_cast<DFTSpare<ValueType>>(mElements[bijection.at(elementId)]);
+                    std::shared_ptr<storm::dft::storage::elements::DFTSpare<ValueType>> spareLeft =
+                        std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType>>(mElements[elementId]);
+                    std::shared_ptr<storm::dft::storage::elements::DFTSpare<ValueType>> spareRight =
+                        std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType>>(mElements[bijection.at(elementId)]);
 
                     if (spareLeft->nrChildren() != spareRight->nrChildren()) {
                         bijectionSpareCompatible = false;
@@ -981,9 +986,9 @@ std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
     for (auto const& e : mElements) {
         if (e->isGate() && (e->type() == DFTElementType::AND || e->type() == DFTElementType::OR)) {
             // suitable parent gate! - Lets check the independent submodules of the children
-            auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(e)->children();
+            auto const& children = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(e)->children();
             for (auto const& child : children) {
-                auto ISD = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
+                auto ISD = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(child)->independentSubDft(true);
                 // In the ISD, check for other children:
 
                 std::vector<size_t> rewrite = {e->id(), child->id()};
@@ -991,7 +996,9 @@ std::vector<size_t> DFT<ValueType>::findModularisationRewrite() const {
                     if (isdElemId == child->id())
                         continue;
                     if (std::find_if(children.begin(), children.end(),
-                                     [&isdElemId](std::shared_ptr<DFTElement<ValueType>> const& e) { return e->id() == isdElemId; }) != children.end()) {
+                                     [&isdElemId](std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>> const& e) {
+                                         return e->id() == isdElemId;
+                                     }) != children.end()) {
                         // element in subtree is also child
                         rewrite.push_back(isdElemId);
                     }
@@ -1187,19 +1194,19 @@ void DFT<ValueType>::writeStatsToStream(std::ostream& stream) const {
 std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunction> const& dft) {
     std::set<storm::RationalFunctionVariable> result;
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<storm::RationalFunction> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<storm::RationalFunction> const> element = dft.getElement(i);
         switch (element->type()) {
             case storm::storage::DFTElementType::BE: {
-                auto be = std::static_pointer_cast<storm::storage::DFTBE<storm::RationalFunction> const>(element);
+                auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<storm::RationalFunction> const>(element);
                 if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
-                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<storm::RationalFunction> const>(element);
+                    auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<storm::RationalFunction> const>(element);
                     beExp->activeFailureRate().gatherVariables(result);
                     beExp->dormancyFactor().gatherVariables(result);
                 }
                 break;
             }
             case storm::storage::DFTElementType::PDEP: {
-                auto dep = std::static_pointer_cast<storm::storage::DFTDependency<storm::RationalFunction> const>(element);
+                auto dep = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<storm::RationalFunction> const>(element);
                 dep->probability().gatherVariables(result);
                 break;
             }

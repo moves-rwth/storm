@@ -8,17 +8,23 @@
 #include "storm-dft/storage/DFTElementState.h"
 #include "storm-dft/storage/FailableElements.h"
 
-namespace storm {
-namespace storage {
+namespace storm::dft::storage::elements {
 
-template<typename ValueType>
-class DFT;
+// Forward declarations
 template<typename ValueType>
 class DFTBE;
 template<typename ValueType>
 class DFTDependency;
 template<typename ValueType>
 class DFTElement;
+
+}  // namespace storm::dft::storage::elements
+
+namespace storm {
+namespace storage {
+
+template<typename ValueType>
+class DFT;
 class DFTStateGenerationInfo;
 
 template<typename ValueType>
@@ -196,7 +202,7 @@ class DFTState {
      *
      * @return True, if claiming was successful.
      */
-    bool claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children);
+    bool claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>> const& children);
 
     /**
      * Get the failure rate of the currently failable BE on the given index.
@@ -243,13 +249,14 @@ class DFTState {
      * @param be BE to fail.
      * @param dependency Dependency which triggered the failure (or nullptr if the BE fails on its own).
      */
-    void letBEFail(std::shared_ptr<DFTBE<ValueType> const> be, std::shared_ptr<DFTDependency<ValueType> const> dependency);
+    void letBEFail(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be,
+                   std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency);
 
     /**
      * Sets the dependency as unsuccesful meaning no BE will fail.
      * @param dependency Dependency.
      */
-    void letDependencyBeUnsuccessful(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency);
+    void letDependencyBeUnsuccessful(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency);
 
     /**
      * Order the state in decreasing order using the symmetries.

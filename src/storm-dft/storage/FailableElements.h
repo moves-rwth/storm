@@ -5,19 +5,23 @@
 
 #include "storm/storage/BitVector.h"
 
-namespace storm {
-namespace storage {
+namespace storm::storage {
 // Forward declarations
 template<typename ValueType>
 class DFT;
+}  // namespace storm::storage
+
+namespace storm::dft {
+namespace storage {
+
+namespace elements {
+
 template<typename ValueType>
 class DFTBE;
 template<typename ValueType>
 class DFTDependency;
-}  // namespace storage
 
-namespace dft {
-namespace storage {
+}  // namespace elements
 
 /*!
  * Handling of currently failable elements (BEs) either due to their own failure or because of dependencies.
@@ -120,8 +124,9 @@ class FailableElements {
          * @return Pair of the BE which fails and the dependency which triggered the failure (or nullptr if the BE fails on its own).
          */
         template<typename ValueType>
-        std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, std::shared_ptr<storm::storage::DFTDependency<ValueType> const>> getFailBE(
-            storm::storage::DFT<ValueType> const& dft) const;
+        std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>,
+                  std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>>
+        getFailBE(storm::storage::DFT<ValueType> const& dft) const;
 
        private:
         // Whether dependencies are currently considered.
@@ -234,5 +239,4 @@ class FailableElements {
 };
 
 }  // namespace storage
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

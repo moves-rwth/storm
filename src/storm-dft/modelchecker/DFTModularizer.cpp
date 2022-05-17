@@ -56,21 +56,21 @@ std::vector<DFTElementCPointer> DFTModularizer::getDecendants(DFTElementCPointer
     std::vector<DFTElementCPointer> decendants{};
 
     if (element->isDependency()) {
-        auto const dependency{std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(element)};
+        auto const dependency{std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(element)};
 
-        auto const triggerElement{std::static_pointer_cast<storm::storage::DFTElement<ValueType> const>(dependency->triggerEvent())};
+        auto const triggerElement{std::static_pointer_cast<storm::dft::storage::elements::DFTElement<ValueType> const>(dependency->triggerEvent())};
         decendants.push_back(triggerElement);
 
         auto const &dependentEvents{dependency->dependentEvents()};
         decendants.insert(decendants.end(), dependentEvents.begin(), dependentEvents.end());
     } else if (element->nrChildren() > 0) {
-        auto const parent{std::static_pointer_cast<storm::storage::DFTChildren<ValueType> const>(element)};
+        auto const parent{std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ValueType> const>(element)};
         auto const &children = parent->children();
         decendants.insert(decendants.end(), children.begin(), children.end());
     }
 
     if (element->isBasicElement()) {
-        auto const be{std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(element)};
+        auto const be{std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element)};
 
         auto const &dependencies{be->ingoingDependencies()};
         decendants.insert(decendants.end(), dependencies.begin(), dependencies.end());
@@ -173,7 +173,7 @@ void DFTModularizer::replaceDynamicModules(DFTElementCPointer const element, std
         if (elementInfo.isModule && !elementInfo.isStatic) {
             analyseDynamic(element, timepoints);
         } else {
-            auto const parent{std::static_pointer_cast<storm::storage::DFTChildren<ValueType> const>(element)};
+            auto const parent{std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ValueType> const>(element)};
             for (auto const &child : parent->children()) {
                 replaceDynamicModules(child, timepoints);
             }

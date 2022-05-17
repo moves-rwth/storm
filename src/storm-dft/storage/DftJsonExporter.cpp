@@ -49,7 +49,8 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
 
     if (element->isGate()) {
         // Set children for gate
-        std::shared_ptr<DFTGate<ValueType> const> gate = std::static_pointer_cast<DFTGate<ValueType> const>(element);
+        std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const> gate =
+            std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType> const>(element);
         std::vector<std::string> children;
         for (DFTElementPointer const& child : gate->children()) {
             children.push_back(std::to_string(child->id()));
@@ -58,12 +59,12 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
 
         // Set threshold for voting gate
         if (element->type() == storm::storage::DFTElementType::VOT) {
-            nodeData["voting"] = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(element)->threshold();
+            nodeData["voting"] = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(element)->threshold();
         }
     } else if (element->isRestriction()) {
         // TODO use same method for gates and restrictions
         // Set children for restriction
-        auto restriction = std::static_pointer_cast<storm::storage::DFTRestriction<ValueType> const>(element);
+        auto restriction = std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<ValueType> const>(element);
         std::vector<std::string> children;
         for (DFTElementPointer const& child : restriction->children()) {
             children.push_back(std::to_string(child->id()));
@@ -71,10 +72,10 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
         nodeData["children"] = children;
     } else if (element->isDependency()) {
         // Set children for dependency
-        auto dependency = std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(element);
+        auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(element);
         std::vector<std::string> children;
         children.push_back(std::to_string(dependency->triggerEvent()->id()));
-        for (std::shared_ptr<DFTBE<ValueType>> const& child : dependency->dependentEvents()) {
+        for (std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>> const& child : dependency->dependentEvents()) {
             children.push_back(std::to_string(child->id()));
         }
         nodeData["children"] = children;
@@ -86,18 +87,19 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
             nodeData["type"] = "fdep";
         }
     } else if (element->isBasicElement()) {
-        std::shared_ptr<DFTBE<ValueType> const> be = std::static_pointer_cast<DFTBE<ValueType> const>(element);
+        std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be =
+            std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element);
         // Set BE specific data
         switch (be->beType()) {
             case storm::storage::BEType::CONSTANT: {
-                auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
+                auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
                 std::stringstream stream;
                 nodeData["distribution"] = "const";
                 nodeData["failed"] = beConst->failed();
                 break;
             }
             case storm::storage::BEType::EXPONENTIAL: {
-                auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                 std::stringstream stream;
                 nodeData["distribution"] = "exp";
                 stream << beExp->activeFailureRate();

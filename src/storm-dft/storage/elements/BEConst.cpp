@@ -1,7 +1,8 @@
 #include "BEConst.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 template<typename ValueType>
 ValueType BEConst<ValueType>::getUnreliability(ValueType time) const {
@@ -12,5 +13,6 @@ ValueType BEConst<ValueType>::getUnreliability(ValueType time) const {
 template class BEConst<double>;
 template class BEConst<RationalFunction>;
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

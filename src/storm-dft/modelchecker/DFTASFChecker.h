@@ -143,54 +143,61 @@ class DFTASFChecker {
      *
      * @return Constraint encoding the claiming.
      */
-    std::shared_ptr<SmtConstraint> generateTryToClaimConstraint(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> spare, uint64_t childIndex,
-                                                                uint64_t timepoint) const;
+    std::shared_ptr<SmtConstraint> generateTryToClaimConstraint(std::shared_ptr<storm::dft::storage::elements::DFTSpare<ValueType> const> spare,
+                                                                uint64_t childIndex, uint64_t timepoint) const;
 
     /**
      * Add constraints encoding AND gates.
      * This corresponds to constraint (1)
      */
-    void generateAndConstraint(size_t i, std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+    void generateAndConstraint(size_t i, std::vector<uint64_t> childVarIndices,
+                               std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);
 
     /**
      * Add constraints encoding OR gates.
      * This corresponds to constraint (2)
      */
-    void generateOrConstraint(size_t i, std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+    void generateOrConstraint(size_t i, std::vector<uint64_t> childVarIndices,
+                              std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);
 
     /**
      * Add constraints encoding VOT gates.
      */
-    void generateVotConstraint(size_t i, std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+    void generateVotConstraint(size_t i, std::vector<uint64_t> childVarIndices,
+                               std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);
 
     /**
      * Add constraints encoding PAND gates.
      * This corresponds to constraint (3)
      */
-    void generatePandConstraint(size_t i, std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+    void generatePandConstraint(size_t i, std::vector<uint64_t> childVarIndices,
+                                std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);
 
     /**
      * Add constraints encoding POR gates.
      */
-    void generatePorConstraint(size_t i, std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+    void generatePorConstraint(size_t i, std::vector<uint64_t> childVarIndices,
+                               std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);
 
     /**
      * Add constraints encoding SEQ gates.
      * This corresponds to constraint (4)
      */
-    void generateSeqConstraint(std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+    void generateSeqConstraint(std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);
 
     /**
      * Add constraints encoding SPARE gates.
      * This corresponds to constraints (5),(6),(7)
      */
-    void generateSpareConstraint(size_t i, std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+    void generateSpareConstraint(size_t i, std::vector<uint64_t> childVarIndices,
+                                 std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);
 
     /**
      * Add constraints encoding PDEP gates.
      *
      */
-    void generatePdepConstraint(size_t i, std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element);
+    void generatePdepConstraint(size_t i, std::vector<uint64_t> childVarIndices,
+                                std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element);
 
     /**
      * Add constraints encoding claiming rules.

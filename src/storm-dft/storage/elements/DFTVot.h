@@ -2,8 +2,9 @@
 
 #include "DFTGate.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * VOT gate with threshold k.
@@ -33,15 +34,15 @@ class DFTVot : public DFTGate<ValueType> {
         return mThreshold;
     }
 
-    DFTElementType type() const override {
-        return DFTElementType::VOT;
+    storm::storage::DFTElementType type() const override {
+        return storm::storage::DFTElementType::VOT;
     }
 
     std::string typestring() const override {
         return storm::storage::toString(this->type()) + " (" + std::to_string(mThreshold) + ")";
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (state.isOperational(this->mId)) {
             unsigned nrFailedChildren = 0;
             for (auto const& child : this->children()) {
@@ -56,7 +57,7 @@ class DFTVot : public DFTGate<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
         if (state.isOperational(this->mId)) {
             unsigned nrFailsafeChildren = 0;
@@ -85,5 +86,6 @@ class DFTVot : public DFTGate<ValueType> {
     unsigned mThreshold;
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

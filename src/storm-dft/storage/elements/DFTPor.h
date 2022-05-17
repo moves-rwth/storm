@@ -2,8 +2,9 @@
 
 #include "DFTGate.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * Priority OR (POR) gate.
@@ -27,8 +28,8 @@ class DFTPor : public DFTGate<ValueType> {
         // Intentionally left empty.
     }
 
-    DFTElementType type() const override {
-        return DFTElementType::POR;
+    storm::storage::DFTElementType type() const override {
+        return storm::storage::DFTElementType::POR;
     }
 
     std::string typestring() const override {
@@ -43,7 +44,7 @@ class DFTPor : public DFTGate<ValueType> {
         return inclusive;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(isInclusive(), "Exclusive POR not supported.");
         if (state.isOperational(this->mId)) {
             auto childIter = this->children().begin();
@@ -63,7 +64,7 @@ class DFTPor : public DFTGate<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(isInclusive(), "Exclusive POR not supported.");
         // If first child is not failsafe, it could still fail.
         if (state.isFailsafe(this->children().front()->id())) {
@@ -76,5 +77,6 @@ class DFTPor : public DFTGate<ValueType> {
     bool inclusive;
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

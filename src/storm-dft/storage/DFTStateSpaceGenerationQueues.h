@@ -7,9 +7,9 @@
 
 #include "storm-dft/storage/OrderDFTElementsById.h"
 
-namespace storm {
-namespace storage {
+namespace storm::dft::storage::elements {
 
+// Forward declarations
 template<typename ValueType>
 class DFTGate;
 template<typename ValueType>
@@ -17,13 +17,18 @@ class DFTElement;
 template<typename ValueType>
 class DFTRestriction;
 
+}  // namespace storm::dft::storage::elements
+
+namespace storm {
+namespace storage {
+
 template<typename ValueType>
 class DFTStateSpaceGenerationQueues {
-    using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
+    using DFTElementPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>;
     using DFTElementVector = std::vector<DFTElementPointer>;
-    using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+    using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
     using DFTGateVector = std::vector<DFTGatePointer>;
-    using DFTRestrictionPointer = std::shared_ptr<DFTRestriction<ValueType>>;
+    using DFTRestrictionPointer = std::shared_ptr<storm::dft::storage::elements::DFTRestriction<ValueType>>;
     using DFTRestrictionVector = std::vector<DFTRestrictionPointer>;
 
     std::priority_queue<DFTGatePointer, DFTGateVector, OrderElementsByRank<ValueType>> failurePropagation;

@@ -5,17 +5,20 @@ namespace storm {
 namespace storage {
 
 template<typename ValueType>
-bool OrderElementsById<ValueType>::operator()(std::shared_ptr<DFTGate<ValueType>> const& a, std::shared_ptr<DFTGate<ValueType>> const& b) const {
+bool OrderElementsById<ValueType>::operator()(std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>> const& a,
+                                              std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>> const& b) const {
     return a->id() < b->id();
 }
 
 template<typename ValueType>
-bool OrderElementsById<ValueType>::operator()(const std::shared_ptr<DFTElement<ValueType>>& a, const std::shared_ptr<DFTElement<ValueType>>& b) const {
+bool OrderElementsById<ValueType>::operator()(const std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>& a,
+                                              const std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>& b) const {
     return a->id() < b->id();
 }
 
 template<typename ValueType>
-bool OrderElementsByRank<ValueType>::operator()(const std::shared_ptr<DFTGate<ValueType>>& a, const std::shared_ptr<DFTGate<ValueType>>& b) const {
+bool OrderElementsByRank<ValueType>::operator()(const std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>& a,
+                                                const std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>& b) const {
     return a->rank() > b->rank();
 }
 

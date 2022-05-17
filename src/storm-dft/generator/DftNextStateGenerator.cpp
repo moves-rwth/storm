@@ -33,10 +33,10 @@ std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialSt
 
     // Check whether constant failed BEs are present
     size_t constFailedBeCounter = 0;
-    std::shared_ptr<storm::storage::DFTBE<ValueType> const> constFailedBE = nullptr;
+    std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> constFailedBE = nullptr;
     for (auto& be : mDft.getBasicElements()) {
         if (be->beType() == storm::storage::BEType::CONSTANT) {
-            auto constBe = std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(be);
+            auto constBe = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
             if (constBe->failed()) {
                 constFailedBeCounter++;
                 STORM_LOG_THROW(constFailedBeCounter < 2, storm::exceptions::NotSupportedException,
@@ -135,10 +135,11 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
     // Let BE fail
     for (; iterFailable != state->getFailableElements().end(!exploreDependencies); ++iterFailable) {
         // Get BE which fails next
-        std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, std::shared_ptr<storm::storage::DFTDependency<ValueType> const>> nextBEPair =
-            iterFailable.getFailBE(mDft);
-        std::shared_ptr<storm::storage::DFTBE<ValueType> const> nextBE = nextBEPair.first;
-        std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency = nextBEPair.second;
+        std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>,
+                  std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>>
+            nextBEPair = iterFailable.getFailBE(mDft);
+        std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> nextBE = nextBEPair.first;
+        std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = nextBEPair.second;
         STORM_LOG_ASSERT(nextBE, "NextBE is null.");
         STORM_LOG_ASSERT(iterFailable.isFailureDueToDependency() == exploreDependencies, "Failure due to dependencies does not match.");
         STORM_LOG_ASSERT((dependency != nullptr) == exploreDependencies, "Failure due to dependencies does not match.");
@@ -227,8 +228,8 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
 
 template<typename ValueType, typename StateType>
 typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createSuccessorState(
-    DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const>& failedBE,
-    std::shared_ptr<storm::storage::DFTDependency<ValueType> const>& triggeringDependency, bool dependencySuccessful) const {
+    DFTStatePointer const state, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& failedBE,
+    std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>& triggeringDependency, bool dependencySuccessful) const {
     // Construct new state as copy from original one
     DFTStatePointer newState = state->copy();
 
@@ -256,7 +257,7 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
     // Check whether transient failure lead to TLE failure
     // TODO handle for all types of BEs.
     if (failedBE->beType() == storm::storage::BEType::EXPONENTIAL) {
-        auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(failedBE);
+        auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(failedBE);
         if (beExp->isTransient() && !newState->hasFailed(mDft.getTopLevelIndex())) {
             newState->markAsTransient();
         }
@@ -281,7 +282,8 @@ typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextSta
 }
 
 template<typename ValueType, typename StateType>
-void DftNextStateGenerator<ValueType, StateType>::propagateFailure(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE,
+void DftNextStateGenerator<ValueType, StateType>::propagateFailure(DFTStatePointer newState,
+                                                                   std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& nextBE,
                                                                    storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
     // Propagate failure
     for (DFTGatePointer parent : nextBE->parents()) {
@@ -311,7 +313,8 @@ void DftNextStateGenerator<ValueType, StateType>::propagateFailure(DFTStatePoint
 }
 
 template<typename ValueType, typename StateType>
-void DftNextStateGenerator<ValueType, StateType>::propagateFailsafe(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE,
+void DftNextStateGenerator<ValueType, StateType>::propagateFailsafe(DFTStatePointer newState,
+                                                                    std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& nextBE,
                                                                     storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
     // Propagate failsafe
     while (!queues.failsafePropagationDone()) {

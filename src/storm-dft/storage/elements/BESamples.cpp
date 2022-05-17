@@ -2,8 +2,9 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 template<typename ValueType>
 ValueType BESamples<ValueType>::getUnreliability(ValueType time) const {
@@ -16,5 +17,6 @@ ValueType BESamples<ValueType>::getUnreliability(ValueType time) const {
 template class BESamples<double>;
 template class BESamples<RationalFunction>;
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

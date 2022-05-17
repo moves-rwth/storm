@@ -24,15 +24,15 @@ TEST(DftInstantiatorTest, InstantiateSimple) {
 
     valuation.insert(std::make_pair(x, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.5)));
     std::shared_ptr<storm::storage::DFT<double>> instDft = instantiator.instantiate(valuation);
-    std::shared_ptr<storm::storage::DFTBE<double> const> elem = instDft->getBasicElement(dft->getIndex("C"));
-    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<double> const>(elem);
+    std::shared_ptr<storm::dft::storage::elements::DFTBE<double> const> elem = instDft->getBasicElement(dft->getIndex("C"));
+    auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<double> const>(elem);
     EXPECT_EQ(beExp->activeFailureRate(), 0.5);
 
     valuation.clear();
     valuation.insert(std::make_pair(x, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(1.5)));
     instDft = instantiator.instantiate(valuation);
     elem = instDft->getBasicElement(dft->getIndex("C"));
-    beExp = std::static_pointer_cast<storm::storage::BEExponential<double> const>(elem);
+    beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<double> const>(elem);
     EXPECT_EQ(beExp->activeFailureRate(), 1.5);
 }
 
@@ -55,12 +55,12 @@ TEST(DftInstantiatorTest, InstantiateSymmetry) {
     valuation.insert(std::make_pair(x, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(5)));
     valuation.insert(std::make_pair(y, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.01)));
     std::shared_ptr<storm::storage::DFT<double>> instDft = instantiator.instantiate(valuation);
-    std::shared_ptr<storm::storage::DFTBE<double> const> elem = instDft->getBasicElement(dft->getIndex("C"));
-    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<double> const>(elem);
+    std::shared_ptr<storm::dft::storage::elements::DFTBE<double> const> elem = instDft->getBasicElement(dft->getIndex("C"));
+    auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<double> const>(elem);
     EXPECT_EQ(beExp->activeFailureRate(), 5);
     EXPECT_EQ(beExp->passiveFailureRate(), 0.05);
     elem = instDft->getBasicElement(dft->getIndex("D"));
-    beExp = std::static_pointer_cast<storm::storage::BEExponential<double> const>(elem);
+    beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<double> const>(elem);
     EXPECT_EQ(beExp->activeFailureRate(), 0.01);
 }
 }  // namespace

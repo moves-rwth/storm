@@ -12,9 +12,9 @@ uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::dft::model
 
     // Count dependent events
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<double> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<double> const> element = dft.getElement(i);
         if (element->isBasicElement()) {
-            auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
             if (be->hasIngoingDependencies()) {
                 ++nrDepEvents;
             }
@@ -70,9 +70,9 @@ uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::dft::model
     auto dft = smtchecker->getDFT();
     // Count dependent events
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<double> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<double> const> element = dft.getElement(i);
         if (element->isBasicElement()) {
-            auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
             if (be->hasIngoingDependencies()) {
                 ++nrDepEvents;
             }

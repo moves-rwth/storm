@@ -16,9 +16,9 @@ class DftNextStateGenerator {
     // TODO: inherit from NextStateGenerator
 
     using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
-    using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
-    using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
-    using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
+    using DFTElementPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>;
+    using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
+    using DFTRestrictionPointer = std::shared_ptr<storm::dft::storage::elements::DFTRestriction<ValueType>>;
 
    public:
     typedef std::function<StateType(DFTStatePointer const&)> StateToIdCallback;
@@ -65,8 +65,8 @@ class DftNextStateGenerator {
      *
      * @return Successor state.
      */
-    DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const>& failedBE,
-                                         std::shared_ptr<storm::storage::DFTDependency<ValueType> const>& triggeringDependency,
+    DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& failedBE,
+                                         std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>& triggeringDependency,
                                          bool dependencySuccessful = true) const;
 
     /**
@@ -75,7 +75,7 @@ class DftNextStateGenerator {
      * @param newState starting state of the propagation
      * @param nextBE BE whose failure is propagated
      */
-    void propagateFailure(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE,
+    void propagateFailure(DFTStatePointer newState, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& nextBE,
                           storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
 
     /**
@@ -84,7 +84,7 @@ class DftNextStateGenerator {
      * @param newState starting state of the propagation
      * @param nextBE BE whose failure is propagated
      */
-    void propagateFailsafe(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE,
+    void propagateFailsafe(DFTStatePointer newState, std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>& nextBE,
                            storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
 
    private:

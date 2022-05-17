@@ -15,8 +15,9 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 using std::size_t;
 
@@ -88,7 +89,7 @@ class DFTElement {
      * Get type.
      * @return Type.
      */
-    virtual DFTElementType type() const = 0;
+    virtual storm::storage::DFTElementType type() const = 0;
 
     /*!
      * Get type as string.
@@ -392,7 +393,7 @@ class DFTElement {
      */
     virtual std::size_t nrChildren() const = 0;
 
-    virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
+    virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
 
     /**
      *  Computes the independent unit of this element, that is, all elements which are direct or indirect successors of an element.
@@ -454,5 +455,7 @@ template<typename ValueType>
 bool equalType(DFTElement<ValueType> const& e1, DFTElement<ValueType> const& e2) {
     return e1.isTypeEqualTo(e2);
 }
+
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

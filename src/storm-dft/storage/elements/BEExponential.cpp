@@ -2,8 +2,9 @@
 
 #include "storm/exceptions/NotSupportedException.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 template<>
 double BEExponential<double>::getUnreliability(double time) const {
@@ -20,5 +21,6 @@ ValueType BEExponential<ValueType>::getUnreliability(ValueType time) const {
 template class BEExponential<double>;
 template class BEExponential<RationalFunction>;
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

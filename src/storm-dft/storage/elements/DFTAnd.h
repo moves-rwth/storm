@@ -2,8 +2,9 @@
 
 #include "DFTGate.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * AND gate.
@@ -23,11 +24,11 @@ class DFTAnd : public DFTGate<ValueType> {
         // Intentionally empty
     }
 
-    DFTElementType type() const override {
-        return DFTElementType::AND;
+    storm::storage::DFTElementType type() const override {
+        return storm::storage::DFTElementType::AND;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (state.isOperational(this->mId)) {
             for (auto const& child : this->children()) {
                 if (!state.hasFailed(child->id())) {
@@ -39,7 +40,7 @@ class DFTAnd : public DFTGate<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(this->hasFailsafeChild(state), "No failsafe child.");
         if (state.isOperational(this->mId)) {
             this->failsafe(state, queues);
@@ -48,5 +49,6 @@ class DFTAnd : public DFTGate<ValueType> {
     }
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

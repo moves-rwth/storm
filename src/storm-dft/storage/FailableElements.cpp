@@ -68,12 +68,13 @@ bool FailableElements::const_iterator::isConflictingDependency() const {
 }
 
 template<typename ValueType>
-std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, std::shared_ptr<storm::storage::DFTDependency<ValueType> const>>
+std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>,
+          std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const>>
 FailableElements::const_iterator::getFailBE(storm::storage::DFT<ValueType> const& dft) const {
     size_t nextFailId = **this;
     if (isFailureDueToDependency()) {
         // Consider failure due to dependency
-        std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency = dft.getDependency(nextFailId);
+        std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = dft.getDependency(nextFailId);
         STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "More than one dependent event");
         return std::make_pair(dft.getBasicElement(dependency->dependentEvents()[0]->id()), dependency);
     } else {
@@ -159,11 +160,12 @@ std::string FailableElements::getCurrentlyFailableString() const {
 }
 
 // Explicit instantiations.
-template std::pair<std::shared_ptr<storm::storage::DFTBE<double> const>, std::shared_ptr<storm::storage::DFTDependency<double> const>>
+template std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<double> const>,
+                   std::shared_ptr<storm::dft::storage::elements::DFTDependency<double> const>>
 FailableElements::const_iterator::getFailBE(storm::storage::DFT<double> const& dft) const;
 
-template std::pair<std::shared_ptr<storm::storage::DFTBE<storm::RationalFunction> const>,
-                   std::shared_ptr<storm::storage::DFTDependency<storm::RationalFunction> const>>
+template std::pair<std::shared_ptr<storm::dft::storage::elements::DFTBE<storm::RationalFunction> const>,
+                   std::shared_ptr<storm::dft::storage::elements::DFTDependency<storm::RationalFunction> const>>
 FailableElements::const_iterator::getFailBE(storm::storage::DFT<storm::RationalFunction> const& dft) const;
 
 }  // namespace storage

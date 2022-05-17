@@ -2,8 +2,9 @@
 
 #include "DFTElement.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * Dependency gate with probability p.
@@ -38,8 +39,8 @@ class DFTDependency : public DFTElement<ValueType> {
         // Intentionally left empty.
     };
 
-    DFTElementType type() const override {
-        return DFTElementType::PDEP;
+    storm::storage::DFTElementType type() const override {
+        return storm::storage::DFTElementType::PDEP;
     }
 
     std::string typestring() const override {
@@ -178,5 +179,6 @@ class DFTDependency : public DFTElement<ValueType> {
     std::vector<DFTBEPointer> mDependentEvents;
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

@@ -31,12 +31,12 @@ void DFTASFChecker::convert() {
 
     // Initialize variables
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(i);
         varNames.push_back("t_" + element->name());
         timePointVariables.emplace(i, varNames.size() - 1);
         switch (element->type()) {
             case storm::storage::DFTElementType::BE: {
-                auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+                auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
                 switch (be->beType()) {
                     case storm::storage::BEType::EXPONENTIAL:
                         beVariables.push_back(varNames.size() - 1);
@@ -44,7 +44,7 @@ void DFTASFChecker::convert() {
                     case storm::storage::BEType::CONSTANT: {
                         STORM_LOG_WARN("Constant BEs are only experimentally supported in the SMT encoding");
                         // Constant BEs are initially either failed or failsafe, treat them differently
-                        auto be = std::static_pointer_cast<storm::storage::BEConst<double> const>(element);
+                        auto be = std::static_pointer_cast<storm::dft::storage::elements::BEConst<double> const>(element);
                         if (be->failed()) {
                             STORM_LOG_THROW(!failedBeIsSet, storm::exceptions::NotSupportedException,
                                             "DFTs containing more than one constantly failed BE are not supported");
@@ -63,7 +63,7 @@ void DFTASFChecker::convert() {
                 break;
             }
             case storm::storage::DFTElementType::SPARE: {
-                auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
+                auto spare = std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<double> const>(element);
                 for (auto const &spareChild : spare->children()) {
                     varNames.push_back("c_" + element->name() + "_" + spareChild->name());
                     claimVariables.emplace(SpareAndChildPair(element->id(), spareChild->id()), varNames.size() - 1);
@@ -135,13 +135,13 @@ void DFTASFChecker::convert() {
 
     // Encoding for gates
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(i);
         STORM_LOG_ASSERT(i == element->id(), "Id and index should match.");
 
         // Get indices for gate children
         std::vector<uint64_t> childVarIndices;
         if (element->isGate()) {
-            std::shared_ptr<storm::storage::DFTGate<ValueType> const> gate = dft.getGate(i);
+            std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const> gate = dft.getGate(i);
             for (auto const &child : gate->children()) {
                 childVarIndices.push_back(timePointVariables.at(child->id()));
             }
@@ -205,9 +205,9 @@ void DFTASFChecker::convert() {
     // A failsafe BE only stays failsafe if no trigger has been triggered
     std::vector<std::shared_ptr<SmtConstraint>> triggerConstraints;
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(i);
         if (element->isBasicElement()) {
-            auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
             if (be->beType() == storm::storage::BEType::CONSTANT) {
                 triggerConstraints.clear();
                 for (auto const &dependency : be->ingoingDependencies()) {
@@ -226,22 +226,22 @@ void DFTASFChecker::convert() {
 // Constraint Generator Functions
 
 void DFTASFChecker::generateAndConstraint(size_t i, std::vector<uint64_t> childVarIndices,
-                                          std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
+                                          std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
     // Constraint for AND gate (constraint 1)
     constraints.push_back(std::make_shared<IsMaximum>(timePointVariables.at(i), childVarIndices));
     constraints.back()->setDescription("AND gate " + element->name());
 }
 
 void DFTASFChecker::generateOrConstraint(size_t i, std::vector<uint64_t> childVarIndices,
-                                         std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
+                                         std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
     // Constraint for OR gate (constraint 2)
     constraints.push_back(std::make_shared<IsMinimum>(timePointVariables.at(i), childVarIndices));
     constraints.back()->setDescription("OR gate " + element->name());
 }
 
 void DFTASFChecker::generateVotConstraint(size_t i, std::vector<uint64_t> childVarIndices,
-                                          std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
-    auto vot = std::static_pointer_cast<storm::storage::DFTVot<double> const>(element);
+                                          std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
+    auto vot = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<double> const>(element);
     // VOTs are implemented via OR over ANDs with all possible combinations
     std::vector<uint64_t> tmpVars;
     size_t k = 0;
@@ -275,7 +275,7 @@ void DFTASFChecker::generateVotConstraint(size_t i, std::vector<uint64_t> childV
 }
 
 void DFTASFChecker::generatePandConstraint(size_t i, std::vector<uint64_t> childVarIndices,
-                                           std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
+                                           std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
     // Constraint for PAND gate (constraint 3)
     std::shared_ptr<SmtConstraint> ifC = std::make_shared<Sorted>(childVarIndices);
     std::shared_ptr<SmtConstraint> thenC = std::make_shared<IsEqual>(timePointVariables.at(i), childVarIndices.back());
@@ -285,7 +285,7 @@ void DFTASFChecker::generatePandConstraint(size_t i, std::vector<uint64_t> child
 }
 
 void DFTASFChecker::generatePorConstraint(size_t i, std::vector<uint64_t> childVarIndices,
-                                          std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
+                                          std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
     // Constraint for POR gate
     // First child fails before all others
     std::vector<std::shared_ptr<SmtConstraint>> firstSmallestC;
@@ -300,10 +300,11 @@ void DFTASFChecker::generatePorConstraint(size_t i, std::vector<uint64_t> childV
     constraints.back()->setDescription("POR gate " + element->name());
 }
 
-void DFTASFChecker::generateSeqConstraint(std::vector<uint64_t> childVarIndices, std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
+void DFTASFChecker::generateSeqConstraint(std::vector<uint64_t> childVarIndices,
+                                          std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
     // Constraint for SEQ gate (constraint 4)
     // As the restriction is not a gate we have to enumerate its children here
-    auto seq = std::static_pointer_cast<storm::storage::DFTRestriction<double> const>(element);
+    auto seq = std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<double> const>(element);
     for (auto const &child : seq->children()) {
         childVarIndices.push_back(timePointVariables.at(child->id()));
     }
@@ -313,8 +314,8 @@ void DFTASFChecker::generateSeqConstraint(std::vector<uint64_t> childVarIndices,
 }
 
 void DFTASFChecker::generateSpareConstraint(size_t i, std::vector<uint64_t> childVarIndices,
-                                            std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
-    auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
+                                            std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
+    auto spare = std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<double> const>(element);
     auto const &children = spare->children();
     uint64_t firstChild = children.front()->id();
     uint64_t lastChild = children.back()->id();
@@ -340,7 +341,7 @@ void DFTASFChecker::generateSpareConstraint(size_t i, std::vector<uint64_t> chil
     }
 }
 
-std::shared_ptr<SmtConstraint> DFTASFChecker::generateTryToClaimConstraint(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> spare,
+std::shared_ptr<SmtConstraint> DFTASFChecker::generateTryToClaimConstraint(std::shared_ptr<storm::dft::storage::elements::DFTSpare<ValueType> const> spare,
                                                                            uint64_t childIndex, uint64_t timepoint) const {
     auto child = spare->children().at(childIndex);
     uint64_t timeChild = timePointVariables.at(child->id());                // Moment when the child fails
@@ -380,9 +381,9 @@ void DFTASFChecker::addClaimingConstraints() {
     // Only one spare can claim a child (constraint 8)
     // and only not failed children can be claimed (addition to constrain 8)
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(i);
         if (element->isSpareGate()) {
-            auto spare = std::static_pointer_cast<storm::storage::DFTSpare<double> const>(element);
+            auto spare = std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<double> const>(element);
             for (auto const &child : spare->children()) {
                 std::vector<std::shared_ptr<SmtConstraint>> additionalC;
                 uint64_t timeClaiming = getClaimVariableIndex(spare->id(), child->id());
@@ -405,8 +406,8 @@ void DFTASFChecker::addClaimingConstraints() {
 }
 
 void DFTASFChecker::generatePdepConstraint(size_t i, std::vector<uint64_t> childVarIndices,
-                                           std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
-    auto dependency = std::static_pointer_cast<storm::storage::DFTDependency<double> const>(element);
+                                           std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
+    auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<double> const>(element);
     auto const &dependentEvents = dependency->dependentEvents();
     auto const &trigger = dependency->triggerEvent();
     std::vector<uint64_t> dependentIndices;
@@ -430,7 +431,7 @@ void DFTASFChecker::addMarkovianConstraints() {
 
     // All dependent events of a failed trigger have failed as well (constraint 9)
     for (size_t j = 0; j < dft.nrElements(); ++j) {
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(j);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(j);
         if (element->hasOutgoingDependencies()) {
             for (uint64_t i = 0; i < nrMarkovian; ++i) {
                 std::shared_ptr<SmtConstraint> triggerFailed = std::make_shared<IsLessEqualConstant>(timePointVariables.at(j), i);
@@ -451,9 +452,9 @@ void DFTASFChecker::addMarkovianConstraints() {
 
     // In non-Markovian steps the next failed element is a dependent BE (constraint 10) + additions to specification in paper
     for (size_t j = 0; j < dft.nrElements(); ++j) {
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(j);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(j);
         if (element->isBasicElement()) {
-            auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
 
             if (be->hasIngoingDependencies()) {
                 depElements.emplace(j);
@@ -483,9 +484,9 @@ void DFTASFChecker::addMarkovianConstraints() {
 
     // In Markovian steps the failure rate is positive (constraint 11)
     for (size_t j = 0; j < dft.nrElements(); ++j) {
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(j);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(j);
         if (element->isBasicElement()) {
-            auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
             for (uint64_t i = 0; i < nrMarkovian; ++i) {
                 std::shared_ptr<SmtConstraint> nextFailure = std::make_shared<IsConstantValue>(timePointVariables.at(j), i + 1);
                 // BE is not cold

@@ -2,8 +2,9 @@
 
 #include "DFTElement.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * Abstract base class for basic events (BEs) in DFTs.
@@ -21,15 +22,15 @@ class DFTBE : public DFTElement<ValueType> {
         // Intentionally empty
     }
 
-    DFTElementType type() const override {
-        return DFTElementType::BE;
+    storm::storage::DFTElementType type() const override {
+        return storm::storage::DFTElementType::BE;
     }
 
     /*!
      * Get type of BE (constant, exponential, etc.).
      * @return BE type.
      */
-    virtual BEType beType() const = 0;
+    virtual storm::storage::BEType beType() const = 0;
 
     size_t nrChildren() const override {
         return 0;
@@ -83,7 +84,7 @@ class DFTBE : public DFTElement<ValueType> {
 
     void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override;
 
-    bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
             state.beNoLongerFailable(this->id());
             return true;
@@ -103,5 +104,6 @@ class DFTBE : public DFTElement<ValueType> {
     std::vector<std::shared_ptr<DFTDependency<ValueType>>> mIngoingDependencies;
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

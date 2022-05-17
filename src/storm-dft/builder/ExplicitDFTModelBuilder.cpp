@@ -537,13 +537,13 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
     // Label all states corresponding to their status (failed, don't care BE)
     // Collect labels for all necessary elements
     for (size_t id = 0; id < dft.nrElements(); ++id) {
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(id);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(id);
         if (element->isRelevant()) {
             modelComponents.stateLabeling.addLabel(element->name() + "_failed");
             modelComponents.stateLabeling.addLabel(element->name() + "_dc");
         }
     }
-    std::vector<std::shared_ptr<storm::storage::DFTGate<ValueType> const>> spares;  // Only filled if needed
+    std::vector<std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const>> spares;  // Only filled if needed
     if (isAddLabelsClaiming) {
         // Collect labels for claiming
         for (size_t spareId : dft.getSpareIndices()) {
@@ -559,7 +559,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
     if (this->uniqueFailedState) {
         // Unique failed state has label 0
         modelComponents.stateLabeling.addLabelToState("failed", 0);
-        std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(dft.getTopLevelIndex());
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(dft.getTopLevelIndex());
         STORM_LOG_ASSERT(element->isRelevant(), "TLE should be relevant if unique failed state is used.");
         modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", 0);
     }
@@ -571,7 +571,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
         }
         // Set failed/don't care status for each necessary element
         for (size_t id = 0; id < dft.nrElements(); ++id) {
-            std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(id);
+            std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(id);
             if (element->isRelevant()) {
                 storm::storage::DFTElementState elementState = storm::storage::DFTState<ValueType>::getElementState(state, *stateGenerationInfo, element->id());
                 switch (elementState) {
@@ -806,7 +806,7 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStateP
                         ValueType rate = state->getBERate(id);
                         if (storm::utility::isZero<ValueType>(rate)) {
                             // Get active failure rate for cold BE
-                            auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(be);
+                            auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                             rate = beExp->activeFailureRate();
                             STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(rate), "Failure rate should not be zero.");
                             // Mark BE as cold

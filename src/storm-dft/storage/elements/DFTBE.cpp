@@ -3,8 +3,9 @@
 #include "storm-dft/storage/elements/DFTDependency.h"
 #include "storm-dft/storage/elements/DFTGate.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 template<typename ValueType>
 void DFTBE<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents,
@@ -30,5 +31,6 @@ void DFTBE<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vecto
 template class DFTBE<double>;
 template class DFTBE<RationalFunction>;
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

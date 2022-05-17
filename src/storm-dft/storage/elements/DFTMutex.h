@@ -2,8 +2,9 @@
 
 #include "DFTRestriction.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * Mutex restriction (MUTEX).
@@ -24,15 +25,15 @@ class DFTMutex : public DFTRestriction<ValueType> {
         // Intentionally left empty.
     }
 
-    DFTElementType type() const override {
-        return DFTElementType::MUTEX;
+    storm::storage::DFTElementType type() const override {
+        return storm::storage::DFTElementType::MUTEX;
     }
 
     bool isMutex() const override {
         return true;
     }
 
-    void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void checkFails(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(queues.failurePropagationDone(), "Failure propagation not finished.");
         bool childFailed = false;
         for (auto const& child : this->children()) {
@@ -48,13 +49,14 @@ class DFTMutex : public DFTRestriction<ValueType> {
         }
     }
 
-    void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {}
+    void checkFailsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {}
 
-    bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         // Actually, it doesnt matter what we return here..
         return false;
     }
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

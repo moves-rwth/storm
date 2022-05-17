@@ -4,8 +4,9 @@
 
 #include <map>
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * BE where the failure distribution is defined by samples.
@@ -25,8 +26,8 @@ class BESamples : public DFTBE<ValueType> {
         STORM_LOG_ASSERT(this->canFail(), "At least one sample should have a non-zero probability.");
     }
 
-    BEType beType() const override {
-        return BEType::SAMPLES;
+    storm::storage::BEType beType() const override {
+        return storm::storage::BEType::SAMPLES;
     }
 
     /*!
@@ -69,5 +70,6 @@ class BESamples : public DFTBE<ValueType> {
     std::map<ValueType, ValueType> mActiveSamples;
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

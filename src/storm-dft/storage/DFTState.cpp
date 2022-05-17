@@ -19,7 +19,7 @@ DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo 
 
     // Initialize uses
     for (size_t spareId : mDft.getSpareIndices()) {
-        std::shared_ptr<DFTGate<ValueType> const> elem = mDft.getGate(spareId);
+        std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const> elem = mDft.getGate(spareId);
         STORM_LOG_ASSERT(elem->isSpareGate(), "Element is no spare gate.");
         STORM_LOG_ASSERT(elem->nrChildren() > 0, "Element has no child.");
         this->setUses(spareId, elem->children()[0]->id());
@@ -55,7 +55,7 @@ void DFTState<ValueType>::construct() {
     for (size_t index = 0; index < mDft.nrElements(); ++index) {
         // Initialize currently failable BE
         if (mDft.isBasicElement(index) && isOperational(index) && !isEventDisabledViaRestriction(index)) {
-            std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(index);
+            std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> be = mDft.getBasicElement(index);
             if (be->canFail()) {
                 switch (be->beType()) {
                     case storm::storage::BEType::CONSTANT:
@@ -63,7 +63,7 @@ void DFTState<ValueType>::construct() {
                         STORM_LOG_TRACE("Currently failable: " << *be);
                         break;
                     case storm::storage::BEType::EXPONENTIAL: {
-                        auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                        auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                         if (!beExp->isColdBasicElement() || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index))) {
                             failableElements.addBE(be->id());
                             STORM_LOG_TRACE("Currently failable: " << *beExp);
@@ -85,7 +85,7 @@ void DFTState<ValueType>::construct() {
 
     // Initialize failable dependencies
     for (size_t dependencyId : mDft.getDependencies()) {
-        std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(dependencyId);
+        std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = mDft.getDependency(dependencyId);
         STORM_LOG_ASSERT(dependencyId == dependency->id(), "Ids do not match.");
         assert(dependency->dependentEvents().size() == 1);
         if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
@@ -325,7 +325,7 @@ ValueType DFTState<ValueType>::getBERate(size_t id) const {
     STORM_LOG_ASSERT(mDft.isBasicElement(id), "Element is no BE.");
     STORM_LOG_THROW(mDft.getBasicElement(id)->beType() == storm::storage::BEType::EXPONENTIAL, storm::exceptions::NotSupportedException,
                     "BE of type '" << mDft.getBasicElement(id)->type() << "' is not supported.");
-    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(mDft.getBasicElement(id));
+    auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(mDft.getBasicElement(id));
     if (mDft.hasRepresentant(id) && !isActive(mDft.getRepresentant(id))) {
         // Return passive failure rate
         return beExp->passiveFailureRate();
@@ -336,7 +336,8 @@ ValueType DFTState<ValueType>::getBERate(size_t id) const {
 }
 
 template<typename ValueType>
-void DFTState<ValueType>::letBEFail(std::shared_ptr<DFTBE<ValueType> const> be, std::shared_ptr<DFTDependency<ValueType> const> dependency) {
+void DFTState<ValueType>::letBEFail(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be,
+                                    std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency) {
     STORM_LOG_ASSERT(!hasFailed(be->id()), "Element " << *be << " has already failed.");
     if (dependency != nullptr) {
         // Consider failure due to dependency
@@ -352,7 +353,7 @@ void DFTState<ValueType>::letBEFail(std::shared_ptr<DFTBE<ValueType> const> be, 
 }
 
 template<typename ValueType>
-void DFTState<ValueType>::letDependencyBeUnsuccessful(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency) {
+void DFTState<ValueType>::letDependencyBeUnsuccessful(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency) {
     STORM_LOG_ASSERT(failableElements.hasDependencies(), "Index invalid.");
     STORM_LOG_ASSERT(!dependency->isFDEP(), "Dependency is not a PDEP.");
     failableElements.removeDependency(dependency->id());
@@ -378,14 +379,14 @@ void DFTState<ValueType>::propagateActivation(size_t representativeId) {
     }
     for (size_t elem : mDft.module(representativeId)) {
         if (mDft.isBasicElement(elem) && isOperational(elem) && !isEventDisabledViaRestriction(elem)) {
-            std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(elem);
+            std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> be = mDft.getBasicElement(elem);
             if (be->canFail()) {
                 switch (be->beType()) {
                     case storm::storage::BEType::CONSTANT:
                         // Nothing to do
                         break;
                     case storm::storage::BEType::EXPONENTIAL: {
-                        auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                        auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                         if (beExp->isColdBasicElement()) {
                             // Add to failable BEs
                             failableElements.addBE(elem);
@@ -497,7 +498,8 @@ bool DFTState<ValueType>::hasOperationalRelevantEvent() {
 }
 
 template<typename ValueType>
-bool DFTState<ValueType>::claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children) {
+bool DFTState<ValueType>::claimNew(size_t spareId, size_t currentlyUses,
+                                   std::vector<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>> const& children) {
     auto it = children.begin();
     while ((*it)->id() != currentlyUses) {
         STORM_LOG_ASSERT(it != children.end(), "Currently used element not found.");

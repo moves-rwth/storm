@@ -22,7 +22,7 @@ class DFTModularizer {
    public:
     using ValueType = double;
     using ElementId = size_t;
-    using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
+    using DFTElementCPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>;
     using FormulaCPointer = std::shared_ptr<storm::logic::Formula const>;
     using FormulaVector = std::vector<FormulaCPointer>;
 

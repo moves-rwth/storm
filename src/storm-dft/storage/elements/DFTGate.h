@@ -2,8 +2,9 @@
 
 #include "DFTChildren.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 /*!
  * Abstract base class for gates.
@@ -55,7 +56,8 @@ class DFTGate : public DFTChildren<ValueType> {
         }
     }
 
-    virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state,
+                                      storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
             childrenDontCare(state, queues);
             return true;
@@ -64,7 +66,7 @@ class DFTGate : public DFTChildren<ValueType> {
     }
 
    protected:
-    void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void fail(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         for (std::shared_ptr<DFTGate> parent : this->mParents) {
             if (state.isOperational(parent->id())) {
                 queues.propagateFailure(parent);
@@ -77,7 +79,7 @@ class DFTGate : public DFTChildren<ValueType> {
         this->childrenDontCare(state, queues);
     }
 
-    void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+    void failsafe(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         for (std::shared_ptr<DFTGate> parent : this->mParents) {
             if (state.isOperational(parent->id())) {
                 queues.propagateFailsafe(parent);
@@ -92,10 +94,11 @@ class DFTGate : public DFTChildren<ValueType> {
      * @param state Current DFT state.
      * @param queues Propagation queues.
      */
-    void childrenDontCare(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+    void childrenDontCare(storm::storage::DFTState<ValueType>& state, storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
         queues.propagateDontCare(this->children());
     }
 };
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

@@ -4,11 +4,13 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
+namespace elements {
 
 template<typename ValueType>
-bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state,
+                                                 storm::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const {
     if (!this->mAllowDC) {
         return false;
     }
@@ -119,5 +121,6 @@ void DFTElement<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::
 template class DFTElement<double>;
 template class DFTElement<RationalFunction>;
 
+}  // namespace elements
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft
