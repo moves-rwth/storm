@@ -9,9 +9,9 @@
 #include <string>
 #include <vector>
 
-#include "storm-dft/storage/dft/DFTElementType.h"
-#include "storm-dft/storage/dft/DFTState.h"
-#include "storm-dft/storage/dft/DFTStateSpaceGenerationQueues.h"
+#include "storm-dft/storage/DFTElementType.h"
+#include "storm-dft/storage/DFTState.h"
+#include "storm-dft/storage/DFTStateSpaceGenerationQueues.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"
 

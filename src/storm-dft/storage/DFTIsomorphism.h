@@ -4,9 +4,9 @@
 #include <utility>
 #include <vector>
 
-#include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/DFTElementType.h"
-#include "storm-dft/storage/dft/DFTElements.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/DFTElementType.h"
+#include "storm-dft/storage/DFTElements.h"
 
 namespace storm {
 namespace storage {

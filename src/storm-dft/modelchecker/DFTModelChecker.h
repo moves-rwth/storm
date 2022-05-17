@@ -5,7 +5,7 @@
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/utility/Stopwatch.h"
 
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-dft/utility/RelevantEvents.h"
 
 namespace storm::dft {

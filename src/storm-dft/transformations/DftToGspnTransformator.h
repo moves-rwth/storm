@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-gspn/storage/gspn/GSPN.h"
 #include "storm-gspn/storage/gspn/GspnBuilder.h"
 

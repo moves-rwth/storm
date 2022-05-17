@@ -1,5 +1,5 @@
 #include "OrderDFTElementsById.h"
-#include "storm-dft/storage/dft/DFTElements.h"
+#include "storm-dft/storage/DFTElements.h"
 
 namespace storm {
 namespace storage {

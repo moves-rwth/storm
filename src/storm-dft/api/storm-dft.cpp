@@ -10,8 +10,8 @@
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/modelchecker/DFTModularizer.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
-#include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 

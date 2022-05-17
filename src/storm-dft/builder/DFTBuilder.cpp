@@ -7,8 +7,8 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
 
-#include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/OrderDFTElementsById.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/OrderDFTElementsById.h"
 
 namespace storm::dft {
 namespace builder {

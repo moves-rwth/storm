@@ -14,7 +14,7 @@
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/storage/dft/DFTIsomorphism.h"
+#include "storm-dft/storage/DFTIsomorphism.h"
 
 namespace storm::dft {
 namespace modelchecker {

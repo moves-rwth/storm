@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-pars/utility/parametric.h"
 
 namespace storm::dft {

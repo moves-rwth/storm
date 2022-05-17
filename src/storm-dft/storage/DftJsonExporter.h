@@ -2,7 +2,7 @@
 
 #include "storm/utility/macros.h"
 
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm/adapters/JsonAdapter.h"
 
 namespace storm {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm/utility/macros.h"
 
 namespace storm::dft {

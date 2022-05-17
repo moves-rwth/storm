@@ -8,7 +8,7 @@
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
-#include "storm-dft/storage/dft/DftJsonExporter.h"
+#include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
 #include "storm-dft/transformations/DftTransformator.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"

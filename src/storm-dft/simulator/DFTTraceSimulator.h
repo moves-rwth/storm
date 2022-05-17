@@ -1,7 +1,7 @@
 #include "storm-dft/generator/DftNextStateGenerator.h"
-#include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/DFTState.h"
-#include "storm-dft/storage/dft/FailableElements.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/DFTState.h"
+#include "storm-dft/storage/FailableElements.h"
 
 #include "storm/utility/random.h"
 

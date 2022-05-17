@@ -5,9 +5,9 @@
 
 #include "storm/utility/macros.h"
 
-#include "storm-dft/storage/dft/DFTElements.h"
-#include "storm-dft/storage/dft/DFTLayoutInfo.h"
-#include "storm-dft/storage/dft/elements/DFTRestriction.h"
+#include "storm-dft/storage/DFTElements.h"
+#include "storm-dft/storage/DFTLayoutInfo.h"
+#include "storm-dft/storage/elements/DFTRestriction.h"
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm::storage {

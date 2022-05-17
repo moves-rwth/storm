@@ -7,8 +7,8 @@
 #include <memory>
 
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
-#include "storm-dft/storage/dft/DFT.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/BinaryBooleanStateFormula.h"
 #include "storm/logic/BoundedUntilFormula.h"

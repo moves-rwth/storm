@@ -4,8 +4,8 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
-#include "storm-dft/storage/dft/DFTIsomorphism.h"
-#include "storm-dft/storage/dft/SymmetricUnits.h"
+#include "storm-dft/storage/DFTIsomorphism.h"
+#include "storm-dft/storage/SymmetricUnits.h"
 #include "storm-dft/transformations/DftTransformator.h"
 
 #include "storm-parsers/api/storm-parsers.h"

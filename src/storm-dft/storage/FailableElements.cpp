@@ -1,8 +1,8 @@
-#include "storm-dft/storage/dft/FailableElements.h"
+#include "storm-dft/storage/FailableElements.h"
 
 #include <sstream>
 
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 
 namespace storm {
 namespace dft {

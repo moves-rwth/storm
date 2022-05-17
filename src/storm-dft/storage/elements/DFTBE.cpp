@@ -1,7 +1,7 @@
 #include "DFTBE.h"
 
-#include "storm-dft/storage/dft/elements/DFTDependency.h"
-#include "storm-dft/storage/dft/elements/DFTGate.h"
+#include "storm-dft/storage/elements/DFTDependency.h"
+#include "storm-dft/storage/elements/DFTGate.h"
 
 namespace storm {
 namespace storage {

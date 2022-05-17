@@ -3,7 +3,7 @@
 #include <map>
 
 #include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm/adapters/JsonAdapter.h"
 
 namespace storm::dft {

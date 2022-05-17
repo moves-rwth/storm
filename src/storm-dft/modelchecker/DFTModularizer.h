@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 
+#include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
-#include "storm-dft/storage/dft/DFT.h"
 #include "storm/logic/Formula.h"
 
 namespace storm::dft {

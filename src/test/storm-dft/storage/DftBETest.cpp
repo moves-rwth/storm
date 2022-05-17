@@ -1,7 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/storage/dft/DFTElements.h"
+#include "storm-dft/storage/DFTElements.h"
 
 namespace {
 

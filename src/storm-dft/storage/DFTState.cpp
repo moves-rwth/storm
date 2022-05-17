@@ -1,6 +1,6 @@
 #include "DFTState.h"
-#include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/DFTElements.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/DFTElements.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
 namespace storm {

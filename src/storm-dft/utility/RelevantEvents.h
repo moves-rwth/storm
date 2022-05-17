@@ -8,7 +8,7 @@
 #include <initializer_list>
 #include <memory>
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 
 namespace storm::dft {
 namespace utility {

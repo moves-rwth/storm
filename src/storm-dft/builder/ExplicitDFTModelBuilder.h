@@ -15,8 +15,8 @@
 #include "storm-dft/builder/DftExplorationHeuristic.h"
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/storage/BucketPriorityQueue.h"
-#include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/SymmetricUnits.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/SymmetricUnits.h"
 
 namespace storm::dft {
 namespace builder {

@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "SmtConstraint.h"
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/utility/solver.h"
 

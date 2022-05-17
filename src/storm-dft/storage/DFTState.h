@@ -5,8 +5,8 @@
 #include "storm/storage/BitVector.h"
 
 #include "storm-dft/builder/DftExplorationHeuristic.h"
-#include "storm-dft/storage/dft/DFTElementState.h"
-#include "storm-dft/storage/dft/FailableElements.h"
+#include "storm-dft/storage/DFTElementState.h"
+#include "storm-dft/storage/FailableElements.h"
 
 namespace storm {
 namespace storage {

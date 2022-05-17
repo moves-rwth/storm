@@ -5,7 +5,7 @@
 #include <queue>
 #include <vector>
 
-#include "storm-dft/storage/dft/OrderDFTElementsById.h"
+#include "storm-dft/storage/OrderDFTElementsById.h"
 
 namespace storm {
 namespace storage {

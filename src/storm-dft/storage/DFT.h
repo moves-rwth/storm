@@ -13,10 +13,10 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/math.h"
 
-#include "storm-dft/storage/dft/DFTElements.h"
-#include "storm-dft/storage/dft/DFTLayoutInfo.h"
-#include "storm-dft/storage/dft/DFTStateGenerationInfo.h"
-#include "storm-dft/storage/dft/SymmetricUnits.h"
+#include "storm-dft/storage/DFTElements.h"
+#include "storm-dft/storage/DFTLayoutInfo.h"
+#include "storm-dft/storage/DFTStateGenerationInfo.h"
+#include "storm-dft/storage/SymmetricUnits.h"
 
 // Forward declarations
 namespace storm::dft {

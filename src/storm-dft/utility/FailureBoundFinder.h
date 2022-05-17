@@ -1,6 +1,6 @@
 #include <vector>
 #include "storm-dft/modelchecker/DFTASFChecker.h"
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 
 namespace storm::dft {
 namespace utility {

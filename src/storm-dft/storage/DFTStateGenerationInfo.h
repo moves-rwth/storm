@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm-dft/storage/dft/SymmetricUnits.h"
+#include "storm-dft/storage/SymmetricUnits.h"
 
 namespace storm {
 namespace storage {
