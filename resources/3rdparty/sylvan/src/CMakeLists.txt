@@ -102,7 +102,7 @@ endif()
 
 option(USE_CARL "Sets whether carl should be included." ON)
 if(USE_CARL)
-    add_definitions(-DSYLVAN_HAVE_CARL)
+    target_compile_definitions(Sylvan PRIVATE SYLVAN_HAVE_CARL)
     message(STATUS "Sylvan - Using CArL.")
     find_package(carl REQUIRED PATHS ${carl_DIR} NO_DEFAULT_PATH)
 else()
