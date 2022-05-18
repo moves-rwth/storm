@@ -70,7 +70,10 @@ target_sources(Sylvan
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/sylvan_storm_rational_number.h>
 )
 
-target_compile_features(Sylvan PUBLIC c_std_11 cxx_std_11)
+### STORM MDOIFICATIONS FOR CARL
+# C++11 -> C++14
+# C++14 is needed for CARL
+target_compile_features(Sylvan PUBLIC c_std_11 cxx_std_14)
 target_compile_options(Sylvan PRIVATE -Wall -Wextra -fno-strict-aliasing -Wno-deprecated)
 
 target_include_directories(Sylvan
