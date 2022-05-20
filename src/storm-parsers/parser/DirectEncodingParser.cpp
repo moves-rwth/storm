@@ -380,7 +380,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
     if (nonDeterministic) {
         STORM_LOG_THROW(nrChoices == 0 || builder.getLastRow() + 1 == nrChoices, storm::exceptions::WrongFormatException,
                         "Number of actions detected (at least " << builder.getLastRow() + 1 << ") does not match number of actions declared (" << nrChoices
-                                                       << ", in @nr_choices).");
+                                                                << ", in @nr_choices).");
     }
 
     // Build transition matrix
