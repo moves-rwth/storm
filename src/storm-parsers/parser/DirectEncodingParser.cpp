@@ -378,8 +378,8 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
     STORM_LOG_TRACE("Finished parsing");
 
     if (nonDeterministic) {
-        STORM_LOG_THROW(nrChoices == 0 || builder.getCurrentRowGroupCount() == nrChoices - 1, storm::exceptions::WrongFormatException,
-                        "Number of actions detected (" << builder.getCurrentRowGroupCount() << ") does not match number of actions declared (" << nrChoices
+        STORM_LOG_THROW(nrChoices == 0 || builder.getLastRow() + 1 == nrChoices, storm::exceptions::WrongFormatException,
+                        "Number of actions detected (at least " << builder.getLastRow() + 1 << ") does not match number of actions declared (" << nrChoices
                                                        << ", in @nr_choices).");
     }
 
