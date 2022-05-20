@@ -6,6 +6,6 @@
 
 namespace storm {
 namespace transformer {
-std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeRewardsConstant(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> const& pMC);
+std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeRewardsConstant(storm::models::sparse::Dtmc<storm::RationalFunction> const& pMC);
 }
 }
