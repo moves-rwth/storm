@@ -1,10 +1,10 @@
 #include "storm-pars/transformer/ParametricTransformer.h"
-#include "storm/storage/sparse/ModelComponents.h"
+#include "storm-pars/utility/parametric.h"
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/storage/SparseMatrix.h"
 #include "storm/models/sparse/StateLabeling.h"
-#include "storm-pars/utility/parametric.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/sparse/ModelComponents.h"
 
 namespace storm {
 namespace transformer {
@@ -25,7 +25,8 @@ std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeReward
     uint64_t nrStates = pMC.getTransitionMatrix().getColumnCount();
     uint_fast64_t nrOfNewStates = 0;
     auto rewardModel = pMC.getUniqueRewardModel();
-    STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::NotImplementedException, "Making rewards constant not implemented for state action rewards");
+    STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::NotImplementedException,
+                    "Making rewards constant not implemented for state action rewards");
     STORM_LOG_ASSERT(rewardModel.hasStateRewards(), "Expecting model to have either state rewards");
 
     for (uint64_t state = 0; state < nrStates; ++state) {
@@ -39,7 +40,8 @@ std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeReward
     uint64_t offset = 0;
     std::vector<storm::RationalFunction> stateRewards(nrStates + nrOfNewStates, storm::RationalFunction(0));
     storm::models::sparse::StateLabeling stateLabeling(nrStates + nrOfNewStates);
-    STORM_LOG_THROW(!pMC.getOptionalStateValuations(), storm::exceptions::NotImplementedException, "Keeping rewards constant while having state valuations is not implemented");
+    STORM_LOG_THROW(!pMC.getOptionalStateValuations(), storm::exceptions::NotImplementedException,
+                    "Keeping rewards constant while having state valuations is not implemented");
     for (uint64_t state = 0; state < nrStates; ++state) {
         storm::RationalFunction reward = storm::RationalFunction(0);
         reward = rewardModel.getStateReward(state);
@@ -53,8 +55,10 @@ std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeReward
         if (!reward.isConstant()) {
             auto vars = reward.gatherVariables();
             storm::RationalFunction::CoeffType b = reward.constantPart();
-            STORM_LOG_THROW(vars.size() == 1, storm::exceptions::NotImplementedException, "Making rewards constant for rewards with more than 1 parameter not implemented");
-            STORM_LOG_THROW(storm::utility::parametric::isLinear(reward), storm::exceptions::NotImplementedException, "Expecting rewards to be constant or linear");
+            STORM_LOG_THROW(vars.size() == 1, storm::exceptions::NotImplementedException,
+                            "Making rewards constant for rewards with more than 1 parameter not implemented");
+            STORM_LOG_THROW(storm::utility::parametric::isLinear(reward), storm::exceptions::NotImplementedException,
+                            "Expecting rewards to be constant or linear");
             std::map<RationalFunctionVariable, RationalFunctionCoefficient> val0, val1;
             val0[*vars.begin()] = 0;
             val1[*vars.begin()] = 1;
@@ -67,7 +71,7 @@ std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeReward
                 stateRewards[state + offset + 1] = storm::utility::convertNumber<storm::RationalFunction>(a);
                 stateRewards[state + offset + 2] = storm::utility::zero<storm::RationalFunction>();
                 // probs are p and 1-p
-                storm::RationalFunction funcP = (reward - b) / a ;
+                storm::RationalFunction funcP = (reward - b) / a;
                 smb.addNextValue(state + offset, state + 1, funcP);
                 smb.addNextValue(state + offset, state + 2, storm::utility::one<storm::RationalFunction>() - funcP);
             } else {
@@ -76,7 +80,7 @@ std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeReward
                 stateRewards[state + offset] = storm::utility::convertNumber<storm::RationalFunction>(value1);
                 stateRewards[state + offset + 1] = storm::utility::convertNumber<storm::RationalFunction>(a);
                 stateRewards[state + offset + 2] = storm::utility::zero<storm::RationalFunction>();
-                storm::RationalFunction funcP = (- (reward - b)) / a ;
+                storm::RationalFunction funcP = (-(reward - b)) / a;
                 smb.addNextValue(state + offset, state + 1, storm::utility::one<storm::RationalFunction>() - funcP);
                 smb.addNextValue(state + offset, state + 2, funcP);
             }
@@ -97,15 +101,13 @@ std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> makeReward
                 smb.addNextValue(state + offset, entry.getColumn(), entry.getValue());
             }
         }
-
-
     }
     modelComponents.transitionMatrix = smb.build();
-    modelComponents.rewardModels.emplace(pMC.getUniqueRewardModelName(), std::move(stateRewards)) ;
+    modelComponents.rewardModels.emplace(pMC.getUniqueRewardModelName(), std::move(stateRewards));
 
     modelComponents.stateLabeling = std::move(stateLabeling);
     modelComponents.stateValuations = pMC.getOptionalStateValuations();
     return std::make_shared<storm::models::sparse::Dtmc<storm::RationalFunction>>(modelComponents);
 }
-}
-}
+}  // namespace transformer
+}  // namespace storm
