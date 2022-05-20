@@ -1,4 +1,4 @@
-#pragma  once
+#pragma once
 
 #include "storm/utility/macros.h"
 
@@ -6,31 +6,28 @@
 #include "storm/adapters/JsonAdapter.h"
 
 namespace storm {
-    namespace storage {
+namespace storage {
 
-        /**
-         * Exports a DFT into the JSON format for visualizing it.
-         */
-        template<typename ValueType>
-        class DftJsonExporter {
-            typedef typename storm::json<double> Json;
-            
-            using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
-            using DFTElementCPointer = std::shared_ptr<DFTElement<ValueType> const>;
-            using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+/**
+ * Exports a DFT into the JSON format for visualizing it.
+ */
+template<typename ValueType>
+class DftJsonExporter {
+    typedef typename storm::json<double> Json;
 
-        public:
+    using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
+    using DFTElementCPointer = std::shared_ptr<DFTElement<ValueType> const>;
+    using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
 
-            static void toFile(storm::storage::DFT<ValueType> const& dft, std::string const& filepath);
+   public:
+    static void toFile(storm::storage::DFT<ValueType> const& dft, std::string const& filepath);
 
-            static void toStream(storm::storage::DFT<ValueType> const& dft, std::ostream& os);
+    static void toStream(storm::storage::DFT<ValueType> const& dft, std::ostream& os);
 
-        private:
+   private:
+    static Json translate(storm::storage::DFT<ValueType> const& dft);
 
-            static Json translate(storm::storage::DFT<ValueType> const& dft);
-
-            static Json translateNode(DFTElementCPointer const& element);
-
-        };
-    }
-}
+    static Json translateNode(DFTElementCPointer const& element);
+};
+}  // namespace storage
+}  // namespace storm

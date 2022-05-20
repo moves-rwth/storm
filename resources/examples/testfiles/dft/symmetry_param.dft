@@ -1,0 +1,10 @@
+param x;
+param y;
+toplevel "A";
+"A" and "B" "B'";
+"B" and "C" "D";
+"B'" and "C'" "D'";
+"C" lambda=x dorm=y;
+"D" lambda=y dorm=0;
+"C'" lambda=x dorm=y;
+"D'" lambda=y dorm=0;

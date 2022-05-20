@@ -48,12 +48,14 @@ void NondeterministicModel<ValueType, RewardModelType>::reduceToStateBasedReward
 
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> NondeterministicModel<ValueType, RewardModelType>::applyScheduler(
-    storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates) const {
+    storm::storage::Scheduler<ValueType> const& scheduler, bool dropUnreachableStates, bool preserveModelType) const {
     if (scheduler.isMemorylessScheduler() && scheduler.isDeterministicScheduler() && !scheduler.isPartialScheduler()) {
         // Special case with improved handling.
         storm::storage::BitVector actionSelection = scheduler.computeActionSupport(getNondeterministicChoiceIndices());
         storm::storage::BitVector allStates(this->getNumberOfStates(), true);
-        auto res = storm::transformer::buildSubsystem(*this, allStates, actionSelection, !dropUnreachableStates);
+        transformer::SubsystemBuilderOptions options;
+        options.makeRowGroupingTrivial = !preserveModelType;
+        auto res = storm::transformer::buildSubsystem(*this, allStates, actionSelection, !dropUnreachableStates, options);
         return res.model;
     } else {
         storm::storage::SparseModelMemoryProduct<ValueType, RewardModelType> memoryProduct(*this, scheduler);

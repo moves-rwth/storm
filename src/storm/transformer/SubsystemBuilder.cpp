@@ -134,6 +134,11 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
     } else {
         components.transitionMatrix = originalModel.getTransitionMatrix().getSubmatrix(false, keptActions, subsystemStates);
     }
+    if (options.makeRowGroupingTrivial) {
+        STORM_LOG_ASSERT(components.transitionMatrix.getColumnCount() == components.transitionMatrix.getRowCount(), "Matrix should be square");
+        components.transitionMatrix.makeRowGroupingTrivial();
+    }
+
     components.stateLabeling = originalModel.getStateLabeling().getSubLabeling(subsystemStates);
     for (auto const& rewardModel : originalModel.getRewardModels()) {
         components.rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, keptActions)));
@@ -182,9 +187,11 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
     }
 
     transformModelSpecificComponents<ValueType, RewardModelType>(originalModel, subsystemStates, components);
-
-    result.model = storm::utility::builder::buildModelFromComponents(originalModel.getType(), std::move(components));
-
+    models::ModelType newModelType = originalModel.getType();
+    if (components.transitionMatrix.hasTrivialRowGrouping() && originalModel.getType() == models::ModelType::Mdp) {
+        newModelType = models::ModelType::Dtmc;
+    }
+    result.model = storm::utility::builder::buildModelFromComponents(newModelType, std::move(components));
     STORM_LOG_DEBUG("Subsystem Builder is done. Resulting model has " << result.model->getNumberOfStates() << " states.");
     return result;
 }
