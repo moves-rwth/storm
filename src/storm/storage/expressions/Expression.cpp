@@ -300,9 +300,13 @@ Expression operator/(Expression const& first, Expression const& second) {
 
 Expression operator%(Expression const& first, Expression const& second) {
     assertSameManager(first.getBaseExpression(), second.getBaseExpression());
-    return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(
+    // First we compute the remainder
+    Expression remainder(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(
         first.getBaseExpression().getManager(), first.getType().modulo(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(),
         BinaryNumericalFunctionExpression::OperatorType::Modulo)));
+
+    // Deal with negative `first` in accordance with Prism
+    return storm::expressions::ite(first >= 0, remainder, remainder + second);
 }
 
 Expression operator&&(Expression const& first, Expression const& second) {

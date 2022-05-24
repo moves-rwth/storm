@@ -1,3 +1,6 @@
+#include "adapters/RationalNumberAdapter.h"
+#include "storage/expressions/OperatorType.h"
+#include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/ExprtkExpressionEvaluator.h"
@@ -59,4 +62,34 @@ TEST(ExpressionEvaluation, ExprTkEvaluation) {
         eval.setRationalValue(z, zValue);
         EXPECT_NEAR(3 * zValue, eval.asRational(iteExpression), 1e-6);
     }
+}
+
+TEST(ExpressionEvaluation, NegativeModulo) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+
+    storm::parser::ExpressionCreator creator(*manager);
+    std::unordered_map<std::string, storm::expressions::Expression> mapping;
+    creator.setIdentifierMapping(mapping);
+
+    storm::expressions::Expression n = manager->integer(-1);
+    storm::expressions::Expression mod = manager->integer(4);
+
+    bool pass = true;
+    storm::expressions::Expression expr = creator.createPowerModuloExpression(n, storm::expressions::OperatorType::Modulo, mod, pass);
+
+    auto positiveModulo = [](int a, int b) { return a >= 0 ? a % b : (a % b) + b; };
+
+    int expectedInt = positiveModulo(-1, 4);
+    double expectedDouble(expectedInt);
+
+    storm::expressions::ExprtkExpressionEvaluator evaluator(*manager);
+    int result1 = evaluator.asInt(expr);
+    int result2 = expr.evaluateAsInt();
+    double result3 = evaluator.asRational(expr);
+    double result4 = expr.evaluateAsDouble();
+
+    EXPECT_EQ(result1, expectedInt);
+    EXPECT_EQ(result2, expectedInt);
+    EXPECT_NEAR(result3, expectedDouble, 1e-6);
+    EXPECT_NEAR(result4, expectedDouble, 1e-6);
 }
