@@ -12,11 +12,11 @@ namespace settings {
 namespace modules {
 
 const std::string GurobiSettings::moduleName = "gurobi";
-const std::string GurobiSettings::integerToleranceOption = "inttol";
-const std::string GurobiSettings::threadsOption = "threads";
-const std::string GurobiSettings::outputOption = "output";
-const std::string GurobiSettings::mipFocusOption = "mipfocus";
-const std::string GurobiSettings::concurrentMipThreadsOption = "concurrentmip";
+static const std::string integerToleranceOption = "inttol";
+static const std::string threadsOption = "threads";
+static const std::string outputOption = "output";
+static const std::string mipFocusOption = "mipfocus";
+static const std::string concurrentMipThreadsOption = "concurrentmip";
 
 GurobiSettings::GurobiSettings() : ModuleSettings(moduleName) {
     this->addOption(
@@ -68,7 +68,7 @@ bool GurobiSettings::isNumberOfThreadsSet() const {
     return this->getOption(threadsOption).getHasOptionBeenSet();
 }
 
-uint_fast64_t GurobiSettings::getNumberOfThreads() const {
+uint64_t GurobiSettings::getNumberOfThreads() const {
     return this->getOption(threadsOption).getArgumentByName("count").getValueAsUnsignedInteger();
 }
 
@@ -76,11 +76,11 @@ bool GurobiSettings::isOutputSet() const {
     return this->getOption(outputOption).getHasOptionBeenSet();
 }
 
-uint_fast64_t GurobiSettings::getMIPFocus() const {
+uint64_t GurobiSettings::getMIPFocus() const {
     return this->getOption(mipFocusOption).getArgumentByName("value").getValueAsUnsignedInteger();
 }
 
-uint_fast64_t GurobiSettings::getNumberOfConcurrentMipThreads() const {
+uint64_t GurobiSettings::getNumberOfConcurrentMipThreads() const {
     return this->getOption(concurrentMipThreadsOption).getArgumentByName("value").getValueAsUnsignedInteger();
 }
 
