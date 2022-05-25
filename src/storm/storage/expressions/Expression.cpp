@@ -543,9 +543,7 @@ Expression sum(std::vector<storm::expressions::Expression> const& expressions) {
 }
 
 Expression modulo(Expression const& first, Expression const& second) {
-    return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(
-        first.getBaseExpression().getManager(), first.getType().modulo(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(),
-        BinaryNumericalFunctionExpression::OperatorType::Modulo)));
+    return first % second;
 }
 
 Expression apply(std::vector<storm::expressions::Expression> const& expressions,
