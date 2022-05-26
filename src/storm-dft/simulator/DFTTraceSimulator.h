@@ -1,12 +1,11 @@
 #include "storm-dft/generator/DftNextStateGenerator.h"
-#include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/DFTState.h"
-#include "storm-dft/storage/dft/FailableElements.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/DFTState.h"
+#include "storm-dft/storage/FailableElements.h"
 
 #include "storm/utility/random.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace simulator {
 
 /*!
@@ -23,7 +22,7 @@ enum class SimulationResult { SUCCESSFUL, UNSUCCESSFUL, INVALID };
  */
 template<typename ValueType>
 class DFTTraceSimulator {
-    using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
+    using DFTStatePointer = std::shared_ptr<storm::dft::storage::DFTState<ValueType>>;
 
    public:
     /*!
@@ -33,7 +32,7 @@ class DFTTraceSimulator {
      * @param stateGenerationInfo Info for state generation.
      * @param randomGenerator Random number generator.
      */
-    DFTTraceSimulator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo,
+    DFTTraceSimulator(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo,
                       boost::mt19937& randomGenerator);
 
     /*!
@@ -96,13 +95,13 @@ class DFTTraceSimulator {
 
    protected:
     // The DFT used for the generation of next states.
-    storm::storage::DFT<ValueType> const& dft;
+    storm::dft::storage::DFT<ValueType> const& dft;
 
     // General information for the state generation.
-    storm::storage::DFTStateGenerationInfo const& stateGenerationInfo;
+    storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo;
 
     // Generator for creating next state in DFT
-    storm::generator::DftNextStateGenerator<ValueType> generator;
+    storm::dft::generator::DftNextStateGenerator<ValueType> generator;
 
     // Current state
     DFTStatePointer state;
@@ -110,6 +109,6 @@ class DFTTraceSimulator {
     // Random number generator
     boost::mt19937& randomGenerator;
 };
+
 }  // namespace simulator
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

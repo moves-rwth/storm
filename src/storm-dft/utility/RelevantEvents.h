@@ -8,9 +8,9 @@
 #include <initializer_list>
 #include <memory>
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 
-namespace storm {
+namespace storm::dft {
 namespace utility {
 
 class RelevantEvents {
@@ -62,7 +62,7 @@ class RelevantEvents {
      * @param dft The DFT to count on.
      */
     template<typename ValueType>
-    size_t count(std::shared_ptr<storm::storage::DFT<ValueType>> const dft) const {
+    size_t count(std::shared_ptr<storm::dft::storage::DFT<ValueType>> const dft) const {
         if (this->allRelevant) {
             return dft->nrElements();
         }
@@ -105,7 +105,7 @@ class RelevantEvents {
                     // length of "_dc" = 3
                     this->names.insert(label.substr(0, label.size() - 3));
                 } else if (label.find("_claimed_") != std::string::npos) {
-                    STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isAddLabelsClaiming(),
+                    STORM_LOG_THROW(storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isAddLabelsClaiming(),
                                     storm::exceptions::InvalidArgumentException,
                                     "Claiming labels will not be exported but are required for label '" << label << "'. Try setting --labels-claiming.");
                 } else {
@@ -152,7 +152,7 @@ class RelevantEvents {
      * @return True iff the relevant names are consistent with the given DFT.
      */
     template<typename ValueType>
-    bool checkRelevantNames(storm::storage::DFT<ValueType> const& dft) const {
+    bool checkRelevantNames(storm::dft::storage::DFT<ValueType> const& dft) const {
         for (std::string const& relevantName : this->names) {
             if (!dft.existsName(relevantName)) {
                 return false;
@@ -202,4 +202,4 @@ class RelevantEvents {
 };
 
 }  // namespace utility
-}  // namespace storm
+}  // namespace storm::dft

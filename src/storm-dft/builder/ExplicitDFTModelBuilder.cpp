@@ -17,7 +17,7 @@
 
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 
-namespace storm {
+namespace storm::dft {
 namespace builder {
 
 template<typename ValueType, typename StateType>
@@ -34,10 +34,10 @@ ExplicitDFTModelBuilder<ValueType, StateType>::MatrixBuilder::MatrixBuilder(bool
 }
 
 template<typename ValueType, typename StateType>
-ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft,
-                                                                       storm::storage::DFTIndependentSymmetries const& symmetries)
+ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft,
+                                                                       storm::dft::storage::DFTIndependentSymmetries const& symmetries)
     : dft(dft),
-      stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
+      stateGenerationInfo(std::make_shared<storm::dft::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
       generator(dft, *stateGenerationInfo),
       matrixBuilder(!generator.isDeterministicModel()),
       stateStorage(dft.stateBitVectorSize()),
@@ -52,7 +52,7 @@ ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::st
     }
 
     // Compute independent subtrees
-    if (dft.getTopLevelType() == storm::storage::DFTElementType::OR) {
+    if (dft.getTopLevelType() == storm::dft::storage::elements::DFTElementType::OR) {
         // We only support this for approximation with top level element OR
         for (auto const& child : dft.getGate(dft.getTopLevelIndex())->children()) {
             // Consider all children of the top level gate
@@ -109,7 +109,7 @@ ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::st
 
 template<typename ValueType, typename StateType>
 void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration, double approximationThreshold,
-                                                               storm::builder::ApproximationHeuristic approximationHeuristic) {
+                                                               storm::dft::builder::ApproximationHeuristic approximationHeuristic) {
     STORM_LOG_TRACE("Generating DFT state space");
     usedHeuristic = approximationHeuristic;
 
@@ -123,14 +123,14 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
     if (iteration < 1) {
         // Initialize
         switch (usedHeuristic) {
-            case storm::builder::ApproximationHeuristic::DEPTH:
-                explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(dft.nrElements() + 1, 0, 0.9, false);
+            case storm::dft::builder::ApproximationHeuristic::DEPTH:
+                explorationQueue = storm::dft::storage::BucketPriorityQueue<ExplorationHeuristic>(dft.nrElements() + 1, 0, 0.9, false);
                 break;
-            case storm::builder::ApproximationHeuristic::PROBABILITY:
-                explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
+            case storm::dft::builder::ApproximationHeuristic::PROBABILITY:
+                explorationQueue = storm::dft::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
                 break;
-            case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
-                explorationQueue = storm::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
+            case storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                explorationQueue = storm::dft::storage::BucketPriorityQueue<ExplorationHeuristic>(200, 0, 0.9, true);
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Heuristic not known.");
@@ -191,13 +191,13 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
         STORM_LOG_ASSERT(!statesNotExplored.at(initialStateIndex).second, "Heuristic for initial state is already initialized");
         ExplorationHeuristicPointer heuristic;
         switch (usedHeuristic) {
-            case storm::builder::ApproximationHeuristic::DEPTH:
+            case storm::dft::builder::ApproximationHeuristic::DEPTH:
                 heuristic = std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(initialStateIndex);
                 break;
-            case storm::builder::ApproximationHeuristic::PROBABILITY:
+            case storm::dft::builder::ApproximationHeuristic::PROBABILITY:
                 heuristic = std::make_shared<DFTExplorationHeuristicProbability<ValueType>>(initialStateIndex);
                 break;
-            case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+            case storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
                 heuristic = std::make_shared<DFTExplorationHeuristicBoundDifference<ValueType>>(initialStateIndex);
                 break;
             default:
@@ -212,11 +212,11 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
 
     if (approximationThreshold > 0.0) {
         switch (usedHeuristic) {
-            case storm::builder::ApproximationHeuristic::DEPTH:
+            case storm::dft::builder::ApproximationHeuristic::DEPTH:
                 approximationThreshold = iteration + 1;
                 break;
-            case storm::builder::ApproximationHeuristic::PROBABILITY:
-            case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+            case storm::dft::builder::ApproximationHeuristic::PROBABILITY:
+            case storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
                 approximationThreshold = std::pow(2, -(double)iteration);  // Need conversion to avoid overflow when negating
                 break;
             default:
@@ -224,9 +224,9 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildModel(size_t iteration,
         }
     }
 
-    auto ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
+    auto ftSettings = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>();
     if (ftSettings.isMaxDepthSet()) {
-        STORM_LOG_ASSERT(usedHeuristic == storm::builder::ApproximationHeuristic::DEPTH, "MaxDepth requires 'depth' exploration heuristic.");
+        STORM_LOG_ASSERT(usedHeuristic == storm::dft::builder::ApproximationHeuristic::DEPTH, "MaxDepth requires 'depth' exploration heuristic.");
         approximationThreshold = ftSettings.getMaxDepth();
     }
 
@@ -436,15 +436,15 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
                             // Initialize heuristic values
                             ExplorationHeuristicPointer heuristic;
                             switch (usedHeuristic) {
-                                case storm::builder::ApproximationHeuristic::DEPTH:
+                                case storm::dft::builder::ApproximationHeuristic::DEPTH:
                                     heuristic =
                                         std::make_shared<DFTExplorationHeuristicDepth<ValueType>>(stateProbabilityPair.first, *currentExplorationHeuristic);
                                     break;
-                                case storm::builder::ApproximationHeuristic::PROBABILITY:
+                                case storm::dft::builder::ApproximationHeuristic::PROBABILITY:
                                     heuristic = std::make_shared<DFTExplorationHeuristicProbability<ValueType>>(
                                         stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
                                     break;
-                                case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                                case storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
                                     heuristic = std::make_shared<DFTExplorationHeuristicBoundDifference<ValueType>>(
                                         stateProbabilityPair.first, *currentExplorationHeuristic, stateProbabilityPair.second, choice.getTotalMass());
                                     break;
@@ -461,7 +461,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
                                 // Do not skip absorbing state or if reached by dependencies
                                 iter->second.second->markExpand();
                             }
-                            if (usedHeuristic == storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE) {
+                            if (usedHeuristic == storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE) {
                                 // Compute bounds for heuristic now
                                 if (state->isPseudoState()) {
                                     // Create concrete state from pseudo state
@@ -481,16 +481,16 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
                             bool changedPriority = false;
                             double oldPriority = iter->second.second->getPriority();
                             switch (usedHeuristic) {
-                                case storm::builder::ApproximationHeuristic::DEPTH:
+                                case storm::dft::builder::ApproximationHeuristic::DEPTH:
                                     changedPriority = iter->second.second->updateHeuristicValues(*currentExplorationHeuristic,
                                                                                                  /* next values are irrelevant */ stateProbabilityPair.second,
                                                                                                  stateProbabilityPair.second);
                                     break;
-                                case storm::builder::ApproximationHeuristic::PROBABILITY:
+                                case storm::dft::builder::ApproximationHeuristic::PROBABILITY:
                                     changedPriority = iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second,
                                                                                                  choice.getTotalMass());
                                     break;
-                                case storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
+                                case storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE:
                                     changedPriority = iter->second.second->updateHeuristicValues(*currentExplorationHeuristic, stateProbabilityPair.second,
                                                                                                  choice.getTotalMass());
                                     break;
@@ -523,7 +523,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::exploreStateSpace(double app
 
 template<typename ValueType, typename StateType>
 void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
-    bool isAddLabelsClaiming = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isAddLabelsClaiming();
+    bool isAddLabelsClaiming = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isAddLabelsClaiming();
 
     // Build state labeling
     modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
@@ -537,13 +537,13 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
     // Label all states corresponding to their status (failed, don't care BE)
     // Collect labels for all necessary elements
     for (size_t id = 0; id < dft.nrElements(); ++id) {
-        std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(id);
         if (element->isRelevant()) {
             modelComponents.stateLabeling.addLabel(element->name() + "_failed");
             modelComponents.stateLabeling.addLabel(element->name() + "_dc");
         }
     }
-    std::vector<std::shared_ptr<storm::storage::DFTGate<ValueType> const>> spares;  // Only filled if needed
+    std::vector<std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const>> spares;  // Only filled if needed
     if (isAddLabelsClaiming) {
         // Collect labels for claiming
         for (size_t spareId : dft.getSpareIndices()) {
@@ -559,7 +559,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
     if (this->uniqueFailedState) {
         // Unique failed state has label 0
         modelComponents.stateLabeling.addLabelToState("failed", 0);
-        std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(dft.getTopLevelIndex());
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(dft.getTopLevelIndex());
         STORM_LOG_ASSERT(element->isRelevant(), "TLE should be relevant if unique failed state is used.");
         modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", 0);
     }
@@ -571,18 +571,19 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
         }
         // Set failed/don't care status for each necessary element
         for (size_t id = 0; id < dft.nrElements(); ++id) {
-            std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(id);
+            std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(id);
             if (element->isRelevant()) {
-                storm::storage::DFTElementState elementState = storm::storage::DFTState<ValueType>::getElementState(state, *stateGenerationInfo, element->id());
+                storm::dft::storage::DFTElementState elementState =
+                    storm::dft::storage::DFTState<ValueType>::getElementState(state, *stateGenerationInfo, element->id());
                 switch (elementState) {
-                    case storm::storage::DFTElementState::Failed:
+                    case storm::dft::storage::DFTElementState::Failed:
                         modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", stateId);
                         break;
-                    case storm::storage::DFTElementState::DontCare:
+                    case storm::dft::storage::DFTElementState::DontCare:
                         modelComponents.stateLabeling.addLabelToState(element->name() + "_dc", stateId);
                         break;
-                    case storm::storage::DFTElementState::Operational:
-                    case storm::storage::DFTElementState::Failsafe:
+                    case storm::dft::storage::DFTElementState::Operational:
+                    case storm::dft::storage::DFTElementState::Failsafe:
                         // do nothing
                         break;
                     default:
@@ -605,7 +606,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
 
 template<typename ValueType, typename StateType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType, StateType>::getModel() {
-    if (storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isMaxDepthSet() && skippedStates.size() > 0) {
+    if (storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isMaxDepthSet() && skippedStates.size() > 0) {
         // Give skipped states separate label "skipped"
         modelComponents.stateLabeling.addLabel("skipped");
         for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
@@ -798,15 +799,15 @@ ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getUpperBound(DFTStateP
             if (state->isOperational(id)) {
                 auto be = dft.getBasicElement(id);
                 switch (be->beType()) {
-                    case storm::storage::BEType::CONSTANT:
+                    case storm::dft::storage::elements::BEType::CONSTANT:
                         // Ignore BE which cannot fail
                         continue;
-                    case storm::storage::BEType::EXPONENTIAL: {
+                    case storm::dft::storage::elements::BEType::EXPONENTIAL: {
                         // Get BE rate
                         ValueType rate = state->getBERate(id);
                         if (storm::utility::isZero<ValueType>(rate)) {
                             // Get active failure rate for cold BE
-                            auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(be);
+                            auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
                             rate = beExp->activeFailureRate();
                             STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(rate), "Failure rate should not be zero.");
                             // Mark BE as cold
@@ -981,4 +982,4 @@ template class ExplicitDFTModelBuilder<storm::RationalFunction>;
 #endif
 
 }  // namespace builder
-}  // namespace storm
+}  // namespace storm::dft

@@ -2,14 +2,14 @@
 
 #include "storm/settings/modules/ModuleSettings.h"
 
-namespace storm {
+namespace storm::dft {
 namespace settings {
 namespace modules {
 
 /*!
  * This class represents the settings for operations concerning the DFT to GSPN transformation.
  */
-class DftGspnSettings : public ModuleSettings {
+class DftGspnSettings : public storm::settings::modules::ModuleSettings {
    public:
     /*!
      * Creates a new set of DFT-GSPN settings.
@@ -76,4 +76,4 @@ class DftGspnSettings : public ModuleSettings {
 
 }  // namespace modules
 }  // namespace settings
-}  // namespace storm
+}  // namespace storm::dft

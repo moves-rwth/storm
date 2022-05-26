@@ -3,7 +3,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 
-namespace storm {
+namespace storm::dft {
 namespace builder {
 
 template<>
@@ -38,5 +38,6 @@ template class DFTExplorationHeuristicDepth<storm::RationalFunction>;
 template class DFTExplorationHeuristicProbability<storm::RationalFunction>;
 template class DFTExplorationHeuristicBoundDifference<storm::RationalFunction>;
 #endif
+
 }  // namespace builder
-}  // namespace storm
+}  // namespace storm::dft

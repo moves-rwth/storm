@@ -10,7 +10,7 @@
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
-namespace storm {
+namespace storm::dft {
 namespace settings {
 namespace modules {
 
@@ -59,16 +59,16 @@ FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.")
                         .setShortName(approximationErrorOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("error", "The relative approximation error to use.")
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
                                          .build())
                         .build());
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.")
-            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "The name of the heuristic used for approximation.")
-                             .setDefaultValueString("depth")
-                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"depth", "probability", "bounddifference"}))
-                             .build())
-            .build());
+    this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.")
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "The name of the heuristic used for approximation.")
+                                         .setDefaultValueString("depth")
+                                         .addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator(
+                                             {"depth", "probability", "bounddifference"}))
+                                         .build())
+                        .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, maxDepthOptionName, false, "Maximal depth for state space exploration.")
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("depth", "The maximal depth.").build())
                         .build());
@@ -87,7 +87,7 @@ FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.")
                                          .setDefaultValueDouble(1e-12)
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
                                          .build())
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, mttfStepsizeName, false,
@@ -95,16 +95,17 @@ FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The stepsize to use.")
                                          .setDefaultValueDouble(1e-10)
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0))
                                          .build())
                         .build());
-    this->addOption(storm::settings::OptionBuilder(moduleName, mttfAlgorithmName, false, "The algorithm used to approximate the MTTF.")
-                        .setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("algorithm", "The algorithm to use.")
-                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"proceeding", "variableChange"}))
-                                         .setDefaultValueString("proceeding")
-                                         .build())
-                        .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, mttfAlgorithmName, false, "The algorithm used to approximate the MTTF.")
+            .setIsAdvanced()
+            .addArgument(storm::settings::ArgumentBuilder::createStringArgument("algorithm", "The algorithm to use.")
+                             .addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"proceeding", "variableChange"}))
+                             .setDefaultValueString("proceeding")
+                             .build())
+            .build());
 }
 
 bool FaultTreeSettings::useSymmetryReduction() const {
@@ -144,14 +145,14 @@ double FaultTreeSettings::getApproximationError() const {
     return this->getOption(approximationErrorOptionName).getArgumentByName("error").getValueAsDouble();
 }
 
-storm::builder::ApproximationHeuristic FaultTreeSettings::getApproximationHeuristic() const {
+storm::dft::builder::ApproximationHeuristic FaultTreeSettings::getApproximationHeuristic() const {
     std::string heuristicAsString = this->getOption(approximationHeuristicOptionName).getArgumentByName("heuristic").getValueAsString();
     if (heuristicAsString == "depth") {
-        return storm::builder::ApproximationHeuristic::DEPTH;
+        return storm::dft::builder::ApproximationHeuristic::DEPTH;
     } else if (heuristicAsString == "probability") {
-        return storm::builder::ApproximationHeuristic::PROBABILITY;
+        return storm::dft::builder::ApproximationHeuristic::PROBABILITY;
     } else if (heuristicAsString == "bounddifference") {
-        return storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
+        return storm::dft::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
     }
     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
 }
@@ -205,11 +206,11 @@ void FaultTreeSettings::finalize() {}
 bool FaultTreeSettings::check() const {
     // Ensure that disableDC and relevantEvents are not set at the same time
     STORM_LOG_THROW(!isDisableDC() || !areRelevantEventsSet(), storm::exceptions::InvalidSettingsException, "DisableDC and relevantSets can not both be set.");
-    STORM_LOG_THROW(!isMaxDepthSet() || getApproximationHeuristic() == storm::builder::ApproximationHeuristic::DEPTH,
+    STORM_LOG_THROW(!isMaxDepthSet() || getApproximationHeuristic() == storm::dft::builder::ApproximationHeuristic::DEPTH,
                     storm::exceptions::InvalidSettingsException, "Maximal depth requires approximation heuristic depth.");
     return true;
 }
 
 }  // namespace modules
 }  // namespace settings
-}  // namespace storm
+}  // namespace storm::dft

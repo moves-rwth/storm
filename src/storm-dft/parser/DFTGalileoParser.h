@@ -7,10 +7,10 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-parsers/parser/ValueParser.h"
 
-namespace storm {
+namespace storm::dft {
 namespace parser {
 
 /*!
@@ -27,7 +27,7 @@ class DFTGalileoParser {
      *
      * @return DFT.
      */
-    static storm::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true);
+    static storm::dft::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true);
 
    private:
     /*!
@@ -50,8 +50,8 @@ class DFTGalileoParser {
      *
      * @return True iff the parsing and creation was successful.
      */
-    static bool parseBasicElement(std::string const& name, std::string const& input, size_t lineNo, storm::builder::DFTBuilder<ValueType>& builder,
-                                  ValueParser<ValueType>& valueParser);
+    static bool parseBasicElement(std::string const& name, std::string const& input, size_t lineNo, storm::dft::builder::DFTBuilder<ValueType>& builder,
+                                  storm::parser::ValueParser<ValueType>& valueParser);
 
     /*!
      * Parse argument of basic element of the form "name=value".
@@ -62,7 +62,7 @@ class DFTGalileoParser {
      *
      * @return Pair (success, value). Success is true iff the parsing was succesful. Then value contains the parsed value.
      */
-    static std::pair<bool, ValueType> parseValue(std::string name, std::string& line, ValueParser<ValueType>& valueParser);
+    static std::pair<bool, ValueType> parseValue(std::string name, std::string& line, storm::parser::ValueParser<ValueType>& valueParser);
 
     /*!
      * Parse argument of basic element of type number: "name=number".
@@ -76,5 +76,6 @@ class DFTGalileoParser {
 
     enum Distribution { None, Constant, Exponential, Erlang, Weibull, LogNormal };
 };
+
 }  // namespace parser
-}  // namespace storm
+}  // namespace storm::dft

@@ -8,7 +8,7 @@
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
-namespace storm {
+namespace storm::dft {
 namespace settings {
 namespace modules {
 
@@ -67,4 +67,4 @@ bool DftGspnSettings::check() const {
 
 }  // namespace modules
 }  // namespace settings
-}  // namespace storm
+}  // namespace storm::dft

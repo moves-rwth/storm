@@ -7,7 +7,7 @@
 
 #include "storm-dft/builder/DftExplorationHeuristic.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 /*!
@@ -121,4 +121,4 @@ class BucketPriorityQueue {
 };
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

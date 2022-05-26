@@ -15,10 +15,10 @@
 #include "storm-dft/builder/DftExplorationHeuristic.h"
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/storage/BucketPriorityQueue.h"
-#include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/storage/dft/SymmetricUnits.h"
+#include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/SymmetricUnits.h"
 
-namespace storm {
+namespace storm::dft {
 namespace builder {
 
 /*!
@@ -26,7 +26,7 @@ namespace builder {
  */
 template<typename ValueType, typename StateType = uint32_t>
 class ExplicitDFTModelBuilder {
-    using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
+    using DFTStatePointer = std::shared_ptr<storm::dft::storage::DFTState<ValueType>>;
     using ExplorationHeuristic = DFTExplorationHeuristic<ValueType>;
     using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
 
@@ -153,7 +153,7 @@ class ExplicitDFTModelBuilder {
      * @param dft DFT.
      * @param symmetries Symmetries in the dft.
      */
-    ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries);
+    ExplicitDFTModelBuilder(storm::dft::storage::DFT<ValueType> const& dft, storm::dft::storage::DFTIndependentSymmetries const& symmetries);
 
     /*!
      * Build model from DFT.
@@ -163,7 +163,7 @@ class ExplicitDFTModelBuilder {
      * @param approximationHeuristic Heuristic used for exploring states.
      */
     void buildModel(size_t iteration, double approximationThreshold = 0.0,
-                    storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH);
+                    storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH);
 
     /*!
      * Get the built model.
@@ -280,14 +280,14 @@ class ExplicitDFTModelBuilder {
     const StateType OFFSET_PSEUDO_STATE = std::numeric_limits<StateType>::max() / 2;
 
     // Dft
-    storm::storage::DFT<ValueType> const& dft;
+    storm::dft::storage::DFT<ValueType> const& dft;
 
     // General information for state generation
     // TODO: use const reference
-    std::shared_ptr<storm::storage::DFTStateGenerationInfo> stateGenerationInfo;
+    std::shared_ptr<storm::dft::storage::DFTStateGenerationInfo> stateGenerationInfo;
 
     // Heuristic used for approximation
-    storm::builder::ApproximationHeuristic usedHeuristic;
+    storm::dft::builder::ApproximationHeuristic usedHeuristic;
 
     // Current id for new state
     size_t newIndex = 0;
@@ -300,7 +300,7 @@ class ExplicitDFTModelBuilder {
     size_t initialStateIndex = 0;
 
     // Next state generator for exploring the state space
-    storm::generator::DftNextStateGenerator<ValueType, StateType> generator;
+    storm::dft::generator::DftNextStateGenerator<ValueType, StateType> generator;
 
     // Structure for the components of the model.
     ModelComponents modelComponents;
@@ -312,7 +312,7 @@ class ExplicitDFTModelBuilder {
     storm::storage::sparse::StateStorage<StateType> stateStorage;
 
     // A priority queue of states that still need to be explored.
-    storm::storage::BucketPriorityQueue<ExplorationHeuristic> explorationQueue;
+    storm::dft::storage::BucketPriorityQueue<ExplorationHeuristic> explorationQueue;
 
     // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
     std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;
@@ -328,4 +328,4 @@ class ExplicitDFTModelBuilder {
 };
 
 }  // namespace builder
-}  // namespace storm
+}  // namespace storm::dft

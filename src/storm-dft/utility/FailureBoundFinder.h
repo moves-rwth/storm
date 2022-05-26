@@ -1,10 +1,10 @@
 #include <vector>
-#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
-#include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/modelchecker/DFTASFChecker.h"
+#include "storm-dft/storage/DFT.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace utility {
+
 class FailureBoundFinder {
    public:
     /**
@@ -15,9 +15,9 @@ class FailureBoundFinder {
      * @param timeout timeout for each query in seconds, defaults to 10 seconds
      * @return the minimal number
      */
-    static uint64_t getLeastFailureBound(storm::storage::DFT<double> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
+    static uint64_t getLeastFailureBound(storm::dft::storage::DFT<double> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
 
-    static uint64_t getLeastFailureBound(storm::storage::DFT<storm::RationalFunction> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
+    static uint64_t getLeastFailureBound(storm::dft::storage::DFT<storm::RationalFunction> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
 
     /**
      * Get the number of BE failures for which the TLE always fails (upper bound for number of failures to check).
@@ -27,9 +27,9 @@ class FailureBoundFinder {
      * @param timeout timeout for each query in seconds, defaults to 10 seconds
      * @return the number
      */
-    static uint64_t getAlwaysFailedBound(storm::storage::DFT<double> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
+    static uint64_t getAlwaysFailedBound(storm::dft::storage::DFT<double> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
 
-    static uint64_t getAlwaysFailedBound(storm::storage::DFT<storm::RationalFunction> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
+    static uint64_t getAlwaysFailedBound(storm::dft::storage::DFT<storm::RationalFunction> const &dft, bool useSMT = false, uint_fast64_t timeout = 10);
 
    private:
     /**
@@ -43,7 +43,7 @@ class FailureBoundFinder {
      * @param timeout timeout timeout for each query in seconds
      * @return the corrected bound
      */
-    static uint64_t correctLowerBound(std::shared_ptr<storm::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
+    static uint64_t correctLowerBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
 
     /**
      * Helper function for correction of bound for number of BEs such that the DFT always fails when dependencies are present
@@ -53,8 +53,8 @@ class FailureBoundFinder {
      * @param timeout timeout timeout for each query in seconds
      * @return the corrected bound
      */
-    static uint64_t correctUpperBound(std::shared_ptr<storm::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
+    static uint64_t correctUpperBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout);
 };
+
 }  // namespace utility
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

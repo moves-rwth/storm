@@ -8,7 +8,7 @@
 #include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
-namespace storm {
+namespace storm::dft {
 namespace settings {
 namespace modules {
 
@@ -38,14 +38,14 @@ DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
         storm::settings::OptionBuilder(moduleName, dftFileOptionName, false, "Parses the model given in the Galileo format.")
             .setShortName(dftFileOptionShortName)
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the DFT model.")
-                             .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                             .addValidatorString(storm::settings::ArgumentValidatorFactory::createExistingFileValidator())
                              .build())
             .build());
     this->addOption(
         storm::settings::OptionBuilder(moduleName, dftJsonFileOptionName, false, "Parses the model given in the Cytoscape JSON format.")
             .setShortName(dftJsonFileOptionShortName)
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the JSON file from which to read the DFT model.")
-                             .addValidatorString(ArgumentValidatorFactory::createExistingFileValidator())
+                             .addValidatorString(storm::settings::ArgumentValidatorFactory::createExistingFileValidator())
                              .build())
             .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, propExpectedTimeOptionName, false, "Compute expected time of system failure.")
@@ -54,20 +54,20 @@ DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
     this->addOption(storm::settings::OptionBuilder(moduleName, propProbabilityOptionName, false, "Compute probability of system failure.").build());
     this->addOption(storm::settings::OptionBuilder(moduleName, propTimeboundOptionName, false, "Compute probability of system failure up to given timebound.")
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("time", "The timebound to use.")
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterValidator(0.0))
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(0.0))
                                          .build())
                         .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, propTimepointsOptionName, false,
                                                    "Compute probability of system failure up to given timebound for a set of given timepoints [starttime, "
                                                    "starttime+inc, starttime+2inc, ... ,endtime]")
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("starttime", "The timebound to start from.")
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
                                          .build())
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("endtime", "The timebound to end with.")
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
                                          .build())
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("inc", "The value to increment with to get the next timepoint.")
-                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
                                          .setDefaultValueDouble(1.0)
                                          .makeOptional()
                                          .build())
@@ -95,7 +95,7 @@ DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
     this->addOption(
         storm::settings::OptionBuilder(moduleName, importanceMeasureOptionName, false, "Calculate importance measures for all basic events in the SFT.")
             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("measure", "The name of the measure. Valid values: [MIF,DIF,CIF,RAW,RRW]")
-                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"MIF", "DIF", "CIF", "RAW", "RRW"}))
+                             .addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"MIF", "DIF", "CIF", "RAW", "RRW"}))
                              .build())
             .build());
 }
@@ -209,4 +209,4 @@ bool DftIOSettings::check() const {
 
 }  // namespace modules
 }  // namespace settings
-}  // namespace storm
+}  // namespace storm::dft

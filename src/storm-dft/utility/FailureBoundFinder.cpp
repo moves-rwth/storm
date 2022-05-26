@@ -1,9 +1,9 @@
 #include "FailureBoundFinder.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace utility {
-uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
+
+uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
     STORM_LOG_DEBUG("Lower bound correction - try to correct bound " << std::to_string(bound));
     uint64_t boundCandidate = bound;
     uint64_t nrDepEvents = 0;
@@ -12,9 +12,9 @@ uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::modelcheck
 
     // Count dependent events
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<double> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<double> const> element = dft.getElement(i);
         if (element->isBasicElement()) {
-            auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
             if (be->hasIngoingDependencies()) {
                 ++nrDepEvents;
             }
@@ -61,7 +61,7 @@ uint64_t FailureBoundFinder::correctLowerBound(std::shared_ptr<storm::modelcheck
     return boundCandidate + 1;
 }
 
-uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::dft::modelchecker::DFTASFChecker> smtchecker, uint64_t bound, uint_fast64_t timeout) {
     STORM_LOG_DEBUG("Upper bound correction - try to correct bound " << std::to_string(bound));
     uint64_t boundCandidate = bound;
     uint64_t nrDepEvents = 0;
@@ -70,9 +70,9 @@ uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::modelcheck
     auto dft = smtchecker->getDFT();
     // Count dependent events
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        std::shared_ptr<storm::storage::DFTElement<double> const> element = dft.getElement(i);
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<double> const> element = dft.getElement(i);
         if (element->isBasicElement()) {
-            auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+            auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<double> const>(element);
             if (be->hasIngoingDependencies()) {
                 ++nrDepEvents;
             }
@@ -113,11 +113,11 @@ uint64_t FailureBoundFinder::correctUpperBound(std::shared_ptr<storm::modelcheck
     return boundCandidate;
 }
 
-uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::getLeastFailureBound(storm::dft::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
     if (useSMT) {
         STORM_LOG_TRACE("Compute lower bound for number of BE failures necessary for the DFT to fail");
 
-        storm::modelchecker::DFTASFChecker smtchecker(dft);
+        storm::dft::modelchecker::DFTASFChecker smtchecker(dft);
         smtchecker.toSolver();
 
         uint64_t bound = 0;
@@ -128,7 +128,7 @@ uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<double> co
             switch (tmp_res) {
                 case storm::solver::SmtSolver::CheckResult::Sat:
                     if (!dft.getDependencies().empty()) {
-                        return correctLowerBound(std::make_shared<storm::modelchecker::DFTASFChecker>(smtchecker), bound, timeout);
+                        return correctLowerBound(std::make_shared<storm::dft::modelchecker::DFTASFChecker>(smtchecker), bound, timeout);
                     } else {
                         return bound;
                     }
@@ -148,17 +148,17 @@ uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<double> co
     }
 }
 
-uint64_t FailureBoundFinder::getLeastFailureBound(storm::storage::DFT<RationalFunction> const &dft, bool useSMT, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::getLeastFailureBound(storm::dft::storage::DFT<RationalFunction> const &dft, bool useSMT, uint_fast64_t timeout) {
     if (useSMT) {
         STORM_LOG_WARN("SMT encoding does not support rational functions");
     }
     return 1;
 }
 
-uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::dft::storage::DFT<double> const &dft, bool useSMT, uint_fast64_t timeout) {
     STORM_LOG_TRACE("Compute bound for number of BE failures such that the DFT always fails");
     if (useSMT) {
-        storm::modelchecker::DFTASFChecker smtchecker(dft);
+        storm::dft::modelchecker::DFTASFChecker smtchecker(dft);
         smtchecker.toSolver();
 
         if (smtchecker.checkTleNeverFailed() == storm::solver::SmtSolver::CheckResult::Sat) {
@@ -172,7 +172,7 @@ uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<double> co
             switch (tmp_res) {
                 case storm::solver::SmtSolver::CheckResult::Sat:
                     if (!dft.getDependencies().empty()) {
-                        return correctUpperBound(std::make_shared<storm::modelchecker::DFTASFChecker>(smtchecker), bound, timeout);
+                        return correctUpperBound(std::make_shared<storm::dft::modelchecker::DFTASFChecker>(smtchecker), bound, timeout);
                     } else {
                         return bound;
                     }
@@ -191,7 +191,7 @@ uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<double> co
     }
 }
 
-uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<RationalFunction> const &dft, bool useSMT, uint_fast64_t timeout) {
+uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::dft::storage::DFT<RationalFunction> const &dft, bool useSMT, uint_fast64_t timeout) {
     if (useSMT) {
         STORM_LOG_WARN("SMT encoding does not support rational functions");
     }
@@ -199,6 +199,6 @@ uint64_t FailureBoundFinder::getAlwaysFailedBound(storm::storage::DFT<RationalFu
 }
 
 class FailureBoundFinder;
+
 }  // namespace utility
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft
