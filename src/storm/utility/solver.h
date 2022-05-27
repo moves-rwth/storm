@@ -29,10 +29,8 @@ class LpSolverFactory {
      * @param name The name of the LP solver.
      * @return A pointer to the newly created solver.
      */
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const;
-    virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name, storm::solver::LpSolverTypeSelection solvType) const;
-
-    virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const;
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const = 0;
+    virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const = 0;
 };
 
 template<typename ValueType>
@@ -55,6 +53,10 @@ class Z3LpSolverFactory : public LpSolverFactory<ValueType> {
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
 };
+
+template<typename ValueType>
+std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(
+    storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS);
 
 template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> getLpSolver(
