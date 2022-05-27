@@ -1,34 +1,10 @@
-#ifndef STORM_UTILITY_SOLVER_H_
-#define STORM_UTILITY_SOLVER_H_
-
-#include <iostream>
+#pragma once
 
 #include <memory>
-#include <set>
-#include <vector>
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
 namespace solver {
-template<storm::dd::DdType T, typename ValueType>
-class SymbolicGameSolver;
-
-template<storm::dd::DdType T, typename V>
-class SymbolicLinearEquationSolver;
-
-template<storm::dd::DdType T, typename V>
-class SymbolicMinMaxLinearEquationSolver;
-
-template<typename V>
-class LinearEquationSolver;
-
-template<typename V>
-class MinMaxLinearEquationSolver;
 
 template<typename ValueType>
 class LpSolver;
@@ -36,27 +12,12 @@ class LpSolver;
 class SmtSolver;
 }  // namespace solver
 
-namespace storage {
-template<typename V>
-class SparseMatrix;
-}
-
-namespace dd {
-template<storm::dd::DdType Type, typename ValueType>
-class Add;
-
-template<storm::dd::DdType Type>
-class Bdd;
-}  // namespace dd
-
 namespace expressions {
-class Variable;
 class ExpressionManager;
 }  // namespace expressions
+}  // namespace storm
 
-namespace utility {
-namespace solver {
-
+namespace storm::utility::solver {
 template<typename ValueType>
 class LpSolverFactory {
    public:
@@ -124,8 +85,4 @@ class MathsatSmtSolverFactory : public SmtSolverFactory {
 };
 
 std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager);
-}  // namespace solver
-}  // namespace utility
-}  // namespace storm
-
-#endif /* STORM_UTILITY_SOLVER_H_ */
+}  // namespace storm::utility::solver
