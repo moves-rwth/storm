@@ -3,6 +3,10 @@
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
+namespace solver {
+enum class GurobiSolverMethod;
+}
+
 namespace settings {
 namespace modules {
 
@@ -57,6 +61,13 @@ class GurobiSettings : public ModuleSettings {
      * @return The number of MIP solvers Gurobi spawns in parallel..
      */
     uint64_t getNumberOfConcurrentMipThreads() const;
+
+    /*!
+     * Retrieves the solver method
+     *
+     * @return
+     */
+    solver::GurobiSolverMethod getMethod() const;
 
     /*!
      * Retrieves whether the output option was set.

@@ -75,6 +75,10 @@ void GurobiLpSolver<ValueType>::setGurobiEnvironmentProperties() const {
     // Enable the following line to only print the output of Gurobi if the debug flag is set.
     toggleOutput(storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() ||
                  storm::settings::getModule<storm::settings::modules::GurobiSettings>().isOutputSet());
+    error = GRBsetintparam(env, "Method", static_cast<int>(storm::settings::getModule<storm::settings::modules::GurobiSettings>().getMethod()));
+    STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
+                    "Unable to set Gurobi Parameter Method (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+
     // Enable the following line to restrict Gurobi to one thread only.
     error = GRBsetintparam(env, "Threads", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getNumberOfThreads());
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
@@ -888,6 +892,42 @@ ValueType GurobiLpSolver<ValueType>::getMILPGap(bool) const {
 }
 
 #endif
+
+std::string toString(GurobiSolverMethod const& method) {
+    switch(method) {
+        case GurobiSolverMethod::AUTOMATIC:
+            return "auto";
+        case GurobiSolverMethod::PRIMALSIMPLEX:
+            return "primal-simplex";
+        case GurobiSolverMethod::DUALSIMPLEX:
+            return "dual-simplex";
+        case GurobiSolverMethod::BARRIER:
+            return "barrier";
+        case GurobiSolverMethod::CONCURRENT:
+            return "concurrent";
+        case GurobiSolverMethod::DETCONCURRENT:
+            return "deterministic-concurrent";
+        case GurobiSolverMethod::DETCONCURRENTSIMPLEX:
+            return "deterministic-concurrent-simplex";
+    }
+    STORM_LOG_ASSERT(false, "Unknown solver method");
+}
+
+std::optional<GurobiSolverMethod> gurobiSolverMethodFromString(std::string const& method) {
+    for (auto const& mt : getGurobiSolverMethods()) {
+        if (toString(mt) == method) {
+            return mt;
+        }
+    }
+    return {};
+}
+
+std::vector<GurobiSolverMethod> getGurobiSolverMethods() {
+    return {GurobiSolverMethod::AUTOMATIC, GurobiSolverMethod::PRIMALSIMPLEX, GurobiSolverMethod::DUALSIMPLEX,
+            GurobiSolverMethod::BARRIER, GurobiSolverMethod::CONCURRENT, GurobiSolverMethod::DETCONCURRENT,
+            GurobiSolverMethod::DETCONCURRENTSIMPLEX};
+}
+
 template class GurobiLpSolver<double>;
 template class GurobiLpSolver<storm::RationalNumber>;
 }  // namespace solver

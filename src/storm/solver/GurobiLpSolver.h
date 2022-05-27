@@ -163,6 +163,28 @@ class GurobiLpSolver : public LpSolver<ValueType> {
     std::vector<IncrementalLevel> incrementalData;
 };
 
+
+enum class GurobiSolverMethod {
+    AUTOMATIC = -1,
+    PRIMALSIMPLEX = 0,
+    DUALSIMPLEX = 1,
+    BARRIER = 2,
+    CONCURRENT = 3,
+    DETCONCURRENT = 4,
+    DETCONCURRENTSIMPLEX = 5
+};
+
+/**
+ * Yields a string representation of the GurobiSolverMethod
+ * @param method
+ * @return
+ */
+std::string toString(GurobiSolverMethod const& method);
+std::optional<GurobiSolverMethod> gurobiSolverMethodFromString(std::string const&);
+std::vector<GurobiSolverMethod> getGurobiSolverMethods();
+
+
+
 }  // namespace solver
 }  // namespace storm
 
