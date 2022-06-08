@@ -810,7 +810,7 @@ namespace storm {
                 }
                 // TODO make this flag toggable
                 bool useExtendedCutoff = true;
-                uint64_t nrCutoffStrategies = 1;
+                uint64_t nrCutoffStrategies = min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
 
                 bool fixPoint = true;
                 if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
@@ -945,7 +945,7 @@ namespace storm {
                         } else {
                             // Add one cut-off transition for each cut-off strategy
                             for (uint64_t i = 0; i < nrCutoffStrategies; ++i) {
-                                auto cutOffValue = min ? underApproximation->computeUpperValueBoundAtBelief(currId) : underApproximation->computeLowerValueBoundAtBelief(currId);
+                                auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i) : underApproximation->computeLowerValueBoundForScheduler(currId, i) ;
                                 if (computeRewards) {
                                     underApproximation->addTransitionsToExtraStates(i, storm::utility::one<ValueType>());
                                     underApproximation->addRewardToCurrentState(i, cutOffValue);
