@@ -20,7 +20,7 @@ namespace storm {
 
             template <typename ValueType>
             std::vector<ValueType> PomdpParametricTransformationModelChecker<ValueType>::computeValuesForFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& formulaInfo, uint64_t memoryBound, storm::storage::PomdpMemoryPattern memoryPattern, double gdEpsilon, uint64_t maxInstantiations){
-                STORM_PRINT_AND_LOG("Parametric Preprocessing with memory bound " << memoryBound << " -- Gradient Descent (Eps: " << gdEpsilon << " / Instantiations: " << maxInstantiations << ")\n");
+                /*STORM_PRINT_AND_LOG("Parametric Preprocessing with memory bound " << memoryBound << " -- Gradient Descent (Eps: " << gdEpsilon << " / Instantiations: " << maxInstantiations << ")\n");
                 // Apply memory structure to POMDP
                 STORM_LOG_ERROR_COND(memoryBound > 0, "Invalid memory bound" << memoryBound << "for transformation from POMDP to pMC. Memory bound needs to be positive!");
                 STORM_PRINT_AND_LOG("Compute values in POMDP by transformation to pMC.");
@@ -117,6 +117,8 @@ namespace storm {
                 }
 
                 return result;
+                 */
+                STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "Using the transformation to a pMC is currently not supported for the belief unfolding.");
             }
 
             template class PomdpParametricTransformationModelChecker<double>;

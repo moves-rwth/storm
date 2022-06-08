@@ -104,7 +104,8 @@ namespace storm {
 
                 std::vector<ValueType> pMCValueBound;
                 if(options.useParametricPreprocessing && options.unfold){
-                    initialPomdpValueBounds.parametric = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, options.paramMemBound, storm::storage::PomdpMemoryPattern::Full, options.paramGDEps, options.paramGDMaxInstantiations);
+                    STORM_LOG_WARN("Using the transformation to a pMC is currently not supported. The preprocessing step is skipped.");
+                    //initialPomdpValueBounds.parametric = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, options.paramMemBound, storm::storage::PomdpMemoryPattern::Full, options.paramGDEps, options.paramGDMaxInstantiations);
                 }
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> initialValueBounds;
                 initialValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
