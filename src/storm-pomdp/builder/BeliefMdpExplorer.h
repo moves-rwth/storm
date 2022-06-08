@@ -162,6 +162,10 @@ namespace storm {
 
             ValueType computeUpperValueBoundAtBelief(BeliefId const &beliefId) const;
 
+            ValueType computeLowerValueBoundForScheduler(BeliefId const &beliefId, uint64_t schedulerId) const;
+
+            ValueType computeUpperValueBoundForScheduler(BeliefId const &beliefId, uint64_t schedulerId) const;
+
             ValueType computeParametricBoundAtBelief(BeliefId const &beliefId) const;
 
             void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir);
@@ -216,6 +220,10 @@ namespace storm {
             bool beliefHasMdpState(BeliefId const &beliefId) const;
 
             storm::storage::BitVector getStateExtremeBoundIsInfinite();
+
+            uint64_t getNrSchedulersForUpperBounds();
+
+            uint64_t getNrSchedulersForLowerBounds();
 
         private:
             MdpStateType noState() const;

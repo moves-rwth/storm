@@ -724,6 +724,22 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::computeLowerValueBoundForScheduler(BeliefId const &beliefId, uint64_t schedulerId) const {
+            STORM_LOG_ASSERT(!pomdpValueBounds.lower.empty(), "Requested lower value bounds but none were available.");
+            STORM_LOG_ASSERT(pomdpValueBounds.lower.size() > schedulerId, "Requested lower value bound for scheduler with ID " << schedulerId << " not available.");
+            return beliefManager->getWeightedSum(beliefId, pomdpValueBounds.lower[schedulerId]);;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::computeUpperValueBoundForScheduler(BeliefId const &beliefId, uint64_t schedulerId) const {
+            STORM_LOG_ASSERT(!pomdpValueBounds.upper.empty(), "Requested upper value bounds but none were available.");
+            STORM_LOG_ASSERT(pomdpValueBounds.upper.size() > schedulerId, "Requested upper value bound for scheduler with ID " << schedulerId << " not available.");
+            return beliefManager->getWeightedSum(beliefId, pomdpValueBounds.upper[schedulerId]);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType
         BeliefMdpExplorer<PomdpType, BeliefValueType>::computeParametricBoundAtBelief(BeliefId const &beliefId) const {
             STORM_LOG_ASSERT(!pomdpValueBounds.parametric.empty(), "Parametric bounds not available.");
             return beliefManager->getWeightedSum(beliefId, pomdpValueBounds.parametric);
@@ -1098,6 +1114,16 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType>
         storm::storage::BitVector BeliefMdpExplorer<PomdpType, BeliefValueType>::getStateExtremeBoundIsInfinite(){
             return extremeValueBound.isInfinite;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        uint64_t BeliefMdpExplorer<PomdpType, BeliefValueType>::getNrSchedulersForUpperBounds() {
+            return pomdpValueBounds.upper.size();
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        uint64_t BeliefMdpExplorer<PomdpType, BeliefValueType>::getNrSchedulersForLowerBounds() {
+            return pomdpValueBounds.lower.size();
         }
 
         template
