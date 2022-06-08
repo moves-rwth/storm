@@ -18,6 +18,21 @@ namespace storm {
                 std::vector<std::vector<ValueType>> upper;
                 std::vector<ValueType> parametric;
                 /**
+                 * Picks the precomputed lower bound for a given scheduler index and state of the POMDP
+                 * @param scheduler_id the scheduler ID
+                 * @param state the state ID
+                 * @return the lower bound value
+                 */
+                ValueType getLowerBound(uint64_t scheduler_id, uint64_t const& state);
+                /**
+                 * Picks the precomputed upper bound for a given scheduler index and state of the POMDP
+                 * @param scheduler_id the scheduler ID
+                 * @param state the state ID
+                 * @return the smallest upper bound value
+                 */
+                ValueType getUpperBound(uint64_t scheduler_id, uint64_t const& state);
+
+                /**
                  * Picks the largest precomputed lower bound for a given state of the POMDP
                  * @param state the state ID
                  * @return the largest lower bound value

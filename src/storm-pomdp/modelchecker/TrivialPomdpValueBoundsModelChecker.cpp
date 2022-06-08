@@ -19,6 +19,18 @@ namespace storm {
         namespace modelchecker {
 
             template<typename ValueType>
+            ValueType TrivialPomdpValueBounds<ValueType>::getLowerBound(uint64_t scheduler_id, uint64_t const& state) {
+                STORM_LOG_ASSERT(!lower.empty(), "requested a lower bound but none were available");
+                return lower[scheduler_id][state];
+            }
+
+            template<typename ValueType>
+            ValueType TrivialPomdpValueBounds<ValueType>::getUpperBound(uint64_t scheduler_id, uint64_t const& state) {
+                STORM_LOG_ASSERT(!upper.empty(), "requested an upper bound but none were available");
+                return upper[scheduler_id][state];
+            }
+
+            template<typename ValueType>
             ValueType TrivialPomdpValueBounds<ValueType>::getHighestLowerBound(uint64_t const& state) {
                 STORM_LOG_ASSERT(!lower.empty(), "requested a lower bound but none were available");
                 auto it = lower.begin();
