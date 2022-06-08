@@ -30,16 +30,17 @@
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 
-namespace storm {
+namespace storm::dft {
 namespace settings {
+
 void initializeDftSettings(std::string const& name, std::string const& executableName) {
     storm::settings::mutableManager().setName(name, executableName);
 
     // Register relevant settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
-    storm::settings::addModule<storm::settings::modules::DftIOSettings>();
-    storm::settings::addModule<storm::settings::modules::FaultTreeSettings>();
-    storm::settings::addModule<storm::settings::modules::DftGspnSettings>();
+    storm::settings::addModule<storm::dft::settings::modules::DftIOSettings>();
+    storm::settings::addModule<storm::dft::settings::modules::FaultTreeSettings>();
+    storm::settings::addModule<storm::dft::settings::modules::DftGspnSettings>();
     storm::settings::addModule<storm::settings::modules::IOSettings>();
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::TransformationSettings>();
@@ -69,5 +70,6 @@ void initializeDftSettings(std::string const& name, std::string const& executabl
     storm::settings::addModule<storm::settings::modules::CuddSettings>();
     storm::settings::addModule<storm::settings::modules::SylvanSettings>();
 }
+
 }  // namespace settings
-}  // namespace storm
+}  // namespace storm::dft

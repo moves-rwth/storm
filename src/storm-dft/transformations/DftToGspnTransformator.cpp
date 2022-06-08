@@ -2,15 +2,14 @@
 #include <memory>
 #include "storm/exceptions/NotImplementedException.h"
 
-namespace storm {
+namespace storm::dft {
 namespace transformations {
-namespace dft {
 
 // Prevent some magic constants
 static constexpr const uint64_t defaultCapacity = 1;
 
 template<typename ValueType>
-DftToGspnTransformator<ValueType>::DftToGspnTransformator(storm::storage::DFT<ValueType> const &dft) : mDft(dft) {
+DftToGspnTransformator<ValueType>::DftToGspnTransformator(storm::dft::storage::DFT<ValueType> const &dft) : mDft(dft) {
     // Intentionally left empty.
 }
 
@@ -39,7 +38,7 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
         // Set priority for PDEP and FDEP according to Monolithic MA semantics
         uint64_t dependency_priority = 2;
         for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-            if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP)
+            if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::PDEP)
                 priorities[i] = dependency_priority;
             else
                 priorities[i] = (-(mDft.getElement(i)->rank()) + mDft.maxRank()) * 2 + 5;
@@ -51,9 +50,9 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
         // Iterate over all elements of the DFT and sort them into the list
         std::list<size_t> elementList;
         for (std::size_t i = 0; i < mDft.nrElements(); i++) {
-            if (mDft.getElement(i)->type() == storm::storage::DFTElementType::PDEP) {
+            if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::PDEP) {
                 // For dependencies, get the maximal number of dependent events
-                auto dependency = std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(mDft.getElement(i));
+                auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(mDft.getElement(i));
                 uint64_t nrDependentEvents = (dependency->dependentEvents()).size();
                 if (nrDependentEvents > maxNrDependentEvents) {
                     maxNrDependentEvents = nrDependentEvents;
@@ -62,7 +61,7 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
             // Get the maximum number of children/ SPAREs need additional transitions
 
             u_int64_t nrChildren = mDft.getElement(i)->nrChildren();
-            if (mDft.getElement(i)->type() == storm::storage::DFTElementType::SPARE) {
+            if (mDft.getElement(i)->type() == storm::dft::storage::elements::DFTElementType::SPARE) {
                 nrChildren *= 4;
             }
             if (maxNrOfChildren < nrChildren) {
@@ -72,7 +71,8 @@ std::map<uint64_t, uint64_t> DftToGspnTransformator<ValueType>::computePrioritie
             if (!elementList.empty()) {
                 std::list<size_t>::iterator it = elementList.begin();
                 // Make sure dependencies are always in the front
-                while ((mDft.getElement(*it)->rank()) < (mDft.getElement(i)->rank()) || mDft.getElement(*it)->type() == storm::storage::DFTElementType::PDEP) {
+                while ((mDft.getElement(*it)->rank()) < (mDft.getElement(i)->rank()) ||
+                       mDft.getElement(*it)->type() == storm::dft::storage::elements::DFTElementType::PDEP) {
                     it++;
                 }
                 elementList.insert(it, i);
@@ -116,34 +116,34 @@ void DftToGspnTransformator<ValueType>::translateGSPNElements() {
 
         // Check which type the element is and call the corresponding translate-function.
         switch (dftElement->type()) {
-            case storm::storage::DFTElementType::BE:
-                translateBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(dftElement));
+            case storm::dft::storage::elements::DFTElementType::BE:
+                translateBE(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::AND:
-                translateAND(std::static_pointer_cast<storm::storage::DFTAnd<ValueType> const>(dftElement));
+            case storm::dft::storage::elements::DFTElementType::AND:
+                translateAND(std::static_pointer_cast<storm::dft::storage::elements::DFTAnd<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::OR:
-                translateOR(std::static_pointer_cast<storm::storage::DFTOr<ValueType> const>(dftElement));
+            case storm::dft::storage::elements::DFTElementType::OR:
+                translateOR(std::static_pointer_cast<storm::dft::storage::elements::DFTOr<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::VOT:
-                translateVOT(std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(dftElement));
+            case storm::dft::storage::elements::DFTElementType::VOT:
+                translateVOT(std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::PAND:
-                translatePAND(std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(dftElement),
-                              std::static_pointer_cast<storm::storage::DFTPand<ValueType> const>(dftElement)->isInclusive());
+            case storm::dft::storage::elements::DFTElementType::PAND:
+                translatePAND(std::static_pointer_cast<storm::dft::storage::elements::DFTPand<ValueType> const>(dftElement),
+                              std::static_pointer_cast<storm::dft::storage::elements::DFTPand<ValueType> const>(dftElement)->isInclusive());
                 break;
-            case storm::storage::DFTElementType::POR:
-                translatePOR(std::static_pointer_cast<storm::storage::DFTPor<ValueType> const>(dftElement),
-                             std::static_pointer_cast<storm::storage::DFTPor<ValueType> const>(dftElement)->isInclusive());
+            case storm::dft::storage::elements::DFTElementType::POR:
+                translatePOR(std::static_pointer_cast<storm::dft::storage::elements::DFTPor<ValueType> const>(dftElement),
+                             std::static_pointer_cast<storm::dft::storage::elements::DFTPor<ValueType> const>(dftElement)->isInclusive());
                 break;
-            case storm::storage::DFTElementType::SPARE:
-                translateSPARE(std::static_pointer_cast<storm::storage::DFTSpare<ValueType> const>(dftElement));
+            case storm::dft::storage::elements::DFTElementType::SPARE:
+                translateSPARE(std::static_pointer_cast<storm::dft::storage::elements::DFTSpare<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::PDEP:
-                translatePDEP(std::static_pointer_cast<storm::storage::DFTDependency<ValueType> const>(dftElement));
+            case storm::dft::storage::elements::DFTElementType::PDEP:
+                translatePDEP(std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(dftElement));
                 break;
-            case storm::storage::DFTElementType::SEQ:
-                translateSeq(std::static_pointer_cast<storm::storage::DFTSeq<ValueType> const>(dftElement));
+            case storm::dft::storage::elements::DFTElementType::SEQ:
+                translateSeq(std::static_pointer_cast<storm::dft::storage::elements::DFTSeq<ValueType> const>(dftElement));
                 break;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "DFT type '" << dftElement->type() << "' not known.");
@@ -153,13 +153,13 @@ void DftToGspnTransformator<ValueType>::translateGSPNElements() {
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translateBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
+void DftToGspnTransformator<ValueType>::translateBE(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> dftBE) {
     switch (dftBE->beType()) {
-        case storm::storage::BEType::CONSTANT:
-            translateBEConst(std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(dftBE));
+        case storm::dft::storage::elements::BEType::CONSTANT:
+            translateBEConst(std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(dftBE));
             break;
-        case storm::storage::BEType::EXPONENTIAL:
-            translateBEExponential(std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(dftBE));
+        case storm::dft::storage::elements::BEType::EXPONENTIAL:
+            translateBEExponential(std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(dftBE));
             break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE type '" << dftBE->beType() << "' not known.");
@@ -168,7 +168,7 @@ void DftToGspnTransformator<ValueType>::translateBE(std::shared_ptr<storm::stora
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translateBEExponential(std::shared_ptr<storm::storage::BEExponential<ValueType> const> dftBE) {
+void DftToGspnTransformator<ValueType>::translateBEExponential(std::shared_ptr<storm::dft::storage::elements::BEExponential<ValueType> const> dftBE) {
     double xcenter = mDft.getElementLayoutInfo(dftBE->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftBE->id()).y;
 
@@ -242,7 +242,7 @@ void DftToGspnTransformator<ValueType>::translateBEExponential(std::shared_ptr<s
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translateBEConst(std::shared_ptr<storm::storage::BEConst<ValueType> const> dftConst) {
+void DftToGspnTransformator<ValueType>::translateBEConst(std::shared_ptr<storm::dft::storage::elements::BEConst<ValueType> const> dftConst) {
     double xcenter = mDft.getElementLayoutInfo(dftConst->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftConst->id()).y;
 
@@ -270,7 +270,7 @@ void DftToGspnTransformator<ValueType>::translateBEConst(std::shared_ptr<storm::
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translateAND(std::shared_ptr<storm::storage::DFTAnd<ValueType> const> dftAnd) {
+void DftToGspnTransformator<ValueType>::translateAND(std::shared_ptr<storm::dft::storage::elements::DFTAnd<ValueType> const> dftAnd) {
     double xcenter = mDft.getElementLayoutInfo(dftAnd->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftAnd->id()).y;
 
@@ -348,7 +348,7 @@ void DftToGspnTransformator<ValueType>::translateAND(std::shared_ptr<storm::stor
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::storage::DFTOr<ValueType> const> dftOr) {
+void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::dft::storage::elements::DFTOr<ValueType> const> dftOr) {
     double xcenter = mDft.getElementLayoutInfo(dftOr->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftOr->id()).y;
 
@@ -434,7 +434,7 @@ void DftToGspnTransformator<ValueType>::translateOR(std::shared_ptr<storm::stora
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::storage::DFTVot<ValueType> const> dftVot) {
+void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::dft::storage::elements::DFTVot<ValueType> const> dftVot) {
     // TODO: finish layouting
 
     double xcenter = mDft.getElementLayoutInfo(dftVot->id()).x;
@@ -526,7 +526,7 @@ void DftToGspnTransformator<ValueType>::translateVOT(std::shared_ptr<storm::stor
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translatePAND(std::shared_ptr<storm::storage::DFTPand<ValueType> const> dftPand, bool inclusive) {
+void DftToGspnTransformator<ValueType>::translatePAND(std::shared_ptr<storm::dft::storage::elements::DFTPand<ValueType> const> dftPand, bool inclusive) {
     // TODO Layouting
     double xcenter = mDft.getElementLayoutInfo(dftPand->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftPand->id()).y;
@@ -640,7 +640,7 @@ void DftToGspnTransformator<ValueType>::translatePAND(std::shared_ptr<storm::sto
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translatePOR(std::shared_ptr<storm::storage::DFTPor<ValueType> const> dftPor, bool inclusive) {
+void DftToGspnTransformator<ValueType>::translatePOR(std::shared_ptr<storm::dft::storage::elements::DFTPor<ValueType> const> dftPor, bool inclusive) {
     double xcenter = mDft.getElementLayoutInfo(dftPor->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftPor->id()).y;
 
@@ -754,7 +754,7 @@ void DftToGspnTransformator<ValueType>::translatePOR(std::shared_ptr<storm::stor
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::storage::DFTSpare<ValueType> const> dftSpare) {
+void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::dft::storage::elements::DFTSpare<ValueType> const> dftSpare) {
     double xcenter = mDft.getElementLayoutInfo(dftSpare->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftSpare->id()).y;
 
@@ -901,7 +901,7 @@ void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::st
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dftDependency) {
+void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dftDependency) {
     double xcenter = mDft.getElementLayoutInfo(dftDependency->id()).x;
     double ycenter = mDft.getElementLayoutInfo(dftDependency->id()).y;
 
@@ -1009,7 +1009,7 @@ void DftToGspnTransformator<ValueType>::translatePDEP(std::shared_ptr<storm::sto
 }
 
 template<typename ValueType>
-void DftToGspnTransformator<ValueType>::translateSeq(std::shared_ptr<storm::storage::DFTSeq<ValueType> const> dftSeq) {
+void DftToGspnTransformator<ValueType>::translateSeq(std::shared_ptr<storm::dft::storage::elements::DFTSeq<ValueType> const> dftSeq) {
     STORM_LOG_THROW(dftSeq->allChildrenBEs(), storm::exceptions::NotImplementedException,
                     "Sequence enforcers with gates as children are currently not supported");
     double xcenter = mDft.getElementLayoutInfo(dftSeq->id()).x;
@@ -1065,7 +1065,7 @@ void DftToGspnTransformator<ValueType>::translateSeq(std::shared_ptr<storm::stor
 }
 
 template<typename ValueType>
-uint64_t DftToGspnTransformator<ValueType>::addFailedPlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement,
+uint64_t DftToGspnTransformator<ValueType>::addFailedPlace(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement,
                                                            storm::gspn::LayoutInfo const &layoutInfo, bool initialFailed) {
     uint64_t failedPlace = builder.addPlace(defaultCapacity, initialFailed ? 1 : 0, dftElement->name() + STR_FAILED);
     assert(failedPlaces.size() == dftElement->id());
@@ -1075,7 +1075,7 @@ uint64_t DftToGspnTransformator<ValueType>::addFailedPlace(std::shared_ptr<storm
 }
 
 template<typename ValueType>
-uint64_t DftToGspnTransformator<ValueType>::addUnavailablePlace(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement,
+uint64_t DftToGspnTransformator<ValueType>::addUnavailablePlace(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement,
                                                                 storm::gspn::LayoutInfo const &layoutInfo, bool initialAvailable) {
     unsigned int capacity = 2;  // Unavailable place has capacity 2
     uint64_t unavailablePlace = builder.addPlace(capacity, initialAvailable ? 0 : 1, dftElement->name() + "_unavail");
@@ -1085,7 +1085,7 @@ uint64_t DftToGspnTransformator<ValueType>::addUnavailablePlace(std::shared_ptr<
 }
 
 template<typename ValueType>
-uint64_t DftToGspnTransformator<ValueType>::addDisabledPlace(std::shared_ptr<const storm::storage::DFTBE<ValueType>> dftBe,
+uint64_t DftToGspnTransformator<ValueType>::addDisabledPlace(std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> dftBe,
                                                              storm::gspn::LayoutInfo const &layoutInfo) {
     uint64_t disabledPlace = builder.addPlace(dftBe->nrRestrictions(), dftBe->nrRestrictions(), dftBe->name() + "_dabled");
     disabledPlaces.emplace(dftBe->id(), disabledPlace);
@@ -1094,7 +1094,7 @@ uint64_t DftToGspnTransformator<ValueType>::addDisabledPlace(std::shared_ptr<con
 }
 
 template<typename ValueType>
-uint64_t DftToGspnTransformator<ValueType>::addDontcareTransition(std::shared_ptr<const storm::storage::DFTElement<ValueType>> dftElement,
+uint64_t DftToGspnTransformator<ValueType>::addDontcareTransition(std::shared_ptr<const storm::dft::storage::elements::DFTElement<ValueType>> dftElement,
                                                                   storm::gspn::LayoutInfo const &layoutInfo) {
     uint64_t dontcareTransition;
     dontcareTransition = builder.addImmediateTransition(dontCarePriority, 0.0, dftElement->name() + STR_DONTCARE + "_transition");
@@ -1104,13 +1104,13 @@ uint64_t DftToGspnTransformator<ValueType>::addDontcareTransition(std::shared_pt
 }
 
 template<typename ValueType>
-bool DftToGspnTransformator<ValueType>::isActiveInitially(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
+bool DftToGspnTransformator<ValueType>::isActiveInitially(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement) {
     // If element is in the top module, return true.
     return !mDft.hasRepresentant(dftElement->id());
 }
 
 template<typename ValueType>
-uint64_t DftToGspnTransformator<ValueType>::getFailPriority(std::shared_ptr<storm::storage::DFTElement<ValueType> const> dftElement) {
+uint64_t DftToGspnTransformator<ValueType>::getFailPriority(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> dftElement) {
     // Return the value given in the field
     return priorities.at(dftElement->id());
 }
@@ -1122,6 +1122,5 @@ template class DftToGspnTransformator<double>;
 // template class DftToGspnTransformator<storm::RationalFunction>;
 #endif
 
-}  // namespace dft
 }  // namespace transformations
-}  // namespace storm
+}  // namespace storm::dft

@@ -38,6 +38,8 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm-pars/transformer/ParametricTransformer.h"
+
 #include <typeinfo>
 
 namespace storm {
@@ -303,8 +305,7 @@ namespace storm {
                 }
                 return analysisPerformed;
             }
-            
-            
+
             template<typename ValueType, storm::dd::DdType DdType>
             bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
@@ -357,10 +358,15 @@ namespace storm {
                     std::string transformMode = transformSettings.getFscApplicationTypeString();
                     auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                     STORM_PRINT_AND_LOG(" done.\n");
-                    pmc->printModelInformationToStream(std::cout);
                     if (transformSettings.allowPostSimplifications()) {
                         STORM_PRINT_AND_LOG("Simplifying pMC...");
                         pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+                        STORM_PRINT_AND_LOG(" done.\n");
+                        pmc->printModelInformationToStream(std::cout);
+                    }
+                    if (pmc->hasRewardModel() && transformSettings.isConstantRewardsSet()) {
+                        STORM_PRINT_AND_LOG("Ensuring constant rewards...");
+                        pmc = storm::transformer::makeRewardsConstant(*(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
                         STORM_PRINT_AND_LOG(" done.\n");
                         pmc->printModelInformationToStream(std::cout);
                     }

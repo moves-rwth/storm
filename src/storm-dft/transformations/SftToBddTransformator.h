@@ -3,15 +3,14 @@
 #include <memory>
 #include <vector>
 
+#include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
-#include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/utility/RelevantEvents.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/bitoperations.h"
 
-namespace storm {
+namespace storm::dft {
 namespace transformations {
-namespace dft {
 
 /**
  * Transformator for DFT -> BDD.
@@ -21,9 +20,9 @@ class SftToBddTransformator {
    public:
     using Bdd = sylvan::Bdd;
 
-    SftToBddTransformator(std::shared_ptr<storm::storage::DFT<ValueType>> dft,
-                          std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::storage::SylvanBddManager>(),
-                          storm::utility::RelevantEvents relevantEvents = {})
+    SftToBddTransformator(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft,
+                          std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>(),
+                          storm::dft::utility::RelevantEvents relevantEvents = {})
         : dft{std::move(dft)}, sylvanBddManager{std::move(sylvanBddManager)}, relevantEvents{relevantEvents} {
         // create Variables for the BEs
         for (auto const& i : this->dft->getBasicElements()) {
@@ -87,23 +86,23 @@ class SftToBddTransformator {
     /**
      * \return The internal DFT
      */
-    std::shared_ptr<storm::storage::DFT<ValueType>> getDFT() const noexcept {
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getDFT() const noexcept {
         return dft;
     }
 
     /**
      * \return The internal sylvanBddManager
      */
-    std::shared_ptr<storm::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> getSylvanBddManager() const noexcept {
         return sylvanBddManager;
     }
 
    private:
     std::map<std::string, Bdd> relevantEventBdds{};
     std::vector<uint32_t> variables{};
-    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
-    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
-    storm::utility::RelevantEvents relevantEvents;
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft;
+    std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager;
+    storm::dft::utility::RelevantEvents relevantEvents;
 
     /**
      * Translate a simple DFT element into a BDD.
@@ -111,7 +110,7 @@ class SftToBddTransformator {
      * \exception storm::exceptions::NotSupportedException
      * The given DFT is not a SFT
      */
-    Bdd translate(std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
+    Bdd translate(std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element) {
         auto isRelevant{relevantEvents.isRelevant(element->name())};
         if (isRelevant) {
             auto const it{relevantEventBdds.find(element->name())};
@@ -122,9 +121,9 @@ class SftToBddTransformator {
 
         Bdd rBdd;
         if (element->isGate()) {
-            rBdd = translate(std::dynamic_pointer_cast<storm::storage::DFTGate<ValueType> const>(element));
+            rBdd = translate(std::dynamic_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType> const>(element));
         } else if (element->isBasicElement()) {
-            rBdd = translate(std::dynamic_pointer_cast<storm::storage::DFTBE<ValueType> const>(element));
+            rBdd = translate(std::dynamic_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element));
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Element of type \"" << element->typestring() << "\" is not supported. Probably not a SFT.");
@@ -147,23 +146,23 @@ class SftToBddTransformator {
      * \exception storm::exceptions::NotSupportedException
      * The given DFT is not a SFT
      */
-    Bdd translate(std::shared_ptr<storm::storage::DFTGate<ValueType> const> gate) {
-        if (gate->type() == storm::storage::DFTElementType::AND) {
+    Bdd translate(std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const> gate) {
+        if (gate->type() == storm::dft::storage::elements::DFTElementType::AND) {
             // used only in conjunctions therefore neutral element -> 1
             auto tmpBdd{sylvanBddManager->getOne()};
-            for (const std::shared_ptr<storm::storage::DFTElement<ValueType> const>& child : gate->children()) {
+            for (const std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>& child : gate->children()) {
                 tmpBdd &= translate(child);
             }
             return tmpBdd;
-        } else if (gate->type() == storm::storage::DFTElementType::OR) {
+        } else if (gate->type() == storm::dft::storage::elements::DFTElementType::OR) {
             // used only in disjunctions therefore neutral element -> 0
             auto tmpBdd{sylvanBddManager->getZero()};
-            for (const std::shared_ptr<storm::storage::DFTElement<ValueType> const>& child : gate->children()) {
+            for (const std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>& child : gate->children()) {
                 tmpBdd |= translate(child);
             }
             return tmpBdd;
-        } else if (gate->type() == storm::storage::DFTElementType::VOT) {
-            return translate(std::dynamic_pointer_cast<storm::storage::DFTVot<ValueType> const>(gate));
+        } else if (gate->type() == storm::dft::storage::elements::DFTElementType::VOT) {
+            return translate(std::dynamic_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(gate));
         }
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate of type \"" << gate->typestring() << "\" is not supported. Probably not a SFT.");
         return sylvanBddManager->getZero();
@@ -175,7 +174,7 @@ class SftToBddTransformator {
      * \exception storm::exceptions::NotSupportedException
      * The given DFT is not a SFT
      */
-    Bdd translate(std::shared_ptr<storm::storage::DFTVot<ValueType> const> vot) {
+    Bdd translate(std::shared_ptr<storm::dft::storage::elements::DFTVot<ValueType> const> vot) {
         std::vector<Bdd> bdds;
         bdds.reserve(vot->children().size());
 
@@ -220,11 +219,10 @@ class SftToBddTransformator {
      * \note This is the recursion anchor.
      *
      */
-    Bdd translate(std::shared_ptr<storm::storage::DFTBE<ValueType> const> const basicElement) {
+    Bdd translate(std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> const basicElement) {
         return sylvanBddManager->getPositiveLiteral(basicElement->name());
     }
 };
 
-}  // namespace dft
 }  // namespace transformations
-}  // namespace storm
+}  // namespace storm::dft

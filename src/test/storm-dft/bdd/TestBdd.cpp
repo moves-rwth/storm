@@ -4,9 +4,9 @@
 #include <vector>
 
 #include "storm-config.h"
+#include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/api/storm-dft.h"
-#include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
-#include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
+#include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 #include "storm-parsers/api/properties.h"
@@ -62,11 +62,11 @@ class SftBddTest : public testing::TestWithParam<SftTestData> {
    protected:
     void SetUp() override {
         auto const &param{TestWithParam::GetParam()};
-        auto dft{storm::api::loadDFTGalileoFile<double>(param.filepath)};
-        checker = std::make_shared<storm::modelchecker::SFTBDDChecker>(dft);
+        auto dft{storm::dft::api::loadDFTGalileoFile<double>(param.filepath)};
+        checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     }
 
-    std::shared_ptr<storm::modelchecker::SFTBDDChecker> checker;
+    std::shared_ptr<storm::dft::modelchecker::SFTBDDChecker> checker;
 };
 
 TEST_P(SftBddTest, bddHash) {
@@ -187,10 +187,10 @@ static std::vector<SftTestData> sftTestData{
 INSTANTIATE_TEST_SUITE_P(SFTs, SftBddTest, testing::ValuesIn(sftTestData), [](auto const &info) { return info.param.testname; });
 
 TEST(TestBdd, AndOrRelevantEvents) {
-    auto dft = storm::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
-    auto manager = std::make_shared<storm::storage::SylvanBddManager>();
-    storm::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
-    storm::transformations::dft::SftToBddTransformator<double> transformer{dft, manager, relevantEvents};
+    auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
+    auto manager = std::make_shared<storm::dft::storage::SylvanBddManager>();
+    storm::dft::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
+    storm::dft::transformations::SftToBddTransformator<double> transformer{dft, manager, relevantEvents};
 
     auto const result = transformer.transformRelevantEvents();
 
@@ -203,12 +203,12 @@ TEST(TestBdd, AndOrRelevantEvents) {
 }
 
 TEST(TestBdd, AndOrRelevantEventsChecked) {
-    auto dft = storm::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
-    auto manager{std::make_shared<storm::storage::SylvanBddManager>()};
-    storm::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
-    auto transformator{std::make_shared<storm::transformations::dft::SftToBddTransformator<double>>(dft, manager, relevantEvents)};
+    auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
+    auto manager{std::make_shared<storm::dft::storage::SylvanBddManager>()};
+    storm::dft::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
+    auto transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<double>>(dft, manager, relevantEvents)};
 
-    storm::modelchecker::SFTBDDChecker checker{transformator};
+    storm::dft::modelchecker::SFTBDDChecker checker{transformator};
 
     auto relevantEventsBdds = transformator->transformRelevantEvents();
 
@@ -221,15 +221,15 @@ TEST(TestBdd, AndOrRelevantEventsChecked) {
 }
 
 TEST(TestBdd, AndOrFormulaFail) {
-    auto dft = storm::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
+    auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto const props{storm::api::extractFormulasFromProperties(storm::api::parseProperties("P=? [F < 1 !\"F2_failed\"];"))};
-    storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
+    storm::dft::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
 
     STORM_SILENT_EXPECT_THROW(checker.check(), storm::exceptions::NotSupportedException);
 }
 
 TEST(TestBdd, AndOrFormula) {
-    auto dft = storm::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
+    auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
     auto const props{
         storm::api::extractFormulasFromProperties(storm::api::parseProperties("P=? [F <= 1 \"failed\"];"
                                                                               "P=? [F <= 1 \"F_failed\"];"
@@ -239,7 +239,7 @@ TEST(TestBdd, AndOrFormula) {
                                                                               "P=? [F  = 1 !\"F2_failed\"];"
                                                                               "P=? [F <= 1 \"F1_failed\"];"
                                                                               "P=? [F <= 1 \"F2_failed\"];"))};
-    storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
+    storm::dft::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
 
     auto const resultProbs{checker.check()};
     auto const result{checker.formulasToBdd()};

@@ -1,12 +1,11 @@
 #include "DFTTraceSimulator.h"
 
-namespace storm {
-namespace dft {
+namespace storm::dft {
 namespace simulator {
 
 template<typename ValueType>
-DFTTraceSimulator<ValueType>::DFTTraceSimulator(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTStateGenerationInfo const& stateGenerationInfo,
-                                                boost::mt19937& randomGenerator)
+DFTTraceSimulator<ValueType>::DFTTraceSimulator(storm::dft::storage::DFT<ValueType> const& dft,
+                                                storm::dft::storage::DFTStateGenerationInfo const& stateGenerationInfo, boost::mt19937& randomGenerator)
     : dft(dft), stateGenerationInfo(stateGenerationInfo), generator(dft, stateGenerationInfo), randomGenerator(randomGenerator) {
     // Set initial state
     state = generator.createInitialState();
@@ -185,6 +184,6 @@ SimulationResult DFTTraceSimulator<storm::RationalFunction>::simulateCompleteTra
 
 template class DFTTraceSimulator<double>;
 template class DFTTraceSimulator<storm::RationalFunction>;
+
 }  // namespace simulator
-}  // namespace dft
-}  // namespace storm
+}  // namespace storm::dft

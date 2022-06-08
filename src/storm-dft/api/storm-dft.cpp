@@ -7,18 +7,19 @@
 
 #include <memory>
 #include <vector>
-#include "storm-dft/modelchecker/dft/DFTModularizer.h"
-#include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
-#include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
+#include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
+#include "storm-dft/modelchecker/DFTModularizer.h"
+#include "storm-dft/modelchecker/SFTBDDChecker.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
-#include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 
-namespace storm {
+namespace storm::dft {
 namespace api {
+
 template<>
-void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
+void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
                    double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName, bool const calculateMCS,
                    bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
                    std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
@@ -32,7 +33,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool
     }
 
     if (useModularisation && calculateProbability) {
-        storm::modelchecker::DFTModularizer checker{dft};
+        storm::dft::modelchecker::DFTModularizer checker{dft};
         if (chunksize == 1) {
             for (auto const& timebound : timepoints) {
                 auto const probability{checker.getProbabilityAtTimebound(timebound)};
@@ -60,9 +61,9 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool
                         "Try modularisation.");
     }
 
-    auto sylvanBddManager{std::make_shared<storm::storage::SylvanBddManager>()};
-    storm::utility::RelevantEvents relevantEvents{additionalRelevantEventNames.begin(), additionalRelevantEventNames.end()};
-    storm::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, relevantEvents, sylvanBddManager};
+    auto sylvanBddManager{std::make_shared<storm::dft::storage::SylvanBddManager>()};
+    storm::dft::utility::RelevantEvents relevantEvents{additionalRelevantEventNames.begin(), additionalRelevantEventNames.end()};
+    storm::dft::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, relevantEvents, sylvanBddManager};
     auto checker{adapter.getSFTBDDChecker()};
 
     if (exportToDot) {
@@ -157,7 +158,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<double>> const& dft, bool
 }
 
 template<>
-void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const& dft, bool const exportToDot, std::string const& filename,
+void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> const& dft, bool const exportToDot, std::string const& filename,
                    bool const calculateMttf, double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName,
                    bool const calculateMCS, bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
                    std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
@@ -166,44 +167,44 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<storm::RationalFunction>>
 }
 
 template<>
-void exportDFTToJsonFile(storm::storage::DFT<double> const& dft, std::string const& file) {
-    storm::storage::DftJsonExporter<double>::toFile(dft, file);
+void exportDFTToJsonFile(storm::dft::storage::DFT<double> const& dft, std::string const& file) {
+    storm::dft::storage::DftJsonExporter<double>::toFile(dft, file);
 }
 
 template<>
-void exportDFTToJsonFile(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+void exportDFTToJsonFile(storm::dft::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
 }
 
 template<>
-std::string exportDFTToJsonString(storm::storage::DFT<double> const& dft) {
+std::string exportDFTToJsonString(storm::dft::storage::DFT<double> const& dft) {
     std::stringstream stream;
-    storm::storage::DftJsonExporter<double>::toStream(dft, stream);
+    storm::dft::storage::DftJsonExporter<double>::toStream(dft, stream);
     return stream.str();
 }
 
 template<>
-std::string exportDFTToJsonString(storm::storage::DFT<storm::RationalFunction> const& dft) {
+std::string exportDFTToJsonString(storm::dft::storage::DFT<storm::RationalFunction> const& dft) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
 }
 
 template<>
-void exportDFTToSMT(storm::storage::DFT<double> const& dft, std::string const& file) {
-    storm::modelchecker::DFTASFChecker asfChecker(dft);
+void exportDFTToSMT(storm::dft::storage::DFT<double> const& dft, std::string const& file) {
+    storm::dft::modelchecker::DFTASFChecker asfChecker(dft);
     asfChecker.convert();
     asfChecker.toFile(file);
 }
 
 template<>
-void exportDFTToSMT(storm::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
+void exportDFTToSMT(storm::dft::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to SMT does not support this data type.");
 }
 
 template<>
-void analyzeDFTSMT(storm::storage::DFT<double> const& dft, bool printOutput) {
+void analyzeDFTSMT(storm::dft::storage::DFT<double> const& dft, bool printOutput) {
     uint64_t solverTimeout = 10;
 
-    storm::modelchecker::DFTASFChecker smtChecker(dft);
+    storm::dft::modelchecker::DFTASFChecker smtChecker(dft);
     smtChecker.toSolver();
     // Removed bound computation etc. here
     smtChecker.setSolverTimeout(solverTimeout);
@@ -212,14 +213,14 @@ void analyzeDFTSMT(storm::storage::DFT<double> const& dft, bool printOutput) {
 }
 
 template<>
-void analyzeDFTSMT(storm::storage::DFT<storm::RationalFunction> const& dft, bool printOutput) {
+void analyzeDFTSMT(storm::dft::storage::DFT<storm::RationalFunction> const& dft, bool printOutput) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Analysis by SMT not supported for this data type.");
 }
 
 template<>
-std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<double> const& dft) {
-    storm::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
-    storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
+std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::dft::storage::DFT<double> const& dft) {
+    storm::dft::settings::modules::FaultTreeSettings const& ftSettings = storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>();
+    storm::dft::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::dft::settings::modules::DftGspnSettings>();
 
     // Set Don't Care elements
     std::set<uint64_t> dontCareElements;
@@ -231,7 +232,7 @@ std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::s
     }
 
     // Transform to GSPN
-    storm::transformations::dft::DftToGspnTransformator<double> gspnTransformator(dft);
+    storm::dft::transformations::DftToGspnTransformator<double> gspnTransformator(dft);
     auto priorities = gspnTransformator.computePriorities(dftGspnSettings.isExtendPriorities());
     gspnTransformator.transform(priorities, dontCareElements, !dftGspnSettings.isDisableSmartTransformation(), dftGspnSettings.isMergeDCFailed(),
                                 dftGspnSettings.isExtendPriorities());
@@ -254,7 +255,7 @@ std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gsp
     auto properties = builder.getStandardProperties(model.get(), failedFormula, "Failed", "a failed state", true);
 
     // Export Jani to file
-    storm::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::settings::modules::DftGspnSettings>();
+    storm::dft::settings::modules::DftGspnSettings const& dftGspnSettings = storm::settings::getModule<storm::dft::settings::modules::DftGspnSettings>();
     if (dftGspnSettings.isWriteToJaniSet()) {
         auto const& jani = storm::settings::getModule<storm::settings::modules::JaniExportSettings>();
         storm::api::exportJaniToFile(*model, properties, dftGspnSettings.getWriteToJaniFilename(), jani.isCompactJsonSet());
@@ -264,9 +265,9 @@ std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gsp
 }
 
 template<>
-std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<storm::RationalFunction> const& dft) {
+std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::dft::storage::DFT<storm::RationalFunction> const& dft) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation to GSPN not supported for this data type.");
 }
 
 }  // namespace api
-}  // namespace storm
+}  // namespace storm::dft

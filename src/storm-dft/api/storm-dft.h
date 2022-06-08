@@ -4,11 +4,11 @@
 #include <utility>
 #include <vector>
 
-#include "storm-dft/modelchecker/dft/DFTASFChecker.h"
-#include "storm-dft/modelchecker/dft/DFTModelChecker.h"
+#include "storm-dft/modelchecker/DFTASFChecker.h"
+#include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
-#include "storm-dft/storage/dft/DftJsonExporter.h"
+#include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
 #include "storm-dft/transformations/DftTransformator.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
@@ -17,7 +17,7 @@
 
 #include "storm-gspn/api/storm-gspn.h"
 
-namespace storm {
+namespace storm::dft {
 namespace api {
 
 /*!
@@ -27,8 +27,8 @@ namespace api {
  * @return DFT.
  */
 template<typename ValueType>
-std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileoFile(std::string const& file) {
-    return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTGalileoParser<ValueType>::parseDFT(file));
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> loadDFTGalileoFile(std::string const& file) {
+    return std::make_shared<storm::dft::storage::DFT<ValueType>>(storm::dft::parser::DFTGalileoParser<ValueType>::parseDFT(file));
 }
 
 /*!
@@ -38,8 +38,8 @@ std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTGalileoFile(std::string c
  * @return DFT.
  */
 template<typename ValueType>
-std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonString(std::string const& jsonString) {
-    return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTJsonParser<ValueType>::parseJsonFromString(jsonString));
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> loadDFTJsonString(std::string const& jsonString) {
+    return std::make_shared<storm::dft::storage::DFT<ValueType>>(storm::dft::parser::DFTJsonParser<ValueType>::parseJsonFromString(jsonString));
 }
 
 /*!
@@ -49,8 +49,8 @@ std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonString(std::string co
  * @return DFT.
  */
 template<typename ValueType>
-std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonFile(std::string const& file) {
-    return std::make_shared<storm::storage::DFT<ValueType>>(storm::parser::DFTJsonParser<ValueType>::parseJsonFromFile(file));
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> loadDFTJsonFile(std::string const& file) {
+    return std::make_shared<storm::dft::storage::DFT<ValueType>>(storm::dft::parser::DFTJsonParser<ValueType>::parseJsonFromFile(file));
 }
 
 /*!
@@ -61,7 +61,7 @@ std::shared_ptr<storm::storage::DFT<ValueType>> loadDFTJsonFile(std::string cons
  * @return Pair where the first entry is true iff the DFT is well-formed. The second entry contains the error messages for illformed parts.
  */
 template<typename ValueType>
-std::pair<bool, std::string> isWellFormed(storm::storage::DFT<ValueType> const& dft, bool validForAnalysis = true) {
+std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> const& dft, bool validForAnalysis = true) {
     std::stringstream stream;
     bool wellFormed = dft.checkWellFormedness(validForAnalysis, stream);
     return std::pair<bool, std::string>(wellFormed, stream.str());
@@ -76,9 +76,9 @@ std::pair<bool, std::string> isWellFormed(storm::storage::DFT<ValueType> const& 
  * @return Transformed DFT.
  */
 template<typename ValueType>
-std::shared_ptr<storm::storage::DFT<ValueType>> applyTransformations(storm::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP) {
-    std::shared_ptr<storm::storage::DFT<ValueType>> transformedDFT = std::make_shared<storm::storage::DFT<ValueType>>(dft);
-    auto dftTransformator = storm::transformations::dft::DftTransformator<ValueType>();
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm::dft::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP) {
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformedDFT = std::make_shared<storm::dft::storage::DFT<ValueType>>(dft);
+    auto dftTransformator = storm::dft::transformations::DftTransformator<ValueType>();
     if (uniqueBE) {
         transformedDFT = dftTransformator.transformUniqueFailedBe(*transformedDFT);
     }
@@ -89,14 +89,14 @@ std::shared_ptr<storm::storage::DFT<ValueType>> applyTransformations(storm::stor
 }
 
 template<typename ValueType>
-std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::storage::DFT<ValueType> const& dft, bool useSMT, double solverTimeout) {
+std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::dft::storage::DFT<ValueType> const& dft, bool useSMT, double solverTimeout) {
     uint64_t lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(dft, useSMT, solverTimeout);
     uint64_t upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(dft, useSMT, solverTimeout);
     return std::make_pair(lowerBEBound, upperBEBound);
 }
 
 template<typename ValueType>
-bool computeDependencyConflicts(storm::storage::DFT<ValueType>& dft, bool useSMT, double solverTimeout) {
+bool computeDependencyConflicts(storm::dft::storage::DFT<ValueType>& dft, bool useSMT, double solverTimeout) {
     // Initialize which DFT elements have dynamic behavior
     dft.setDynamicBehaviorInfo();
 
@@ -130,10 +130,10 @@ bool computeDependencyConflicts(storm::storage::DFT<ValueType>& dft, bool useSMT
  * @return Relevant events.
  */
 template<typename ValueType>
-storm::utility::RelevantEvents computeRelevantEvents(storm::storage::DFT<ValueType> const& dft,
-                                                     std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
-                                                     std::vector<std::string> const& additionalRelevantEventNames) {
-    storm::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
+storm::dft::utility::RelevantEvents computeRelevantEvents(storm::dft::storage::DFT<ValueType> const& dft,
+                                                          std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                                                          std::vector<std::string> const& additionalRelevantEventNames) {
+    storm::dft::utility::RelevantEvents events(additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
     events.insertNamesFromProperties(properties.begin(), properties.end());
     return events;
 }
@@ -156,14 +156,14 @@ storm::utility::RelevantEvents computeRelevantEvents(storm::storage::DFT<ValueTy
  * @return Results.
  */
 template<typename ValueType>
-typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(
-    storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
-    bool allowModularisation = true, storm::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
-    double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
+typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT(
+    storm::dft::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
+    bool allowModularisation = true, storm::dft::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
+    double approximationError = 0.0, storm::dft::builder::ApproximationHeuristic approximationHeuristic = storm::dft::builder::ApproximationHeuristic::DEPTH,
     bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels,
     bool printOutput = false) {
-    storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
-    typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results =
+    storm::dft::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
+    typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results results =
         modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic,
                            eliminateChains, labelBehavior);
     if (printOutput) {
@@ -223,9 +223,9 @@ typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results analyzeDFT
  *
  */
 template<typename ValueType>
-void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<ValueType>> const& dft, bool const exportToDot, std::string const& filename, bool const calculateMttf,
-                   double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName, bool const calculateMCS,
-                   bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
+void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<ValueType>> const& dft, bool const exportToDot, std::string const& filename,
+                   bool const calculateMttf, double const mttfPrecision, double const mttfStepsize, std::string const mttfAlgorithmName,
+                   bool const calculateMCS, bool const calculateProbability, bool const useModularisation, std::string const importanceMeasureName,
                    std::vector<double> const& timepoints, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                    std::vector<std::string> const& additionalRelevantEventNames, size_t const chunksize);
 
@@ -237,7 +237,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::storage::DFT<ValueType>> const& dft, b
  * @return Result result vector
  */
 template<typename ValueType>
-void analyzeDFTSMT(storm::storage::DFT<ValueType> const& dft, bool printOutput);
+void analyzeDFTSMT(storm::dft::storage::DFT<ValueType> const& dft, bool printOutput);
 
 /*!
  * Export DFT to JSON file.
@@ -246,7 +246,7 @@ void analyzeDFTSMT(storm::storage::DFT<ValueType> const& dft, bool printOutput);
  * @param file File.
  */
 template<typename ValueType>
-void exportDFTToJsonFile(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file);
 
 /*!
  * Export DFT to JSON string.
@@ -255,7 +255,7 @@ void exportDFTToJsonFile(storm::storage::DFT<ValueType> const& dft, std::string 
  * @return DFT in JSON format.
  */
 template<typename ValueType>
-std::string exportDFTToJsonString(storm::storage::DFT<ValueType> const& dft);
+std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft);
 
 /*!
  * Export DFT to SMT encoding.
@@ -264,7 +264,7 @@ std::string exportDFTToJsonString(storm::storage::DFT<ValueType> const& dft);
  * @param file File.
  */
 template<typename ValueType>
-void exportDFTToSMT(storm::storage::DFT<ValueType> const& dft, std::string const& file);
+void exportDFTToSMT(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file);
 
 /*!
  * Transform DFT to GSPN.
@@ -273,7 +273,7 @@ void exportDFTToSMT(storm::storage::DFT<ValueType> const& dft, std::string const
  * @return Pair of GSPN and id of failed place corresponding to the top level element.
  */
 template<typename ValueType>
-std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::storage::DFT<ValueType> const& dft);
+std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::dft::storage::DFT<ValueType> const& dft);
 
 /*!
  * Transform GSPN to Jani model.
@@ -285,4 +285,4 @@ std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::s
 std::shared_ptr<storm::jani::Model> transformToJani(storm::gspn::GSPN const& gspn, uint64_t toplevelFailedPlace);
 
 }  // namespace api
-}  // namespace storm
+}  // namespace storm::dft

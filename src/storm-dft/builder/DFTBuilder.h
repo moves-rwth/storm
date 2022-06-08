@@ -5,32 +5,33 @@
 
 #include "storm/utility/macros.h"
 
-#include "storm-dft/storage/dft/DFTElements.h"
-#include "storm-dft/storage/dft/DFTLayoutInfo.h"
-#include "storm-dft/storage/dft/elements/DFTRestriction.h"
+#include "storm-dft/storage/DFTLayoutInfo.h"
+#include "storm-dft/storage/elements/DFTElements.h"
+#include "storm-dft/storage/elements/DFTRestriction.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-namespace storm {
-namespace storage {
+namespace storm::storage {
+
 // Forward declaration
 template<typename ValueType>
 class DFT;
-}  // namespace storage
+}  // namespace storm::storage
 
+namespace storm::dft {
 namespace builder {
 
 template<typename ValueType>
 class DFTBuilder {
-    using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
-    using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
+    using DFTElementPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>;
+    using DFTElementCPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>;
     using DFTElementVector = std::vector<DFTElementPointer>;
-    using DFTBEPointer = std::shared_ptr<storm::storage::DFTBE<ValueType>>;
-    using DFTBECPointer = std::shared_ptr<storm::storage::DFTBE<ValueType> const>;
-    using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
-    using DFTGateCPointer = std::shared_ptr<storm::storage::DFTGate<ValueType> const>;
+    using DFTBEPointer = std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>;
+    using DFTBECPointer = std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>;
+    using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
+    using DFTGateCPointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const>;
     using DFTGateVector = std::vector<DFTGatePointer>;
-    using DFTDependencyPointer = std::shared_ptr<storm::storage::DFTDependency<ValueType>>;
-    using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
+    using DFTDependencyPointer = std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType>>;
+    using DFTRestrictionPointer = std::shared_ptr<storm::dft::storage::elements::DFTRestriction<ValueType>>;
 
    private:
     std::size_t mNextId = 0;
@@ -42,53 +43,53 @@ class DFTBuilder {
     std::unordered_map<DFTDependencyPointer, std::vector<std::string>> mDependencyChildNames;
     std::vector<DFTDependencyPointer> mDependencies;
     std::vector<DFTRestrictionPointer> mRestrictions;
-    std::unordered_map<std::string, storm::storage::DFTLayoutInfo> mLayoutInfo;
+    std::unordered_map<std::string, storm::dft::storage::DFTLayoutInfo> mLayoutInfo;
 
    public:
     DFTBuilder(bool defaultInclusive = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive) {}
 
     bool addAndElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::AND);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::AND);
     }
 
     bool addOrElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::OR);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::OR);
     }
 
     bool addPandElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::PAND);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::PAND);
     }
 
     bool addPandElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
         bool tmpDefault = pandDefaultInclusive;
         pandDefaultInclusive = inclusive;
-        bool result = addStandardGate(name, children, storm::storage::DFTElementType::PAND);
+        bool result = addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::PAND);
         pandDefaultInclusive = tmpDefault;
         return result;
     }
 
     bool addPorElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::POR);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::POR);
     }
 
     bool addPorElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
         bool tmpDefault = porDefaultInclusive;
         porDefaultInclusive = inclusive;
-        bool result = addStandardGate(name, children, storm::storage::DFTElementType::POR);
+        bool result = addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::POR);
         pandDefaultInclusive = tmpDefault;
         return result;
     }
 
     bool addSpareElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::storage::DFTElementType::SPARE);
+        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::SPARE);
     }
 
     bool addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children) {
-        return addRestriction(name, children, storm::storage::DFTElementType::SEQ);
+        return addRestriction(name, children, storm::dft::storage::elements::DFTElementType::SEQ);
     }
 
     bool addMutex(std::string const& name, std::vector<std::string> const& children) {
-        return addRestriction(name, children, storm::storage::DFTElementType::MUTEX);
+        return addRestriction(name, children, storm::dft::storage::elements::DFTElementType::MUTEX);
     }
 
     bool addDepElement(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
@@ -107,7 +108,7 @@ class DFTBuilder {
         std::string trigger = children[0];
 
         // TODO: collect constraints for SMT solving
-        DFTDependencyPointer element = std::make_shared<storm::storage::DFTDependency<ValueType>>(mNextId++, name, probability);
+        DFTDependencyPointer element = std::make_shared<storm::dft::storage::elements::DFTDependency<ValueType>>(mNextId++, name, probability);
         mElements[element->name()] = element;
         mDependencyChildNames[element] = children;
         mDependencies.push_back(element);
@@ -133,7 +134,7 @@ class DFTBuilder {
             STORM_LOG_ERROR("Voting gates with threshold higher than the number of children is not supported.");
             return false;
         }
-        DFTElementPointer element = std::make_shared<storm::storage::DFTVot<ValueType>>(mNextId++, name, threshold);
+        DFTElementPointer element = std::make_shared<storm::dft::storage::elements::DFTVot<ValueType>>(mNextId++, name, threshold);
 
         mElements[name] = element;
         mChildNames[element] = children;
@@ -145,7 +146,7 @@ class DFTBuilder {
             STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
             return false;
         }
-        mElements[name] = std::make_shared<storm::storage::BEConst<ValueType>>(mNextId++, name, failed);
+        mElements[name] = std::make_shared<storm::dft::storage::elements::BEConst<ValueType>>(mNextId++, name, failed);
         return true;
     }
 
@@ -176,7 +177,7 @@ class DFTBuilder {
             return addBasicElementConst(name, false);
         }
 
-        mElements[name] = std::make_shared<storm::storage::BEExponential<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
+        mElements[name] = std::make_shared<storm::dft::storage::elements::BEExponential<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
         return true;
     }
 
@@ -199,7 +200,7 @@ class DFTBuilder {
             return addBasicElementConst(name, false);
         }
 
-        mElements[name] = std::make_shared<storm::storage::BESamples<ValueType>>(mNextId++, name, activeSamples);
+        mElements[name] = std::make_shared<storm::dft::storage::elements::BESamples<ValueType>>(mNextId++, name, activeSamples);
         return true;
     }
 
@@ -207,7 +208,7 @@ class DFTBuilder {
         if (!nameInUse(name)) {
             STORM_LOG_ERROR("Element with name '" << name << "' not found.");
         }
-        mLayoutInfo[name] = storm::storage::DFTLayoutInfo(x, y);
+        mLayoutInfo[name] = storm::dft::storage::DFTLayoutInfo(x, y);
     }
 
     bool setTopLevel(std::string const& tle) {
@@ -226,7 +227,7 @@ class DFTBuilder {
 
     std::string getUniqueName(std::string name);
 
-    storm::storage::DFT<ValueType> build();
+    storm::dft::storage::DFT<ValueType> build();
 
     /**
      * Copy element and insert it again in the builder.
@@ -254,13 +255,13 @@ class DFTBuilder {
    private:
     unsigned computeRank(DFTElementPointer const& elem);
 
-    bool addStandardGate(std::string const& name, std::vector<std::string> const& children, storm::storage::DFTElementType tp);
+    bool addStandardGate(std::string const& name, std::vector<std::string> const& children, storm::dft::storage::elements::DFTElementType tp);
 
-    bool addRestriction(std::string const& name, std::vector<std::string> const& children, storm::storage::DFTElementType tp);
+    bool addRestriction(std::string const& name, std::vector<std::string> const& children, storm::dft::storage::elements::DFTElementType tp);
 
     enum class topoSortColour { WHITE, BLACK, GREY };
 
-    void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, storm::storage::OrderElementsById<ValueType>>& visited,
+    void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>>& visited,
                    DFTElementVector& L);
 
     DFTElementVector topoSort();
@@ -272,5 +273,6 @@ class DFTBuilder {
     // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
     bool porDefaultInclusive;
 };
+
 }  // namespace builder
-}  // namespace storm
+}  // namespace storm::dft
