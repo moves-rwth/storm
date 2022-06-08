@@ -808,6 +808,10 @@ namespace storm {
                         STORM_PRINT_AND_LOG("Disable clipping candidate set reduction \n");
                     }
                 }
+                // TODO make this flag toggable
+                bool useExtendedCutoff = true;
+                uint64_t nrCutoffStrategies = 1;
+
                 bool fixPoint = true;
                 if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
                     statistics.underApproximationStateLimit = heuristicParameters.sizeThreshold;
@@ -869,77 +873,86 @@ namespace storm {
                             underApproximation->setCurrentStateIsTruncated();
                         } else if (!stateAlreadyExplored) {
                             // Check whether we want to explore the state now!
-                            ValueType gap = getGap(underApproximation->getLowerValueBoundAtCurrentState(), underApproximation->getUpperValueBoundAtCurrentState());
+                            ValueType gap =
+                                getGap(underApproximation->getLowerValueBoundAtCurrentState(), underApproximation->getUpperValueBoundAtCurrentState());
                             if ((gap < heuristicParameters.gapThreshold) || (gap == 0 && options.cutZeroGap)) {
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
-                            } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold /*&& !statistics.beliefMdpDetectedToBeFinite*/) {
+                            } else if (underApproximation->getCurrentNumberOfMdpStates() >=
+                                       heuristicParameters.sizeThreshold /*&& !statistics.beliefMdpDetectedToBeFinite*/) {
                                 clipBelief = useBeliefClipping;
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
                             }
                         }
-                        if(clipBelief){
-                            if(options.useGridClipping){
+
+                        if (clipBelief) {
+                            if (options.useGridClipping) {
                                 // Use a belief grid as clipping candidates
                                 clipToGrid(currId, computeRewards, min, beliefManager, underApproximation);
                                 addedActions += beliefManager->getBeliefNumberOfChoices(currId);
                             } else {
                                 // Use clipping with explored beliefs as candidates ("classic" clipping)
-                                if(clipToExploredBeliefs(currId, storm::utility::convertNumber<BeliefValueType>(heuristicParameters.clippingThreshold), computeRewards, 10, beliefManager, underApproximation)){
+                                if (clipToExploredBeliefs(currId, storm::utility::convertNumber<BeliefValueType>(heuristicParameters.clippingThreshold),
+                                                          computeRewards, 10, beliefManager, underApproximation)) {
                                     ++addedActions;
                                 }
                             }
-                        } // end Clipping Procedure
+                        }  // end Clipping Procedure
 
-                        // Add successor transitions or cut-off transitions when exploration is stopped
-                        for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
-                            // Always restore old behavior if available
-                            if (stateAlreadyExplored) {
-                                underApproximation->restoreOldBehaviorAtCurrentState(action);
-                            } else {
-                                auto truncationProbability = storm::utility::zero<ValueType>();
-                                auto truncationValueBound = storm::utility::zero<ValueType>();
-                                auto successors = beliefManager->expand(currId, action);
-                                for (auto const &successor : successors) {
-                                    bool added = underApproximation->addTransitionToBelief(addedActions + action, successor.first, successor.second, stopExploration);
-                                    if (!added) {
-                                        STORM_LOG_ASSERT(stopExploration, "Didn't add a transition although exploration shouldn't be stopped.");
-                                        // We did not explore this successor state. Get a bound on the "missing" value
-                                        truncationProbability += successor.second;
-                                        // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other
-                                        // under-approximation values. In general, this does not yield a sound underapproximation anymore.
-                                        // However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
-                                        truncationValueBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
-                                                                                        : underApproximation->computeLowerValueBoundAtBelief(successor.first));
+                        if(!stopExploration || useExtendedCutoff) {
+                            // Add successor transitions or cut-off transitions when exploration is stopped
+                            for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                                // Always restore old behavior if available
+                                if (stateAlreadyExplored) {
+                                    underApproximation->restoreOldBehaviorAtCurrentState(action);
+                                } else {
+                                    auto truncationProbability = storm::utility::zero<ValueType>();
+                                    auto truncationValueBound = storm::utility::zero<ValueType>();
+                                    auto successors = beliefManager->expand(currId, action);
+                                    for (auto const& successor : successors) {
+                                        bool added = underApproximation->addTransitionToBelief(addedActions + action, successor.first, successor.second,
+                                                                                               stopExploration);
+                                        if (!added) {
+                                            STORM_LOG_ASSERT(stopExploration, "Didn't add a transition although exploration shouldn't be stopped.");
+                                            // We did not explore this successor state. Get a bound on the "missing" value
+                                            truncationProbability += successor.second;
+                                            // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other under-approximation values. In general, this does not yield a sound underapproximation anymore. However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
+                                            truncationValueBound +=
+                                                successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
+                                                                        : underApproximation->computeLowerValueBoundAtBelief(successor.first));
+                                        }
+                                    }
+                                    if (stopExploration) {
+                                        if (computeRewards) {
+                                            underApproximation->addTransitionsToExtraStates(addedActions + action, truncationProbability);
+                                        } else {
+                                            underApproximation->addTransitionsToExtraStates(addedActions + action, truncationValueBound,
+                                                                                            truncationProbability - truncationValueBound);
+                                        }
+                                        if (computeRewards) {
+                                            // The truncationValueBound will be added on top of the reward introduced by the current belief state.
+                                            if (!clipBelief) {
+                                                underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
+                                            } else {
+                                                underApproximation->addRewardToCurrentState(
+                                                    addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
+                                            }
+                                        }
                                     }
                                 }
-                                if (stopExploration) {
-                                    if (computeRewards) {
-                                        underApproximation->addTransitionsToExtraStates(addedActions + action, truncationProbability);
-                                    } else {
-                                        underApproximation->addTransitionsToExtraStates(addedActions + action, truncationValueBound, truncationProbability - truncationValueBound);
-                                    }
-                                }
+                            }
+                        } else {
+                            // Add one cut-off transition for each cut-off strategy
+                            for (uint64_t i = 0; i < nrCutoffStrategies; ++i) {
+                                auto cutOffValue = min ? underApproximation->computeUpperValueBoundAtBelief(currId) : underApproximation->computeLowerValueBoundAtBelief(currId);
                                 if (computeRewards) {
-                                    // The truncationValueBound will be added on top of the reward introduced by the current belief state.
-                                    if(!clipBelief) {
-                                        underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
-                                    } else {
-                                        underApproximation->addRewardToCurrentState(addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
-                                    }
+                                    underApproximation->addTransitionsToExtraStates(i, storm::utility::one<ValueType>());
+                                    underApproximation->addRewardToCurrentState(i, cutOffValue);
+                                } else {
+                                    underApproximation->addTransitionsToExtraStates(i, cutOffValue,storm::utility::one<ValueType>() - cutOffValue);
                                 }
                             }
-                        }
-                        // Add parametric cut-off transitions if parametric bounds exist
-                        if(underApproximation->hasParametricBounds()){
-                            if(computeRewards){
-                                underApproximation->addTransitionsToExtraStates(beliefManager->getBeliefNumberOfChoices(currId) + addedActions, storm::utility::one<ValueType>());
-                                underApproximation->addRewardToCurrentState(beliefManager->getBeliefNumberOfChoices(currId) + addedActions, underApproximation->computeParametricBoundAtBelief(currId));
-                            } else {
-                                underApproximation->addTransitionsToExtraStates(beliefManager->getBeliefNumberOfChoices(currId) + addedActions, underApproximation->computeParametricBoundAtBelief(currId), storm::utility::one<ValueType>() - underApproximation->computeParametricBoundAtBelief(currId));
-                            }
-                            ++addedActions;
                         }
                     }
                     if (storm::utility::resources::isTerminate()) {
