@@ -1126,6 +1126,22 @@ namespace storm {
             return pomdpValueBounds.lower.size();
         }
 
+        template<typename PomdpType, typename BeliefValueType>
+        storm::storage::Scheduler<typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::getLowerValueBoundScheduler(uint64_t schedulerId) const {
+            STORM_LOG_ASSERT(!pomdpValueBounds.lowerSchedulers.empty(), "Requested lower bound scheduler but none were available.");
+            STORM_LOG_ASSERT(pomdpValueBounds.lowerSchedulers.size() > schedulerId, "Requested lower value bound scheduler with ID " << schedulerId << " not available.");
+            return pomdpValueBounds.lowerSchedulers[schedulerId];
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        storm::storage::Scheduler<typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::getUpperValueBoundScheduler(uint64_t schedulerId) const {
+            STORM_LOG_ASSERT(!pomdpValueBounds.upperSchedulers.empty(), "Requested upper bound scheduler but none were available.");
+            STORM_LOG_ASSERT(pomdpValueBounds.upperSchedulers.size() > schedulerId, "Requested upper value bound scheduler with ID " << schedulerId << " not available.");
+            return pomdpValueBounds.upperSchedulers[schedulerId];
+        }
+
         template
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>>;
 
