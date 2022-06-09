@@ -20,11 +20,18 @@ class BitVector {
      * A class that enables iterating over the indices of the bit vector whose corresponding bits are set to
      * true. Note that this is a const iterator, which cannot alter the bit vector.
      */
-    class const_iterator : public std::iterator<std::input_iterator_tag, uint_fast64_t> {
+    class const_iterator {
         // Declare the BitVector class as a friend class to access its internal storage.
         friend class BitVector;
 
        public:
+        // Define iterator
+        using iterator_category = std::input_iterator_tag;
+        using value_type = uint_fast64_t;
+        using difference_type = std::ptrdiff_t;
+        using pointer = uint_fast64_t*;
+        using reference = uint_fast64_t&;
+
         /*!
          * Constructs an iterator over the indices of the set bits in the given bit vector, starting and
          * stopping, respectively, at the given indices.
