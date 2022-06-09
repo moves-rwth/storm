@@ -16,11 +16,11 @@ namespace storm {
         namespace modelchecker {
             
             template<typename ValueType>
-            struct TrivialPomdpValueBounds;
+            struct PreprocessingPomdpValueBounds;
 
             template<typename ValueType>
             struct POMDPValueBounds{
-                storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> trivialPomdpValueBounds;
+                storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> trivialPomdpValueBounds;
                 storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremePomdpValueBound;
             };
             

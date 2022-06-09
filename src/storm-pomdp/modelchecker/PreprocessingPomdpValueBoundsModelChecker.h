@@ -12,7 +12,7 @@ namespace storm {
              * Struct for storing precomputed values bounding the actual values on the POMDP
              */
             template<typename ValueType>
-            struct TrivialPomdpValueBounds {
+            struct PreprocessingPomdpValueBounds {
                 // Vectors containing upper and lower bound values for the POMDP states
                 std::vector<std::vector<ValueType>> lower;
                 std::vector<std::vector<ValueType>> upper;
@@ -69,11 +69,11 @@ namespace storm {
             };
 
             template <typename ValueType>
-            class TrivialPomdpValueBoundsModelChecker {
+            class PreprocessingPomdpValueBoundsModelChecker {
             public:
-                typedef TrivialPomdpValueBounds<ValueType> ValueBounds;
-                typedef ExtremePOMDPValueBound<ValueType> ExtremeValueBound;
-                TrivialPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp);
+                typedef PreprocessingPomdpValueBounds<ValueType> ValueBounds;
+                typedef ExtremePOMDPValueBound<ValueType> ExtremeValueBound
+                PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp);
                 
                 ValueBounds getValueBounds(storm::logic::Formula const& formula);
                 

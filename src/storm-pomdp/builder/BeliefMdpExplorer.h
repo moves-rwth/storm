@@ -7,10 +7,9 @@
 #include <queue>
 #include <boost/optional.hpp>
 
-
-#include "storm/storage/BitVector.h"
+#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include "storm-pomdp/storage/BeliefManager.h"
-#include "storm-pomdp/modelchecker/TrivialPomdpValueBoundsModelChecker.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     
@@ -47,7 +46,7 @@ namespace storm {
                 ModelChecked
             };
 
-            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds, ExplorationHeuristic explorationHeuristic = ExplorationHeuristic::BreadthFirst);
+            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> const &pomdpValueBounds, ExplorationHeuristic explorationHeuristic = ExplorationHeuristic::BreadthFirst);
 
             BeliefMdpExplorer(BeliefMdpExplorer &&other) = default;
 
@@ -276,7 +275,7 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
             
             // Value and scheduler related information
-            storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> pomdpValueBounds;
+            storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> pomdpValueBounds;
             storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremeValueBound;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;

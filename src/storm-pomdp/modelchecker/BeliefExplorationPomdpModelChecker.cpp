@@ -13,15 +13,15 @@
 #include "storm/utility/graph.h"
 #include "storm/logic/Formulas.h"
 
+#include "storm-pomdp/builder/BeliefMdpExplorer.h"
+#include "storm-pomdp/modelchecker/PomdpParametricTransformationModelChecker.h"
+#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
+#include "storm/api/export.h"
+#include "storm/api/properties.h"
+#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/utility/vector.h"
-#include "storm/api/properties.h"
-#include "storm/api/export.h"
-#include "storm-pomdp/builder/BeliefMdpExplorer.h"
-#include "storm-pomdp/modelchecker/TrivialPomdpValueBoundsModelChecker.h"
-#include "storm-pomdp/modelchecker/PomdpParametricTransformationModelChecker.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/SignalHandler.h"
@@ -97,7 +97,7 @@ namespace storm {
                 
                 // Compute some initial bounds on the values for each state of the pomdp
                 // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
-                auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<ValueType>(pomdp()).getValueBounds(formula, formulaInfo);
+                auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getValueBounds(formula, formulaInfo);
                 uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
                 Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
                 STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " << result.upperBound << "]");
@@ -112,7 +112,8 @@ namespace storm {
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
                 if((options.clippingThresholdInit > 0 || options.useGridClipping) && formula.isRewardOperatorFormula()){
-                    initialValueBounds.extremePomdpValueBound = TrivialPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
+                    initialValueBounds.extremePomdpValueBound =
+                        PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
                     STORM_LOG_INFO("Extreme Bound in Init: " << initialValueBounds.extremePomdpValueBound.getValueForState(initialPomdpState));
                 }
 

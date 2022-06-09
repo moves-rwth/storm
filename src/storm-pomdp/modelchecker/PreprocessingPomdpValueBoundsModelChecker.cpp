@@ -1,5 +1,4 @@
-#include "TrivialPomdpValueBoundsModelChecker.h"
-
+#include "PreprocessingPomdpValueBoundsModelChecker.h"
 
 #include "storm-pomdp/storage/PomdpMemory.h"
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
@@ -19,19 +18,19 @@ namespace storm {
         namespace modelchecker {
 
             template<typename ValueType>
-            ValueType TrivialPomdpValueBounds<ValueType>::getLowerBound(uint64_t scheduler_id, uint64_t const& state) {
+            ValueType PreprocessingPomdpValueBounds<ValueType>::getLowerBound(uint64_t scheduler_id, uint64_t const& state) {
                 STORM_LOG_ASSERT(!lower.empty(), "requested a lower bound but none were available");
                 return lower[scheduler_id][state];
             }
 
             template<typename ValueType>
-            ValueType TrivialPomdpValueBounds<ValueType>::getUpperBound(uint64_t scheduler_id, uint64_t const& state) {
+            ValueType PreprocessingPomdpValueBounds<ValueType>::getUpperBound(uint64_t scheduler_id, uint64_t const& state) {
                 STORM_LOG_ASSERT(!upper.empty(), "requested an upper bound but none were available");
                 return upper[scheduler_id][state];
             }
 
             template<typename ValueType>
-            ValueType TrivialPomdpValueBounds<ValueType>::getHighestLowerBound(uint64_t const& state) {
+            ValueType PreprocessingPomdpValueBounds<ValueType>::getHighestLowerBound(uint64_t const& state) {
                 STORM_LOG_ASSERT(!lower.empty(), "requested a lower bound but none were available");
                 auto it = lower.begin();
                 ValueType result = (*it)[state];
@@ -42,7 +41,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            ValueType TrivialPomdpValueBounds<ValueType>::getSmallestUpperBound(uint64_t const& state) {
+            ValueType PreprocessingPomdpValueBounds<ValueType>::getSmallestUpperBound(uint64_t const& state) {
                 STORM_LOG_ASSERT(!upper.empty(), "requested an upper bound but none were available");
                 auto it = upper.begin();
                 ValueType result = (*it)[state];
@@ -53,7 +52,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            ValueType TrivialPomdpValueBounds<ValueType>::getParametricBound(uint64_t const& state) {
+            ValueType PreprocessingPomdpValueBounds<ValueType>::getParametricBound(uint64_t const& state) {
                 STORM_LOG_ASSERT(!parametric.empty(), "requested a parametric bound but none was available");
                 return parametric[state];
             }
@@ -65,24 +64,25 @@ namespace storm {
             }
 
             template <typename ValueType>
-            TrivialPomdpValueBoundsModelChecker<ValueType>::TrivialPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp) : pomdp(pomdp) {
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp) : pomdp(pomdp) {
                 // Intentionally left empty
             }
 
             template <typename ValueType>
-            typename TrivialPomdpValueBoundsModelChecker<ValueType>::ValueBounds TrivialPomdpValueBoundsModelChecker<ValueType>::getValueBounds(storm::logic::Formula const& formula) {
+            typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<ValueType>::getValueBounds(storm::logic::Formula const& formula) {
                 return getValueBounds(formula, storm::pomdp::analysis::getFormulaInformation(pomdp, formula));
             }
 
             template <typename ValueType>
-            std::vector<ValueType> TrivialPomdpValueBoundsModelChecker<ValueType>::getChoiceValues(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards) {
+            std::vector<ValueType> PreprocessingPomdpValueBoundsModelChecker<ValueType>::getChoiceValues(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards) {
                 std::vector<ValueType> choiceValues((pomdp.getNumberOfChoices()));
                 pomdp.getTransitionMatrix().multiplyWithVector(stateValues, choiceValues, actionBasedRewards);
                 return choiceValues;
             }
 
             template <typename ValueType>
-            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForGuessedScheduler(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore) {
+            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForGuessedScheduler(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore) {
                 // Create some positional scheduler for the POMDP
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates());
                 // For each state, we heuristically find a good distribution over output actions.
@@ -138,7 +138,8 @@ namespace storm {
             }
 
             template <typename ValueType>
-            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound){
+            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound){
                 // Consider memoryless policy on memory-unfolded POMDP
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates() * memoryBound);
 
@@ -181,7 +182,8 @@ namespace storm {
             }
 
             template <typename ValueType>
-            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp){
+            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp){
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates());
                 std::vector<uint64_t> obsChoiceVector(pomdp.getNrObservations());
 
@@ -211,7 +213,7 @@ namespace storm {
             }
 
             template <typename ValueType>
-            typename TrivialPomdpValueBoundsModelChecker<ValueType>::ValueBounds TrivialPomdpValueBoundsModelChecker<ValueType>::getValueBounds(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
+            typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ValueBounds PreprocessingPomdpValueBoundsModelChecker<ValueType>::getValueBounds(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
                 STORM_LOG_THROW(info.isNonNestedReachabilityProbability() || info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "The property type is not supported for this analysis.");
 
                 // Compute the values on the fully observable MDP
@@ -327,7 +329,8 @@ namespace storm {
             }
 
             template <typename ValueType>
-            typename TrivialPomdpValueBoundsModelChecker<ValueType>::ExtremeValueBound TrivialPomdpValueBoundsModelChecker<ValueType>::getExtremeValueBound(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
+            typename PreprocessingPomdpValueBoundsModelChecker<ValueType>::ExtremeValueBound
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::getExtremeValueBound(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
                 STORM_LOG_THROW(info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "The property type is not supported for this analysis.");
 
                 // Compute the values for the opposite direction on the fully observable MDP
@@ -357,13 +360,13 @@ namespace storm {
             }
 
             template
-            class TrivialPomdpValueBoundsModelChecker<double>;
+            class PreprocessingPomdpValueBoundsModelChecker<double>;
 
             template
-            class TrivialPomdpValueBoundsModelChecker<storm::RationalNumber>;
+            class PreprocessingPomdpValueBoundsModelChecker<storm::RationalNumber>;
 
-            template class TrivialPomdpValueBounds<double>;
-            template class TrivialPomdpValueBounds<storm::RationalNumber>;
+            template class PreprocessingPomdpValueBounds<double>;
+            template class PreprocessingPomdpValueBounds<storm::RationalNumber>;
 
             template class ExtremePOMDPValueBound<double>;
             template class ExtremePOMDPValueBound<storm::RationalNumber>;

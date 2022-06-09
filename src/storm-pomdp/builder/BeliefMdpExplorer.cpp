@@ -29,7 +29,7 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType>
         BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager,
-                                                                         storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds,
+                                                                         storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> const &pomdpValueBounds,
                                                                          ExplorationHeuristic explorationHeuristic) : beliefManager(beliefManager),
                                                                                                                       pomdpValueBounds(pomdpValueBounds),
                                                                                                                       explHeuristic(explorationHeuristic),
