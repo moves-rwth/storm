@@ -72,7 +72,7 @@ namespace storm {
             class PreprocessingPomdpValueBoundsModelChecker {
             public:
                 typedef PreprocessingPomdpValueBounds<ValueType> ValueBounds;
-                typedef ExtremePOMDPValueBound<ValueType> ExtremeValueBound
+                typedef ExtremePOMDPValueBound<ValueType> ExtremeValueBound;
                 PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp);
                 
                 ValueBounds getValueBounds(storm::logic::Formula const& formula);
