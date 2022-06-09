@@ -89,6 +89,7 @@ namespace storm {
                 uint64_t getParametricGDMaxInstantiations() const;
                 uint64_t getParametricPreprocessingMemoryBound() const;
 
+                bool isExplicitCutoffSet() const;
 
                 storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
     

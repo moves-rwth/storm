@@ -809,8 +809,7 @@ namespace storm {
                         STORM_PRINT_AND_LOG("Disable clipping candidate set reduction \n");
                     }
                 }
-                // TODO make this flag toggable
-                bool useExtendedCutoff = true;
+
                 uint64_t nrCutoffStrategies = min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
 
                 bool fixPoint = true;
@@ -900,7 +899,7 @@ namespace storm {
                                 }
                             }
                         }  // end Clipping Procedure
-                        if(useExtendedCutoff || !stopExploration){
+                        if(!options.useExplicitCutoff || !stopExploration){
                             // Add successor transitions or cut-off transitions when exploration is stopped
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available
