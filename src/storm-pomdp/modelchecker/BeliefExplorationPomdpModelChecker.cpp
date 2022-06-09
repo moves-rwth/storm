@@ -899,8 +899,7 @@ namespace storm {
                                 }
                             }
                         }  // end Clipping Procedure
-
-                        //if(!stopExploration || useExtendedCutoff) {
+                        if(useExtendedCutoff || !stopExploration){
                             // Add successor transitions or cut-off transitions when exploration is stopped
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available
@@ -917,9 +916,7 @@ namespace storm {
                                             STORM_LOG_ASSERT(stopExploration, "Didn't add a transition although exploration shouldn't be stopped.");
                                             // We did not explore this successor state. Get a bound on the "missing" value
                                             truncationProbability += successor.second;
-                                            // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other under-approximation values.
-                                            // In general, this does not yield a sound underapproximation anymore.
-                                            // However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
+                                            // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other under-approximation values. In general, this does not yield a sound underapproximation anymore. However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
                                             truncationValueBound +=
                                                 successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
                                                                         : underApproximation->computeLowerValueBoundAtBelief(successor.first));
@@ -932,20 +929,19 @@ namespace storm {
                                             underApproximation->addTransitionsToExtraStates(addedActions + action, truncationValueBound,
                                                                                             truncationProbability - truncationValueBound);
                                         }
-                                        if (computeRewards) {
-                                            // The truncationValueBound will be added on top of the reward introduced by the current belief state.
-                                            if (!clipBelief) {
-                                                underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
-                                            } else {
-                                                underApproximation->addRewardToCurrentState(
-                                                    addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
-                                            }
+                                    }
+                                    if (computeRewards) {
+                                        // The truncationValueBound will be added on top of the reward introduced by the current belief state.
+                                        if (!clipBelief) {
+                                            underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
+                                        } else {
+                                            underApproximation->addRewardToCurrentState(
+                                                addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
                                         }
                                     }
                                 }
                             }
-                        /*} else {
-                            // Add one cut-off transition for each cut-off strategy
+                        } else {
                             for (uint64_t i = 0; i < nrCutoffStrategies; ++i) {
                                 auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i) : underApproximation->computeLowerValueBoundForScheduler(currId, i) ;
                                 if (computeRewards) {
@@ -955,7 +951,7 @@ namespace storm {
                                     underApproximation->addTransitionsToExtraStates(i, cutOffValue,storm::utility::one<ValueType>() - cutOffValue);
                                 }
                             }
-                        }*/
+                        }
                     }
                     if (storm::utility::resources::isTerminate()) {
                         break;
