@@ -17,6 +17,9 @@ namespace storm {
                 std::vector<std::vector<ValueType>> lower;
                 std::vector<std::vector<ValueType>> upper;
                 std::vector<ValueType> parametric;
+                std::vector<storm::storage::Scheduler<ValueType>> lowerSchedulers;
+                std::vector<storm::storage::Scheduler<ValueType>> upperSchedulers;
+
                 /**
                  * Picks the precomputed lower bound for a given scheduler index and state of the POMDP
                  * @param scheduler_id the scheduler ID
@@ -83,11 +86,11 @@ namespace storm {
 
                 std::vector<ValueType> getChoiceValues(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards);
 
-                std::vector<ValueType> computeValuesForGuessedScheduler(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore);
+                std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForGuessedScheduler(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore);
 
-                std::vector<ValueType> computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound);
+                std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound);
 
-                std::vector<ValueType> computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp);
+                std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp);
             };
         }
     }

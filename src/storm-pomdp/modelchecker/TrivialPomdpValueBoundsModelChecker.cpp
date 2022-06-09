@@ -82,7 +82,7 @@ namespace storm {
             }
 
             template <typename ValueType>
-            std::vector<ValueType> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForGuessedScheduler(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore) {
+            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForGuessedScheduler(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards, storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp, ValueType const& scoreThreshold, bool relativeScore) {
                 // Create some positional scheduler for the POMDP
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates());
                 // For each state, we heuristically find a good distribution over output actions.
@@ -134,11 +134,11 @@ namespace storm {
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
-                return pomdpSchedulerResult;
+                return std::make_pair(pomdpSchedulerResult, pomdpScheduler);
             }
 
             template <typename ValueType>
-            std::vector<ValueType> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound){
+            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomFMPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, uint64_t memoryBound){
                 // Consider memoryless policy on memory-unfolded POMDP
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates() * memoryBound);
 
@@ -177,11 +177,11 @@ namespace storm {
                         res[modelState] = pomdpSchedulerResult[memPomdpState];
                     }
                 }
-                return res;
+                return std::make_pair(res, pomdpScheduler);
             }
 
             template <typename ValueType>
-            std::vector<ValueType> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp){
+            std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>> TrivialPomdpValueBoundsModelChecker<ValueType>::computeValuesForRandomMemorylessPolicy(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info, std::shared_ptr<storm::models::sparse::Mdp<ValueType>> underlyingMdp){
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates());
                 std::vector<uint64_t> obsChoiceVector(pomdp.getNrObservations());
 
@@ -207,7 +207,7 @@ namespace storm {
 
                 STORM_LOG_DEBUG("Initial Value for guessed Policy: " << pomdpSchedulerResult[pomdp.getInitialStates().getNextSetIndex(0)]);
 
-                return pomdpSchedulerResult;
+                return std::make_pair(pomdpSchedulerResult, pomdpScheduler);
             }
 
             template <typename ValueType>
@@ -230,10 +230,13 @@ namespace storm {
                     actionBasedRewardsPtr = &actionBasedRewards;
                 }
                 std::vector<std::vector<ValueType>> guessedSchedulerValues;
-
+                std::vector<storm::storage::Scheduler<ValueType>> guessedSchedulers;
+                std::shared_ptr<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>> guessedSchedulerPair;
                 std::vector<std::pair<double, bool>> guessParameters({{0.875,false},{0.875,true},{0.75,false},{0.75,true}});
                 for (auto const& pars : guessParameters) {
-                    guessedSchedulerValues.push_back(computeValuesForGuessedScheduler(fullyObservableResult, actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(pars.first), pars.second));
+                    guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(fullyObservableResult, actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(pars.first), pars.second));
+                    guessedSchedulerValues.push_back(guessedSchedulerPair->first);
+                    guessedSchedulers.push_back(guessedSchedulerPair->second);
                 }
 
                 // compute the 'best' guess and do a few iterations on it
@@ -246,9 +249,15 @@ namespace storm {
                         bestGuessSum = guessSum;
                     }
                 }
-                guessedSchedulerValues.push_back(computeValuesForGuessedScheduler(guessedSchedulerValues[bestGuess], actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
-                guessedSchedulerValues.push_back(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
-                guessedSchedulerValues.push_back(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
+                guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(guessedSchedulerValues[bestGuess], actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
+                guessedSchedulerValues.push_back(guessedSchedulerPair->first);
+                guessedSchedulers.push_back(guessedSchedulerPair->second);
+                guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
+                guessedSchedulerValues.push_back(guessedSchedulerPair->first);
+                guessedSchedulers.push_back(guessedSchedulerPair->second);
+                guessedSchedulerPair = std::make_shared<std::pair<std::vector<ValueType>, storm::storage::Scheduler<ValueType>>>(computeValuesForGuessedScheduler(guessedSchedulerValues.back(), actionBasedRewardsPtr, formula, info, underlyingMdp, storm::utility::convertNumber<ValueType>(guessParameters[bestGuess].first), guessParameters[bestGuess].second));
+                guessedSchedulerValues.push_back(guessedSchedulerPair->first);
+                guessedSchedulers.push_back(guessedSchedulerPair->second);
 
                 // TODO Make this a setting
                 /*uint64_t maxMem = 5;
@@ -295,15 +304,23 @@ namespace storm {
                 }
                 STORM_LOG_INFO("Keeping scheduler guesses " << keptGuesses);
                 storm::utility::vector::filterVectorInPlace(guessedSchedulerValues, keptGuesses);
+                std::vector<storm::storage::Scheduler<ValueType>> filteredSchedulers;
+                for (uint64_t i = 0; i < guessedSchedulers.size(); ++i) {
+                    if(keptGuesses[i]){
+                        filteredSchedulers.push_back(guessedSchedulers[i]);
+                    }
+                }
 
                 // Finally prepare the result
                 ValueBounds result;
                 if (info.minimize()) {
                     result.lower.push_back(std::move(fullyObservableResult));
                     result.upper = std::move(guessedSchedulerValues);
+                    result.upperSchedulers = filteredSchedulers;
                 } else {
                     result.lower = std::move(guessedSchedulerValues);
                     result.upper.push_back(std::move(fullyObservableResult));
+                    result.lowerSchedulers = filteredSchedulers;
                 }
                 STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(result.lower.front(), result.upper.front(), std::less_equal<ValueType>()), "Lower bound is larger than upper bound");
                 return result;
