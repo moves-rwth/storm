@@ -300,6 +300,7 @@ namespace storm {
                         approx->setExtremeValueBound(pomdpValueBounds.extremePomdpValueBound);
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
+                    storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(approx->getExploredMdp()),"/Users/bork/belMDP.dot");
                     if (approx->hasComputedValues()) {
                         auto printInfo = [&approx]() {
                             std::stringstream str;
@@ -307,6 +308,27 @@ namespace storm {
                             approx->getExploredMdp()->printModelInformationToStream(str);
                             return str.str();
                         };
+
+                        std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = approx->getExploredMdp();
+                        storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
+                        auto nrPreprocessingScheds = min ? approx->getNrSchedulersForUpperBounds() : approx->getNrSchedulersForLowerBounds();
+                        for(uint64_t i = 0; i < nrPreprocessingScheds; ++i){
+                            newLabeling.addLabel("sched_" + std::to_string(i));
+                        }
+                        newLabeling.addLabel("cutoff");
+                        for(uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i){
+                            if(newLabeling.getStateHasLabel("truncated",i)){
+                                newLabeling.addLabelToState("sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()),i);
+                                newLabeling.addLabelToState("cutoff", i);
+                            }
+                        }
+                        newLabeling.removeLabel("truncated");
+                        storm::models::sparse::Mdp<ValueType> newMDP(scheduledModel->getTransitionMatrix(), newLabeling, scheduledModel->getRewardModels());
+                        auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), false);
+                        //auto imcPtr = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(inducedMC);
+                        scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
+                        storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(scheduledModel),"/Users/bork/sched.dot");
+                        storm::api::exportScheduler(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(approx->getExploredMdp()),*(approx->getSchedulerForExploredMdp()),"/Users/bork/sched.json");
                         STORM_LOG_INFO(printInfo());
                         ValueType &resultValue = min ? result.upperBound : result.lowerBound;
                         resultValue = approx->getComputedValueAtInitialState();

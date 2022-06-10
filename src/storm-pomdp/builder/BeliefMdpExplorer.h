@@ -228,6 +228,8 @@ namespace storm {
 
             uint64_t getNrSchedulersForLowerBounds();
 
+            const std::shared_ptr<storm::storage::Scheduler<BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>> &getSchedulerForExploredMdp() const;
+
         private:
             MdpStateType noState() const;
 
@@ -286,6 +288,7 @@ namespace storm {
             std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed
             boost::optional<storm::storage::BitVector> optimalChoices;
             boost::optional<storm::storage::BitVector> optimalChoicesReachableMdpStates;
+            std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler;
             
             // The current status of this explorer
             ExplorationHeuristic explHeuristic;

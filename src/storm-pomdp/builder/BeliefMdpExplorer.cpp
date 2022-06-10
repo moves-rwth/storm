@@ -755,6 +755,7 @@ namespace storm {
             std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(exploredMdp, task));
             if (res) {
                 values = std::move(res->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+                scheduler = std::make_shared<storm::storage::Scheduler<ValueType>>(res->asExplicitQuantitativeCheckResult<ValueType>().getScheduler());
                 STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(lowerValueBounds, values, std::less_equal<ValueType>()),
                                           "Computed values are smaller than the lower bound.");
                 STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(upperValueBounds, values, std::greater_equal<ValueType>()),
@@ -775,6 +776,12 @@ namespace storm {
         std::vector<typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType> const &BeliefMdpExplorer<PomdpType, BeliefValueType>::getValuesOfExploredMdp() const {
             STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
             return values;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        const std::shared_ptr<storm::storage::Scheduler<typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>> &BeliefMdpExplorer<PomdpType, BeliefValueType>::getSchedulerForExploredMdp() const {
+            STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
+            return scheduler;
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -914,6 +921,7 @@ namespace storm {
             hint.setResultHint(values);
             auto hintPtr = std::make_shared<storm::modelchecker::ExplicitModelCheckerHint<ValueType>>(hint);
             task.setHint(hintPtr);
+            task.setProduceSchedulers();
             return task;
         }
 
