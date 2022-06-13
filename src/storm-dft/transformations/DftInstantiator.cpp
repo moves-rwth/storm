@@ -107,11 +107,8 @@ void DftInstantiator<ParametricType, ConstantType>::checkValid() const {
     // TODO write some checks
 }
 
-#ifdef STORM_HAVE_CARL
-
 // Explicitly instantiate the class.
 template class DftInstantiator<storm::RationalFunction, double>;
 
-#endif
 }  // namespace transformations
 }  // namespace storm::dft

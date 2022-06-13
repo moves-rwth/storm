@@ -528,11 +528,7 @@ void DFTModelChecker<ValueType>::printResults(dft_results const& results, std::o
 }
 
 template class DFTModelChecker<double>;
-
-#ifdef STORM_HAVE_CARL
-
 template class DFTModelChecker<storm::RationalFunction>;
 
-#endif
 }  // namespace modelchecker
 }  // namespace storm::dft

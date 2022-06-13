@@ -976,10 +976,7 @@ void ExplicitDFTModelBuilder<ValueType, StateType>::printNotExplored() const {
 
 // Explicitly instantiate the class.
 template class ExplicitDFTModelBuilder<double>;
-
-#ifdef STORM_HAVE_CARL
 template class ExplicitDFTModelBuilder<storm::RationalFunction>;
-#endif
 
 }  // namespace builder
 }  // namespace storm::dft
