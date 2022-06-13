@@ -26,10 +26,8 @@ bool OrderElementsByRank<ValueType>::operator()(const std::shared_ptr<storm::dft
 template struct OrderElementsById<double>;
 template struct OrderElementsByRank<double>;
 
-#ifdef STORM_HAVE_CARL
 template struct OrderElementsById<RationalFunction>;
 template struct OrderElementsByRank<RationalFunction>;
-#endif
 
 }  // namespace storage
 }  // namespace storm::dft

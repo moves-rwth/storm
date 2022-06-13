@@ -1118,9 +1118,7 @@ uint64_t DftToGspnTransformator<ValueType>::getFailPriority(std::shared_ptr<stor
 // Explicitly instantiate the class.
 template class DftToGspnTransformator<double>;
 
-#ifdef STORM_HAVE_CARL
 // template class DftToGspnTransformator<storm::RationalFunction>;
-#endif
 
 }  // namespace transformations
 }  // namespace storm::dft

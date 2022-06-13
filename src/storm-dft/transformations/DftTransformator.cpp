@@ -236,12 +236,7 @@ std::vector<std::string> DftTransformator<ValueType>::getChildrenVector(std::sha
 
 // Explicitly instantiate the class.
 template class DftTransformator<double>;
-
-#ifdef STORM_HAVE_CARL
-
 template class DftTransformator<RationalFunction>;
-
-#endif
 
 }  // namespace transformations
 }  // namespace storm::dft

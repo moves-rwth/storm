@@ -344,10 +344,7 @@ void DFTBuilder<ValueType>::copyGate(DFTGateCPointer gate, std::vector<std::stri
 
 // Explicitly instantiate the class.
 template class DFTBuilder<double>;
-
-#ifdef STORM_HAVE_CARL
 template class DFTBuilder<RationalFunction>;
-#endif
 
 }  // namespace builder
 }  // namespace storm::dft
