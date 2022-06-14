@@ -28,9 +28,7 @@ class DFTChildren : public DFTElement<ValueType> {
     /*!
      * Destructor.
      */
-    virtual ~DFTChildren() {
-        // Intentionally left empty.
-    }
+    virtual ~DFTChildren() = default;
 
     /*!
      * Add child.

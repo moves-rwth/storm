@@ -46,7 +46,7 @@ class BEExponential : public DFTBE<ValueType> {
     }
 
     /*!
-     * Return dormancy factor given by passive_failure_rate/active_failure_rate.
+     * Return dormancy factor given by passive_failure_rate / active_failure_rate.
      * @return Dormancy factor.
      */
     ValueType dormancyFactor() const {
@@ -77,17 +77,9 @@ class BEExponential : public DFTBE<ValueType> {
         return storm::utility::isZero(this->passiveFailureRate());
     }
 
-    bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
-        if (!DFTBE<ValueType>::isTypeEqualTo(other)) {
-            return false;
-        }
-        auto& otherBE = static_cast<BEExponential<ValueType> const&>(other);
-        return (this->activeFailureRate() == otherBE.activeFailureRate()) && (this->passiveFailureRate() == otherBE.passiveFailureRate());
-    }
-
-    std::string toString() const override {
+    std::string distributionString() const override {
         std::stringstream stream;
-        stream << "{" << this->name() << "} BE exp(" << this->activeFailureRate() << ", " << this->passiveFailureRate() << ")";
+        stream << "exp " << this->activeFailureRate() << ", " << this->passiveFailureRate();
         return stream.str();
     }
 

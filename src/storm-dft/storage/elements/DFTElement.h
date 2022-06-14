@@ -57,9 +57,7 @@ class DFTElement {
     /*!
      * Destructor.
      */
-    virtual ~DFTElement() {
-        // Intentionally left empty.
-    }
+    virtual ~DFTElement() = default;
 
     /*!
      * Get id.
@@ -179,6 +177,12 @@ class DFTElement {
     virtual bool isRestriction() const {
         return false;
     }
+
+    /*!
+     * Get number of children.
+     * @return Nr of children.
+     */
+    virtual std::size_t nrChildren() const = 0;
 
     /*!
      * Return whether the element has parents.
@@ -386,13 +390,6 @@ class DFTElement {
 
     virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
 
-    // virtual void extendImmediateFailureCausePathEvents(std::set<size_t>& ) const;
-    /*!
-     * Get number of children.
-     * @return Nr of children.
-     */
-    virtual std::size_t nrChildren() const = 0;
-
     virtual bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
                                       storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
 
@@ -450,11 +447,6 @@ class DFTElement {
 template<typename ValueType>
 inline std::ostream& operator<<(std::ostream& os, DFTElement<ValueType> const& element) {
     return os << element.toString();
-}
-
-template<typename ValueType>
-bool equalType(DFTElement<ValueType> const& e1, DFTElement<ValueType> const& e2) {
-    return e1.isTypeEqualTo(e2);
 }
 
 }  // namespace elements

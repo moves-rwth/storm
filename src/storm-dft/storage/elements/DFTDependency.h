@@ -35,9 +35,7 @@ class DFTDependency : public DFTElement<ValueType> {
     /*!
      * Destructor
      */
-    virtual ~DFTDependency(){
-        // Intentionally left empty.
-    };
+    virtual ~DFTDependency() = default;
 
     storm::dft::storage::elements::DFTElementType type() const override {
         return storm::dft::storage::elements::DFTElementType::PDEP;
