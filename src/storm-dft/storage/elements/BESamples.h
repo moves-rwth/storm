@@ -47,22 +47,12 @@ class BESamples : public DFTBE<ValueType> {
                 return true;
             }
         }
-        return true;
+        return false;
     }
 
-    bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
-        if (!DFTBE<ValueType>::isTypeEqualTo(other)) {
-            return false;
-        }
-
-        auto& otherBE = static_cast<BESamples<ValueType> const&>(other);
-        return mActiveSamples.size() == otherBE.activeSamples().size() &&
-               std::equal(mActiveSamples.begin(), mActiveSamples.end(), otherBE.activeSamples().begin());
-    }
-
-    std::string toString() const override {
+    std::string distributionString() const override {
         std::stringstream stream;
-        stream << "{" << this->name() << "} BE samples(" << this->activeSamples().size() << " samples)";
+        stream << "samples " << this->activeSamples().size();
         return stream.str();
     }
 

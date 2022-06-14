@@ -93,12 +93,16 @@ class DFTBE : public DFTElement<ValueType> {
         return false;
     }
 
-    bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
-        if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
-            return false;
-        }
-        auto& otherBE = static_cast<DFTBE<ValueType> const&>(other);
-        return this->beType() == otherBE.beType();
+    /*!
+     * Print information about failure distribution to string.
+     * @return Distribution information.
+     */
+    virtual std::string distributionString() const = 0;
+
+    virtual std::string toString() const override {
+        std::stringstream stream;
+        stream << "{" << this->name() << "} BE(" << this->distributionString() << ")";
+        return stream.str();
     }
 
    private:

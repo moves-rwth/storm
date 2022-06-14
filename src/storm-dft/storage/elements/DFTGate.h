@@ -28,9 +28,7 @@ class DFTGate : public DFTChildren<ValueType> {
     /*!
      * Destructor
      */
-    virtual ~DFTGate() {
-        // Intentionally left empty.
-    }
+    virtual ~DFTGate() = default;
 
     virtual bool isGate() const override {
         return true;
