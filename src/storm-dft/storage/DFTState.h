@@ -65,7 +65,7 @@ class DFTState {
     DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
 
     /**
-     * Construct concerete state from pseudo state by using the underlying bitvector.
+     * Construct concrete state from pseudo state by using the underlying bitvector.
      */
     void construct();
 

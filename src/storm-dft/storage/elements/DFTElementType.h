@@ -89,6 +89,8 @@ inline std::string toString(BEType const& type) {
             return "CONST";
         case BEType::EXPONENTIAL:
             return "EXPONENTIAL";
+        case BEType::SAMPLES:
+            return "SAMPLES";
         default:
             STORM_LOG_ASSERT(false, "BE type not known.");
             return "";
