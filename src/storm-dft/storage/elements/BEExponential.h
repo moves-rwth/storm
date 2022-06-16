@@ -65,7 +65,7 @@ class BEExponential : public DFTBE<ValueType> {
     }
 
     bool canFail() const override {
-        STORM_LOG_ASSERT(!storm::utility::isZero(this->activeFailureRate()), "BEExp should have failure rate > 0");
+        STORM_LOG_ASSERT(!storm::utility::isZero(this->activeFailureRate()), "BE EXP should have failure rate > 0.");
         return true;
     }
 

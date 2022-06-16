@@ -216,7 +216,7 @@ class DFTElement {
         if (std::find(this->parents().begin(), this->parents().end(), parent) == this->parents().end()) {
             // Parent does not exist yet
             mParents.push_back(parent);
-        };
+        }
     }
 
     /*!
