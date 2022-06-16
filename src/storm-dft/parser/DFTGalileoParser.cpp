@@ -32,8 +32,8 @@ std::string DFTGalileoParser<ValueType>::parseName(std::string const& name) {
 }
 
 template<typename ValueType>
-storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename, bool defaultInclusive) {
-    storm::dft::builder::DFTBuilder<ValueType> builder(defaultInclusive);
+storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename) {
+    storm::dft::builder::DFTBuilder<ValueType> builder;
     storm::parser::ValueParser<ValueType> valueParser;
     // Regular expression to detect comments
     // taken from: https://stackoverflow.com/questions/9449887/removing-c-c-style-comments-using-boostregex
@@ -105,52 +105,47 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
                 for (size_t i = 2; i < tokens.size(); ++i) {
                     childNames.push_back(parseName(tokens[i]));
                 }
-                bool success = true;
+                bool success = false;
 
                 // Add element according to type
                 std::string type = tokens[1];
                 if (type == "and") {
-                    success = builder.addAndElement(name, childNames);
+                    success = builder.addAndGate(name, childNames);
                 } else if (type == "or") {
-                    success = builder.addOrElement(name, childNames);
+                    success = builder.addOrGate(name, childNames);
                 } else if (boost::starts_with(type, "vot")) {
                     size_t threshold = storm::parser::parseNumber<size_t>(type.substr(3));
-                    success = builder.addVotElement(name, threshold, childNames);
+                    success = builder.addVotingGate(name, threshold, childNames);
                 } else if (type.find("of") != std::string::npos) {
                     size_t pos = type.find("of");
                     size_t threshold = storm::parser::parseNumber<size_t>(type.substr(0, pos));
                     size_t count = storm::parser::parseNumber<size_t>(type.substr(pos + 2));
-                    STORM_LOG_THROW(
-                        count == childNames.size(), storm::exceptions::WrongFormatException,
-                        "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << " in line " << lineNo << ".");
-                    success = builder.addVotElement(name, threshold, childNames);
+                    STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException,
+                                    "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << ".");
+                    success = builder.addVotingGate(name, threshold, childNames);
                 } else if (type == "pand") {
-                    success = builder.addPandElement(name, childNames, defaultInclusive);
+                    success = builder.addPandGate(name, childNames);
                 } else if (type == "pand-inc") {
-                    success = builder.addPandElement(name, childNames, true);
+                    success = builder.addPandGate(name, childNames, true);
                 } else if (type == "pand-ex") {
-                    success = builder.addPandElement(name, childNames, false);
+                    success = builder.addPandGate(name, childNames, false);
                 } else if (type == "por") {
-                    success = builder.addPorElement(name, childNames, defaultInclusive);
-                } else if (type == "por-ex") {
-                    success = builder.addPorElement(name, childNames, false);
+                    success = builder.addPorGate(name, childNames);
                 } else if (type == "por-inc") {
-                    success = builder.addPorElement(name, childNames, true);
+                    success = builder.addPorGate(name, childNames, true);
+                } else if (type == "por-ex") {
+                    success = builder.addPorGate(name, childNames, false);
                 } else if (type == "wsp" || type == "csp" || type == "hsp") {
-                    success = builder.addSpareElement(name, childNames);
+                    success = builder.addSpareGate(name, childNames);
                 } else if (type == "seq") {
                     success = builder.addSequenceEnforcer(name, childNames);
                 } else if (type == "mutex") {
                     success = builder.addMutex(name, childNames);
                 } else if (type == "fdep") {
-                    STORM_LOG_THROW(childNames.size() >= 2, storm::exceptions::WrongFormatException,
-                                    "FDEP gate needs at least two children in line " << lineNo << ".");
-                    success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
+                    success = builder.addPdep(name, childNames, storm::utility::one<ValueType>());
                 } else if (boost::starts_with(type, "pdep=")) {
-                    STORM_LOG_THROW(childNames.size() >= 2, storm::exceptions::WrongFormatException,
-                                    "PDEP gate needs at least two children in line " << lineNo << ".");
                     ValueType probability = valueParser.parseValue(type.substr(5));
-                    success = builder.addDepElement(name, childNames, probability);
+                    success = builder.addPdep(name, childNames, probability);
                 } else if (type.find("=") != std::string::npos) {
                     success = parseBasicElement(tokens[0], line, lineNo, builder, valueParser);
                 } else if (type.find("insp") != std::string::npos) {
@@ -158,7 +153,6 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Inspections (defined in line " << lineNo << ") are not supported.");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " in line " << lineNo << " not recognized.");
-                    success = false;
                 }
                 STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << name << "' in line " << lineNo << ".");
             }
@@ -315,32 +309,31 @@ bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
     switch (distribution) {
         case Constant:
             if (storm::utility::isZero(firstValDistribution) || storm::utility::isOne(firstValDistribution)) {
-                return builder.addBasicElementProbability(parseName(name), firstValDistribution, dormancyFactor, false);  // TODO set transient BEs
+                return builder.addBasicElementProbability(parseName(name), firstValDistribution, dormancyFactor);
             } else {
                 // Model constant BEs with probability 0 < p < 1
                 bool success = true;
                 if (!builder.nameInUse("constantBeTrigger")) {
                     // Use a unique constantly failed element that triggers failsafe elements probabilistically
-                    success = success && builder.addBasicElementProbability("constantBeTrigger", storm::utility::one<ValueType>(),
-                                                                            storm::utility::one<ValueType>(), false);
+                    success =
+                        success && builder.addBasicElementProbability("constantBeTrigger", storm::utility::one<ValueType>(), storm::utility::one<ValueType>());
                 }
                 std::vector<std::string> childNames;
                 childNames.push_back("constantBeTrigger");
-                success =
-                    success && builder.addBasicElementProbability(parseName(name), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(), false);
+                success = success && builder.addBasicElementProbability(parseName(name), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                 childNames.push_back(parseName(name));
-                return success && builder.addDepElement(parseName(name) + "_pdep", childNames, firstValDistribution);
+                return success && builder.addPdep(parseName(name) + "_pdep", childNames, firstValDistribution);
             }
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                             "Constant distribution is not supported for basic element '" << name << "' in line " << lineNo << ".");
             break;
         case Exponential:
-            return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor, false);  // TODO set transient BEs
+            return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor);
             break;
         case Erlang:
             if (erlangPhases == 1) {
                 // Erlang distribution reduces to exponential distribution
-                return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor, false);  // TODO set transient BEs
+                return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor);
             } else {
                 // Model Erlang distribution by using SEQ over BEs instead.
                 // For each phase a BE is added, then the SEQ ensures the ordered failure.

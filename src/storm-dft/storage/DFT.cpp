@@ -513,19 +513,19 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
             childrenNames.push_back(mElements[rewrites[i]]->name());
         }
 
-        // Add element inbetween parent and children
+        // Add element in-between parent and children
         switch (originalParent->type()) {
             case storm::dft::storage::elements::DFTElementType::AND:
-                builder.addAndElement(newParentName, childrenNames);
+                builder.addAndGate(newParentName, childrenNames);
                 break;
             case storm::dft::storage::elements::DFTElementType::OR:
-                builder.addOrElement(newParentName, childrenNames);
+                builder.addOrGate(newParentName, childrenNames);
                 break;
             case storm::dft::storage::elements::DFTElementType::BE:
             case storm::dft::storage::elements::DFTElementType::VOT:
             case storm::dft::storage::elements::DFTElementType::PAND:
-            case storm::dft::storage::elements::DFTElementType::SPARE:
             case storm::dft::storage::elements::DFTElementType::POR:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
             case storm::dft::storage::elements::DFTElementType::PDEP:
             case storm::dft::storage::elements::DFTElementType::SEQ:
             case storm::dft::storage::elements::DFTElementType::MUTEX:

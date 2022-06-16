@@ -27,6 +27,7 @@ class DFTBuilder {
     using DFTElementVector = std::vector<DFTElementPointer>;
     using DFTBEPointer = std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>;
     using DFTBECPointer = std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>;
+    using DFTChildrenCPointer = std::shared_ptr<storm::dft::storage::elements::DFTChildren<ValueType> const>;
     using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
     using DFTGateCPointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const>;
     using DFTGateVector = std::vector<DFTGatePointer>;
@@ -35,174 +36,128 @@ class DFTBuilder {
 
    private:
     std::size_t mNextId = 0;
-    static std::size_t mUniqueOffset;
+    static std::size_t mUniqueOffset;  // Used to ensure unique names
     std::string mTopLevelIdentifier;
     std::unordered_map<std::string, DFTElementPointer> mElements;
     std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
     std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
     std::unordered_map<DFTDependencyPointer, std::vector<std::string>> mDependencyChildNames;
-    std::vector<DFTDependencyPointer> mDependencies;
-    std::vector<DFTRestrictionPointer> mRestrictions;
     std::unordered_map<std::string, storm::dft::storage::DFTLayoutInfo> mLayoutInfo;
 
    public:
-    DFTBuilder(bool defaultInclusive = true) : pandDefaultInclusive(defaultInclusive), porDefaultInclusive(defaultInclusive) {}
+    DFTBuilder() = default;
 
-    bool addAndElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::AND);
-    }
+    /*!
+     * Create BE which is constant failed or constant failsafe and add it to DFT.
+     * @param name Name.
+     * @param failed Whether the BE is constant failed.
+     * @return True iff adding was successful.
+     */
+    bool addBasicElementConst(std::string const& name, bool failed);
 
-    bool addOrElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::OR);
-    }
+    /*!
+     * Create BE with constant (Bernoulli) distribution and add it to DFT.
+     * @param name Name.
+     * @param probability (Constant) probability that BE is failed.
+     * @param dormancyFactor Dormancy factor in passive mode.
+     * @param transient Whether the failure is transient.
+     * @return True iff adding was successful.
+     */
+    bool addBasicElementProbability(std::string const& name, ValueType probability, ValueType dormancyFactor);
 
-    bool addPandElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::PAND);
-    }
+    /*!
+     * Create BE with exponential distribution and add it to DFT.
+     * @param name Name.
+     * @param rate Failure rate governing failure distribution of BE.
+     * @param dormancyFactor Dormancy factor in passive mode.
+     * @param transient Whether the failure is transient.
+     * @return True iff adding was successful.
+     */
+    bool addBasicElementExponential(std::string const& name, ValueType rate, ValueType dormancyFactor, bool transient = false);
 
-    bool addPandElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
-        bool tmpDefault = pandDefaultInclusive;
-        pandDefaultInclusive = inclusive;
-        bool result = addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::PAND);
-        pandDefaultInclusive = tmpDefault;
-        return result;
-    }
+    /*!
+     * Create BE with distribution given by sample points and add it to DFT.
+     * @param name Name.
+     * @param activeSamples Sample points defining the unreliability at certain time points (i.e. the cumulative distribution function F(x)).
+     * @return True iff adding was successful.
+     */
+    bool addBasicElementSamples(std::string const& name, std::map<ValueType, ValueType> const& activeSamples);
 
-    bool addPorElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::POR);
-    }
+    /*!
+     * Create AND-gate and add it to DFT.
+     * @param name Name.
+     * @param children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addAndGate(std::string const& name, std::vector<std::string> const& children);
 
-    bool addPorElement(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
-        bool tmpDefault = porDefaultInclusive;
-        porDefaultInclusive = inclusive;
-        bool result = addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::POR);
-        pandDefaultInclusive = tmpDefault;
-        return result;
-    }
+    /*!
+     * Create OR-gate and add it to DFT.
+     * @param name Name.
+     * @param children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addOrGate(std::string const& name, std::vector<std::string> const& children);
 
-    bool addSpareElement(std::string const& name, std::vector<std::string> const& children) {
-        return addStandardGate(name, children, storm::dft::storage::elements::DFTElementType::SPARE);
-    }
+    /*!
+     * Create VOTing-gate and add it to DFT.
+     * @param name Name.
+     * @param threshold Threshold specifying how many children need to fail.
+     * @param children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addVotingGate(std::string const& name, unsigned threshold, std::vector<std::string> const& children);
 
-    bool addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children) {
-        return addRestriction(name, children, storm::dft::storage::elements::DFTElementType::SEQ);
-    }
+    /*!
+     * Create PAND-gate and add it to DFT.
+     * @param name Name.
+     * @param children Names of children.
+     * @param inclusive Whether the failure behaviour is inclusive (simultaneous failures are allowed) or not.
+     * @return True iff adding was successful.
+     */
+    bool addPandGate(std::string const& name, std::vector<std::string> const& children, bool inclusive = true);
 
-    bool addMutex(std::string const& name, std::vector<std::string> const& children) {
-        return addRestriction(name, children, storm::dft::storage::elements::DFTElementType::MUTEX);
-    }
+    /*!
+     * Create POR-gate and add it to DFT.
+     * @param name Name.
+     * @param children Names of children.
+     * @param inclusive Whether the failure behaviour is inclusive (simultaneous failures are allowed) or not.
+     * @return True iff adding was successful.
+     */
+    bool addPorGate(std::string const& name, std::vector<std::string> const& children, bool inclusive = true);
 
-    bool addDepElement(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
-        if (children.size() <= 1) {
-            STORM_LOG_ERROR("Dependencies require at least two children");
-        }
-        if (nameInUse(name)) {
-            STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
-            return false;
-        }
+    /*!
+     * Create SPARE-gate and add it to DFT.
+     * @param name Name.
+     * @param children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addSpareGate(std::string const& name, std::vector<std::string> const& children);
 
-        if (storm::utility::isZero(probability)) {
-            // Element is superfluous
-            return true;
-        }
-        std::string trigger = children[0];
+    /*!
+     * Create sequence enforcer (SEQ) and add it to DFT.
+     * @param name Name.
+     * @param children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children);
 
-        // TODO: collect constraints for SMT solving
-        DFTDependencyPointer element = std::make_shared<storm::dft::storage::elements::DFTDependency<ValueType>>(mNextId++, name, probability);
-        mElements[element->name()] = element;
-        mDependencyChildNames[element] = children;
-        mDependencies.push_back(element);
-        return true;
-    }
+    /*!
+     * Create mutual exclusion-gate (MUTEX) and add it to DFT.
+     * @param name Name.
+     * @param children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addMutex(std::string const& name, std::vector<std::string> const& children);
 
-    bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
-        STORM_LOG_ASSERT(children.size() > 0, "Has no child.");
-        if (nameInUse(name)) {
-            STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
-            return false;
-        }
-        // It is an and-gate
-        if (children.size() == threshold) {
-            return addAndElement(name, children);
-        }
-        // It is an or-gate
-        if (threshold == 1) {
-            return addOrElement(name, children);
-        }
-
-        if (threshold > children.size()) {
-            STORM_LOG_ERROR("Voting gates with threshold higher than the number of children is not supported.");
-            return false;
-        }
-        DFTElementPointer element = std::make_shared<storm::dft::storage::elements::DFTVot<ValueType>>(mNextId++, name, threshold);
-
-        mElements[name] = element;
-        mChildNames[element] = children;
-        return true;
-    }
-
-    bool addBasicElementConst(std::string const& name, bool failed) {
-        if (nameInUse(name)) {
-            STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
-            return false;
-        }
-        mElements[name] = std::make_shared<storm::dft::storage::elements::BEConst<ValueType>>(mNextId++, name, failed);
-        return true;
-    }
-
-    bool addBasicElementProbability(std::string const& name, ValueType probability, ValueType dormancyFactor, bool transient = false) {
-        // 0 <= dormancyFactor <= 1
-        if (nameInUse(name)) {
-            STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
-            return false;
-        }
-        if (storm::utility::isZero<ValueType>(probability)) {
-            return addBasicElementConst(name, false);
-        } else if (storm::utility::isOne<ValueType>(probability)) {
-            return addBasicElementConst(name, true);
-        }
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                        "Constant probability distribution is not supported for basic element '" << name << "'.");
-        return false;
-    }
-
-    bool addBasicElementExponential(std::string const& name, ValueType failureRate, ValueType dormancyFactor, bool transient = false) {
-        // TODO: collect constraints for SMT solving
-        // 0 <= dormancyFactor <= 1
-        if (nameInUse(name)) {
-            STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
-            return false;
-        }
-        if (storm::utility::isZero<ValueType>(failureRate)) {
-            return addBasicElementConst(name, false);
-        }
-
-        mElements[name] = std::make_shared<storm::dft::storage::elements::BEExponential<ValueType>>(mNextId++, name, failureRate, dormancyFactor, transient);
-        return true;
-    }
-
-    bool addBasicElementSamples(std::string const& name, std::map<ValueType, ValueType> const& activeSamples) {
-        if (nameInUse(name)) {
-            STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
-            return false;
-        }
-
-        // check if it can fail
-        bool canFail{false};
-        for (auto const& sample : activeSamples) {
-            if (!storm::utility::isZero(sample.second)) {
-                canFail = true;
-                break;
-            }
-        }
-
-        if (!canFail) {
-            return addBasicElementConst(name, false);
-        }
-
-        mElements[name] = std::make_shared<storm::dft::storage::elements::BESamples<ValueType>>(mNextId++, name, activeSamples);
-        return true;
-    }
+    /*!
+     * Create (probabilistic) dependency (PDEP) and add it to DFT.
+     * @param name Name.
+     * @param children Names of children. First child is the trigger event, all remaining children are the dependent events.
+     * @param probability Probability of forwarding the failure. Probability 1 corresponds to an FDEP.
+     * @return True iff adding was successful.
+     */
+    bool addPdep(std::string const& name, std::vector<std::string> const& children, ValueType probability);
 
     void addLayoutInfo(std::string const& name, double x, double y) {
         if (!nameInUse(name)) {
@@ -255,9 +210,36 @@ class DFTBuilder {
    private:
     unsigned computeRank(DFTElementPointer const& elem);
 
-    bool addStandardGate(std::string const& name, std::vector<std::string> const& children, storm::dft::storage::elements::DFTElementType tp);
+    /*!
+     * Add given element to DFT.
+     * @param element DFT element.
+     * @return True iff adding was successful.
+     */
+    bool addElement(DFTElementPointer element);
 
-    bool addRestriction(std::string const& name, std::vector<std::string> const& children, storm::dft::storage::elements::DFTElementType tp);
+    /*!
+     * Add given gate to DFT.
+     * @param gate Gate.
+     * @param children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addGate(DFTGatePointer gate, std::vector<std::string> const& children);
+
+    /*!
+     * Add given dependency to DFT.
+     * @param dependency Dependency.
+     * @parama children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addDependency(DFTDependencyPointer dependency, std::vector<std::string> const& children);
+
+    /*!
+     * Add given restriction to DFT.
+     * @param restriction Restriction.
+     * @param children Names of children.
+     * @return True iff adding was successful.
+     */
+    bool addRestriction(DFTRestrictionPointer restriction, std::vector<std::string> const& children);
 
     enum class topoSortColour { WHITE, BLACK, GREY };
 
@@ -265,13 +247,6 @@ class DFTBuilder {
                    DFTElementVector& L);
 
     DFTElementVector topoSort();
-
-    std::vector<bool> computeHasDynamicBehavior(DFTElementVector elements);
-
-    // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
-    bool pandDefaultInclusive;
-    // If true, the standard gate adders make a pand inclusive, and exclusive otherwise.
-    bool porDefaultInclusive;
 };
 
 }  // namespace builder

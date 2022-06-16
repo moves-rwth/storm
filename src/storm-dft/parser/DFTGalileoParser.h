@@ -23,11 +23,10 @@ class DFTGalileoParser {
      * Parse DFT in Galileo format and build DFT.
      *
      * @param filename File.
-     * @param defaultInclusive Flag indicating if priority gates are inclusive by default.
      *
      * @return DFT.
      */
-    static storm::dft::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true);
+    static storm::dft::storage::DFT<ValueType> parseDFT(std::string const& filename);
 
    private:
     /*!
