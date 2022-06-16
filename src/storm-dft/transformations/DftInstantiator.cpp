@@ -11,7 +11,7 @@ DftInstantiator<ParametricType, ConstantType>::DftInstantiator(storm::dft::stora
 template<typename ParametricType, typename ConstantType>
 std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<ParametricType, ConstantType>::instantiate(
     storm::utility::parametric::Valuation<ParametricType> const &valuation) {
-    storm::dft::builder::DFTBuilder<ConstantType> builder = storm::dft::builder::DFTBuilder<ConstantType>(true);
+    storm::dft::builder::DFTBuilder<ConstantType> builder;
     for (size_t i = 0; i < dft.nrElements(); ++i) {
         std::shared_ptr<storm::dft::storage::elements::DFTElement<ParametricType> const> element = dft.getElement(i);
         switch (element->type()) {
@@ -37,33 +37,33 @@ std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<Parametr
                 break;
             }
             case storm::dft::storage::elements::DFTElementType::AND:
-                builder.addAndElement(element->name(), getChildrenVector(element));
+                builder.addAndGate(element->name(), getChildrenVector(element));
                 break;
             case storm::dft::storage::elements::DFTElementType::OR:
-                builder.addOrElement(element->name(), getChildrenVector(element));
+                builder.addOrGate(element->name(), getChildrenVector(element));
                 break;
             case storm::dft::storage::elements::DFTElementType::VOT: {
                 auto vot = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ParametricType> const>(element);
-                builder.addVotElement(vot->name(), vot->threshold(), getChildrenVector(vot));
+                builder.addVotingGate(vot->name(), vot->threshold(), getChildrenVector(vot));
                 break;
             }
             case storm::dft::storage::elements::DFTElementType::PAND: {
                 auto pand = std::static_pointer_cast<storm::dft::storage::elements::DFTPand<ParametricType> const>(element);
-                builder.addPandElement(pand->name(), getChildrenVector(pand), pand->isInclusive());
+                builder.addPandGate(pand->name(), getChildrenVector(pand), pand->isInclusive());
                 break;
             }
             case storm::dft::storage::elements::DFTElementType::POR: {
                 auto por = std::static_pointer_cast<storm::dft::storage::elements::DFTPor<ParametricType> const>(element);
-                builder.addPorElement(por->name(), getChildrenVector(por), por->isInclusive());
+                builder.addPorGate(por->name(), getChildrenVector(por), por->isInclusive());
                 break;
             }
             case storm::dft::storage::elements::DFTElementType::SPARE:
-                builder.addSpareElement(element->name(), getChildrenVector(element));
+                builder.addSpareGate(element->name(), getChildrenVector(element));
                 break;
             case storm::dft::storage::elements::DFTElementType::PDEP: {
                 auto dep = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ParametricType> const>(element);
                 ConstantType probability = storm::utility::convertNumber<ConstantType>(dep->probability().evaluate(valuation));
-                builder.addDepElement(dep->name(), getChildrenVector(dep), probability);
+                builder.addPdep(dep->name(), getChildrenVector(dep), probability);
                 break;
             }
             case storm::dft::storage::elements::DFTElementType::SEQ:

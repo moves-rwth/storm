@@ -68,7 +68,7 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
     // Parse nodes
     for (auto const& element : nodes) {
         STORM_LOG_TRACE("Parsing: " << element);
-        bool success = true;
+        bool success = false;
         Json const& data = element.at("data");
         std::string name = generateUniqueName(data.at("name"));
         std::vector<std::string> childNames;
@@ -83,27 +83,27 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
         std::string type = data.at("type");
 
         if (type == "and") {
-            success = builder.addAndElement(name, childNames);
+            success = builder.addAndGate(name, childNames);
         } else if (type == "or") {
-            success = builder.addOrElement(name, childNames);
+            success = builder.addOrGate(name, childNames);
         } else if (type == "vot") {
             std::string votThreshold = parseJsonNumber(data.at("voting"));
-            success = builder.addVotElement(name, storm::parser::parseNumber<size_t>(votThreshold), childNames);
+            success = builder.addVotingGate(name, storm::parser::parseNumber<size_t>(votThreshold), childNames);
         } else if (type == "pand") {
-            success = builder.addPandElement(name, childNames);
+            success = builder.addPandGate(name, childNames);
         } else if (type == "por") {
-            success = builder.addPorElement(name, childNames);
+            success = builder.addPorGate(name, childNames);
         } else if (type == "spare") {
-            success = builder.addSpareElement(name, childNames);
+            success = builder.addSpareGate(name, childNames);
         } else if (type == "seq") {
             success = builder.addSequenceEnforcer(name, childNames);
         } else if (type == "mutex") {
             success = builder.addMutex(name, childNames);
         } else if (type == "fdep") {
-            success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
+            success = builder.addPdep(name, childNames, storm::utility::one<ValueType>());
         } else if (type == "pdep") {
             ValueType probability = valueParser.parseValue(parseJsonNumber(data.at("probability")));
-            success = builder.addDepElement(name, childNames, probability);
+            success = builder.addPdep(name, childNames, probability);
         } else if (boost::starts_with(type, "be")) {
             std::string distribution = "exp";  // Set default of exponential distribution
             if (data.count("distribution") > 0) {
@@ -124,14 +124,11 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
                 success = builder.addBasicElementConst(name, failed);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Distribution: " << distribution << " not supported.");
-                success = false;
             }
         } else if (type == "compound") {
             STORM_LOG_TRACE("Ignoring compound node '" << name << "'.");
-
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " not recognized.");
-            success = false;
         }
 
         // Try to set layout information
