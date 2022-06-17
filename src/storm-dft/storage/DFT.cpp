@@ -246,12 +246,53 @@ template<typename ValueType>
 DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::storage::DFTIndependentSymmetries const& symmetries) const {
     DFTStateGenerationInfo generationInfo(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
 
-    // Generate Pre and Post info for restrictions, and mutexes
+    // Generate pre- and post-set info for restrictions, and mutexes
     for (auto const& elem : mElements) {
         if (!elem->isDependency() && !elem->isRestriction()) {
-            generationInfo.setRestrictionPreElements(elem->id(), elem->seqRestrictionPres());
-            generationInfo.setRestrictionPostElements(elem->id(), elem->seqRestrictionPosts());
-            generationInfo.setMutexElements(elem->id(), elem->mutexRestrictionElements());
+            // Ids of elements which are the direct predecessor in the list of children of a restriction
+            std::vector<size_t> seqRestrictionPres;
+            // Ids of elements which are the direct successor in the list of children of a restriction
+            std::vector<size_t> seqRestrictionPosts;
+            // Ids of elements which are under the same mutex
+            std::vector<size_t> mutexRestrictionElements;
+
+            for (auto const& restr : elem->restrictions()) {
+                if (restr->isSeqEnforcer()) {
+                    auto it = restr->children().cbegin();
+                    for (; it != restr->children().cend(); ++it) {
+                        if ((*it)->id() == elem->id()) {
+                            break;
+                        }
+                    }
+                    STORM_LOG_ASSERT(it != restr->children().cend(), "Child " << elem->id() << " not found in restriction " << *restr);
+                    // Add child following element in SEQ
+                    ++it;
+                    if (it != restr->children().cend()) {
+                        seqRestrictionPosts.push_back((*it)->id());
+                    }
+                    // Add child before element in SEQ
+                    --it;
+                    if (it != restr->children().cbegin()) {
+                        --it;
+                        seqRestrictionPres.push_back((*it)->id());
+                    }
+                } else {
+                    STORM_LOG_ASSERT(restr->isMutex(), "Restriction " << *restr << " is neither SEQ nor MUTEX.");
+                    bool found = false;
+                    for (auto it = restr->children().cbegin(); it != restr->children().cend(); ++it) {
+                        if ((*it)->id() != elem->id()) {
+                            mutexRestrictionElements.push_back((*it)->id());
+                        } else {
+                            found = true;
+                        }
+                    }
+                    STORM_LOG_ASSERT(found, "Child " << elem->id() << " is not included in restriction " << *restr);
+                }
+            }
+
+            generationInfo.setRestrictionPreElements(elem->id(), seqRestrictionPres);
+            generationInfo.setRestrictionPostElements(elem->id(), seqRestrictionPosts);
+            generationInfo.setMutexElements(elem->id(), mutexRestrictionElements);
         }
     }
 
