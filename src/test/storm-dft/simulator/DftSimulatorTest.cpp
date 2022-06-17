@@ -5,15 +5,14 @@
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
 #include "storm-dft/storage/SymmetricUnits.h"
-#include "storm-dft/transformations/DftTransformator.h"
 
 namespace {
 
 // Helper functions
 std::pair<double, double> simulateDft(std::string const& file, double timebound, size_t noRuns) {
     // Load, build and prepare DFT
-    storm::dft::transformations::DftTransformator<double> dftTransformator = storm::dft::transformations::DftTransformator<double>();
-    std::shared_ptr<storm::dft::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft =
+        storm::dft::api::prepareForMarkovAnalysis<double>(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 
     // Set relevant events

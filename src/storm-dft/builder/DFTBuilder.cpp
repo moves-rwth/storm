@@ -122,14 +122,15 @@ bool DFTBuilder<ValueType>::addElement(DFTElementPointer element) {
         STORM_LOG_ERROR("Element with name '" << element->name() << "' already exists.");
         return false;
     }
-
+    STORM_LOG_ASSERT(mNextId == mElements.size(), "Current id " << mNextId << " and number of elements " << mElements.size() << " do not match.");
+    element->setId(mNextId++);
     mElements[element->name()] = element;
     return true;
 }
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addBasicElementConst(std::string const& name, bool failed) {
-    return addElement(std::make_shared<storm::dft::storage::elements::BEConst<ValueType>>(mNextId++, name, failed));
+    return addElement(std::make_shared<storm::dft::storage::elements::BEConst<ValueType>>(0, name, failed));
 }
 
 template<typename ValueType>
@@ -153,16 +154,15 @@ bool DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, 
     }
 
     // TODO: check 0 <= dormancyFactor <= 1
-    return addElement(std::make_shared<storm::dft::storage::elements::BEExponential<ValueType>>(mNextId++, name, rate, dormancyFactor, transient));
+    return addElement(std::make_shared<storm::dft::storage::elements::BEExponential<ValueType>>(0, name, rate, dormancyFactor, transient));
 }
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addBasicElementSamples(std::string const& name, std::map<ValueType, ValueType> const& activeSamples) {
     // Check if it can fail
-    auto be = std::make_shared<storm::dft::storage::elements::BESamples<ValueType>>(mNextId++, name, activeSamples);
+    auto be = std::make_shared<storm::dft::storage::elements::BESamples<ValueType>>(0, name, activeSamples);
     if (!be->canFail()) {
-        --mNextId;  // Created BE cannot be used
-        // Add constant failed BE
+        // Add constant failed BE instead
         return addBasicElementConst(name, false);
     }
 
@@ -181,12 +181,12 @@ bool DFTBuilder<ValueType>::addGate(DFTGatePointer gate, std::vector<std::string
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addAndGate(std::string const& name, std::vector<std::string> const& children) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTAnd<ValueType>>(mNextId++, name), children);
+    return addGate(std::make_shared<storm::dft::storage::elements::DFTAnd<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addOrGate(std::string const& name, std::vector<std::string> const& children) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTOr<ValueType>>(mNextId++, name), children);
+    return addGate(std::make_shared<storm::dft::storage::elements::DFTOr<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
@@ -203,22 +203,22 @@ bool DFTBuilder<ValueType>::addVotingGate(std::string const& name, unsigned thre
         STORM_LOG_ERROR("Voting gate " << name << " has threshold " << threshold << " higher than the number of children " << children.size() << ".");
         return false;
     }
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTVot<ValueType>>(mNextId++, name, threshold), children);
+    return addGate(std::make_shared<storm::dft::storage::elements::DFTVot<ValueType>>(0, name, threshold), children);
 }
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addPandGate(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTPand<ValueType>>(mNextId++, name, inclusive), children);
+    return addGate(std::make_shared<storm::dft::storage::elements::DFTPand<ValueType>>(0, name, inclusive), children);
 }
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addPorGate(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTPor<ValueType>>(mNextId++, name, inclusive), children);
+    return addGate(std::make_shared<storm::dft::storage::elements::DFTPor<ValueType>>(0, name, inclusive), children);
 }
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addSpareGate(std::string const& name, std::vector<std::string> const& children) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTSpare<ValueType>>(mNextId++, name), children);
+    return addGate(std::make_shared<storm::dft::storage::elements::DFTSpare<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
@@ -240,7 +240,7 @@ bool DFTBuilder<ValueType>::addDependency(DFTDependencyPointer dependency, std::
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addPdep(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
-    return addDependency(std::make_shared<storm::dft::storage::elements::DFTDependency<ValueType>>(mNextId++, name, probability), children);
+    return addDependency(std::make_shared<storm::dft::storage::elements::DFTDependency<ValueType>>(0, name, probability), children);
 }
 
 template<typename ValueType>
@@ -256,12 +256,12 @@ bool DFTBuilder<ValueType>::addRestriction(DFTRestrictionPointer restriction, st
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children) {
-    return addRestriction(std::make_shared<storm::dft::storage::elements::DFTSeq<ValueType>>(mNextId++, name), children);
+    return addRestriction(std::make_shared<storm::dft::storage::elements::DFTSeq<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
 bool DFTBuilder<ValueType>::addMutex(std::string const& name, std::vector<std::string> const& children) {
-    return addRestriction(std::make_shared<storm::dft::storage::elements::DFTMutex<ValueType>>(mNextId++, name), children);
+    return addRestriction(std::make_shared<storm::dft::storage::elements::DFTMutex<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
@@ -339,7 +339,6 @@ std::string DFTBuilder<ValueType>::getUniqueName(std::string name) {
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::cloneElement(DFTElementCPointer element) {
-    std::vector<std::string> children;
     switch (element->type()) {
         case storm::dft::storage::elements::DFTElementType::BE:
             addElement(element->clone());
@@ -353,6 +352,7 @@ void DFTBuilder<ValueType>::cloneElement(DFTElementCPointer element) {
         case storm::dft::storage::elements::DFTElementType::SEQ:
         case storm::dft::storage::elements::DFTElementType::MUTEX: {
             auto elemWithChildren = std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ValueType> const>(element);
+            std::vector<std::string> children{};
             for (DFTElementPointer const& elem : elemWithChildren->children()) {
                 children.push_back(elem->name());
             }
@@ -361,7 +361,7 @@ void DFTBuilder<ValueType>::cloneElement(DFTElementCPointer element) {
         }
         case storm::dft::storage::elements::DFTElementType::PDEP: {
             auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(element);
-            children.push_back(dependency->triggerEvent()->name());
+            std::vector<std::string> children = {dependency->triggerEvent()->name()};
             for (auto const& depEv : dependency->dependentEvents()) {
                 children.push_back(depEv->name());
             }

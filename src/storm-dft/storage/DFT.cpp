@@ -562,17 +562,9 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
             case storm::dft::storage::elements::DFTElementType::OR:
                 builder.addOrGate(newParentName, childrenNames);
                 break;
-            case storm::dft::storage::elements::DFTElementType::BE:
-            case storm::dft::storage::elements::DFTElementType::VOT:
-            case storm::dft::storage::elements::DFTElementType::PAND:
-            case storm::dft::storage::elements::DFTElementType::POR:
-            case storm::dft::storage::elements::DFTElementType::SPARE:
-            case storm::dft::storage::elements::DFTElementType::PDEP:
-            case storm::dft::storage::elements::DFTElementType::SEQ:
-            case storm::dft::storage::elements::DFTElementType::MUTEX:
-                // Other elements are not supported
             default:
-                STORM_LOG_ASSERT(false, "Dft type can not be rewritten.");
+                // Other elements are not supported
+                STORM_LOG_ASSERT(false, "Dft type " << originalParent->type() << " can not be rewritten.");
                 break;
         }
 
