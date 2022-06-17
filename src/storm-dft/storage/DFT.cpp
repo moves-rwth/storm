@@ -442,7 +442,7 @@ std::vector<DFT<ValueType>> DFT<ValueType>::topModularisation() const {
         storm::dft::builder::DFTBuilder<ValueType> builder;
 
         for (size_t id : subdft.second) {
-            builder.copyElement(mElements[id]);
+            builder.cloneElement(mElements[id]);
         }
         builder.setTopLevel(mElements[subdft.first]->name());
         res.push_back(builder.build());
@@ -484,7 +484,7 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
     // Copy all other elements which do not change
     for (auto elem : mElements) {
         if (rewriteSet.count(elem->id()) == 0) {
-            builder.copyElement(elem);
+            builder.cloneElement(elem);
         }
     }
 
@@ -544,7 +544,7 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
                 childrenNames.push_back(child->name());
             }
         }
-        builder.copyGate(originalParent, childrenNames);
+        builder.cloneElementWithNewChildren(originalParent, childrenNames);
     }
 
     builder.setTopLevel(mElements[mTopLevelIndex]->name());

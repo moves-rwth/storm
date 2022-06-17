@@ -26,6 +26,10 @@ class BESamples : public DFTBE<ValueType> {
         STORM_LOG_ASSERT(this->canFail(), "At least one sample should have a non-zero probability.");
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new BESamples<ValueType>(this->id(), this->name(), this->activeSamples()));
+    }
+
     storm::dft::storage::elements::BEType beType() const override {
         return storm::dft::storage::elements::BEType::SAMPLES;
     }

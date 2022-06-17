@@ -28,6 +28,10 @@ class DFTPor : public DFTGate<ValueType> {
         // Intentionally left empty.
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new DFTPor<ValueType>(this->id(), this->name(), this->isInclusive(), {}));
+    }
+
     storm::dft::storage::elements::DFTElementType type() const override {
         return storm::dft::storage::elements::DFTElementType::POR;
     }
