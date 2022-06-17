@@ -25,6 +25,10 @@ class DFTSeq : public DFTRestriction<ValueType> {
         // Intentionally left empty.
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new DFTSeq<ValueType>(this->id(), this->name(), {}));
+    }
+
     storm::dft::storage::elements::DFTElementType type() const override {
         return storm::dft::storage::elements::DFTElementType::SEQ;
     }

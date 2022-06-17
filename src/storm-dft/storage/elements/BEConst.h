@@ -23,6 +23,10 @@ class BEConst : public DFTBE<ValueType> {
         // Intentionally empty
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new BEConst<ValueType>(this->id(), this->name(), this->failed()));
+    }
+
     storm::dft::storage::elements::BEType beType() const override {
         return storm::dft::storage::elements::BEType::CONSTANT;
     }

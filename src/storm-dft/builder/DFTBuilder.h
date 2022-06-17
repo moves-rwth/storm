@@ -185,27 +185,19 @@ class DFTBuilder {
     storm::dft::storage::DFT<ValueType> build();
 
     /**
-     * Copy element and insert it again in the builder.
+     * Clone element and add it via the builder.
      *
-     * @param element Element to copy.
+     * @param element Element to clone.
      */
-    void copyElement(DFTElementCPointer element);
+    void cloneElement(DFTElementCPointer element);
 
     /**
-     * Copy BE and insert it again in the builder.i
+     * Clone element, replace its children with the given children and add it via the builder.
      *
-     * @param be BE to copy.
+     * @param element Element to clone.
+     * @param children New children of cloned gate.
      */
-    void copyBE(DFTBECPointer be);
-
-    /**
-     * Copy gate with given children and insert it again in the builder. The current children of the element
-     * are discarded.
-     *
-     * @param gate Gate to copy.
-     * @param children New children of copied element.
-     */
-    void copyGate(DFTGateCPointer gate, std::vector<std::string> const& children);
+    void cloneElementWithNewChildren(DFTChildrenCPointer elemWithChildren, std::vector<std::string> const& children);
 
    private:
     unsigned computeRank(DFTElementPointer const& elem);

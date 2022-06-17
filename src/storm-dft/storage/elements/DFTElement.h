@@ -55,6 +55,13 @@ class DFTElement {
     }
 
     /*!
+     * Create a shallow copy of the element.
+     * Only data (id, name, etc.) is copied but not the connections (parents, children, etc.).
+     * @return Shallow copy of element.
+     */
+    virtual std::shared_ptr<DFTElement<ValueType>> clone() const = 0;
+
+    /*!
      * Destructor.
      */
     virtual ~DFTElement() = default;

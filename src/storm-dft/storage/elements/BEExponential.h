@@ -25,6 +25,11 @@ class BEExponential : public DFTBE<ValueType> {
         STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(failureRate), "Exponential failure rate should not be zero.");
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(
+            new BEExponential<ValueType>(this->id(), this->name(), this->activeFailureRate(), this->dormancyFactor(), this->isTransient()));
+    }
+
     storm::dft::storage::elements::BEType beType() const override {
         return storm::dft::storage::elements::BEType::EXPONENTIAL;
     }

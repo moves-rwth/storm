@@ -24,6 +24,10 @@ class DFTOr : public DFTGate<ValueType> {
         // Intentionally empty
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new DFTOr<ValueType>(this->id(), this->name(), {}));
+    }
+
     storm::dft::storage::elements::DFTElementType type() const override {
         return storm::dft::storage::elements::DFTElementType::OR;
     }

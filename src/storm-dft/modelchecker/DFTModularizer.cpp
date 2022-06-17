@@ -189,7 +189,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DFTModularizer::getSubDFT(D
     std::unordered_set<std::string> depInConflict;
     for (auto const id : workDFT->getIndependentSubDftRoots(element->id())) {
         auto const tmpElement{workDFT->getElement(id)};
-        builder.copyElement(tmpElement);
+        builder.cloneElement(tmpElement);
         // Remember dependency conflict
         if (tmpElement->isDependency() && workDFT->isDependencyInConflict(tmpElement->id())) {
             depInConflict.insert(tmpElement->name());
@@ -213,7 +213,7 @@ void DFTModularizer::updateWorkDFT(DFTElementCPointer const element, std::map<Va
     for (auto const id : workDFT->getAllIds()) {
         auto const tmpElement{workDFT->getElement(id)};
         if (tmpElement->name() != element->name()) {
-            builder.copyElement(tmpElement);
+            builder.cloneElement(tmpElement);
             // Remember dependency conflict
             if (tmpElement->isDependency() && workDFT->isDependencyInConflict(id)) {
                 depInConflict.insert(tmpElement->name());
