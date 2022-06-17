@@ -16,6 +16,7 @@ std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<Parametr
         std::shared_ptr<storm::dft::storage::elements::DFTElement<ParametricType> const> element = dft.getElement(i);
         switch (element->type()) {
             case storm::dft::storage::elements::DFTElementType::BE: {
+                // Instantiate probability distributions
                 auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ParametricType> const>(element);
                 switch (be->beType()) {
                     case storm::dft::storage::elements::BEType::CONSTANT: {
@@ -30,12 +31,24 @@ std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<Parametr
                         builder.addBasicElementExponential(beExp->name(), activeFailureRate, dormancyFactor, beExp->isTransient());
                         break;
                     }
+                    case storm::dft::storage::elements::BEType::SAMPLES: {
+                        auto beSamples = std::static_pointer_cast<storm::dft::storage::elements::BESamples<ParametricType> const>(element);
+                        std::map<ConstantType, ConstantType> activeSamples{};
+                        for (auto &[time, prob] : beSamples->activeSamples()) {
+                            ConstantType timeInst = storm::utility::convertNumber<ConstantType>(time.evaluate(valuation));
+                            ConstantType probInst = storm::utility::convertNumber<ConstantType>(prob.evaluate(valuation));
+                            activeSamples[timeInst] = probInst;
+                        }
+                        builder.addBasicElementSamples(beSamples->name(), activeSamples);
+                        break;
+                    }
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "BE type '" << be->beType() << "' not known.");
                         break;
                 }
                 break;
             }
+            // We cannot use cloneElement() as ValueType differs between the original element and the clone.
             case storm::dft::storage::elements::DFTElementType::AND:
                 builder.addAndGate(element->name(), getChildrenVector(element));
                 break;
@@ -60,18 +73,23 @@ std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<Parametr
             case storm::dft::storage::elements::DFTElementType::SPARE:
                 builder.addSpareGate(element->name(), getChildrenVector(element));
                 break;
-            case storm::dft::storage::elements::DFTElementType::PDEP: {
-                auto dep = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ParametricType> const>(element);
-                ConstantType probability = storm::utility::convertNumber<ConstantType>(dep->probability().evaluate(valuation));
-                builder.addPdep(dep->name(), getChildrenVector(dep), probability);
-                break;
-            }
             case storm::dft::storage::elements::DFTElementType::SEQ:
                 builder.addSequenceEnforcer(element->name(), getChildrenVector(element));
                 break;
             case storm::dft::storage::elements::DFTElementType::MUTEX:
                 builder.addMutex(element->name(), getChildrenVector(element));
                 break;
+            case storm::dft::storage::elements::DFTElementType::PDEP: {
+                auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ParametricType> const>(element);
+                // Instantiate probability
+                ConstantType probability = storm::utility::convertNumber<ConstantType>(dependency->probability().evaluate(valuation));
+                std::vector<std::string> children = {dependency->triggerEvent()->name()};
+                for (auto const &depEvent : dependency->dependentEvents()) {
+                    children.push_back(depEvent->name());
+                }
+                builder.addPdep(dependency->name(), children, probability);
+                break;
+            }
             default:
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "DFT type '" << element->type() << "' not known.");
                 break;
@@ -85,21 +103,12 @@ std::shared_ptr<storm::dft::storage::DFT<ConstantType>> DftInstantiator<Parametr
 template<typename ParametricType, typename ConstantType>
 std::vector<std::string> DftInstantiator<ParametricType, ConstantType>::getChildrenVector(
     std::shared_ptr<storm::dft::storage::elements::DFTElement<ParametricType> const> element) {
-    std::vector<std::string> res;
-    if (element->isDependency()) {
-        // Dependencies have to be handled separately
-        auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ParametricType> const>(element);
-        res.push_back(dependency->triggerEvent()->name());
-        for (auto const &depEvent : dependency->dependentEvents()) {
-            res.push_back(depEvent->name());
-        }
-    } else {
-        auto elementWithChildren = std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ParametricType> const>(element);
-        for (auto const &child : elementWithChildren->children()) {
-            res.push_back(child->name());
-        }
+    std::vector<std::string> children;
+    auto elementWithChildren = std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ParametricType> const>(element);
+    for (auto const &child : elementWithChildren->children()) {
+        children.push_back(child->name());
     }
-    return res;
+    return children;
 }
 
 template<typename ParametricType, typename ConstantType>

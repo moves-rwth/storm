@@ -52,7 +52,8 @@ class DftApproximationTest : public ::testing::Test {
     }
 
     std::pair<double, double> analyzeMTTF(std::string const& file, double errorBound) {
-        std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(file);
+        std::shared_ptr<storm::dft::storage::DFT<double>> dft =
+            storm::dft::api::prepareForMarkovAnalysis<double>(*storm::dft::api::loadDFTGalileoFile<double>(file));
         EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
         std::string property = "T=? [F \"failed\"]";
         std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
@@ -62,7 +63,8 @@ class DftApproximationTest : public ::testing::Test {
     }
 
     std::pair<double, double> analyzeTimebound(std::string const& file, double timeBound, double errorBound) {
-        std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(file);
+        std::shared_ptr<storm::dft::storage::DFT<double>> dft =
+            storm::dft::api::prepareForMarkovAnalysis<double>(*storm::dft::api::loadDFTGalileoFile<double>(file));
         EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
         std::stringstream propertyStream;
         propertyStream << "P=? [F<=" << timeBound << " \"failed\"]";
