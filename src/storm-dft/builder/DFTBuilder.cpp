@@ -14,98 +14,89 @@ namespace storm::dft {
 namespace builder {
 
 template<typename ValueType>
-std::size_t DFTBuilder<ValueType>::mUniqueOffset = 0;
-
-template<typename ValueType>
 storm::dft::storage::DFT<ValueType> DFTBuilder<ValueType>::build() {
-    // Build parent/child connections between elements
-    for (auto& elem : mChildNames) {
-        DFTGatePointer gate = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(elem.first);
-        for (auto const& child : elem.second) {
-            auto itFind = mElements.find(child);
-            if (itFind != mElements.end()) {
-                // Child found
-                DFTElementPointer childElement = itFind->second;
-                if (childElement->isRestriction()) {
-                    STORM_LOG_WARN("Restriction '" << child << "' is not used as input for gate '" << gate->name()
-                                                   << "', because restrictions have no output.");
-                } else if (childElement->isDependency()) {
-                    STORM_LOG_WARN("Dependency '" << child << "' is not used as input for gate '" << gate->name() << "', because dependencies have no output.");
-                } else {
-                    gate->pushBackChild(childElement);
-                    childElement->addParent(gate);
-                }
+    STORM_LOG_THROW(!mTopLevelName.empty(), storm::exceptions::WrongFormatException, "No top level element defined.");
+
+    // Build parent/child connections for gates
+    for (auto& gateChildrenPair : mChildNames) {
+        STORM_LOG_ASSERT(gateChildrenPair.first->isGate(), "Element " << *gateChildrenPair.first << " with children is not a gate.");
+        DFTGatePointer gate = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(gateChildrenPair.first);
+        for (std::string const& childName : gateChildrenPair.second) {
+            auto itFind = mElements.find(childName);
+            STORM_LOG_THROW(itFind != mElements.end(), storm::exceptions::WrongFormatException,
+                            "Child '" << childName << "' for gate '" << gate->name() << "' not found.");
+            DFTElementPointer childElement = itFind->second;
+            if (childElement->isRestriction()) {
+                STORM_LOG_WARN("Restriction '" << childName << "' is ignored as input for gate '" << gate->name() << "', because restrictions have no output.");
+            } else if (childElement->isDependency()) {
+                STORM_LOG_WARN("Dependency '" << childName << "' is ignored as input for gate '" << gate->name() << "', because dependencies have no output.");
             } else {
-                // Child not found -> find first dependent event to assure that child is dependency
-                // TODO: Not sure whether this is the intended behaviour?
-                auto itFind = mElements.find(child + "_1");
-                STORM_LOG_THROW(itFind != mElements.end(), storm::exceptions::WrongFormatException,
-                                "Child '" << child << "' for gate '" << gate->name() << "' not found.");
-                STORM_LOG_THROW(itFind->second->isDependency(), storm::exceptions::WrongFormatException, "Child '" << child << "'is no dependency.");
-                STORM_LOG_TRACE("Ignore functional dependency " << child << " in gate " << gate->name());
+                gate->addChild(childElement);
+                childElement->addParent(gate);
             }
         }
     }
 
     // Build connections for restrictions
-    for (auto& elem : mRestrictionChildNames) {
-        for (auto const& childName : elem.second) {
+    for (auto& restrictionChildrenPair : mRestrictionChildNames) {
+        DFTRestrictionPointer restriction = restrictionChildrenPair.first;
+        for (std::string const& childName : restrictionChildrenPair.second) {
             auto itFind = mElements.find(childName);
             STORM_LOG_THROW(itFind != mElements.end(), storm::exceptions::WrongFormatException,
-                            "Child '" << childName << "' for gate '" << elem.first->name() << "' not found.");
+                            "Child '" << childName << "' for restriction '" << restriction->name() << "' not found.");
             DFTElementPointer childElement = itFind->second;
             STORM_LOG_THROW(childElement->isGate() || childElement->isBasicElement(), storm::exceptions::WrongFormatException,
-                            "Child '" << childElement->name() << "' of restriction '" << elem.first->name() << "' must be gate or BE.");
-            elem.first->pushBackChild(childElement);
-            childElement->addRestriction(elem.first);
+                            "Child '" << childElement->name() << "' of restriction '" << restriction->name() << "' must be gate or BE.");
+            restriction->addChild(childElement);
+            childElement->addRestriction(restriction);
         }
     }
 
     // Build connections for dependencies
-    for (auto& elem : mDependencyChildNames) {
-        bool first = true;
-        std::vector<std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>> dependencies;
-        for (auto const& childName : elem.second) {
+    for (auto& dependencyChildrenPair : mDependencyChildNames) {
+        DFTDependencyPointer dependency = dependencyChildrenPair.first;
+        bool triggerElement = true;
+        for (std::string const& childName : dependencyChildrenPair.second) {
             auto itFind = mElements.find(childName);
             STORM_LOG_THROW(itFind != mElements.end(), storm::exceptions::WrongFormatException,
-                            "Child '" << childName << "' for gate '" << elem.first->name() << "' not found.");
+                            "Child '" << childName << "' for dependency '" << dependency->name() << "' not found.");
             DFTElementPointer childElement = itFind->second;
-            if (!first) {
-                STORM_LOG_THROW(childElement->isBasicElement(), storm::exceptions::WrongFormatException,
-                                "Child '" << childName << "' of dependency '" << elem.first->name() << "' must be BE.");
-                dependencies.push_back(std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(childElement));
-            } else {
-                first = false;
+            if (triggerElement) {
+                triggerElement = false;
                 STORM_LOG_THROW(childElement->isGate() || childElement->isBasicElement(), storm::exceptions::WrongFormatException,
-                                "Child '" << childName << "' of dependency '" << elem.first->name() << "' must be gate or BE.");
-                elem.first->setTriggerElement(std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(childElement));
-                childElement->addOutgoingDependency(elem.first);
+                                "Trigger element '" << childName << "' of dependency '" << dependency->name() << "' must be gate or BE.");
+                dependency->setTriggerElement(std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(childElement));
+                childElement->addOutgoingDependency(dependency);
+            } else {
+                STORM_LOG_THROW(childElement->isBasicElement(), storm::exceptions::WrongFormatException,
+                                "Dependent element '" << childName << "' of dependency '" << dependency->name() << "' must be BE.");
+                DFTBEPointer dependentBE = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType>>(childElement);
+                dependency->addDependentEvent(dependentBE);
+                dependentBE->addIngoingDependency(dependency);
             }
-        }
-        for (auto& be : dependencies) {
-            elem.first->addDependentEvent(be);
-            be->addIngoingDependency(elem.first);
         }
     }
 
     // Sort elements topologically
-    DFTElementVector elems = topoSort();
-    // compute rank
+    DFTElementVector elements = sortTopological();
+    // Set ids according to order
+    size_t id = 0;
+    for (DFTElementPointer e : elements) {
+        e->setId(id++);
+    }
+    // Compute rank
+    computeRank(mElements[mTopLevelName]);  // Start with top level element
     for (auto& elem : mElements) {
         computeRank(elem.second);
     }
-    // Set ids
-    size_t id = 0;
-    for (DFTElementPointer e : elems) {
-        e->setId(id++);
-    }
 
-    STORM_LOG_THROW(!mTopLevelIdentifier.empty(), storm::exceptions::WrongFormatException, "No top level element defined.");
-    storm::dft::storage::DFT<ValueType> dft(elems, mElements[mTopLevelIdentifier]);
+    // Create DFT
+    storm::dft::storage::DFT<ValueType> dft(elements, mElements[mTopLevelName]);
 
     // Set layout info
     for (auto& elem : mElements) {
         if (mLayoutInfo.count(elem.first) > 0) {
+            // Use given layout info
             dft.setElementLayoutInfo(elem.second->id(), mLayoutInfo.at(elem.first));
         } else {
             // Set default layout
@@ -265,76 +256,25 @@ bool DFTBuilder<ValueType>::addMutex(std::string const& name, std::vector<std::s
 }
 
 template<typename ValueType>
-unsigned DFTBuilder<ValueType>::computeRank(DFTElementPointer const& elem) {
-    if (elem->rank() == static_cast<decltype(elem->rank())>(-1)) {
-        if (elem->nrChildren() == 0 || elem->isDependency() || elem->isRestriction()) {
-            elem->setRank(0);
-        } else {
-            DFTGatePointer gate = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(elem);
-            unsigned maxrnk = 0;
-            unsigned newrnk = 0;
-
-            for (DFTElementPointer const& child : gate->children()) {
-                newrnk = computeRank(child);
-                if (newrnk > maxrnk) {
-                    maxrnk = newrnk;
-                }
-            }
-            elem->setRank(maxrnk + 1);
-        }
+bool DFTBuilder<ValueType>::setTopLevel(std::string const& tle) {
+    if (!mTopLevelName.empty()) {
+        STORM_LOG_ERROR("Top level element was already set");
+        return false;
     }
-
-    return elem->rank();
+    if (!nameInUse(tle)) {
+        STORM_LOG_ERROR("Element with name '" << tle << "' not known.");
+        return false;
+    }
+    mTopLevelName = tle;
+    return true;
 }
 
 template<typename ValueType>
-void DFTBuilder<ValueType>::topoVisit(DFTElementPointer const& n,
-                                      std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>>& visited,
-                                      DFTElementVector& L) {
-    STORM_LOG_THROW(visited[n] != topoSortColour::GREY, storm::exceptions::WrongFormatException, "DFT is cyclic");
-    if (visited[n] == topoSortColour::WHITE) {
-        if (n->isGate()) {
-            visited[n] = topoSortColour::GREY;
-            for (DFTElementPointer const& c : std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(n)->children()) {
-                topoVisit(c, visited, L);
-            }
-        }
-        // TODO restrictions and dependencies have no parents, so this can be done more efficiently.
-        else if (n->isRestriction()) {
-            visited[n] = topoSortColour::GREY;
-            for (DFTElementPointer const& c : std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<ValueType>>(n)->children()) {
-                topoVisit(c, visited, L);
-            }
-        } else if (n->isDependency()) {
-            visited[n] = topoSortColour::GREY;
-            for (DFTBEPointer const& c : std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType>>(n)->dependentEvents()) {
-                topoVisit(c, visited, L);
-            }
-            topoVisit(std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType>>(n)->triggerEvent(), visited, L);
-        }
-        visited[n] = topoSortColour::BLACK;
-        L.push_back(n);
+void DFTBuilder<ValueType>::addLayoutInfo(std::string const& name, double x, double y) {
+    if (!nameInUse(name)) {
+        STORM_LOG_ERROR("Element with name '" << name << "' not found.");
     }
-}
-
-template<typename ValueType>
-std::vector<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>> DFTBuilder<ValueType>::topoSort() {
-    std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>> visited;
-    for (auto const& e : mElements) {
-        visited.insert(std::make_pair(e.second, topoSortColour::WHITE));
-    }
-
-    DFTElementVector L;
-    for (auto const& e : visited) {
-        topoVisit(e.first, visited, L);
-    }
-    // std::reverse(L.begin(), L.end());
-    return L;
-}
-
-template<typename ValueType>
-std::string DFTBuilder<ValueType>::getUniqueName(std::string name) {
-    return name + "_" + std::to_string(++mUniqueOffset);
+    mLayoutInfo[name] = storm::dft::storage::DFTLayoutInfo(x, y);
 }
 
 template<typename ValueType>
@@ -393,6 +333,84 @@ void DFTBuilder<ValueType>::cloneElementWithNewChildren(DFTChildrenCPointer elem
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "DFT element type '" << elemWithChildren->type() << "' not known.");
             break;
     }
+}
+
+template<typename ValueType>
+void DFTBuilder<ValueType>::topologicalVisit(DFTElementPointer const& element,
+                                             std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>>& visited,
+                                             DFTElementVector& visitedElements) {
+    STORM_LOG_THROW(visited[element] != topoSortColour::GREY, storm::exceptions::WrongFormatException, "DFT is cyclic.");
+    if (visited[element] == topoSortColour::WHITE) {
+        // Mark as currently visiting
+        visited[element] = topoSortColour::GREY;
+        // Element was not visited before
+        if (element->isGate()) {
+            for (DFTElementPointer const& child : std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(element)->children()) {
+                // Recursively visit all children
+                topologicalVisit(child, visited, visitedElements);
+            }
+        }
+        // TODO: restrictions and dependencies have no parents, so this can be done more efficiently.
+        else if (element->isRestriction()) {
+            for (DFTElementPointer const& child : std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<ValueType>>(element)->children()) {
+                // Recursively visit all children
+                topologicalVisit(child, visited, visitedElements);
+            }
+        } else if (element->isDependency()) {
+            for (DFTBEPointer const& child : std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType>>(element)->dependentEvents()) {
+                // Recursively visit all dependent children
+                topologicalVisit(child, visited, visitedElements);
+            }
+            // Visit trigger element
+            topologicalVisit(std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType>>(element)->triggerEvent(), visited,
+                             visitedElements);
+        } else {
+            STORM_LOG_ASSERT(element->isBasicElement(), "Unknown element type " << element->type() << " for " << *element);
+        }
+        // Mark as completely visited
+        visited[element] = topoSortColour::BLACK;
+        // Children have all been visited before -> add element to list
+        visitedElements.push_back(element);
+    }
+}
+
+template<typename ValueType>
+std::vector<std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType>>> DFTBuilder<ValueType>::sortTopological() {
+    // Prepare map
+    std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>> visited;
+    for (auto const& e : mElements) {
+        visited.insert(std::make_pair(e.second, topoSortColour::WHITE));
+    }
+
+    DFTElementVector visitedElements;  // Return argument
+    // Start from top level element
+    topologicalVisit(mElements[mTopLevelName], visited, visitedElements);
+    for (auto const& e : visited) {
+        // Visit all elements to account for restrictions/dependencies/etc. not directly reachable from top level element
+        topologicalVisit(e.first, visited, visitedElements);
+    }
+    return visitedElements;
+}
+
+template<typename ValueType>
+size_t DFTBuilder<ValueType>::computeRank(DFTElementPointer const& elem) {
+    if (elem->rank() == static_cast<decltype(elem->rank())>(-1)) {
+        // Compute rank
+        if (elem->isBasicElement() || elem->isDependency() || elem->isRestriction()) {
+            // Rank is 0 for BEs/dependencies/restrictions
+            elem->setRank(0);
+        } else {
+            // Rank is maximal rank of children + 1
+            DFTGatePointer gate = std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType>>(elem);
+            size_t maxRank = 0;
+            for (DFTElementPointer const& child : gate->children()) {
+                maxRank = std::max(maxRank, computeRank(child));
+            }
+            elem->setRank(maxRank + 1);
+        }
+    }
+
+    return elem->rank();
 }
 
 // Explicitly instantiate the class.
