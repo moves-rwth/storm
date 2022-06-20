@@ -11,7 +11,6 @@
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm::storage {
-
 // Forward declaration
 template<typename ValueType>
 class DFT;
@@ -26,18 +25,14 @@ class DFTBuilder {
     using DFTElementCPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>;
     using DFTElementVector = std::vector<DFTElementPointer>;
     using DFTBEPointer = std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>>;
-    using DFTBECPointer = std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const>;
     using DFTChildrenCPointer = std::shared_ptr<storm::dft::storage::elements::DFTChildren<ValueType> const>;
     using DFTGatePointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType>>;
-    using DFTGateCPointer = std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const>;
-    using DFTGateVector = std::vector<DFTGatePointer>;
     using DFTDependencyPointer = std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType>>;
     using DFTRestrictionPointer = std::shared_ptr<storm::dft::storage::elements::DFTRestriction<ValueType>>;
 
    private:
     std::size_t mNextId = 0;
-    static std::size_t mUniqueOffset;  // Used to ensure unique names
-    std::string mTopLevelIdentifier;
+    std::string mTopLevelName;
     std::unordered_map<std::string, DFTElementPointer> mElements;
     std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
     std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
@@ -45,6 +40,9 @@ class DFTBuilder {
     std::unordered_map<std::string, storm::dft::storage::DFTLayoutInfo> mLayoutInfo;
 
    public:
+    /*!
+     * Constructor.
+     */
     DFTBuilder() = default;
 
     /*!
@@ -159,29 +157,26 @@ class DFTBuilder {
      */
     bool addPdep(std::string const& name, std::vector<std::string> const& children, ValueType probability);
 
-    void addLayoutInfo(std::string const& name, double x, double y) {
-        if (!nameInUse(name)) {
-            STORM_LOG_ERROR("Element with name '" << name << "' not found.");
-        }
-        mLayoutInfo[name] = storm::dft::storage::DFTLayoutInfo(x, y);
-    }
-
-    bool setTopLevel(std::string const& tle) {
-        mTopLevelIdentifier = tle;
-        return nameInUse(tle);
-    }
-
-    /**
-     * Check whether the name is already used.
-     * @param name Element name.
-     * @return True iff name is already in use.
+    /*!
+     * Set top level element.
+     * @param tle Name of top level element.
+     * @return True iff setting was successful.
      */
-    bool nameInUse(std::string const& name) {
-        return mElements.find(name) != mElements.end();
-    }
+    bool setTopLevel(std::string const& tle);
 
-    std::string getUniqueName(std::string name);
+    /*!
+     * Add layout information for DFT element.
+     * @param name Name of DFT element.
+     * @param x X coordinate.
+     * @param y Y coordinate.
+     */
+    void addLayoutInfo(std::string const& name, double x, double y);
 
+    /*!
+     * Create DFT.
+     * The elements of the DFT must be specified before via the addX() methods and the top level element must be set via setTopLevel().
+     * @return DFT.
+     */
     storm::dft::storage::DFT<ValueType> build();
 
     /**
@@ -200,8 +195,6 @@ class DFTBuilder {
     void cloneElementWithNewChildren(DFTChildrenCPointer elemWithChildren, std::vector<std::string> const& children);
 
    private:
-    unsigned computeRank(DFTElementPointer const& elem);
-
     /*!
      * Add given element to DFT.
      * @param element DFT element.
@@ -233,12 +226,47 @@ class DFTBuilder {
      */
     bool addRestriction(DFTRestrictionPointer restriction, std::vector<std::string> const& children);
 
+    /**
+     * Check whether the name is already used.
+     * @param name Element name.
+     * @return True iff name is already in use.
+     */
+    bool nameInUse(std::string const& name) {
+        return mElements.find(name) != mElements.end();
+    }
+
+    /*!
+     * Colouring used for topological sorting.
+     * WHITE: not yet visited
+     * BLACK: finished visit
+     * GREY:  currently visiting
+     */
     enum class topoSortColour { WHITE, BLACK, GREY };
 
-    void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>>& visited,
-                   DFTElementVector& L);
+    /*!
+     * Visit elements in depth-first order.
+     * @param element Current element.
+     * @param visited Map storing which elements have been visited.
+     * @param visitedElements List of elements sorted by the order in which they were visited. Acts as return type.
+     */
+    void topologicalVisit(DFTElementPointer const& element,
+                          std::map<DFTElementPointer, topoSortColour, storm::dft::storage::OrderElementsById<ValueType>>& visited,
+                          DFTElementVector& visitedElements);
 
-    DFTElementVector topoSort();
+    /*!
+     * Return list of elements sorted topologically (depth-first).
+     * @return Ordered list of elements.
+     */
+    DFTElementVector sortTopological();
+
+    /*!
+     * Compute rank (i.e., height in tree) for given element.
+     * BEs/dependencies/restriction have rank 0.
+     * Gates have maximal rank of their children + 1.
+     * @param elem DFT element.
+     * @return Rank.
+     */
+    size_t computeRank(DFTElementPointer const& elem);
 };
 
 }  // namespace builder

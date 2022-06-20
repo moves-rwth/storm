@@ -312,15 +312,11 @@ bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
                 return builder.addBasicElementProbability(parseName(name), firstValDistribution, dormancyFactor);
             } else {
                 // Model constant BEs with probability 0 < p < 1
-                bool success = true;
-                if (!builder.nameInUse("constantBeTrigger")) {
-                    // Use a unique constantly failed element that triggers failsafe elements probabilistically
-                    success =
-                        success && builder.addBasicElementProbability("constantBeTrigger", storm::utility::one<ValueType>(), storm::utility::one<ValueType>());
-                }
+                // Use a constantly failed element that triggers failsafe elements probabilistically
+                bool success = builder.addBasicElementConst("constantBeTrigger_" + parseName(name), true);
                 std::vector<std::string> childNames;
-                childNames.push_back("constantBeTrigger");
-                success = success && builder.addBasicElementProbability(parseName(name), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                childNames.push_back("constantBeTrigger_" + parseName(name));
+                success = success && builder.addBasicElementConst(parseName(name), false);
                 childNames.push_back(parseName(name));
                 return success && builder.addPdep(parseName(name) + "_pdep", childNames, firstValDistribution);
             }

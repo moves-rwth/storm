@@ -96,8 +96,6 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
                             std::string nameDep = dep->name() + "_" + std::to_string(j);
                             std::string dependentName = dep->dependentEvents()[j]->name();
                             STORM_LOG_TRACE("Add FDEP " << nameDep << " for " << dependentName);
-                            STORM_LOG_THROW(!builder.nameInUse(nameDep), storm::exceptions::UnexpectedException,
-                                            "Element with name '" << nameDep << "' already exists.");
                             builder.addPdep(nameDep, {nameAdditional, dependentName}, storm::utility::one<ValueType>());
                         }
                     } else {
@@ -107,8 +105,6 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
                             std::string nameDep = dep->name() + "_" + std::to_string(j);
                             std::string dependentName = dep->dependentEvents()[j]->name();
                             STORM_LOG_TRACE("Add FDEP " << nameDep << " for " << dependentName);
-                            STORM_LOG_THROW(!builder.nameInUse(nameDep), storm::exceptions::UnexpectedException,
-                                            "Element with name '" << nameDep << "' already exists.");
                             builder.addPdep(nameDep, {dep->triggerEvent()->name(), dependentName}, storm::utility::one<ValueType>());
                         }
                     }

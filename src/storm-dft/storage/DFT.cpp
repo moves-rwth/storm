@@ -529,6 +529,7 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
         }
     }
 
+    size_t uniqueIndex = 0;  // Counter to ensure unique names
     // Add rewritten elements
     for (std::vector<size_t> rewrites : rewriteIds) {
         STORM_LOG_ASSERT(rewrites.size() > 1, "No rewritten elements.");
@@ -540,7 +541,7 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
                                           return p->id() == originalParent->id();
                                       }) != mElements[rewrites[1]]->parents().end(),
                          "Rewritten element has not the same parent");
-        std::string newParentName = builder.getUniqueName(originalParent->name());
+        std::string newParentName = originalParent->name() + "_" + std::to_string(++uniqueIndex);
 
         // Accumulate children names
         std::vector<std::string> childrenNames;
