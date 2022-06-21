@@ -74,6 +74,34 @@ class DFTBuilder {
     bool addBasicElementExponential(std::string const& name, ValueType rate, ValueType dormancyFactor, bool transient = false);
 
     /*!
+     * Create BE with Erlang distribution and add it to DFT.
+     * @param name Name.
+     * @param rate Failure rate governing failure distribution in each phase.
+     * @param phases Number of consecutive phases.
+     * @param dormancyFactor Dormancy factor in passive mode.
+     * @return True iff adding was successful.
+     */
+    bool addBasicElementErlang(std::string const& name, ValueType rate, unsigned phases, ValueType dormancyFactor);
+
+    /*!
+     * Create BE with Weibull distribution and add it to DFT.
+     * @param name Name.
+     * @param shape Shape parameter.
+     * @param rate Failure rate governing failure distribution (also called scale).
+     * @return True iff adding was successful.
+     */
+    bool addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate);
+
+    /*!
+     * Create BE with log-normal distribution and add it to DFT.
+     * @param name Name.
+     *  @param mean Mean value (also called expected value).
+     * @param standardDeviation Standard deviation.
+     * @return True iff adding was successful.
+     */
+    bool addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation);
+
+    /*!
      * Create BE with distribution given by sample points and add it to DFT.
      * @param name Name.
      * @param activeSamples Sample points defining the unreliability at certain time points (i.e. the cumulative distribution function F(x)).

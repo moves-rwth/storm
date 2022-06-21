@@ -246,14 +246,14 @@ bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
         distribution = Distribution::Erlang;
     }
     // Weibull distribution
-    result = parseValue("rate", line, valueParser);
+    result = parseValue("shape", line, valueParser);
     if (result.first) {
         STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Weibull, storm::exceptions::WrongFormatException,
                         "A different distribution was already defined for basic element '" << name << "' in line " << lineNo << ".");
         firstValDistribution = result.second;
         distribution = Distribution::Weibull;
     }
-    result = parseValue("shape", line, valueParser);
+    result = parseValue("rate", line, valueParser);
     if (result.first) {
         STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Weibull, storm::exceptions::WrongFormatException,
                         "A different distribution was already defined for basic element '" << name << "' in line " << lineNo << ".");
@@ -308,57 +308,15 @@ bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
 
     switch (distribution) {
         case Constant:
-            if (storm::utility::isZero(firstValDistribution) || storm::utility::isOne(firstValDistribution)) {
-                return builder.addBasicElementProbability(parseName(name), firstValDistribution, dormancyFactor);
-            } else {
-                // Model constant BEs with probability 0 < p < 1
-                // Use a constantly failed element that triggers failsafe elements probabilistically
-                bool success = builder.addBasicElementConst("constantBeTrigger_" + parseName(name), true);
-                std::vector<std::string> childNames;
-                childNames.push_back("constantBeTrigger_" + parseName(name));
-                success = success && builder.addBasicElementConst(parseName(name), false);
-                childNames.push_back(parseName(name));
-                return success && builder.addPdep(parseName(name) + "_pdep", childNames, firstValDistribution);
-            }
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                            "Constant distribution is not supported for basic element '" << name << "' in line " << lineNo << ".");
-            break;
+            return builder.addBasicElementProbability(parseName(name), firstValDistribution, dormancyFactor);
         case Exponential:
             return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor);
-            break;
         case Erlang:
-            if (erlangPhases == 1) {
-                // Erlang distribution reduces to exponential distribution
-                return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor);
-            } else {
-                // Model Erlang distribution by using SEQ over BEs instead.
-                // For each phase a BE is added, then the SEQ ensures the ordered failure.
-                STORM_LOG_WARN("Erlang distribution for basic element '" << name << "' in line " << lineNo << " is modelled by SEQ gate and BEs.");
-                std::string origName = parseName(name);
-                std::vector<std::string> childNames;
-                bool success = builder.addBasicElementExponential(origName, firstValDistribution, dormancyFactor, false);  // TODO set transient BEs
-                for (size_t i = 0; i < erlangPhases - 1; ++i) {
-                    std::string beName = origName + "_" + std::to_string(i);
-                    childNames.push_back(beName);
-                    success = success && builder.addBasicElementExponential(beName, firstValDistribution, dormancyFactor, false);  // TODO set transient BEs
-                }
-                childNames.push_back(origName);
-                return success && builder.addSequenceEnforcer(origName + "_seq", childNames);
-            }
-            break;
+            return builder.addBasicElementErlang(parseName(name), firstValDistribution, erlangPhases, dormancyFactor);
         case Weibull:
-            if (storm::utility::isOne<ValueType>(secondValDistribution)) {
-                // Weibull distribution reduces to exponential distribution
-                return builder.addBasicElementExponential(parseName(name), firstValDistribution, dormancyFactor, false);  // TODO set transient BEs
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                "Weibull distribution is not supported for basic element '" << name << "' in line " << lineNo << ".");
-            }
-            break;
+            return builder.addBasicElementWeibull(parseName(name), firstValDistribution, secondValDistribution);
         case LogNormal:
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                            "LogNormal distribution is not supported for basic element '" << name << "' in line " << lineNo << ".");
-            break;
+            return builder.addBasicElementLogNormal(parseName(name), firstValDistribution, secondValDistribution);
         case None:
             // go-through
         default:

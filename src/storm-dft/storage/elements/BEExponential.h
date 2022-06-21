@@ -7,7 +7,7 @@ namespace storage {
 namespace elements {
 
 /*!
- * BE with exponential failure rate.
+ * BE with exponential failure distribution.
  */
 template<typename ValueType>
 class BEExponential : public DFTBE<ValueType> {
@@ -55,7 +55,7 @@ class BEExponential : public DFTBE<ValueType> {
      * @return Dormancy factor.
      */
     ValueType dormancyFactor() const {
-        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(this->activeFailureRate()), "Active failure rate of non-const BE should not be zero.");
+        STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(this->activeFailureRate()), "Active failure rate should not be zero.");
         return this->passiveFailureRate() / this->activeFailureRate();
     }
 
