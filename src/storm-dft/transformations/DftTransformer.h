@@ -28,6 +28,16 @@ class DftTransformer {
      * @return DFT in which all dependencies are binary.
      */
     static std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformBinaryDependencies(storm::dft::storage::DFT<ValueType> const &dft);
+
+    /*!
+     * Replace certain BE distributions by DFT constructs to make them amenable for Markovian analysis.
+     * - constant probability distributions are replaced using PDEPs
+     * - Erlang distributions are replaced using SEQs
+     *
+     * @param dft Original DFT.
+     * @return DFT in which certain BE distributions are replaced by DFT constructs.
+     */
+    static std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformMarkovianDistributions(storm::dft::storage::DFT<ValueType> const &dft);
 };
 
 }  // namespace transformations

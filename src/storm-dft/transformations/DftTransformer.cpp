@@ -25,7 +25,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
                         // Remember constant failed BEs for later
                         auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(element);
                         if (beConst->canFail()) {
-                            STORM_LOG_TRACE("Transform " << beConst);
+                            STORM_LOG_TRACE("Transform " << *beConst);
                             failedBEs.push_back(beConst->name());
                         }
                         // All original constant BEs are set to failsafe, failed BEs are later triggered by a new element
@@ -83,7 +83,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
                 } else {
                     if (!storm::utility::isOne(dep->probability())) {
                         // PDEP with probability < 1
-                        STORM_LOG_TRACE("Transform " << element);
+                        STORM_LOG_TRACE("Transform " << *element);
                         // Introduce additional element to first capture the probabilistic dependency
                         std::string nameAdditional = dep->name() + "_additional";
                         STORM_LOG_TRACE("Add auxiliary BE " << nameAdditional);
@@ -100,7 +100,7 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
                         }
                     } else {
                         // FDEP -> add explicit dependencies for each dependent event
-                        STORM_LOG_TRACE("Transform " << element);
+                        STORM_LOG_TRACE("Transform " << *element);
                         for (size_t j = 0; j < dep->dependentEvents().size(); ++j) {
                             std::string nameDep = dep->name() + "_" + std::to_string(j);
                             std::string dependentName = dep->dependentEvents()[j]->name();
@@ -121,6 +121,66 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::
     builder.setTopLevel(dft.getTopLevelElement()->name());
 
     STORM_LOG_DEBUG("Transformation BinaryDependencies complete");
+    return std::make_shared<storm::dft::storage::DFT<ValueType>>(builder.build());
+}
+
+template<typename ValueType>
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftTransformer<ValueType>::transformMarkovianDistributions(
+    storm::dft::storage::DFT<ValueType> const &dft) {
+    STORM_LOG_DEBUG("Start transformation BEDistributions");
+    storm::dft::builder::DFTBuilder<ValueType> builder;
+
+    for (size_t i = 0; i < dft.nrElements(); ++i) {
+        std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const> element = dft.getElement(i);
+        switch (element->type()) {
+            case storm::dft::storage::elements::DFTElementType::BE: {
+                auto be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element);
+                switch (be->beType()) {
+                    case storm::dft::storage::elements::BEType::PROBABILITY: {
+                        auto beProb = std::static_pointer_cast<storm::dft::storage::elements::BEProbability<ValueType> const>(be);
+                        // Model BE with constant probability by PDEP
+                        // Introduce constant failed element as trigger
+                        std::string triggerName = "constantBeTrigger_" + beProb->name();
+                        builder.addBasicElementConst(triggerName, true);
+                        // Add constant failsafe element for original BE
+                        builder.addBasicElementConst(beProb->name(), false);
+                        // Add PDEP in which the probability corresponds to the failure probability of the original BE
+                        builder.addPdep(beProb->name() + "_pdep", {triggerName, beProb->name()}, beProb->activeFailureProbability());
+                        break;
+                    }
+                    case storm::dft::storage::elements::BEType::ERLANG: {
+                        auto beErlang = std::static_pointer_cast<storm::dft::storage::elements::BEErlang<ValueType> const>(be);
+                        // Model BE with Erlang distribution by using SEQ over BEs instead.
+                        std::vector<std::string> childNames;
+                        builder.addBasicElementExponential(beErlang->name(), beErlang->activeFailureRate(), beErlang->dormancyFactor());
+                        // For each phase a BE is added
+                        for (size_t j = 0; j < beErlang->phases() - 1; ++j) {
+                            std::string beName = beErlang->name() + "_" + std::to_string(j);
+                            childNames.push_back(beName);
+                            builder.addBasicElementExponential(beName, beErlang->activeFailureRate(), beErlang->dormancyFactor());
+                        }
+                        childNames.push_back(beErlang->name());
+                        // SEQ ensures the ordered failure.
+                        builder.addSequenceEnforcer(beErlang->name() + "_seq", childNames);
+                        break;
+                    }
+                    default:
+                        // Clone other types of BEs
+                        builder.cloneElement(be);
+                        break;
+                }
+                break;
+            }
+            default:
+                // Clone other elements
+                builder.cloneElement(element);
+                break;
+        }
+    }
+
+    builder.setTopLevel(dft.getTopLevelElement()->name());
+
+    STORM_LOG_DEBUG("Transformation BEDistributions complete");
     return std::make_shared<storm::dft::storage::DFT<ValueType>>(builder.build());
 }
 
