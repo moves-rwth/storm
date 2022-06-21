@@ -82,7 +82,7 @@ void processOptions() {
 
     // Apply transformations
     // TODO transform later before actual analysis
-    dft = storm::dft::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true);
+    dft = storm::dft::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true, false);
     STORM_LOG_DEBUG(dft->getElementsString());
 
     // Compute minimal number of BE failures leading to system failure and

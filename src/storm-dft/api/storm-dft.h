@@ -76,8 +76,12 @@ std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> co
  * @return Transformed DFT.
  */
 template<typename ValueType>
-std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm::dft::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP) {
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm::dft::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP,
+                                                                          bool markovianDistributions) {
     std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformedDFT = std::make_shared<storm::dft::storage::DFT<ValueType>>(dft);
+    if (markovianDistributions) {
+        transformedDFT = storm::dft::transformations::DftTransformer<ValueType>::transformMarkovianDistributions(*transformedDFT);
+    }
     if (uniqueBE) {
         transformedDFT = storm::dft::transformations::DftTransformer<ValueType>::transformUniqueFailedBE(*transformedDFT);
     }
@@ -88,14 +92,14 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm:
 }
 
 /*!
- * Apply transformations to make DFT feasible for Markov analysis.
+ * Apply transformations to make DFT feasible for Markovian analysis.
  *
  * @param dft DFT.
  * @return Transformed DFT.
  */
 template<typename ValueType>
 std::shared_ptr<storm::dft::storage::DFT<ValueType>> prepareForMarkovAnalysis(storm::dft::storage::DFT<ValueType> const& dft) {
-    return storm::dft::api::applyTransformations(dft, true, true);
+    return storm::dft::api::applyTransformations(dft, true, true, true);
 }
 
 template<typename ValueType>
