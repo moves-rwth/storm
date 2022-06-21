@@ -1,0 +1,4 @@
+toplevel "T";
+"T" or "A" "B";
+"A" lambda=4 dorm=1;
+"B" lambda=0 dorm=1;
