@@ -133,8 +133,7 @@ bool DFTBuilder<ValueType>::addBasicElementProbability(std::string const& name, 
         return addBasicElementConst(name, true);
     }
     // TODO: check 0 <= dormancyFactor <= 1
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant probability distribution is not supported for basic element '" << name << "'.");
-    return false;
+    return addElement(std::make_shared<storm::dft::storage::elements::BEProbability<ValueType>>(0, name, probability, dormancyFactor));
 }
 
 template<typename ValueType>
@@ -146,6 +145,55 @@ bool DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, 
 
     // TODO: check 0 <= dormancyFactor <= 1
     return addElement(std::make_shared<storm::dft::storage::elements::BEExponential<ValueType>>(0, name, rate, dormancyFactor, transient));
+}
+
+template<typename ValueType>
+bool DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, ValueType rate, unsigned phases, ValueType dormancyFactor) {
+    // Handle special cases
+    if (storm::utility::isZero<ValueType>(rate)) {
+        return addBasicElementConst(name, false);
+    }
+    if (phases == 0) {
+        STORM_LOG_ERROR("Erlang distribution of BE " << name << " requires a positive number of phases.");
+        return false;
+    } else if (phases == 1) {
+        // shape=1 reduces to exponential distribution
+        return addBasicElementExponential(name, rate, dormancyFactor);
+    }
+
+    // TODO: check 0 <= dormancyFactor <= 1
+    return addElement(std::make_shared<storm::dft::storage::elements::BEErlang<ValueType>>(0, name, rate, phases, dormancyFactor));
+}
+
+template<typename ValueType>
+bool DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate) {
+    // Handle special cases
+    if (storm::utility::isZero<ValueType>(rate)) {
+        STORM_LOG_ERROR("Weibull distribution of BE " << name << " requires a positive scale.");
+        return false;
+    }
+    if (storm::utility::isZero<ValueType>(shape)) {
+        STORM_LOG_ERROR("Weibull distribution of BE " << name << " requires a positive shape.");
+        return false;
+    }
+    if (storm::utility::isOne<ValueType>(shape)) {
+        // shape=1 reduces to exponential distribution with rate 1/lambda
+        return addBasicElementExponential(name, storm::utility::one<ValueType>() / rate, storm::utility::one<ValueType>());  // TODO set dormancy factor
+    }
+
+    // TODO: check 0 <= dormancyFactor <= 1
+    return addElement(std::make_shared<storm::dft::storage::elements::BEWeibull<ValueType>>(0, name, shape, rate));
+}
+
+template<typename ValueType>
+bool DFTBuilder<ValueType>::addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation) {
+    // Handle special cases
+    if (storm::utility::isZero<ValueType>(standardDeviation)) {
+        STORM_LOG_ERROR("Weibull distribution of BE " << name << " requires a positive standard deviation.");
+        return false;
+    }
+
+    return addElement(std::make_shared<storm::dft::storage::elements::BELogNormal<ValueType>>(0, name, mean, standardDeviation));
 }
 
 template<typename ValueType>

@@ -14,7 +14,7 @@ enum class DFTElementType { BE, AND, OR, VOT, PAND, POR, SPARE, PDEP, SEQ, MUTEX
 /*!
  * BE types in a DFT.
  */
-enum class BEType { CONSTANT, EXPONENTIAL, SAMPLES };
+enum class BEType { CONSTANT, PROBABILITY, EXPONENTIAL, ERLANG, WEIBULL, LOGNORMAL, SAMPLES };
 
 inline bool isGateType(DFTElementType const& type) {
     switch (type) {
@@ -87,8 +87,16 @@ inline std::string toString(BEType const& type) {
     switch (type) {
         case BEType::CONSTANT:
             return "CONST";
+        case BEType::PROBABILITY:
+            return "PROBABILITY";
         case BEType::EXPONENTIAL:
             return "EXPONENTIAL";
+        case BEType::ERLANG:
+            return "ERLANG";
+        case BEType::WEIBULL:
+            return "WEIBULL";
+        case BEType::LOGNORMAL:
+            return "LOGNORMAL";
         case BEType::SAMPLES:
             return "SAMPLES";
         default:
