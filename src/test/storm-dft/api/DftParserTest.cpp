@@ -21,6 +21,14 @@ TEST(DftParserTest, LoadFromJsonFile) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 }
 
+TEST(DftParserTest, LoadBEDistributionsFromJsonFile) {
+    std::string file = STORM_TEST_RESOURCES_DIR "/dft/be_distributions.json";
+    std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTJsonFile<double>(file);
+    EXPECT_EQ(8ul, dft->nrElements());
+    EXPECT_EQ(7ul, dft->nrBasicElements());
+    EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
+}
+
 TEST(DftParserTest, CatchCycles) {
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/cyclic.dft";
     STORM_SILENT_EXPECT_THROW(storm::dft::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);

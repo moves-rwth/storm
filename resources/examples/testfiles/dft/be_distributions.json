@@ -1,0 +1,108 @@
+{
+    "nodes": [
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "const",
+                "failed": true,
+                "id": "0",
+                "name": "A",
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "const",
+                "failed": false,
+                "id": "1",
+                "name": "B",
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "probability",
+                "dorm": "1",
+                "id": "2",
+                "name": "C",
+                "prob": "0.4",
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "3",
+                "name": "D",
+                "rate": "4",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "erlang",
+                "dorm": "1",
+                "id": "4",
+                "name": "E",
+                "phases": 3,
+                "rate": "4",
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "lognormal",
+                "id": "5",
+                "mean": "0.5",
+                "name": "F",
+                "stddev": "1",
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "weibull",
+                "id": "6",
+                "name": "G",
+                "rate": "4",
+                "shape": "4",
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "vot",
+            "data": {
+                "children": [
+                    "0",
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6"
+                ],
+                "voting": "3",
+                "id": "7",
+                "name": "T",
+                "type": "vot"
+            },
+            "group": "nodes"
+        }
+    ],
+    "toplevel": "7"
+}
