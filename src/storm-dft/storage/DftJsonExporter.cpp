@@ -28,7 +28,7 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translate(
     // Nodes
     Json jsonNodes;
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        Json jsonNode = translateNode(dft.getElement(i));
+        Json jsonNode = translateElement(dft.getElement(i));
         jsonNodes.push_back(jsonNode);
     }
 
@@ -39,20 +39,20 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translate(
 }
 
 template<typename ValueType>
-typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateNode(DFTElementCPointer const& element) {
+typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateElement(DFTElementCPointer element) {
     Json nodeData;
     nodeData["id"] = std::to_string(element->id());
     nodeData["name"] = element->name();
     std::string type = storm::dft::storage::elements::toString(element->type());
+    // Make lower case
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);
     nodeData["type"] = type;
 
-    if (element->isGate()) {
-        // Set children for gate
-        std::shared_ptr<storm::dft::storage::elements::DFTGate<ValueType> const> gate =
-            std::static_pointer_cast<storm::dft::storage::elements::DFTGate<ValueType> const>(element);
+    if (element->isGate() || element->isRestriction()) {
+        // Set children for gate/restriction
+        auto elemWithChildren = std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ValueType> const>(element);
         std::vector<std::string> children;
-        for (DFTElementPointer const& child : gate->children()) {
+        for (auto const& child : elemWithChildren->children()) {
             children.push_back(std::to_string(child->id()));
         }
         nodeData["children"] = children;
@@ -61,60 +61,28 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
         if (element->type() == storm::dft::storage::elements::DFTElementType::VOT) {
             nodeData["voting"] = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(element)->threshold();
         }
-    } else if (element->isRestriction()) {
-        // TODO use same method for gates and restrictions
-        // Set children for restriction
-        auto restriction = std::static_pointer_cast<storm::dft::storage::elements::DFTRestriction<ValueType> const>(element);
-        std::vector<std::string> children;
-        for (DFTElementPointer const& child : restriction->children()) {
-            children.push_back(std::to_string(child->id()));
-        }
-        nodeData["children"] = children;
     } else if (element->isDependency()) {
         // Set children for dependency
         auto dependency = std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(element);
         std::vector<std::string> children;
         children.push_back(std::to_string(dependency->triggerEvent()->id()));
-        for (std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType>> const& child : dependency->dependentEvents()) {
+        for (auto const& child : dependency->dependentEvents()) {
             children.push_back(std::to_string(child->id()));
         }
         nodeData["children"] = children;
-        if (!storm::utility::isOne<ValueType>(dependency->probability())) {
+        if (storm::utility::isOne<ValueType>(dependency->probability())) {
+            nodeData["type"] = "fdep";
+        } else {
             std::stringstream stream;
             stream << dependency->probability();
             nodeData["probability"] = stream.str();
-        } else {
-            nodeData["type"] = "fdep";
         }
     } else if (element->isBasicElement()) {
-        std::shared_ptr<storm::dft::storage::elements::DFTBE<ValueType> const> be =
-            std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element);
-        // Set BE specific data
-        switch (be->beType()) {
-            case storm::dft::storage::elements::BEType::CONSTANT: {
-                auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
-                std::stringstream stream;
-                nodeData["distribution"] = "const";
-                nodeData["failed"] = beConst->failed();
-                break;
-            }
-            case storm::dft::storage::elements::BEType::EXPONENTIAL: {
-                auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
-                std::stringstream stream;
-                nodeData["distribution"] = "exp";
-                stream << beExp->activeFailureRate();
-                nodeData["rate"] = stream.str();
-                stream.str(std::string());  // Clear stringstream
-                stream << beExp->dormancyFactor();
-                nodeData["dorm"] = stream.str();
-                break;
-            }
-            default:
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->beType() << "' is not known.");
-                break;
-        }
+        DFTBECPointer be = std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element);
+        nodeData = translateBE(be, nodeData);
     } else {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Element of type '" << element->type() << "' is not supported.");
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                        "Element '" << element->name() << "' of type '" << element->type() << "' is not supported.");
     }
 
     Json jsonNode;
@@ -122,6 +90,78 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateN
     jsonNode["group"] = "nodes";
     jsonNode["classes"] = type;
     return jsonNode;
+}
+
+template<typename ValueType>
+typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateBE(DFTBECPointer be, Json nodeData) {
+    std::string distributionType = storm::dft::storage::elements::toString(be->beType());
+    // Make lower case
+    std::transform(distributionType.begin(), distributionType.end(), distributionType.begin(), ::tolower);
+    nodeData["distribution"] = distributionType;
+
+    // Add distribution specific information
+    switch (be->beType()) {
+        case storm::dft::storage::elements::BEType::CONSTANT: {
+            auto beConst = std::static_pointer_cast<storm::dft::storage::elements::BEConst<ValueType> const>(be);
+            nodeData["failed"] = beConst->failed();
+            return nodeData;
+        }
+        case storm::dft::storage::elements::BEType::PROBABILITY: {
+            auto beProb = std::static_pointer_cast<storm::dft::storage::elements::BEProbability<ValueType> const>(be);
+            std::stringstream stream;
+            stream << beProb->activeFailureProbability();
+            nodeData["prob"] = stream.str();
+            stream.str(std::string());  // Clear stringstream
+            stream << beProb->dormancyFactor();
+            nodeData["dorm"] = stream.str();
+            return nodeData;
+        }
+        case storm::dft::storage::elements::BEType::EXPONENTIAL: {
+            auto beExp = std::static_pointer_cast<storm::dft::storage::elements::BEExponential<ValueType> const>(be);
+            std::stringstream stream;
+            stream << beExp->activeFailureRate();
+            nodeData["rate"] = stream.str();
+            stream.str(std::string());  // Clear stringstream
+            stream << beExp->dormancyFactor();
+            nodeData["dorm"] = stream.str();
+            nodeData["transient"] = beExp->isTransient();
+            return nodeData;
+        }
+        case storm::dft::storage::elements::BEType::ERLANG: {
+            auto beErlang = std::static_pointer_cast<storm::dft::storage::elements::BEErlang<ValueType> const>(be);
+            std::stringstream stream;
+            stream << beErlang->activeFailureRate();
+            nodeData["rate"] = stream.str();
+            nodeData["phases"] = beErlang->phases();
+            stream.str(std::string());  // Clear stringstream
+            stream << beErlang->dormancyFactor();
+            nodeData["dorm"] = stream.str();
+            return nodeData;
+        }
+        case storm::dft::storage::elements::BEType::WEIBULL: {
+            auto beWeibull = std::static_pointer_cast<storm::dft::storage::elements::BEWeibull<ValueType> const>(be);
+            std::stringstream stream;
+            stream << beWeibull->shape();
+            nodeData["shape"] = stream.str();
+            stream.str(std::string());  // Clear stringstream
+            stream << beWeibull->rate();
+            nodeData["rate"] = stream.str();
+            return nodeData;
+        }
+        case storm::dft::storage::elements::BEType::LOGNORMAL: {
+            auto beLogNormal = std::static_pointer_cast<storm::dft::storage::elements::BELogNormal<ValueType> const>(be);
+            std::stringstream stream;
+            stream << beLogNormal->mean();
+            nodeData["mean"] = stream.str();
+            stream.str(std::string());  // Clear stringstream
+            stream << beLogNormal->standardDeviation();
+            nodeData["stddev"] = stream.str();
+            return nodeData;
+        }
+        default:
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->beType() << "' is not known.");
+            return nodeData;
+    }
 }
 
 // Explicitly instantiate the class.
