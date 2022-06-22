@@ -9,6 +9,8 @@ namespace solver {
 template<typename ValueType>
 class LpSolver;
 
+class GurobiEnvironment;
+
 class SmtSolver;
 }  // namespace solver
 
@@ -43,8 +45,12 @@ class GlpkLpSolverFactory : public LpSolverFactory<ValueType> {
 template<typename ValueType>
 class GurobiLpSolverFactory : public LpSolverFactory<ValueType> {
    public:
+    GurobiLpSolverFactory();
     virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const override;
     virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+
+   private:
+    std::shared_ptr<storm::solver::GurobiEnvironment> environment;
 };
 
 template<typename ValueType>

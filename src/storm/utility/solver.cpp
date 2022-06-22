@@ -1,11 +1,5 @@
 #include "storm/utility/solver.h"
 
-#include <vector>
-
-#include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
-#include "storm/solver/SymbolicGameSolver.h"
-#include "storm/solver/SymbolicNativeLinearEquationSolver.h"
-
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/Z3LpSolver.h"
@@ -16,9 +10,6 @@
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/utility/NumberTraits.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
 
 namespace storm {
 namespace utility {
@@ -35,8 +26,14 @@ std::unique_ptr<LpSolverFactory<ValueType>> GlpkLpSolverFactory<ValueType>::clon
 }
 
 template<typename ValueType>
+GurobiLpSolverFactory<ValueType>::GurobiLpSolverFactory() {
+    environment = std::make_shared<storm::solver::GurobiEnvironment>();
+    environment->initialize();
+}
+
+template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> GurobiLpSolverFactory<ValueType>::create(std::string const& name) const {
-    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GurobiLpSolver<ValueType>(name));
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GurobiLpSolver<ValueType>(environment, name));
 }
 
 template<typename ValueType>
@@ -77,7 +74,6 @@ std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::solver::Lp
             return std::unique_ptr<LpSolverFactory<ValueType>>(new Z3LpSolverFactory<ValueType>());
     }
     return nullptr;
-
 }
 
 template<typename ValueType>

@@ -6,8 +6,8 @@
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/solver/SolverSelectionOptions.h"
 #include "storm/solver/GurobiLpSolver.h"
+#include "storm/solver/SolverSelectionOptions.h"
 namespace storm {
 namespace settings {
 namespace modules {
@@ -27,12 +27,12 @@ GurobiSettings::GurobiSettings() : ModuleSettings(moduleName) {
     }
 
     this->addOption(OptionBuilder(moduleName, methodOption, true, "The method Gurobi should use.")
-            .setIsAdvanced()
-            .addArgument(ArgumentBuilder::createStringArgument("method", "the name of the method")
-                                     .setDefaultValueString("auto")
-                                     .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
-                                     .build())
-            .build());
+                        .setIsAdvanced()
+                        .addArgument(ArgumentBuilder::createStringArgument("method", "the name of the method")
+                                         .setDefaultValueString("auto")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
+                                         .build())
+                        .build());
 
     this->addOption(
         storm::settings::OptionBuilder(moduleName, threadsOption, true, "The number of threads that may be used by Gurobi.")
