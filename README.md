@@ -5,6 +5,7 @@ Storm - A Modern Probabilistic Model Checker
 [![GitHub release](https://img.shields.io/github/release/moves-rwth/storm.svg)](https://github.com/moves-rwth/storm/releases/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896)
 
+Storm fork containing the `storm-synthesis` module used for the synthesis of probabilistic programs in [PAYNT](https://github.com/randriu/synthesis).
 
 For more instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
 
