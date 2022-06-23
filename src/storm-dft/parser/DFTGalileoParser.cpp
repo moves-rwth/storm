@@ -108,15 +108,15 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
                     success = builder.addVotingGate(name, threshold, childNames);
                 } else if (type == "pand") {
                     success = builder.addPandGate(name, childNames);
-                } else if (type == "pand-inc") {
+                } else if (type == "pand-incl" || type == "pand<=") {
                     success = builder.addPandGate(name, childNames, true);
-                } else if (type == "pand-ex") {
+                } else if (type == "pand-excl" || type == "pand<") {
                     success = builder.addPandGate(name, childNames, false);
                 } else if (type == "por") {
                     success = builder.addPorGate(name, childNames);
-                } else if (type == "por-inc") {
+                } else if (type == "por-incl" || type == "por<=") {
                     success = builder.addPorGate(name, childNames, true);
-                } else if (type == "por-ex") {
+                } else if (type == "por-excl" || type == "por<") {
                     success = builder.addPorGate(name, childNames, false);
                 } else if (type == "wsp" || type == "csp" || type == "hsp" || type == "spare") {
                     success = builder.addSpareGate(name, childNames);

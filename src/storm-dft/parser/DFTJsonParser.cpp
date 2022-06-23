@@ -90,9 +90,19 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
                 std::string votThreshold = parseValue(data.at("voting"));
                 success = builder.addVotingGate(name, storm::parser::parseNumber<size_t>(votThreshold), childNames);
             } else if (type == "pand") {
-                success = builder.addPandGate(name, childNames);
+                if (data.count("inclusive") > 0) {
+                    bool inclusive = data.at("inclusive");
+                    success = builder.addPandGate(name, childNames, inclusive);
+                } else {
+                    success = builder.addPandGate(name, childNames);
+                }
             } else if (type == "por") {
-                success = builder.addPorGate(name, childNames);
+                if (data.count("inclusive") > 0) {
+                    bool inclusive = data.at("inclusive");
+                    success = builder.addPorGate(name, childNames, inclusive);
+                } else {
+                    success = builder.addPorGate(name, childNames);
+                }
             } else if (type == "spare") {
                 success = builder.addSpareGate(name, childNames);
             } else if (type == "seq") {
