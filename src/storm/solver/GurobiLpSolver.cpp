@@ -79,6 +79,8 @@ void GurobiEnvironment::setOutput(bool set) {
     int error = GRBsetintparam(env, "OutputFlag", set);
     STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException,
                     "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+#else
+    (void)set;
 #endif
 }
 
@@ -692,25 +694,25 @@ ValueType GurobiLpSolver<ValueType>::getMILPGap(bool relative) const {
 
 #else
 template<typename ValueType>
-GurobiLpSolver<ValueType>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment, std::string const&, OptimizationDirection const&) {
+GurobiLpSolver<ValueType>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const&, std::string const&, OptimizationDirection const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
                                                           "requires this support. Please choose a version of support with Gurobi support.";
 }
 
 template<typename ValueType>
-GurobiLpSolver<ValueType>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment, std::string const&) {
+GurobiLpSolver<ValueType>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const&, std::string const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
                                                           "requires this support. Please choose a version of support with Gurobi support.";
 }
 
 template<typename ValueType>
-GurobiLpSolver<ValueType>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment, OptimizationDirection const&) {
+GurobiLpSolver<ValueType>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const&, OptimizationDirection const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
                                                           "requires this support. Please choose a version of support with Gurobi support.";
 }
 
 template<typename ValueType>
-GurobiLpSolver<ValueType>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment) {
+GurobiLpSolver<ValueType>::GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Gurobi. Yet, a method was called that "
                                                           "requires this support. Please choose a version of support with Gurobi support.";
 }

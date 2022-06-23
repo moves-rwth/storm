@@ -2,6 +2,7 @@
 #define STORM_SOLVER_GUROBILPSOLVER
 
 #include <map>
+#include <optional>
 #include "storm/solver/LpSolver.h"
 // To detect whether the usage of Gurobi is possible, this include is neccessary.
 #include "storm-config.h"
