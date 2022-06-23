@@ -1,0 +1,9 @@
+toplevel "T";
+"T" vot3 "A" "B" "C" "D" "E" "F" "G";
+"A" prob=1;
+"B" prob=0;
+"C" prob=0.4 dorm=1;
+"D" lambda=4 dorm=1;
+"E" lambda=4 phases=3 dorm=1;
+"F" mean=0.5 stddev=1;
+"G" rate=4 shape=4;
