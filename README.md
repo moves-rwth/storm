@@ -6,6 +6,10 @@ Storm - A Modern Probabilistic Model Checker
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896)
 
 Storm fork containing the `storm-synthesis` module used for the synthesis of probabilistic programs in [PAYNT](https://github.com/randriu/synthesis).
+The module is compiled using make e.g. as follows:
+```shell
+make storm-main storm-synthesis
+```
 
 For more instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
 
