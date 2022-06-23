@@ -57,9 +57,27 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateE
         }
         nodeData["children"] = children;
 
-        // Set threshold for voting gate
-        if (element->type() == storm::dft::storage::elements::DFTElementType::VOT) {
-            nodeData["voting"] = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(element)->threshold();
+        // Set additional parameters
+        switch (element->type()) {
+            case storm::dft::storage::elements::DFTElementType::VOT:
+                nodeData["voting"] = std::static_pointer_cast<storm::dft::storage::elements::DFTVot<ValueType> const>(element)->threshold();
+                break;
+            case storm::dft::storage::elements::DFTElementType::PAND:
+                nodeData["inclusive"] = std::static_pointer_cast<storm::dft::storage::elements::DFTPand<ValueType> const>(element)->isInclusive();
+                break;
+            case storm::dft::storage::elements::DFTElementType::POR:
+                nodeData["inclusive"] = std::static_pointer_cast<storm::dft::storage::elements::DFTPor<ValueType> const>(element)->isInclusive();
+                break;
+            case storm::dft::storage::elements::DFTElementType::AND:
+            case storm::dft::storage::elements::DFTElementType::OR:
+            case storm::dft::storage::elements::DFTElementType::SPARE:
+            case storm::dft::storage::elements::DFTElementType::SEQ:
+            case storm::dft::storage::elements::DFTElementType::MUTEX:
+                // No additional parameters
+                break;
+            default:
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                                "Element '" << element->name() << "' of type '" << element->type() << "' is not supported.");
         }
     } else if (element->isDependency()) {
         // Set children for dependency
