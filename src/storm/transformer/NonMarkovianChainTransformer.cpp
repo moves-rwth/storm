@@ -28,19 +28,7 @@ std::shared_ptr<models::sparse::Model<ValueType, RewardModelType>> NonMarkovianC
 
     if (ma->getMarkovianStates().full()) {
         // Is already a CTMC
-        storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(ma->getTransitionMatrix(), ma->getStateLabeling(), ma->getRewardModels(),
-                                                                                       false);
-        components.exitRates = ma->getExitRates();
-        if (ma->hasChoiceLabeling()) {
-            components.choiceLabeling = ma->getChoiceLabeling();
-        }
-        if (ma->hasStateValuations()) {
-            components.stateValuations = ma->getStateValuations();
-        }
-        if (ma->hasChoiceOrigins()) {
-            components.choiceOrigins = ma->getChoiceOrigins();
-        }
-        return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(components));
+        return ma->convertToCtmc();
     }
 
     // Initialize
@@ -173,15 +161,10 @@ std::vector<std::shared_ptr<storm::logic::Formula const>> NonMarkovianChainTrans
 }
 
 template class NonMarkovianChainTransformer<double>;
-
 template class NonMarkovianChainTransformer<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 
-#ifdef STORM_HAVE_CARL
-template class NonMarkovianChainTransformer<storm::RationalFunction>;
-
 template class NonMarkovianChainTransformer<storm::RationalNumber>;
-
-#endif
+template class NonMarkovianChainTransformer<storm::RationalFunction>;
 
 }  // namespace transformer
 }  // namespace storm
