@@ -675,8 +675,8 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder
                 std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
             if (ma->hasOnlyTrivialNondeterminism()) {
                 // Markov automaton can be converted into CTMC
-                // TODO: change components which were not moved accordingly
-                model = ma->convertToCtmc();
+                model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                    ma, storm::transformer::EliminationLabelBehavior::ExtendLabels);
             } else {
                 model = ma;
             }
@@ -734,7 +734,9 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder
             ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
         }
         if (ma->hasOnlyTrivialNondeterminism()) {
-            model = ma->convertToCtmc();
+            // Markov automaton can be converted into CTMC
+            model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                ma, storm::transformer::EliminationLabelBehavior::ExtendLabels);
         } else {
             model = ma;
         }
