@@ -37,8 +37,15 @@ class FailableElements {
      * Iterator for failable elements.
      *
      */
-    class const_iterator : public std::iterator<std::input_iterator_tag, size_t> {
+    class const_iterator {
        public:
+        // Define iterator
+        using iterator_category = std::input_iterator_tag;
+        using value_type = size_t;
+        using difference_type = std::ptrdiff_t;
+        using pointer = size_t*;
+        using reference = size_t&;
+
         /*!
          * Construct a new iterator.
          * We either iterate over all failable BEs or over all dependencies (if dependency is true).
