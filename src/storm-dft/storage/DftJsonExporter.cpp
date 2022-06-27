@@ -25,17 +25,36 @@ void DftJsonExporter<ValueType>::toStream(storm::dft::storage::DFT<ValueType> co
 
 template<typename ValueType>
 typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translate(storm::dft::storage::DFT<ValueType> const& dft) {
+    Json jsonDft;
+    // Top level element
+    jsonDft["toplevel"] = std::to_string(dft.getTopLevelIndex());
+    // Parameters
+    jsonDft["parameters"] = translateParameters(dft);
     // Nodes
     Json jsonNodes;
     for (size_t i = 0; i < dft.nrElements(); ++i) {
-        Json jsonNode = translateElement(dft.getElement(i));
-        jsonNodes.push_back(jsonNode);
+        jsonNodes.push_back(translateElement(dft.getElement(i)));
     }
-
-    Json jsonDft;
-    jsonDft["toplevel"] = std::to_string(dft.getTopLevelIndex());
     jsonDft["nodes"] = jsonNodes;
     return jsonDft;
+}
+
+template<>
+typename DftJsonExporter<storm::RationalFunction>::Json DftJsonExporter<storm::RationalFunction>::translateParameters(
+    storm::dft::storage::DFT<storm::RationalFunction> const& dft) {
+    Json jsonParameters;
+    for (auto const& parameter : storm::dft::storage::getParameters(dft)) {
+        std::stringstream stream;
+        stream << parameter;
+        jsonParameters.push_back(stream.str());
+    }
+    return jsonParameters;
+}
+
+template<typename ValueType>
+typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateParameters(storm::dft::storage::DFT<ValueType> const& dft) {
+    // No parameters for non-parametric models
+    return {};
 }
 
 template<typename ValueType>

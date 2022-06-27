@@ -54,6 +54,13 @@ class DftJsonExporter {
      * @return JSON representation of BE.
      */
     static Json translateBE(DFTBECPointer element, Json nodeData);
+
+    /*!
+     * Export parameters of (parametric) DFT into JSON list.
+     * @param dft DFT.
+     * @return List of parameters. Returns empty list, if DFT is not parametric.
+     */
+    static Json translateParameters(storm::dft::storage::DFT<ValueType> const& dft);
 };
 
 }  // namespace storage

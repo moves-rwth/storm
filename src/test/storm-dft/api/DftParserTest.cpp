@@ -83,4 +83,28 @@ TEST(DftParserTest, LoadSeqChildren) {
     EXPECT_EQ(2ul, dft->nrBasicElements());
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 }
+
+TEST(DftParserTest, LoadParametricFromGalileoFile) {
+    std::string file = STORM_TEST_RESOURCES_DIR "/dft/and_param.dft";
+    std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> dft = storm::dft::api::loadDFTGalileoFile<storm::RationalFunction>(file);
+    EXPECT_EQ(3ul, dft->nrElements());
+    EXPECT_EQ(2ul, dft->nrBasicElements());
+    EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
+    auto parameters = storm::dft::storage::getParameters(*dft);
+    EXPECT_TRUE(parameters.size() == 1);
+    auto it = std::find_if(parameters.begin(), parameters.end(), [](storm::RationalFunctionVariable const& x) { return x.name() == "x"; });
+    EXPECT_TRUE(it != parameters.end());
+}
+
+TEST(DftParserTest, LoadParametricFromJsonFile) {
+    std::string file = STORM_TEST_RESOURCES_DIR "/dft/and_param.json";
+    std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> dft = storm::dft::api::loadDFTJsonFile<storm::RationalFunction>(file);
+    EXPECT_EQ(3ul, dft->nrElements());
+    EXPECT_EQ(2ul, dft->nrBasicElements());
+    EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
+    auto parameters = storm::dft::storage::getParameters(*dft);
+    EXPECT_TRUE(parameters.size() == 1);
+    auto it = std::find_if(parameters.begin(), parameters.end(), [](storm::RationalFunctionVariable const& x) { return x.name() == "x"; });
+    EXPECT_TRUE(it != parameters.end());
+}
 }  // namespace
