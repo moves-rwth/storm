@@ -43,9 +43,8 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
             Json parameters = jsonInput.at("parameters");
             STORM_LOG_THROW(parameters.empty() || (std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException,
                             "Parameters only allowed when using rational functions.");
-            for (auto it = parameters.begin(); it != parameters.end(); ++it) {
-                std::string parameter = it.key();
-                valueParser.addParameter(parameter);
+            for (auto const& parameter : parameters) {
+                valueParser.addParameter(parseValue(parameter));
             }
         }
 
@@ -146,6 +145,8 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
 
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in " << currentLocation << ": " << exception.what());
+    } catch (std::exception const& exception) {
+        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "An exception occurred during parsing in " << currentLocation << ": " << exception.what());
     }
     if (!builder.setTopLevel(toplevelName)) {
         STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level element '" << toplevelName << "' unknown.");

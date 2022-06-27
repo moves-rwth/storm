@@ -167,28 +167,6 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunct
 }
 
 template<>
-void exportDFTToJsonFile(storm::dft::storage::DFT<double> const& dft, std::string const& file) {
-    storm::dft::storage::DftJsonExporter<double>::toFile(dft, file);
-}
-
-template<>
-void exportDFTToJsonFile(storm::dft::storage::DFT<storm::RationalFunction> const& dft, std::string const& file) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
-}
-
-template<>
-std::string exportDFTToJsonString(storm::dft::storage::DFT<double> const& dft) {
-    std::stringstream stream;
-    storm::dft::storage::DftJsonExporter<double>::toStream(dft, stream);
-    return stream.str();
-}
-
-template<>
-std::string exportDFTToJsonString(storm::dft::storage::DFT<storm::RationalFunction> const& dft) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to JSON not supported for this data type.");
-}
-
-template<>
 void exportDFTToSMT(storm::dft::storage::DFT<double> const& dft, std::string const& file) {
     storm::dft::modelchecker::DFTASFChecker asfChecker(dft);
     asfChecker.convert();
