@@ -217,6 +217,7 @@ void processOptions() {
     storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames);
 
     // Analyze DFT
+    dft = storm::dft::api::prepareForMarkovAnalysis<ValueType>(*dft);
     // TODO allow building of state space even without properties
     if (props.empty()) {
         STORM_LOG_WARN("No property given. No analysis will be performed.");
