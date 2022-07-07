@@ -78,17 +78,17 @@ std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> co
 template<typename ValueType>
 std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm::dft::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP,
                                                                           bool markovianDistributions) {
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformedDFT = std::make_shared<storm::dft::storage::DFT<ValueType>>(dft);
-    if (markovianDistributions) {
-        transformedDFT = storm::dft::transformations::DftTransformer<ValueType>::transformMarkovianDistributions(*transformedDFT);
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformedDft = std::make_shared<storm::dft::storage::DFT<ValueType>>(dft);
+    if (markovianDistributions && !storm::dft::transformations::DftTransformer<ValueType>::hasOnlyExponentialDistributions(*transformedDft)) {
+        transformedDft = storm::dft::transformations::DftTransformer<ValueType>::transformExponentialDistributions(*transformedDft);
     }
-    if (uniqueBE) {
-        transformedDFT = storm::dft::transformations::DftTransformer<ValueType>::transformUniqueFailedBE(*transformedDFT);
+    if (uniqueBE && !storm::dft::transformations::DftTransformer<ValueType>::hasUniqueFailedBE(*transformedDft)) {
+        transformedDft = storm::dft::transformations::DftTransformer<ValueType>::transformUniqueFailedBE(*transformedDft);
     }
-    if (binaryFDEP && !dft.getDependencies().empty()) {
-        transformedDFT = storm::dft::transformations::DftTransformer<ValueType>::transformBinaryDependencies(*transformedDFT);
+    if (binaryFDEP && storm::dft::transformations::DftTransformer<ValueType>::hasNonBinaryDependency(*transformedDft)) {
+        transformedDft = storm::dft::transformations::DftTransformer<ValueType>::transformBinaryDependencies(*transformedDft);
     }
-    return transformedDFT;
+    return transformedDft;
 }
 
 /*!
