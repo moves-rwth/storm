@@ -68,6 +68,13 @@ namespace storm {
 
             uint64_t getBeliefNumberOfChoices(BeliefId beliefId);
 
+            /**
+             * Returns the first state in the belief as a representative
+             * @param beliefId
+             * @return
+             */
+            uint64_t getRepresentativeState(BeliefId const beliefId);
+
             Triangulation triangulateBelief(BeliefId beliefId, BeliefValueType resolution);
 
             template<typename DistributionType>

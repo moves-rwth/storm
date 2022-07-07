@@ -948,6 +948,10 @@ namespace storm {
             // Return the id
             return insertioRes.first->second;
         }
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        uint64_t BeliefManager<PomdpType, BeliefValueType, StateType>::getRepresentativeState(BeliefId const beliefId) {
+            return getBelief(beliefId).begin()->first;
+        }
 
         template class BeliefManager<storm::models::sparse::Pomdp<double>>;
 
