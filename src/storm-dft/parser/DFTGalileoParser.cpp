@@ -88,68 +88,64 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
                 for (size_t i = 2; i < tokens.size(); ++i) {
                     childNames.push_back(parseName(tokens[i]));
                 }
-                bool success = false;
 
                 // Add element according to type
                 std::string type = tokens[1];
                 if (type == "and") {
-                    success = builder.addAndGate(name, childNames);
+                    builder.addAndGate(name, childNames);
                 } else if (type == "or") {
-                    success = builder.addOrGate(name, childNames);
+                    builder.addOrGate(name, childNames);
                 } else if (boost::starts_with(type, "vot")) {
                     size_t threshold = storm::parser::parseNumber<size_t>(type.substr(3));
-                    success = builder.addVotingGate(name, threshold, childNames);
+                    builder.addVotingGate(name, threshold, childNames);
                 } else if (type.find("of") != std::string::npos) {
                     size_t pos = type.find("of");
                     size_t threshold = storm::parser::parseNumber<size_t>(type.substr(0, pos));
                     size_t count = storm::parser::parseNumber<size_t>(type.substr(pos + 2));
                     STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException,
                                     "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << ".");
-                    success = builder.addVotingGate(name, threshold, childNames);
+                    builder.addVotingGate(name, threshold, childNames);
                 } else if (type == "pand") {
-                    success = builder.addPandGate(name, childNames);
+                    builder.addPandGate(name, childNames);
                 } else if (type == "pand-incl" || type == "pand<=") {
-                    success = builder.addPandGate(name, childNames, true);
+                    builder.addPandGate(name, childNames, true);
                 } else if (type == "pand-excl" || type == "pand<") {
-                    success = builder.addPandGate(name, childNames, false);
+                    builder.addPandGate(name, childNames, false);
                 } else if (type == "por") {
-                    success = builder.addPorGate(name, childNames);
+                    builder.addPorGate(name, childNames);
                 } else if (type == "por-incl" || type == "por<=") {
-                    success = builder.addPorGate(name, childNames, true);
+                    builder.addPorGate(name, childNames, true);
                 } else if (type == "por-excl" || type == "por<") {
-                    success = builder.addPorGate(name, childNames, false);
+                    builder.addPorGate(name, childNames, false);
                 } else if (type == "wsp" || type == "csp" || type == "hsp" || type == "spare") {
-                    success = builder.addSpareGate(name, childNames);
+                    builder.addSpareGate(name, childNames);
                 } else if (type == "seq") {
-                    success = builder.addSequenceEnforcer(name, childNames);
+                    builder.addSequenceEnforcer(name, childNames);
                 } else if (type == "mutex") {
-                    success = builder.addMutex(name, childNames);
+                    builder.addMutex(name, childNames);
                 } else if (type == "fdep") {
-                    success = builder.addPdep(name, childNames, storm::utility::one<ValueType>());
+                    builder.addPdep(name, childNames, storm::utility::one<ValueType>());
                 } else if (boost::starts_with(type, "pdep=")) {
                     ValueType probability = valueParser.parseValue(type.substr(5));
-                    success = builder.addPdep(name, childNames, probability);
+                    builder.addPdep(name, childNames, probability);
                 } else if (type.find("=") != std::string::npos) {
                     // Use dedicated method for parsing BEs
                     // Remove name from line and parse remainder
                     std::regex regexName("\"?" + tokens[0] + "\"?");
                     std::string remaining_line = std::regex_replace(line, regexName, "");
-                    success = parseBasicElement(name, remaining_line, builder, valueParser);
+                    parseBasicElement(name, remaining_line, builder, valueParser);
                 } else if (type.find("insp") != std::string::npos) {
                     // Inspection as defined by DFTCalc
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Inspections are not supported.");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name '" << type << "' not recognized.");
                 }
-                STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << name << "'.");
             }
         }
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in line " << lineNo << ": " << exception.what());
     }
-    if (!builder.setTopLevel(toplevelId)) {
-        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level element '" << toplevelId << "' unknown.");
-    }
+    builder.setTopLevel(toplevelId);
     storm::utility::closeFile(file);
 
     // Build DFT
@@ -189,7 +185,7 @@ std::string DFTGalileoParser<ValueType>::parseValue(std::string name, std::strin
 }
 
 template<typename ValueType>
-bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std::string& input, storm::dft::builder::DFTBuilder<ValueType>& builder,
+void DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std::string& input, storm::dft::builder::DFTBuilder<ValueType>& builder,
                                                     storm::parser::ValueParser<ValueType>& valueParser) {
     // Avoid writing too much
     using namespace storm::dft::storage::elements;
@@ -312,7 +308,8 @@ bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
                 STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "'. Assuming dormancy factor of 1.");
                 dorm = storm::utility::one<ValueType>();
             }
-            return builder.addBasicElementProbability(name, prob.value(), dorm.value());
+            builder.addBasicElementProbability(name, prob.value(), dorm.value());
+            break;
         case BEType::EXPONENTIAL:
             STORM_LOG_THROW(lambda.has_value(), storm::exceptions::WrongFormatException,
                             "Distribution " << toString(BEType::EXPONENTIAL) << " requires parameter 'lambda' for BE '" << name << "'.");
@@ -320,7 +317,8 @@ bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
                 STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "'. Assuming dormancy factor of 1.");
                 dorm = storm::utility::one<ValueType>();
             }
-            return builder.addBasicElementExponential(name, lambda.value(), dorm.value());
+            builder.addBasicElementExponential(name, lambda.value(), dorm.value());
+            break;
         case BEType::ERLANG:
             STORM_LOG_THROW(lambda.has_value(), storm::exceptions::WrongFormatException,
                             "Distribution " << toString(BEType::ERLANG) << " requires parameter 'lambda' for BE '" << name << "'.");
@@ -330,22 +328,25 @@ bool DFTGalileoParser<ValueType>::parseBasicElement(std::string const& name, std
                 STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "'. Assuming dormancy factor of 1.");
                 dorm = storm::utility::one<ValueType>();
             }
-            return builder.addBasicElementErlang(name, lambda.value(), phases.value(), dorm.value());
+            builder.addBasicElementErlang(name, lambda.value(), phases.value(), dorm.value());
+            break;
         case BEType::WEIBULL:
             STORM_LOG_THROW(shape.has_value(), storm::exceptions::WrongFormatException,
                             "Distribution " << toString(BEType::WEIBULL) << " requires parameter 'shape' for BE '" << name << "'.");
             STORM_LOG_THROW(rate.has_value(), storm::exceptions::WrongFormatException,
                             "Distribution " << toString(BEType::WEIBULL) << " requires parameter 'rate' for BE '" << name << "'.");
-            return builder.addBasicElementWeibull(name, shape.value(), rate.value());
+            builder.addBasicElementWeibull(name, shape.value(), rate.value());
+            break;
         case BEType::LOGNORMAL:
             STORM_LOG_THROW(mean.has_value(), storm::exceptions::WrongFormatException,
                             "Distribution " << toString(BEType::LOGNORMAL) << " requires parameter 'mean' for BE '" << name << "'.");
             STORM_LOG_THROW(stddev.has_value(), storm::exceptions::WrongFormatException,
                             "Distribution " << toString(BEType::WEIBULL) << " requires parameter 'stddev' for BE '" << name << "'.");
-            return builder.addBasicElementLogNormal(name, mean.value(), stddev.value());
+            builder.addBasicElementLogNormal(name, mean.value(), stddev.value());
+            break;
         default:
             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "No distribution defined for basic element '" << name << "'.");
-            return false;
+            break;
     }
 }
 

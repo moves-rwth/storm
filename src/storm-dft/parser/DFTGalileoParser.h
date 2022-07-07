@@ -44,10 +44,8 @@ class DFTGalileoParser {
      * @param input Input line (without name of BE). Will be modified during the parsing.
      * @param builder DFTBuilder.
      * @param valueParser ValueParser for parsing numbers.
-     *
-     * @return True iff the parsing and creation was successful.
      */
-    static bool parseBasicElement(std::string const& name, std::string& input, storm::dft::builder::DFTBuilder<ValueType>& builder,
+    static void parseBasicElement(std::string const& name, std::string& input, storm::dft::builder::DFTBuilder<ValueType>& builder,
                                   storm::parser::ValueParser<ValueType>& valueParser);
 
     /*!
