@@ -42,7 +42,7 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
         if (jsonInput.count("parameters") > 0) {
             Json parameters = jsonInput.at("parameters");
             STORM_LOG_THROW(parameters.empty() || (std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException,
-                            "Parameters only allowed when using rational functions.");
+                            "Parameters are only allowed when using rational functions.");
             for (auto const& parameter : parameters) {
                 valueParser.addParameter(parseValue(parameter));
             }
@@ -65,7 +65,6 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
         // Parse nodes
         for (auto const& element : nodes) {
             currentLocation = parseValue(element);
-            bool success = false;
             Json const& data = element.at("data");
             std::string name = parseName(data.at("name"));
             // Create list of children
@@ -81,51 +80,47 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
 
             std::string type = data.at("type");
             if (type == "and") {
-                success = builder.addAndGate(name, childNames);
+                builder.addAndGate(name, childNames);
             } else if (type == "or") {
-                success = builder.addOrGate(name, childNames);
+                builder.addOrGate(name, childNames);
             } else if (type == "vot") {
                 STORM_LOG_THROW(data.count("voting") > 0, storm::exceptions::WrongFormatException, "Voting gate '" << name << "' requires parameter 'voting'.");
                 std::string votThreshold = parseValue(data.at("voting"));
-                success = builder.addVotingGate(name, storm::parser::parseNumber<size_t>(votThreshold), childNames);
+                builder.addVotingGate(name, storm::parser::parseNumber<size_t>(votThreshold), childNames);
             } else if (type == "pand") {
                 if (data.count("inclusive") > 0) {
                     bool inclusive = data.at("inclusive");
-                    success = builder.addPandGate(name, childNames, inclusive);
+                    builder.addPandGate(name, childNames, inclusive);
                 } else {
-                    success = builder.addPandGate(name, childNames);
+                    builder.addPandGate(name, childNames);
                 }
             } else if (type == "por") {
                 if (data.count("inclusive") > 0) {
                     bool inclusive = data.at("inclusive");
-                    success = builder.addPorGate(name, childNames, inclusive);
+                    builder.addPorGate(name, childNames, inclusive);
                 } else {
-                    success = builder.addPorGate(name, childNames);
+                    builder.addPorGate(name, childNames);
                 }
             } else if (type == "spare") {
-                success = builder.addSpareGate(name, childNames);
+                builder.addSpareGate(name, childNames);
             } else if (type == "seq") {
-                success = builder.addSequenceEnforcer(name, childNames);
+                builder.addSequenceEnforcer(name, childNames);
             } else if (type == "mutex") {
-                success = builder.addMutex(name, childNames);
+                builder.addMutex(name, childNames);
             } else if (type == "fdep") {
-                success = builder.addPdep(name, childNames, storm::utility::one<ValueType>());
+                builder.addPdep(name, childNames, storm::utility::one<ValueType>());
             } else if (type == "pdep") {
                 STORM_LOG_THROW(data.count("probability") > 0, storm::exceptions::WrongFormatException,
                                 "PDEP '" << name << "' requires parameter 'probability'.");
                 ValueType probability = valueParser.parseValue(parseValue(data.at("probability")));
-                success = builder.addPdep(name, childNames, probability);
+                builder.addPdep(name, childNames, probability);
             } else if (boost::starts_with(type, "be")) {
-                success = parseBasicElement(name, type, data, builder, valueParser);
+                parseBasicElement(name, type, data, builder, valueParser);
             } else if (type == "compound") {
                 STORM_LOG_TRACE("Ignoring compound node '" << name << "'.");
-                success = true;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name '" << type << "' not recognized.");
-                success = false;
             }
-            // Check whether adding was successful
-            STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << element << "'.");
 
             if (element.find("position") != element.end()) {
                 // Set layout positions
@@ -141,15 +136,12 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
         std::string topLevelId = parseValue(jsonInput.at("toplevel"));
         STORM_LOG_THROW(nameMapping.find(topLevelId) != nameMapping.end(), storm::exceptions::WrongFormatException,
                         "Top level element with id '" << topLevelId << "' was not defined.");
-        toplevelName = nameMapping.at(topLevelId);
+        builder.setTopLevel(nameMapping.at(topLevelId));
 
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_THROW(false, storm::exceptions::FileIoException, "A parsing exception occurred in " << currentLocation << ": " << exception.what());
     } catch (std::exception const& exception) {
         STORM_LOG_THROW(false, storm::exceptions::FileIoException, "An exception occurred during parsing in " << currentLocation << ": " << exception.what());
-    }
-    if (!builder.setTopLevel(toplevelName)) {
-        STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level element '" << toplevelName << "' unknown.");
     }
 
     // Build DFT
@@ -179,7 +171,7 @@ std::string DFTJsonParser<ValueType>::parseValue(Json value) {
 }
 
 template<typename ValueType>
-bool DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::string const& type, Json input,
+void DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::string const& type, Json input,
                                                  storm::dft::builder::DFTBuilder<ValueType>& builder, storm::parser::ValueParser<ValueType>& valueParser) {
     std::string distribution = "exponential";  // Default is exponential distribution
     if (input.count("distribution") > 0) {
@@ -196,7 +188,7 @@ bool DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         // Constant failed/failsafe
         STORM_LOG_THROW(input.count("failed") > 0, storm::exceptions::WrongFormatException, "Constant BE '" << name << "' requires parameter 'failed'.");
         bool failed = input.at("failed");
-        return builder.addBasicElementConst(name, failed);
+        builder.addBasicElementConst(name, failed);
     } else if (distribution == "probability") {
         // Constant probability distribution
         STORM_LOG_THROW(input.count("prob") > 0, storm::exceptions::WrongFormatException,
@@ -208,7 +200,7 @@ bool DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         } else {
             STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "'. Assuming dormancy factor of 1.");
         }
-        return builder.addBasicElementProbability(name, probability, dormancy);
+        builder.addBasicElementProbability(name, probability, dormancy);
     } else if (distribution == "exponential") {
         // Exponential distribution
         STORM_LOG_THROW(input.count("rate") > 0, storm::exceptions::WrongFormatException,
@@ -224,7 +216,7 @@ bool DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         if (input.count("transient") > 0) {
             transient = input.at("transient");
         }
-        return builder.addBasicElementExponential(name, rate, dormancy, transient);
+        builder.addBasicElementExponential(name, rate, dormancy, transient);
     } else if (distribution == "erlang") {
         // Erlang distribution
         STORM_LOG_THROW(input.count("rate") > 0, storm::exceptions::WrongFormatException,
@@ -239,7 +231,7 @@ bool DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         } else {
             STORM_LOG_WARN("No dormancy factor was provided for basic element '" << name << "'. Assuming dormancy factor of 1.");
         }
-        return builder.addBasicElementErlang(name, rate, phases, dormancy);
+        builder.addBasicElementErlang(name, rate, phases, dormancy);
     } else if (distribution == "weibull") {
         // Weibull distribution
         STORM_LOG_THROW(input.count("shape") > 0, storm::exceptions::WrongFormatException,
@@ -248,7 +240,7 @@ bool DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         STORM_LOG_THROW(input.count("rate") > 0, storm::exceptions::WrongFormatException,
                         "BE '" << name << "' with Weibull distribution requires parameter 'rate'.");
         ValueType rate = valueParser.parseValue(parseValue(input.at("rate")));
-        return builder.addBasicElementWeibull(name, shape, rate);
+        builder.addBasicElementWeibull(name, shape, rate);
     } else if (distribution == "lognormal") {
         // Log-normal distribution
         STORM_LOG_THROW(input.count("mean") > 0, storm::exceptions::WrongFormatException,
@@ -257,10 +249,9 @@ bool DFTJsonParser<ValueType>::parseBasicElement(std::string const& name, std::s
         STORM_LOG_THROW(input.count("stddev") > 0, storm::exceptions::WrongFormatException,
                         "BE '" << name << "' with Log-normal distribution requires parameter 'stddev'.");
         ValueType stddev = valueParser.parseValue(parseValue(input.at("stddev")));
-        return builder.addBasicElementLogNormal(name, mean, stddev);
+        builder.addBasicElementLogNormal(name, mean, stddev);
     } else {
         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Distribution " << distribution << " not known.");
-        return false;
     }
 }
 

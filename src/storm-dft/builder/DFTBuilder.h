@@ -49,9 +49,8 @@ class DFTBuilder {
      * Create BE which is constant failed or constant failsafe and add it to DFT.
      * @param name Name.
      * @param failed Whether the BE is constant failed.
-     * @return True iff adding was successful.
      */
-    bool addBasicElementConst(std::string const& name, bool failed);
+    void addBasicElementConst(std::string const& name, bool failed);
 
     /*!
      * Create BE with constant (Bernoulli) distribution and add it to DFT.
@@ -59,9 +58,8 @@ class DFTBuilder {
      * @param probability (Constant) probability that BE is failed.
      * @param dormancyFactor Dormancy factor in passive mode.
      * @param transient Whether the failure is transient.
-     * @return True iff adding was successful.
      */
-    bool addBasicElementProbability(std::string const& name, ValueType probability, ValueType dormancyFactor);
+    void addBasicElementProbability(std::string const& name, ValueType probability, ValueType dormancyFactor);
 
     /*!
      * Create BE with exponential distribution and add it to DFT.
@@ -69,9 +67,8 @@ class DFTBuilder {
      * @param rate Failure rate governing failure distribution of BE.
      * @param dormancyFactor Dormancy factor in passive mode.
      * @param transient Whether the failure is transient.
-     * @return True iff adding was successful.
      */
-    bool addBasicElementExponential(std::string const& name, ValueType rate, ValueType dormancyFactor, bool transient = false);
+    void addBasicElementExponential(std::string const& name, ValueType rate, ValueType dormancyFactor, bool transient = false);
 
     /*!
      * Create BE with Erlang distribution and add it to DFT.
@@ -79,118 +76,104 @@ class DFTBuilder {
      * @param rate Failure rate governing failure distribution in each phase.
      * @param phases Number of consecutive phases.
      * @param dormancyFactor Dormancy factor in passive mode.
-     * @return True iff adding was successful.
      */
-    bool addBasicElementErlang(std::string const& name, ValueType rate, unsigned phases, ValueType dormancyFactor);
+    void addBasicElementErlang(std::string const& name, ValueType rate, unsigned phases, ValueType dormancyFactor);
 
     /*!
      * Create BE with Weibull distribution and add it to DFT.
      * @param name Name.
      * @param shape Shape parameter.
      * @param rate Failure rate governing failure distribution (also called scale).
-     * @return True iff adding was successful.
      */
-    bool addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate);
+    void addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate);
 
     /*!
      * Create BE with log-normal distribution and add it to DFT.
      * @param name Name.
      *  @param mean Mean value (also called expected value).
      * @param standardDeviation Standard deviation.
-     * @return True iff adding was successful.
      */
-    bool addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation);
+    void addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation);
 
     /*!
      * Create BE with distribution given by sample points and add it to DFT.
      * @param name Name.
      * @param activeSamples Sample points defining the unreliability at certain time points (i.e. the cumulative distribution function F(x)).
-     * @return True iff adding was successful.
      */
-    bool addBasicElementSamples(std::string const& name, std::map<ValueType, ValueType> const& activeSamples);
+    void addBasicElementSamples(std::string const& name, std::map<ValueType, ValueType> const& activeSamples);
 
     /*!
      * Create AND-gate and add it to DFT.
      * @param name Name.
      * @param children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addAndGate(std::string const& name, std::vector<std::string> const& children);
+    void addAndGate(std::string const& name, std::vector<std::string> const& children);
 
     /*!
      * Create OR-gate and add it to DFT.
      * @param name Name.
      * @param children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addOrGate(std::string const& name, std::vector<std::string> const& children);
+    void addOrGate(std::string const& name, std::vector<std::string> const& children);
 
     /*!
      * Create VOTing-gate and add it to DFT.
      * @param name Name.
      * @param threshold Threshold specifying how many children need to fail.
      * @param children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addVotingGate(std::string const& name, unsigned threshold, std::vector<std::string> const& children);
+    void addVotingGate(std::string const& name, unsigned threshold, std::vector<std::string> const& children);
 
     /*!
      * Create PAND-gate and add it to DFT.
      * @param name Name.
      * @param children Names of children.
      * @param inclusive Whether the failure behaviour is inclusive (simultaneous failures are allowed) or not.
-     * @return True iff adding was successful.
      */
-    bool addPandGate(std::string const& name, std::vector<std::string> const& children, bool inclusive = true);
+    void addPandGate(std::string const& name, std::vector<std::string> const& children, bool inclusive = true);
 
     /*!
      * Create POR-gate and add it to DFT.
      * @param name Name.
      * @param children Names of children.
      * @param inclusive Whether the failure behaviour is inclusive (simultaneous failures are allowed) or not.
-     * @return True iff adding was successful.
      */
-    bool addPorGate(std::string const& name, std::vector<std::string> const& children, bool inclusive = true);
+    void addPorGate(std::string const& name, std::vector<std::string> const& children, bool inclusive = true);
 
     /*!
      * Create SPARE-gate and add it to DFT.
      * @param name Name.
      * @param children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addSpareGate(std::string const& name, std::vector<std::string> const& children);
+    void addSpareGate(std::string const& name, std::vector<std::string> const& children);
 
     /*!
      * Create sequence enforcer (SEQ) and add it to DFT.
      * @param name Name.
      * @param children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children);
+    void addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children);
 
     /*!
      * Create mutual exclusion-gate (MUTEX) and add it to DFT.
      * @param name Name.
      * @param children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addMutex(std::string const& name, std::vector<std::string> const& children);
+    void addMutex(std::string const& name, std::vector<std::string> const& children);
 
     /*!
      * Create (probabilistic) dependency (PDEP) and add it to DFT.
      * @param name Name.
      * @param children Names of children. First child is the trigger event, all remaining children are the dependent events.
      * @param probability Probability of forwarding the failure. Probability 1 corresponds to an FDEP.
-     * @return True iff adding was successful.
      */
-    bool addPdep(std::string const& name, std::vector<std::string> const& children, ValueType probability);
+    void addPdep(std::string const& name, std::vector<std::string> const& children, ValueType probability);
 
     /*!
      * Set top level element.
      * @param tle Name of top level element.
-     * @return True iff setting was successful.
      */
-    bool setTopLevel(std::string const& tle);
+    void setTopLevel(std::string const& tle);
 
     /*!
      * Add layout information for DFT element.
@@ -226,33 +209,29 @@ class DFTBuilder {
     /*!
      * Add given element to DFT.
      * @param element DFT element.
-     * @return True iff adding was successful.
      */
-    bool addElement(DFTElementPointer element);
+    void addElement(DFTElementPointer element);
 
     /*!
      * Add given gate to DFT.
      * @param gate Gate.
      * @param children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addGate(DFTGatePointer gate, std::vector<std::string> const& children);
+    void addGate(DFTGatePointer gate, std::vector<std::string> const& children);
 
     /*!
      * Add given dependency to DFT.
      * @param dependency Dependency.
      * @parama children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addDependency(DFTDependencyPointer dependency, std::vector<std::string> const& children);
+    void addDependency(DFTDependencyPointer dependency, std::vector<std::string> const& children);
 
     /*!
      * Add given restriction to DFT.
      * @param restriction Restriction.
      * @param children Names of children.
-     * @return True iff adding was successful.
      */
-    bool addRestriction(DFTRestrictionPointer restriction, std::vector<std::string> const& children);
+    void addRestriction(DFTRestrictionPointer restriction, std::vector<std::string> const& children);
 
     /**
      * Check whether the name is already used.

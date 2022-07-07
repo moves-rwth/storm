@@ -108,220 +108,189 @@ storm::dft::storage::DFT<ValueType> DFTBuilder<ValueType>::build() {
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addElement(DFTElementPointer element) {
-    if (nameInUse(element->name())) {
-        STORM_LOG_ERROR("Element with name '" << element->name() << "' already exists.");
-        return false;
-    }
+void DFTBuilder<ValueType>::addElement(DFTElementPointer element) {
+    STORM_LOG_THROW(!nameInUse(element->name()), storm::exceptions::InvalidArgumentException, "Element with name '" << element->name() << "' already exists.");
     STORM_LOG_ASSERT(mNextId == mElements.size(), "Current id " << mNextId << " and number of elements " << mElements.size() << " do not match.");
     element->setId(mNextId++);
     mElements[element->name()] = element;
-    return true;
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addBasicElementConst(std::string const& name, bool failed) {
-    return addElement(std::make_shared<storm::dft::storage::elements::BEConst<ValueType>>(0, name, failed));
+void DFTBuilder<ValueType>::addBasicElementConst(std::string const& name, bool failed) {
+    addElement(std::make_shared<storm::dft::storage::elements::BEConst<ValueType>>(0, name, failed));
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addBasicElementProbability(std::string const& name, ValueType probability, ValueType dormancyFactor) {
+void DFTBuilder<ValueType>::addBasicElementProbability(std::string const& name, ValueType probability, ValueType dormancyFactor) {
     // Handle special cases
     if (storm::utility::isZero<ValueType>(probability)) {
-        return addBasicElementConst(name, false);
+        addBasicElementConst(name, false);
     } else if (storm::utility::isOne<ValueType>(probability)) {
-        return addBasicElementConst(name, true);
+        addBasicElementConst(name, true);
+    } else {
+        // TODO: check 0 <= dormancyFactor <= 1
+        addElement(std::make_shared<storm::dft::storage::elements::BEProbability<ValueType>>(0, name, probability, dormancyFactor));
     }
-    // TODO: check 0 <= dormancyFactor <= 1
-    return addElement(std::make_shared<storm::dft::storage::elements::BEProbability<ValueType>>(0, name, probability, dormancyFactor));
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, ValueType rate, ValueType dormancyFactor, bool transient) {
+void DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, ValueType rate, ValueType dormancyFactor, bool transient) {
     // Handle special cases
     if (storm::utility::isZero<ValueType>(rate)) {
-        return addBasicElementConst(name, false);
+        addBasicElementConst(name, false);
+    } else {
+        // TODO: check 0 <= dormancyFactor <= 1
+        addElement(std::make_shared<storm::dft::storage::elements::BEExponential<ValueType>>(0, name, rate, dormancyFactor, transient));
     }
-
-    // TODO: check 0 <= dormancyFactor <= 1
-    return addElement(std::make_shared<storm::dft::storage::elements::BEExponential<ValueType>>(0, name, rate, dormancyFactor, transient));
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, ValueType rate, unsigned phases, ValueType dormancyFactor) {
+void DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, ValueType rate, unsigned phases, ValueType dormancyFactor) {
     // Handle special cases
     if (storm::utility::isZero<ValueType>(rate)) {
-        return addBasicElementConst(name, false);
-    }
-    if (phases == 0) {
-        STORM_LOG_ERROR("Erlang distribution of BE " << name << " requires a positive number of phases.");
-        return false;
+        addBasicElementConst(name, false);
     } else if (phases == 1) {
         // shape=1 reduces to exponential distribution
-        return addBasicElementExponential(name, rate, dormancyFactor);
+        addBasicElementExponential(name, rate, dormancyFactor);
+    } else {
+        STORM_LOG_THROW(phases > 0, storm::exceptions::WrongFormatException, "Erlang distribution of BE " << name << " requires a positive number of phases.");
+        // TODO: check 0 <= dormancyFactor <= 1
+        addElement(std::make_shared<storm::dft::storage::elements::BEErlang<ValueType>>(0, name, rate, phases, dormancyFactor));
     }
-
-    // TODO: check 0 <= dormancyFactor <= 1
-    return addElement(std::make_shared<storm::dft::storage::elements::BEErlang<ValueType>>(0, name, rate, phases, dormancyFactor));
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate) {
+void DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate) {
+    STORM_LOG_THROW(!storm::utility::isZero<ValueType>(rate), storm::exceptions::WrongFormatException,
+                    "Weibull distribution of BE " << name << " requires a positive scale.");
+    STORM_LOG_THROW(!storm::utility::isZero<ValueType>(shape), storm::exceptions::WrongFormatException,
+                    "Weibull distribution of BE " << name << " requires a positive shape.");
     // Handle special cases
-    if (storm::utility::isZero<ValueType>(rate)) {
-        STORM_LOG_ERROR("Weibull distribution of BE " << name << " requires a positive scale.");
-        return false;
-    }
-    if (storm::utility::isZero<ValueType>(shape)) {
-        STORM_LOG_ERROR("Weibull distribution of BE " << name << " requires a positive shape.");
-        return false;
-    }
     if (storm::utility::isOne<ValueType>(shape)) {
         // shape=1 reduces to exponential distribution with rate 1/lambda
-        return addBasicElementExponential(name, storm::utility::one<ValueType>() / rate, storm::utility::one<ValueType>());  // TODO set dormancy factor
+        addBasicElementExponential(name, storm::utility::one<ValueType>() / rate, storm::utility::one<ValueType>());  // TODO set dormancy factor
+    } else {
+        // TODO: check 0 <= dormancyFactor <= 1
+        addElement(std::make_shared<storm::dft::storage::elements::BEWeibull<ValueType>>(0, name, shape, rate));
     }
-
-    // TODO: check 0 <= dormancyFactor <= 1
-    return addElement(std::make_shared<storm::dft::storage::elements::BEWeibull<ValueType>>(0, name, shape, rate));
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation) {
-    // Handle special cases
-    if (storm::utility::isZero<ValueType>(standardDeviation)) {
-        STORM_LOG_ERROR("Weibull distribution of BE " << name << " requires a positive standard deviation.");
-        return false;
-    }
-
-    return addElement(std::make_shared<storm::dft::storage::elements::BELogNormal<ValueType>>(0, name, mean, standardDeviation));
+void DFTBuilder<ValueType>::addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation) {
+    STORM_LOG_THROW(!storm::utility::isZero<ValueType>(standardDeviation), storm::exceptions::WrongFormatException,
+                    "Weibull distribution of BE " << name << " requires a positive standard deviation.");
+    addElement(std::make_shared<storm::dft::storage::elements::BELogNormal<ValueType>>(0, name, mean, standardDeviation));
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addBasicElementSamples(std::string const& name, std::map<ValueType, ValueType> const& activeSamples) {
+void DFTBuilder<ValueType>::addBasicElementSamples(std::string const& name, std::map<ValueType, ValueType> const& activeSamples) {
     // Check if it can fail
-    auto be = std::make_shared<storm::dft::storage::elements::BESamples<ValueType>>(0, name, activeSamples);
-    if (!be->canFail()) {
+    bool canFail = false;
+    for (auto const& sample : activeSamples) {
+        // At least one sample is not zero
+        if (!storm::utility::isZero(sample.second)) {
+            canFail = true;
+            break;
+        }
+    }
+    if (!canFail) {
         // Add constant failed BE instead
-        return addBasicElementConst(name, false);
+        addBasicElementConst(name, false);
+    } else {
+        addElement(std::make_shared<storm::dft::storage::elements::BESamples<ValueType>>(0, name, activeSamples));
     }
-
-    return addElement(be);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addGate(DFTGatePointer gate, std::vector<std::string> const& children) {
-    if (children.size() == 0) {
-        STORM_LOG_ERROR("No children given for gate " << gate << ".");
-        return false;
-    }
+void DFTBuilder<ValueType>::addGate(DFTGatePointer gate, std::vector<std::string> const& children) {
+    STORM_LOG_THROW(children.size() > 0, storm::exceptions::WrongFormatException, "No children given for gate " << gate << ".");
     mChildNames[gate] = children;
-    return addElement(gate);
+    addElement(gate);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addAndGate(std::string const& name, std::vector<std::string> const& children) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTAnd<ValueType>>(0, name), children);
+void DFTBuilder<ValueType>::addAndGate(std::string const& name, std::vector<std::string> const& children) {
+    addGate(std::make_shared<storm::dft::storage::elements::DFTAnd<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addOrGate(std::string const& name, std::vector<std::string> const& children) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTOr<ValueType>>(0, name), children);
+void DFTBuilder<ValueType>::addOrGate(std::string const& name, std::vector<std::string> const& children) {
+    addGate(std::make_shared<storm::dft::storage::elements::DFTOr<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addVotingGate(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
+void DFTBuilder<ValueType>::addVotingGate(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
+    STORM_LOG_THROW(threshold <= children.size(), storm::exceptions::WrongFormatException,
+                    "Voting gate " << name << " has threshold " << threshold << " higher than the number of children " << children.size() << ".");
     // Handle special cases
     if (children.size() == threshold) {
-        return addAndGate(name, children);
+        addAndGate(name, children);
+    } else if (threshold == 1) {
+        addOrGate(name, children);
+    } else {
+        addGate(std::make_shared<storm::dft::storage::elements::DFTVot<ValueType>>(0, name, threshold), children);
     }
-    if (threshold == 1) {
-        return addOrGate(name, children);
-    }
-
-    if (threshold > children.size()) {
-        STORM_LOG_ERROR("Voting gate " << name << " has threshold " << threshold << " higher than the number of children " << children.size() << ".");
-        return false;
-    }
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTVot<ValueType>>(0, name, threshold), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addPandGate(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTPand<ValueType>>(0, name, inclusive), children);
+void DFTBuilder<ValueType>::addPandGate(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
+    addGate(std::make_shared<storm::dft::storage::elements::DFTPand<ValueType>>(0, name, inclusive), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addPorGate(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTPor<ValueType>>(0, name, inclusive), children);
+void DFTBuilder<ValueType>::addPorGate(std::string const& name, std::vector<std::string> const& children, bool inclusive) {
+    addGate(std::make_shared<storm::dft::storage::elements::DFTPor<ValueType>>(0, name, inclusive), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addSpareGate(std::string const& name, std::vector<std::string> const& children) {
-    return addGate(std::make_shared<storm::dft::storage::elements::DFTSpare<ValueType>>(0, name), children);
+void DFTBuilder<ValueType>::addSpareGate(std::string const& name, std::vector<std::string> const& children) {
+    addGate(std::make_shared<storm::dft::storage::elements::DFTSpare<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addDependency(DFTDependencyPointer dependency, std::vector<std::string> const& children) {
-    if (children.size() <= 1) {
-        STORM_LOG_ERROR("Dependency " << dependency->name() << " requires at least two children.");
-        return false;
-    }
+void DFTBuilder<ValueType>::addDependency(DFTDependencyPointer dependency, std::vector<std::string> const& children) {
+    STORM_LOG_THROW(children.size() > 1, storm::exceptions::WrongFormatException, "Dependency " << dependency->name() << " requires at least two children.");
     if (storm::utility::isZero(dependency->probability())) {
-        STORM_LOG_WARN("Dependency " << dependency->name() << " with probability 0 is superfluous.");
-        // Element is superfluous
-        return true;
+        STORM_LOG_WARN("Dependency " << dependency->name() << " with probability 0 is superfluous and will not be added.");
+    } else {
+        // TODO: collect constraints for SMT solving
+        mDependencyChildNames[dependency] = children;
+        addElement(dependency);
     }
-    // TODO: collect constraints for SMT solving
-
-    mDependencyChildNames[dependency] = children;
-    return addElement(dependency);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addPdep(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
-    return addDependency(std::make_shared<storm::dft::storage::elements::DFTDependency<ValueType>>(0, name, probability), children);
+void DFTBuilder<ValueType>::addPdep(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
+    addDependency(std::make_shared<storm::dft::storage::elements::DFTDependency<ValueType>>(0, name, probability), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addRestriction(DFTRestrictionPointer restriction, std::vector<std::string> const& children) {
-    if (children.size() <= 1) {
-        STORM_LOG_ERROR("Restrictions require at least two children");
-        return false;
-    }
-
+void DFTBuilder<ValueType>::addRestriction(DFTRestrictionPointer restriction, std::vector<std::string> const& children) {
+    STORM_LOG_THROW(children.size() > 1, storm::exceptions::WrongFormatException, "Restriction " << restriction->name() << " requires at least two children.");
     mRestrictionChildNames[restriction] = children;
-    return addElement(restriction);
+    addElement(restriction);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children) {
-    return addRestriction(std::make_shared<storm::dft::storage::elements::DFTSeq<ValueType>>(0, name), children);
+void DFTBuilder<ValueType>::addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children) {
+    addRestriction(std::make_shared<storm::dft::storage::elements::DFTSeq<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::addMutex(std::string const& name, std::vector<std::string> const& children) {
-    return addRestriction(std::make_shared<storm::dft::storage::elements::DFTMutex<ValueType>>(0, name), children);
+void DFTBuilder<ValueType>::addMutex(std::string const& name, std::vector<std::string> const& children) {
+    addRestriction(std::make_shared<storm::dft::storage::elements::DFTMutex<ValueType>>(0, name), children);
 }
 
 template<typename ValueType>
-bool DFTBuilder<ValueType>::setTopLevel(std::string const& tle) {
-    if (!mTopLevelName.empty()) {
-        STORM_LOG_ERROR("Top level element was already set");
-        return false;
-    }
-    if (!nameInUse(tle)) {
-        STORM_LOG_ERROR("Element with name '" << tle << "' not known.");
-        return false;
-    }
+void DFTBuilder<ValueType>::setTopLevel(std::string const& tle) {
+    STORM_LOG_THROW(mTopLevelName.empty(), storm::exceptions::WrongFormatException, "Top level element was already set");
+    STORM_LOG_THROW(nameInUse(tle), storm::exceptions::InvalidArgumentException, "Element with name '" << tle << "' not known.");
     mTopLevelName = tle;
-    return true;
 }
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addLayoutInfo(std::string const& name, double x, double y) {
-    if (!nameInUse(name)) {
-        STORM_LOG_ERROR("Element with name '" << name << "' not found.");
-    }
+    STORM_LOG_THROW(nameInUse(name), storm::exceptions::InvalidArgumentException, "Element with name '" << name << "' not found.");
     mLayoutInfo[name] = storm::dft::storage::DFTLayoutInfo(x, y);
 }
 
