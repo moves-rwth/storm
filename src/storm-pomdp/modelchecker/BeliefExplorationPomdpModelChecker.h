@@ -40,6 +40,7 @@ namespace storm {
                     ValueType diff (bool relative = false) const;
                     bool updateLowerBound(ValueType const& value);
                     bool updateUpperBound(ValueType const& value);
+                    std::shared_ptr<storm::models::sparse::Model<ValueType>> schedulerAsMarkovChain;
                 };
                 
                 BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());

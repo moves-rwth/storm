@@ -300,7 +300,6 @@ namespace storm {
                         approx->setExtremeValueBound(pomdpValueBounds.extremePomdpValueBound);
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
-                    storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(approx->getExploredMdp()),"/Users/bork/belMDP.dot");
                     if (approx->hasComputedValues()) {
                         auto printInfo = [&approx]() {
                             std::stringstream str;
@@ -323,13 +322,14 @@ namespace storm {
                             }
                         }
                         newLabeling.removeLabel("truncated");
-                        storm::models::sparse::Mdp<ValueType> newMDP(scheduledModel->getTransitionMatrix(), newLabeling, scheduledModel->getRewardModels());
-                        auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), false);
-                        //auto imcPtr = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(inducedMC);
+                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling, scheduledModel->getRewardModels());
+                        if(scheduledModel->hasChoiceLabeling()){
+                            modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
+                        }
+                        storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
+                        auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), true);
                         scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
-                        storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(scheduledModel),"/Users/bork/sched.dot");
-                        storm::api::exportScheduler(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(approx->getExploredMdp()),*(approx->getSchedulerForExploredMdp()),"/Users/bork/sched.json");
-                        STORM_LOG_INFO(printInfo());
+                        result.schedulerAsMarkovChain = scheduledModel;
                         ValueType &resultValue = min ? result.upperBound : result.lowerBound;
                         resultValue = approx->getComputedValueAtInitialState();
                     }
@@ -886,6 +886,7 @@ namespace storm {
                     if (targetObservations.count(beliefManager->getBeliefObservation(currId)) != 0) {
                         underApproximation->setCurrentStateIsTarget();
                         underApproximation->addSelfloopTransition();
+                        underApproximation->addChoiceLabelToCurrentState(0, "loop");
                     } else {
                         bool stopExploration = false;
                         bool clipBelief = false;
@@ -925,6 +926,12 @@ namespace storm {
                             // Add successor transitions or cut-off transitions when exploration is stopped
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available
+                                if(pomdp().hasChoiceLabeling()){
+                                    if(pomdp().getChoiceLabeling().getLabelsOfChoice(beliefManager->getRepresentativeState(currId)+action).size() > 0) {
+                                        underApproximation->addChoiceLabelToCurrentState(
+                                            addedActions + action,*(pomdp().getChoiceLabeling().getLabelsOfChoice(beliefManager->getRepresentativeState(currId)+action).begin()));
+                                    }
+                                }
                                 if (stateAlreadyExplored) {
                                     underApproximation->restoreOldBehaviorAtCurrentState(action);
                                 } else {
@@ -972,6 +979,9 @@ namespace storm {
                                 } else {
                                     underApproximation->addTransitionsToExtraStates(i, cutOffValue,storm::utility::one<ValueType>() - cutOffValue);
                                 }
+                                if(pomdp().hasChoiceLabeling()){
+                                    underApproximation->addChoiceLabelToCurrentState(i, "sched_" + std::to_string(i));
+                                }
                             }
                         }
                     }
@@ -1005,7 +1015,6 @@ namespace storm {
                     statistics.underApproximationStates = underApproximation->getExploredMdp()->getNumberOfStates();
                 }
                 return fixPoint;
-
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>

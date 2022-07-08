@@ -68,6 +68,7 @@ namespace storm {
             clippedStates.clear();
             delayedExplorationChoices.clear();
             clippingTransitionRewards.clear();
+            mdpStateToChoiceLabelsMap.clear();
             optimalChoices = boost::none;
             optimalChoicesReachableMdpStates = boost::none;
             exploredMdp = nullptr;
@@ -82,6 +83,7 @@ namespace storm {
                 insertValueHints(extraBottomStateValue.get(), extraBottomStateValue.get());
 
                 internalAddTransition(getStartOfCurrentRowGroup(), extraBottomState.get(), storm::utility::one<ValueType>());
+                mdpStateToChoiceLabelsMap[getStartOfCurrentRowGroup()][0] = "loop";
                 internalAddRowGroupIndex();
                 ++nextId;
             } else {
@@ -95,6 +97,7 @@ namespace storm {
                 insertValueHints(extraTargetStateValue.get(), extraTargetStateValue.get());
 
                 internalAddTransition(getStartOfCurrentRowGroup(), extraTargetState.get(), storm::utility::one<ValueType>());
+                mdpStateToChoiceLabelsMap[getStartOfCurrentRowGroup()][0] = "loop";
                 internalAddRowGroupIndex();
 
                 targetStates.grow(getCurrentNumberOfMdpStates(), false);
@@ -476,9 +479,16 @@ namespace storm {
                         beliefIdToMdpStateMap[beliefMdpState.first] = stateRemapping[beliefMdpState.second];
                     }
                 }
+                if(!mdpStateToChoiceLabelsMap.empty()) {
+                    std::map<BeliefId, std::map<uint64_t, std::string>> temp(mdpStateToChoiceLabelsMap);
+                    for (auto const &entry : stateRemapping) {
+                        temp[entry.second] = mdpStateToChoiceLabelsMap[entry.first];
+                    }
+                    mdpStateToChoiceLabelsMap = temp;
+                }
             }
 
-            // Create the tranistion matrix
+            // Create the transition matrix
             uint64_t entryCount = 0;
             for (auto const &row : exploredMdpTransitions) {
                 entryCount += row.size();
@@ -542,6 +552,19 @@ namespace storm {
             storm::storage::sparse::ModelComponents<ValueType> modelComponents(std::move(mdpTransitionMatrix), std::move(mdpLabeling), std::move(mdpRewardModels));
 
             // Potentially create a choice labeling
+            if(!mdpStateToChoiceLabelsMap.empty()){
+                modelComponents.choiceLabeling = storm::models::sparse::ChoiceLabeling(getCurrentNumberOfMdpChoices());
+                for(auto const & stateMap : mdpStateToChoiceLabelsMap){
+                    auto rowGroup = stateMap.first;
+                    for(auto const & actionLabel : stateMap.second){
+                        if(! modelComponents.choiceLabeling->containsLabel(actionLabel.second)){
+                            modelComponents.choiceLabeling->addLabel(actionLabel.second);
+                        }
+                        modelComponents.choiceLabeling->addLabelToChoice(actionLabel.second, exploredChoiceIndices[rowGroup] + actionLabel.first);
+                    }
+                }
+            }
+
             if (!delayedExplorationChoices.empty()) {
                 modelComponents.choiceLabeling = storm::models::sparse::ChoiceLabeling(getCurrentNumberOfMdpChoices());
                 delayedExplorationChoices.resize(getCurrentNumberOfMdpChoices(), false);
@@ -1069,6 +1092,11 @@ namespace storm {
                 mdpStatesToExplorePrioState.emplace(currentPrio, result);
                 return result;
             }
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addChoiceLabelToCurrentState(uint64_t const &localActionIndex, std::string label) {
+            mdpStateToChoiceLabelsMap[currentMdpState][localActionIndex] = label;
         }
 
         template<typename PomdpType, typename BeliefValueType>

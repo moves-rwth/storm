@@ -68,6 +68,8 @@ namespace storm {
 
             BeliefId exploreNextState();
 
+            void addChoiceLabelToCurrentState(uint64_t const &localActionIndex, std::string label);
+
             void addTransitionsToExtraStates(uint64_t const &localActionIndex, ValueType const &targetStateValue = storm::utility::zero<ValueType>(),
                                              ValueType const &bottomStateValue = storm::utility::zero<ValueType>());
 
@@ -254,7 +256,8 @@ namespace storm {
             std::vector<BeliefId> mdpStateToBeliefIdMap;
             std::map<BeliefId, MdpStateType> beliefIdToMdpStateMap;
             storm::storage::BitVector exploredBeliefIds;
-            
+            std::map<BeliefId, std::map<uint64_t, std::string>> mdpStateToChoiceLabelsMap;
+
             // Exploration information
             std::multimap<ValueType, uint64_t> mdpStatesToExplorePrioState;
             std::map<uint64_t, ValueType> mdpStatesToExploreStatePrio;
