@@ -20,8 +20,15 @@ namespace expressions {
 // Forward-declare manager class for iterator class.
 class ExpressionManager;
 
-class VariableIterator : public std::iterator<std::input_iterator_tag, std::pair<storm::expressions::Variable, storm::expressions::Type> const> {
+class VariableIterator {
    public:
+    // Define iterator
+    using iterator_category = std::input_iterator_tag;
+    using value_type = std::pair<storm::expressions::Variable, storm::expressions::Type> const;
+    using difference_type = std::ptrdiff_t;
+    using pointer = std::pair<storm::expressions::Variable, storm::expressions::Type> const*;
+    using reference = std::pair<storm::expressions::Variable, storm::expressions::Type> const&;
+
     enum class VariableSelection { OnlyRegularVariables, OnlyAuxiliaryVariables, AllVariables };
 
     VariableIterator(ExpressionManager const& manager, std::unordered_map<std::string, uint_fast64_t>::const_iterator nameIndexIterator,
