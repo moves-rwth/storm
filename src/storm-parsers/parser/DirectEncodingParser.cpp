@@ -205,7 +205,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
             if (nonDeterministic) {
                 STORM_LOG_TRACE("new Row Group starts at " << row << ".");
                 builder.newRowGroup(row);
-                STORM_LOG_THROW(nrChoices == 0 || builder.getCurrentRowGroupCount() < nrChoices, storm::exceptions::WrongFormatException,
+                STORM_LOG_THROW(nrChoices == 0 || builder.getCurrentRowGroupCount() <= nrChoices, storm::exceptions::WrongFormatException,
                                 "More actions detected than declared (in @nr_choices).");
             }
 
