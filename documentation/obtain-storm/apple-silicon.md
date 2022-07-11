@@ -29,7 +29,7 @@ $ arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Home
 ```
 
 {:.alert .alert-info}
-You can have [seperate homebrew installations](https://docs.brew.sh/Installation#multiple-installations){:target="_blank"} that use default paths for x86 and ARM, respectively. One valid configuration would be to have one homebrew installation for x86 compilation in ```/usr/local/``` and one for ARM compilation in ```/opt/homebrew/```.
+You can have [seperate homebrew installations](https://docs.brew.sh/Installation#multiple-installations){:target="_blank" .alert-link} that use default paths for x86 and ARM, respectively. One valid configuration would be to have one homebrew installation for x86 compilation in ```/usr/local/``` and one for ARM compilation in ```/opt/homebrew/```.
 
 
 We set an alias `brew86` to ensure that the x86 homebrew installation is invoked.

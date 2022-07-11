@@ -31,4 +31,4 @@ The publications in this category present tools, algorithms and case studies tha
 {% bibliography --group_by year --query @*[category=using] %}
 
 {:.alert .alert-danger}
-If there is a publication missing in some of the lists above, feel free to [contact us]({{ '/about.html#people' | relative_url }}).
+If there is a publication missing in some of the lists above, feel free to [contact us]({{ '/about.html#people' | relative_url }}){:.alert-link}.
