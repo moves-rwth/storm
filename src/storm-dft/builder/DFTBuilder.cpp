@@ -14,6 +14,16 @@ namespace storm::dft {
 namespace builder {
 
 template<typename ValueType>
+DFTBuilder<ValueType>::DFTBuilder() : mNextId(0), comparator() {
+    // Intentionally left empty
+}
+
+template<>
+DFTBuilder<double>::DFTBuilder() : mNextId(0), comparator(0 /* Set error to 0*/) {
+    // Intentionally left empty
+}
+
+template<typename ValueType>
 storm::dft::storage::DFT<ValueType> DFTBuilder<ValueType>::build() {
     STORM_LOG_THROW(!mTopLevelName.empty(), storm::exceptions::WrongFormatException, "No top level element defined.");
 
@@ -128,7 +138,10 @@ void DFTBuilder<ValueType>::addBasicElementProbability(std::string const& name, 
     } else if (storm::utility::isOne<ValueType>(probability)) {
         addBasicElementConst(name, true);
     } else {
-        // TODO: check 0 <= dormancyFactor <= 1
+        STORM_LOG_THROW(isValidProbability(probability), storm::exceptions::WrongFormatException,
+                        "Failure probability " << probability << " of BE " << name << " is not within interval [0, 1].");
+        STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
+                        "Dormancy factor " << dormancyFactor << " of BE " << name << " is not within interval [0, 1].");
         addElement(std::make_shared<storm::dft::storage::elements::BEProbability<ValueType>>(0, name, probability, dormancyFactor));
     }
 }
@@ -139,7 +152,10 @@ void DFTBuilder<ValueType>::addBasicElementExponential(std::string const& name, 
     if (storm::utility::isZero<ValueType>(rate)) {
         addBasicElementConst(name, false);
     } else {
-        // TODO: check 0 <= dormancyFactor <= 1
+        STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), rate), storm::exceptions::WrongFormatException,
+                        "Failure rate " << rate << " of BE " << name << " must be positive.");
+        STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
+                        "Dormancy factor " << dormancyFactor << " of BE " << name << " is not within interval [0, 1].");
         addElement(std::make_shared<storm::dft::storage::elements::BEExponential<ValueType>>(0, name, rate, dormancyFactor, transient));
     }
 }
@@ -153,32 +169,35 @@ void DFTBuilder<ValueType>::addBasicElementErlang(std::string const& name, Value
         // shape=1 reduces to exponential distribution
         addBasicElementExponential(name, rate, dormancyFactor);
     } else {
+        STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), rate), storm::exceptions::WrongFormatException,
+                        "Erlang distribution of BE " << name << " requires a positive rate.");
         STORM_LOG_THROW(phases > 0, storm::exceptions::WrongFormatException, "Erlang distribution of BE " << name << " requires a positive number of phases.");
-        // TODO: check 0 <= dormancyFactor <= 1
+        STORM_LOG_THROW(isValidProbability(dormancyFactor), storm::exceptions::WrongFormatException,
+                        "Dormancy factor " << dormancyFactor << " of BE " << name << " is not within interval [0, 1].");
         addElement(std::make_shared<storm::dft::storage::elements::BEErlang<ValueType>>(0, name, rate, phases, dormancyFactor));
     }
 }
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementWeibull(std::string const& name, ValueType shape, ValueType rate) {
-    STORM_LOG_THROW(!storm::utility::isZero<ValueType>(rate), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), rate), storm::exceptions::WrongFormatException,
                     "Weibull distribution of BE " << name << " requires a positive scale.");
-    STORM_LOG_THROW(!storm::utility::isZero<ValueType>(shape), storm::exceptions::WrongFormatException,
+    STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), shape), storm::exceptions::WrongFormatException,
                     "Weibull distribution of BE " << name << " requires a positive shape.");
+
     // Handle special cases
     if (storm::utility::isOne<ValueType>(shape)) {
         // shape=1 reduces to exponential distribution with rate 1/lambda
-        addBasicElementExponential(name, storm::utility::one<ValueType>() / rate, storm::utility::one<ValueType>());  // TODO set dormancy factor
+        addBasicElementExponential(name, storm::utility::one<ValueType>() / rate, storm::utility::one<ValueType>());
     } else {
-        // TODO: check 0 <= dormancyFactor <= 1
         addElement(std::make_shared<storm::dft::storage::elements::BEWeibull<ValueType>>(0, name, shape, rate));
     }
 }
 
 template<typename ValueType>
 void DFTBuilder<ValueType>::addBasicElementLogNormal(std::string const& name, ValueType mean, ValueType standardDeviation) {
-    STORM_LOG_THROW(!storm::utility::isZero<ValueType>(standardDeviation), storm::exceptions::WrongFormatException,
-                    "Weibull distribution of BE " << name << " requires a positive standard deviation.");
+    STORM_LOG_THROW(this->comparator.isLess(storm::utility::zero<ValueType>(), standardDeviation), storm::exceptions::WrongFormatException,
+                    "Log-normal distribution of BE " << name << " requires a positive standard deviation.");
     addElement(std::make_shared<storm::dft::storage::elements::BELogNormal<ValueType>>(0, name, mean, standardDeviation));
 }
 
@@ -253,7 +272,8 @@ void DFTBuilder<ValueType>::addDependency(DFTDependencyPointer dependency, std::
     if (storm::utility::isZero(dependency->probability())) {
         STORM_LOG_WARN("Dependency " << dependency->name() << " with probability 0 is superfluous and will not be added.");
     } else {
-        // TODO: collect constraints for SMT solving
+        STORM_LOG_THROW(isValidProbability(dependency->probability()), storm::exceptions::WrongFormatException,
+                        "Probability " << dependency->probability() << " of PDEP " << *dependency << " is not within interval [0, 1].");
         mDependencyChildNames[dependency] = children;
         addElement(dependency);
     }
@@ -389,6 +409,24 @@ void DFTBuilder<ValueType>::topologicalVisit(DFTElementPointer const& element,
         // Children have all been visited before -> add element to list
         visitedElements.push_back(element);
     }
+}
+
+template<typename ValueType>
+bool DFTBuilder<ValueType>::nameInUse(std::string const& name) const {
+    return mElements.find(name) != mElements.end();
+}
+
+template<typename ValueType>
+bool DFTBuilder<ValueType>::isValidProbability(ValueType value) const {
+    if (this->comparator.isZero(value) || this->comparator.isOne(value)) {
+        return true;
+    } else if (!this->comparator.isConstant(value)) {
+        // Do not check further if value is non-constant rational function
+        return true;
+    } else if (this->comparator.isLess(storm::utility::zero<ValueType>(), value) && this->comparator.isLess(value, storm::utility::one<ValueType>())) {
+        return true;
+    }
+    return false;
 }
 
 template<typename ValueType>

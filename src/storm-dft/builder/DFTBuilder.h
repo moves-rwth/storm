@@ -1,14 +1,16 @@
 #pragma once
+
 #include <iostream>
 #include <map>
 #include <unordered_map>
 
-#include "storm/utility/macros.h"
-
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 #include "storm-dft/storage/elements/DFTRestriction.h"
+
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/macros.h"
 
 namespace storm::storage {
 // Forward declaration
@@ -31,19 +33,20 @@ class DFTBuilder {
     using DFTRestrictionPointer = std::shared_ptr<storm::dft::storage::elements::DFTRestriction<ValueType>>;
 
    private:
-    std::size_t mNextId = 0;
+    std::size_t mNextId;
     std::string mTopLevelName;
     std::unordered_map<std::string, DFTElementPointer> mElements;
     std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
     std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
     std::unordered_map<DFTDependencyPointer, std::vector<std::string>> mDependencyChildNames;
     std::unordered_map<std::string, storm::dft::storage::DFTLayoutInfo> mLayoutInfo;
+    storm::utility::ConstantsComparator<ValueType> comparator;
 
    public:
     /*!
      * Constructor.
      */
-    DFTBuilder() = default;
+    DFTBuilder();
 
     /*!
      * Create BE which is constant failed or constant failsafe and add it to DFT.
@@ -238,9 +241,14 @@ class DFTBuilder {
      * @param name Element name.
      * @return True iff name is already in use.
      */
-    bool nameInUse(std::string const& name) {
-        return mElements.find(name) != mElements.end();
-    }
+    bool nameInUse(std::string const& name) const;
+
+    /**
+     * Check whether the given value is a probability and satisfies 0 <= value <= 1.
+     * @param value Value.
+     * @return True iff 0 <= value <= 1.
+     */
+    bool isValidProbability(ValueType value) const;
 
     /*!
      * Colouring used for topological sorting.
