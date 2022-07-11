@@ -41,6 +41,7 @@ namespace storm {
                     bool updateLowerBound(ValueType const& value);
                     bool updateUpperBound(ValueType const& value);
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> schedulerAsMarkovChain;
+                    std::vector<storm::storage::Scheduler<ValueType>> cutoffSchedulers;
                 };
                 
                 BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());

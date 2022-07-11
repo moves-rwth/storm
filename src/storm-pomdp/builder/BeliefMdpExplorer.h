@@ -171,6 +171,10 @@ namespace storm {
 
             storm::storage::Scheduler<ValueType> getLowerValueBoundScheduler(uint64_t schedulerId) const;
 
+            std::vector<storm::storage::Scheduler<ValueType>> getUpperValueBoundSchedulers() const;
+
+            std::vector<storm::storage::Scheduler<ValueType>> getLowerValueBoundSchedulers() const;
+
             ValueType computeParametricBoundAtBelief(BeliefId const &beliefId) const;
 
             void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir);

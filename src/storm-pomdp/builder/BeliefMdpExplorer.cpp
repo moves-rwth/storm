@@ -1178,6 +1178,20 @@ namespace storm {
             return pomdpValueBounds.upperSchedulers[schedulerId];
         }
 
+        template<typename PomdpType, typename BeliefValueType>
+        std::vector<storm::storage::Scheduler<typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>>
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::getLowerValueBoundSchedulers() const {
+            STORM_LOG_ASSERT(!pomdpValueBounds.lowerSchedulers.empty(), "Requested lower bound schedulers but none were available.");
+            return pomdpValueBounds.lowerSchedulers;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        std::vector<storm::storage::Scheduler<typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>>
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::getUpperValueBoundSchedulers() const {
+            STORM_LOG_ASSERT(!pomdpValueBounds.upperSchedulers.empty(), "Requested upper bound schedulers but none were available.");
+            return pomdpValueBounds.upperSchedulers;
+        }
+
         template
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>>;
 
