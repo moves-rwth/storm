@@ -46,9 +46,11 @@ namespace storm {
                 
                 BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
                 
-                Result check(storm::logic::Formula const& formula);
+                Result check(storm::logic::Formula const& formula, std::vector<std::vector<ValueType>> additionalUnderApproximationBounds = std::vector<std::vector<ValueType>>());
 
                 void printStatisticsToStream(std::ostream& stream) const;
+
+                POMDPValueBounds<BeliefValueType> precomputeValueBounds(const logic::Formula& formula);
                 
             private:
                 
@@ -68,7 +70,7 @@ namespace storm {
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& pomdpValueBounds, Result& result);
+                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
                 
                 
                 /**
@@ -78,7 +80,7 @@ namespace storm {
                  * @param min true if minimum probability is to be computed
                  * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& pomdpValueBounds, Result& result);
+                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
                 
                 struct HeuristicParameters {
                     ValueType gapThreshold;
@@ -124,10 +126,14 @@ namespace storm {
                  */
                 bool clipToExploredBeliefs(uint64_t clippingStateId, BeliefValueType threshold, bool computeRewards, uint64_t reducedCandidateSetSize, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer);
 
+                /**
+                 * Heuristically rates the quality of the approximation described by the given successor observation info.
+                 * Here, 0 means a bad approximation and 1 means a good approximation.
+                 */
                 BeliefValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution);
                 
                 std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector);
-                
+
                 struct Statistics {
                     Statistics();
                     boost::optional<uint64_t> refinementSteps;
@@ -163,6 +169,8 @@ namespace storm {
                 Options options;
                 storm::utility::ConstantsComparator<BeliefValueType> beliefTypeCC;
                 storm::utility::ConstantsComparator<ValueType> valueTypeCC;
+
+                storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
             };
 
         }

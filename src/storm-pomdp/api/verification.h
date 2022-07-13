@@ -6,12 +6,12 @@ namespace api {
     template<typename ValueType>
     typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<ValueType>::Result
     underapproximateWithCutoffs(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp,
-                              storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold){
+                              storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,  std::vector<std::vector<ValueType>> pomdpStateValues = std::vector<std::vector<ValueType>>()){
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
         options.useExplicitCutoff = true;
         options.sizeThresholdInit = sizeThreshold;
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<ValueType> modelchecker(pomdp, options);
-        return modelchecker.check(task.getFormula());
+        return modelchecker.check(task.getFormula(), pomdpStateValues);
     }
 
     template<typename ValueType>

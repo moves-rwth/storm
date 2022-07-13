@@ -83,7 +83,29 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(storm::logic::Formula const& formula) {
+            storm::pomdp::modelchecker::POMDPValueBounds<BeliefValueType> BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula) {
+                auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
+
+                // Compute some initial bounds on the values for each state of the pomdp
+                // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
+                auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getValueBounds(formula, formulaInfo);
+
+                std::vector<ValueType> pMCValueBound;
+                if(options.useParametricPreprocessing && options.unfold){
+                    STORM_LOG_WARN("Using the transformation to a pMC is currently not supported. The preprocessing step is skipped.");
+                    //initialPomdpValueBounds.parametric = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, options.paramMemBound, storm::storage::PomdpMemoryPattern::Full, options.paramGDEps, options.paramGDMaxInstantiations);
+                }
+                pomdpValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
+
+                // If we clip and compute rewards, compute the values necessary for the correction terms
+                if((options.clippingThresholdInit > 0 || options.useGridClipping) && formula.isRewardOperatorFormula()){
+                    pomdpValueBounds.extremePomdpValueBound =
+                        PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
+                }
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(storm::logic::Formula const& formula, std::vector<std::vector<ValueType>> additionalUnderApproximationBounds) {
                 STORM_LOG_ASSERT(options.unfold || options.discretize, "Invoked belief exploration but no task (unfold or discretize) given.");
                 
                 // Potentially reset preprocessed model from previous call
@@ -95,27 +117,17 @@ namespace storm {
                 // Extract the relevant information from the formula
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
                 
-                // Compute some initial bounds on the values for each state of the pomdp
-                // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
-                auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getValueBounds(formula, formulaInfo);
+                precomputeValueBounds(formula);
+                if(!additionalUnderApproximationBounds.empty()){
+                    if(formulaInfo.minimize()){
+                        pomdpValueBounds.trivialPomdpValueBounds.upper.insert(pomdpValueBounds.trivialPomdpValueBounds.upper.end(), std::make_move_iterator(additionalUnderApproximationBounds.begin()), std::make_move_iterator(additionalUnderApproximationBounds.end()));
+                    } else {
+                        pomdpValueBounds.trivialPomdpValueBounds.lower.insert(pomdpValueBounds.trivialPomdpValueBounds.lower.end(), std::make_move_iterator(additionalUnderApproximationBounds.begin()), std::make_move_iterator(additionalUnderApproximationBounds.end()));
+                    }
+                }
                 uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
-                Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
+                Result result(pomdpValueBounds.trivialPomdpValueBounds.getHighestLowerBound(initialPomdpState), pomdpValueBounds.trivialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
                 STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " << result.upperBound << "]");
-
-                std::vector<ValueType> pMCValueBound;
-                if(options.useParametricPreprocessing && options.unfold){
-                    STORM_LOG_WARN("Using the transformation to a pMC is currently not supported. The preprocessing step is skipped.");
-                    //initialPomdpValueBounds.parametric = PomdpParametricTransformationModelChecker<ValueType>(pomdp()).computeValuesForFMPolicy(formula, formulaInfo, options.paramMemBound, storm::storage::PomdpMemoryPattern::Full, options.paramGDEps, options.paramGDMaxInstantiations);
-                }
-                storm::pomdp::modelchecker::POMDPValueBounds<ValueType> initialValueBounds;
-                initialValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
-
-                // If we clip and compute rewards, compute the values necessary for the correction terms
-                if((options.clippingThresholdInit > 0 || options.useGridClipping) && formula.isRewardOperatorFormula()){
-                    initialValueBounds.extremePomdpValueBound =
-                        PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
-                    STORM_LOG_INFO("Extreme Bound in Init: " << initialValueBounds.extremePomdpValueBound.getValueForState(initialPomdpState));
-                }
 
                 boost::optional<std::string> rewardModelName;
                 std::set<uint32_t> targetObservations;
@@ -146,9 +158,9 @@ namespace storm {
                 }
 
                 if (options.refine) {
-                    refineReachability(targetObservations, formulaInfo.minimize(), rewardModelName, initialValueBounds, result);
+                    refineReachability(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
                 } else {
-                    computeReachabilityOTF(targetObservations, formulaInfo.minimize(), rewardModelName, initialValueBounds, result);
+                    computeReachabilityOTF(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
                 }
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
                 if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
@@ -240,8 +252,8 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& pomdpValueBounds, Result &result) {
-                auto trivialPOMDPBounds = pomdpValueBounds.trivialPomdpValueBounds;
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result &result) {
+                auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
                 if (options.discretize) {
                     std::vector<BeliefValueType> observationResolutionVector(pomdp().getNrObservations(),
                                                                              storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
@@ -297,7 +309,7 @@ namespace storm {
                     }
                     // If we clip and compute rewards
                     if((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
-                        approx->setExtremeValueBound(pomdpValueBounds.extremePomdpValueBound);
+                        approx->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
                     if (approx->hasComputedValues()) {
@@ -338,9 +350,9 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const &pomdpValueBounds, Result &result) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const & valueBounds, Result &result) {
                 statistics.refinementSteps = 0;
-                auto trivialPOMDPBounds = pomdpValueBounds.trivialPomdpValueBounds;
+                auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
                 // Set up exploration data
                 std::vector<BeliefValueType> observationResolutionVector;
                 std::shared_ptr<BeliefManagerType> overApproxBeliefManager;
@@ -388,7 +400,7 @@ namespace storm {
                         underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
                     if((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
-                        underApproximation->setExtremeValueBound(pomdpValueBounds.extremePomdpValueBound);
+                        underApproximation->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
                     if (!underApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
@@ -502,10 +514,6 @@ namespace storm {
                 }
             }
 
-            /*!
-             * Heuristically rates the quality of the approximation described by the given successor observation info.
-             * Here, 0 means a bad approximation and 1 means a good approximation.
-             */
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             BeliefValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
                 auto n = storm::utility::convertNumber<BeliefValueType, uint64_t>(info.support.size());
