@@ -23,6 +23,11 @@ namespace api {
     std::shared_ptr<storm::models::sparse::Model<ValueType>> getCutoffScheduler(typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<ValueType>::Result modelcheckingResult, uint64_t schedId){
         return modelcheckingResult.cutoffSchedulers[schedId];
     }
+
+    template<typename ValueType>
+    uint64_t getNumberOfPreprocessingSchedulers(typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<ValueType>::Result modelcheckingResult){
+        return modelcheckingResult.cutoffSchedulers.size();
+    }
 }
 }
 }
