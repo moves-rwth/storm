@@ -33,11 +33,9 @@ template class DFTExplorationHeuristicDepth<double>;
 template class DFTExplorationHeuristicProbability<double>;
 template class DFTExplorationHeuristicBoundDifference<double>;
 
-#ifdef STORM_HAVE_CARL
 template class DFTExplorationHeuristicDepth<storm::RationalFunction>;
 template class DFTExplorationHeuristicProbability<storm::RationalFunction>;
 template class DFTExplorationHeuristicBoundDifference<storm::RationalFunction>;
-#endif
 
 }  // namespace builder
 }  // namespace storm::dft

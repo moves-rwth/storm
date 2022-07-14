@@ -1,14 +1,11 @@
-#include <boost/algorithm/string.hpp>
-
-#include "storm-cli-utilities/cli.h"
 #include "storm-dft/api/storm-dft.h"
+#include "storm-cli-utilities/cli.h"
 #include "storm-dft/settings/DftSettings.h"
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/exceptions/UnmetRequirementException.h"
-#include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
@@ -85,7 +82,7 @@ void processOptions() {
 
     // Apply transformations
     // TODO transform later before actual analysis
-    dft = storm::dft::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true);
+    dft = storm::dft::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true, false);
     STORM_LOG_DEBUG(dft->getElementsString());
 
     // Compute minimal number of BE failures leading to system failure and
@@ -220,6 +217,7 @@ void processOptions() {
     storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames);
 
     // Analyze DFT
+    dft = storm::dft::api::prepareForMarkovAnalysis<ValueType>(*dft);
     // TODO allow building of state space even without properties
     if (props.empty()) {
         STORM_LOG_WARN("No property given. No analysis will be performed.");

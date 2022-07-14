@@ -1,11 +1,5 @@
 #pragma once
 
-#include <map>
-
-#include "storm-parsers/parser/ExpressionParser.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-parsers/parser/ValueParser.h"
@@ -15,6 +9,11 @@ namespace parser {
 
 /*!
  * Parser for DFT in the Galileo format.
+ *
+ * The original definition of the Galileo format is given at
+ * https://www.cse.msu.edu/~cse870/Materials/FaultTolerant/manual-galileo.htm
+ * Extensions of the format are provided at
+ * https://dftbenchmarks.utwente.nl/galileo.html
  */
 template<typename ValueType>
 class DFTGalileoParser {
@@ -23,11 +22,10 @@ class DFTGalileoParser {
      * Parse DFT in Galileo format and build DFT.
      *
      * @param filename File.
-     * @param defaultInclusive Flag indicating if priority gates are inclusive by default.
      *
      * @return DFT.
      */
-    static storm::dft::storage::DFT<ValueType> parseDFT(std::string const& filename, bool defaultInclusive = true);
+    static storm::dft::storage::DFT<ValueType> parseDFT(std::string const& filename);
 
    private:
     /*!
@@ -43,14 +41,11 @@ class DFTGalileoParser {
      * Parse basic element and add it to builder.
      *
      * @param name Name of BE.
-     * @param input Input line.
-     * @param lineNo Line number.
+     * @param input Input line (without name of BE). Will be modified during the parsing.
      * @param builder DFTBuilder.
-     * @param valueParser ValueParser.
-     *
-     * @return True iff the parsing and creation was successful.
+     * @param valueParser ValueParser for parsing numbers.
      */
-    static bool parseBasicElement(std::string const& name, std::string const& input, size_t lineNo, storm::dft::builder::DFTBuilder<ValueType>& builder,
+    static void parseBasicElement(std::string const& name, std::string& input, storm::dft::builder::DFTBuilder<ValueType>& builder,
                                   storm::parser::ValueParser<ValueType>& valueParser);
 
     /*!
@@ -58,23 +53,10 @@ class DFTGalileoParser {
      *
      * @param name Name of BE.
      * @param input Input line. The parsed argument will be removed from the line.
-     * @param valueParser ValueParser.
      *
-     * @return Pair (success, value). Success is true iff the parsing was succesful. Then value contains the parsed value.
+     * @return String containing 'value'. Empty string if the parsing was unsuccessful.
      */
-    static std::pair<bool, ValueType> parseValue(std::string name, std::string& line, storm::parser::ValueParser<ValueType>& valueParser);
-
-    /*!
-     * Parse argument of basic element of type number: "name=number".
-     *
-     * @param name Name of BE.
-     * @param input Input line. The parsed argument will be removed from the line.
-     *
-     * @return Pair (success, value). Success is true iff the parsing was successful. Then value contains the parsed value.
-     */
-    static std::pair<bool, size_t> parseNumber(std::string name, std::string& line);
-
-    enum Distribution { None, Constant, Exponential, Erlang, Weibull, LogNormal };
+    static std::string parseValue(std::string name, std::string& line);
 };
 
 }  // namespace parser

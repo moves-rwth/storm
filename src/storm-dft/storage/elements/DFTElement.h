@@ -55,11 +55,16 @@ class DFTElement {
     }
 
     /*!
+     * Create a shallow copy of the element.
+     * Only data (id, name, etc.) is copied but not the connections (parents, children, etc.).
+     * @return Shallow copy of element.
+     */
+    virtual std::shared_ptr<DFTElement<ValueType>> clone() const = 0;
+
+    /*!
      * Destructor.
      */
-    virtual ~DFTElement() {
-        // Intentionally left empty.
-    }
+    virtual ~DFTElement() = default;
 
     /*!
      * Get id.
@@ -181,6 +186,12 @@ class DFTElement {
     }
 
     /*!
+     * Get number of children.
+     * @return Nr of children.
+     */
+    virtual std::size_t nrChildren() const = 0;
+
+    /*!
      * Return whether the element has parents.
      * @return True iff at least one parent exists.
      */
@@ -212,7 +223,7 @@ class DFTElement {
         if (std::find(this->parents().begin(), this->parents().end(), parent) == this->parents().end()) {
             // Parent does not exist yet
             mParents.push_back(parent);
-        };
+        }
     }
 
     /*!
@@ -308,90 +319,10 @@ class DFTElement {
         if (std::find(this->outgoingDependencies().begin(), this->outgoingDependencies().end(), outgoingDependency) == this->outgoingDependencies().end()) {
             // Outgoing dependency does not exist yet
             mOutgoingDependencies.push_back(outgoingDependency);
-        };
-    }
-
-    /**
-     * Obtains ids of elements which are the direct successor in the list of children of a restriction
-     * @return A vector of ids
-     */
-    std::vector<size_t> seqRestrictionPosts() const {
-        std::vector<size_t> res;
-        for (auto const& restr : mRestrictions) {
-            if (!restr->isSeqEnforcer()) {
-                continue;
-            }
-            auto it = restr->children().cbegin();
-            for (; it != restr->children().cend(); ++it) {
-                if ((*it)->id() == mId) {
-                    break;
-                }
-            }
-            STORM_LOG_ASSERT(it != restr->children().cend(), "Child not found.");
-            ++it;
-            if (it != restr->children().cend()) {
-                res.push_back((*it)->id());
-            }
         }
-        return res;
-    }
-
-    /**
-     * Obtains ids of elements which are the direct predecessor in the list of children of a restriction
-     * @return A vector of ids
-     */
-    std::vector<size_t> seqRestrictionPres() const {
-        std::vector<size_t> res;
-        for (auto const& restr : mRestrictions) {
-            if (!restr->isSeqEnforcer()) {
-                continue;
-            }
-            auto it = restr->children().cbegin();
-            for (; it != restr->children().cend(); ++it) {
-                if ((*it)->id() == mId) {
-                    break;
-                }
-            }
-            STORM_LOG_ASSERT(it != restr->children().cend(), "Child not found.");
-            if (it != restr->children().cbegin()) {
-                --it;
-                res.push_back((*it)->id());
-            }
-        }
-        return res;
-    }
-
-    /**
-     * Obtains ids of elements which are under the same mutex.
-     * @return A vector of ids
-     */
-    std::vector<size_t> mutexRestrictionElements() const {
-        std::vector<size_t> res;
-        for (auto const& restr : mRestrictions) {
-            if (!restr->isMutex()) {
-                continue;
-            }
-            bool found = false;
-            for (auto it = restr->children().cbegin(); it != restr->children().cend(); ++it) {
-                if ((*it)->id() != mId) {
-                    res.push_back((*it)->id());
-                } else {
-                    found = true;
-                }
-            }
-            STORM_LOG_ASSERT(found, "Child " << mId << " is not included in restriction " << *restr);
-        }
-        return res;
     }
 
     virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
-
-    // virtual void extendImmediateFailureCausePathEvents(std::set<size_t>& ) const;
-    /*!
-     * Get number of children.
-     * @return Nr of children.
-     */
-    virtual std::size_t nrChildren() const = 0;
 
     virtual bool checkDontCareAnymore(storm::dft::storage::DFTState<ValueType>& state,
                                       storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const;
@@ -450,11 +381,6 @@ class DFTElement {
 template<typename ValueType>
 inline std::ostream& operator<<(std::ostream& os, DFTElement<ValueType> const& element) {
     return os << element.toString();
-}
-
-template<typename ValueType>
-bool equalType(DFTElement<ValueType> const& e1, DFTElement<ValueType> const& e2) {
-    return e1.isTypeEqualTo(e2);
 }
 
 }  // namespace elements

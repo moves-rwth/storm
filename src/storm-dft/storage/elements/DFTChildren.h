@@ -28,15 +28,13 @@ class DFTChildren : public DFTElement<ValueType> {
     /*!
      * Destructor.
      */
-    virtual ~DFTChildren() {
-        // Intentionally left empty.
-    }
+    virtual ~DFTChildren() = default;
 
     /*!
      * Add child.
      * @param element Element.
      */
-    void pushBackChild(DFTElementPointer element) {
+    void addChild(DFTElementPointer element) {
         mChildren.push_back(element);
     }
 

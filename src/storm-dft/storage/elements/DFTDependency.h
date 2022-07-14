@@ -32,12 +32,14 @@ class DFTDependency : public DFTElement<ValueType> {
         // We cannot assert 0<=p<=1 in general, because ValueType might be RationalFunction.
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new DFTDependency<ValueType>(this->id(), this->name(), this->probability()));
+    }
+
     /*!
      * Destructor
      */
-    virtual ~DFTDependency(){
-        // Intentionally left empty.
-    };
+    virtual ~DFTDependency() = default;
 
     storm::dft::storage::elements::DFTElementType type() const override {
         return storm::dft::storage::elements::DFTElementType::PDEP;

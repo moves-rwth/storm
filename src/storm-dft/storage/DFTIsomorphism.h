@@ -478,7 +478,7 @@ class DFTIsomorphismCheck {
         // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
         for (auto const& indexpair : bijection) {
             // Check type first. Colouring takes care of a lot, but not necesarily everything (e.g. voting thresholds)
-            if (!equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second))) {
+            if (!dft.getElement(indexpair.first)->isTypeEqualTo(*dft.getElement(indexpair.second))) {
                 return false;
             }
             if (dft.getElement(indexpair.first)->isRelevant() || dft.getElement(indexpair.second)->isRelevant()) {

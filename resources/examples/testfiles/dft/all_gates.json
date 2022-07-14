@@ -1,0 +1,595 @@
+{
+    "nodes": [
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "0",
+                "name": "K",
+                "rate": "2",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "1",
+                "name": "L",
+                "rate": "2",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "2",
+                "name": "M",
+                "rate": "2",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "pand",
+            "data": {
+                "children": [
+                    "0",
+                    "1",
+                    "2"
+                ],
+                "id": "3",
+                "name": "A1",
+                "type": "pand"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "pand",
+            "data": {
+                "children": [
+                    "0",
+                    "1",
+                    "2"
+                ],
+                "id": "4",
+                "inclusive": true,
+                "name": "A2",
+                "type": "pand"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "pand",
+            "data": {
+                "children": [
+                    "0",
+                    "1",
+                    "2"
+                ],
+                "id": "5",
+                "inclusive": true,
+                "name": "A3",
+                "type": "pand"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "pand",
+            "data": {
+                "children": [
+                    "0",
+                    "1",
+                    "2"
+                ],
+                "id": "6",
+                "inclusive": false,
+                "name": "A4",
+                "type": "pand"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "pand",
+            "data": {
+                "children": [
+                    "0",
+                    "1",
+                    "2"
+                ],
+                "id": "7",
+                "inclusive": false,
+                "name": "A5",
+                "type": "pand"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "or",
+            "data": {
+                "children": [
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7"
+                ],
+                "id": "8",
+                "name": "Pand",
+                "type": "or"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0",
+                "id": "9",
+                "name": "N",
+                "rate": "3",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0",
+                "id": "10",
+                "name": "O",
+                "rate": "3",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0",
+                "id": "11",
+                "name": "P",
+                "rate": "3",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "por",
+            "data": {
+                "children": [
+                    "9",
+                    "10",
+                    "11"
+                ],
+                "id": "12",
+                "inclusive": true,
+                "name": "B1",
+                "type": "por"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "por",
+            "data": {
+                "children": [
+                    "9",
+                    "10",
+                    "11"
+                ],
+                "id": "13",
+                "inclusive": true,
+                "name": "B2",
+                "type": "por"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "por",
+            "data": {
+                "children": [
+                    "9",
+                    "10",
+                    "11"
+                ],
+                "id": "14",
+                "inclusive": true,
+                "name": "B3",
+                "type": "por"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "por",
+            "data": {
+                "children": [
+                    "9",
+                    "10",
+                    "11"
+                ],
+                "id": "15",
+                "inclusive": false,
+                "name": "B4",
+                "type": "por"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "por",
+            "data": {
+                "children": [
+                    "9",
+                    "10",
+                    "11"
+                ],
+                "id": "16",
+                "inclusive": false,
+                "name": "B5",
+                "type": "por"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "vot",
+            "data": {
+                "children": [
+                    "12",
+                    "13",
+                    "14",
+                    "15",
+                    "16"
+                ],
+                "id": "17",
+                "name": "Por",
+                "type": "vot",
+                "voting": 3
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0.4",
+                "id": "18",
+                "name": "Q1",
+                "rate": "4",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0.4",
+                "id": "19",
+                "name": "R",
+                "rate": "4",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0.4",
+                "id": "20",
+                "name": "S",
+                "rate": "4",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "spare",
+            "data": {
+                "children": [
+                    "18",
+                    "19",
+                    "20"
+                ],
+                "id": "21",
+                "name": "C1",
+                "type": "spare"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0.4",
+                "id": "22",
+                "name": "Q2",
+                "rate": "4",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "spare",
+            "data": {
+                "children": [
+                    "22",
+                    "19",
+                    "20"
+                ],
+                "id": "23",
+                "name": "C2",
+                "type": "spare"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0.4",
+                "id": "24",
+                "name": "Q3",
+                "rate": "4",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "spare",
+            "data": {
+                "children": [
+                    "24",
+                    "19",
+                    "20"
+                ],
+                "id": "25",
+                "name": "C3",
+                "type": "spare"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "0.4",
+                "id": "26",
+                "name": "Q4",
+                "rate": "4",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "spare",
+            "data": {
+                "children": [
+                    "26",
+                    "19",
+                    "20"
+                ],
+                "id": "27",
+                "name": "C4",
+                "type": "spare"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "vot",
+            "data": {
+                "children": [
+                    "21",
+                    "23",
+                    "25",
+                    "27"
+                ],
+                "id": "28",
+                "name": "Spare",
+                "type": "vot",
+                "voting": 2
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "29",
+                "name": "D1",
+                "rate": "1",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "30",
+                "name": "D2",
+                "rate": "1",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "31",
+                "name": "D3",
+                "rate": "1",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "32",
+                "name": "D4",
+                "rate": "1",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "33",
+                "name": "D5",
+                "rate": "1",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "34",
+                "name": "D6",
+                "rate": "1",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "1",
+                "id": "35",
+                "name": "D7",
+                "rate": "1",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "vot",
+            "data": {
+                "children": [
+                    "29",
+                    "30",
+                    "31",
+                    "32",
+                    "33",
+                    "34",
+                    "35"
+                ],
+                "id": "36",
+                "name": "Other",
+                "type": "vot",
+                "voting": 3
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "and",
+            "data": {
+                "children": [
+                    "8",
+                    "17",
+                    "28",
+                    "36"
+                ],
+                "id": "37",
+                "name": "T",
+                "type": "and"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "seq",
+            "data": {
+                "children": [
+                    "29",
+                    "30",
+                    "31"
+                ],
+                "id": "38",
+                "name": "Seq-enforcer",
+                "type": "seq"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "mutex",
+            "data": {
+                "children": [
+                    "31",
+                    "32",
+                    "33"
+                ],
+                "id": "39",
+                "name": "Mutex",
+                "type": "mutex"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "pdep",
+            "data": {
+                "children": [
+                    "30",
+                    "34"
+                ],
+                "id": "40",
+                "name": "F",
+                "type": "fdep"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "pdep",
+            "data": {
+                "children": [
+                    "34",
+                    "35"
+                ],
+                "id": "41",
+                "name": "F'",
+                "probability": "0.4",
+                "type": "pdep"
+            },
+            "group": "nodes"
+        }
+    ],
+    "toplevel": "37"
+}

@@ -26,6 +26,10 @@ class DFTVot : public DFTGate<ValueType> {
         // k=n cannot be checked as children might be added later
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new DFTVot<ValueType>(this->id(), this->name(), this->threshold(), {}));
+    }
+
     /*!
      * Get the threshold k.
      * @return Threshold.

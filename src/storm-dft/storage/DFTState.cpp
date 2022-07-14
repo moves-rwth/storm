@@ -554,10 +554,7 @@ bool DFTState<ValueType>::orderBySymmetry() {
 
 // Explicitly instantiate the class.
 template class DFTState<double>;
-
-#ifdef STORM_HAVE_CARL
 template class DFTState<RationalFunction>;
-#endif
 
 }  // namespace storage
 }  // namespace storm::dft
