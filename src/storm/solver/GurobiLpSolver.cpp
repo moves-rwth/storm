@@ -25,7 +25,9 @@ namespace solver {
 
 GurobiEnvironment::~GurobiEnvironment() {
 #ifdef STORM_HAS_GUROBI
-    GRBfreeenv(env);
+    if(initialized) {
+        GRBfreeenv(env);
+    }
 #endif
 }
 
