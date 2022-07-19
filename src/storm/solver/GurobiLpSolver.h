@@ -21,6 +21,8 @@ namespace solver {
 class GurobiEnvironment {
    public:
     GurobiEnvironment() = default;
+    GurobiEnvironment(GurobiEnvironment const&) = delete;
+    GurobiEnvironment& operator=(GurobiEnvironment const&) = delete;
     virtual ~GurobiEnvironment();
     /*!
      * Sets some properties of the Gurobi environment according to parameters given by the options.
