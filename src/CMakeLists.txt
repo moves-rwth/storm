@@ -23,6 +23,8 @@ add_subdirectory(storm-pomdp-cli)
 add_subdirectory(storm-conv)
 add_subdirectory(storm-conv-cli)
 
+add_subdirectory(storm-synthesis) #+
+
 if (STORM_EXCLUDE_TESTS_FROM_ALL)
     add_subdirectory(test EXCLUDE_FROM_ALL)
 else()
