@@ -13,6 +13,7 @@ Version 1.7.x
 - DRN Parser is now more robust, e.g., it does no longer depend on tabs
 - PRISM Parser: Modulo with negative numbers is now consistent with Prism.
 - Developer: Storm is now built in C++17 mode
+- Added lexicographic multi-objective model checking. Use `--lex` in the command line interface when specifying a `multi(...)` property
 - Fix handling duplicate entries in the sparse matrix builder 
 - API: Applying a fully defined deterministic memoryless scheduler to an MDP yields a DTMC
 
