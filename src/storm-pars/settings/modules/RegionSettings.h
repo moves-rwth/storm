@@ -96,6 +96,8 @@ namespace storm {
 
                 int getSplittingThreshold() const;
 
+				bool isTimeTravellingEnabled() const;
+
 				/*!
 				 * Retrieves which type of region check should be performed
 				 */
@@ -128,6 +130,7 @@ namespace storm {
 				const static std::string checkEngineOptionName;
 				const static std::string printNoIllustrationOptionName;
 				const static std::string printFullResultOptionName;
+				const static std::string timeTravellingEnabledName;
             };
             
         } // namespace modules
