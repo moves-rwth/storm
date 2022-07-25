@@ -6,29 +6,9 @@ Storm - A Modern Probabilistic Model Checker
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896)
 
 
-For more instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
+For installation and usage instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
 
-
-Benchmarks
-----------------------------
-
-Example input files for Storm can be obtained from  
-https://github.com/moves-rwth/storm-examples.
-
-Various Benchmarks together with example invocations of Storm can be found at the [Quantitative Verification Benchmark Set (QVBS)](http://qcomp.org/benchmarks).
-
-Further examples and benchmarks can be found in the following repositories:
-
-* **Prism files** (DTMC, MDP, CTMC):  
-http://www.prismmodelchecker.org/benchmarks
-* **Jani files** (DTMC, MDP, CTMC, MA):  
-http://jani-spec.org
-* **GSPN**s:  
-(private, contact: sebastian.junges@cs.rwth-aachen.de)
-* **DFT**s:  
-https://github.com/moves-rwth/dft-examples
-* **PGCL**:  
-(private, contact: sebastian.junges@cs.rwth-aachen.de)
+Various benchmarks together with example invocations of Storm can be found at the [Quantitative Verification Benchmark Set (QVBS)](http://qcomp.org/benchmarks). Additional input files for Storm can be obtained from  https://github.com/moves-rwth/storm-examples.
 
 
 Authors
