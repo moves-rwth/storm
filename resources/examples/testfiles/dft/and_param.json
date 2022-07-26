@@ -1,0 +1,47 @@
+{
+    "nodes": [
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "3/10",
+                "id": "0",
+                "name": "B",
+                "rate": "1/2",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "be",
+            "data": {
+                "distribution": "exponential",
+                "dorm": "3/10",
+                "id": "1",
+                "name": "C",
+                "rate": "(x)/(1)",
+                "transient": false,
+                "type": "be"
+            },
+            "group": "nodes"
+        },
+        {
+            "classes": "and",
+            "data": {
+                "children": [
+                    "0",
+                    "1"
+                ],
+                "id": "2",
+                "name": "A",
+                "type": "and"
+            },
+            "group": "nodes"
+        }
+    ],
+    "parameters": [
+        "x"
+    ],
+    "toplevel": "2"
+}

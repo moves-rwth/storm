@@ -547,9 +547,11 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovA
         result = model->convertToCtmc();
     }
 
-    if (transformationSettings.isChainEliminationSet() && result->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-        result = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-            result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), transformationSettings.getLabelBehavior());
+    if (transformationSettings.isChainEliminationSet()) {
+        // TODO: we should also transform the properties at this point.
+        result = storm::api::eliminateNonMarkovianChains(result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), {},
+                                                         transformationSettings.getLabelBehavior())
+                     .first;
     }
 
     return result;

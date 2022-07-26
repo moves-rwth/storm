@@ -1,3 +1,4 @@
+
 #include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -19,7 +20,7 @@ namespace storm {
             std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
             const std::string transformBinaryOption = "transformbinary";
             const std::string transformSimpleOption = "transformsimple";
-            const std::string constantRewardsOption = "constant-reward";
+            const std::string constantRewardsOption = "ensure-constant-reward";
             const std::string allowSimplificationOption = "simplify-pmc";
 
             ToParametricSettings::ToParametricSettings() : ModuleSettings(moduleName) {

@@ -17,7 +17,7 @@ set_target_properties(storm-pomdp PROPERTIES DEFINE_SYMBOL "")
 list(APPEND STORM_TARGETS storm-pomdp)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
-target_link_libraries(storm-pomdp PUBLIC storm storm-parsers ${STORM_POMDP_LINK_LIBRARIES})
+target_link_libraries(storm-pomdp PUBLIC storm storm-parsers storm-pars ${STORM_POMDP_LINK_LIBRARIES})
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_POMDP_HEADERS})

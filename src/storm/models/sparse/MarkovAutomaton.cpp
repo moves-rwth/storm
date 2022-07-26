@@ -192,12 +192,9 @@ template<typename ValueType, typename RewardModelType>
 bool MarkovAutomaton<ValueType, RewardModelType>::hasOnlyTrivialNondeterminism() const {
     // Check every state
     for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-        // Get number of choices in current state
-        uint_fast64_t numberChoices = this->getTransitionMatrix().getRowGroupIndices()[state + 1] - this->getTransitionMatrix().getRowGroupIndices()[state];
-        if (isMarkovianState(state)) {
-            STORM_LOG_ASSERT(numberChoices == 1, "Wrong number of choices for Markovian state.");
-        }
-        if (numberChoices > 1) {
+        STORM_LOG_ASSERT(!isHybridState(state), "State is hybrid.");
+        if (this->getNumberOfChoices(state) > 1) {
+            // Non-deterministic choice present
             STORM_LOG_ASSERT(isProbabilisticState(state), "State is not probabilistic.");
             return false;
         }
@@ -217,68 +214,22 @@ bool MarkovAutomaton<ValueType, RewardModelType>::checkIsClosed() const {
 
 template<typename ValueType, typename RewardModelType>
 std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCtmc() const {
-    if (isClosed() && markovianStates.full()) {
-        storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(this->getTransitionMatrix(), this->getStateLabeling(),
-                                                                                       this->getRewardModels(), false);
-        components.transitionMatrix.makeRowGroupingTrivial();
-        components.exitRates = this->getExitRates();
-        if (this->hasChoiceLabeling()) {
-            components.choiceLabeling = this->getChoiceLabeling();
-        }
-        if (this->hasStateValuations()) {
-            components.stateValuations = this->getStateValuations();
-        }
-        if (this->hasChoiceOrigins()) {
-            components.choiceOrigins = this->getChoiceOrigins();
-        }
-        return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(components));
+    STORM_LOG_THROW(isConvertibleToCtmc(), storm::exceptions::InvalidArgumentException, "MA cannot be converted to CTMC.");
+
+    storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(this->getTransitionMatrix(), this->getStateLabeling(),
+                                                                                   this->getRewardModels(), false);
+    components.transitionMatrix.makeRowGroupingTrivial();
+    components.exitRates = this->getExitRates();
+    if (this->hasChoiceLabeling()) {
+        components.choiceLabeling = this->getChoiceLabeling();
     }
-
-    // Eliminate all probabilistic states by state elimination
-    // Initialize
-    storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(this->getTransitionMatrix());
-    storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(this->getTransitionMatrix().transpose());
-    storm::solver::stateelimination::StateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions);
-
-    for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-        STORM_LOG_ASSERT(!this->isHybridState(state), "State is hybrid.");
-        if (this->isProbabilisticState(state)) {
-            // Eliminate this probabilistic state
-            stateEliminator.eliminateState(state, true);
-        }
+    if (this->hasStateValuations()) {
+        components.stateValuations = this->getStateValuations();
     }
-
-    // Create the rate matrix for the CTMC
-    storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, false);
-    // Remember state to keep
-    storm::storage::BitVector keepStates(this->getNumberOfStates(), true);
-    for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-        if (storm::utility::isZero(flexibleMatrix.getRowSum(state))) {
-            // State is eliminated and can be discarded
-            keepStates.set(state, false);
-        } else {
-            STORM_LOG_ASSERT(this->isMarkovianState(state), "State is not Markovian.");
-            // Copy transitions
-            for (uint_fast64_t row = flexibleMatrix.getRowGroupIndices()[state]; row < flexibleMatrix.getRowGroupIndices()[state + 1]; ++row) {
-                for (auto const& entry : flexibleMatrix.getRow(row)) {
-                    // Convert probabilities into rates
-                    transitionMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue() * exitRates[state]);
-                }
-            }
-        }
+    if (this->hasChoiceOrigins()) {
+        components.choiceOrigins = this->getChoiceOrigins();
     }
-
-    storm::storage::SparseMatrix<ValueType> rateMatrix = transitionMatrixBuilder.build();
-    rateMatrix = rateMatrix.getSubmatrix(false, keepStates, keepStates, false);
-    // Construct CTMC
-    storm::models::sparse::StateLabeling stateLabeling = this->getStateLabeling().getSubLabeling(keepStates);
-
-    // TODO update reward models and choice labels according to kept states
-    STORM_LOG_WARN_COND(this->getRewardModels().empty(), "Conversion of MA to CTMC does not preserve rewards.");
-    STORM_LOG_WARN_COND(!this->hasChoiceLabeling(), "Conversion of MA to CTMC does not preserve choice labels.");
-    STORM_LOG_WARN_COND(!this->hasStateValuations(), "Conversion of MA to CTMC does not preserve state valuations.");
-    STORM_LOG_WARN_COND(!this->hasChoiceOrigins(), "Conversion of MA to CTMC does not preserve choice origins.");
-    return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling));
+    return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(components));
 }
 
 template<typename ValueType, typename RewardModelType>

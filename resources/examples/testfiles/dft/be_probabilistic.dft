@@ -1,0 +1,4 @@
+toplevel "T";
+"T" and "A" "B";
+"A" prob=0.4 dorm=1;
+"B" lambda=0.4 dorm=1;

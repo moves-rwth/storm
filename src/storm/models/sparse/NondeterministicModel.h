@@ -58,9 +58,12 @@ class NondeterministicModel : public Model<ValueType, RewardModelType> {
      * Applies the given scheduler to this model.
      * @param scheduler the considered scheduler.
      * @param dropUnreachableStates if set, the resulting model only considers the states that are reachable from an initial state
+     * @param preserveModelType if set, the resulting model has the same type as the original (this) model,
+     *                          even when all nondeterminism is resolved and independent of the scheduler. Otherwise, the model type may differ.
      */
     std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> applyScheduler(storm::storage::Scheduler<ValueType> const& scheduler,
-                                                                                             bool dropUnreachableStates = true) const;
+                                                                                             bool dropUnreachableStates = true,
+                                                                                             bool preserveModelType = false) const;
 
     virtual void printModelInformationToStream(std::ostream& out) const override;
 

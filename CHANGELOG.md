@@ -8,8 +8,14 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.7.x
 -------------
 
-## Version 1.7.?
+## Version 1.7.0 (2022/??)
+- Fixed a bug in LP-based MDP model checking
+- DRN Parser is now more robust, e.g., it does no longer depend on tabs
+- PRISM Parser: Modulo with negative numbers is now consistent with Prism.
 - Developer: Storm is now built in C++17 mode
+- Added lexicographic multi-objective model checking. Use `--lex` in the command line interface when specifying a `multi(...)` property
+- Fix handling duplicate entries in the sparse matrix builder 
+- API: Applying a fully defined deterministic memoryless scheduler to an MDP yields a DTMC
 
 Version 1.6.x
 -------------

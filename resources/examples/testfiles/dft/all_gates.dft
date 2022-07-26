@@ -1,0 +1,46 @@
+toplevel "T";
+"T" and "Pand" "Por" "Spare" "Other";
+"Pand" or "A1" "A2" "A3" "A4" "A5";
+"Por" vot3 "B1" "B2" "B3" "B4" "B5";
+"Spare" 2of4 "C1" "C2" "C3" "C4";
+Other vot3 D1 "D2" D3 "D4" "D5" "D6" "D7";
+"A1" pand "K" "L" "M";
+"A2" pand-incl "K" "L" "M";
+"A3" pand<= "K" "L" "M";
+"A4" pand-excl "K" "L" "M";
+"A5" pand< "K" "L" "M";
+"B1" por "N" "O" "P";
+"B2" por-incl "N" "O" "P";
+"B3" por<= "N" "O" "P";
+"B4" por-excl "N" "O" "P";
+"B5" por< "N" "O" "P";
+"C1" wsp "Q1" "R" "S";
+"C2" csp "Q2" "R" "S";
+"C3" hsp "Q3" "R" "S";
+"C4" spare "Q4" "R" "S";
+
+"Seq-enforcer" seq "D1" "D2" "D3";
+"Mutex" mutex "D3" "D4" "D5";
+"F" fdep "D2" "D6";
+"F'" pdep=0.4 "D6" D7;
+
+"K" lambda=2 dorm=1;
+"L" lambda=2 dorm=1;
+"M" lambda=2 dorm=1;
+"N" lambda=3 dorm=0;
+"O" lambda=3 dorm=0;
+"P" lambda=3 dorm=0;
+"Q1" lambda=4 dorm=0.4;
+"Q2" lambda=4 dorm=0.4;
+"Q3" lambda=4 dorm=0.4;
+"Q4" lambda=4 dorm=0.4;
+"R" lambda=4 dorm=0.4;
+"S" lambda=4 dorm=0.4;
+"D1" lambda=1;
+"D2" lambda=1;
+"D3" lambda=1;
+"D4" lambda=1;
+"D5" lambda=1;
+D6 lambda=1;
+"D7" lambda=1;
+
