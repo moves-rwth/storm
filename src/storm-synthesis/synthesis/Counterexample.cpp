@@ -409,7 +409,7 @@ namespace storm {
                 // Add hints from previous wave
                 storm::modelchecker::ExplicitModelCheckerHint<ValueType> hint;
                 hint.setComputeOnlyMaybeStates(false);
-                hint.setResultHint(boost::make_optional(this->hint_result->asExplicitQuantitativeCheckResult<ValueType>().getValueVector()));
+                hint.setResultHint(boost::make_optional(this->hint_result->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector()));
                 task.setHint(std::make_shared<storm::modelchecker::ExplicitModelCheckerHint<ValueType>>(hint));
             }
             storm::Environment env;
@@ -424,7 +424,7 @@ namespace storm {
             this->timer_model_check.start();
             this->hint_result = storm::api::verifyWithSparseEngine<ValueType>(env, subdtmc, task);
             this->timer_model_check.stop();
-            storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& result = this->hint_result->asExplicitQuantitativeCheckResult<ValueType>();
+            storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& result = this->hint_result->template asExplicitQuantitativeCheckResult<ValueType>();
             bool satisfied;
             if(this->formula_safety[index]) {
                 satisfied = result[initial_state] < formula_bound;
