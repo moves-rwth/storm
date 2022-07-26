@@ -38,6 +38,8 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm-pars/transformer/ParametricTransformer.h"
+
 #include <typeinfo>
 
 namespace storm {
@@ -257,16 +259,16 @@ namespace storm {
 
             }
             
-            template<typename ValueType, storm::dd::DdType DdType>
+            template<typename ValueType, storm::dd::DdType DdType, typename BeliefType>
             bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool analysisPerformed = false;
                 if (pomdpSettings.isBeliefExplorationSet()) {
-                    STORM_PRINT_AND_LOG("Exploring the belief MDP... ");
+                    STORM_PRINT_AND_LOG("Exploring the belief MDP... \n");
                     auto options = storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
                     auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
                     beliefExplorationSettings.setValuesInOptionsStruct(options);
-                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(pomdp, options);
+                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>, BeliefType> checker(pomdp, options);
                     auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
                     if (storm::utility::resources::isTerminate()) {
@@ -303,8 +305,7 @@ namespace storm {
                 }
                 return analysisPerformed;
             }
-            
-            
+
             template<typename ValueType, storm::dd::DdType DdType>
             bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
@@ -341,10 +342,10 @@ namespace storm {
                 if (transformSettings.isTransformBinarySet() || transformSettings.isTransformSimpleSet()) {
                     if (transformSettings.isTransformSimpleSet()) {
                         STORM_PRINT_AND_LOG("Transforming the POMDP to a simple POMDP.");
-                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, true);
+                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, true).transformedPomdp;
                     } else {
                         STORM_PRINT_AND_LOG("Transforming the POMDP to a binary POMDP.");
-                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, false);
+                        pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, false).transformedPomdp;
                     }
                     pomdp->printModelInformationToStream(std::cout);
                     STORM_PRINT_AND_LOG(" done.\n");
@@ -357,10 +358,15 @@ namespace storm {
                     std::string transformMode = transformSettings.getFscApplicationTypeString();
                     auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                     STORM_PRINT_AND_LOG(" done.\n");
-                    pmc->printModelInformationToStream(std::cout);
                     if (transformSettings.allowPostSimplifications()) {
                         STORM_PRINT_AND_LOG("Simplifying pMC...");
                         pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+                        STORM_PRINT_AND_LOG(" done.\n");
+                        pmc->printModelInformationToStream(std::cout);
+                    }
+                    if (pmc->hasRewardModel() && transformSettings.isConstantRewardsSet()) {
+                        STORM_PRINT_AND_LOG("Ensuring constant rewards...");
+                        pmc = storm::transformer::makeRewardsConstant(*(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
                         STORM_PRINT_AND_LOG(" done.\n");
                         pmc->printModelInformationToStream(std::cout);
                     }
@@ -431,9 +437,29 @@ namespace storm {
                     }
                     
                     sw.restart();
-                    if (performAnalysis<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
-                        sw.stop();
-                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
+                    auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
+                    switch(beliefExplorationSettings.getBeliefType()){
+
+                        case Default:
+                            if (performAnalysis<ValueType, DdType, ValueType>(pomdp, formulaInfo, *formula)) {
+                                sw.stop();
+                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
+                            }
+                            break;
+                        case Float:
+                            STORM_PRINT_AND_LOG("Use floating point numbers for belief probabilties.\n");
+                            if (performAnalysis<ValueType, DdType, double>(pomdp, formulaInfo, *formula)) {
+                                sw.stop();
+                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
+                            }
+                            break;
+                        case Rational:
+                            STORM_PRINT_AND_LOG("Use exact numbers for belief probabilties.\n");
+                            if (performAnalysis<ValueType, DdType, storm::RationalNumber>(pomdp, formulaInfo, *formula)) {
+                                sw.stop();
+                                STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s.\n");
+                            }
+                            break;
                     }
                     
 

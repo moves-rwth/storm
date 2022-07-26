@@ -113,7 +113,6 @@ std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> Direct
         } else if (line == "@model") {
             // Parse rest of the model
             STORM_LOG_THROW(sawType, storm::exceptions::WrongFormatException, "Type has to be declared before model.");
-            STORM_LOG_THROW(sawParameters, storm::exceptions::WrongFormatException, "Parameters have to be declared before model.");
             STORM_LOG_THROW(nrStates != 0, storm::exceptions::WrongFormatException, "No. of states has to be declared before model.");
             STORM_LOG_THROW(!options.buildChoiceLabeling || nrChoices != 0, storm::exceptions::WrongFormatException,
                             "No. of actions (@nr_choices) has to be declared before model.");
@@ -165,13 +164,19 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
     std::string line;
     size_t row = 0;
     size_t state = 0;
+    uint64_t lineNumber = 0;
     bool firstState = true;
     bool firstActionForState = true;
     while (storm::utility::getline(file, line)) {
+        lineNumber++;
         if (boost::starts_with(line, "//")) {
             continue;
         }
-        STORM_LOG_TRACE("Parsing: " << line);
+        if (line.empty()) {
+            continue;
+        }
+        STORM_LOG_TRACE("Parsing line no " << lineNumber << " : " << line);
+        boost::trim_left(line);
         if (boost::starts_with(line, "state ")) {
             // New state
             if (firstState) {
@@ -182,6 +187,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
             }
             firstActionForState = true;
             STORM_LOG_TRACE("New state " << state);
+            STORM_LOG_THROW(state <= stateSize, storm::exceptions::WrongFormatException, "More states detected than declared (in @nr_states).");
 
             // Parse state id
             line = line.substr(6);  // Remove "state "
@@ -194,15 +200,18 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                 line = "";
             }
             size_t parsedId = parseNumber<size_t>(curString);
-            STORM_LOG_ASSERT(state == parsedId, "State ids do not correspond.");
+            STORM_LOG_THROW(state == parsedId, storm::exceptions::WrongFormatException,
+                            "In line " << lineNumber << " state ids are not ordered and without gaps. Expected " << state << " but got " << parsedId << ".");
             if (nonDeterministic) {
                 STORM_LOG_TRACE("new Row Group starts at " << row << ".");
                 builder.newRowGroup(row);
+                STORM_LOG_THROW(nrChoices == 0 || builder.getCurrentRowGroupCount() <= nrChoices, storm::exceptions::WrongFormatException,
+                                "More actions detected than declared (in @nr_choices).");
             }
 
             if (continuousTime) {
                 // Parse exit rate for CTMC or MA
-                STORM_LOG_THROW(boost::starts_with(line, "!"), storm::exceptions::WrongFormatException, "Exit rate missing.");
+                STORM_LOG_THROW(boost::starts_with(line, "!"), storm::exceptions::WrongFormatException, "Exit rate missing in " << lineNumber);
                 line = line.substr(1);  // Remove "!"
                 curString = line;
                 posEnd = line.find(" ");
@@ -223,7 +232,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
             if (boost::starts_with(line, "[")) {
                 // Parse rewards
                 size_t posEndReward = line.find(']');
-                STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing.");
+                STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing in line " << lineNumber << " .");
                 std::string rewardsStr = line.substr(1, posEndReward - 1);
                 STORM_LOG_TRACE("State rewards: " << rewardsStr);
                 std::vector<std::string> rewards;
@@ -253,7 +262,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                     modelComponents->observabilityClasses.get()[state] = std::stoi(observation);
                     line = line.substr(posEndObservation + 1);
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << ".");
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << " in line " << lineNumber);
                 }
             }
 
@@ -292,8 +301,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                     STORM_LOG_TRACE("New label: '" << label << "'");
                 }
             }
-
-        } else if (boost::starts_with(line, "\taction ")) {
+        } else if (boost::starts_with(line, "action ")) {
             // New action
             if (firstActionForState) {
                 firstActionForState = false;
@@ -301,7 +309,7 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
                 ++row;
             }
             STORM_LOG_TRACE("New action: " << row);
-            line = line.substr(8);  // Remove "\taction "
+            line = line.substr(7);
             std::string curString = line;
             size_t posEnd = line.find(" ");
             if (posEnd != std::string::npos) {
@@ -349,13 +357,14 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
         } else {
             // New transition
             size_t posColon = line.find(':');
-            STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found in '" << line << "'.");
-            size_t target = parseNumber<size_t>(line.substr(2, posColon - 3));
+            STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException,
+                            "':' not found in '" << line << "' on line " << lineNumber << ".");
+            size_t target = parseNumber<size_t>(line.substr(0, posColon - 1));
             std::string valueStr = line.substr(posColon + 2);
             ValueType value = parseValue(valueStr, placeholders, valueParser);
             STORM_LOG_TRACE("Transition " << row << " -> " << target << ": " << value);
             STORM_LOG_THROW(target < stateSize, storm::exceptions::WrongFormatException,
-                            "Target state " << target << " is greater than state size " << stateSize);
+                            "In line " << lineNumber << " target state " << target << " is greater than state size " << stateSize);
             builder.addNextValue(row, target, value);
         }
 
@@ -367,6 +376,12 @@ std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelTy
 
     }  // end state iteration
     STORM_LOG_TRACE("Finished parsing");
+
+    if (nonDeterministic) {
+        STORM_LOG_THROW(nrChoices == 0 || builder.getLastRow() + 1 == nrChoices, storm::exceptions::WrongFormatException,
+                        "Number of actions detected (at least " << builder.getLastRow() + 1 << ") does not match number of actions declared (" << nrChoices
+                                                                << ", in @nr_choices).");
+    }
 
     // Build transition matrix
     modelComponents->transitionMatrix = builder.build(row + 1, stateSize, nonDeterministic ? stateSize : 0);

@@ -1,0 +1,4 @@
+toplevel "T";
+"T" and "A" "B";
+"A" lambda=2 phases=1 dorm=1;
+"B" lambda=4 phases=3 dorm=1;

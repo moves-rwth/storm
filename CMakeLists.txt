@@ -1,6 +1,8 @@
-cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 3.8)
 
 cmake_policy(VERSION 3.2)
+
+ set(CMAKE_CXX_STANDARD 17)
 
 # When searching for packages, we would like to first search in prefixes specified by <PackageName>_ROOT.
 # However, this behavior is only supported since CMake 3.12.
@@ -83,6 +85,12 @@ set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(USE_XERCESC ${XML_SUPPORT})
 mark_as_advanced(USE_XERCESC)
+option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
+option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
+
+if (STORM_COMPILE_WITH_ALL_SANITIZERS)
+    set(STORM_COMPILE_WITH_ADDRESS_SANITIZER ON)
+endif()
 
 # Get an approximation of the number of available processors (used for parallel build of shipped resources)
 ProcessorCount(STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT)
@@ -240,6 +248,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 	message(FATAL_ERROR "Intel compiler is currently not supported.")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	message(FATAL_ERROR "Visual Studio compiler is currently not supported.")
+else()
+    message(FATAL_ERROR "Unknown compiler '${CMAKE_CXX_COMPILER_ID}' is not supported")
 endif()
 set(STORM_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
 
@@ -255,11 +265,6 @@ endif()
 if (STORM_FORCE_POPCNT)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
 endif()
-
-# TODO: remove forcing the old version of optional as soon as the related Spirit bug is fixed:
-# https://svn.boost.org/trac/boost/ticket/12349
-# Fix thanks to: https://github.com/freeorion/freeorion/issues/777
-add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE -DBOOST_OPTIONAL_CONFIG_USE_OLD_IMPLEMENTATION_OF_OPTIONAL)
 
 #############################################################
 ##
@@ -277,7 +282,7 @@ if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
 		set(CLANG_STDLIB libc++)
     endif()
 
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -ftemplate-depth=1024")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=${CLANG_STDLIB} -ftemplate-depth=1024")
     set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
     if(LINUX)
@@ -291,7 +296,6 @@ elseif (STORM_COMPILER_GCC)
     if(FORCE_COLOR)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")
     endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fprefetch-loop-arrays")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
@@ -318,10 +322,19 @@ else()
     message(STATUS "Storm - Disabling link-time optimizations.")
 endif()
 
+if (STORM_COMPILE_WITH_ADDRESS_SANITIZER)
+    message(STATUS "Storm - Enabling AddressSanitizer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+endif()
+
 # In release mode, we turn on even more optimizations if we do not have to provide a portable binary.
-if (NOT STORM_PORTABLE)
-	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-endif ()
+if (NOT ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang"))
+	if (NOT STORM_PORTABLE)
+		set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+	endif ()
+else()
+	message(WARNING "AppleClang currently does not support -march=native compiler option on M1 chips.")
+endif()
 
 if (STORM_DEVELOPER)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
@@ -403,7 +416,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ##
 #############################################################
 if ("${CMAKE_GENERATOR}" STREQUAL "Xcode")
-	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++14")
+	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++17")
 	set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
 endif()
 

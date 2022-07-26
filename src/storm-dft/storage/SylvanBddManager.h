@@ -6,7 +6,7 @@
 #include "storm/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "storm/utility/macros.h"
 
-namespace storm {
+namespace storm::dft {
 namespace storage {
 
 /**
@@ -96,13 +96,17 @@ class SylvanBddManager {
      * \return
      * The bdd representation of the constant function 1.
      */
-    sylvan::Bdd getOne() { return sylvan::Bdd::bddOne(); }
+    sylvan::Bdd getOne() {
+        return sylvan::Bdd::bddOne();
+    }
 
     /**
      * \return
      * The bdd representation of the constant function 0.
      */
-    sylvan::Bdd getZero() { return sylvan::Bdd::bddZero(); }
+    sylvan::Bdd getZero() {
+        return sylvan::Bdd::bddZero();
+    }
 
     /**
      * \return
@@ -129,8 +133,7 @@ class SylvanBddManager {
      * \param filename
      * The name of the file the dot graph is written to
      */
-    static void exportBddToDot(sylvan::Bdd const &bdd,
-                               std::string const &filename) {
+    static void exportBddToDot(sylvan::Bdd const &bdd, std::string const &filename) {
         FILE *filePointer = fopen(filename.c_str(), "w+");
 
         // fopen returns a nullptr on failure
@@ -151,4 +154,4 @@ class SylvanBddManager {
 };
 
 }  // namespace storage
-}  // namespace storm
+}  // namespace storm::dft

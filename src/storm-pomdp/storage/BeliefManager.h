@@ -7,6 +7,10 @@
 #include <boost/container/flat_set.hpp>
 
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/LpSolver.h"
+#include "storm/utility/constants.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     namespace storage {
@@ -36,6 +40,15 @@ namespace storm {
                 uint64_t size() const;
             };
 
+            struct BeliefClipping {
+                bool isClippable;
+                BeliefId startingBelief;
+                BeliefId targetBelief;
+                BeliefValueType delta;
+                BeliefType deltaValues;
+                bool onGrid = false;
+            };
+
             BeliefId noId() const;
 
             bool isEqual(BeliefId const &first, BeliefId const &second) const;
@@ -55,6 +68,13 @@ namespace storm {
 
             uint64_t getBeliefNumberOfChoices(BeliefId beliefId);
 
+            /**
+             * Returns the first state in the belief as a representative
+             * @param beliefId
+             * @return
+             */
+            uint64_t getRepresentativeState(BeliefId const beliefId);
+
             Triangulation triangulateBelief(BeliefId beliefId, BeliefValueType resolution);
 
             template<typename DistributionType>
@@ -67,12 +87,32 @@ namespace storm {
             std::vector<std::pair<BeliefId, ValueType>>
             expandAndTriangulate(BeliefId const &beliefId, uint64_t actionIndex, std::vector<BeliefValueType> const &observationResolutions);
 
+            std::vector<std::pair<BeliefId, ValueType>>
+            expandAndClip(BeliefId const &beliefId, uint64_t actionIndex, std::vector<uint64_t> const &observationResolutions);
+
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
+
+            BeliefClipping clipBelief(BeliefId const &beliefId, BeliefValueType threshold = storm::utility::one<BeliefValueType>(), boost::optional<std::vector<BeliefId>> const &targets = boost::none);
+
+            BeliefValueType computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2);
+
+            BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite);
 
         private:
 
+            BeliefClipping clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector& isInfinite);
+
+            template<typename DistributionType>
+            void adjustDistribution(DistributionType &distr);
+
+            BeliefValueType computeDifference1normInternal(BeliefType const &belief1, BeliefType const &belief2);
+
             struct BeliefHash {
                 std::size_t operator()(const BeliefType &belief) const;
+            };
+
+            struct Belief_equal_to {
+                bool operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const;
             };
 
             struct FreudenthalDiff {
@@ -104,7 +144,8 @@ namespace storm {
             Triangulation triangulateBelief(BeliefType const &belief, BeliefValueType const &resolution);
 
             std::vector<std::pair<BeliefId, ValueType>>
-            expandInternal(BeliefId const &beliefId, uint64_t actionIndex, boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = boost::none);
+            expandInternal(BeliefId const &beliefId, uint64_t actionIndex, boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = boost::none,
+                           boost::optional<std::vector<uint64_t>> const &observationGridClippingResolutions = boost::none);
 
             BeliefId computeInitialBelief();
 
@@ -114,10 +155,12 @@ namespace storm {
             std::vector<ValueType> pomdpActionRewardVector;
             
             std::vector<BeliefType> beliefs;
-            std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash>> beliefToIdMap;
+            std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash, Belief_equal_to>> beliefToIdMap;
             BeliefId initialBeliefId;
             
-            storm::utility::ConstantsComparator<ValueType> cc;
+            storm::utility::ConstantsComparator<BeliefValueType> cc;
+
+            std::shared_ptr<storm::solver::LpSolver<BeliefValueType>> lpSolver;
             
             TriangulationMode triangulationMode;
             

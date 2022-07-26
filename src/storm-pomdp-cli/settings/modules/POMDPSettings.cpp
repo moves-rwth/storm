@@ -85,7 +85,6 @@ namespace storm {
                 return this->getOption(isQualitativeOption).getHasOptionBeenSet();
             }
 
-
             uint64_t POMDPSettings::getMemoryBound() const {
                 return this->getOption(memoryBoundOption).getArgumentByName("bound").getValueAsUnsignedInteger();
             }
