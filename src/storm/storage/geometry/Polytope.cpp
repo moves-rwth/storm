@@ -213,8 +213,8 @@ std::vector<storm::expressions::Variable> Polytope<ValueType>::declareVariables(
 }
 
 template<typename ValueType>
-std::vector<storm::expressions::Expression> Polytope<ValueType>::getConstraints([[maybe_unused]] storm::expressions::ExpressionManager const& manager,
-                                                                                [[maybe_unused]] std::vector<storm::expressions::Variable> const& variables) const {
+std::vector<storm::expressions::Expression> Polytope<ValueType>::getConstraints(
+    [[maybe_unused]] storm::expressions::ExpressionManager const& manager, [[maybe_unused]] std::vector<storm::expressions::Variable> const& variables) const {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented for this polytope implementation.");
     std::vector<storm::expressions::Expression> result;
     return result;

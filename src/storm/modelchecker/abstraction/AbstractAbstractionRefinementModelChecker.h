@@ -128,10 +128,9 @@ class AbstractAbstractionRefinementModelChecker : public AbstractModelChecker<Mo
                                                                                           storm::models::Model<ValueType> const& abstractModel,
                                                                                           storm::abstraction::StateSet const& constraintStates,
                                                                                           storm::abstraction::StateSet const& targetStates);
-    std::unique_ptr<storm::abstraction::QualitativeResultMinMax> computeQualitativeResult(Environment const& env,
-                                                                                          storm::models::symbolic::Model<DdType, ValueType> const& abstractModel,
-                                                                                          storm::abstraction::SymbolicStateSet<DdType> const& constraintStates,
-                                                                                          storm::abstraction::SymbolicStateSet<DdType> const& targetStates);
+    std::unique_ptr<storm::abstraction::QualitativeResultMinMax> computeQualitativeResult(
+        Environment const& env, storm::models::symbolic::Model<DdType, ValueType> const& abstractModel,
+        storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates);
     std::unique_ptr<storm::abstraction::QualitativeResultMinMax> computeQualitativeResult(Environment const& env,
                                                                                           storm::models::symbolic::Dtmc<DdType, ValueType> const& abstractModel,
                                                                                           storm::abstraction::SymbolicStateSet<DdType> const& constraintStates,
@@ -140,10 +139,9 @@ class AbstractAbstractionRefinementModelChecker : public AbstractModelChecker<Mo
                                                                                           storm::models::symbolic::Mdp<DdType, ValueType> const& abstractModel,
                                                                                           storm::abstraction::SymbolicStateSet<DdType> const& constraintStates,
                                                                                           storm::abstraction::SymbolicStateSet<DdType> const& targetStates);
-    std::unique_ptr<storm::abstraction::QualitativeResultMinMax> computeQualitativeResult(Environment const& env,
-                                                                                          storm::models::symbolic::StochasticTwoPlayerGame<DdType,ValueType> const& abstractModel,
-                                                                                          storm::abstraction::SymbolicStateSet<DdType> const& constraintStates,
-                                                                                          storm::abstraction::SymbolicStateSet<DdType> const& targetStates);
+    std::unique_ptr<storm::abstraction::QualitativeResultMinMax> computeQualitativeResult(
+        Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
+        storm::abstraction::SymbolicStateSet<DdType> const& constraintStates, storm::abstraction::SymbolicStateSet<DdType> const& targetStates);
 
     std::unique_ptr<storm::abstraction::SymbolicQualitativeGameResultMinMax<DdType>> computeQualitativeResultReuse(
         storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel, storm::dd::Bdd<DdType> const& transitionMatrixBdd,
@@ -182,8 +180,7 @@ class AbstractAbstractionRefinementModelChecker : public AbstractModelChecker<Mo
     void printBoundsInformation(std::pair<std::unique_ptr<CheckResult>, std::unique_ptr<CheckResult>>& bounds);
     void printBoundsInformation(SymbolicQuantitativeCheckResult<DdType, ValueType> const& lowerBounds,
                                 SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds);
-    bool checkForResultAfterQuantitativeCheck(bool lowerBounds,
-                                              QuantitativeCheckResult<ValueType> const& result);
+    bool checkForResultAfterQuantitativeCheck(bool lowerBounds, QuantitativeCheckResult<ValueType> const& result);
     std::unique_ptr<CheckResult> computeReachabilityProbabilitiesHelper(
         Environment const& env, storm::models::symbolic::StochasticTwoPlayerGame<DdType, ValueType> const& abstractModel,
         storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::dd::Bdd<DdType> const& maybeStates,

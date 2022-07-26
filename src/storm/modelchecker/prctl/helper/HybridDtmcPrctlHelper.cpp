@@ -272,9 +272,10 @@ inline std::vector<ValueType> computeUpperRewardBounds(storm::storage::SparseMat
 }
 
 template<>
-inline std::vector<storm::RationalFunction> computeUpperRewardBounds([[maybe_unused]] storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
-                                                                     [[maybe_unused]] std::vector<storm::RationalFunction> const& rewards,
-                                                                     [[maybe_unused]] std::vector<storm::RationalFunction> const& oneStepTargetProbabilities) {
+inline std::vector<storm::RationalFunction> computeUpperRewardBounds(
+    [[maybe_unused]] storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
+    [[maybe_unused]] std::vector<storm::RationalFunction> const& rewards,
+    [[maybe_unused]] std::vector<storm::RationalFunction> const& oneStepTargetProbabilities) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing upper reward bounds is not supported for rational functions.");
 }
 

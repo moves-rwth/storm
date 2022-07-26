@@ -176,7 +176,8 @@ void DdJaniModelBuilder<Type, ValueType>::Options::addLabel(std::string const& l
 template<storm::dd::DdType Type, typename ValueType>
 class ParameterCreator {
    public:
-    void create([[maybe_unused]] storm::jani::Model const& model, [[maybe_unused]] storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
+    void create([[maybe_unused]] storm::jani::Model const& model,
+                [[maybe_unused]] storm::adapters::AddExpressionAdapter<Type, ValueType>& rowExpressionAdapter) {
         // Intentionally left empty: no support for parameters for this data type.
     }
 

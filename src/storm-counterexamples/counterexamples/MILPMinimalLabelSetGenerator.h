@@ -508,8 +508,7 @@ class MILPMinimalLabelSetGenerator {
      * @param variableInformation A struct with information about the variables of the model.
      * @return The total number of constraints that were created.
      */
-    static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver<double>& solver,
-                                                  std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
+    static uint_fast64_t assertChoicesImplyLabels(storm::solver::LpSolver<double>& solver, std::vector<storm::storage::FlatSet<uint_fast64_t>> const& labelSets,
                                                   StateInformation const& stateInformation, ChoiceInformation const& choiceInformation,
                                                   VariableInformation const& variableInformation) {
         uint_fast64_t numberOfConstraintsCreated = 0;

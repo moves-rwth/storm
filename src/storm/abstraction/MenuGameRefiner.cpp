@@ -1392,99 +1392,99 @@ boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePr
     return derivePredicatesFromInterpolationFromTrace(interpolationManager, traceAndVariableSubstitution.first, traceAndVariableSubstitution.second);
 }
 
-//template<storm::dd::DdType Type, typename ValueType>
-//boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolationKShortestPaths(
-//    storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
-//    std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates,
-//    storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ValueType minProbability, ValueType maxProbability,
-//    ExplicitGameStrategyPair const& maxStrategyPair) const {
-//    // Extract the underlying DTMC of the max strategy pair.
+// template<storm::dd::DdType Type, typename ValueType>
+// boost::optional<RefinementPredicates> MenuGameRefiner<Type, ValueType>::derivePredicatesFromInterpolationKShortestPaths(
+//     storm::dd::Odd const& odd, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<uint64_t> const& player1Grouping,
+//     std::vector<uint64_t> const& player1Labeling, std::vector<uint64_t> const& player2Labeling, storm::storage::BitVector const& initialStates,
+//     storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, ValueType minProbability, ValueType maxProbability,
+//     ExplicitGameStrategyPair const& maxStrategyPair) const {
+//     // Extract the underlying DTMC of the max strategy pair.
 //
-//    // Start by determining which states are reachable.
-//    storm::storage::BitVector reachableStatesInMaxFragment(initialStates);
-//    std::vector<uint64_t> stack(initialStates.begin(), initialStates.end());
-//    while (!stack.empty()) {
-//        uint64_t currentState = stack.back();
-//        stack.pop_back();
+//     // Start by determining which states are reachable.
+//     storm::storage::BitVector reachableStatesInMaxFragment(initialStates);
+//     std::vector<uint64_t> stack(initialStates.begin(), initialStates.end());
+//     while (!stack.empty()) {
+//         uint64_t currentState = stack.back();
+//         stack.pop_back();
 //
-//        uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
-//        uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor);
-//        for (auto const& successorEntry : transitionMatrix.getRow(player2Choice)) {
-//            if (!reachableStatesInMaxFragment.get(successorEntry.getColumn())) {
-//                reachableStatesInMaxFragment.set(successorEntry.getColumn());
-//                if (!targetStates.get(successorEntry.getColumn())) {
-//                    stack.push_back(successorEntry.getColumn());
-//                }
-//            }
-//        }
-//    }
+//         uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+//         uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor);
+//         for (auto const& successorEntry : transitionMatrix.getRow(player2Choice)) {
+//             if (!reachableStatesInMaxFragment.get(successorEntry.getColumn())) {
+//                 reachableStatesInMaxFragment.set(successorEntry.getColumn());
+//                 if (!targetStates.get(successorEntry.getColumn())) {
+//                     stack.push_back(successorEntry.getColumn());
+//                 }
+//             }
+//         }
+//     }
 //
-//    uint64_t numberOfReachableStates = reachableStatesInMaxFragment.getNumberOfSetBits();
-//    std::vector<uint64_t> reachableStatesWithLowerIndex = reachableStatesInMaxFragment.getNumberOfSetBitsBeforeIndices();
+//     uint64_t numberOfReachableStates = reachableStatesInMaxFragment.getNumberOfSetBits();
+//     std::vector<uint64_t> reachableStatesWithLowerIndex = reachableStatesInMaxFragment.getNumberOfSetBitsBeforeIndices();
 //
-//    // Now construct the matrix just for these entries.
-//    storm::storage::SparseMatrixBuilder<ValueType> builder(numberOfReachableStates, numberOfReachableStates);
-//    storm::storage::BitVector dtmcInitialStates(numberOfReachableStates);
-//    typename storm::utility::ksp::ShortestPathsGenerator<ValueType>::StateProbMap targetProbabilities;
-//    std::vector<uint64_t> stateToOffset(numberOfReachableStates);
-//    std::vector<uint64_t> dtmcPlayer1Labels(numberOfReachableStates);
-//    uint64_t currentRow = 0;
-//    for (auto currentState : reachableStatesInMaxFragment) {
-//        stateToOffset[currentRow] = currentState;
-//        if (targetStates.get(currentState)) {
-//            targetProbabilities[currentRow] = storm::utility::one<ValueType>();
-//            builder.addNextValue(currentRow, currentRow, storm::utility::one<ValueType>());
-//        } else {
-//            uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
-//            dtmcPlayer1Labels[currentRow] = player1Labeling[player2Successor];
-//            uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor);
+//     // Now construct the matrix just for these entries.
+//     storm::storage::SparseMatrixBuilder<ValueType> builder(numberOfReachableStates, numberOfReachableStates);
+//     storm::storage::BitVector dtmcInitialStates(numberOfReachableStates);
+//     typename storm::utility::ksp::ShortestPathsGenerator<ValueType>::StateProbMap targetProbabilities;
+//     std::vector<uint64_t> stateToOffset(numberOfReachableStates);
+//     std::vector<uint64_t> dtmcPlayer1Labels(numberOfReachableStates);
+//     uint64_t currentRow = 0;
+//     for (auto currentState : reachableStatesInMaxFragment) {
+//         stateToOffset[currentRow] = currentState;
+//         if (targetStates.get(currentState)) {
+//             targetProbabilities[currentRow] = storm::utility::one<ValueType>();
+//             builder.addNextValue(currentRow, currentRow, storm::utility::one<ValueType>());
+//         } else {
+//             uint64_t player2Successor = maxStrategyPair.getPlayer1Strategy().getChoice(currentState);
+//             dtmcPlayer1Labels[currentRow] = player1Labeling[player2Successor];
+//             uint64_t player2Choice = maxStrategyPair.getPlayer2Strategy().getChoice(player2Successor);
 //
-//            for (auto const& successorEntry : transitionMatrix.getRow(player2Choice)) {
-//                builder.addNextValue(currentRow, reachableStatesWithLowerIndex[successorEntry.getColumn()], successorEntry.getValue());
-//            }
-//        }
+//             for (auto const& successorEntry : transitionMatrix.getRow(player2Choice)) {
+//                 builder.addNextValue(currentRow, reachableStatesWithLowerIndex[successorEntry.getColumn()], successorEntry.getValue());
+//             }
+//         }
 //
-//        if (initialStates.get(currentState)) {
-//            dtmcInitialStates.set(currentRow);
-//        }
-//        ++currentRow;
-//    }
-//    storm::storage::SparseMatrix<ValueType> dtmcMatrix = builder.build();
+//         if (initialStates.get(currentState)) {
+//             dtmcInitialStates.set(currentRow);
+//         }
+//         ++currentRow;
+//     }
+//     storm::storage::SparseMatrix<ValueType> dtmcMatrix = builder.build();
 //
-//    // Create a new expression manager that we can use for the interpolation.
-//    AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
-//    std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
+//     // Create a new expression manager that we can use for the interpolation.
+//     AbstractionInformation<Type> const& abstractionInformation = abstractor.get().getAbstractionInformation();
+//     std::shared_ptr<storm::expressions::ExpressionManager> interpolationManager = abstractionInformation.getExpressionManager().clone();
 //
-//    // Use a path generator to compute k-shortest-paths.
-//    storm::utility::ksp::ShortestPathsGenerator<ValueType> pathGenerator(dtmcMatrix, targetProbabilities, dtmcInitialStates,
-//                                                                         storm::utility::ksp::MatrixFormat::straight);
-//    uint64_t currentShortestPath = 1;
-//    bool considerNextPath = true;
+//     // Use a path generator to compute k-shortest-paths.
+//     storm::utility::ksp::ShortestPathsGenerator<ValueType> pathGenerator(dtmcMatrix, targetProbabilities, dtmcInitialStates,
+//                                                                          storm::utility::ksp::MatrixFormat::straight);
+//     uint64_t currentShortestPath = 1;
+//     bool considerNextPath = true;
 //
-//    boost::optional<RefinementPredicates> result;
+//     boost::optional<RefinementPredicates> result;
 //
-//    while (currentShortestPath < 100 && considerNextPath) {
-//        auto reversedPath = pathGenerator.getPathAsList(currentShortestPath);
-//        std::vector<uint64_t> reversedLabels;
-//        for (auto stateIt = reversedPath.rbegin(); stateIt != reversedPath.rend() - 1; ++stateIt) {
-//            reversedLabels.push_back(player1Labeling[maxStrategyPair.getPlayer1Strategy().getChoice(stateToOffset[*stateIt])]);
-//        }
+//     while (currentShortestPath < 100 && considerNextPath) {
+//         auto reversedPath = pathGenerator.getPathAsList(currentShortestPath);
+//         std::vector<uint64_t> reversedLabels;
+//         for (auto stateIt = reversedPath.rbegin(); stateIt != reversedPath.rend() - 1; ++stateIt) {
+//             reversedLabels.push_back(player1Labeling[maxStrategyPair.getPlayer1Strategy().getChoice(stateToOffset[*stateIt])]);
+//         }
 //
-//        boost::optional<RefinementPredicates> pathPredicates =
-//            derivePredicatesFromInterpolationReversedPath(odd, *interpolationManager, reversedPath, stateToOffset, reversedLabels);
-//        if (pathPredicates) {
-//            if (!result) {
-//                result = RefinementPredicates(RefinementPredicates::Source::Interpolation, pathPredicates.get().getPredicates());
-//            } else {
-//                result.get().addPredicates(pathPredicates.get().getPredicates());
-//            }
-//        }
-//        ++currentShortestPath;
-//    }
+//         boost::optional<RefinementPredicates> pathPredicates =
+//             derivePredicatesFromInterpolationReversedPath(odd, *interpolationManager, reversedPath, stateToOffset, reversedLabels);
+//         if (pathPredicates) {
+//             if (!result) {
+//                 result = RefinementPredicates(RefinementPredicates::Source::Interpolation, pathPredicates.get().getPredicates());
+//             } else {
+//                 result.get().addPredicates(pathPredicates.get().getPredicates());
+//             }
+//         }
+//         ++currentShortestPath;
+//     }
 //
-//    exit(-1);
-//    return result;
-//}
+//     exit(-1);
+//     return result;
+// }
 
 template<storm::dd::DdType Type, typename ValueType>
 bool MenuGameRefiner<Type, ValueType>::refine(storm::abstraction::MenuGame<Type, ValueType> const& game, storm::dd::Odd const& odd,

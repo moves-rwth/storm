@@ -262,8 +262,10 @@ void GmmxxMultiplier<ValueType>::multAddReduceHelper(std::vector<uint64_t> const
 
 template<>
 template<typename Compare, bool backwards>
-void GmmxxMultiplier<storm::RationalFunction>::multAddReduceHelper([[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices, [[maybe_unused]] std::vector<storm::RationalFunction> const& x,
-                                                                   [[maybe_unused]] std::vector<storm::RationalFunction> const* b, [[maybe_unused]] std::vector<storm::RationalFunction>& result,
+void GmmxxMultiplier<storm::RationalFunction>::multAddReduceHelper([[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices,
+                                                                   [[maybe_unused]] std::vector<storm::RationalFunction> const& x,
+                                                                   [[maybe_unused]] std::vector<storm::RationalFunction> const* b,
+                                                                   [[maybe_unused]] std::vector<storm::RationalFunction>& result,
                                                                    [[maybe_unused]] std::vector<uint64_t>* choices) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported for this data type.");
 }
@@ -398,7 +400,8 @@ void GmmxxMultiplier<storm::RationalFunction>::multAddReduceParallel([[maybe_unu
                                                                      [[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices,
                                                                      [[maybe_unused]] std::vector<storm::RationalFunction> const& x,
                                                                      [[maybe_unused]] std::vector<storm::RationalFunction> const* b,
-                                                                     [[maybe_unused]] std::vector<storm::RationalFunction>& result, [[maybe_unused]] std::vector<uint64_t>* choices) const {
+                                                                     [[maybe_unused]] std::vector<storm::RationalFunction>& result,
+                                                                     [[maybe_unused]] std::vector<uint64_t>* choices) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
 }
 

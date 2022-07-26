@@ -116,7 +116,8 @@ std::pair<bool, ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::
 
 template<>
 storm::RationalFunction SparseDeterministicInfiniteHorizonHelper<storm::RationalFunction>::computeLraForBsccVi(
-    [[maybe_unused]] Environment const& env, [[maybe_unused]] ValueGetter const& stateValueGetter, [[maybe_unused]] ValueGetter const& actionValueGetter, [[maybe_unused]] storm::storage::StronglyConnectedComponent const& bscc) {
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] ValueGetter const& stateValueGetter, [[maybe_unused]] ValueGetter const& actionValueGetter,
+    [[maybe_unused]] storm::storage::StronglyConnectedComponent const& bscc) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The requested Method for LRA computation is not supported for parametric models.");
 }
 template<typename ValueType>
@@ -529,8 +530,8 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
 }
 
 template<typename ValueType>
-std::vector<ValueType> computeUpperBoundsForExpectedVisitingTimes([[maybe_unused]]storm::storage::SparseMatrix<ValueType> const& nonBsccMatrix,
-                                                                  [[maybe_unused]]std::vector<ValueType> const& toBsccProbabilities) {
+std::vector<ValueType> computeUpperBoundsForExpectedVisitingTimes([[maybe_unused]] storm::storage::SparseMatrix<ValueType> const& nonBsccMatrix,
+                                                                  [[maybe_unused]] std::vector<ValueType> const& toBsccProbabilities) {
     return storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>::computeUpperBoundOnExpectedVisitingTimes(nonBsccMatrix, toBsccProbabilities);
 }
 

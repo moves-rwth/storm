@@ -84,7 +84,8 @@ storm::dd::Add<DdType, ValueType> SymbolicEliminationLinearEquationSolver<DdType
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
-LinearEquationSolverProblemFormat SymbolicEliminationLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat([[maybe_unused]] Environment const& env) const {
+LinearEquationSolverProblemFormat SymbolicEliminationLinearEquationSolver<DdType, ValueType>::getEquationProblemFormat(
+    [[maybe_unused]] Environment const& env) const {
     return LinearEquationSolverProblemFormat::FixedPointSystem;
 }
 

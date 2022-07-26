@@ -1866,8 +1866,9 @@ void SparseMatrix<ValueType>::performWalkerChaeStep(std::vector<ValueType> const
 
 #ifdef STORM_HAVE_CARL
 template<>
-void SparseMatrix<Interval>::performWalkerChaeStep([[maybe_unused]] std::vector<Interval> const& x, [[maybe_unused]] std::vector<Interval> const& rowSums, [[maybe_unused]] std::vector<Interval> const& b,
-                                                   [[maybe_unused]] std::vector<Interval> const& ax, [[maybe_unused]] std::vector<Interval>& result) const {
+void SparseMatrix<Interval>::performWalkerChaeStep([[maybe_unused]] std::vector<Interval> const& x, [[maybe_unused]] std::vector<Interval> const& rowSums,
+                                                   [[maybe_unused]] std::vector<Interval> const& b, [[maybe_unused]] std::vector<Interval> const& ax,
+                                                   [[maybe_unused]] std::vector<Interval>& result) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
 }
 #endif
@@ -1962,10 +1963,12 @@ void SparseMatrix<ValueType>::multiplyAndReduceForward(std::vector<uint64_t> con
 
 #ifdef STORM_HAVE_CARL
 template<>
-void SparseMatrix<storm::RationalFunction>::multiplyAndReduceForward([[maybe_unused]] OptimizationDirection const& dir, [[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices,
+void SparseMatrix<storm::RationalFunction>::multiplyAndReduceForward([[maybe_unused]] OptimizationDirection const& dir,
+                                                                     [[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices,
                                                                      [[maybe_unused]] std::vector<storm::RationalFunction> const& vector,
                                                                      [[maybe_unused]] std::vector<storm::RationalFunction> const* b,
-                                                                     [[maybe_unused]] std::vector<storm::RationalFunction>& result, [[maybe_unused]] std::vector<uint_fast64_t>* choices) const {
+                                                                     [[maybe_unused]] std::vector<storm::RationalFunction>& result,
+                                                                     [[maybe_unused]] std::vector<uint_fast64_t>* choices) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
 }
 #endif
@@ -2055,10 +2058,12 @@ void SparseMatrix<ValueType>::multiplyAndReduceBackward(std::vector<uint64_t> co
 
 #ifdef STORM_HAVE_CARL
 template<>
-void SparseMatrix<storm::RationalFunction>::multiplyAndReduceBackward([[maybe_unused]] OptimizationDirection const& dir, [[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices,
+void SparseMatrix<storm::RationalFunction>::multiplyAndReduceBackward([[maybe_unused]] OptimizationDirection const& dir,
+                                                                      [[maybe_unused]] std::vector<uint64_t> const& rowGroupIndices,
                                                                       [[maybe_unused]] std::vector<storm::RationalFunction> const& vector,
                                                                       [[maybe_unused]] std::vector<storm::RationalFunction> const* b,
-                                                                      [[maybe_unused]] std::vector<storm::RationalFunction>& result, [[maybe_unused]] std::vector<uint_fast64_t>* choices) const {
+                                                                      [[maybe_unused]] std::vector<storm::RationalFunction>& result,
+                                                                      [[maybe_unused]] std::vector<uint_fast64_t>* choices) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "This operation is not supported.");
 }
 #endif

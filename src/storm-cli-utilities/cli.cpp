@@ -108,7 +108,7 @@ void printHeader(std::string const& name, const int argc, const char** argv) {
 }
 
 void printVersion(std::string const& name) {
-    STORM_PRINT(name << " "  << storm::StormVersion::longVersionString() << '\n');
+    STORM_PRINT(name << " " << storm::StormVersion::longVersionString() << '\n');
     STORM_PRINT(storm::StormVersion::buildInfo() << '\n');
 
 #ifdef STORM_HAVE_INTELTBB

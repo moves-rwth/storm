@@ -15,7 +15,8 @@ bool TerminationCondition<ValueType>::terminateNow(std::vector<ValueType> const&
 }
 
 template<typename ValueType>
-bool NoTerminationCondition<ValueType>::terminateNow([[maybe_unused]] std::function<ValueType(uint64_t const&)> const& valueGetter, [[maybe_unused]] SolverGuarantee const& guarantee) const {
+bool NoTerminationCondition<ValueType>::terminateNow([[maybe_unused]] std::function<ValueType(uint64_t const&)> const& valueGetter,
+                                                     [[maybe_unused]] SolverGuarantee const& guarantee) const {
     return false;
 }
 

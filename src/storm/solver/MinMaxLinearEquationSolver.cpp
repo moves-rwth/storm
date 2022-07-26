@@ -147,7 +147,8 @@ std::vector<uint_fast64_t> const& MinMaxLinearEquationSolver<ValueType>::getInit
 
 template<typename ValueType>
 MinMaxLinearEquationSolverRequirements MinMaxLinearEquationSolver<ValueType>::getRequirements(
-    Environment const&, [[maybe_unused]] boost::optional<storm::solver::OptimizationDirection> const& direction, [[maybe_unused]] bool const& hasInitialScheduler) const {
+    Environment const&, [[maybe_unused]] boost::optional<storm::solver::OptimizationDirection> const& direction,
+    [[maybe_unused]] bool const& hasInitialScheduler) const {
     return MinMaxLinearEquationSolverRequirements();
 }
 

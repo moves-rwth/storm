@@ -198,7 +198,8 @@ bool InternalAdd<DdType::CUDD, ValueType>::equalModuloPrecision(InternalAdd<DdTy
 
 template<>
 bool InternalAdd<DdType::CUDD, storm::RationalNumber>::equalModuloPrecision([[maybe_unused]] InternalAdd<DdType::CUDD, storm::RationalNumber> const& other,
-                                                                            [[maybe_unused]] storm::RationalNumber const& precision, [[maybe_unused]] bool relative) const {
+                                                                            [[maybe_unused]] storm::RationalNumber const& precision,
+                                                                            [[maybe_unused]] bool relative) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported.");
 }
 
@@ -868,9 +869,11 @@ DdNode* InternalAdd<DdType::CUDD, ValueType>::fromVectorRec(::DdManager* manager
 }
 
 template<>
-DdNode* InternalAdd<DdType::CUDD, storm::RationalNumber>::fromVectorRec([[maybe_unused]] ::DdManager* manager, [[maybe_unused]] uint_fast64_t& currentOffset, [[maybe_unused]] uint_fast64_t currentLevel,
-                                                                        [[maybe_unused]] uint_fast64_t maxLevel, [[maybe_unused]] std::vector<storm::RationalNumber> const& values,
-                                                                        [[maybe_unused]] Odd const& odd, [[maybe_unused]] std::vector<uint_fast64_t> const& ddVariableIndices) {
+DdNode* InternalAdd<DdType::CUDD, storm::RationalNumber>::fromVectorRec([[maybe_unused]] ::DdManager* manager, [[maybe_unused]] uint_fast64_t& currentOffset,
+                                                                        [[maybe_unused]] uint_fast64_t currentLevel, [[maybe_unused]] uint_fast64_t maxLevel,
+                                                                        [[maybe_unused]] std::vector<storm::RationalNumber> const& values,
+                                                                        [[maybe_unused]] Odd const& odd,
+                                                                        [[maybe_unused]] std::vector<uint_fast64_t> const& ddVariableIndices) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation not supported");
 }
 

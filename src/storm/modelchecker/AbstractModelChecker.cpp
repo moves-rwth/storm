@@ -128,7 +128,7 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeNextProbabi
 }
 
 template<typename ModelType>
-std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeUntilProbabilities([[maybe_unused]]  Environment const& env,
+std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeUntilProbabilities([[maybe_unused]] Environment const& env,
                                                                                         CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
@@ -219,7 +219,8 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeTotalReward
 
 template<typename ModelType>
 std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLongRunAverageRewards(
-    [[maybe_unused]] Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
+    [[maybe_unused]] Environment const& env, storm::logic::RewardMeasureType,
+    CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException,
                     "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
 }

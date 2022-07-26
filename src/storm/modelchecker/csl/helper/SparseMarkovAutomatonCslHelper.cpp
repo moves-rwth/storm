@@ -717,8 +717,9 @@ std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbab
 
 template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(
-    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::solver::SolveGoal<ValueType>&& goal, [[maybe_unused]] storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-    [[maybe_unused]] std::vector<ValueType> const& exitRateVector, [[maybe_unused]] storm::storage::BitVector const& markovianStates, [[maybe_unused]] storm::storage::BitVector const& phiStates,
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::solver::SolveGoal<ValueType>&& goal,
+    [[maybe_unused]] storm::storage::SparseMatrix<ValueType> const& transitionMatrix, [[maybe_unused]] std::vector<ValueType> const& exitRateVector,
+    [[maybe_unused]] storm::storage::BitVector const& markovianStates, [[maybe_unused]] storm::storage::BitVector const& phiStates,
     [[maybe_unused]] storm::storage::BitVector const& psiStates, [[maybe_unused]] std::pair<double, double> const& boundsPair) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
 }

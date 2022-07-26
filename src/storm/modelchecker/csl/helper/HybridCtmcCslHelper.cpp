@@ -317,9 +317,11 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabiliti
 
 template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(
-    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::models::symbolic::Ctmc<DdType, ValueType> const& model, [[maybe_unused]] bool onlyInitialStatesRelevant,
-    [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& rateMatrix, [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& exitRateVector, [[maybe_unused]] storm::dd::Bdd<DdType> const& phiStates,
-    [[maybe_unused]] storm::dd::Bdd<DdType> const& psiStates, [[maybe_unused]] bool qualitative, [[maybe_unused]] double lowerBound, [[maybe_unused]] double upperBound) {
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
+    [[maybe_unused]] bool onlyInitialStatesRelevant, [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& rateMatrix,
+    [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& exitRateVector, [[maybe_unused]] storm::dd::Bdd<DdType> const& phiStates,
+    [[maybe_unused]] storm::dd::Bdd<DdType> const& psiStates, [[maybe_unused]] bool qualitative, [[maybe_unused]] double lowerBound,
+    [[maybe_unused]] double upperBound) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
 }
 
@@ -387,8 +389,9 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
 
 template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(
-    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::models::symbolic::Ctmc<DdType, ValueType> const& model, [[maybe_unused]] bool onlyInitialStatesRelevant,
-    [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& rateMatrix, [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& exitRateVector,
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
+    [[maybe_unused]] bool onlyInitialStatesRelevant, [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& rateMatrix,
+    [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& exitRateVector,
     [[maybe_unused]] typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, [[maybe_unused]] double timeBound) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing instantaneous rewards is unsupported for this value type.");
 }
@@ -474,8 +477,9 @@ std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(
 
 template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
 std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(
-    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::models::symbolic::Ctmc<DdType, ValueType> const& model, [[maybe_unused]] bool onlyInitialStatesRelevant,
-    [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& rateMatrix, [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& exitRateVector,
+    [[maybe_unused]] Environment const& env, [[maybe_unused]] storm::models::symbolic::Ctmc<DdType, ValueType> const& model,
+    [[maybe_unused]] bool onlyInitialStatesRelevant, [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& rateMatrix,
+    [[maybe_unused]] storm::dd::Add<DdType, ValueType> const& exitRateVector,
     [[maybe_unused]] typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, [[maybe_unused]] double timeBound) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing cumulative rewards is unsupported for this value type.");
 }
