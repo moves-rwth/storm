@@ -484,7 +484,7 @@ template storm::storage::BitVector StandardRewardModel<double>::getChoicesWithZe
 template storm::storage::BitVector StandardRewardModel<double>::getChoicesWithFilter(storm::storage::SparseMatrix<double> const& transitionMatrix,
                                                                                      std::function<bool(double const&)> const& filter) const;
 template double StandardRewardModel<double>::getStateActionAndTransitionReward(uint_fast64_t stateIndex,
-                                                                               storm::storage::SparseMatrix<double> constß& transitionMatrix) const;
+                                                                               storm::storage::SparseMatrix<double> const& transitionMatrix) const;
 template double StandardRewardModel<double>::getTotalStateActionReward(uint_fast64_t stateIndex, uint_fast64_t choiceIndex,
                                                                        storm::storage::SparseMatrix<double> const& transitionMatrix,
                                                                        double const& stateRewardWeight, double const& actionRewardWeight) const;
