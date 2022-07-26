@@ -494,7 +494,7 @@ template void StandardRewardModel<double>::reduceToStateBasedRewards(storm::stor
 template void StandardRewardModel<double>::setStateActionReward(uint_fast64_t choiceIndex, double const& newValue);
 template void StandardRewardModel<double>::setStateReward(uint_fast64_t state, double const& newValue);
 template class StandardRewardModel<double>;
-template std::ostream& operator<< <double>(std::ostream& out, StandardRewardModel<double> const& rewardModel);
+template std::ostream& operator<<<double>(std::ostream& out, StandardRewardModel<double> const& rewardModel);
 
 template std::vector<float> StandardRewardModel<float>::getTotalRewardVector(uint_fast64_t numberOfRows,
                                                                              storm::storage::SparseMatrix<float> const& transitionMatrix,
@@ -509,7 +509,7 @@ template void StandardRewardModel<float>::reduceToStateBasedRewards(storm::stora
 template void StandardRewardModel<float>::setStateActionReward(uint_fast64_t choiceIndex, float const& newValue);
 template void StandardRewardModel<float>::setStateReward(uint_fast64_t state, float const& newValue);
 template class StandardRewardModel<float>;
-template std::ostream& operator<< <float>(std::ostream& out, StandardRewardModel<float> const& rewardModel);
+template std::ostream& operator<<<float>(std::ostream& out, StandardRewardModel<float> const& rewardModel);
 
 #ifdef STORM_HAVE_CARL
 template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(
@@ -541,7 +541,7 @@ template void StandardRewardModel<storm::RationalNumber>::clearRewardAtState(uin
 template void StandardRewardModel<storm::RationalNumber>::setStateActionReward(uint_fast64_t choiceIndex, storm::RationalNumber const& newValue);
 template void StandardRewardModel<storm::RationalNumber>::setStateReward(uint_fast64_t state, storm::RationalNumber const& newValue);
 template class StandardRewardModel<storm::RationalNumber>;
-template std::ostream& operator<< <storm::RationalNumber>(std::ostream& out, StandardRewardModel<storm::RationalNumber> const& rewardModel);
+template std::ostream& operator<<<storm::RationalNumber>(std::ostream& out, StandardRewardModel<storm::RationalNumber> const& rewardModel);
 
 template std::vector<storm::RationalFunction> StandardRewardModel<storm::RationalFunction>::getTotalRewardVector(
     uint_fast64_t numberOfRows, storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& filter) const;
@@ -572,7 +572,7 @@ template void StandardRewardModel<storm::RationalFunction>::reduceToStateBasedRe
 template void StandardRewardModel<storm::RationalFunction>::setStateActionReward(uint_fast64_t choiceIndex, storm::RationalFunction const& newValue);
 template void StandardRewardModel<storm::RationalFunction>::setStateReward(uint_fast64_t state, storm::RationalFunction const& newValue);
 template class StandardRewardModel<storm::RationalFunction>;
-template std::ostream& operator<< <storm::RationalFunction>(std::ostream& out, StandardRewardModel<storm::RationalFunction> const& rewardModel);
+template std::ostream& operator<<<storm::RationalFunction>(std::ostream& out, StandardRewardModel<storm::RationalFunction> const& rewardModel);
 
 template std::vector<storm::Interval> StandardRewardModel<storm::Interval>::getTotalRewardVector(uint_fast64_t numberOfRows,
                                                                                                  storm::storage::SparseMatrix<double> const& transitionMatrix,
@@ -595,7 +595,7 @@ template void StandardRewardModel<storm::Interval>::clearRewardAtState(uint_fast
 template void StandardRewardModel<storm::Interval>::reduceToStateBasedRewards(storm::storage::SparseMatrix<double> const& transitionMatrix,
                                                                               bool reduceToStateRewards, std::vector<double> const* weights);
 template class StandardRewardModel<storm::Interval>;
-template std::ostream& operator<< <storm::Interval>(std::ostream& out, StandardRewardModel<storm::Interval> const& rewardModel);
+template std::ostream& operator<<<storm::Interval>(std::ostream& out, StandardRewardModel<storm::Interval> const& rewardModel);
 #endif
 }  // namespace sparse
 
