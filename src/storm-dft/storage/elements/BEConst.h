@@ -23,6 +23,10 @@ class BEConst : public DFTBE<ValueType> {
         // Intentionally empty
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new BEConst<ValueType>(this->id(), this->name(), this->failed()));
+    }
+
     storm::dft::storage::elements::BEType beType() const override {
         return storm::dft::storage::elements::BEType::CONSTANT;
     }
@@ -41,17 +45,9 @@ class BEConst : public DFTBE<ValueType> {
 
     ValueType getUnreliability(ValueType time) const override;
 
-    bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
-        if (!DFTBE<ValueType>::isTypeEqualTo(other)) {
-            return false;
-        }
-        auto& otherBE = static_cast<BEConst<ValueType> const&>(other);
-        return this->failed() == otherBE.failed();
-    }
-
-    std::string toString() const override {
+    std::string distributionString() const override {
         std::stringstream stream;
-        stream << "{" << this->name() << "} BE(const " << (this->failed() ? "failed" : "failsafe") << ")";
+        stream << "const " << (this->failed() ? "failed" : "failsafe");
         return stream.str();
     }
 

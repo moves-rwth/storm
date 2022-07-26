@@ -26,6 +26,10 @@ class BESamples : public DFTBE<ValueType> {
         STORM_LOG_ASSERT(this->canFail(), "At least one sample should have a non-zero probability.");
     }
 
+    std::shared_ptr<DFTElement<ValueType>> clone() const override {
+        return std::shared_ptr<DFTElement<ValueType>>(new BESamples<ValueType>(this->id(), this->name(), this->activeSamples()));
+    }
+
     storm::dft::storage::elements::BEType beType() const override {
         return storm::dft::storage::elements::BEType::SAMPLES;
     }
@@ -47,22 +51,12 @@ class BESamples : public DFTBE<ValueType> {
                 return true;
             }
         }
-        return true;
+        return false;
     }
 
-    bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
-        if (!DFTBE<ValueType>::isTypeEqualTo(other)) {
-            return false;
-        }
-
-        auto& otherBE = static_cast<BESamples<ValueType> const&>(other);
-        return mActiveSamples.size() == otherBE.activeSamples().size() &&
-               std::equal(mActiveSamples.begin(), mActiveSamples.end(), otherBE.activeSamples().begin());
-    }
-
-    std::string toString() const override {
+    std::string distributionString() const override {
         std::stringstream stream;
-        stream << "{" << this->name() << "} BE samples(" << this->activeSamples().size() << " samples)";
+        stream << "samples " << this->activeSamples().size();
         return stream.str();
     }
 

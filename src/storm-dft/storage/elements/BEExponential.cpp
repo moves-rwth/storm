@@ -9,7 +9,8 @@ namespace elements {
 template<>
 double BEExponential<double>::getUnreliability(double time) const {
     // 1 - e^(-lambda * t)
-    return 1 - exp(-this->activeFailureRate() * time);
+    // where lambda is the rate
+    return 1 - std::exp(-this->activeFailureRate() * time);
 }
 
 template<typename ValueType>

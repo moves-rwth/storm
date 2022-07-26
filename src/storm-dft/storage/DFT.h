@@ -405,14 +405,12 @@ class DFT {
     }
 };
 
-#ifdef STORM_HAVE_CARL
 /*!
  * Get all rate/probability parameters occurring in the DFT.
  * @param dft DFT.
  * @return Set of parameters.
  */
 std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunction> const& dft);
-#endif
 
 }  // namespace storage
 }  // namespace storm::dft

@@ -61,6 +61,7 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
         return true;
     } else if (checkTask.isOnlyInitialStatesRelevantSet()) {
         auto multiObjectiveFragment = storm::logic::multiObjective()
+                                          .setTimeAllowed(true)
                                           .setCumulativeRewardFormulasAllowed(true)
                                           .setTimeBoundedCumulativeRewardFormulasAllowed(true)
                                           .setStepBoundedCumulativeRewardFormulasAllowed(true)

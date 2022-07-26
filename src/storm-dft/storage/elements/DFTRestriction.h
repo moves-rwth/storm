@@ -29,9 +29,7 @@ class DFTRestriction : public DFTChildren<ValueType> {
     /*!
      * Destructor
      */
-    virtual ~DFTRestriction(){
-        // Intentionally left empty.
-    };
+    virtual ~DFTRestriction() = default;
 
     bool isRestriction() const override {
         return true;

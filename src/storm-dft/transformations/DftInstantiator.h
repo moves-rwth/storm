@@ -15,12 +15,12 @@ class DftInstantiator {
     /*!
      * Constructor.
      *
-     * @param dft DFT
+     * @param dft DFT.
      */
     DftInstantiator(storm::dft::storage::DFT<ParametricType> const& dft);
 
     /*!
-     * Destructs the Instantiator
+     * Destructs the Instantiator.
      */
     virtual ~DftInstantiator() = default;
 
@@ -39,6 +39,11 @@ class DftInstantiator {
    private:
     storm::dft::storage::DFT<ParametricType> const& dft;
 
+    /*!
+     * Get list of children names.
+     * @param element DFT element.
+     * @return Names of element's children.
+     */
     std::vector<std::string> getChildrenVector(std::shared_ptr<storm::dft::storage::elements::DFTElement<ParametricType> const> element);
 };
 

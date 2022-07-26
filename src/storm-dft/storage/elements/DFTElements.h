@@ -2,8 +2,12 @@
 
 // BE types
 #include "BEConst.h"
+#include "BEErlang.h"
 #include "BEExponential.h"
+#include "BELogNormal.h"
+#include "BEProbability.h"
 #include "BESamples.h"
+#include "BEWeibull.h"
 
 // Gates
 #include "DFTAnd.h"

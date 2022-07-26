@@ -2,7 +2,6 @@
 #include "test/storm_gtest.h"
 
 #include "storm-dft/api/storm-dft.h"
-#include "storm-dft/transformations/DftTransformator.h"
 #include "storm-parsers/api/storm-parsers.h"
 
 namespace {
@@ -73,8 +72,8 @@ class DftModelCheckerTest : public ::testing::Test {
 
     double analyze(std::string const& file, std::string const& property) {
         // Load, build and prepare DFT
-        storm::dft::transformations::DftTransformator<double> dftTransformator = storm::dft::transformations::DftTransformator<double>();
-        std::shared_ptr<storm::dft::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
+        std::shared_ptr<storm::dft::storage::DFT<double>> dft =
+            storm::dft::api::prepareForMarkovAnalysis<double>(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
         EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 
         // Create property

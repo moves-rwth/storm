@@ -210,7 +210,7 @@ std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> DFTModelChecker<ValueTyp
             }
 
             // Build a single CTMC
-            STORM_LOG_DEBUG("Building Model from DFT with top level element " << ft.getElement(ft.getTopLevelIndex())->toString() << " ...");
+            STORM_LOG_DEBUG("Building Model from DFT with top level element " << *ft.getElement(ft.getTopLevelIndex()) << " ...");
             storm::dft::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries);
             builder.buildModel(0, 0.0);
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
@@ -528,11 +528,7 @@ void DFTModelChecker<ValueType>::printResults(dft_results const& results, std::o
 }
 
 template class DFTModelChecker<double>;
-
-#ifdef STORM_HAVE_CARL
-
 template class DFTModelChecker<storm::RationalFunction>;
 
-#endif
 }  // namespace modelchecker
 }  // namespace storm::dft

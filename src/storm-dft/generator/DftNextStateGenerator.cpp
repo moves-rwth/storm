@@ -352,9 +352,7 @@ storm::generator::StateBehavior<ValueType, StateType> DftNextStateGenerator<Valu
 }
 
 template class DftNextStateGenerator<double>;
-
-#ifdef STORM_HAVE_CARL
 template class DftNextStateGenerator<storm::RationalFunction>;
-#endif
+
 }  // namespace generator
 }  // namespace storm::dft

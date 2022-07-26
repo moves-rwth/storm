@@ -246,12 +246,53 @@ template<typename ValueType>
 DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::dft::storage::DFTIndependentSymmetries const& symmetries) const {
     DFTStateGenerationInfo generationInfo(nrElements(), mNrOfSpares, mNrRepresentatives, mMaxSpareChildCount);
 
-    // Generate Pre and Post info for restrictions, and mutexes
+    // Generate pre- and post-set info for restrictions, and mutexes
     for (auto const& elem : mElements) {
         if (!elem->isDependency() && !elem->isRestriction()) {
-            generationInfo.setRestrictionPreElements(elem->id(), elem->seqRestrictionPres());
-            generationInfo.setRestrictionPostElements(elem->id(), elem->seqRestrictionPosts());
-            generationInfo.setMutexElements(elem->id(), elem->mutexRestrictionElements());
+            // Ids of elements which are the direct predecessor in the list of children of a restriction
+            std::vector<size_t> seqRestrictionPres;
+            // Ids of elements which are the direct successor in the list of children of a restriction
+            std::vector<size_t> seqRestrictionPosts;
+            // Ids of elements which are under the same mutex
+            std::vector<size_t> mutexRestrictionElements;
+
+            for (auto const& restr : elem->restrictions()) {
+                if (restr->isSeqEnforcer()) {
+                    auto it = restr->children().cbegin();
+                    for (; it != restr->children().cend(); ++it) {
+                        if ((*it)->id() == elem->id()) {
+                            break;
+                        }
+                    }
+                    STORM_LOG_ASSERT(it != restr->children().cend(), "Child " << elem->id() << " not found in restriction " << *restr);
+                    // Add child following element in SEQ
+                    ++it;
+                    if (it != restr->children().cend()) {
+                        seqRestrictionPosts.push_back((*it)->id());
+                    }
+                    // Add child before element in SEQ
+                    --it;
+                    if (it != restr->children().cbegin()) {
+                        --it;
+                        seqRestrictionPres.push_back((*it)->id());
+                    }
+                } else {
+                    STORM_LOG_ASSERT(restr->isMutex(), "Restriction " << *restr << " is neither SEQ nor MUTEX.");
+                    bool found = false;
+                    for (auto it = restr->children().cbegin(); it != restr->children().cend(); ++it) {
+                        if ((*it)->id() != elem->id()) {
+                            mutexRestrictionElements.push_back((*it)->id());
+                        } else {
+                            found = true;
+                        }
+                    }
+                    STORM_LOG_ASSERT(found, "Child " << elem->id() << " is not included in restriction " << *restr);
+                }
+            }
+
+            generationInfo.setRestrictionPreElements(elem->id(), seqRestrictionPres);
+            generationInfo.setRestrictionPostElements(elem->id(), seqRestrictionPosts);
+            generationInfo.setMutexElements(elem->id(), mutexRestrictionElements);
         }
     }
 
@@ -442,7 +483,7 @@ std::vector<DFT<ValueType>> DFT<ValueType>::topModularisation() const {
         storm::dft::builder::DFTBuilder<ValueType> builder;
 
         for (size_t id : subdft.second) {
-            builder.copyElement(mElements[id]);
+            builder.cloneElement(mElements[id]);
         }
         builder.setTopLevel(mElements[subdft.first]->name());
         res.push_back(builder.build());
@@ -484,10 +525,11 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
     // Copy all other elements which do not change
     for (auto elem : mElements) {
         if (rewriteSet.count(elem->id()) == 0) {
-            builder.copyElement(elem);
+            builder.cloneElement(elem);
         }
     }
 
+    size_t uniqueIndex = 0;  // Counter to ensure unique names
     // Add rewritten elements
     for (std::vector<size_t> rewrites : rewriteIds) {
         STORM_LOG_ASSERT(rewrites.size() > 1, "No rewritten elements.");
@@ -499,7 +541,7 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
                                           return p->id() == originalParent->id();
                                       }) != mElements[rewrites[1]]->parents().end(),
                          "Rewritten element has not the same parent");
-        std::string newParentName = builder.getUniqueName(originalParent->name());
+        std::string newParentName = originalParent->name() + "_" + std::to_string(++uniqueIndex);
 
         // Accumulate children names
         std::vector<std::string> childrenNames;
@@ -513,25 +555,17 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
             childrenNames.push_back(mElements[rewrites[i]]->name());
         }
 
-        // Add element inbetween parent and children
+        // Add element in-between parent and children
         switch (originalParent->type()) {
             case storm::dft::storage::elements::DFTElementType::AND:
-                builder.addAndElement(newParentName, childrenNames);
+                builder.addAndGate(newParentName, childrenNames);
                 break;
             case storm::dft::storage::elements::DFTElementType::OR:
-                builder.addOrElement(newParentName, childrenNames);
+                builder.addOrGate(newParentName, childrenNames);
                 break;
-            case storm::dft::storage::elements::DFTElementType::BE:
-            case storm::dft::storage::elements::DFTElementType::VOT:
-            case storm::dft::storage::elements::DFTElementType::PAND:
-            case storm::dft::storage::elements::DFTElementType::SPARE:
-            case storm::dft::storage::elements::DFTElementType::POR:
-            case storm::dft::storage::elements::DFTElementType::PDEP:
-            case storm::dft::storage::elements::DFTElementType::SEQ:
-            case storm::dft::storage::elements::DFTElementType::MUTEX:
-                // Other elements are not supported
             default:
-                STORM_LOG_ASSERT(false, "Dft type can not be rewritten.");
+                // Other elements are not supported
+                STORM_LOG_ASSERT(false, "Dft type " << originalParent->type() << " can not be rewritten.");
                 break;
         }
 
@@ -544,7 +578,7 @@ DFT<ValueType> DFT<ValueType>::optimize() const {
                 childrenNames.push_back(child->name());
             }
         }
-        builder.copyGate(originalParent, childrenNames);
+        builder.cloneElementWithNewChildren(originalParent, childrenNames);
     }
 
     builder.setTopLevel(mElements[mTopLevelIndex]->name());

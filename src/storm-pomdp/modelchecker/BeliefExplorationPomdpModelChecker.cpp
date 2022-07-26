@@ -83,7 +83,7 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            storm::pomdp::modelchecker::POMDPValueBounds<BeliefValueType> BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula) {
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
 
                 // Compute some initial bounds on the values for each state of the pomdp
@@ -160,7 +160,7 @@ namespace storm {
                 if (options.refine) {
                     refineReachability(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
                 } else {
-                    computeReachabilityOTF(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
+                    computeReachability(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
                 }
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
                 if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
@@ -252,7 +252,7 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result &result) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::computeReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result &result) {
                 auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
                 if (options.discretize) {
                     std::vector<BeliefValueType> observationResolutionVector(pomdp().getNrObservations(),

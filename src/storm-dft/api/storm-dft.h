@@ -10,7 +10,7 @@
 #include "storm-dft/parser/DFTJsonParser.h"
 #include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
-#include "storm-dft/transformations/DftTransformator.h"
+#include "storm-dft/transformations/DftTransformer.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
 #include "storm-dft/utility/FailureBoundFinder.h"
 #include "storm-dft/utility/RelevantEvents.h"
@@ -76,16 +76,30 @@ std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> co
  * @return Transformed DFT.
  */
 template<typename ValueType>
-std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm::dft::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP) {
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformedDFT = std::make_shared<storm::dft::storage::DFT<ValueType>>(dft);
-    auto dftTransformator = storm::dft::transformations::DftTransformator<ValueType>();
-    if (uniqueBE) {
-        transformedDFT = dftTransformator.transformUniqueFailedBe(*transformedDFT);
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm::dft::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP,
+                                                                          bool markovianDistributions) {
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformedDft = std::make_shared<storm::dft::storage::DFT<ValueType>>(dft);
+    if (markovianDistributions && !storm::dft::transformations::DftTransformer<ValueType>::hasOnlyExponentialDistributions(*transformedDft)) {
+        transformedDft = storm::dft::transformations::DftTransformer<ValueType>::transformExponentialDistributions(*transformedDft);
     }
-    if (binaryFDEP && !dft.getDependencies().empty()) {
-        transformedDFT = dftTransformator.transformBinaryFDEPs(*transformedDFT);
+    if (uniqueBE && !storm::dft::transformations::DftTransformer<ValueType>::hasUniqueFailedBE(*transformedDft)) {
+        transformedDft = storm::dft::transformations::DftTransformer<ValueType>::transformUniqueFailedBE(*transformedDft);
     }
-    return transformedDFT;
+    if (binaryFDEP && storm::dft::transformations::DftTransformer<ValueType>::hasNonBinaryDependency(*transformedDft)) {
+        transformedDft = storm::dft::transformations::DftTransformer<ValueType>::transformBinaryDependencies(*transformedDft);
+    }
+    return transformedDft;
+}
+
+/*!
+ * Apply transformations to make DFT feasible for Markovian analysis.
+ *
+ * @param dft DFT.
+ * @return Transformed DFT.
+ */
+template<typename ValueType>
+std::shared_ptr<storm::dft::storage::DFT<ValueType>> prepareForMarkovAnalysis(storm::dft::storage::DFT<ValueType> const& dft) {
+    return storm::dft::api::applyTransformations(dft, true, true, true);
 }
 
 template<typename ValueType>
@@ -246,7 +260,9 @@ void analyzeDFTSMT(storm::dft::storage::DFT<ValueType> const& dft, bool printOut
  * @param file File.
  */
 template<typename ValueType>
-void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file);
+void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file) {
+    storm::dft::storage::DftJsonExporter<ValueType>::toFile(dft, file);
+}
 
 /*!
  * Export DFT to JSON string.
@@ -255,7 +271,11 @@ void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::st
  * @return DFT in JSON format.
  */
 template<typename ValueType>
-std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft);
+std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft) {
+    std::stringstream stream;
+    storm::dft::storage::DftJsonExporter<ValueType>::toStream(dft, stream);
+    return stream.str();
+}
 
 /*!
  * Export DFT to SMT encoding.

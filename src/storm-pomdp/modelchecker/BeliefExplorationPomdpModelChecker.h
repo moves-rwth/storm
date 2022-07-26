@@ -50,7 +50,7 @@ namespace storm {
 
                 void printStatisticsToStream(std::ostream& stream) const;
 
-                POMDPValueBounds<BeliefValueType> precomputeValueBounds(const logic::Formula& formula);
+                void precomputeValueBounds(const logic::Formula& formula);
                 
             private:
                 
@@ -70,7 +70,7 @@ namespace storm {
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
+                void computeReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
                 
                 
                 /**
