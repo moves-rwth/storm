@@ -50,7 +50,7 @@ namespace storm {
 
                 void printStatisticsToStream(std::ostream& stream) const;
 
-                POMDPValueBounds<BeliefValueType> precomputeValueBounds(const logic::Formula& formula);
+                void precomputeValueBounds(const logic::Formula& formula);
                 
             private:
                 

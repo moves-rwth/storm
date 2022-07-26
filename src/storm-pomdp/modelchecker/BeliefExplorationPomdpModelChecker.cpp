@@ -83,7 +83,7 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            storm::pomdp::modelchecker::POMDPValueBounds<BeliefValueType> BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula) {
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
 
                 // Compute some initial bounds on the values for each state of the pomdp
