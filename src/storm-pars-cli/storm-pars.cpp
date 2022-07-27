@@ -20,9 +20,10 @@
 #include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/derivative/GradientDescentMethod.h"
+#include "storm-pars/transformer/BinaryDtmcTransformer.h"
+#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
 
 #include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
@@ -301,8 +302,8 @@ namespace storm {
             }
 
             if (regionSettings.isTimeTravellingEnabled()) {
-                std::cout << "Time-Travelling." << '\n';
-                result.changed = true;
+                // storm::transformer::BinaryDtmcTransformer transformer;
+                // result.model = transformer.transform(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), true);
 
                 transformer::TimeTravelling reducer;
                 auto formulas = storm::api::extractFormulasFromProperties(input.properties);

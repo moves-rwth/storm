@@ -104,6 +104,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
     }
 
     // To prevent infinite unrolling of parametric loops
+    // We have already reordered with these as root
     std::set<std::pair<RationalFunctionVariable, std::set<uint_fast64_t>>> alreadyReorderedWrt;
 
     updateTreeStates(treeStates, workingSets, flexibleMatrix, allParameters, stateRewardVector, runningLabeling, labelsInFormula);
@@ -125,7 +126,15 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
                 performJipConvert = true;
                 reorderingPossible = true;
             }
-            if (alreadyReorderedWrt.count(std::make_pair(parameter, entry)) == 0) {
+
+            // For the duplicate checking, new states automatically count as duplicates. Thus, they are filtered out here.
+            std::set<uint_fast64_t> entriesInOldDtmc;
+            const uint_fast64_t statesOfDtmc = dtmc.getNumberOfStates();
+            std::copy_if(entry.begin(), entry.end(), std::inserter(entriesInOldDtmc, entriesInOldDtmc.end()),
+                         [statesOfDtmc](uint_fast64_t value) { return value < statesOfDtmc; });
+
+            // Check if we have already reordered w.r.t. this and enter it into the map
+            if (alreadyReorderedWrt.count(std::make_pair(parameter, entriesInOldDtmc)) == 0) {
                 alreadyReorderedWrtThis = false;
             }
             alreadyReorderedWrt.emplace(std::make_pair(parameter, entry));
