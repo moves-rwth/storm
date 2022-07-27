@@ -138,9 +138,19 @@ namespace storm {
                         storm::transformer::MakeStateSetObservationClosed<ValueType> obsCloser(inputPomdp);
                         std::tie(preprocessedPomdp, targetObservations) = obsCloser.transform(formulaInfo.getTargetStates().states);
                     }
-                    // FIXME: Instead of giving up, make sink states absorbing.
                     if (formulaInfo.isNonNestedReachabilityProbability()) {
                         if (!formulaInfo.getSinkStates().empty()) {
+                            storm::storage::sparse::ModelComponents<ValueType> components;
+                            components.stateLabeling = pomdp().getStateLabeling();
+                            components.rewardModels = pomdp().getRewardModels();
+                            auto matrix = pomdp().getTransitionMatrix();
+                            matrix.makeRowGroupsAbsorbing(formulaInfo.getSinkStates().states);
+                            components.transitionMatrix = matrix;
+                            components.observabilityClasses = pomdp().getObservations();
+                            if(pomdp().hasChoiceLabeling()){
+                                components.choiceLabeling = pomdp().getChoiceLabeling();
+                            }
+                            preprocessedPomdp = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
                             auto reachableFromSinkStates = storm::utility::graph::getReachableStates(pomdp().getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
                             reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
                             STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException, "There are sink states that can reach non-sink states. This is currently not supported");
