@@ -352,7 +352,11 @@ namespace storm {
                         auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), true);
                         scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
                         result.schedulerAsMarkovChain = scheduledModel;
-                        result.cutoffSchedulers = approx->getLowerValueBoundSchedulers();
+                        if(min){
+                            result.cutoffSchedulers = approx->getUpperValueBoundSchedulers();
+                        } else {
+                            result.cutoffSchedulers = approx->getLowerValueBoundSchedulers();
+                        }
                         ValueType &resultValue = min ? result.upperBound : result.lowerBound;
                         resultValue = approx->getComputedValueAtInitialState();
                     }
