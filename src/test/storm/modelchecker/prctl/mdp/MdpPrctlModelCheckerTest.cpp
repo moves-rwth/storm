@@ -797,6 +797,60 @@ TYPED_TEST(MdpPrctlModelCheckerTest, LtlDice) {
 #endif
 }
 
+TYPED_TEST(MdpPrctlModelCheckerTest, LtlCoinFlips) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+    std::string formulasString = "Pmax=? [  G (true U (heads | \"done\")) ]";
+    formulasString += "; Pmin=? [  G (true U (heads | \"done\")) ]";
+    formulasString += "; Pmax=? [  G (true U<=10 (heads | \"done\")) ]";
+    formulasString += "; Pmin=? [  G (true U<=10 (heads | \"done\")) ]";
+    formulasString += "; Pmax=? [ X G (true U<=0 (heads | \"done\")) ]";
+    formulasString += "; Pmax=? [ true U[10,12] heads ]";
+    formulasString += "; Pmax=? [ X (true U[0,0] heads) ]";
+    formulasString += "; Pmax=? [  G (!(P>=1 [\"done\"]) U<=10 (heads | P>=1 [ \"done\"])) ]";
+    auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/coin_flips.nm", formulasString);
+    auto model = std::move(modelFormulas.first);
+    auto tasks = this->getTasks(modelFormulas.second);
+    EXPECT_EQ(61ul, model->getNumberOfStates());
+    EXPECT_EQ(177ul, model->getNumberOfTransitions());
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+    auto checker = this->createModelChecker(model);
+    std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+    // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
+    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[1]);
+        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[2]);
+        EXPECT_NEAR(this->parseNumber("1021/1024"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[3]);
+        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[4]);
+        EXPECT_NEAR(this->parseNumber("1/524288"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[5]);
+        EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[6]);
+        EXPECT_NEAR(this->parseNumber("1/2"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        result = checker->check(this->env(), tasks[7]);
+        EXPECT_NEAR(this->parseNumber("1021/1024"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+    } else {
+        EXPECT_FALSE(checker->canHandle(tasks[0]));
+    }
+
+#else
+    GTEST_SKIP();
+#endif
+}
+
 TYPED_TEST(MdpPrctlModelCheckerTest, HOADice) {
     // "P=? [ F "three" & (X s=1)]"
     std::string formulasString = "; P=?[HOA: {\"" STORM_TEST_RESOURCES_DIR "/hoa/automaton_Fandp0Xp1.hoa\", \"p0\" -> \"three\", \"p1\" -> s2=1 }]";
