@@ -268,6 +268,8 @@ void Scheduler<ValueType>::printToStream(std::ostream& out, std::shared_ptr<stor
 
             // Print memory updates
             if (!isMemorylessScheduler()) {
+                STORM_LOG_THROW(model != nullptr, storm::exceptions::InvalidOperationException,
+                                "Schedulers with memory can only be printed when the model is passed.");
                 out << std::setw(widthOfStates) << "";
                 // The memory updates do not depend on the actual choice, they only depend on the current model- and memory state as well as the successor model
                 // state.
@@ -352,6 +354,8 @@ void Scheduler<ValueType>::printJsonToStream(std::ostream& out, std::shared_ptr<
 
                     // Memory updates
                     if (!isMemorylessScheduler()) {
+                        STORM_LOG_THROW(model != nullptr, storm::exceptions::InvalidOperationException,
+                                        "Schedulers with memory can only be printed when the model is passed.");
                         choiceJson["memory-updates"] = std::vector<storm::json<storm::RationalNumber>>();
                         uint64_t row = model->getTransitionMatrix().getRowGroupIndices()[state] + choiceProbPair.first;
                         for (auto entryIt = model->getTransitionMatrix().getRow(row).begin(); entryIt < model->getTransitionMatrix().getRow(row).end();
