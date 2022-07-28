@@ -12,7 +12,7 @@ namespace storm {
             
             BinaryDtmcTransformer();
             
-            std::shared_ptr<storm::models::sparse::Dtmc<RationalFunction>> transform(storm::models::sparse::Dtmc<RationalFunction> const& pomdp, bool transformSimple, bool keepStateValuations = false) const;
+            std::shared_ptr<storm::models::sparse::Dtmc<RationalFunction>> transform(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, bool transformSimple, bool keepStateValuations = false) const;
 
         private:
     
@@ -21,10 +21,10 @@ namespace storm {
                 std::vector<uint64_t> simpleStateToOriginalState;
             };
             
-            TransformationData transformTransitions(storm::models::sparse::Dtmc<RationalFunction> const& pomdp, bool transformSimple) const;
-            storm::models::sparse::StateLabeling transformStateLabeling(storm::models::sparse::Dtmc<RationalFunction> const& pomdp, TransformationData const& data) const;
-            storm::models::sparse::StandardRewardModel<RationalFunction> transformRewardModel(storm::models::sparse::Dtmc<RationalFunction> const& pomdp, storm::models::sparse::StandardRewardModel<RationalFunction> const& rewardModel, TransformationData const& data) const;
-            storm::models::sparse::ChoiceLabeling transformChoiceLabeling(storm::models::sparse::Dtmc<RationalFunction> const& pomdp, TransformationData const& data) const;
+            TransformationData transformTransitions(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, bool transformSimple) const;
+            storm::models::sparse::StateLabeling transformStateLabeling(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, TransformationData const& data) const;
+            storm::models::sparse::StandardRewardModel<RationalFunction> transformRewardModel(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, storm::models::sparse::StandardRewardModel<RationalFunction> const& rewardModel, TransformationData const& data) const;
+            storm::models::sparse::ChoiceLabeling transformChoiceLabeling(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, TransformationData const& data) const;
         };
     }
 }

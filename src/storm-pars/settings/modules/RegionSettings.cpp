@@ -28,7 +28,6 @@ namespace storm {
             const std::string RegionSettings::checkEngineOptionName = "engine";
             const std::string RegionSettings::printNoIllustrationOptionName = "noillustration";
             const std::string RegionSettings::printFullResultOptionName = "printfullresult";
-            const std::string RegionSettings::timeTravellingEnabledName = "time-travel";
             
             RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionOptionName, false, "Sets the region(s) considered for analysis.").setShortName(regionShortOptionName)
@@ -65,8 +64,6 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, printNoIllustrationOptionName, false, "If set, no illustration of the result is printed.").build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, printFullResultOptionName, false, "If set, the full result for every region is printed.").build());
-
-                this->addOption(storm::settings::OptionBuilder(moduleName, timeTravellingEnabledName, false, "Enabled time travelling (flip transitions to improve PLA bounds).").build());
             }
             
             bool RegionSettings::isRegionSet() const {
@@ -210,10 +207,6 @@ namespace storm {
 
             bool RegionSettings::isSplittingThresholdSet() const {
                 return this->getOption(splittingThresholdName).getHasOptionBeenSet();
-            }
-
-            bool RegionSettings::isTimeTravellingEnabled() const {
-                return this->getOption(timeTravellingEnabledName).getHasOptionBeenSet();
             }
 
         } // namespace modules

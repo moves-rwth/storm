@@ -52,6 +52,7 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
+#include "utility/logging.h"
 
 
 namespace storm {
@@ -300,8 +301,15 @@ namespace storm {
                 result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
                 result.changed = true;
             }
+            
+            if (parametricSettings.isLinearToSimpleEnabled()) {
+                STORM_LOG_INFO("Transforming linear to simple...");
+                transformer::BinaryDtmcTransformer transformer;
+                result.model = transformer.transform(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), true);
+                result.changed = true;
+            }
 
-            if (regionSettings.isTimeTravellingEnabled()) {
+            if (parametricSettings.isTimeTravellingEnabled()) {
                 // storm::transformer::BinaryDtmcTransformer transformer;
                 // result.model = transformer.transform(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), true);
 

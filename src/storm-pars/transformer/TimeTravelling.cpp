@@ -40,8 +40,6 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
     storage::SparseMatrix<RationalFunction> transitionMatrix = dtmc.getTransitionMatrix();
     uint_fast64_t initialState = dtmc.getInitialStates().getNextSetIndex(0);
 
-    STORM_LOG_ASSERT(dtmc.getTransitionMatrix().isProbabilistic(), "Matrix not probabilistic!");
-
     auto allParameters = storm::models::sparse::getAllParameters(dtmc);
 
     std::set<std::string> labelsInFormula;

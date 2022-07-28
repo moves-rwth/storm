@@ -96,8 +96,6 @@ namespace storm {
 
                 int getSplittingThreshold() const;
 
-				bool isTimeTravellingEnabled() const;
-
 				/*!
 				 * Retrieves which type of region check should be performed
 				 */
