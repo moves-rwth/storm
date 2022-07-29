@@ -283,7 +283,6 @@ namespace storm {
             auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
             auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
             auto derSettings = storm::settings::getModule<storm::settings::modules::DerivativeSettings>();
-            auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
 
             PreprocessResult result(model, false);
             if (monSettings.isMonotonicityAnalysisSet() || parametricSettings.isUseMonotonicitySet() || derSettings.isFeasibleInstantiationSearchSet() || derSettings.getDerivativeAtInstantiation()) {
