@@ -1,0 +1,20 @@
+// flip a coin N times
+
+mdp
+
+const N=20;
+
+module count
+	x : [0..N] init 0;
+	[flip] x<N -> (x'=x+1);
+endmodule
+
+module coin
+	heads : bool init false;
+	tails : bool init false;
+
+	[flip] true -> 0.5: (heads'=true) & (tails'=false) + 0.5: (heads'=false) & (tails'=true);
+	[] true -> (heads'=false) & (tails'=false);
+endmodule
+
+label "done" = x=N;

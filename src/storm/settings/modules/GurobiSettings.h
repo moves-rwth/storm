@@ -1,9 +1,12 @@
-#ifndef STORM_SETTINGS_MODULES_GUROBISETTINGS_H_
-#define STORM_SETTINGS_MODULES_GUROBISETTINGS_H_
+#pragma once
 
 #include "storm/settings/modules/ModuleSettings.h"
 
 namespace storm {
+namespace solver {
+enum class GurobiSolverMethod;
+}
+
 namespace settings {
 namespace modules {
 
@@ -43,21 +46,28 @@ class GurobiSettings : public ModuleSettings {
      *
      * @return The maximally allowed number of threads.
      */
-    uint_fast64_t getNumberOfThreads() const;
+    uint64_t getNumberOfThreads() const;
 
     /*!
      * Retrieves the selected high-level solution strategy for MILPs.
      *
      * @return The high-level solution strategy.
      */
-    uint_fast64_t getMIPFocus() const;
+    uint64_t getMIPFocus() const;
 
     /*!
      * Retrieves the number of MIP solvers, Gurobi spawns in parallel.
      *
      * @return The number of MIP solvers Gurobi spawns in parallel..
      */
-    uint_fast64_t getNumberOfConcurrentMipThreads() const;
+    uint64_t getNumberOfConcurrentMipThreads() const;
+
+    /*!
+     * Retrieves the solver method
+     *
+     * @return
+     */
+    solver::GurobiSolverMethod getMethod() const;
 
     /*!
      * Retrieves whether the output option was set.
@@ -70,18 +80,8 @@ class GurobiSettings : public ModuleSettings {
 
     // The name of the module.
     static const std::string moduleName;
-
-   private:
-    // Define the string names of the options as constants.
-    static const std::string integerToleranceOption;
-    static const std::string threadsOption;
-    static const std::string outputOption;
-    static const std::string mipFocusOption;
-    static const std::string concurrentMipThreadsOption;
 };
 
 }  // namespace modules
 }  // namespace settings
 }  // namespace storm
-
-#endif /* STORM_SETTINGS_MODULES_GUROBISETTINGS_H_ */
