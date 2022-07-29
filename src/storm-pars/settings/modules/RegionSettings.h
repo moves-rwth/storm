@@ -128,7 +128,6 @@ namespace storm {
 				const static std::string checkEngineOptionName;
 				const static std::string printNoIllustrationOptionName;
 				const static std::string printFullResultOptionName;
-				const static std::string timeTravellingEnabledName;
             };
             
         } // namespace modules

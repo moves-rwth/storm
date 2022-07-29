@@ -313,11 +313,11 @@ namespace storm {
                 // storm::transformer::BinaryDtmcTransformer transformer;
                 // result.model = transformer.transform(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), true);
 
-                transformer::TimeTravelling reducer;
+                transformer::TimeTravelling tt;
                 auto formulas = storm::api::extractFormulasFromProperties(input.properties);
                 modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);
                 result.model = std::make_shared<storm::models::sparse::Dtmc<RationalFunction>>(
-                    reducer.timeTravel(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
+                    tt.timeTravel(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), checkTask));
                 result.changed = true;
             }
 
