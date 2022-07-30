@@ -347,20 +347,30 @@ template<typename SparseModelType>
 void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessRewardOperatorFormula(storm::logic::RewardOperatorFormula const& formula,
                                                                                         storm::logic::OperatorInformation const& opInfo,
                                                                                         PreprocessorData& data) {
-    STORM_LOG_THROW((formula.hasRewardModelName() && data.model->hasRewardModel(formula.getRewardModelName())) ||
-                        (!formula.hasRewardModelName() && data.model->hasUniqueRewardModel()),
-                    storm::exceptions::InvalidPropertyException,
-                    "The reward model is not unique or the formula " << formula << " does not specify an existing reward model.");
-
     std::string rewardModelName;
     if (formula.hasRewardModelName()) {
         rewardModelName = formula.getRewardModelName();
         STORM_LOG_THROW(data.model->hasRewardModel(rewardModelName), storm::exceptions::InvalidPropertyException,
                         "The reward model specified by formula " << formula << " does not exist in the model");
     } else {
-        STORM_LOG_THROW(data.model->hasUniqueRewardModel(), storm::exceptions::InvalidOperationException,
-                        "The formula " << formula << " does not specify a reward model name and the reward model is not unique.");
-        rewardModelName = data.model->getRewardModels().begin()->first;
+        // We have to assert that a unique reward model exists, and we need to find its name.
+        // However, we might have added auxiliary reward models for other objectives which we have to filter out here.
+        auto prefixOf = [](std::string const& left, std::string const& right) {
+            return std::mismatch(left.begin(), left.end(), right.begin()).first == left.end();
+        };
+        bool uniqueRewardModelFound = false;
+        for (auto const& rewModel : data.model->getRewardModels()) {
+            if (prefixOf(data.rewardModelNamePrefix, rewModel.first)) {
+                // Skip auxiliary reward model
+                continue;
+            }
+            STORM_LOG_THROW(!uniqueRewardModelFound, storm::exceptions::InvalidOperationException,
+                            "The formula " << formula << " does not specify a reward model name and the reward model is not unique.");
+            uniqueRewardModelFound = true;
+            rewardModelName = rewModel.first;
+        }
+        STORM_LOG_THROW(uniqueRewardModelFound, storm::exceptions::InvalidOperationException,
+                        "The formula " << formula << " refers to an unnamed reward model but no reward model has been defined.");
     }
 
     data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();

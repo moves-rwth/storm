@@ -80,10 +80,10 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(Boost_NO_BOOST_CMAKE ON)
 
-find_package(Boost 1.61.0 QUIET REQUIRED COMPONENTS filesystem system)
+find_package(Boost 1.65.1 QUIET REQUIRED COMPONENTS filesystem system)
 if (NOT Boost_FOUND)
     if (Boost_VERSION)
-	message(FATAL_ERROR "The required Boost version is 1.61.0 or newer, however, only ${Boost_VERSION} was found.")
+	message(FATAL_ERROR "The required Boost version is 1.65.1 or newer, however, only ${Boost_VERSION} was found.")
     else ()
    	message(FATAL_ERROR "Boost was not found.")
     endif ()
@@ -113,31 +113,33 @@ message (STATUS "Storm - Including ExprTk.")
 add_imported_library_interface(ExprTk "${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 list(APPEND STORM_DEP_TARGETS ExprTk)
 
+
+
 #############################################################
 ##
-##	Sparsepp
+##	Parallel Hashmap
 ##
 #############################################################
 
-# Use the shipped version of Sparsepp
-message (STATUS "Storm - Including Sparsepp.")
-set(SPARSEPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/sparsepp")
-file(GLOB SPARSEPP_HEADERS "${SPARSEPP_INCLUDE_DIR}/*.h")
+# Use the shipped version of Parallel Hashmap
+message (STATUS "Storm - Including Parallel Hashmap.")
+set(PHMAP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/parallel_hashmap/parallel_hashmap")
+file(GLOB PHMAP_HEADERS "${PHMAP_INCLUDE_DIR}/*.h")
 
-# Add the sparsepp headers to the headers that are copied to the include directory in the build directory.
-set(SPARSEPP_BINDIR_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/sparsepp)
-include_directories("${SPARSEPP_BINDIR_DIR}")
-foreach(HEADER ${SPARSEPP_HEADERS})
+# Add the parallel_hashmap headers to the headers that are copied to the include directory in the build directory.
+set(PHMAP_BINDIR_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/parallel_hashmap)
+include_directories("${PHMAP_BINDIR_DIR}")
+foreach(HEADER ${PHMAP_HEADERS})
     string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})
     string(REGEX MATCH "(.*)[/\\]" RELATIVE_DIRECTORY ${RELATIVE_HEADER_PATH})
     string(REGEX REPLACE "${RELATIVE_DIRECTORY}/?" "" HEADER_FILENAME ${RELATIVE_HEADER_PATH})
     add_custom_command(
-        OUTPUT ${SPARSEPP_BINDIR_DIR}/sparsepp/${HEADER_FILENAME}
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${SPARSEPP_BINDIR_DIR}/sparsepp
-        COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${SPARSEPP_BINDIR_DIR}/sparsepp/${HEADER_FILENAME}
-        DEPENDS ${SPARSEPP_INCLUDE_DIR}/${HEADER_FILENAME}
+        OUTPUT ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${PHMAP_BINDIR_DIR}/parallel_hashmap
+        COMMAND ${CMAKE_COMMAND} -E copy ${HEADER} ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME}
+        DEPENDS ${PHMAP_INCLUDE_DIR}/${HEADER_FILENAME}
     )
-    list(APPEND SPARSEPP_BINDIR_HEADERS ${SPARSEPP_BINDIR_DIR}/sparsepp/${HEADER_FILENAME})
+    list(APPEND PHMAP_BINDIR_HEADERS ${PHMAP_BINDIR_DIR}/parallel_hashmap/${HEADER_FILENAME})
 endforeach()
 
 #############################################################
@@ -189,19 +191,25 @@ if(Z3_FOUND)
         list(GET Z3_VERSION_LIST 1 STORM_Z3_VERSION_MINOR)
         list(GET Z3_VERSION_LIST 2 STORM_Z3_VERSION_PATCH)
 
-        # Check whether the version of z3 supports optimization
-        if(NOT "${Z3_VERSION}" VERSION_LESS "4.5.0")
-            set(STORM_HAVE_Z3_OPTIMIZE ON)
-            message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+        if ("${Z3_VERSION}" VERSION_EQUAL "4.10.1")
+            message (WARNING "Storm cannot be linked against Z3 version 4.10.1, see issue 252.")
+            message(WARNING "Storm - Could not link with z3. Building of Prism/JANI models will not be supported.")
+            set(Z3_FOUND FALSE)
         else()
-            message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version does not support optimization)")
-        endif()
-        if (NOT "${Z3_VERSION}" VERSION_LESS "4.7.1")
-            set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
-        endif()
+            # Check whether the version of z3 supports optimization
+            if(NOT "${Z3_VERSION}" VERSION_LESS "4.5.0")
+                set(STORM_HAVE_Z3_OPTIMIZE ON)
+                message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version supports optimization)")
+            else()
+                message (STATUS "Storm - Linking with Z3 (version ${Z3_VERSION}). (Z3 version does not support optimization)")
+            endif()
+            if (NOT "${Z3_VERSION}" VERSION_LESS "4.7.1")
+                set(STORM_Z3_API_USES_STANDARD_INTEGERS ON)
+            endif()
 
-        add_imported_library(Z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
-        list(APPEND STORM_DEP_TARGETS Z3_SHARED)
+            add_imported_library(Z3 SHARED ${Z3_LIBRARIES} ${Z3_INCLUDE_DIRS})
+            list(APPEND STORM_DEP_TARGETS Z3_SHARED)
+        endif()
     else()
         message(WARNING "Storm - Could not obtain Z3 version. Building of Prism/JANI models will not be supported.")
         set(Z3_FOUND FALSE)
@@ -659,7 +667,7 @@ if (STORM_USE_INTELTBB)
         list(APPEND STORM_DEP_TARGETS tbb_SHARED)
         add_imported_library(tbb_malloc SHARED ${TBB_MALLOC_LIBRARY} ${TBB_INCLUDE_DIRS})
         list(APPEND STORM_DEP_TARGETS tbb_malloc_SHARED)
-	
+
     else(TBB_FOUND)
         message(FATAL_ERROR "Storm - TBB was requested, but not found.")
     endif(TBB_FOUND)
@@ -817,4 +825,4 @@ if(ENABLE_CUDA)
     include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
 endif()
 
-add_custom_target(copy_resources_headers DEPENDS ${SPARSEPP_BINDIR_HEADERS})
+add_custom_target(copy_resources_headers DEPENDS ${PHMAP_BINDIR_HEADERS})

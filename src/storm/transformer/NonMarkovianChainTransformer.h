@@ -3,7 +3,15 @@
 
 namespace storm {
 namespace transformer {
-enum EliminationLabelBehavior { KeepLabels, MergeLabels, DeleteLabels };
+
+/*!
+ * Specify criteria whether a state can be eliminated and how its labels should be treated.
+ * - KeepLabels: only eliminate if the labels of the state and the successors are the same.
+ * - ExtendLabels: only eliminate if the labels of the state are a subset of the labels of the successors.
+ * - MergeLabels: eliminate state and add labels of state to labels of the successors.
+ * - DeleteLabels: eliminate state and do not add its labels to the successors (except "init" label).
+ */
+enum EliminationLabelBehavior { KeepLabels, ExtendLabels, MergeLabels, DeleteLabels };
 
 /**
  * Transformer for eliminating chains of non-Markovian states (instantaneous path fragment leading to the same outcome) from Markov automata.

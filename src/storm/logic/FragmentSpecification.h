@@ -271,6 +271,9 @@ FragmentSpecification csrlstar();
 // Multi-Objective formulas.
 FragmentSpecification multiObjective();
 
+// Lex-Objective formulas
+FragmentSpecification lexObjective();
+
 // Quantile formulas.
 FragmentSpecification quantiles();
 

@@ -85,6 +85,12 @@ set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(USE_XERCESC ${XML_SUPPORT})
 mark_as_advanced(USE_XERCESC)
+option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
+option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
+
+if (STORM_COMPILE_WITH_ALL_SANITIZERS)
+    set(STORM_COMPILE_WITH_ADDRESS_SANITIZER ON)
+endif()
 
 # Get an approximation of the number of available processors (used for parallel build of shipped resources)
 ProcessorCount(STORM_RESOURCES_BUILD_JOBCOUNT_DEFAULT)
@@ -242,6 +248,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 	message(FATAL_ERROR "Intel compiler is currently not supported.")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	message(FATAL_ERROR "Visual Studio compiler is currently not supported.")
+else()
+    message(FATAL_ERROR "Unknown compiler '${CMAKE_CXX_COMPILER_ID}' is not supported")
 endif()
 set(STORM_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
 
@@ -257,11 +265,6 @@ endif()
 if (STORM_FORCE_POPCNT)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
 endif()
-
-# TODO: remove forcing the old version of optional as soon as the related Spirit bug is fixed:
-# https://svn.boost.org/trac/boost/ticket/12349
-# Fix thanks to: https://github.com/freeorion/freeorion/issues/777
-add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE -DBOOST_OPTIONAL_CONFIG_USE_OLD_IMPLEMENTATION_OF_OPTIONAL)
 
 #############################################################
 ##
@@ -317,6 +320,11 @@ elseif (STORM_USE_LTO)
     message(STATUS "Storm - Enabling link-time optimizations.")
 else()
     message(STATUS "Storm - Disabling link-time optimizations.")
+endif()
+
+if (STORM_COMPILE_WITH_ADDRESS_SANITIZER)
+    message(STATUS "Storm - Enabling AddressSanitizer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 endif()
 
 # In release mode, we turn on even more optimizations if we do not have to provide a portable binary.
@@ -535,6 +543,8 @@ set(STORM_TARGETS "")
 add_subdirectory(src)
 
 export_option(STORM_HAVE_XERCES)
+export_option(STORM_HAVE_SPOT)
+export_option(STORM_HAVE_GUROBI)
 
 include(export)
 

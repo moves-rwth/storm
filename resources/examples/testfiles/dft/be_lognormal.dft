@@ -1,0 +1,4 @@
+toplevel "T";
+"T" and "A" "B";
+"A" mean=0.5 stddev=1 dorm=1;
+"B" mean=-1 stddev=0.3 dorm=1;

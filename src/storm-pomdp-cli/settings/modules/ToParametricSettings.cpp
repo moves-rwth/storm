@@ -19,6 +19,7 @@ namespace storm {
             std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
             const std::string transformBinaryOption = "transformbinary";
             const std::string transformSimpleOption = "transformsimple";
+            const std::string constantRewardsOption = "ensure-constant-reward";
             const std::string allowSimplificationOption = "simplify-pmc";
 
             ToParametricSettings::ToParametricSettings() : ModuleSettings(moduleName) {
@@ -26,6 +27,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, constantRewardsOption, false, "Transforms the resulting pMC to a pMC with constant rewards.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, allowSimplificationOption, false, "After obtaining a pMC, should further simplifications be applied?.").build());
 
             }
@@ -45,6 +47,10 @@ namespace storm {
 
             bool ToParametricSettings::isTransformSimpleSet() const {
                 return this->getOption(transformSimpleOption).getHasOptionBeenSet();
+            }
+
+            bool ToParametricSettings::isConstantRewardsSet() const {
+                return this->getOption(constantRewardsOption).getHasOptionBeenSet();
             }
 
             bool ToParametricSettings::allowPostSimplifications() const {

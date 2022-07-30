@@ -9,6 +9,7 @@
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/LexicographicCheckResult.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -18,6 +19,7 @@
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
+#include "storm/modelchecker/lexicographic/lexicographicModelChecking.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
@@ -59,6 +61,7 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
         return true;
     } else if (checkTask.isOnlyInitialStatesRelevantSet()) {
         auto multiObjectiveFragment = storm::logic::multiObjective()
+                                          .setTimeAllowed(true)
                                           .setCumulativeRewardFormulasAllowed(true)
                                           .setTimeBoundedCumulativeRewardFormulasAllowed(true)
                                           .setStepBoundedCumulativeRewardFormulasAllowed(true)
@@ -69,7 +72,20 @@ bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<s
                                           .setMultiDimensionalBoundedUntilFormulasAllowed(true)
                                           .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
                                           .setRewardAccumulationAllowed(true);
-        if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles())) {
+        auto lexObjectiveFragment = storm::logic::lexObjective()
+                                        .setHOAPathFormulasAllowed(true)
+                                        .setCumulativeRewardFormulasAllowed(true)
+                                        .setTimeBoundedCumulativeRewardFormulasAllowed(true)
+                                        .setStepBoundedCumulativeRewardFormulasAllowed(true)
+                                        .setRewardBoundedCumulativeRewardFormulasAllowed(true)
+                                        .setTimeBoundedUntilFormulasAllowed(true)
+                                        .setStepBoundedUntilFormulasAllowed(true)
+                                        .setRewardBoundedUntilFormulasAllowed(true)
+                                        .setMultiDimensionalBoundedUntilFormulasAllowed(true)
+                                        .setMultiDimensionalCumulativeRewardFormulasAllowed(true)
+                                        .setRewardAccumulationAllowed(true);
+
+        if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles()) || formula.isInFragment(lexObjectiveFragment)) {
             if (requiresSingleInitialState) {
                 *requiresSingleInitialState = true;
             }
@@ -389,6 +405,17 @@ template<typename SparseMdpModelType>
 std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(
     Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) {
     return multiobjective::performMultiObjectiveModelChecking(env, this->getModel(), checkTask.getFormula());
+}
+
+template<class SparseMdpModelType>
+std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::checkLexObjectiveFormula(
+    const Environment& env, const CheckTask<storm::logic::MultiObjectiveFormula, ValueType>& checkTask) {
+    auto formulaChecker = [&](storm::logic::Formula const& formula) {
+        return this->check(env, formula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+    };
+    auto ret = lexicographic::check(env, this->getModel(), checkTask, formulaChecker);
+    std::unique_ptr<CheckResult> result(new LexicographicCheckResult<ValueType>(ret.values, *this->getModel().getInitialStates().begin()));
+    return result;
 }
 
 template<typename SparseMdpModelType>

@@ -185,7 +185,7 @@ class ShortestPathsGenerator {
     // --- tiny helper fcts ---
 
     inline bool isInitialState(state_t node) const {
-        return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
+        return std::find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
     }
 
     inline bool isMetaTargetPredecessor(state_t node) const {

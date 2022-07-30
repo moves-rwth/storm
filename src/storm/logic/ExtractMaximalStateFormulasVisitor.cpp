@@ -39,9 +39,37 @@ boost::any ExtractMaximalStateFormulasVisitor::visit(BoundedUntilFormula const& 
         return CloneVisitor::visit(f, data);
     }
 
-    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not extract maximal state formulas for bounded until");
-    // never reached
-    return boost::any();
+    STORM_LOG_THROW(!f.hasMultiDimensionalSubformulas(), storm::exceptions::InvalidOperationException,
+                    "Can not extract maximal state formulas for multi-dimensional bounded until");
+
+    std::shared_ptr<Formula> left = boost::any_cast<std::shared_ptr<Formula>>(f.getLeftSubformula().accept(*this, data));
+    if (left->hasQualitativeResult()) {
+        left = extract(left);
+    }
+
+    std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
+    if (right->hasQualitativeResult()) {
+        right = extract(right);
+    }
+
+    // Copy bound information
+    std::vector<boost::optional<TimeBound>> lowerBounds, upperBounds;
+    std::vector<TimeBoundReference> timeBoundReferences;
+    for (uint64_t i = 0; i < f.getDimension(); ++i) {
+        if (f.hasLowerBound(i)) {
+            lowerBounds.emplace_back(TimeBound(f.isLowerBoundStrict(i), f.getLowerBound(i)));
+        } else {
+            lowerBounds.emplace_back();
+        }
+        if (f.hasUpperBound(i)) {
+            upperBounds.emplace_back(TimeBound(f.isUpperBoundStrict(i), f.getUpperBound(i)));
+        } else {
+            upperBounds.emplace_back();
+        }
+        timeBoundReferences.push_back(f.getTimeBoundReference(i));
+    }
+
+    return std::static_pointer_cast<Formula>(std::make_shared<BoundedUntilFormula>(left, right, lowerBounds, upperBounds, timeBoundReferences));
 }
 
 boost::any ExtractMaximalStateFormulasVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {

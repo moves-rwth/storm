@@ -6,19 +6,34 @@
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
 namespace storm {
 namespace settings {
 namespace modules {
 
 const std::string GurobiSettings::moduleName = "gurobi";
-const std::string GurobiSettings::integerToleranceOption = "inttol";
-const std::string GurobiSettings::threadsOption = "threads";
-const std::string GurobiSettings::outputOption = "output";
-const std::string GurobiSettings::mipFocusOption = "mipfocus";
-const std::string GurobiSettings::concurrentMipThreadsOption = "concurrentmip";
+static const std::string methodOption = "method";
+static const std::string integerToleranceOption = "inttol";
+static const std::string threadsOption = "threads";
+static const std::string outputOption = "output";
+static const std::string mipFocusOption = "mipfocus";
+static const std::string concurrentMipThreadsOption = "concurrentmip";
 
 GurobiSettings::GurobiSettings() : ModuleSettings(moduleName) {
+    std::vector<std::string> methods;
+    for (auto const& m : solver::getGurobiSolverMethods()) {
+        methods.push_back(solver::toString(m));
+    }
+
+    this->addOption(OptionBuilder(moduleName, methodOption, true, "The method Gurobi should use.")
+                        .setIsAdvanced()
+                        .addArgument(ArgumentBuilder::createStringArgument("method", "the name of the method")
+                                         .setDefaultValueString("auto")
+                                         .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods))
+                                         .build())
+                        .build());
+
     this->addOption(
         storm::settings::OptionBuilder(moduleName, threadsOption, true, "The number of threads that may be used by Gurobi.")
             .setIsAdvanced()
@@ -68,19 +83,28 @@ bool GurobiSettings::isNumberOfThreadsSet() const {
     return this->getOption(threadsOption).getHasOptionBeenSet();
 }
 
-uint_fast64_t GurobiSettings::getNumberOfThreads() const {
+uint64_t GurobiSettings::getNumberOfThreads() const {
     return this->getOption(threadsOption).getArgumentByName("count").getValueAsUnsignedInteger();
+}
+
+solver::GurobiSolverMethod GurobiSettings::getMethod() const {
+    auto method = solver::gurobiSolverMethodFromString(this->getOption(methodOption).getArgumentByName("method").getValueAsString());
+    if (method.has_value()) {
+        return method.value();
+    }
+    STORM_LOG_ASSERT(false, "Unknown method name should not get through validator");
+    return solver::GurobiSolverMethod::AUTOMATIC;
 }
 
 bool GurobiSettings::isOutputSet() const {
     return this->getOption(outputOption).getHasOptionBeenSet();
 }
 
-uint_fast64_t GurobiSettings::getMIPFocus() const {
+uint64_t GurobiSettings::getMIPFocus() const {
     return this->getOption(mipFocusOption).getArgumentByName("value").getValueAsUnsignedInteger();
 }
 
-uint_fast64_t GurobiSettings::getNumberOfConcurrentMipThreads() const {
+uint64_t GurobiSettings::getNumberOfConcurrentMipThreads() const {
     return this->getOption(concurrentMipThreadsOption).getArgumentByName("value").getValueAsUnsignedInteger();
 }
 
