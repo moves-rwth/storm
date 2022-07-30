@@ -199,7 +199,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeRewardAtCurrentState(uint64 const &localActionIndex, ValueType extraReward) {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeRewardAtCurrentState(uint64_t const &localActionIndex, ValueType extraReward) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             if (getCurrentNumberOfMdpChoices() > mdpActionRewards.size()) {
                 mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
