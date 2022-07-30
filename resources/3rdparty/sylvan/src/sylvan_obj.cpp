@@ -23,13 +23,13 @@ using namespace sylvan;
  * Implementation of class Bdd
  */
 
-int
+bool
 Bdd::operator==(const Bdd& other) const
 {
     return bdd == other.bdd;
 }
 
-int
+bool
 Bdd::operator!=(const Bdd& other) const
 {
     return bdd != other.bdd;
@@ -42,7 +42,7 @@ Bdd::operator=(const Bdd& right)
     return *this;
 }
 
-int
+bool
 Bdd::operator<=(const Bdd& other) const
 {
     // TODO: better implementation, since we are not interested in the BDD result
@@ -50,20 +50,20 @@ Bdd::operator<=(const Bdd& other) const
     return r == sylvan_false;
 }
 
-int
+bool
 Bdd::operator>=(const Bdd& other) const
 {
     // TODO: better implementation, since we are not interested in the BDD result
     return other <= *this;
 }
 
-int
+bool
 Bdd::operator<(const Bdd& other) const
 {
     return bdd != other.bdd && *this <= other;
 }
 
-int
+bool
 Bdd::operator>(const Bdd& other) const
 {
     return bdd != other.bdd && *this >= other;
@@ -219,7 +219,7 @@ Bdd::Xnor(const Bdd &g) const
     return sylvan_equiv(bdd, g.bdd);
 }
 
-int
+bool
 Bdd::Leq(const Bdd &g) const
 {
     // TODO: better implementation, since we are not interested in the BDD result
@@ -444,25 +444,25 @@ Bdd::bddCube(const BddSet &variables, std::vector<uint8_t> values)
     return sylvan_cube(variables.set.bdd, data);
 }
 
-int
+bool
 Bdd::isConstant() const
 {
     return bdd == sylvan_true || bdd == sylvan_false;
 }
 
-int
+bool
 Bdd::isTerminal() const
 {
     return bdd == sylvan_true || bdd == sylvan_false;
 }
 
-int
+bool
 Bdd::isOne() const
 {
     return bdd == sylvan_true;
 }
 
-int
+bool
 Bdd::isZero() const
 {
     return bdd == sylvan_false;
@@ -540,7 +540,7 @@ BddMap::size() const
     return sylvan_map_count(bdd);
 }
 
-int
+bool
 BddMap::isEmpty() const
 {
     return sylvan_map_isempty(bdd);
@@ -606,25 +606,25 @@ Mtbdd::mtbddCube(const BddSet &variables, std::vector<uint8_t> values, const Mtb
     return mtbdd_cube(variables.set.bdd, data, terminal.mtbdd);
 }
 
-int
+bool
 Mtbdd::isTerminal() const
 {
     return mtbdd_isleaf(mtbdd);
 }
 
-int
+bool
 Mtbdd::isLeaf() const
 {
     return mtbdd_isleaf(mtbdd);
 }
 
-int
+bool
 Mtbdd::isOne() const
 {
     return mtbdd == mtbdd_true;
 }
 
-int
+bool
 Mtbdd::isZero() const
 {
     return mtbdd == mtbdd_false;
@@ -732,13 +732,13 @@ Mtbdd::AndExists(const Mtbdd &other, const BddSet &variables) const
     return mtbdd_and_exists(mtbdd, other.mtbdd, variables.set.bdd);
 }
 
-int
+bool
 Mtbdd::operator==(const Mtbdd& other) const
 {
     return mtbdd == other.mtbdd;
 }
 
-int
+bool
 Mtbdd::operator!=(const Mtbdd& other) const
 {
     return mtbdd != other.mtbdd;
@@ -928,7 +928,7 @@ MtbddMap::size()
     return mtbdd_map_count(mtbdd);
 }
 
-int
+bool
 MtbddMap::isEmpty()
 {
     return mtbdd_map_isempty(mtbdd);

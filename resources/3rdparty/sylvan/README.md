@@ -66,6 +66,7 @@ Bindings for other languages than C/C++ also exist:
 -  Java/JNI bindings: https://github.com/utwente-fmt/jsylvan (outdated prototype)
 -  Haskell bindings: https://github.com/adamwalker/sylvan-haskell
 -  Python bindings: https://github.com/johnyf/dd
+-  Rust bindings: https://github.com/daemontus/sylvan-sys
 
 ## Documentation
 

@@ -2531,6 +2531,10 @@ mtbdd_enum_first(MTBDD dd, MTBDD variables, uint8_t *arr, mtbdd_enum_filter_cb f
             variables = mtbdd_gethigh(variables);
         }
         return dd;
+    } else if (variables == mtbdd_true) {
+        // in the case of partial evaluation... treat like a leaf
+        if (filter_cb != NULL && filter_cb(dd) == 0) return mtbdd_false;
+        return dd;
     } else {
         // if variables == true, then dd must be a leaf. But then this line is unreachable.
         // if this assertion fails, then <variables> is not the support of <dd>.
@@ -2571,6 +2575,9 @@ mtbdd_enum_next(MTBDD dd, MTBDD variables, uint8_t *arr, mtbdd_enum_filter_cb fi
 {
     if (mtbdd_isleaf(dd)) {
         // we find the leaf in 'enum_next', then we've seen it before...
+        return mtbdd_false;
+    } else if (variables == mtbdd_true) {
+        // in the case of partial evaluation... treat like a leaf
         return mtbdd_false;
     } else {
         // if variables == true, then dd must be a leaf. But then this line is unreachable.
@@ -2614,8 +2621,10 @@ mtbdd_enum_all_first(MTBDD dd, MTBDD variables, uint8_t *arr, mtbdd_enum_filter_
         return mtbdd_false;
     } else if (variables == mtbdd_true) {
         // if this assertion fails, then <variables> is not the support of <dd>.
-        assert(mtbdd_isleaf(dd));
+        // actually, remove this check to allow for "partial" enumeration
+        // assert(mtbdd_isleaf(dd));
         // for _first, just return the leaf; there is nothing to set, though.
+        if (filter_cb != NULL && filter_cb(dd) == 0) return mtbdd_false;
         return dd;
     } else if (mtbdd_isleaf(dd)) {
         // a leaf for which the filter returns 0 is skipped
@@ -2668,7 +2677,8 @@ mtbdd_enum_all_next(MTBDD dd, MTBDD variables, uint8_t *arr, mtbdd_enum_filter_c
         return mtbdd_false;
     } else if (variables == mtbdd_true) {
         // if this assertion fails, then <variables> is not the support of <dd>.
-        assert(mtbdd_isleaf(dd));
+        // actually, remove this check to allow for "partial" enumeration
+        // assert(mtbdd_isleaf(dd));
         // no next if there are no variables
         return mtbdd_false;
     } else {

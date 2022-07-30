@@ -11,7 +11,7 @@ else()
 endif()
 
 
-project(Sylvan
+project(sylvan
     VERSION 1.6.1
     DESCRIPTION "Sylvan, a parallel decision diagram library"
     HOMEPAGE_URL "https://github.com/trolando/sylvan"
@@ -36,13 +36,6 @@ if(NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
 
-# Make shared library or static library?
-option(BUILD_SHARED_LIBS "Enable/disable creation of shared libraries" OFF)
-if (DEFINED Sylvan_SHARED_LIBS)
-    set(BUILD_SHARED_LIBS "${Sylvan_SHARED_LIBS}")
-endif ()
-
-
 # === #
 # Add code coverage if we are the main project
 # === #
@@ -53,9 +46,9 @@ endif()
 
 
 # Set up the target library
-add_library(Sylvan)
-add_library(Sylvan::Sylvan ALIAS Sylvan)
-set_target_properties(Sylvan PROPERTIES VERSION ${Sylvan_VERSION} SOVERSION ${Sylvan_VERSION_MAJOR})
+add_library(sylvan STATIC)
+add_library(sylvan::sylvan ALIAS sylvan)
+set_target_properties(sylvan PROPERTIES VERSION ${sylvan_VERSION} SOVERSION ${sylvan_VERSION_MAJOR})
 add_subdirectory(src)
 
 

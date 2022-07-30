@@ -47,6 +47,7 @@
 #include <sylvan_mtbdd.h>
 #include <sylvan_bdd.h>
 #include <sylvan_ldd.h>
+#include <sylvan_zdd.h>
 
 // ADDED BY STORM
 #include <sylvan_mtbdd_storm.h>
