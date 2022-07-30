@@ -1,6 +1,8 @@
 #include "GradientDescentInstantiationSearcher.h"
+#if defined STORM_HAVE_CLN
 #include <cln/random.h>
 #include <cln/real.h>
+#endif
 #include <cmath>
 #include <cstdint>
 #include <random>
