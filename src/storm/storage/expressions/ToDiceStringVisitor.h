@@ -9,7 +9,7 @@ namespace storm {
 namespace expressions {
 class ToDiceStringVisitor : public ExpressionVisitor {
    public:
-    ToDiceStringVisitor(uint64 nrBits);
+    ToDiceStringVisitor(uint64_t nrBits);
 
     std::string toString(Expression const& expression);
     std::string toString(BaseExpression const* expression);
