@@ -2,6 +2,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <optional>
 #include <regex>
 
 #include "storm/exceptions/FileIoException.h"
