@@ -67,41 +67,8 @@ InternalDdManager<DdType::Sylvan>::InternalDdManager() {
             lace_start(0, task_deque_size);
         }
 
-        // Table/cache size computation taken from newer version of sylvan.
-        uint64_t memorycap = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024;
-
-        uint64_t table_ratio = 0;
-        uint64_t initial_ratio = 0;
-
-        uint64_t max_t = 1;
-        uint64_t max_c = 1;
-        if (table_ratio > 0) {
-            max_t <<= table_ratio;
-        } else {
-            max_c <<= -table_ratio;
-        }
-
-        uint64_t cur = max_t * 24 + max_c * 36;
-        STORM_LOG_THROW(cur <= memorycap, storm::exceptions::InvalidSettingsException, "Memory cap incompatible with default table ratio.");
-        STORM_LOG_WARN_COND(memorycap < 60 * 0x0000040000000000, "Sylvan only supports tablesizes <= 42 bits. Memory limit is changed accordingly.");
-
-        while (2 * cur < memorycap && max_t < 0x0000040000000000) {
-            max_t *= 2;
-            max_c *= 2;
-            cur *= 2;
-        }
-
-        uint64_t min_t = max_t, min_c = max_c;
-        while (initial_ratio > 0 && min_t > 0x1000 && min_c > 0x1000) {
-            min_t >>= 1;
-            min_c >>= 1;
-            initial_ratio--;
-        }
-        // End of copied code.
-
-        STORM_LOG_DEBUG("Initializing sylvan library. Initial/max table size: " << min_t << "/" << max_t << ", initial/max cache size: " << min_c << "/"
-                                                                                << max_c << ".");
-        sylvan::Sylvan::initPackage(min_t, max_t, min_c, max_c);
+        sylvan_set_limits(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024, 0, 0);
+        sylvan_init_package();
 
         sylvan::Sylvan::initBdd();
         sylvan::Sylvan::initMtbdd();
