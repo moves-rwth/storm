@@ -77,7 +77,7 @@ template<typename ValueType>
 storm::storage::SparseMatrix<ValueType> createReorderedMatrix(storm::storage::SparseMatrix<ValueType> const& matrix,
                                                               std::vector<uint64_t> const& newToOrigIndexMap,
                                                               std::vector<std::pair<uint64_t, ValueType>>& bFactors) {
-    std::vector<uint64_t> origToNewMap(newToOrigIndexMap.size(), std::numeric_limits<uint64>::max());
+    std::vector<uint64_t> origToNewMap(newToOrigIndexMap.size(), std::numeric_limits<uint64_t>::max());
     for (uint64_t i = 0; i < newToOrigIndexMap.size(); ++i) {
         origToNewMap[newToOrigIndexMap[i]] = i;
     }

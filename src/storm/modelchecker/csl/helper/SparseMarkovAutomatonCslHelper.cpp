@@ -472,7 +472,7 @@ class UnifPlusHelper {
                                                                               storm::storage::BitVector const& targetStateConstraint) const {
         auto denseResult = transitionMatrix.getConstrainedRowGroupSumVector(sourceStateConstraint, targetStateConstraint);
         std::vector<std::pair<uint64_t, ValueType>> sparseResult;
-        for (uint64 i = 0; i < denseResult.size(); ++i) {
+        for (uint64_t i = 0; i < denseResult.size(); ++i) {
             auto const& val = denseResult[i];
             if (!storm::utility::isZero(val)) {
                 sparseResult.emplace_back(i, val);
