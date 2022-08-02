@@ -448,11 +448,11 @@ namespace storm {
             }
 
             STORM_LOG_INFO("Total number of splits: " << numberOfSplits << '\n');
-            STORM_PRINT("Total number of plaCalls: " << numberOfPLACalls << '\n');
+            STORM_LOG_INFO("Total number of plaCalls: " << numberOfPLACalls << '\n');
             if (useMonotonicity) {
-                STORM_PRINT("Total number of plaCalls for bounds for monotonicity checking: " << numberOfPLACallsBounds << '\n');
-                STORM_PRINT("Total number of copies of the order: " << numberOfOrderCopies << '\n');
-                STORM_PRINT("Total number of copies of the local monotonicity result: " << numberOfMonResCopies
+                STORM_LOG_INFO("Total number of plaCalls for bounds for monotonicity checking: " << numberOfPLACallsBounds << '\n');
+                STORM_LOG_INFO("Total number of copies of the order: " << numberOfOrderCopies << '\n');
+                STORM_LOG_INFO("Total number of copies of the local monotonicity result: " << numberOfMonResCopies
                                                                                         << '\n');
             }
             STORM_LOG_INFO("\nTotal time for region refinement: " << loopWatch << ".\n\n");
