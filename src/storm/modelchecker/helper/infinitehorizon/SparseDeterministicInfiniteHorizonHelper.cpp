@@ -530,14 +530,14 @@ std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::comp
 }
 
 template<typename ValueType>
-std::vector<ValueType> computeUpperBoundsForExpectedVisitingTimes([[maybe_unused]] storm::storage::SparseMatrix<ValueType> const& nonBsccMatrix,
-                                                                  [[maybe_unused]] std::vector<ValueType> const& toBsccProbabilities) {
+std::vector<ValueType> computeUpperBoundsForExpectedVisitingTimes(storm::storage::SparseMatrix<ValueType> const& nonBsccMatrix,
+                                                                  std::vector<ValueType> const& toBsccProbabilities) {
     return storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>::computeUpperBoundOnExpectedVisitingTimes(nonBsccMatrix, toBsccProbabilities);
 }
 
 template<>
-std::vector<storm::RationalFunction> computeUpperBoundsForExpectedVisitingTimes(storm::storage::SparseMatrix<storm::RationalFunction> const& nonBsccMatrix,
-                                                                                std::vector<storm::RationalFunction> const& toBsccProbabilities) {
+std::vector<storm::RationalFunction> computeUpperBoundsForExpectedVisitingTimes([[maybe_unused]] storm::storage::SparseMatrix<storm::RationalFunction> const& nonBsccMatrix,
+                                                                                [[maybe_unused]] std::vector<storm::RationalFunction> const& toBsccProbabilities) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                     "Computing upper bounds for expected visiting times over rational functions is not supported.");
 }
