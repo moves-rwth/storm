@@ -8,6 +8,10 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.7.x
 -------------
 
+## Version 1.7.1 (20??/??)
+- Upgraded shipped version of sylvan
+
+
 ## Version 1.7.0 (2022/07)
 - Fixed a bug in LP-based MDP model checking.
 - DRN Parser is now more robust, e.g., it does no longer depend on tabs.
