@@ -73,7 +73,7 @@ namespace storm {
              */
             bool addTransitionToBelief(uint64_t const &localActionIndex, BeliefId const &transitionTarget, ValueType const &value, bool ignoreNewBeliefs);
 
-            void computeRewardAtCurrentState(uint64 const &localActionIndex, ValueType extraReward = storm::utility::zero<ValueType>());
+            void computeRewardAtCurrentState(uint64_t const &localActionIndex, ValueType extraReward = storm::utility::zero<ValueType>());
 
             void setCurrentStateIsTarget();
 

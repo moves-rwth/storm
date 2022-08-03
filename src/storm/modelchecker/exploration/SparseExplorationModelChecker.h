@@ -18,7 +18,9 @@ class Environment;
 
 namespace storage {
 class MaximalEndComponent;
-}
+template<typename V>
+class SparseMatrix;
+}  // namespace storage
 namespace prism {
 class Program;
 }

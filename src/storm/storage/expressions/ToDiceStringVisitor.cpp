@@ -4,7 +4,7 @@
 
 namespace storm {
 namespace expressions {
-ToDiceStringVisitor::ToDiceStringVisitor(uint64 nrBits) : nrBits(nrBits) {}
+ToDiceStringVisitor::ToDiceStringVisitor(uint64_t nrBits) : nrBits(nrBits) {}
 
 std::string ToDiceStringVisitor::toString(Expression const& expression) {
     return toString(expression.getBaseExpressionPointer().get());
