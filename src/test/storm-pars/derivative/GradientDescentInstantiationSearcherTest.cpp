@@ -140,7 +140,9 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
     ASSERT_TRUE(simplifier.simplify(*formulas[0]));
     model = simplifier.getSimplifiedModel();
-    dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    
+    dtmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
     storm::modelchecker::CheckTask<storm::logic::Formula, typename TestFixture::FunctionType> checkTask(*formulas[0]);
 
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);

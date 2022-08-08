@@ -7,6 +7,8 @@
 
 @nr_states
 8607
+@nr_choices
+8607
 @model
 state 0 init
 	action 0

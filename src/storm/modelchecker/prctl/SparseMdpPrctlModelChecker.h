@@ -57,6 +57,8 @@ class SparseMdpPrctlModelChecker : public SparsePropositionalModelChecker<Sparse
                                                                      CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(Environment const& env,
                                                                     CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) override;
+    virtual std::unique_ptr<CheckResult> checkLexObjectiveFormula(Environment const& env,
+                                                                  CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<CheckResult> checkQuantileFormula(Environment const& env,
                                                               CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask) override;
 };

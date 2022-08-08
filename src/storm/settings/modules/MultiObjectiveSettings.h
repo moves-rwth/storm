@@ -97,6 +97,11 @@ class MultiObjectiveSettings : public ModuleSettings {
     bool isAutoEncodingSet() const;
 
     /*!
+     * Retrieves whether lexicographic model checking has been set
+     */
+    bool isLexicographicModelCheckingSet() const;
+
+    /*!
      * Checks whether the settings are consistent. If they are inconsistent, an exception is thrown.
      *
      * @return True if the settings are consistent.
@@ -113,6 +118,7 @@ class MultiObjectiveSettings : public ModuleSettings {
     const static std::string schedulerRestrictionOptionName;
     const static std::string printResultsOptionName;
     const static std::string encodingOptionName;
+    const static std::string lexicographicOptionName;
 };
 
 }  // namespace modules

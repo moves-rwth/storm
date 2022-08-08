@@ -443,9 +443,10 @@ namespace storm {
                     auto& unknownStates = unknownStatesMap[order];
                     if (unknownStates.first != numberOfStates) {
                         // only continue if the difference is large enough to be correct
+                        ConstantType error = storm::utility::convertNumber<ConstantType>(0.000001);
                         continueExtending[order] =
-                            (minValues.get()[unknownStates.first] > maxValues.get()[unknownStates.second] && (minValues.get()[unknownStates.first] - maxValues.get()[unknownStates.second]) > 0.000001)
-                            ||  (minValues.get()[unknownStates.second] > maxValues.get()[unknownStates.first] && ((minValues.get()[unknownStates.second] - maxValues.get()[unknownStates.first]) > 0.000001));
+                            (minValues.get()[unknownStates.first] > maxValues.get()[unknownStates.second] && (minValues.get()[unknownStates.first] - maxValues.get()[unknownStates.second]) > error)
+                            ||  (minValues.get()[unknownStates.second] > maxValues.get()[unknownStates.first] && ((minValues.get()[unknownStates.second] - maxValues.get()[unknownStates.first]) > error));
                     } else {
                         continueExtending[order] = true;
                     }

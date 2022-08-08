@@ -2,6 +2,7 @@
 #define STORM_SOLVER_GUROBILPSOLVER
 
 #include <map>
+#include <optional>
 #include "storm/solver/LpSolver.h"
 // To detect whether the usage of Gurobi is possible, this include is neccessary.
 #include "storm-config.h"
@@ -17,6 +18,27 @@ int __stdcall GRBislp(GRBenv**, const char*, const char*, const char*, const cha
 namespace storm {
 namespace solver {
 
+class GurobiEnvironment {
+   public:
+    GurobiEnvironment() = default;
+    GurobiEnvironment(GurobiEnvironment const&) = delete;
+    GurobiEnvironment& operator=(GurobiEnvironment const&) = delete;
+    virtual ~GurobiEnvironment();
+    /*!
+     * Sets some properties of the Gurobi environment according to parameters given by the options.
+     */
+    void initialize();
+    void setOutput(bool set = false);
+#ifdef STORM_HAVE_GUROBI
+    GRBenv* operator*();
+#endif
+   private:
+    bool initialized = false;
+#ifdef STORM_HAVE_GUROBI
+    GRBenv* env = nullptr;
+#endif
+};
+
 /*!
  * A class that implements the LpSolver interface using Gurobi.
  */
@@ -30,7 +52,7 @@ class GurobiLpSolver : public LpSolver<ValueType> {
      * @param modelSense A value indicating whether the value of the objective function is to be minimized or
      * maximized.
      */
-    GurobiLpSolver(std::string const& name, OptimizationDirection const& optDir);
+    GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment, std::string const& name, OptimizationDirection const& optDir);
 
     /*!
      * Constructs a solver with the given name. By default the objective function is assumed to be minimized,
@@ -38,7 +60,7 @@ class GurobiLpSolver : public LpSolver<ValueType> {
      *
      * @param name The name of the LP problem.
      */
-    GurobiLpSolver(std::string const& name);
+    GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment, std::string const& name);
 
     /*!
      * Constructs a solver without a name and the given model sense.
@@ -46,13 +68,13 @@ class GurobiLpSolver : public LpSolver<ValueType> {
      * @param modelSense A value indicating whether the value of the objective function is to be minimized or
      * maximized.
      */
-    GurobiLpSolver(OptimizationDirection const& optDir);
+    GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment, OptimizationDirection const& optDir);
 
     /*!
      * Constructs a solver without a name. By default the objective function is assumed to be minimized,
      * but this may be altered later using a call to setModelSense.
      */
-    GurobiLpSolver();
+    GurobiLpSolver(std::shared_ptr<GurobiEnvironment> const& environment);
 
     /*!
      * Creates a (deep) copy of this solver.
@@ -106,8 +128,6 @@ class GurobiLpSolver : public LpSolver<ValueType> {
     // Methods to print the LP problem to a file.
     virtual void writeModelToFile(std::string const& filename) const override;
 
-    virtual void toggleOutput(bool set) const;
-
     virtual void push() override;
     virtual void pop() override;
 
@@ -124,11 +144,6 @@ class GurobiLpSolver : public LpSolver<ValueType> {
 
    private:
     /*!
-     * Sets some properties of the Gurobi environment according to parameters given by the options.
-     */
-    void setGurobiEnvironmentProperties() const;
-
-    /*!
      * Adds a variable with the given name, type, lower and upper bound and objective function coefficient.
      *
      * @param variable The variable to add.
@@ -140,12 +155,11 @@ class GurobiLpSolver : public LpSolver<ValueType> {
     void addVariable(storm::expressions::Variable const& variable, char variableType, double lowerBound, double upperBound,
                      ValueType objectiveFunctionCoefficient);
 #ifdef STORM_HAVE_GUROBI
-    // The Gurobi environment.
-    GRBenv* env;
-
     // The Gurobi model.
     GRBmodel* model;
 #endif
+
+    std::shared_ptr<GurobiEnvironment> environment;
 
     // The index of the next variable.
     int nextVariableIndex;
@@ -162,6 +176,17 @@ class GurobiLpSolver : public LpSolver<ValueType> {
     };
     std::vector<IncrementalLevel> incrementalData;
 };
+
+enum class GurobiSolverMethod { AUTOMATIC = -1, PRIMALSIMPLEX = 0, DUALSIMPLEX = 1, BARRIER = 2, CONCURRENT = 3, DETCONCURRENT = 4, DETCONCURRENTSIMPLEX = 5 };
+
+/**
+ * Yields a string representation of the GurobiSolverMethod
+ * @param method
+ * @return
+ */
+std::string toString(GurobiSolverMethod const& method);
+std::optional<GurobiSolverMethod> gurobiSolverMethodFromString(std::string const&);
+std::vector<GurobiSolverMethod> getGurobiSolverMethods();
 
 }  // namespace solver
 }  // namespace storm

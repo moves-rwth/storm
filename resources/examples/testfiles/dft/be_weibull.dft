@@ -1,0 +1,4 @@
+toplevel "T";
+"T" and "A" "B";
+"A" rate=4 shape=4 dorm=1;
+"B" rate=2 shape=1 dorm=1;

@@ -5,18 +5,19 @@
 #include "storm/exceptions/InvalidAccessException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/solver/Z3LpSolver.h"
-#include "storm/storage/expressions/Variable.h"
-
 #include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/solver/Z3LpSolver.h"
 #include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/utility/solver.h"
 
 #include <cmath>
 
 TEST(Z3LpSolver, LPOptimizeMax) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -49,7 +50,9 @@ TEST(Z3LpSolver, LPOptimizeMax) {
 }
 
 TEST(Z3LpSolver, LPOptimizeMin) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Minimize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -82,7 +85,9 @@ TEST(Z3LpSolver, LPOptimizeMin) {
 }
 
 TEST(Z3LpSolver, MILPOptimizeMax) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -115,7 +120,9 @@ TEST(Z3LpSolver, MILPOptimizeMax) {
 }
 
 TEST(Z3LpSolver, MILPOptimizeMin) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Minimize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -153,7 +160,9 @@ TEST(Z3LpSolver, MILPOptimizeMin) {
 }
 
 TEST(Z3LpSolver, LPInfeasible) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -179,7 +188,9 @@ TEST(Z3LpSolver, LPInfeasible) {
 }
 
 TEST(Z3LpSolver, MILPInfeasible) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -205,7 +216,9 @@ TEST(Z3LpSolver, MILPInfeasible) {
 }
 
 TEST(Z3LpSolver, LPUnbounded) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -229,7 +242,9 @@ TEST(Z3LpSolver, LPUnbounded) {
 }
 
 TEST(Z3LpSolver, MILPUnbounded) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -253,7 +268,9 @@ TEST(Z3LpSolver, MILPUnbounded) {
 }
 
 TEST(Z3LpSolver, Incremental) {
-    storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::Z3LpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::Z3LpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x, y, z;
     ASSERT_NO_THROW(x = solver.addUnboundedContinuousVariable("x", 1));
 

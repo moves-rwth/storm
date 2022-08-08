@@ -7,6 +7,8 @@
 avg_waiting_time 
 @nr_states
 17
+@nr_choices
+19
 @model
 state 0 !0 [1] init
 	action 0 [0]

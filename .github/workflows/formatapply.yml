@@ -9,16 +9,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       # apply the formatting twice as a workaround for a clang-format bug
-      - uses: DoozyX/clang-format-lint-action@v0.13
+      - uses: DoozyX/clang-format-lint-action@v0.14
         with:
           source: './src'
-          clangFormatVersion: 12
+          clangFormatVersion: 14
           style: file
           inplace: True
-      - uses: DoozyX/clang-format-lint-action@v0.13
+      - uses: DoozyX/clang-format-lint-action@v0.14
         with:
           source: './src'
-          clangFormatVersion: 12
+          clangFormatVersion: 14
           style: file
           inplace: True
       - name: Commit Formatting
@@ -41,4 +41,4 @@ jobs:
           delete-branch: true
           title: 'Code formatting'
           body: |
-            Auto-generated pull request triggered by the `apply-code-format` workflow.
+            Auto-generated pull request triggered by the `apply-code-format` workflow. Make sure to **merge** (and not rebase) this PR so that the added commit hash in `.git-blame-ignore-revs`  remains valid. 

@@ -38,6 +38,8 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
+#include "storm-pars/transformer/ParametricTransformer.h"
+
 #include <typeinfo>
 
 namespace storm {
@@ -305,75 +307,6 @@ namespace storm {
             }
 
             template<typename ValueType, storm::dd::DdType DdType>
-            std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> makeRewardsConstant( std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> pMC) {
-                STORM_LOG_THROW(pMC->hasUniqueRewardModel(), storm::exceptions::IllegalArgumentException, "pMC need to have a rewqrad model");
-                storm::storage::sparse::ModelComponents<storm::RationalFunction> modelComponents;
-
-                uint64_t nrStates = pMC->getTransitionMatrix().getColumnCount();
-                uint_fast64_t nrOfNewStates = 0;
-                auto rewardModel = pMC->getUniqueRewardModel();
-                for (uint64_t state = 0; state < nrStates; ++state) {
-                    if (rewardModel.hasStateActionRewards() && !rewardModel.getStateActionReward(state).isConstant()) {
-                        nrOfNewStates = nrOfNewStates + 2;
-                    } else if (rewardModel.hasStateRewards() && !rewardModel.getStateReward(state).isConstant()) {
-                        nrOfNewStates = nrOfNewStates + 2;
-                    }
-                }
-
-                storm::storage::SparseMatrixBuilder<storm::RationalFunction> smb(nrStates + nrOfNewStates, nrStates + nrOfNewStates, 0, true);
-
-                uint64_t offset = 0;
-                std::vector<storm::RationalFunction> stateRewards(nrStates + nrOfNewStates, storm::RationalFunction(0));
-                storm::models::sparse::StateLabeling stateLabeling(nrStates + nrOfNewStates);
-                STORM_LOG_THROW(!pMC->getOptionalStateValuations(), storm::exceptions::NotImplementedException, "Keeping rewards constant while having state valuations is not implemented");
-                for (uint64_t state = 0; state < nrStates; ++state) {
-                    storm::RationalFunction reward = storm::RationalFunction(0);
-                    if (rewardModel.hasStateActionRewards()) {
-                        reward = rewardModel.getStateActionReward(state);
-                    } else {
-                        STORM_LOG_ASSERT(rewardModel.hasStateRewards(), "Expecting model to have either state rewards or state action rewards");
-                        reward = rewardModel.getStateReward(state);
-                    }
-                    for (auto& label : pMC->getStateLabeling().getLabelsOfState(state)) {
-                        if (!stateLabeling.containsLabel(label)) {
-                            stateLabeling.addLabel(label);
-                        }
-                        stateLabeling.addLabelToState(label, state + offset);
-                    }
-
-                    if (!reward.isConstant()) {
-                        stateRewards[state + offset] = storm::RationalFunction(0);
-                        stateRewards[state + offset + 1] = storm::RationalFunction(1);
-                        stateRewards[state + offset + 2] = storm::RationalFunction(0);
-
-                        smb.addNextValue(state + offset, state + 1, reward);
-                        smb.addNextValue(state + offset, state + 2, storm::RationalFunction(1) - reward);
-                        auto row = pMC->getTransitionMatrix().getRow(state);
-                        for (auto const& entry : row) {
-                            smb.addNextValue(state + offset + 1, entry.getColumn(), entry.getValue());
-                        }
-                        for (auto const& entry : row) {
-                            smb.addNextValue(state + offset + 2, entry.getColumn(), entry.getValue());
-                        }
-                        offset += 2;
-                    } else {
-                        stateRewards[state + offset] = reward;
-                        for (auto const& entry : pMC->getTransitionMatrix().getRow(state)) {
-                            smb.addNextValue(state + offset, entry.getColumn(), entry.getValue());
-                        }
-                    }
-
-
-                }
-                modelComponents.transitionMatrix = smb.build();
-                modelComponents.rewardModels.emplace(pMC->getUniqueRewardModelName(), std::move(stateRewards)) ;
-
-                modelComponents.stateLabeling = std::move(stateLabeling);
-                modelComponents.stateValuations = pMC->getOptionalStateValuations();
-                return std::make_shared<storm::models::sparse::Dtmc<storm::RationalFunction>>(modelComponents);
-            }
-
-            template<typename ValueType, storm::dd::DdType DdType>
             bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
@@ -425,15 +358,16 @@ namespace storm {
                     std::string transformMode = transformSettings.getFscApplicationTypeString();
                     auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                     STORM_PRINT_AND_LOG(" done.\n");
-                    uint_fast64_t numberOfStates = pmc->getTransitionMatrix().getColumnCount();
-                    if (transformSettings.isConstantRewardsSet()) {
-                        pmc = makeRewardsConstant<ValueType, DdType>(pmc);
-                    }
-                    pmc->printModelInformationToStream(std::cout);
 
                     if (transformSettings.allowPostSimplifications()) {
                         STORM_PRINT_AND_LOG("Simplifying pMC...");
                         pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+                        STORM_PRINT_AND_LOG(" done.\n");
+                        pmc->printModelInformationToStream(std::cout);
+                    }
+                    if (pmc->hasRewardModel() && transformSettings.isConstantRewardsSet()) {
+                        STORM_PRINT_AND_LOG("Ensuring constant rewards...");
+                        pmc = storm::transformer::makeRewardsConstant(*(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
                         STORM_PRINT_AND_LOG(" done.\n");
                         pmc->printModelInformationToStream(std::cout);
                     }

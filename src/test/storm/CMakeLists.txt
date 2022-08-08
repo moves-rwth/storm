@@ -11,7 +11,7 @@ include_directories(${GTEST_INCLUDE_DIR})
 
 # Set split and non-split test directories
 set(NON_SPLIT_TESTS abstraction adapter automata builder logic model parser permissiveschedulers simulator solver storage transformer utility)
-set(MODELCHECKER_TEST_SPLITS abstraction csl exploration multiobjective reachability)
+set(MODELCHECKER_TEST_SPLITS abstraction csl exploration lexicographic multiobjective reachability)
 set(MODELCHECKER_PRCTL_TEST_SPLITS dtmc mdp)
 
 function(configure_testsuite_target testsuite)
