@@ -556,7 +556,7 @@ namespace storm {
             // when this is not the case, the order is invalid
             // however, it could be that the sat solver didn't finish in time, in that case we just continue.
             if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
-                STORM_LOG_ASSERT(order->isOptimistic(), "The order of successors plus the bounds should be satisfiable, probably the order is invalid");
+//                STORM_LOG_ASSERT(order->isOptimistic(), "The order of successors plus the bounds should be satisfiable, probably the order is invalid");
                 return AssumptionStatus::INVALID;
             }
 

@@ -359,6 +359,7 @@ namespace storm {
                 if (this->formula->hasQuantitativeResult()) {
                     checkTask  = storm::api::createTask<ValueType>(formula, false);
                 } else {
+                    // Remove the >=/<= information from the formula
                     storm::logic::OperatorInformation opInfo(boost::none, boost::none);
                     if (formula->isProbabilityOperatorFormula()) {
                         auto newFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
