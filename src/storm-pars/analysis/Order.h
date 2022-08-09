@@ -107,9 +107,8 @@ namespace storm {
              *
              * @param above The node closest to the top Node of the Order.
              * @param below The node closest to the bottom Node of the Order.
-             * @param allowMerge Whether merging of nodes is allowed or not (should only happen when using assumptions)
              */
-            void addRelationNodes(storm::analysis::Order::Node *above, storm::analysis::Order::Node *below, bool allowMerge = false);
+            void addRelationNodes(storm::analysis::Order::Node *above, storm::analysis::Order::Node *below);
 
             /*!
              * Adds a new relation between two states to the order.
@@ -133,17 +132,15 @@ namespace storm {
              *
              * @param node1 The first node
              * @param node2 The second node
-             * @return false when merging leads to invalid order
              */
-            bool mergeNodes(Node* node1, Node* node2);
+            void mergeNodes(Node* node1, Node* node2);
 
             /*!
              * Merges node of var2 into node of var1.
              * @param var1 The first state
              * @param var2 The second state
-             * @return false when merging leads to invalid order
              */
-            bool merge(uint_fast64_t state1, uint_fast64_t state2);
+            void merge(uint_fast64_t state1, uint_fast64_t state2);
 
             /*!
              * Compares the level of the nodes of the states.
@@ -510,7 +507,7 @@ namespace storm {
             /*** Order Information ***/
 
             // True if the order is invalid
-            bool invalid;
+//            bool invalid;
 
             // True if the order is finished
             bool doneBuilding;

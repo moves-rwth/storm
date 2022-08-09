@@ -70,7 +70,7 @@ namespace storm {
         }
 
         Order::Order() {
-            this->invalid = false;
+//            this->invalid = false;
             this->optimistic = true;
             this->changed = false;
         }
@@ -149,10 +149,10 @@ namespace storm {
                 return;
             }
 
-            if (compare(above, below) != ABOVE) {
-                invalid = true;
-                return;
-            }
+//            if (compare(above, below) != ABOVE) {
+//                invalid = true;
+//                return;
+//            }
             assert(compare(above, below) == ABOVE);
             assert (above != nullptr && below != nullptr);
             if (nodes[state] == nullptr) {
@@ -189,33 +189,33 @@ namespace storm {
         }
 
         void Order::addRelation(uint_fast64_t above, uint_fast64_t below, bool allowMerge) {
-            assert (getNode(above) != nullptr && getNode(below) != nullptr);
+//            assert (getNode(above) != nullptr && getNode(below) != nullptr);
             addRelationNodes(getNode(above), getNode(below));
         }
 
-        void Order::addRelationNodes(Order::Node *above, Order::Node * below, bool allowMerge) {
-            if (above == below) {
-                this->invalid = true;
-                return;
-            }
-            if (compare(above, below) == BELOW) {
-                if (allowMerge) {
-                    mergeNodes(above, below);
-                    STORM_LOG_INFO("Merged nodes" << *above->states.begin() << " and " << *below->states.begin() << std::endl);
-                } else {
-                    invalid = true;
-                    STORM_LOG_INFO("Order is invalid");
-                    return;
-                }
-            } else {
+        void Order::addRelationNodes(Order::Node *above, Order::Node * below) {
+//            if (above == below) {
+//                this->invalid = true;
+//                return;
+//            }
+//            if (compare(above, below) == BELOW) {
+//                if (allowMerge) {
+//                    mergeNodes(above, below);
+//                    STORM_LOG_INFO("Merged nodes" << *above->states.begin() << " and " << *below->states.begin() << std::endl);
+//                } else {
+//                    invalid = true;
+//                    STORM_LOG_INFO("Order is invalid");
+//                    return;
+//                }
+//            } else {
                 STORM_LOG_INFO("Add relation between (above) " << *above->states.begin() << " and " << *below->states.begin() << std::endl);
 
                 below->statesAbove |= ((above->statesAbove));
                 for (auto const& state : above->states) {
                     below->statesAbove.set(state);
                 }
-                assert(compare(above, below) == ABOVE);
-            }
+//                assert(compare(above, below) == ABOVE);
+//            }
         }
 
         void Order::addToNode(uint_fast64_t state, Node *node) {
@@ -237,7 +237,7 @@ namespace storm {
             }
         }
 
-        bool Order::mergeNodes(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2) {
+        void Order::mergeNodes(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2) {
             STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << '\n');
 
             // Merges node2 into node 1
@@ -275,11 +275,11 @@ namespace storm {
                     }
                 }
             }
-            return !invalid;
+//            return !invalid;
         }
 
-        bool Order::merge(uint_fast64_t state1, uint_fast64_t state2) {
-            return mergeNodes(getNode(state1), getNode(state2));
+        void Order::merge(uint_fast64_t state1, uint_fast64_t state2) {
+            mergeNodes(getNode(state1), getNode(state2));
         }
 
         /*** Checking on the order ***/
@@ -715,7 +715,7 @@ namespace storm {
         void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool isOptimistic, bool doneBuilding) {
             this->optimistic = isOptimistic;
             this->numberOfStates = numberOfStates;
-            this->invalid = false;
+//            this->invalid = false;
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
             this->sufficientForState = storm::storage::BitVector(numberOfStates, false);
             this->doneForState = storm::storage::BitVector(numberOfStates, false);
@@ -867,7 +867,9 @@ namespace storm {
         }
 
         bool Order::isInvalid() const {
-            return invalid;
+            STORM_LOG_ASSERT(false, "Don't expect function call");
+            return false;
+//            return invalid;
         }
 
         void Order::addToMdpScheduler(uint_fast64_t state, uint_fast64_t action) {

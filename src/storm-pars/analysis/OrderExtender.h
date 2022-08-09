@@ -224,6 +224,8 @@ namespace storm {
         private:
             MonotonicityChecker<ValueType> monotonicityChecker;
             bool useAssumptions;
+            ConstantType error = storm::utility::convertNumber<ConstantType>(0.000001);
+
         };
     }
 }

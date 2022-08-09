@@ -168,7 +168,7 @@ namespace storm {
             } else {
                 STORM_LOG_ASSERT (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater, "Unknown comparision type found, it is neither equal nor greater");
                 if (n1 != nullptr && n2 != nullptr) {
-                    order->addRelationNodes(n1, n2, true);
+                    order->addRelationNodes(n1, n2);//, true);
                 } else if (n1 != nullptr) {
                     order->addBetween(val2, n1, order->getBottom());
                 } else if (n2 != nullptr) {
@@ -256,7 +256,7 @@ namespace storm {
             STORM_LOG_ASSERT (minValues.find(order) != minValues.end() && maxValues.find(order) != maxValues.end(), "Cannot add states based on min max values if the minmax values are not initialized for this order");
             std::vector<ConstantType> const& mins = minValues.at(order);
             std::vector<ConstantType> const& maxs = maxValues.at(order);
-            if (mins[state1] == maxs[state1] && mins[state2] == maxs[state2] && mins[state1] == mins[state2]) {
+            if (mins[state1] > error && mins[state1] == maxs[state1] && mins[state2] == maxs[state2] && mins[state1] == mins[state2]) {
                 if (order->contains(state1)) {
                     if (order->contains(state2)) {
                         STORM_LOG_INFO("Merging state " << state1 << " and " << state2 << " based on min max values");
@@ -456,7 +456,6 @@ namespace storm {
                     auto& unknownStates = unknownStatesMap[order];
                     if (unknownStates.first != numberOfStates) {
                         // only continue if the difference is large enough to be correct
-                        ConstantType error = storm::utility::convertNumber<ConstantType>(0.000001);
                         continueExtending[order] =
                             (minValues.get()[unknownStates.first] > maxValues.get()[unknownStates.second] && (minValues.get()[unknownStates.first] - maxValues.get()[unknownStates.second]) > error)
                             ||  (minValues.get()[unknownStates.second] > maxValues.get()[unknownStates.first] && ((minValues.get()[unknownStates.second] - maxValues.get()[unknownStates.first]) > error));
