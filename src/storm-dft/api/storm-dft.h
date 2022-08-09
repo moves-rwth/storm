@@ -73,13 +73,14 @@ std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> co
  * @param dft DFT.
  * @param uniqueBE Flag whether a unique constant failed BE is created.
  * @param binaryFDEP Flag whether all dependencies should be binary (only one dependent child).
+ * @param exponentialDistributions Flag whether distributions should be transformed to exponential distributions (if possible).
  * @return Transformed DFT.
  */
 template<typename ValueType>
 std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm::dft::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP,
-                                                                          bool markovianDistributions) {
+                                                                          bool exponentialDistributions) {
     std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformedDft = std::make_shared<storm::dft::storage::DFT<ValueType>>(dft);
-    if (markovianDistributions && !storm::dft::transformations::DftTransformer<ValueType>::hasOnlyExponentialDistributions(*transformedDft)) {
+    if (exponentialDistributions && !storm::dft::transformations::DftTransformer<ValueType>::hasOnlyExponentialDistributions(*transformedDft)) {
         transformedDft = storm::dft::transformations::DftTransformer<ValueType>::transformExponentialDistributions(*transformedDft);
     }
     if (uniqueBE && !storm::dft::transformations::DftTransformer<ValueType>::hasUniqueFailedBE(*transformedDft)) {
