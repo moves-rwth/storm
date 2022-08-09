@@ -57,9 +57,11 @@ namespace storm {
                     stateMap[state].push_back(std::vector<uint64_t>());
                     bool selfloop = false;
                     for (auto& entry : row) {
-                        selfloop |= state == entry.getColumn() && !storm::utility::isZero<ValueType>(entry.getValue());
-                        stateMap[state][currentOption].push_back(entry.getColumn());
-                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                        if (!storm::utility::isZero<ValueType>(entry.getValue()) {
+                            selfloop |= state == entry.getColumn());
+                            stateMap[state][currentOption].push_back(entry.getColumn());
+                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                        }
                     }
                     if (selfloop && stateMap[state][currentOption].size() == 2) {
                         // We have a selfloop and one additional successor, so we add the state to states to handle
