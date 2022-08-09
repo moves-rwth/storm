@@ -11,6 +11,7 @@
 #include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
 #include "storm-dft/transformations/DftTransformer.h"
+#include "storm-dft/utility/DftValidator.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
 #include "storm-dft/utility/FailureBoundFinder.h"
 #include "storm-dft/utility/RelevantEvents.h"
@@ -57,13 +58,18 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> loadDFTJsonFile(std::string
  * Check whether the DFT is well-formed.
  *
  * @param dft DFT.
- * @param validForAnalysis  If true, additional (more restrictive) checks are performed to check whether the DFT is valid for analysis.
- * @return Pair where the first entry is true iff the DFT is well-formed. The second entry contains the error messages for illformed parts.
+ * @param validForMarkovianAnalysis If true, additional checks are performed to check whether the DFT is valid for analysis via Markov models.
+ * @return Pair where the first entry is true iff the DFT is well-formed. The second entry contains the error messages for ill-formed parts.
  */
 template<typename ValueType>
-std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> const& dft, bool validForAnalysis = true) {
+std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> const& dft, bool validForMarkovianAnalysis = true) {
     std::stringstream stream;
-    bool wellFormed = dft.checkWellFormedness(validForAnalysis, stream);
+    bool wellFormed = false;
+    if (validForMarkovianAnalysis) {
+        wellFormed = storm::dft::utility::DftValidator<ValueType>::isDftValidForMarkovianAnalysis(dft, stream);
+    } else {
+        wellFormed = storm::dft::utility::DftValidator<ValueType>::isDftWellFormed(dft, stream);
+    }
     return std::pair<bool, std::string>(wellFormed, stream.str());
 }
 

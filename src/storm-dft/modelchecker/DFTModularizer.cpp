@@ -1,12 +1,15 @@
 #include <sstream>
 
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
+#include "storm-dft/api/storm-dft.h"
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/modelchecker/DFTModularizer.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
+
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
+#include "storm/exceptions/InvalidModelException.h"
 
 namespace storm::dft {
 namespace modelchecker {
@@ -240,7 +243,8 @@ void DFTModularizer::analyseDynamic(DFTElementCPointer const element, std::vecto
         return;
     }
     auto subDFT{getSubDFT(element)};
-    subDFT->checkWellFormedness(true, std::cout);
+    auto wellFormedResult = storm::dft::api::isWellFormed(*subDFT, true);
+    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::InvalidModelException, wellFormedResult.second);
 
     storm::dft::modelchecker::DFTModelChecker<ValueType> checker{true};
     std::stringstream propertyStream{};

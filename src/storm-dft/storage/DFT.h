@@ -142,6 +142,10 @@ class DFT {
         }
     }
 
+    std::map<size_t, std::vector<size_t>> const& getSpareModules() const {
+        return mSpareModules;
+    }
+
     bool isDependencyInConflict(size_t id) const {
         STORM_LOG_ASSERT(isDependency(id), "Not a dependency.");
         return mDependencyInConflict.at(id);
@@ -247,15 +251,6 @@ class DFT {
     }
 
     bool canHaveNondeterminism() const;
-
-    /*!
-     * Check if the DFT is well-formed.
-     *
-     * @param validForAnalysis If true, additional (more restrictive) checks are performed to check whether the DFT is valid for analysis.
-     * @param stream Output stream where warnings about non-well-formed parts are written.
-     * @return True iff the DFT is well-formed.
-     */
-    bool checkWellFormedness(bool validForAnalysis, std::ostream& stream) const;
 
     uint64_t maxRank() const;
 

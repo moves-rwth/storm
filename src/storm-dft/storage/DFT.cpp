@@ -800,46 +800,6 @@ bool DFT<ValueType>::canHaveNondeterminism() const {
 }
 
 template<typename ValueType>
-bool DFT<ValueType>::checkWellFormedness(bool validForAnalysis, std::ostream& stream) const {
-    bool wellformed = true;
-    // Check independence of spare modules
-    // TODO: comparing one element of each spare module sufficient?
-    for (auto module1 = mSpareModules.begin(); module1 != mSpareModules.end(); ++module1) {
-        if (!module1->second.empty()) {
-            // Empty modules are allowed for the primary module of a spare gate
-            size_t firstElement = module1->second.front();
-            for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
-                if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
-                    if (!wellformed) {
-                        stream << '\n';
-                    }
-                    stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name()
-                           << "' should not overlap.";
-                    wellformed = false;
-                }
-            }
-        }
-    }
-
-    if (validForAnalysis) {
-        // Check that each dependency is binary
-        for (size_t idDependency : this->getDependencies()) {
-            std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = this->getDependency(idDependency);
-            if (dependency->dependentEvents().size() != 1) {
-                if (!wellformed) {
-                    stream << '\n';
-                }
-                stream << "Dependency '" << dependency->name() << "' is not binary.";
-                wellformed = false;
-            }
-        }
-    }
-    // TODO check VOT gates
-    // TODO check only one constant failed event
-    return wellformed;
-}
-
-template<typename ValueType>
 DFTColouring<ValueType> DFT<ValueType>::colourDFT() const {
     return DFTColouring<ValueType>(*this);
 }
