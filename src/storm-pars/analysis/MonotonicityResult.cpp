@@ -21,6 +21,17 @@ namespace storm {
         }
 
         template <typename VariableType>
+        void MonotonicityResult<VariableType>::merge(std::shared_ptr<MonotonicityResult<VariableType>> other) {
+            for (auto& monRes : other->getMonotonicityResult()) {
+                if (this->monotonicityResult.find(monRes.first) != this->monotonicityResult.end()) {
+                    this->updateMonotonicityResult(monRes.first, monRes.second, false);
+                } else {
+                    this->addMonotonicityResult(monRes.first, monRes.second);
+                }
+            }
+        }
+
+        template <typename VariableType>
         void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon, bool force) {
             assert (force || !isDoneForVar(var));
             if (force) {

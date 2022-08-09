@@ -102,37 +102,44 @@ namespace storm {
             createOrder(isOptimistic);
 
             //output of results
-            for (auto itr : monResults) {
-                if (itr.first != nullptr) {
-                    std::cout << "Number of done states: " << itr.first->getNumberOfSufficientStates() << std::endl;
+            if (monResults.size() == 1) {
+                auto itr = monResults.begin();
+                if (itr->first != nullptr) {
+                    std::cout << "Number of done states: " << itr->first->getNumberOfSufficientStates() << std::endl;
                 }
                 if (checkSamples) {
-                    for (auto & entry : resultCheckOnSamples.getMonotonicityResult()) {
+                    for (auto& entry : resultCheckOnSamples.getMonotonicityResult()) {
                         if (entry.second == Monotonicity::Not) {
-                            itr.second.first->updateMonotonicityResult(entry.first, entry.second, true);
+                            itr->second.first->updateMonotonicityResult(entry.first, entry.second, true);
                         }
                     }
                 }
-                std::string temp = itr.second.first->toString();
-                bool first = true;
-                for (auto& assumption : itr.second.second) {
-                    if (!first) {
-                        outfile << " & ";
-                    } else {
-                        outfile << "Assumptions: \n" << "    ";
-                        first = false;
-                    }
-                    outfile << *assumption;
-                }
-                if (!first) {
-                    outfile << '\n';
-                } else {
-                    outfile << "No Assumptions\n";
-                }
-                outfile << "Monotonicity Result: \n" << "    " << temp << "\n\n";
-            }
+                    outfile << "Assumptions: no\n";
+                outfile << "Monotonicity Result: \n"
+                        << "    " << itr->second.first->toString() << "\n\n";
 
-            if (monResults.size() == 0) {
+            } else if (monResults.size() > 1) {
+                storm::analysis::MonotonicityResult<VariableType> finalRes;
+                bool first = true;
+                for (auto itr : monResults) {
+                    finalRes.merge(itr.second.first);
+                }
+
+                if (checkSamples) {
+                    for (auto& entry : resultCheckOnSamples.getMonotonicityResult()) {
+                        if (entry.second == Monotonicity::Not) {
+                            finalRes.updateMonotonicityResult(entry.first, entry.second, true);
+                        }
+                    }
+                }
+
+                outfile << "Assumptions: yes\n";
+
+                outfile << "Monotonicity Result: \n"
+                        << "    " << finalRes.toString() << "\n\n";
+
+
+            } else {
                 outfile << "No monotonicity found, as the order is insufficient\n";
                 if (checkSamples) {
                         outfile << "Monotonicity Result on samples: " << resultCheckOnSamples.toString() << '\n';

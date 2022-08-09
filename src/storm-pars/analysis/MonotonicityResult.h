@@ -37,6 +37,8 @@ namespace storm {
              */
             void addMonotonicityResult(VariableType var, Monotonicity mon);
 
+            void merge(std::shared_ptr<MonotonicityResult<VariableType>> other);
+
 
             /*!
              * Updates the Monotonicity of a variable based on its value so far and a new value.
