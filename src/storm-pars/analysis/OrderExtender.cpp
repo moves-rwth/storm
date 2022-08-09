@@ -123,7 +123,7 @@ namespace storm {
                 if (result.first == this->numberOfStates) {
                     return result;
                 } else {
-                    auto result2 = extendNormal(order, region, currentState);
+                    auto result2 = extendByBackwardReasoning(order, region, currentState);
                     if (result2.first == this->numberOfStates) {
                         return result2;
                     } else {
