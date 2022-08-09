@@ -119,7 +119,17 @@ namespace storm {
             }
             if (this->cyclic && !order->isSufficientForState(currentState) && !order->isTrivial(currentState) && order->contains(currentState)) {
                 // Try to extend the order for this scc
-                return extendByForwardReasoning(order, region, currentState);
+                auto result = extendByForwardReasoning(order, region, currentState);
+                if (result.first == this->numberOfStates) {
+                    return result;
+                } else {
+                    auto result2 = extendNormal(order, region, currentState);
+                    if (result2.first == this->numberOfStates) {
+                        return result2;
+                    } else {
+                        return result;
+                    }
+                }
             } else {
                 assert (order->isTrivial(currentState) || !order->contains(currentState) || order->isSufficientForState(currentState));
                 // Do backward reasoning, all successor states must be in the order
@@ -642,7 +652,7 @@ namespace storm {
                         allSorted &= this->addStatesBasedOnMinMax(order, succ1, succ2) != Order::NodeComparison::UNKNOWN;
                     }
                 }
-                if (allSorted && successors.size() > 1 || (successors.size() == 1 && state != *(successors.begin()))) {
+                if (!this->cyclic && (allSorted && successors.size() > 1 || (successors.size() == 1 && state != *(successors.begin())))) {
                     STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
                     order->setSufficientForState(state);
                     for (auto& entry : transposeMatrix.getRow(state)) {

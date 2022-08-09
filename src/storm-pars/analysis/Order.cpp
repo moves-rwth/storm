@@ -841,7 +841,8 @@ namespace storm {
         }
 
         void Order::addStateToHandle(uint_fast64_t state) {
-            if (!sufficientForState[state] || !contains(state)) {
+            STORM_LOG_INFO("Adding " << state << " to states to handle");
+            if (!sufficientForState[state]) {
                 statesToHandle.push_back(state);
             }
         }
