@@ -38,8 +38,11 @@ namespace storm {
 
 
                 if (successors.size() == 1) {
-                    STORM_LOG_ASSERT (order->contains(successors[0]), "Expecting order to contain successor of state " << currentState);
-                    this->handleOneSuccessor(order, currentState, successors[0]);
+                    if (order->contains(successors[0])) {
+                        this->handleOneSuccessor(order, currentState, successors[0]);
+                    } else {
+                        result = {successors[0], successors[0]};
+                    }
                 } else if (!successors.empty() || successorRes.first) {
                     if (order->isOnlyInitialOrder()) {
                         order->add(currentState);
