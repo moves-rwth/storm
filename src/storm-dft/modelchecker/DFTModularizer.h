@@ -65,12 +65,6 @@ class DFTModularizer {
      */
     static std::vector<DFTElementCPointer> getDecendants(DFTElementCPointer const element);
 
-    /**
-     * \return whether the given element is static i.e. not dynamic
-     * \note This is the case for all static gates and all basic elements.
-     */
-    static bool isElementStatic(DFTElementCPointer const element);
-
     struct DfsCounter {
         uint64_t firstVisit{0};
         uint64_t secondVisit{0};
