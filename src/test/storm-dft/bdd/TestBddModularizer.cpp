@@ -2,7 +2,7 @@
 #include "test/storm_gtest.h"
 
 #include "storm-dft/api/storm-dft.h"
-#include "storm-dft/modelchecker/DFTModularizer.h"
+#include "storm-dft/modelchecker/DftModularizationChecker.h"
 
 namespace {
 
@@ -36,10 +36,10 @@ class BddModularizerTest : public testing::TestWithParam<ModularizerTestData> {
     void SetUp() override {
         auto const &param{TestWithParam::GetParam()};
         auto dft{storm::dft::api::loadDFTGalileoFile<double>(param.filepath)};
-        checker = std::make_shared<storm::dft::modelchecker::DFTModularizer>(dft);
+        checker = std::make_shared<storm::dft::modelchecker::DftModularizationChecker<double>>(dft);
     }
 
-    std::shared_ptr<storm::dft::modelchecker::DFTModularizer> checker;
+    std::shared_ptr<storm::dft::modelchecker::DftModularizationChecker<double>> checker;
 };
 
 TEST_P(BddModularizerTest, ProbabilityAtTimeOne) {

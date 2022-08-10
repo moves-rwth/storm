@@ -22,11 +22,7 @@ class DftModule {
      * @param Id of representative, ie top element of the subtree.
      * @param elements List of elements forming the module. Representative must be contained.
      */
-    DftModule(size_t representative, std::vector<size_t> const& elements) : representative(representative), elements(elements) {
-        // Assertion cannot be guaranteed as spare module currently only contain the corresponding BEs and SPAREs
-        // STORM_LOG_ASSERT(std::find(this->elements.begin(), this->elements.end(), representative) != this->elements.end(),
-        //                 "Representative " + std::to_string(representative) + " must be contained in module.");
-    }
+    DftModule(size_t representative, std::vector<size_t> const& elements);
 
     /*!
      * Get representative (top element of subtree).
@@ -37,12 +33,28 @@ class DftModule {
     }
 
     /*!
+     * Returns whether the module is static.
+     * Requires a call to setType() to properly initialize.
+     * @return True iff the module contains no dynamic element.
+     */
+    bool isStaticModule() const;
+
+    /*!
+     * Compute the type of the module: static (only static elements) or dynamic (at least one dynamic element).
+     * Sets an internal variable which allows to use isDynamicModule() afterwards.
+     * @param dft DFT.
+     */
+    template<typename ValueType>
+    void setType(storm::dft::storage::DFT<ValueType> const& dft);
+
+    /*!
      * Begin iterator for elements.
      * @return Iterator.
      */
     std::vector<size_t>::const_iterator begin() const {
         return elements.begin();
     }
+
     /*!
      * End iterator for elements.
      * @return Ierator.
@@ -77,6 +89,7 @@ class DftModule {
    private:
     size_t representative;
     std::vector<size_t> elements;
+    std::optional<bool> staticModule;
 };
 
 }  // namespace storage
