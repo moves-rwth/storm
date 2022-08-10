@@ -57,13 +57,13 @@ bool DftValidator<ValueType>::isDftValidForMarkovianAnalysis(storm::dft::storage
     // TODO: comparing one element of each spare module sufficient?
     // We do not check overlap with the top module as this makes no difference (because we are using early claiming, early activation)
     for (auto module1 = spareModules.begin(); module1 != spareModules.end(); ++module1) {
-        if (!module1->second.empty()) {
+        if (!module1->empty()) {
             // Empty modules are allowed for the primary module of a spare gate
-            size_t firstElement = module1->second.front();
+            size_t firstElement = *module1->begin();
             for (auto module2 = std::next(module1); module2 != spareModules.end(); ++module2) {
-                if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
-                    stream << "Spare modules of '" << dft.getElement(module1->first)->name() << "' and '" << dft.getElement(module2->first)->name()
-                           << "' should not overlap.";
+                if (std::find(module2->begin(), module2->end(), firstElement) != module2->end()) {
+                    stream << "Spare modules of '" << dft.getElement(module1->getRepresentative())->name() << "' and '"
+                           << dft.getElement(module2->getRepresentative())->name() << "' should not overlap.";
                     return false;
                 }
             }

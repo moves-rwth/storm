@@ -49,7 +49,7 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
                         mRepresentants.insert(std::make_pair(modelem, spareReprs->id()));
                     }
                 }
-                mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
+                mModules.insert(std::make_pair(spareReprs->id(), storm::dft::storage::DftModule(spareReprs->id(), sparesAndBes)));
             }
         } else if (elem->isDependency()) {
             mDependencies.push_back(elem->id());
@@ -66,27 +66,29 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
         }
     }
     // Erase spare modules
-    for (auto const& module : mSpareModules) {
+    for (auto const& module : mModules) {
         for (auto const& index : module.second) {
             topModuleSet.erase(index);
         }
     }
     // Extend top module and insert those elements which are part of the top module and a spare module
     mElements[mTopLevelIndex]->extendSpareModule(topModuleSet);
-    mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
+    storm::dft::storage::DftModule topModule(mTopLevelIndex, std::vector<size_t>(topModuleSet.begin(), topModuleSet.end()));
 
     // Clear all spare modules where at least one element is also in the top module.
     // These spare modules will be activated from the beginning.
-    if (!mTopModule.empty()) {
-        for (auto& module : mSpareModules) {
-            if (std::find(module.second.begin(), module.second.end(), mTopModule.front()) != module.second.end()) {
+    if (!topModule.empty()) {
+        for (auto& module : mModules) {
+            auto& spareModule = module.second;
+            if (std::find(spareModule.begin(), spareModule.end(), *topModule.begin()) != spareModule.end()) {
                 STORM_LOG_WARN("Elements of spare module '"
-                               << getElement(module.first)->name()
+                               << getElement(spareModule.getRepresentative())->name()
                                << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
-                module.second.clear();
+                spareModule.clear();
             }
         }
     }
+    mModules.insert(std::make_pair(mTopLevelIndex, topModule));
 
     // Reserve space for failed spares
     ++mMaxSpareChildCount;
@@ -657,36 +659,10 @@ std::string DFT<ValueType>::getInfoString() const {
 }
 
 template<typename ValueType>
-std::string DFT<ValueType>::getSpareModulesString() const {
+std::string DFT<ValueType>::getModulesString() const {
     std::stringstream stream;
-    stream << "[" << mElements[mTopLevelIndex]->id() << "] {";
-    std::vector<size_t>::const_iterator it = mTopModule.begin();
-    if (it == mTopModule.end()) {
-        stream << "}\n";
-        return stream.str();
-    }
-    STORM_LOG_ASSERT(it != mTopModule.end(), "Element not found.");
-    stream << mElements[(*it)]->name();
-    ++it;
-    while (it != mTopModule.end()) {
-        stream << ", " << mElements[(*it)]->name();
-        ++it;
-    }
-    stream << "}\n";
-
-    for (auto const& spareModule : mSpareModules) {
-        stream << "[" << mElements[spareModule.first]->name() << "] = {";
-        if (!spareModule.second.empty()) {
-            std::vector<size_t>::const_iterator it = spareModule.second.begin();
-            STORM_LOG_ASSERT(it != spareModule.second.end(), "Element not found.");
-            stream << mElements[(*it)]->name();
-            ++it;
-            while (it != spareModule.second.end()) {
-                stream << ", " << mElements[(*it)]->name();
-                ++it;
-            }
-        }
-        stream << "}\n";
+    for (auto const& module : mModules) {
+        stream << module.second.toString(*this) << "\n";
     }
     return stream.str();
 }
@@ -1224,7 +1200,6 @@ std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunct
 
 // Explicitly instantiate the class.
 template class DFT<double>;
-
 template class DFT<RationalFunction>;
 
 }  // namespace storage

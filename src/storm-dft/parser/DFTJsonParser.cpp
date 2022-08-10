@@ -147,7 +147,7 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
     // Build DFT
     storm::dft::storage::DFT<ValueType> dft = builder.build();
     STORM_LOG_DEBUG("Elements:\n" << dft.getElementsString());
-    STORM_LOG_DEBUG("Spare Modules:\n" << dft.getSpareModulesString());
+    STORM_LOG_DEBUG("Modules:\n" << dft.getModulesString());
     return dft;
 }
 

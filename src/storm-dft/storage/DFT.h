@@ -15,6 +15,7 @@
 
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/DFTStateGenerationInfo.h"
+#include "storm-dft/storage/DftModule.h"
 #include "storm-dft/storage/SymmetricUnits.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 
@@ -68,9 +69,8 @@ class DFT {
     size_t mTopLevelIndex;
     size_t mStateVectorSize;
     size_t mMaxSpareChildCount;
-    std::map<size_t, std::vector<size_t>> mSpareModules;
+    std::map<size_t, storm::dft::storage::DftModule> mModules;
     std::vector<size_t> mDependencies;
-    std::vector<size_t> mTopModule;
     std::map<size_t, size_t> mRepresentants;  // id element -> id representative
     std::vector<std::vector<size_t>> mSymmetries;
     std::map<size_t, DFTLayoutInfo> mLayoutInfo;
@@ -133,17 +133,19 @@ class DFT {
         return indices;
     }
 
-    std::vector<size_t> const& module(size_t representativeId) const {
-        if (representativeId == mTopLevelIndex) {
-            return mTopModule;
-        } else {
-            STORM_LOG_ASSERT(mSpareModules.count(representativeId) > 0, "Representative not found.");
-            return mSpareModules.find(representativeId)->second;
-        }
+    storm::dft::storage::DftModule const& module(size_t representativeId) const {
+        STORM_LOG_ASSERT(mModules.count(representativeId) > 0, "Representative not found.");
+        return mModules.at(representativeId);
     }
 
-    std::map<size_t, std::vector<size_t>> const& getSpareModules() const {
-        return mSpareModules;
+    std::vector<storm::dft::storage::DftModule> getSpareModules() const {
+        std::vector<storm::dft::storage::DftModule> spareModules;
+        for (auto const& pair : mModules) {
+            if (pair.first != mTopLevelIndex) {
+                spareModules.push_back(pair.second);
+            }
+        }
+        return spareModules;
     }
 
     bool isDependencyInConflict(size_t id) const {
@@ -316,7 +318,7 @@ class DFT {
 
     std::string getInfoString() const;
 
-    std::string getSpareModulesString() const;
+    std::string getModulesString() const;
 
     std::string getElementsWithStateString(DFTStatePointer const& state) const;
 
