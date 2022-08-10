@@ -47,10 +47,10 @@ std::vector<ValueType> DFTModularizer::check(FormulaVector const &formulas, size
 std::vector<ValueType> DFTModularizer::getProbabilitiesAtTimepoints(std::vector<ValueType> const &timepoints, size_t const chunksize) {
     workDFT = dft;
 
-    auto topLevelElement{workDFT->getTopLevelElement()};
-    replaceDynamicModules(topLevelElement, timepoints);
+    replaceDynamicModules(workDFT->getTopLevelElement(), timepoints);
 
-    auto const subDFT{getSubDFT(topLevelElement)};
+    // Get toplevel element again, because it might have changed in the workDFT
+    auto const subDFT{getSubDFT(workDFT->getTopLevelElement())};
     storm::dft::modelchecker::SFTBDDChecker checker{subDFT, sylvanBddManager};
     return checker.getProbabilitiesAtTimepoints(timepoints, chunksize);
 }
