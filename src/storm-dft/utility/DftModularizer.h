@@ -51,7 +51,7 @@ class DftModularizer {
      * @param element DFT element.
      * @return List of descendants.
      */
-    static std::vector<DFTElementCPointer> getDecendants(DFTElementCPointer const element);
+    static std::vector<DFTElementCPointer> getDescendants(DFTElementCPointer const element);
 
     /*!
      * Counters for each DFT element.
