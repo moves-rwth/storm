@@ -57,11 +57,13 @@ bool DftValidator<ValueType>::isDftValidForMarkovianAnalysis(storm::dft::storage
     // TODO: comparing one element of each spare module sufficient?
     // We do not check overlap with the top module as this makes no difference (because we are using early claiming, early activation)
     for (auto module1 = spareModules.begin(); module1 != spareModules.end(); ++module1) {
-        if (!module1->empty()) {
+        auto const& module1Elements = module1->getElements();
+        if (!module1Elements.empty()) {
             // Empty modules are allowed for the primary module of a spare gate
-            size_t firstElement = *module1->begin();
+            size_t firstElement = *module1Elements.begin();
             for (auto module2 = std::next(module1); module2 != spareModules.end(); ++module2) {
-                if (std::find(module2->begin(), module2->end(), firstElement) != module2->end()) {
+                auto const& module2Elements = module2->getElements();
+                if (std::find(module2Elements.begin(), module2Elements.end(), firstElement) != module2Elements.end()) {
                     stream << "Spare modules of '" << dft.getElement(module1->getRepresentative())->name() << "' and '"
                            << dft.getElement(module2->getRepresentative())->name() << "' should not overlap.";
                     return false;
@@ -77,7 +79,7 @@ bool DftValidator<ValueType>::isDftValidForMarkovianAnalysis(storm::dft::storage
     }
     // 9. No constant failed events in primary module
     for (size_t primaryModuleId : primaryModuleIds) {
-        for (size_t elementId : dft.module(primaryModuleId)) {
+        for (size_t elementId : dft.module(primaryModuleId).getElements()) {
             if (dft.isBasicElement(elementId)) {
                 auto const& be = dft.getBasicElement(elementId);
                 if (be->beType() == storm::dft::storage::elements::BEType::CONSTANT) {

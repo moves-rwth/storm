@@ -67,7 +67,7 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
     }
     // Erase spare modules
     for (auto const& module : mModules) {
-        for (auto const& index : module.second) {
+        for (auto const& index : module.second.getElements()) {
             topModuleSet.erase(index);
         }
     }
@@ -77,10 +77,12 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
 
     // Clear all spare modules where at least one element is also in the top module.
     // These spare modules will be activated from the beginning.
-    if (!topModule.empty()) {
+    if (!topModule.getElements().empty()) {
+        size_t topModuleId = *topModule.getElements().begin();
         for (auto& module : mModules) {
             auto& spareModule = module.second;
-            if (std::find(spareModule.begin(), spareModule.end(), *topModule.begin()) != spareModule.end()) {
+            auto const& spareModuleElements = spareModule.getElements();
+            if (std::find(spareModuleElements.begin(), spareModuleElements.end(), topModuleId) != spareModuleElements.end()) {
                 STORM_LOG_WARN("Elements of spare module '"
                                << getElement(spareModule.getRepresentative())->name()
                                << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
@@ -140,14 +142,15 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
                     // Case 2: Triggering outside events
                     // If the SPARE was already detected to have dynamic behavior, do not proceed
                     if (!dynamicBehaviorVector[spare->id()]) {
-                        for (auto const& memberID : module(child->id())) {
+                        for (auto const& memberID : module(child->id()).getElements()) {
                             // Iterate over all members of the module child represents
                             auto member = getElement(memberID);
                             for (auto const& dep : member->outgoingDependencies()) {
                                 // If the member has outgoing dependencies, check if those trigger something outside the module
                                 for (auto const& depEvent : dep->dependentEvents()) {
                                     // If a dependent event is not found in the module, SPARE is dynamic
-                                    if (std::find(module(child->id()).begin(), module(child->id()).end(), depEvent->id()) == module(child->id()).end()) {
+                                    auto const& childModuleElements = module(child->id()).getElements();
+                                    if (std::find(childModuleElements.begin(), childModuleElements.end(), depEvent->id()) == childModuleElements.end()) {
                                         dynamicBehaviorVector[spare->id()] = true;
                                         break;  // depEvent-loop
                                     }

@@ -20,7 +20,7 @@ class DftModule {
     /*!
      * Constructor.
      * @param Id of representative, ie top element of the subtree.
-     * @param elements List of elements forming the module. Representative must be contained.
+     * @param elements List of element ids forming the module. Representative must be contained.
      */
     DftModule(size_t representative, std::vector<size_t> const& elements);
 
@@ -33,27 +33,11 @@ class DftModule {
     }
 
     /*!
-     * Begin iterator for elements.
-     * @return Iterator.
+     * Return elements of module.
+     * @return List of element ids.
      */
-    std::vector<size_t>::const_iterator begin() const {
-        return elements.begin();
-    }
-
-    /*!
-     * End iterator for elements.
-     * @return Ierator.
-     */
-    std::vector<size_t>::const_iterator end() const {
-        return elements.end();
-    }
-
-    /*!
-     * Check whether the module is empty.
-     * @return True iff no elements are contained.
-     */
-    bool empty() const {
-        return elements.empty();
+    std::vector<size_t> const& getElements() const {
+        return elements;
     }
 
     /*!
