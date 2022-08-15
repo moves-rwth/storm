@@ -7,27 +7,10 @@
 namespace storm::dft {
 namespace storage {
 
-DftModule::DftModule(size_t representative, std::vector<size_t> const& elements)
-    : representative(representative), elements(elements), staticModule(std::nullopt) {
+DftModule::DftModule(size_t representative, std::vector<size_t> const& elements) : representative(representative), elements(elements) {
     // Assertion cannot be guaranteed as spare module currently only contain the corresponding BEs and SPAREs
     // STORM_LOG_ASSERT(std::find(this->elements.begin(), this->elements.end(), representative) != this->elements.end(),
     //                 "Representative " + std::to_string(representative) + " must be contained in module.");
-}
-
-template<typename ValueType>
-void DftModule::setType(storm::dft::storage::DFT<ValueType> const& dft) {
-    staticModule = true;
-    for (auto id : elements) {
-        if (!dft.getElement(id)->isStaticElement()) {
-            staticModule = false;
-            return;
-        }
-    }
-}
-
-bool DftModule::isStaticModule() const {
-    STORM_LOG_ASSERT(staticModule.has_value(), "Type of module was not initialized.");
-    return staticModule.value();
 }
 
 template<typename ValueType>
@@ -47,13 +30,28 @@ std::string DftModule::toString(storm::dft::storage::DFT<ValueType> const& dft) 
     stream << "}";
     return stream.str();
 }
+DftIndependentModule::DftIndependentModule(size_t representative, std::vector<size_t> const& elements, bool isStatic)
+    : DftModule(representative, elements), staticModule(isStatic) {
+    STORM_LOG_ASSERT(std::find(this->elements.begin(), this->elements.end(), representative) != this->elements.end(),
+                     "Representative " + std::to_string(representative) + " must be contained in module.");
+}
+template<typename ValueType>
+void DftIndependentModule::computeType(storm::dft::storage::DFT<ValueType> const& dft) {
+    staticModule = true;
+    for (auto id : this->elements) {
+        if (!dft.getElement(id)->isStaticElement()) {
+            staticModule = false;
+            return;
+        }
+    }
+}
 
 // Explicitly instantiate functions
-template void DftModule::setType(storm::dft::storage::DFT<double> const&);
 template std::string DftModule::toString(storm::dft::storage::DFT<double> const&) const;
-
-template void DftModule::setType(storm::dft::storage::DFT<storm::RationalFunction> const&);
 template std::string DftModule::toString(storm::dft::storage::DFT<storm::RationalFunction> const&) const;
+
+template void DftIndependentModule::computeType(storm::dft::storage::DFT<double> const&);
+template void DftIndependentModule::computeType(storm::dft::storage::DFT<storm::RationalFunction> const&);
 
 }  // namespace storage
 }  // namespace storm::dft

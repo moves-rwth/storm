@@ -30,7 +30,7 @@ class DftModularizer {
      * @param dft DFT.
      * @return List of independent modules.
      */
-    std::vector<storm::dft::storage::DftModule> computeModules(storm::dft::storage::DFT<ValueType> const& dft);
+    std::vector<storm::dft::storage::DftIndependentModule> computeModules(storm::dft::storage::DFT<ValueType> const& dft);
 
    private:
     /*!
@@ -46,12 +46,26 @@ class DftModularizer {
     void populateElementInfos(DFTElementCPointer const element);
 
     /*!
-     * Return all descendants for an element.
-     * Descendants are the children + dependencies/restrictions affecting the element.
+     * Return all children for an element.
      * @param element DFT element.
-     * @return List of descendants.
+     * @return List of children.
      */
-    static std::vector<DFTElementCPointer> getDescendants(DFTElementCPointer const element);
+    static std::vector<DFTElementCPointer> getChildren(DFTElementCPointer const element);
+
+    /*!
+     * Return all restrictions and dependencies affecting the element.
+     * @param element DFT element.
+     * @return List of elements affecting the element.
+     */
+    static std::vector<DFTElementCPointer> getAffectingElements(DFTElementCPointer const element);
+
+    /*!
+     * Check whether the list contains the element.
+     * @param list List of elements.
+     * @param element Element to search for.
+     * @return True iff element is contained in list.
+     */
+    static bool containsElement(std::vector<DFTElementCPointer> const& list, DFTElementCPointer const element);
 
     /*!
      * Counters for each DFT element.

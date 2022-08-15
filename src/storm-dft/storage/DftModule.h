@@ -33,21 +33,6 @@ class DftModule {
     }
 
     /*!
-     * Returns whether the module is static.
-     * Requires a call to setType() to properly initialize.
-     * @return True iff the module contains no dynamic element.
-     */
-    bool isStaticModule() const;
-
-    /*!
-     * Compute the type of the module: static (only static elements) or dynamic (at least one dynamic element).
-     * Sets an internal variable which allows to use isDynamicModule() afterwards.
-     * @param dft DFT.
-     */
-    template<typename ValueType>
-    void setType(storm::dft::storage::DFT<ValueType> const& dft);
-
-    /*!
      * Begin iterator for elements.
      * @return Iterator.
      */
@@ -86,10 +71,42 @@ class DftModule {
     template<typename ValueType>
     std::string toString(storm::dft::storage::DFT<ValueType> const& dft) const;
 
-   private:
+   protected:
     size_t representative;
     std::vector<size_t> elements;
-    std::optional<bool> staticModule;
+};
+
+/**
+ * Represents an independent module/subtree.
+ */
+class DftIndependentModule : public DftModule {
+   public:
+    /*!
+     * Constructor.
+     * @param Id of representative, ie top element of the subtree.
+     * @param elements List of elements forming the module. Representative must be contained.
+     * @param isStatic Whether the independent module only contains static elements.
+     */
+    DftIndependentModule(size_t representative, std::vector<size_t> const& elements, bool isStatic);
+
+    /*!
+     * Returns whether the module is static.
+     * @return True iff the module contains no dynamic element.
+     */
+    bool isStaticModule() const {
+        return staticModule;
+    }
+
+    /*!
+     * Compute the type of the module: static (only static elements) or dynamic (at least one dynamic element).
+     * Sets an internal variable which allows to use isStaticModule() afterwards.
+     * @param dft DFT.
+     */
+    template<typename ValueType>
+    void computeType(storm::dft::storage::DFT<ValueType> const& dft);
+
+   private:
+    bool staticModule;
 };
 
 }  // namespace storage

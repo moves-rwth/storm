@@ -98,8 +98,8 @@ class DftModularizationChecker {
     // don't reinitialize Sylvan BDD
     // temporary
     std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager;
-    // Modules with their top element
-    std::map<ElementId, storm::dft::storage::DftModule> modules;
+    // Independent modules with their top element
+    std::map<ElementId, storm::dft::storage::DftIndependentModule> modules;
 };
 
 }  // namespace modelchecker

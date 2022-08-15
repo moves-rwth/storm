@@ -4,7 +4,7 @@ namespace storm::dft {
 namespace utility {
 
 template<typename ValueType>
-std::vector<storm::dft::storage::DftModule> DftModularizer<ValueType>::computeModules(storm::dft::storage::DFT<ValueType> const &dft) {
+std::vector<storm::dft::storage::DftIndependentModule> DftModularizer<ValueType>::computeModules(storm::dft::storage::DFT<ValueType> const &dft) {
     // Initialize data structures
     // dfsCounters/elementInfos must not be cleared because they are either not initialized or were cleared in a previous call of computeModules()
     for (auto const &id : dft.getAllIds()) {
@@ -20,13 +20,10 @@ std::vector<storm::dft::storage::DftModule> DftModularizer<ValueType>::computeMo
     populateElementInfos(dft.getTopLevelElement());
 
     // Create modules
-    std::vector<storm::dft::storage::DftModule> modules;
+    std::vector<storm::dft::storage::DftIndependentModule> modules;
     for (auto const &elementInfo : elementInfos) {
         if (elementInfo.second.isModule) {
-            storm::dft::storage::DftModule module(elementInfo.first, dft.getIndependentSubDftRoots(elementInfo.first));
-            module.setType(dft);
-            STORM_LOG_ASSERT(module.isStaticModule() == elementInfo.second.isStatic,
-                             "Computation of module type gave different results than module algorithm.");
+            storm::dft::storage::DftIndependentModule module(elementInfo.first, dft.getIndependentSubDftRoots(elementInfo.first), elementInfo.second.isStatic);
             modules.push_back(module);
         }
     }
@@ -48,12 +45,17 @@ void DftModularizer<ValueType>::populateDfsCounters(DFTElementCPointer const ele
         // as 0 can never be a valid firstVisit
         counter.firstVisit = lastDate;
 
-        // Continue recursively
-        for (auto const &descendant : getDescendants(element)) {
-            populateDfsCounters(descendant);
+        // Recursively visit children
+        for (auto const &child : getChildren(element)) {
+            populateDfsCounters(child);
         }
         ++lastDate;
         counter.secondVisit = lastDate;
+    }
+    if (counter.secondVisit == 0) {
+        // Will set lastDate before secondDate -> encountered cycle
+        STORM_LOG_WARN("Modularizer encountered a cycle containing the elemnt " << *element << ".");
+        // The algorithm still terminates as the children have not been visited again.
     }
     counter.lastVisit = lastDate;
 }
@@ -68,17 +70,19 @@ void DftModularizer<ValueType>::populateElementInfos(DFTElementCPointer const el
 
         // minFirstVisit <= secondVisit
         counter.minFirstVisit = counter.secondVisit;
-        for (auto const &descendant : getDescendants(element)) {
-            populateElementInfos(descendant);
+        // maxLastVisit >= firstVisit
+        counter.maxLastVisit = counter.firstVisit;
+        for (auto const &child : getChildren(element)) {
+            populateElementInfos(child);
 
-            auto const &descendantCounter{dfsCounters.at(descendant->id())};
-            auto const &descendantElementInfo{elementInfos.at(descendant->id())};
+            auto const &childCounter{dfsCounters.at(child->id())};
+            auto const &childElementInfo{elementInfos.at(child->id())};
 
-            counter.minFirstVisit = std::min({counter.minFirstVisit, descendantCounter.firstVisit, descendantCounter.minFirstVisit});
-            counter.maxLastVisit = std::max({counter.maxLastVisit, descendantCounter.lastVisit, descendantCounter.maxLastVisit});
+            counter.minFirstVisit = std::min({counter.minFirstVisit, childCounter.firstVisit, childCounter.minFirstVisit});
+            counter.maxLastVisit = std::max({counter.maxLastVisit, childCounter.lastVisit, childCounter.maxLastVisit});
 
             // propagate dynamic property
-            if (!descendantElementInfo.isStatic && !descendantElementInfo.isModule) {
+            if (!childElementInfo.isStatic && !childElementInfo.isModule) {
                 elementInfo.isStatic = false;
             }
         }
@@ -87,44 +91,83 @@ void DftModularizer<ValueType>::populateElementInfos(DFTElementCPointer const el
             elementInfo.isStatic = false;
         }
 
-        if (!element->isBasicElement() && counter.firstVisit < counter.minFirstVisit && counter.maxLastVisit < counter.secondVisit) {
-            elementInfo.isModule = true;
+        if (counter.firstVisit < counter.minFirstVisit && counter.maxLastVisit < counter.secondVisit) {
+            if (!element->isBasicElement()) {
+                // Consider only non-trivial modules
+                elementInfo.isModule = true;
+            }
         }
     }
 }
-
 template<typename ValueType>
-std::vector<typename DftModularizer<ValueType>::DFTElementCPointer> DftModularizer<ValueType>::getDescendants(DFTElementCPointer const element) {
-    std::vector<DFTElementCPointer> descendants{};
-
+std::vector<typename DftModularizer<ValueType>::DFTElementCPointer> DftModularizer<ValueType>::getChildren(DFTElementCPointer const element) {
+    std::vector<DFTElementCPointer> children{};
     if (element->isDependency()) {
         auto const dependency{std::static_pointer_cast<storm::dft::storage::elements::DFTDependency<ValueType> const>(element)};
-
         auto const triggerElement{std::static_pointer_cast<storm::dft::storage::elements::DFTElement<ValueType> const>(dependency->triggerEvent())};
-        descendants.push_back(triggerElement);
-
-        auto const &dependentEvents{dependency->dependentEvents()};
-        descendants.insert(descendants.end(), dependentEvents.begin(), dependentEvents.end());
-    } else if (element->nrChildren() > 0) {
+        children.push_back(triggerElement);
+        children.insert(children.end(), dependency->dependentEvents().begin(), dependency->dependentEvents().end());
+    } else if (element->isGate() || element->isRestriction()) {
         auto const parent{std::static_pointer_cast<storm::dft::storage::elements::DFTChildren<ValueType> const>(element)};
-        auto const &children = parent->children();
-        descendants.insert(descendants.end(), children.begin(), children.end());
+        children.insert(children.end(), parent->children().begin(), parent->children().end());
+    } else {
+        STORM_LOG_ASSERT(element->isBasicElement(), "Element " << *element << " has invalid type.");
     }
+
+    // For each child we also compute the dependencies/restrictions affecting each child
+    // These "affecting elements" also act as children of the given element
+    // That way, we model dependencies/restrictions affecting a child as having a dummy input to the given element
+    std::vector<DFTElementCPointer> affectingElements{};
+    for (auto const &child : children) {
+        if (child->isBasicElement()) {
+            // Add ingoing dependencies
+            auto const be{std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(child)};
+            for (auto const &ingoingDependency : be->ingoingDependencies()) {
+                if (ingoingDependency->id() != element->id() && !containsElement(affectingElements, ingoingDependency)) {
+                    affectingElements.push_back(ingoingDependency);
+                }
+            }
+        }
+
+        for (auto const &restriction : child->restrictions()) {
+            if (restriction->id() != element->id() && !containsElement(affectingElements, restriction)) {
+                affectingElements.push_back(restriction);
+            }
+        }
+
+        for (auto const &outgoingDependency : child->outgoingDependencies()) {
+            if (outgoingDependency->id() != element->id() && !containsElement(affectingElements, outgoingDependency)) {
+                affectingElements.push_back(outgoingDependency);
+            }
+        }
+    }
+
+    children.insert(children.end(), affectingElements.begin(), affectingElements.end());
+    return children;
+}
+
+template<typename ValueType>
+bool DftModularizer<ValueType>::containsElement(std::vector<DFTElementCPointer> const &list, DFTElementCPointer const element) {
+    return std::find_if(list.begin(), list.end(), [&element](auto const &elem) { return element->id() == elem->id(); }) != list.end();
+}
+
+template<typename ValueType>
+std::vector<typename DftModularizer<ValueType>::DFTElementCPointer> DftModularizer<ValueType>::getAffectingElements(DFTElementCPointer const element) {
+    std::vector<DFTElementCPointer> affectingElements{};
 
     if (element->isBasicElement()) {
         auto const be{std::static_pointer_cast<storm::dft::storage::elements::DFTBE<ValueType> const>(element)};
-
         auto const &dependencies{be->ingoingDependencies()};
-        descendants.insert(descendants.end(), dependencies.begin(), dependencies.end());
+        affectingElements.insert(affectingElements.end(), dependencies.begin(), dependencies.end());
     }
 
     auto const &restrictions{element->restrictions()};
-    descendants.insert(descendants.end(), restrictions.begin(), restrictions.end());
+    affectingElements.insert(affectingElements.end(), restrictions.begin(), restrictions.end());
 
     auto const &dependencies{element->outgoingDependencies()};
-    descendants.insert(descendants.end(), dependencies.begin(), dependencies.end());
+    affectingElements.insert(affectingElements.end(), dependencies.begin(), dependencies.end());
 
-    return descendants;
+    return affectingElements;
 }
 
 // Explicitly instantiate the class.
