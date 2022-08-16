@@ -1,11 +1,5 @@
 #include "storm/utility/solver.h"
 
-#include <vector>
-
-#include "storm/solver/SymbolicEliminationLinearEquationSolver.h"
-#include "storm/solver/SymbolicGameSolver.h"
-#include "storm/solver/SymbolicNativeLinearEquationSolver.h"
-
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/Z3LpSolver.h"
@@ -17,52 +11,13 @@
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/utility/NumberTraits.h"
 
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
-
 namespace storm {
 namespace utility {
 namespace solver {
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType>> LpSolverFactory<ValueType>::create(std::string const& name,
-                                                                                       storm::solver::LpSolverTypeSelection solvT) const {
-    storm::solver::LpSolverType t;
-    if (solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
-        t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
-        bool useExact =
-            storm::NumberTraits<ValueType>::IsExact || storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactFinitePrecisionSet();
-        if (useExact && t != storm::solver::LpSolverType::Z3 &&
-            storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
-            t = storm::solver::LpSolverType::Z3;
-        }
-    } else {
-        t = convert(solvT);
-    }
-    switch (t) {
-        case storm::solver::LpSolverType::Gurobi:
-            return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GurobiLpSolver<ValueType>(name));
-        case storm::solver::LpSolverType::Glpk:
-            return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GlpkLpSolver<ValueType>(name));
-        case storm::solver::LpSolverType::Z3:
-            return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::Z3LpSolver<ValueType>(name));
-    }
-    return nullptr;
-}
-
-template<typename ValueType>
-std::unique_ptr<storm::solver::LpSolver<ValueType>> LpSolverFactory<ValueType>::create(std::string const& name) const {
-    return LpSolverFactory<ValueType>::create(name, storm::solver::LpSolverTypeSelection::FROMSETTINGS);
-}
-
-template<typename ValueType>
-std::unique_ptr<LpSolverFactory<ValueType>> LpSolverFactory<ValueType>::clone() const {
-    return std::make_unique<LpSolverFactory<ValueType>>(*this);
-}
-
-template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> GlpkLpSolverFactory<ValueType>::create(std::string const& name) const {
-    return LpSolverFactory<ValueType>::create(name, storm::solver::LpSolverTypeSelection::Glpk);
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GlpkLpSolver<ValueType>(name));
 }
 
 template<typename ValueType>
@@ -71,8 +26,14 @@ std::unique_ptr<LpSolverFactory<ValueType>> GlpkLpSolverFactory<ValueType>::clon
 }
 
 template<typename ValueType>
+GurobiLpSolverFactory<ValueType>::GurobiLpSolverFactory() {
+    environment = std::make_shared<storm::solver::GurobiEnvironment>();
+    environment->initialize();
+}
+
+template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> GurobiLpSolverFactory<ValueType>::create(std::string const& name) const {
-    return LpSolverFactory<ValueType>::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::GurobiLpSolver<ValueType>(environment, name));
 }
 
 template<typename ValueType>
@@ -82,7 +43,7 @@ std::unique_ptr<LpSolverFactory<ValueType>> GurobiLpSolverFactory<ValueType>::cl
 
 template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> Z3LpSolverFactory<ValueType>::create(std::string const& name) const {
-    return LpSolverFactory<ValueType>::create(name, storm::solver::LpSolverTypeSelection::Z3);
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::Z3LpSolver<ValueType>(name));
 }
 
 template<typename ValueType>
@@ -91,9 +52,34 @@ std::unique_ptr<LpSolverFactory<ValueType>> Z3LpSolverFactory<ValueType>::clone(
 }
 
 template<typename ValueType>
+std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::solver::LpSolverTypeSelection solvType) {
+    storm::solver::LpSolverType t;
+    if (solvType == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
+        t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
+        bool useExact =
+            storm::NumberTraits<ValueType>::IsExact || storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactFinitePrecisionSet();
+        if (useExact && t != storm::solver::LpSolverType::Z3 &&
+            storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
+            t = storm::solver::LpSolverType::Z3;
+        }
+    } else {
+        t = convert(solvType);
+    }
+    switch (t) {
+        case storm::solver::LpSolverType::Gurobi:
+            return std::unique_ptr<LpSolverFactory<ValueType>>(new GurobiLpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Glpk:
+            return std::unique_ptr<LpSolverFactory<ValueType>>(new GlpkLpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Z3:
+            return std::unique_ptr<LpSolverFactory<ValueType>>(new Z3LpSolverFactory<ValueType>());
+    }
+    return nullptr;
+}
+
+template<typename ValueType>
 std::unique_ptr<storm::solver::LpSolver<ValueType>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType) {
-    std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory(new LpSolverFactory<ValueType>());
-    return factory->create(name, solvType);
+    std::unique_ptr<storm::utility::solver::LpSolverFactory<ValueType>> factory = getLpSolverFactory<ValueType>(solvType);
+    return factory->create(name);
 }
 
 std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {

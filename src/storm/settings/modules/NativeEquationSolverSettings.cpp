@@ -27,7 +27,7 @@ const std::string NativeEquationSolverSettings::intervalIterationSymmetricUpdate
 
 NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> methods = {"jacobi", "gaussseidel",           "sor", "walkerchae",
-                                        "power",  "sound-value-iteration", "svi", "optimistic-value-itearation",
+                                        "power",  "sound-value-iteration", "svi", "optimistic-value-iteration",
                                         "ovi",    "interval-iteration",    "ii",  "ratsearch"};
     this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true,
                                                    "The method to be used for solving linear equation systems with the native engine.")

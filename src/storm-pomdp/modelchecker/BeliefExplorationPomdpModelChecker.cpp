@@ -331,6 +331,7 @@ namespace storm {
                         };
 
                         std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = approx->getExploredMdp();
+                        std::vector<uint32_t> observations = approx->getObservationForMdpStates();
                         storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
                         auto nrPreprocessingScheds = min ? approx->getNrSchedulersForUpperBounds() : approx->getNrSchedulersForLowerBounds();
                         for(uint64_t i = 0; i < nrPreprocessingScheds; ++i){
@@ -344,6 +345,19 @@ namespace storm {
                             }
                         }
                         newLabeling.removeLabel("truncated");
+                        // TODO replace labels by exporting a map
+                        for(uint64_t i = 0; i < pomdp().getNrObservations(); ++i){
+                            newLabeling.addLabel("obs_" + std::to_string(i));
+                        }
+                        newLabeling.addLabel("no_obs");
+                        for(uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i){
+                            if (observations[i] <= pomdp().getNrObservations()) {
+                                newLabeling.addLabelToState("obs_" + std::to_string(observations[i]), i);
+                            } else {
+                                newLabeling.addLabelToState("no_obs", i);
+                            }
+                        }
+
                         storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling, scheduledModel->getRewardModels());
                         if(scheduledModel->hasChoiceLabeling()){
                             modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();

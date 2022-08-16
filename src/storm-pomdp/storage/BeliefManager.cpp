@@ -604,8 +604,7 @@ namespace storm {
             uint32_t obs = getBeliefObservation(belief);
             STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
             if(!lpSolver){
-                auto lpSolverFactory = storm::utility::solver::LpSolverFactory<BeliefValueType>();
-                lpSolver = lpSolverFactory.create("POMDP LP Solver");
+                lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>("POMDP LP Solver");
             } else {
                 lpSolver->pop();
             }
@@ -787,8 +786,7 @@ namespace storm {
                 return BeliefClipping{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
             }
             if(!lpSolver){
-                auto lpSolverFactory = storm::utility::solver::LpSolverFactory<BeliefValueType>();
-                lpSolver = lpSolverFactory.create("POMDP LP Solver");
+                lpSolver = storm::utility::solver::getLpSolver<BeliefValueType>("POMDP LP Solver");
             } else {
                 lpSolver->pop();
             }

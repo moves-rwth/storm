@@ -547,6 +547,8 @@ set(STORM_TARGETS "")
 add_subdirectory(src)
 
 export_option(STORM_HAVE_XERCES)
+export_option(STORM_HAVE_SPOT)
+export_option(STORM_HAVE_GUROBI)
 
 include(export)
 
