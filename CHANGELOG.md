@@ -8,18 +8,19 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.7.x
 -------------
 
-## Version 1.7.0 (2022/??)
+## Version 1.7.0 (2022/07)
 - Fixed a bug in LP-based MDP model checking.
 - DRN Parser is now more robust, e.g., it does no longer depend on tabs.
 - PRISM Parser: Modulo with negative numbers is now consistent with Prism.
-- Developer: Storm is now built in C++17 mode.
 - Added lexicographic multi-objective model checking. Use `--lex` in the command line interface when specifying a `multi(...)` property.
 - Fix handling duplicate entries in the sparse matrix builder.
+- Added support for step-bounded until formulas in LTL.
 - Added Dockerfile.
 - API: Applying a fully defined deterministic memoryless scheduler to an MDP yields a DTMC.
 - `storm-dft`: Use dedicated namespace `storm::dft`.
 - `storm-dft`: Added support (parsing, export, BDD analysis) for additional BE failure distributions (Erlang, log-normal, Weibull, constant probability).
 - `storm-dft`: Added instantiator for parametric DFT.
+- Developer: Storm is now built in C++17 mode.
 - Developer: Added support for automatic code formatting for `storm-dft`.
 
 Version 1.6.x
