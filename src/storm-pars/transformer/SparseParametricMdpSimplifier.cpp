@@ -145,7 +145,6 @@ namespace storm {
         bool SparseParametricMdpSimplifier<SparseModelType>::simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula, bool keepRewardsAsConstantAsPossible) {
             typename SparseModelType::RewardModelType const& originalRewardModel = formula.hasRewardModelName() ? this->originalModel.getRewardModel(formula.getRewardModelName()) : this->originalModel.getUniqueRewardModel();
 
-            STORM_LOG_ASSERT (!keepRewardsAsConstantAsPossible, "Forcing rewards to stay constant not implemented");
             bool minimizing = formula.hasOptimalityType() ? storm::solver::minimize(formula.getOptimalityType()) : storm::logic::isLowerBound(formula.getBound().comparisonType);
 
             // Get the prob1 and the maybeStates
@@ -206,7 +205,7 @@ namespace storm {
             if (mergerResult.sinkState) {
                 considerForElimination.set(*mergerResult.sinkState, false);
             }
-            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination, rewardModelNameAsVector.front());
+            this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination, rewardModelNameAsVector.front(), keepRewardsAsConstantAsPossible);
             
             // Eliminate the end components in which no reward is collected (only required if rewards are minimized)
             if (minimizing) {
