@@ -1,7 +1,7 @@
 #pragma once
 
+#include <set>
 #include <string>
-#include <vector>
 
 #include "storm/utility/macros.h"
 
@@ -20,9 +20,9 @@ class DftModule {
     /*!
      * Constructor.
      * @param Id of representative, ie top element of the subtree.
-     * @param elements List of element ids forming the module. Representative must be contained.
+     * @param elements Set of element ids forming the module.
      */
-    DftModule(size_t representative, std::vector<size_t> const& elements);
+    DftModule(size_t representative, std::set<size_t> const& elements);
 
     /*!
      * Get representative (top element of subtree).
@@ -34,9 +34,9 @@ class DftModule {
 
     /*!
      * Return elements of module.
-     * @return List of element ids.
+     * @return Set of element ids.
      */
-    std::vector<size_t> const& getElements() const {
+    std::set<size_t> const& getElements() const {
         return elements;
     }
 
@@ -57,7 +57,7 @@ class DftModule {
 
    protected:
     size_t representative;
-    std::vector<size_t> elements;
+    std::set<size_t> elements;
 };
 
 /**
@@ -66,31 +66,58 @@ class DftModule {
 class DftIndependentModule : public DftModule {
    public:
     /*!
-     * Constructor.
+     * Constructor. The elements within the module are a union of elements and the elements of submodules.
      * @param Id of representative, ie top element of the subtree.
-     * @param elements List of elements forming the module. Representative must be contained.
-     * @param isStatic Whether the independent module only contains static elements.
+     * @param elements Set of elements forming the module. Representative must be contained.
+     * @param submodules Set of sub-modules contained in the module.
+     * @param staticElements Whether the module contains only static elements. Dynamic elements in sub-modules are allowed.
+     * @param fullyStatic Whether the independent module contains only static static elements and all sub-modules also contain only static elements.
      */
-    DftIndependentModule(size_t representative, std::vector<size_t> const& elements, bool isStatic);
+    DftIndependentModule(size_t representative, std::set<size_t> const& elements, std::set<DftIndependentModule> const& submodules, bool staticElements,
+                         bool fullyStatic);
 
     /*!
-     * Returns whether the module is static.
+     * Returns whether the module contains only static elements (except in sub-modules).
+     * Dynamic elements in sub-modules are allowed.
      * @return True iff the module contains no dynamic element.
      */
-    bool isStaticModule() const {
-        return staticModule;
+    bool isStatic() const {
+        return staticElements;
     }
 
     /*!
-     * Compute the type of the module: static (only static elements) or dynamic (at least one dynamic element).
-     * Sets an internal variable which allows to use isStaticModule() afterwards.
+     * Returns whether the module contains only static elements (also in sub-modules).
+     * @return True iff the module contains no dynamic element at all.
+     */
+    bool isFullyStatic() const {
+        return fullyStatic;
+    }
+
+    /*!
+     * Returns sub-modules.
+     * @return Set of sub-modules.
+     */
+    std::set<DftIndependentModule> const& getSubModules() const {
+        return submodules;
+    }
+
+    /*!
+     * Get string representation of module.
      * @param dft DFT.
+     * @param indentation Whitespace indentation giving better layout for sub-modules.
+     * @return Module representative with list of elements and sub-modules in the module.
      */
     template<typename ValueType>
-    void computeType(storm::dft::storage::DFT<ValueType> const& dft);
+    std::string toString(storm::dft::storage::DFT<ValueType> const& dft, std::string const& indentation = "") const;
+
+    bool operator<(DftIndependentModule const& other) const {
+        return this->getRepresentative() < other.getRepresentative();
+    }
 
    private:
-    bool staticModule;
+    bool staticElements;
+    bool fullyStatic;
+    std::set<DftIndependentModule> submodules;
 };
 
 }  // namespace storage

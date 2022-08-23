@@ -28,22 +28,24 @@ class DftModularizer {
     /*!
      * Compute modules of DFT by applying the LTA/DR algorithm.
      * @param dft DFT.
-     * @return List of independent modules.
+     * @return Independent module of top-level element. All sub-modules are contained in this module.
      */
-    std::vector<storm::dft::storage::DftIndependentModule> computeModules(storm::dft::storage::DFT<ValueType> const& dft);
+    storm::dft::storage::DftIndependentModule computeModules(storm::dft::storage::DFT<ValueType> const& dft);
 
    private:
     /*!
      * Recursive function to perform first depth first search of the LTA/DR algorithm.
+     * The function populates dfsCounter.
      * @param element Current DFT element.
      */
     void populateDfsCounters(DFTElementCPointer const element);
 
     /*!
-     * Recursive function to perform second depth first search of the LTA/DR algorithm.
+     * Recursive function to obtain modularization information.
+     * The function performs a second depth first search of the LTA/DR algorithm and populates modInfos.
      * @param element Current DFT element.
      */
-    void populateElementInfos(DFTElementCPointer const element);
+    void obtainModules(DFTElementCPointer const element);
 
     /*!
      * Return all children for an element.
@@ -79,13 +81,16 @@ class DftModularizer {
         uint64_t minFirstVisit{0};
         uint64_t maxLastVisit{0};
     };
-    struct ElementInfo {
-        bool isModule{false};
-        bool isStatic{true};
+    struct ModularizationInfo {
+        bool isModule = false;
+        std::set<ElementId> elements;
+        std::set<storm::dft::storage::DftIndependentModule> submodules;
+        bool isStatic = true;
+        bool fullyStatic = true;
     };
 
     std::map<ElementId, DfsCounter> dfsCounters{};
-    std::map<ElementId, ElementInfo> elementInfos{};
+    std::map<ElementId, ModularizationInfo> modInfos{};
     uint64_t lastDate{};
 };
 

@@ -4,12 +4,12 @@ namespace storm::dft {
 namespace utility {
 
 template<typename ValueType>
-std::vector<storm::dft::storage::DftIndependentModule> DftModularizer<ValueType>::computeModules(storm::dft::storage::DFT<ValueType> const &dft) {
+storm::dft::storage::DftIndependentModule DftModularizer<ValueType>::computeModules(storm::dft::storage::DFT<ValueType> const &dft) {
     // Initialize data structures
     // dfsCounters/elementInfos must not be cleared because they are either not initialized or were cleared in a previous call of computeModules()
     for (auto const &id : dft.getAllIds()) {
         dfsCounters[id] = DfsCounter{};
-        elementInfos[id] = ElementInfo{};
+        modInfos[id] = ModularizationInfo{};
     }
     lastDate = 0;
 
@@ -17,22 +17,19 @@ std::vector<storm::dft::storage::DftIndependentModule> DftModularizer<ValueType>
     populateDfsCounters(dft.getTopLevelElement());
 
     // Second depth first search of the LTA/DR algorithm.
-    populateElementInfos(dft.getTopLevelElement());
-
-    // Create modules
-    std::vector<storm::dft::storage::DftIndependentModule> modules;
-    for (auto const &elementInfo : elementInfos) {
-        if (elementInfo.second.isModule) {
-            storm::dft::storage::DftIndependentModule module(elementInfo.first, dft.getIndependentSubDftRoots(elementInfo.first), elementInfo.second.isStatic);
-            modules.push_back(module);
-        }
-    }
+    obtainModules(dft.getTopLevelElement());
+    auto &topModInfo{modInfos.at(dft.getTopLevelElement()->id())};
+    STORM_LOG_ASSERT(topModInfo.isModule, "Top element should form module.");
+    STORM_LOG_ASSERT(topModInfo.elements.empty(), "Top module does not exist.");
+    STORM_LOG_ASSERT(topModInfo.submodules.size() == 1, "Top element should form unique module.");
+    // Get top module
+    storm::dft::storage::DftIndependentModule topModule = *topModInfo.submodules.begin();
 
     // Free some space
     dfsCounters.clear();
-    elementInfos.clear();
+    modInfos.clear();
 
-    return modules;
+    return topModule;
 }
 
 template<typename ValueType>
@@ -54,51 +51,64 @@ void DftModularizer<ValueType>::populateDfsCounters(DFTElementCPointer const ele
     }
     if (counter.secondVisit == 0) {
         // Will set lastDate before secondDate -> encountered cycle
-        STORM_LOG_WARN("Modularizer encountered a cycle containing the elemnt " << *element << ".");
+        STORM_LOG_WARN("Modularizer encountered a cycle containing the element " << *element << ".");
         // The algorithm still terminates as the children have not been visited again.
     }
     counter.lastVisit = lastDate;
 }
 
 template<typename ValueType>
-void DftModularizer<ValueType>::populateElementInfos(DFTElementCPointer const element) {
+void DftModularizer<ValueType>::obtainModules(DFTElementCPointer const element) {
     auto &counter{dfsCounters.at(element->id())};
-    auto &elementInfo{elementInfos.at(element->id())};
+    auto &modInfo{modInfos.at(element->id())};
 
     if (counter.minFirstVisit == 0) {
         // element was never visited before as min can never be 0
+        // Add current element
+        modInfo.elements.insert(element->id());
 
         // minFirstVisit <= secondVisit
         counter.minFirstVisit = counter.secondVisit;
         // maxLastVisit >= firstVisit
         counter.maxLastVisit = counter.firstVisit;
         for (auto const &child : getChildren(element)) {
-            populateElementInfos(child);
+            obtainModules(child);
 
+            // Set min/max visit times
             auto const &childCounter{dfsCounters.at(child->id())};
-            auto const &childElementInfo{elementInfos.at(child->id())};
-
             counter.minFirstVisit = std::min({counter.minFirstVisit, childCounter.firstVisit, childCounter.minFirstVisit});
             counter.maxLastVisit = std::max({counter.maxLastVisit, childCounter.lastVisit, childCounter.maxLastVisit});
 
-            // propagate dynamic property
-            if (!childElementInfo.isStatic && !childElementInfo.isModule) {
-                elementInfo.isStatic = false;
+            // Fill information
+            auto const &childInfo{modInfos.at(child->id())};
+            // Only insert elements and submodules once
+            modInfo.elements.insert(childInfo.elements.begin(), childInfo.elements.end());
+            modInfo.submodules.insert(childInfo.submodules.begin(), childInfo.submodules.end());
+            modInfo.fullyStatic = modInfo.fullyStatic && childInfo.fullyStatic;
+            if (!childInfo.isStatic && !childInfo.isModule) {
+                modInfo.isStatic = false;
             }
         }
 
         if (!element->isStaticElement()) {
-            elementInfo.isStatic = false;
+            modInfo.isStatic = false;
+            modInfo.fullyStatic = false;
         }
 
         if (counter.firstVisit < counter.minFirstVisit && counter.maxLastVisit < counter.secondVisit) {
             if (!element->isBasicElement()) {
                 // Consider only non-trivial modules
-                elementInfo.isModule = true;
+                // Create new module
+                storm::dft::storage::DftIndependentModule module(element->id(), modInfo.elements, modInfo.submodules, modInfo.isStatic, modInfo.fullyStatic);
+                // Update information
+                modInfo.elements = {};
+                modInfo.submodules = {module};
+                modInfo.isModule = true;
             }
         }
     }
 }
+
 template<typename ValueType>
 std::vector<typename DftModularizer<ValueType>::DFTElementCPointer> DftModularizer<ValueType>::getChildren(DFTElementCPointer const element) {
     std::vector<DFTElementCPointer> children{};

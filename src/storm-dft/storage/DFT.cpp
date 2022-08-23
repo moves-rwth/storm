@@ -42,10 +42,10 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
                                 "Child '" << spareReprs->name() << "' of spare '" << elem->name() << "' must be gate or BE.");
                 std::set<size_t> module = {spareReprs->id()};
                 spareReprs->extendSpareModule(module);
-                std::vector<size_t> sparesAndBes;
+                std::set<size_t> sparesAndBes;
                 for (size_t modelem : module) {
                     if (mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
-                        sparesAndBes.push_back(modelem);
+                        sparesAndBes.insert(modelem);
                         mRepresentants.insert(std::make_pair(modelem, spareReprs->id()));
                     }
                 }
@@ -73,7 +73,7 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
     }
     // Extend top module and insert those elements which are part of the top module and a spare module
     mElements[mTopLevelIndex]->extendSpareModule(topModuleSet);
-    storm::dft::storage::DftModule topModule(mTopLevelIndex, std::vector<size_t>(topModuleSet.begin(), topModuleSet.end()));
+    storm::dft::storage::DftModule topModule(mTopLevelIndex, topModuleSet);
 
     // Clear all spare modules where at least one element is also in the top module.
     // These spare modules will be activated from the beginning.
