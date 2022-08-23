@@ -82,6 +82,27 @@ namespace storm {
 
                 currentOption = 0;
             }
+            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+                bool first = true;
+                bool res = false;
+                std::vector<uint_fast64_t> successors;
+                for (auto& succs : this->stateMap[state]) {
+                    if (first) {
+                        for (auto succ : succs) {
+                            successors.push_back(succ);
+                        }
+                        first = false;
+                    } else {
+                        for (auto succ : succs) {
+                            if (std::find(successors.begin(), successors.end(), succ) == successors.end()) {
+                                res = false;
+                                successors.push_back(succ);
+                            }
+                        }
+                    }
+                }
+                stateMapAllSucc[state] = {res, std::move(successors)};
+            }
         }
 
         template <typename ValueType, typename ConstantType>
@@ -537,26 +558,15 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         std::pair<bool, std::vector<uint_fast64_t>&> OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, std::shared_ptr<Order> order) {
-            bool res = true;
             if (this->stateMap[state].size() == 1) {
                 assert (stateMap[state][0].size() > 0);
-                return {res, stateMap[state][0]};
+                return {true, stateMap[state][0]};
             }
             if (order->isActionSetAtState(state)) {
                 assert (stateMap[state][order->getActionAtState(state)].size() > 0);
-                return {res, stateMap[state][order->getActionAtState(state)]};
+                return {true, stateMap[state][order->getActionAtState(state)]};
             }
-            std::vector<uint_fast64_t> successors;
-            for (auto& succs : this->stateMap[state]) {
-                res &= succs.size() > 1;
-                for (auto succ : succs) {
-                    if (std::find(successors.begin(), successors.end(), succ) == successors.end()) {
-                        successors.push_back(succ);
-                    }
-                }
-            }
-            assert (successors.size() > 0);
-            return {res, successors};
+            return stateMapAllSucc[state];
         }
 
         template<typename ValueType, typename ConstantType>

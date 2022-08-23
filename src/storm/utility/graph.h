@@ -814,7 +814,10 @@ template<typename T>
 std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates = {});
 
 template<typename T>
-std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& firstStates);
+std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& firstStates = {});
+
+template<typename T>
+std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, storm::storage::SparseMatrix<T> const& originalMatrix, std::vector<uint_fast64_t> const& firstStates = {});
 
 }  // namespace graph
 }  // namespace utility

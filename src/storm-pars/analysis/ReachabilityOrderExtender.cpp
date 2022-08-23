@@ -26,6 +26,7 @@ namespace storm {
             while (currentStateMode.first != this->numberOfStates) {
                 STORM_LOG_ASSERT (currentStateMode.first < this->numberOfStates, "Unexpected state number");
                 auto& currentState = currentStateMode.first;
+                STORM_LOG_INFO("Currently considering state " << currentState << " from " << (currentStateMode.second ? "sortedStates" : "statesToHandle"));
                 while (order->isTopState(currentState) || order->isBottomState(currentState)) {
                     currentStateMode = this->getNextState(order, currentState, true);
                     currentState = currentStateMode.first;
@@ -187,7 +188,11 @@ namespace storm {
                 order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
             } else {
                 auto squareMatrix = this->matrix.getSquareMatrix();
-                auto statesSorted = storm::utility::graph::getTopologicalSort(squareMatrix.transpose(), firstStates);
+                auto statesSorted = storm::utility::graph::getBFSTopologicalSort(squareMatrix.transpose(), this->matrix, firstStates);
+                std::cout << "Sorting of states" << std::endl;
+                for (auto & state : statesSorted) {
+                    std::cout << state << std::endl;
+                }
                 order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
 
             }

@@ -139,6 +139,7 @@ namespace storm {
             /**
              * Returns a vector with the successors for this state.
              * If an action is set in the order, the successors for this action are returned, otherwise all possible successors are returned.
+             * The boolean is true if the action is set, or all actions have the same successors
              * @param state
              * @param order
              * @return
@@ -213,6 +214,9 @@ namespace storm {
             std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
             std::vector<std::set<VariableType>> occuringVariablesAtState;
             std::map<uint_fast64_t, std::vector<std::vector<uint_fast64_t>>> stateMap;
+
+            std::map<uint_fast64_t, std::pair<bool, std::vector<uint_fast64_t>>> stateMapAllSucc;
+
             boost::container::flat_set<uint_fast64_t> nonParametricStates;
 
             // To make assumptions

@@ -1815,36 +1815,91 @@ void topologicalSortHelper(storm::storage::SparseMatrix<T> const& matrix, uint64
 }
 
 template<typename T>
-std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& firstStates) {
-    storm::storage::BitVector seenStates(matrix.getRowGroupCount());
+std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates) {
+    storm::storage::BitVector seenStates(matrix.getRowGroupCount(), false);
 
-    std::vector<uint_fast64_t> stateQueue;
-    stateQueue.reserve(matrix.getRowGroupCount());
-    std::vector<uint_fast64_t> result;
-    result.reserve(matrix.getRowGroupCount());
-
-    //                storm::storage::sparse::state_type currentPosition = 0;
+    std::queue<uint_fast64_t> stateQueue;
+    std::vector<uint_fast64_t> result(matrix.getRowGroupCount(), matrix.getRowGroupCount());
+    // Add all states that are first on the list
     auto count = matrix.getRowGroupCount() - 1;
-    for (auto const& state : firstStates) {
-        stateQueue.push_back(state);
+    for (uint_fast64_t state : firstStates) {
+        stateQueue.push(state);
         result[count] = state;
+        seenStates.set(state, true);
         count--;
     }
 
     // Perform a BFS.
     while (!stateQueue.empty()) {
-        auto state = stateQueue.back();
-        stateQueue.pop_back();
-        seenStates.set(state);
+        auto state = stateQueue.front();
+        stateQueue.pop();
         for (auto const& successorEntry : matrix.getRowGroup(state)) {
-            auto succ = successorEntry.geColumn();
+            auto succ = successorEntry.getColumn();
             if (!seenStates[succ]) {
+                STORM_LOG_ASSERT (std::find(result.begin(), result.end(), succ) == result.end(), "state: " << succ << " already added");
                 result[count] = succ;
+                seenStates.set(succ, true);
                 count--;
-                stateQueue.insert(stateQueue.begin(), succ);
+                stateQueue.push(succ);
             }
         }
     }
+    STORM_LOG_ASSERT (std::find(result.begin(), result.end(), matrix.getRowGroupCount()) == result.end(), "Couldn't sort all states");
+
+    return result;
+}
+
+template<typename T>
+std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, storm::storage::SparseMatrix<T> const& originalMatrix, std::vector<uint64_t> const& firstStates) {
+    // first BFS on deterministic states, then topological on everything not yet sorted.
+    storm::storage::BitVector seenStates(matrix.getRowGroupCount(), false);
+    std::vector<uint_fast64_t> ignoredStates;
+
+    std::queue<uint_fast64_t> stateQueue;
+    std::vector<uint_fast64_t> result(matrix.getRowGroupCount(), matrix.getRowGroupCount());
+    // Add all states that are first on the list
+    auto count = matrix.getRowGroupCount() - 1;
+    for (uint_fast64_t state : firstStates) {
+        if (originalMatrix.getRowGroupSize(state) > 1) {
+            ignoredStates.push_back(state);
+        } else {
+            stateQueue.push(state);
+            result[count] = state;
+            seenStates.set(state, true);
+            count--;
+        }
+    }
+
+    // Perform a BFS.
+    while (!stateQueue.empty()) {
+        auto state = stateQueue.front();
+        stateQueue.pop();
+        for (auto const& successorEntry : matrix.getRowGroup(state)) {
+            auto succ = successorEntry.getColumn();
+            if (originalMatrix.getRowGroupSize(succ) > 1) {
+                ignoredStates.push_back(succ);
+            } else if (!seenStates[succ]) {
+                STORM_LOG_ASSERT(std::find(result.begin(), result.end(), succ) == result.end(), "state: " << succ << " already added");
+                result[count] = succ;
+                seenStates.set(succ, true);
+                count--;
+                stateQueue.push(succ);
+            }
+        }
+    }
+    auto sortedTopological = getTopologicalSort(matrix, ignoredStates);
+
+    for (auto i = 0; i < sortedTopological.size(); ++i) {
+        auto state = sortedTopological[i];
+        if (std::find(result.begin(), result.end(), state) == result.end()) {
+            result[count] = state;
+            count --;
+        }
+    }
+
+
+    STORM_LOG_ASSERT (std::find(result.begin(), result.end(), matrix.getRowGroupCount()) == result.end(), "Couldn't sort all states");
+
     return result;
 }
 
@@ -2019,6 +2074,8 @@ template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<doub
                                                boost::optional<storm::storage::BitVector> const& player1Candidates);
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix, std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<double> const& matrix, std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<double> const& matrix, storm::storage::SparseMatrix<double> const& originalMatrix, std::vector<uint64_t> const& firstStates);
 
 // Instantiations for storm::RationalNumber.
 #ifdef STORM_HAVE_CARL
@@ -2149,6 +2206,11 @@ template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<stor
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,
                                                        std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,
+                                                       std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,
+                                                          storm::storage::SparseMatrix<storm::RationalNumber> const& originalMatrix,
+                                                          std::vector<uint64_t> const& firstStates);
 // End of instantiations for storm::RationalNumber.
 
 template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix,
@@ -2254,6 +2316,11 @@ template std::pair<storm::storage::BitVector, storm::storage::BitVector> perform
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,
                                                        std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,
+                                                       std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,
+                                                          storm::storage::SparseMatrix<storm::RationalFunction> const& originalMatrix,
+                                                          std::vector<uint64_t> const& firstStates);
 #endif
 
 // Instantiations for CUDD.

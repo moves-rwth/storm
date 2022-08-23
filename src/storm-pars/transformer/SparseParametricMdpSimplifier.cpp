@@ -80,12 +80,12 @@ namespace storm {
                 considerForElimination.set(*mergerResult.sinkState, false);
             }
             this->simplifiedModel = this->eliminateConstantDeterministicStates(*this->simplifiedModel, considerForElimination);
-                        
+
             // Eliminate the end components that do not contain a target or a sink state (only required if the probability is maximized)
             if(!minimizing) {
                 this->simplifiedModel = this->eliminateNeutralEndComponents(*this->simplifiedModel, this->simplifiedModel->getStates(targetLabel) | this->simplifiedModel->getStates(sinkLabel));
             }
-            
+
             return true;
         }
         

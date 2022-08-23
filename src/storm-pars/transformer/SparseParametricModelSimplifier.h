@@ -38,7 +38,8 @@ namespace storm {
              * Note that simplify(formula) needs to be called first and has to return true. Otherwise an exception is thrown
              */
             std::shared_ptr<storm::logic::Formula const> getSimplifiedFormula() const;
-            
+            static std::shared_ptr<SparseModelType> removeDontCareNonDeterminism(SparseModelType const& model, boost::optional<std::string> const& rewardModelName = boost::none);
+
             
         protected:
             
@@ -60,7 +61,7 @@ namespace storm {
              * Labelings of eliminated states will be lost
              */
             static std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model,  storm::storage::BitVector const& consideredStates, boost::optional<std::string> const& rewardModelName = boost::none, bool keepRewardsAsConstantAsPossible = false);
-            
+
             SparseModelType const& originalModel;
             
             std::shared_ptr<SparseModelType> simplifiedModel;

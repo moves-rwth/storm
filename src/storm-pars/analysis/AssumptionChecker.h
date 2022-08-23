@@ -89,6 +89,8 @@ namespace storm {
 
             // Reward model of our model, ONLY to be initialized if we are checking a reward property
             std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel;
+
+            std::set<uint_fast64_t> getSuccessors(uint_fast64_t state, uint_fast64_t action) const;
         };
     }
 }

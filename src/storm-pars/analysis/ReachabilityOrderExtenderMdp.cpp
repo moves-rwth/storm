@@ -26,6 +26,13 @@ namespace storm {
                 STORM_LOG_INFO("Best action for state " << state << " is already set." << std::endl);
                 return true;
             }
+            if (this->stateMap[state].size() == 1){
+                // if we only have one possible action, we already know which one we take.
+                STORM_LOG_INFO("   Only one Action available, take it." << std::endl);
+                order->addToMdpScheduler(state, 0);
+                return true;
+
+            }
             if (order->isTopState(state)) {
                 // in this case the state should be absorbing so we just take action 0
                 STORM_LOG_INFO("   State is top state, thus absorbing. Take action 0." << std::endl);
@@ -38,18 +45,11 @@ namespace storm {
                 order->addToMdpScheduler(state, 0);
                 return true;
             }
-            if (this->stateMap[state].size() == 1){
-                // if we only have one possible action, we already know which one we take.
-                STORM_LOG_INFO("   Only one Action available, take it." << std::endl);
-                order->addToMdpScheduler(state, 0);
-                return true;
-
-            }
 
             // note that succs in this function mean potential succs
             uint64_t bestAct = this->matrix.getRowCount();
-            auto& successors = this->getSuccessors(state, order).second;
-            auto orderedSuccs = order->sortStates(successors);
+            auto successors = this->getSuccessors(state, order);
+            auto orderedSuccs = order->sortStates(successors.second);
             if (orderedSuccs.back() == this->numberOfStates){
                 STORM_LOG_WARN("    No best action found, as the successors could not be ordered.");
                 return false;
@@ -57,62 +57,43 @@ namespace storm {
             auto nrOfSuccs = orderedSuccs.size();
             if (prMax) {
                 STORM_LOG_INFO("   Interested in PrMax." << std::endl);
-                if (nrOfSuccs == 2) {
-                    uint64_t bestSucc = orderedSuccs[0];
-                    boost::optional<storm::RationalFunction> bestFunc;
+                // Check for the simple case
+                auto simpleCheckResult = simpleActionCheck(state, orderedSuccs);
+                if(simpleCheckResult.first == true) {
+                    bestAct = simpleCheckResult.second;
+                    STORM_LOG_INFO("Best action found");
+                } else {
+                    // else use SMT solver
+                    std::vector<uint64_t> candidates;
                     uint_fast64_t index = 0;
                     auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
                     while (index < numberOfOptionsForState) {
-                        auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + index);
-                        auto itr = row.begin();
-                        while (itr != row.end() && itr->getColumn() != bestSucc) {
-                            itr++;
+                        auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + index);
+                        bool in = true;
+                        for (uint_fast64_t i = 0; i < candidates.size(); i++){
+                            auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + candidates[i]);
+                            auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
+                            if(compRes == GEQ){
+                                candidates.erase(candidates.begin()+i);
+                            } else if (compRes == LEQ) {
+                                in = false;
+                                // TODO put break; here?
+                            }
                         }
-                        if (!bestFunc || (itr != row.end() && isFunctionGreaterEqual(itr->getValue(), bestFunc.get(), region))) {
-                            bestFunc = itr->getValue();
-                            bestAct = index;
+                        if (in) {
+                            candidates.push_back(index);
                         }
                         index++;
                     }
-                    STORM_LOG_INFO("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-                } else {
-                    // more than 2 succs
-                    // Check for the simple case
-                    auto simpleCheckResult = simpleActionCheck(state, orderedSuccs);
-                    if(simpleCheckResult.first == true) {
-                        bestAct = simpleCheckResult.second;
+                    if (candidates.size() == 1) {
+                        bestAct = candidates[0];
+                        STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                     } else {
-                        // else use SMT solver
-                        std::vector<uint64_t> candidates;
-                        uint_fast64_t index = 0;
-                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
-                        while (index < numberOfOptionsForState) {
-                            auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + index);
-                            bool in = true;
-                            for (uint_fast64_t i = 0; i < candidates.size(); i++){
-                                auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + candidates[i]);
-                                auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
-                                if(compRes == GEQ){
-                                    candidates.erase(candidates.begin()+i);
-                                } else if (compRes == LEQ) {
-                                    in = false;
-                                    // TODO put break; here?
-                                }
-                            }
-                            if (in) {
-                                candidates.push_back(index);
-                            }
-                            index++;
-                        }
-                        if (candidates.size() == 1) {
-                            bestAct = candidates[0];
-                            STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-                        } else {
-                            assert (false);
-                            STORM_LOG_WARN("No best action found. Take action 0 as default.");
-                        }
+                        assert (false);
+                        STORM_LOG_WARN("No best action found. Take action 0 as default.");
                     }
                 }
+//                }
             } else {
                 // We are interested in PrMin
                 STORM_LOG_INFO("   Interested in PrMin." << std::endl);
@@ -179,94 +160,11 @@ namespace storm {
             }
             if (bestAct != this->matrix.getRowCount()) {
                 order->addToMdpScheduler(state, bestAct);
+                STORM_LOG_INFO("Best action for state " << state << ": " << bestAct);
                 return true;
             }
             return false;
         }
-
-//        template <typename ValueType, typename ConstantType>
-//        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-//            STORM_LOG_ASSERT (order != nullptr, "Order should be provided");
-//            if (assumption != nullptr) {
-//                this->handleAssumption(order, assumption);
-//            }
-//
-//            auto currentStateMode = this->getNextState(order, this->numberOfStates, false);
-//            while (currentStateMode.first != this->numberOfStates) {
-//                STORM_LOG_ASSERT (currentStateMode.first < this->numberOfStates, "Unexpected state number");
-//                auto& currentState = currentStateMode.first;
-//                std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
-//                std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
-//
-//                order->toDotOutput();
-//                if (successors.size() == 1) {
-//                    STORM_LOG_ASSERT (order->contains(successors[0]), "Expecting order to contain successor of state " << currentState);
-//                    this->handleOneSuccessor(order, currentState, successors[0]);
-//                } else if (!successors.empty()) {
-//                    if (order->isOnlyInitialOrder()) {
-//                        order->add(currentState);
-//                        if (!order->isTrivial(currentState)) {
-//                            // This state is part of an scc, therefore, we could do forward reasoning here
-//                            result = this->extendByForwardReasoning(order, region, currentState);
-//                        } else {
-//                            result = {this->numberOfStates, this->numberOfStates};
-//                        }
-//                    } else {
-//                        result = this->extendNormal(order, region, currentState);
-//                    }
-//                }
-//
-//                if (result.first == this->numberOfStates) {
-//                    // We did extend the order
-//                    STORM_LOG_ASSERT (result.second == this->numberOfStates, "Expecting both parts of result to contain the number of states");
-//                    STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Something went wrong while sorting states, number of states differs");
-//                    STORM_LOG_ASSERT (order->contains(currentState) && order->getNode(currentState) != nullptr, "Expecting order to contain the current State");
-//
-//                    if (monRes != nullptr) {
-//                        for (auto& param : this->occuringVariablesAtState[currentState]) {
-//                            this->checkParOnStateMonRes(currentState, order, param, region, monRes);
-//                        }
-//                    }
-//                    // Get the next state
-//                    currentStateMode = this->getNextState(order, currentState, true);
-//                } else {
-//                    STORM_LOG_ASSERT (result.first < this->numberOfStates && result.second < this->numberOfStates, "Expecting both result numbers to correspond to states");
-//                    STORM_LOG_ASSERT (order->compare(result.first, result.second) == Order::UNKNOWN && order->compare(result.second, result.first) == Order::UNKNOWN, "Expecting relation between the two states to be unknown");
-//                    // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
-//                    if (currentStateMode.second && this->extendWithAssumption(order, region, result.first, result.second)) {
-//                        continue;
-//                    }
-//                    // We couldn't extend the order
-//                    if (this->nonParametricStates.find(currentState) != this->nonParametricStates.end()) {
-//                        if (!order->contains(currentState)) {
-//                            // State is not parametric, so we hope that just adding it between =) and =( will help us
-//                            order->add(currentState);
-//                        }
-//                        currentStateMode = this->getNextState(order, currentState, true);
-//                        continue;
-//                    } else {
-//                        if (!currentStateMode.second) {
-//                            // The state was based on statesToHandle, so it is not bad if we cannot continue with this.
-//                            currentStateMode = this->getNextState(order, currentState, false);
-//                            continue;
-//                        } else {
-//                            // The state was based on the topological sorting, so we need to return, but first add this state to the states Sorted as we are not done with it
-//                            order->addStateSorted(currentState);
-//                            this->continueExtending[order] = false;
-//                            return {order, result.first, result.second};
-//                        }
-//                    }
-//                }
-//                STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Expecting all successor states to be sorted");
-//            }
-//
-//            STORM_LOG_ASSERT (order->getDoneBuilding(), "Expecting to have a final order");
-//            if (monRes != nullptr) {
-//                // monotonicity result for the in-build checking of monotonicity
-//                monRes->setDone();
-//            }
-//            return std::make_tuple(order, this->numberOfStates, this->numberOfStates);
-//        }
 
         template<typename ValueType, typename ConstantType>
         bool ReachabilityOrderExtenderMdp<ValueType, ConstantType>::isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2, storage::ParameterRegion<ValueType> region) {

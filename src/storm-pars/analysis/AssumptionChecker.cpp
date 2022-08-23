@@ -196,6 +196,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolverTwoSucc(uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValues) const {
+            std::cout << "Checking: " << assumption->toExpression().toString() << std::endl;
             STORM_LOG_ASSERT (!order->isActionSetAtState(state1) || action1 == order->getActionAtState(state1), "Expecting action to either not be set, or to correspond to the action set in the order");
             STORM_LOG_ASSERT (!order->isActionSetAtState(state2) || action2 == order->getActionAtState(state2), "Expecting action to either not be set, or to correspond to the action set in the order");
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
@@ -244,18 +245,38 @@ namespace storm {
 
             // Add relation on successor states of state1
             expressions::Expression exprOrderSucc = manager->boolean(true);
-            for (auto itr = row1.begin(); itr != row1.end(); ++itr) {
-                for (auto itr2 = itr+1; itr2 != row1.end(); ++itr2) {
-                    auto comp = order->compare(itr->getColumn(), itr2->getColumn());
-                    if (comp == Order::NodeComparison::ABOVE) {
-                        exprOrderSucc = exprOrderSucc && manager->getVariable("s" + std::to_string(itr->getColumn())) > manager->getVariable("s"+ std::to_string(itr2->getColumn()));
+            auto successors = getSuccessors(state1, action1);
+            for (auto itr = successors.begin(); itr != successors.end(); ++itr) {
+                auto itr2 = itr;
+
+                while (itr2 != successors.end()) {
+                    auto varname1 = "s" + std::to_string(*itr2);
+                    if (!manager->hasVariable(varname1)) {
+                        if (order->isTopState(*itr2)) {
+                            topVariables.insert(manager->declareRationalVariable(varname1));
+                        } else if (order->isBottomState(*itr2)) {
+                            bottomVariables.insert(manager->declareRationalVariable(varname1));
+                        } else {
+                            stateVariables.insert(manager->declareRationalVariable(varname1));
+                        }
                     }
-                    if (comp == Order::NodeComparison::SAME) {
-                        exprOrderSucc = exprOrderSucc && manager->getVariable("s" + std::to_string(itr->getColumn())) >= manager->getVariable("s"+ std::to_string(itr2->getColumn())) && manager->getVariable("s" + std::to_string(itr->getColumn())) <= manager->getVariable("s"+ std::to_string(itr2->getColumn()));
+                    if (*itr != *itr2) {
+                        auto comp = order->compare(*itr, *itr2);
+                        if (comp == Order::NodeComparison::ABOVE) {
+                            exprOrderSucc =
+                                exprOrderSucc && manager->getVariable("s" + std::to_string(*itr)) > manager->getVariable("s" + std::to_string(*itr2));
+                        }
+                        if (comp == Order::NodeComparison::SAME) {
+                            exprOrderSucc = exprOrderSucc &&
+                                            manager->getVariable("s" + std::to_string(*itr)) >= manager->getVariable("s" + std::to_string(*itr2)) &&
+                                            manager->getVariable("s" + std::to_string(*itr)) <= manager->getVariable("s" + std::to_string(*itr2));
+                        }
+                        if (comp == Order::NodeComparison::BELOW) {
+                            exprOrderSucc =
+                                exprOrderSucc && manager->getVariable("s" + std::to_string(*itr2)) > manager->getVariable("s" + std::to_string(*itr));
+                        }
                     }
-                    if (comp == Order::NodeComparison::BELOW) {
-                        exprOrderSucc = exprOrderSucc && manager->getVariable("s"+ std::to_string(itr2->getColumn())) > manager->getVariable("s" + std::to_string(itr->getColumn()));
-                    }
+                    ++itr2;
                 }
             }
 
@@ -281,10 +302,42 @@ namespace storm {
                 expr1 = manager->rational(0);
                 expr2 = manager->rational(0);
             }
+            // We unroll it further if there is only one successor
+            expressions::Expression exprAdditional = manager->boolean(true);
+            std::set<uint_fast64_t> seenStates;
             for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
                 expr1 = expr1 + (valueTypeToExpression.toExpression(itr1->getValue()) *
                                  manager->getVariable("s" + std::to_string(itr1->getColumn())));
+                seenStates.insert(state1);
+                auto state = itr1->getColumn();
+                bool onlyOneSucc = matrix.getRowGroupSize(state) == 1 && matrix.getRow(state,0).getNumberOfEntries() == 1 && seenStates.find(state) == seenStates.end();
+                while (onlyOneSucc) {
+                    expressions::Expression newExpr;
+                    if (rewardModel != nullptr) {
+                        // We are dealing with a reward property
+                        if (rewardModel->hasStateActionRewards()) {
+                            newExpr = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(state));
+                        } else if (rewardModel->hasStateRewards()) {
+                            newExpr = valueTypeToExpression.toExpression(rewardModel->getStateReward(state));
+                        }
+                    } else {
+                        newExpr = manager->rational(0);
+                    }
+                    auto entry = matrix.getRow(state,0).begin();
+                    auto varSuccName = "s" + std::to_string(entry->getColumn());
+                    if (!manager->hasVariable(varSuccName)) {
+                        stateVariables.insert(manager->declareRationalVariable(varSuccName));
+                    }
+                    newExpr = newExpr + (valueTypeToExpression.toExpression(entry->getValue()) *
+                                         manager->getVariable(varSuccName));
+                    exprAdditional = exprAdditional && (manager->getVariable("s" +  std::to_string(state)) == newExpr);
+                    seenStates.insert(state);
+                    state = entry->getColumn();
+                    onlyOneSucc = matrix.getRowGroupSize(state) == 1 && matrix.getRow(state,0).getNumberOfEntries() == 1 && seenStates.find(state) == seenStates.end();
+                }
             }
+
+            expr2 = expr2 + manager->getVariable("s" + var2);
 
             // --------------------------------------------------------------------------------
             // Expression for the bounds on the variables
@@ -329,6 +382,11 @@ namespace storm {
             solver::Z3SmtSolver s(*manager);
             s.add(exprOrderSucc);
             s.add(exprBounds);
+            s.add(exprAdditional);
+            std::cout << "exprOrderSucc: " << exprOrderSucc << std::endl;
+            std::cout << "exprBounds: " << exprBounds << std::endl;
+            std::cout << "exprAdditional: " << exprAdditional << std::endl;
+
             s.setTimeout(100);
             // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
             // when this is not the case, the order is invalid
@@ -353,13 +411,36 @@ namespace storm {
                 exprToCheck = expr1 != expr2;
             }
             s.add(exprToCheck);
+            std::cout << "exprToCheck: " << exprToCheck << std::endl;
+
             auto smtRes = s.check();
             if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
                 // If there is no thing satisfying the negation we are safe.
+                std::cout << "assumption is valid" << std::endl << std::endl;
                 return AssumptionStatus::VALID;
             }
             return result;
         }
+
+        template <typename ValueType, typename ConstantType>
+        std::set<uint_fast64_t> AssumptionChecker<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, uint_fast64_t action) const {
+            auto row1 = matrix.getRow(state, action);
+            std::set<uint_fast64_t> result;
+            for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
+                auto succ = itr1->getColumn();
+                result.insert(succ);
+                bool onlyOneSucc = matrix.getRowGroupSize(succ) == 1 && matrix.getRow(succ,0).getNumberOfEntries() == 1;
+                while (onlyOneSucc) {
+                    auto entry = matrix.getRow(succ,0).begin();
+                    result.insert(succ);
+                    onlyOneSucc = matrix.getRowGroupSize(succ) == 1 && matrix.getRow(succ,0).getNumberOfEntries() == 1 ;
+                    succ = entry->getColumn();
+                    onlyOneSucc = onlyOneSucc && result.find(succ) == result.end();
+                }
+            }
+            return result;
+        }
+
 
         template <typename ValueType, typename ConstantType>
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValues) const {
@@ -398,12 +479,12 @@ namespace storm {
             // Expression for the successors of our state
             // --------------------------------------------------------------------------------
             auto exprOrderSucc = manager->boolean(true);
-            for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
-                auto varname1 = "s" + std::to_string(itr1->getColumn());
+            for (auto succ1 : getSuccessors(state1, action1)) {
+                auto varname1 = "s" + std::to_string(succ1);
                 if (!manager->hasVariable(varname1) ) {
-                    if (order->isTopState(itr1->getColumn())) {
+                    if (order->isTopState(succ1)) {
                         topVariables.insert(manager->declareRationalVariable(varname1));
-                    } else if (order->isBottomState(itr1->getColumn())) {
+                    } else if (order->isBottomState(succ1)) {
                         bottomVariables.insert(manager->declareRationalVariable(varname1));
                     } else {
                         stateVariables.insert(manager->declareRationalVariable(varname1));
@@ -411,46 +492,46 @@ namespace storm {
                 }
 
                 // Check whether we need to add var2 = ... to the expressions.
-                addVar2 |= std::to_string(itr1->getColumn()) == var2;
+                addVar2 |= std::to_string(succ1) == var2;
 
-                for (auto itr2 = row2.begin(); itr2 != row2.end(); ++itr2) {
+                for (auto succ2 : getSuccessors(state2, action2)) {
                     // Check whether we need to add var1 = ... to the expressions.
-                    addVar1 |= std::to_string(itr2->getColumn()) == var1;
-                    // if itr1->getColumn() == itr2->getColumn() we don't need to check for comparison, as this will be SAME
-                    if (itr1->getColumn() != itr2->getColumn()) {
-                        auto varname2 = "s" + std::to_string(itr2->getColumn());
+                    addVar1 |= std::to_string(succ2) == var1;
+                    // if itr1->getColumn() == succ2 we don't need to check for comparison, as this will be SAME
+                    if (succ1 != succ2) {
+                        auto varname2 = "s" + std::to_string(succ2);
                         if (!manager->hasVariable(varname2)) {
-                            if (order->isTopState(itr2->getColumn())) {
+                            if (order->isTopState(succ2)) {
                                 topVariables.insert(manager->declareRationalVariable(varname2));
-                            } else if (order->isBottomState(itr2->getColumn())) {
+                            } else if (order->isBottomState(succ2)) {
                                 bottomVariables.insert(manager->declareRationalVariable(varname2));
                             } else {
                                 stateVariables.insert(manager->declareRationalVariable(varname2));
                             }
                         }
 
-                        auto comp = order->compare(itr1->getColumn(), itr2->getColumn());
+                        auto comp = order->compare(succ1, succ2);
                         if (minValues.size() > 0 && comp == Order::NodeComparison::UNKNOWN) {
                             // Couldn't add relation between varname1 and varname2 but maybe we can based on min/max values;
-                            if (minValues[itr2->getColumn()] > maxValues[itr1->getColumn()]) {
-                                if (!order->contains(itr1->getColumn())) {
-                                    order->add(itr1->getColumn());
+                            if (minValues[succ2] > maxValues[succ1]) {
+                                if (!order->contains(succ1)) {
+                                    order->add(succ1);
                                 }
-                                if (!order->contains(itr2->getColumn())) {
-                                    order->add(itr2->getColumn());
+                                if (!order->contains(succ2)) {
+                                    order->add(succ2);
                                 }
-                                order->addRelation(itr2->getColumn(), itr1->getColumn());
+                                order->addRelation(succ2, succ1);
                                 comp = Order::NodeComparison::BELOW;
-                            } else if (minValues[itr1->getColumn()] > maxValues[itr2->getColumn()]) {
-                                if (!order->contains(itr1->getColumn())) {
-                                    order->add(itr1->getColumn());
-//                                    order->addStateToHandle(itr1->getColumn());
+                            } else if (minValues[succ1] > maxValues[succ2]) {
+                                if (!order->contains(succ1)) {
+                                    order->add(succ1);
+//                                    order->addStateToHandle(succ1);
                                 }
-                                if (!order->contains(itr2->getColumn())) {
-                                    order->add(itr2->getColumn());
-//                                    order->addStateToHandle(itr2->getColumn());
+                                if (!order->contains(succ2)) {
+                                    order->add(succ2);
+//                                    order->addStateToHandle(succ2);
                                 }
-                                order->addRelation(itr1->getColumn(), itr2->getColumn());
+                                order->addRelation(succ1, succ2);
                                 comp = Order::NodeComparison::ABOVE;
                             }
                         }
@@ -491,14 +572,71 @@ namespace storm {
                 expr1 = manager->rational(0);
                 expr2 = manager->rational(0);
             }
+            // We unroll it further if there is only one successor
+            expressions::Expression exprAdditional = manager->boolean(true);
+            std::set<uint_fast64_t> seenStates;
             for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
                 expr1 = expr1 + (valueTypeToExpression.toExpression(itr1->getValue()) *
                                  manager->getVariable("s" + std::to_string(itr1->getColumn())));
+                seenStates.insert(state1);
+                auto state = itr1->getColumn();
+                bool onlyOneSucc = matrix.getRowGroupSize(state) == 1 && matrix.getRow(state,0).getNumberOfEntries() == 1 && seenStates.find(state) == seenStates.end();
+                while (onlyOneSucc) {
+                    expressions::Expression newExpr;
+                    if (rewardModel != nullptr) {
+                        // We are dealing with a reward property
+                        if (rewardModel->hasStateActionRewards()) {
+                            newExpr = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(state));
+                        } else if (rewardModel->hasStateRewards()) {
+                            newExpr = valueTypeToExpression.toExpression(rewardModel->getStateReward(state));
+                        }
+                    } else {
+                        newExpr = manager->rational(0);
+                    }
+                    auto entry = matrix.getRow(state,0).begin();
+                    auto varSuccName = "s" + std::to_string(entry->getColumn());
+                    if (!manager->hasVariable(varSuccName)) {
+                        stateVariables.insert(manager->declareRationalVariable(varSuccName));
+                    }
+                    newExpr = newExpr + (valueTypeToExpression.toExpression(entry->getValue()) *
+                                          manager->getVariable(varSuccName));
+                    exprAdditional = exprAdditional && (manager->getVariable("s" +  std::to_string(state)) == newExpr);
+                    seenStates.insert(state);
+                    state = entry->getColumn();
+                    onlyOneSucc = matrix.getRowGroupSize(state) == 1 && matrix.getRow(state,0).getNumberOfEntries() == 1 && seenStates.find(state) == seenStates.end();
+                }
             }
 
             for (auto itr2 = row2.begin(); itr2 != row2.end(); ++itr2) {
                 expr2 = expr2 + (valueTypeToExpression.toExpression(itr2->getValue()) *
                                  manager->getVariable("s" + std::to_string(itr2->getColumn())));
+                auto state = itr2->getColumn();
+                seenStates.insert(state2);
+                bool onlyOneSucc = matrix.getRowGroupSize(state) == 1 && matrix.getRow(state,0).getNumberOfEntries() == 1 && seenStates.find(state) == seenStates.end();
+                while (onlyOneSucc) {
+                    expressions::Expression newExpr;
+                    if (rewardModel != nullptr) {
+                        // We are dealing with a reward property
+                        if (rewardModel->hasStateActionRewards()) {
+                            newExpr = valueTypeToExpression.toExpression(rewardModel->getStateActionReward(state));
+                        } else if (rewardModel->hasStateRewards()) {
+                            newExpr = valueTypeToExpression.toExpression(rewardModel->getStateReward(state));
+                        }
+                    } else {
+                        newExpr = manager->rational(0);
+                    }
+                    auto entry = matrix.getRow(state,0).begin();
+                    auto varSuccName = "s" + std::to_string(entry->getColumn());
+                    if (!manager->hasVariable(varSuccName)) {
+                        stateVariables.insert(manager->declareRationalVariable(varSuccName));
+                    }
+                    newExpr = newExpr + (valueTypeToExpression.toExpression(entry->getValue()) *
+                                         manager->getVariable(varSuccName));
+                    exprAdditional = exprAdditional && (manager->getVariable("s" +  std::to_string(state)) == newExpr);
+                    seenStates.insert(state);
+                    state = entry->getColumn();
+                    onlyOneSucc = matrix.getRowGroupSize(state) == 1 && matrix.getRow(state,0).getNumberOfEntries() == 1 && seenStates.find(state) == seenStates.end();
+                }
             }
 
             // --------------------------------------------------------------------------------
@@ -549,8 +687,12 @@ namespace storm {
             // Check if the order of the successors + the bounds is satisfiable
             // --------------------------------------------------------------------------------
             solver::Z3SmtSolver s(*manager);
+            std::cout << "ExprOrderSucc: " << exprOrderSucc << std::endl;
+            std::cout << "exprBounds: " << exprBounds << std::endl;
+            std::cout << "exprAdditional: " << exprAdditional << std::endl;
             s.add(exprOrderSucc);
             s.add(exprBounds);
+            s.add(exprAdditional);
             s.setTimeout(1000);
             // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
             // when this is not the case, the order is invalid
@@ -569,6 +711,7 @@ namespace storm {
             } else {
                 exprToCheck = expr1 != expr2;
             }
+            std::cout << "exprToCheckk: " << exprToCheck << std::endl;
             s.add(exprToCheck);
             solver::SmtSolver::CheckResult smtRes = s.check();
 

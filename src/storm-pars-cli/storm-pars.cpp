@@ -285,6 +285,32 @@ namespace storm {
         }
 
         template <typename ValueType>
+        std::shared_ptr<storm::models::ModelBase> removeDontCareChoices(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, bool keepRewardsAsConstantAsPossible = false) {
+            storm::utility::Stopwatch simplifyingWatch(true);
+            std::shared_ptr<storm::models::ModelBase> result;
+            if (model->isOfType(storm::models::ModelType::Dtmc)) {
+               result = model;
+            } else if (model->isOfType(storm::models::ModelType::Mdp)) {
+                storm::transformer::SparseParametricMdpSimplifier<storm::models::sparse::Mdp<ValueType>> simplifier(*(model->template as<storm::models::sparse::Mdp<ValueType>>()));
+                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
+                boost::optional<std::string> rewardModelName = boost::none;
+
+                if (formulas[0]->isRewardOperatorFormula()) {
+                    auto formula = formulas[0]->asRewardOperatorFormula();
+                    rewardModelName = formula.hasRewardModelName() ? formula.getRewardModelName() : model->getUniqueRewardModelName();
+                }
+                result = simplifier.removeDontCareNonDeterminism(*(model->template as<storm::models::sparse::Mdp<ValueType>>()), rewardModelName);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform monotonicity analysis on the provided model type.");
+            }
+
+            simplifyingWatch.stop();
+            STORM_PRINT("\nTime for model simplification: " << simplifyingWatch << ".\n\n");
+            result->printModelInformationToStream(std::cout);
+            return result;
+        }
+
+        template <typename ValueType>
         PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, storm::cli::ModelProcessingInformation const& mpi) {
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
@@ -307,6 +333,16 @@ namespace storm {
             if (mpi.applyBisimulation) {
                 result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
                 result.changed = true;
+            }
+
+            if (monSettings.isMonotonicityAnalysisSet() || parametricSettings.isUseMonotonicitySet() || derSettings.isFeasibleInstantiationSearchSet() || derSettings.getDerivativeAtInstantiation()) {
+                STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidSettingsException, "When computing monotonicity, a property has to be specified");
+                result.model = storm::pars::removeDontCareChoices<ValueType>(result.model, input,  (monSettings.isMonotonicityAnalysisSet() || parametricSettings.isUseMonotonicitySet()) && input.properties.begin()->getRawFormula()->isRewardOperatorFormula());
+                result.changed = true;
+                if (mpi.applyBisimulation) {
+                    result.model = storm::cli::preprocessSparseModelBisimulation(result.model->template as<storm::models::sparse::Model<ValueType>>(), input, bisimulationSettings);
+                    result.changed = true;
+                }
             }
 
             if (transformationSettings.isChainEliminationSet() &&
