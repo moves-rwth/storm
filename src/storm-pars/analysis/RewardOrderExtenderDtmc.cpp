@@ -192,7 +192,7 @@ namespace storm {
             storm::storage::BitVector subStates (this->bottomStates->size(), true);
 
             for (auto state : (this->bottomStates.get())) {
-                firstStates.push_back(state);
+                firstStates.push_back(state);f
                 subStates.set(state, false);
             }
 

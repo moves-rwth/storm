@@ -376,6 +376,7 @@ namespace storm {
              * @param state
              */
             void addStateToHandle(uint_fast64_t state);
+            void addSpecialStateToHandle(uint_fast64_t state);
 
             /*!
              * TODO ??
@@ -442,6 +443,7 @@ namespace storm {
 
             bool isActionSetAtState(uint_fast64_t state) const;
             bool isSufficientForState(uint_fast64_t state) const;
+            bool isDoneForState(uint_fast64_t state) const;
 
             bool isOptimistic() const;
 
@@ -546,6 +548,7 @@ namespace storm {
             storm::storage::BitVector trivialStates;
             // States for Forward Reasoning
             std::vector<uint_fast64_t> statesToHandle;
+            std::vector<uint_fast64_t> specialStatesToHandle;
 
             boost::optional<std::vector<uint64_t>> mdpScheduler;
             bool changed;

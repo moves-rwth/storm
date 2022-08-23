@@ -24,6 +24,7 @@ namespace storm {
             this->formula = formula;
             this->bottomStates = boost::none;
             this->topStates = boost::none;
+
         }
 
         template <typename ValueType, typename ConstantType>
@@ -44,6 +45,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::buildStateMap() {
+            this->dependentStates = std::vector<std::set<uint_fast64_t>>(numberOfStates, std::set<uint_fast64_t>());
             // Build stateMap
             auto rowCount = 0;
             auto currentOption = 0;
@@ -522,9 +524,16 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, bool> OrderExtender<ValueType, ConstantType>::getNextState(std::shared_ptr<Order> order, uint_fast64_t currentState, bool done) {
-            if (done && currentState != numberOfStates) {
+            if (done) {
+                assert (currentState != numberOfStates);
                 order->setSufficientForState(currentState);
                 order->setDoneForState(currentState);
+                for (auto& state : this->dependentStates[currentState]) {
+                    // only non-deterministic, non-parametric states can occur in here
+                    order->addSpecialStateToHandle(state);
+                    order->setSufficientForState(state);
+                    order->setDoneForState(state);
+                }
             }
             if (order->existsStateToHandle()) {
                 return order->getStateToHandle();

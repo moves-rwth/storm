@@ -223,13 +223,12 @@ namespace storm {
             AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
             std::vector<uint_fast64_t> statesToHandleInitially;
 
+            std::vector<std::set<uint_fast64_t>> dependentStates;
 
-
-        private:
+           private:
             MonotonicityChecker<ValueType> monotonicityChecker;
             bool useAssumptions;
             ConstantType error = storm::utility::convertNumber<ConstantType>(0.000001);
-
         };
     }
 }

@@ -89,7 +89,17 @@ namespace storm {
                             // State is not parametric, so we hope that just adding it between =) and =( will help us
                             order->add(currentState);
                         }
-                        currentStateMode = this->getNextState(order, currentState, true);
+                        if (this->matrix.getRowGroupSize(currentState) > 1) {
+                            // State is non-deterministic
+                            // If one of the successors is not yet in the order, we add it to a waitinglist and see if we can handle it as soon as we are done for the successor
+                            for (auto& succ : this->getSuccessors(currentState, order).second) {
+                                if (!order->isSufficientForState(succ)) {
+                                    this->dependentStates[succ].insert(currentState);
+                                }
+                            }
+                        }
+                        currentStateMode = this->getNextState(order, currentState, false);
+
                         continue;
                     } else {
                         if (!currentStateMode.second) {

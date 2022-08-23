@@ -567,6 +567,7 @@ namespace storm {
             copiedOrder->numberOfStates = this->getNumberOfStates();
             copiedOrder->statesSorted = std::vector<uint_fast64_t>(this->statesSorted);
             copiedOrder->statesToHandle = std::vector<uint_fast64_t>(this->statesToHandle);
+            copiedOrder->specialStatesToHandle = std::vector<uint_fast64_t>(this->specialStatesToHandle);
             copiedOrder->trivialStates = storm::storage::BitVector(trivialStates);
             copiedOrder->sufficientForState = storm::storage::BitVector(sufficientForState);
             copiedOrder->doneForState = storm::storage::BitVector(doneForState);
@@ -823,6 +824,11 @@ namespace storm {
         }
 
         std::pair<uint_fast64_t, bool> Order::getStateToHandle() {
+            if (!specialStatesToHandle.empty()) {
+                auto state = specialStatesToHandle.back();
+                specialStatesToHandle.pop_back();
+                return {state, false};
+            }
             while (!statesToHandle.empty()) {
                 auto state = statesToHandle.back();
                 statesToHandle.pop_back();
@@ -834,6 +840,9 @@ namespace storm {
         }
 
         bool Order::existsStateToHandle() {
+            if (!specialStatesToHandle.empty()) {
+                return true;
+            }
             while (!statesToHandle.empty() && contains(statesToHandle.back()) && sufficientForState[statesToHandle.back()]) {
                 statesToHandle.pop_back();
             }
@@ -845,6 +854,11 @@ namespace storm {
             if (!sufficientForState[state]) {
                 statesToHandle.push_back(state);
             }
+        }
+
+        void Order::addSpecialStateToHandle(uint_fast64_t state) {
+            STORM_LOG_INFO("Adding " << state << " to special states to handle");
+            specialStatesToHandle.push_back(state);
         }
 
         void Order::addStateSorted(uint_fast64_t state) {
@@ -895,6 +909,10 @@ namespace storm {
 
         bool Order::isSufficientForState(uint_fast64_t state) const {
             return sufficientForState[state];
+        }
+
+        bool Order::isDoneForState(uint_fast64_t stateNumber) const {
+            return doneForState[stateNumber];
         }
 
         bool Order::isOptimistic() const {
