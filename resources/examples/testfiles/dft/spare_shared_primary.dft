@@ -1,0 +1,7 @@
+toplevel "A";
+"A" and "S1" "S2";
+"S1" spare "B" "C";
+"S2" spare "B" "D";
+"B" lambda=1 dorm=1;
+"C" lambda=1 dorm=1;
+"D" lambda=1 dorm=1;
