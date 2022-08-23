@@ -284,8 +284,6 @@ namespace storm {
                     if (order->contains(state2)) {
                         STORM_LOG_INFO("Merging state " << state1 << " and " << state2 << " based on min max values");
                         order->merge(state1, state2);
-                        STORM_LOG_THROW(!order->isInvalid(), storm::exceptions::UnexpectedException,
-                                        "Extending the order yields an invalid order, please contact the developers");
                     } else {
                         STORM_LOG_INFO("Adding state " << state2 << " to " << state1 << " based on min max values");
 

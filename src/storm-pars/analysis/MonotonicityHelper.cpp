@@ -214,11 +214,6 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
-            if (order->isInvalid()) {
-                // We don't add anything as the order we created with assumptions turns out to be invalid
-                STORM_LOG_INFO("    The order was invalid, so we stop here");
-                return;
-            }
             auto numberOfStates = model->getNumberOfStates();
             if (val1 == numberOfStates || val2 == numberOfStates) {
                 assert (val1 == val2);

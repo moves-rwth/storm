@@ -192,7 +192,7 @@ namespace storm {
             storm::storage::BitVector subStates (this->bottomStates->size(), true);
 
             for (auto state : (this->bottomStates.get())) {
-                firstStates.push_back(state);f
+                firstStates.push_back(state);
                 subStates.set(state, false);
             }
 
@@ -479,7 +479,7 @@ namespace storm {
             }
 
             auto currentStateMode = this->getNextState(order, this->numberOfStates, false);
-            while (!order->isInvalid() && currentStateMode.first != this->numberOfStates) {
+            while (currentStateMode.first != this->numberOfStates) {
                 STORM_LOG_ASSERT (currentStateMode.first < this->numberOfStates, "Unexpected state number");
                 auto& currentState = currentStateMode.first;
 
@@ -511,10 +511,6 @@ namespace storm {
                     } else {
                         result = this->extendNormal(order, region, currentState);
                     }
-                }
-
-                if (order->isInvalid()) {
-                    return {order, 0,0};
                 }
 
                 if (result.first == this->numberOfStates) {

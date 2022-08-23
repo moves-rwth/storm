@@ -419,13 +419,6 @@ namespace storm {
             void setDoneForState(uint_fast64_t stateNumber);
 
             /*!
-             * Checks if this order has been marked as invalid
-             *
-             * @return true if the order is invalid
-             */
-            bool isInvalid() const;
-
-            /*!
              * Adds an action for a state in an mdp
              *
              * @param state the considered state
@@ -507,10 +500,6 @@ namespace storm {
 
 
             /*** Order Information ***/
-
-            // True if the order is invalid
-//            bool invalid;
-
             // True if the order is finished
             bool doneBuilding;
 
