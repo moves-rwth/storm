@@ -1,0 +1,596 @@
+#if SUBGRAMMAR == 0
+AGENTSTOK        //new for DECENTRALIZED pomdp
+    =   str_p("agents");
+DISCOUNTTOK
+    =   str_p("discount");
+VALUESTOK 
+    =   str_p("values");
+STATESTOK 
+    =   str_p("states"); 
+ACTIONSTOK 
+    =   str_p("actions")[DebugOutput("'actions' keyword")];
+OBSERVATIONSTOK 
+    =   str_p("observations")[DebugOutput("'observations' keyword")];
+TTOK 
+    =   str_p("T")[DebugOutput("'T' keyword")];
+OTOK 
+    =   str_p("O")[DebugOutput("'O' keyword")];
+RTOK 
+    =   str_p("R")[DebugOutput("'R' keyword")];
+UNIFORMTOK 
+    =   str_p("uniform")[SetLastParsedType(self._m_parserObject, UNIFORM)];
+INTTOK 
+    =   uint_p[StoreLastParsedElement(self._m_parserObject)]; 
+#endif            
+IDENTITYTOK 
+    =   str_p("identity")[SetLastParsedType(self._m_parserObject, IDENTITY)];
+REWARDTOK 
+    =   str_p("reward");
+COSTTOK 
+    =   str_p("cost");
+STARTTOK
+    =   str_p("start")[DebugOutput("'start' keyword")];
+INCLUDETOK 
+    =   str_p("include");
+EXCLUDETOK 
+    =   str_p("exclude");
+RESETTOK 
+    =   str_p("reset");
+COLONTOK 
+    =   str_p(":");
+ASTERICKTOK 
+    =   str_p("*")[SetLastParsedType(self._m_parserObject, ASTERICK)];
+PLUSTOK 
+    =   str_p("+");
+MINUSTOK
+    =   str_p("-");
+FLOATTOK
+    =   real_p[StoreLastParsedElement(self._m_parserObject)][DebugOutput("FLOATTOK")]; 
+        //([0-9]+ \. [0-9]* | \. [0-9]+ | [0-9]+ ) ([eE] [+-]? [0-9]+)?
+STRINGTOK 
+    =   (lexeme_d[alpha_p >> *(alnum_p | ch_p('_') | ch_p('-') ) ] 
+        - reserved_word)[StoreLastParsedElement(self._m_parserObject)];
+    ;
+        
+reserved_word
+    =   AGENTSTOK | DISCOUNTTOK | ACTIONSTOK | OBSERVATIONSTOK | TTOK | OTOK | RTOK | STARTTOK
+    ;
+
+pomdp_file    
+    =   eps_p[DebugOutput("start of pomdp file")][Initialize(self._m_parserObject)] 
+        >> pomdp[DebugOutput("pomdp")][InitializePOMDP(self._m_parserObject)]
+    ;
+/*                        
+pomdp_file    
+    =	//NOTE start_state has been moved to a fixed place in the preamble
+	//cassandra's def: preamble start_state param_list
+	preamble 
+        >>
+        param_list
+    ;
+*/
+
+pomdp
+    =   
+        eps_p[DebugOutput("setting number of agents...")][SetNrAgents(self._m_parserObject)] >> 
+        preamble_unordered[DebugOutput("preamble_unordered")][AddModels(self._m_parserObject)]
+        >> 
+        //start_state is optional:
+        !start_state[DebugOutput("preamble_start_state")][InitializeStates(self._m_parserObject)] 
+        >>
+        param_list[DebugOutput("param_list")]
+    ;
+
+preamble_unordered
+    =   // 5 lines for preamble:
+        preamble_item >>
+        preamble_item >>
+        preamble_item >>
+        preamble_item >>
+        preamble_item
+    ;
+        
+        
+preamble_item
+    =
+        discount_param[DebugOutput("preamble_discount_param")] |
+        value_param[DebugOutput("preamble_value_param")] |
+        state_param[DebugOutput("preamble_state_param")] |
+        action_param[DebugOutput("preamble_action_param")][InitializeActions(self._m_parserObject)]  |
+        obs_param[DebugOutput("preamble_obs_param")][InitializeObservations(self._m_parserObject)]  
+;
+preamble        
+    =   //NOTE the order of the preamble is now fixed
+        //cassandra's def: preamble param_type | /* empty */
+        eps_p[DebugOutput("preamble: setting number of agents...")][SetNrAgents(self._m_parserObject)] >> 
+        discount_param[DebugOutput("preamble_discount_param")] >>
+        value_param[DebugOutput("preamble_value_param")] >>
+        state_param[DebugOutput("preamble_state_param")] >>
+
+        //this is a much more logical place for start state and compatible with the .dpomdp file format:
+        //(but of course not with Cassandra's format...)
+        !start_state[DebugOutput("preamble_start_state")][InitializeStates(self._m_parserObject)] >>
+
+        action_param[DebugOutput("preamble_action_param")][InitializeActions(self._m_parserObject)]  >>
+        obs_param[DebugOutput("preamble_obs_param")][InitializeObservations(self._m_parserObject)]  
+;
+
+//preamble        
+//    =	//NOTE the order of the preamble is now fixed
+//	//cassandra's def: preamble param_type | /* empty */
+//	agents_param >>
+//	discount_param >>
+//	value_param >>
+//	state_param >>
+//	start_state >>
+//	action_param >>
+//	obs_param
+//;
+
+/* deprecated
+param_type      = discount_param
+                | value_param
+                | state_param
+                | action_param
+                | obs_param
+;*/
+
+/* new:*/
+//agents_param 
+//    =	AGENTSTOK >> COLONTOK >> INTTOK
+//    =   AGENTSTOK[DebugOutput("ap_AGENTSTOK")] >> COLONTOK >> agents_tail >> 
+//    ;
+
+discount_param  
+//    =	DISCOUNTTOK >> COLONTOK >> number
+    =   DISCOUNTTOK >> COLONTOK >> FLOATTOK[dp_SetDiscountParam(self._m_parserObject)] 
+    ;
+
+value_param   
+    =   VALUESTOK >> COLONTOK >> value_tail[DebugOutput("vp_value_tail")] 
+//    =	VALUESTOK >> COLONTOK >> value_tail
+    ;
+
+value_tail     
+//    =	REWARDTOK
+//        | COSTTOK
+    =   REWARDTOK[vt_REWARDTOK(self._m_parserObject)]
+        | COSTTOK[vt_COSTTOK(self._m_parserObject)]
+    ;
+
+state_param    
+//    =	STATESTOK >> COLONTOK >> state_tail
+    =   STATESTOK[SetNrStates(self._m_parserObject,0)] >> COLONTOK >> 
+        state_tail[DebugOutput("sp_state_tail")]
+    ;
+
+state_tail     
+//    =	INTTOK
+//	| ident_list 
+    =   INTTOK[SetNrStates(self._m_parserObject)]
+            [DebugOutput("st_INTTOK")]
+        | state_list[DebugOutput("st_ident_list")]
+    ;
+
+state_list     
+    =   // ident_list >> STRINGTOK | STRINGTOK
+        +( STRINGTOK[AddState(self._m_parserObject)] )
+    ;
+
+//// for multiple agents, setting the action is more complex:
+////new - each agent has its actions on its own line
+//action_param   
+//    =   ACTIONSTOK[SetAgentIndex(self._m_parserObject, 0)] >> COLONTOK >>
+//            +(EOLTOK >> action_param_line[DebugOutput("ap_action_param_line")]) 
+//    ;
+//action_param_line     
+//    =   action_tail[DebugOutput("apl_action_tail")][SetNextAgentIndex(
+//            self._m_parserObject)]  
+//    ;
+//action_tail    
+//    =   INTTOK[SetNrActions(self._m_parserObject)]
+//        | action_list[DebugOutput("at_ident_list")]
+//    ;
+//action_list
+//    =   +( STRINGTOK[AddAction(self._m_parserObject)] )
+//    ;
+//
+////
+
+action_param   
+    =	ACTIONSTOK >> COLONTOK >> action_tail
+    ;
+
+action_tail    
+//    =	INTTOK
+//        | ident_list
+    =   INTTOK[SetNrActions(self._m_parserObject)]
+        | action_list[DebugOutput("at_ident_list")]
+    ;
+action_list
+    =   +( STRINGTOK[AddAction(self._m_parserObject)] )
+    ;
+
+obs_param 
+//    =	OBSERVATIONSTOK >> COLONTOK >> obs_param_tail
+    =   OBSERVATIONSTOK[SetAgentIndex(self._m_parserObject, 0)] 
+        >> COLONTOK 
+        >> obs_tail
+//            +(EOLTOK >> obs_param_line[DebugOutput("op_obs_param_line")]) >> EOLTOK 
+
+    ;
+
+//obs_param_tail 
+//    =	INTTOK
+//	| ident_list
+//;
+
+obs_tail 
+    =   INTTOK[SetNrObservations(self._m_parserObject)]
+        | obs_list[DebugOutput("ot_ident_list")]
+    ;
+obs_list
+    =   +( STRINGTOK[AddObservation(self._m_parserObject)] )
+    ;
+
+start_state     
+//    =	STARTTOK >> COLONTOK >> u_matrix //distribution specified
+//      | STARTTOK >> COLONTOK >> STRINGTOK //name of start state
+//      | STARTTOK >> INCLUDETOK >> COLONTOK >> start_state_list
+//      | STARTTOK >> EXCLUDETOK >> COLONTOK >> start_state_list
+//      //  empty not valid |  /* empty */    
+    =        
+        (
+            STARTTOK[DebugOutput("STARTTOK")][ResetCurMatrix(self._m_parserObject)] >>
+            (
+                (   COLONTOK[DebugOutput("COLONTOK")] >> 
+                        (
+                            u_matrix[DebugOutput("u_matrix")][StartStateRowProbs(self._m_parserObject)]
+                        | 
+                            STRINGTOK[AddStartState(self._m_parserObject)]
+                                [ProcessStartStateList(self._m_parserObject)]
+                        |   
+                            INTTOK[AddStartState(self._m_parserObject)]
+                                [ProcessStartStateList(self._m_parserObject)]
+                        )
+                )
+                | (INCLUDETOK >> COLONTOK >> start_state_list
+                    [ProcessStartStateList(self._m_parserObject)])
+                | (EXCLUDETOK[StartStateExludes(self._m_parserObject)]
+                    >> COLONTOK >> start_state_list
+                    [ProcessStartStateList(self._m_parserObject)])
+            )
+        ) 
+;
+
+
+
+;
+
+/*changed to remove left recursion: */
+start_state_list    
+    =	// cassandra's def: start_state_list state | state
+	// easy substitute:	+(state) 
+	// NOTE - this allows '*' as states here...
+	// we don't want that, so :
+//	+(STRINGTOK)
+//	| +(INTTOK)
+        +(STRINGTOK[AddStartState(self._m_parserObject)][DebugOutput("ssl_STRINGTOK")]
+        | INTTOK[AddStartState(self._m_parserObject)][DebugOutput("ssl_INTTOK")])
+
+    ;
+
+/*remove left recursion...*/    
+param_list     
+    =	// cassandra's def: param_list param_spec | /* empty */
+	*(param_spec)
+    ;
+
+param_spec     
+    =	trans_prob_spec[DebugOutput("trans_prob_spec")]
+        | obs_prob_spec[DebugOutput("obs_prob_spec")]
+        | reward_spec[DebugOutput("reward_spec")]
+;
+
+trans_prob_spec     
+//    =	TTOK >> COLONTOK >> trans_spec_tail
+    =   TTOK[DebugOutput("tps_TTOK")][ResetCurMatrix(self._m_parserObject)] >> COLONTOK >> trans_spec_tail 
+    ;
+
+trans_spec_tail     
+//    =	paction >> COLONTOK >> state >> COLONTOK >> state >> prob
+//	| paction >> COLONTOK >> state >> u_matrix 
+//	| paction >> ui_matrix     
+    =   paction[DebugOutput("tst_paction")] 
+        >> 
+        (
+            ( //case 1 or 2
+                COLONTOK[DebugOutput("tst_COLON2")] 
+                >>
+                from_state[DebugOutput("tst_statefrom")] 
+                >> 
+                (
+                    ( //case 1
+                        COLONTOK[DebugOutput("tst_COLON3")]  
+                        >> to_state[DebugOutput("tst_stateto")] 
+                        >> prob[DebugOutput("tst_prob")][ProcessTProb(self._m_parserObject)]
+                    )
+                    |
+                    ( //case 2
+                        u_matrix[DebugOutput("tst_u_matrix")][ProcessTRow(self._m_parserObject)]
+                    )
+                )
+            )
+        |
+            ( //case 3
+                ui_matrix[DebugOutput("tst_ui_matrix")][ProcessTMatrix(self._m_parserObject)]
+            )
+        )        
+;
+
+
+obs_prob_spec  
+//    = OTOK >> COLONTOK >> obs_spec_tail
+    =   OTOK[DebugOutput("ops_OTOK")][ResetCurMatrix(self._m_parserObject)] >> COLONTOK >> obs_spec_tail 
+    ;
+
+obs_spec_tail  
+//    =	paction >> COLONTOK >> state >> COLONTOK >> obs >> prob
+//	| paction >> COLONTOK >> state >> u_matrix
+//	| paction >> u_matrix
+    =   paction[DebugOutput("tst_paction")] 
+        >> 
+        (
+            ( //case 1 or 2
+                COLONTOK[DebugOutput("tst_COLON2")] 
+                >>
+                to_state[DebugOutput("ost_stateto")]
+                >> 
+                (
+                    ( //case 1
+                        COLONTOK[DebugOutput("tst_COLON3")]  
+                        >> obs[DebugOutput("ost_obs")] 
+                        >> prob[DebugOutput("ost_prob")][ProcessOProb(self._m_parserObject)]
+                    )
+                    |
+                    ( //case 2
+                        u_matrix[DebugOutput("ost_u_matrix")][ProcessORow(self._m_parserObject)]
+                    )
+                )
+            )
+        |
+            ( //case 3
+                ui_matrix[DebugOutput("tst_ui_matrix")][ProcessOMatrix(self._m_parserObject)]
+            )
+        )        
+;
+    ;
+
+reward_spec    
+//    =	RTOK >> COLONTOK  >> reward_spec_tail
+    =   RTOK[DebugOutput("rs_rtok")][ResetCurMatrix(self._m_parserObject)] >> COLONTOK  >> reward_spec_tail[DebugOutput("reward_spec_tail")]
+    ;
+
+reward_spec_tail 
+//    =	        paction >> COLONTOK >> state >> COLONTOK >> state >> COLONTOK >> obs >> number 
+//     |	paction >> COLONTOK >> state >> COLONTOK >> state >> num_matrix
+//     |	paction >> COLONTOK >> state >> num_matrix
+    =   paction[DebugOutput("rst_paction")] 
+        >> COLONTOK 
+        >> from_state[DebugOutput("rst_statefrom")]
+        >>
+        (            
+            (
+                COLONTOK
+                >> to_state[DebugOutput("rst_stateto")] 
+                >> COLONTOK
+                >>
+                (  //case 1
+                    obs[DebugOutput("rst_obs")] 
+                    >> FLOATTOK[DebugOutput("rst_FLOATTOK")][ProcessR(self._m_parserObject)]
+                |
+                    //case 2:
+                    floats_matrix[DebugOutput("rst_floats_matrix")][ProcessRRow(self._m_parserObject)]                    
+                )
+            )
+        |
+            //case 3
+            floats_matrix[DebugOutput("rst_floats_matrix")][ProcessRMatrix(self._m_parserObject)]
+        )
+    ;
+
+    ;
+
+ui_matrix      
+//    =	UNIFORMTOK 
+//	| IDENTITYTOK 
+//	| prob_matrixx
+    = 
+        (
+        UNIFORMTOK[DebugOutput("ui_matrix UNIFORMTOK ")]
+        | IDENTITYTOK 
+        | floats_matrix
+        )
+    ;
+
+
+u_matrix  
+//    =	UNIFORMTOK 
+//	| RESETTOK
+//	| prob_matrix
+    =   UNIFORMTOK[DebugOutput("um_UNIFORMTOK")]
+//        | RESETTOK - NOTE:reset is not documented by cassandra, therefore 
+//          omitted here
+        | floats_matrix[DebugOutput("um_floats_matrix")]
+    ;
+
+floats_matrix    
+    =        //floats_matrix >> floats | floats
+        +(floats_row_vector[DebugOutput("pm_floats_row_vector")][NextRowOfMatrix(self._m_parserObject)])
+    ;
+floats_row_vector
+    =
+        lexeme_d
+        [
+            +
+            (
+                *blank_p[DebugOutput("blank")]
+                >> 
+                FLOATTOK[NextFloatOfRow(self._m_parserObject)]
+            )
+//            >>   
+//            *blank_p[DebugOutput("blank")]
+//            >> 
+//            eol_p[DebugOutput("eol")]
+        ]
+    ;  
+
+
+//difference between prob and num is deprecated - only parse doubles
+// and do typechecking when putting data in model...(easier)
+
+/*
+prob_matrix    
+    =        //prob_matrix >> prob | prob
+        +(prob_row_vector[DebugOutput("pm_prob_row_vector")][NextRowOfMatrix(
+            self._m_parserObject)])
+    ;
+prob_row_vector
+    =
+        +(prob[DebugOutput("prv_prob")][NextProbOfRow(self._m_parserObject)])  
+    ;
+
+num_matrix     
+    =        //num_matrix >> number | number
+        +(num_row_vector[DebugOutput("nm_num_row_vector")])
+    ;
+
+num_row_vector
+    =   +(number[DebugOutput("nrv_number")])
+    ;
+
+*/
+
+from_state
+    =   state_or_indiv_act_or_obs[StoreLPFromState(self._m_parserObject)]
+    ;
+to_state
+    =   state_or_indiv_act_or_obs[StoreLPToState(self._m_parserObject)]
+    ;
+
+/*
+state          
+    =	INTTOK
+	| STRINGTOK
+	| ASTERICKTOK
+    ;
+*/
+/* the parsed sub-rules set the "_m_lp_type" variable, which is used by 
+ * StoreLPAction above. Therefore, no functions need to be called here.*/
+state_or_indiv_act_or_obs
+    =   INTTOK
+        | STRINGTOK
+        | ASTERICKTOK 
+    ;
+
+paction         
+//original    
+//  =	
+//        INTTOK
+//	| STRINGTOK
+//	| ASTERICKTOK
+//but probably easier to just treat as a joint action with 1 element:        
+    =   state_or_indiv_act_or_obs[StoreLPAction(self._m_parserObject)][StoreLPJointAction(self._m_parserObject)]
+        | INTTOK[StoreLPJointAction(self._m_parserObject, true)]
+        | ASTERICKTOK[WildCardJointAction(self._m_parserObject)][StoreLPJointAction(self._m_parserObject)]
+
+
+
+
+#if 0 
+/*in order to discriminate between a joint action specified by
+ * 1) a joint action index (or '*')
+ * and 
+ * 2) multiple individual actions (indices, '*'s or action names)
+ *
+ * we have to require at least two individual indices in case (2).*/
+joint_action         
+    =   (   state_or_indiv_act_or_obs[StoreLPAction(self._m_parserObject)] >>
+            +(state_or_indiv_act_or_obs[StoreLPAction(self._m_parserObject)])        
+        )[StoreLPJointAction(self._m_parserObject)]
+        | INTTOK[StoreLPJointAction(self._m_parserObject, true)]
+        | ASTERICKTOK[WildCardJointAction(self._m_parserObject)][StoreLPJointAction(self._m_parserObject)]
+        
+        //NYI(" the * joint action ")]//to indicate any joint action...
+    ;
+
+joint_obs
+        =   //first try to catch joint actions specified as "* * ... *" which
+            //denote all joint observations
+            // (we don't want to expand these individual joint observations...)
+            (  ASTERICKTOK >> +ASTERICKTOK )
+                [WildCardJointObservation(self._m_parserObject)]
+        |
+            //the regular case of specifying individual observation(indice)s
+            (   state_or_indiv_act_or_obs[StoreLPObservation(self._m_parserObject)] >>
+                +(state_or_indiv_act_or_obs[StoreLPObservation(self._m_parserObject)])        
+            )[StoreLPJointObservation(self._m_parserObject)]
+        | 
+            //a joint observation index
+            INTTOK[StoreLPJointObservation(self._m_parserObject, true)]
+        | 
+            //a single '*' denoting all joint observations:
+            ASTERICKTOK[WildCardJointObservation(self._m_parserObject)]
+        
+        //NYI(" the * joint obs ")]//to indicate any joint obs...
+    ;
+#endif    
+    ;
+
+obs       
+//    =	INTTOK
+//	| STRINGTOK
+//	| ASTERICKTOK
+//but probably easier to just treat as a joint observation with 1 element:        
+    =   state_or_indiv_act_or_obs[StoreLPObservation(self._m_parserObject)][StoreLPJointObservation(self._m_parserObject)]
+        | INTTOK[StoreLPJointAction(self._m_parserObject, true)]
+        | ASTERICKTOK[WildCardJointAction(self._m_parserObject)][StoreLPJointAction(self._m_parserObject)]
+    ;
+
+//ident_list     
+//    =	// ident_list >> STRINGTOK | STRINGTOK
+////	+(STRINGTOK)	
+//        +( STRINGTOK[DebugOutput("il_STRINGTOK_next")][NextStringOfIdentList(self._m_parserObject)] )
+//    ;
+
+prob      
+    =   FLOATTOK    // try float first -> don't want to be left with ".024" 
+        |   INTTOK
+    ;
+
+/*
+number          
+        // try float first -> don't want to be left with ".024" 
+    =        float_r
+        | int_r
+    ;
+
+float_r
+    =   FLOATTOK[n_SetLPNumberType(self._m_parserObject,DOUBLE)]
+    ;
+
+int_r
+    =   (optional_sign[n_SetLPNumUsedOptSign(self._m_parserObject,true)]) >>
+            INTTOK[n_SetLPNumberType(self._m_parserObject,INT)]
+                [n_ProcessNegation(self._m_parserObject)]
+        |   INTTOK[n_SetLPNumUsedOptSign(self._m_parserObject,false)]
+                [n_SetLPNumberType(self._m_parserObject,INT)]
+    ;
+
+optional_sign  
+    =   PLUSTOK[os_SetNegated(self._m_parserObject,false)]
+        | MINUSTOK[os_SetNegated(self._m_parserObject,true)]
+//      | eps_p[DebugOutput("optional_sign_epsmatch")] 
+;
+
+*/

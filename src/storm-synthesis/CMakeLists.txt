@@ -7,7 +7,6 @@ register_source_groups_from_filestructure("${ALL_FILES}" storm-synthesis)
 file(GLOB_RECURSE STORM_SYN_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-synthesis/*/*.cpp)
 file(GLOB_RECURSE STORM_SYN_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-synthesis/*/*.h)
 
-
 # Create storm-synthesis.
 add_library(storm-synthesis SHARED ${STORM_SYN_SOURCES} ${STORM_SYN_HEADERS})
 
@@ -34,6 +33,14 @@ foreach(HEADER ${STORM_SYN_HEADERS})
 endforeach()
 add_custom_target(copy_storm_syn_headers DEPENDS ${STORM_SYN_OUTPUT_HEADERS} ${STORM_SYN_HEADERS})
 add_dependencies(storm-synthesis copy_storm_syn_headers)
+
+# MADP include directories
+target_include_directories(storm-synthesis
+ PRIVATE
+  madp/base/
+  madp/include/
+  madp/parser/
+  )
 
 # installation
 install(TARGETS storm-synthesis RUNTIME DESTINATION bin LIBRARY DESTINATION lib OPTIONAL)
