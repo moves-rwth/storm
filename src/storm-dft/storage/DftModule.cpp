@@ -1,5 +1,6 @@
 #include "DftModule.h"
 
+#include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/DFT.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -37,6 +38,38 @@ DftIndependentModule::DftIndependentModule(size_t representative, std::set<size_
                      "Representative " + std::to_string(representative) + " must be contained in module.");
 }
 
+std::set<size_t> DftIndependentModule::getAllElements() const {
+    std::set<size_t> allElements = elements;
+    for (auto const& submodule : submodules) {
+        allElements.merge(submodule.getAllElements());
+    }
+    return allElements;
+}
+
+template<typename ValueType>
+storm::dft::storage::DFT<ValueType> DftIndependentModule::getSubtree(storm::dft::storage::DFT<ValueType> const& dft) const {
+    storm::dft::builder::DFTBuilder<ValueType> builder;
+    std::unordered_set<std::string> depInConflict;
+    for (auto const id : getAllElements()) {
+        auto const tmpElement = dft.getElement(id);
+        builder.cloneElement(tmpElement);
+        // Remember dependency conflict
+        if (tmpElement->isDependency() && dft.isDependencyInConflict(tmpElement->id())) {
+            depInConflict.insert(tmpElement->name());
+        }
+    }
+    builder.setTopLevel(dft.getElement(getRepresentative())->name());
+    auto subdft = builder.build();
+    // Update dependency conflicts
+    for (size_t id : subdft.getDependencies()) {
+        // Set dependencies not in conflict
+        if (depInConflict.find(subdft.getElement(id)->name()) == depInConflict.end()) {
+            subdft.setDependencyNotInConflict(id);
+        }
+    }
+    return subdft;
+}
+
 template<typename ValueType>
 std::string DftIndependentModule::toString(storm::dft::storage::DFT<ValueType> const& dft, std::string const& indentation) const {
     std::stringstream stream;
@@ -52,6 +85,8 @@ std::string DftIndependentModule::toString(storm::dft::storage::DFT<ValueType> c
 template std::string DftModule::toString(storm::dft::storage::DFT<double> const&) const;
 template std::string DftModule::toString(storm::dft::storage::DFT<storm::RationalFunction> const&) const;
 
+template storm::dft::storage::DFT<double> DftIndependentModule::getSubtree(storm::dft::storage::DFT<double> const&) const;
+template storm::dft::storage::DFT<storm::RationalFunction> DftIndependentModule::getSubtree(storm::dft::storage::DFT<storm::RationalFunction> const&) const;
 template std::string DftIndependentModule::toString(storm::dft::storage::DFT<double> const&, std::string const&) const;
 template std::string DftIndependentModule::toString(storm::dft::storage::DFT<storm::RationalFunction> const&, std::string const&) const;
 

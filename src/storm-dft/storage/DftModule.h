@@ -102,6 +102,20 @@ class DftIndependentModule : public DftModule {
     }
 
     /*!
+     * Returns all elements contained in the module (including sub-modules).
+     * @return Set of all elements.
+     */
+    std::set<size_t> getAllElements() const;
+
+    /*!
+     * Create subtree corresponding to module.
+     * @param dft (Complete) DFT.
+     * @return Subtree corresponding to independent module.
+     */
+    template<typename ValueType>
+    storm::dft::storage::DFT<ValueType> getSubtree(storm::dft::storage::DFT<ValueType> const& dft) const;
+
+    /*!
      * Get string representation of module.
      * @param dft DFT.
      * @param indentation Whitespace indentation giving better layout for sub-modules.

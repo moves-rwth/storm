@@ -757,13 +757,6 @@ size_t DFT<ValueType>::getNrChild(size_t spareId, size_t childId) const {
 }
 
 template<typename ValueType>
-std::vector<size_t> DFT<ValueType>::getIndependentSubDftRoots(size_t index) const {
-    auto elem = getElement(index);
-    auto ISD = elem->independentSubDft(false);
-    return ISD;
-}
-
-template<typename ValueType>
 std::vector<size_t> DFT<ValueType>::immediateFailureCauses(size_t index) const {
     if (isGate(index)) {
         STORM_LOG_ASSERT(false, "Is gate.");

@@ -326,8 +326,6 @@ class DFT {
 
     std::string getStateString(storm::storage::BitVector const& status, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const;
 
-    std::vector<size_t> getIndependentSubDftRoots(size_t index) const;
-
     DFTColouring<ValueType> colourDFT() const;
 
     std::map<size_t, size_t> findBijection(size_t index1, size_t index2, DFTColouring<ValueType> const& colouring, bool sparesAsLeaves) const;

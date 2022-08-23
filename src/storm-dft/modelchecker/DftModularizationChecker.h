@@ -73,15 +73,6 @@ class DftModularizationChecker {
     std::shared_ptr<storm::dft::storage::DFT<ValueType>> replaceDynamicModules(std::vector<ValueType> const &timepoints);
 
     /*!
-     * Return DFT with the given element as the root.
-     * @param dft Original DFT.
-     * @param element Root element.
-     * @return Sub-DFT with given element as root.
-     */
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getSubDFT(std::shared_ptr<storm::dft::storage::DFT<ValueType>> const dft,
-                                                                   DFTElementCPointer const element);
-
-    /*!
      * Analyse the given dynamic module.
      * @param module Module.
      * @param timepoints Time points for which the failure probability of element should be computed.

@@ -83,7 +83,13 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftModularizationChecker<Va
         samplePoints.insert({mod.getRepresentative(), activeSamples});
     }
 
-    // Second replace all dynamic modules by BEs which have samples corresponding to the previously computed analysis results
+    // Gather all elements contained in dynamic modules
+    std::set<size_t> dynamicElements;
+    for (auto const& mod : dynamicModules) {
+        dynamicElements.merge(mod.getAllElements());
+    }
+
+    // Replace each dynamic module by a single BE which has samples corresponding to the previously computed analysis results
     storm::dft::builder::DFTBuilder<ValueType> builder{};
     std::unordered_set<std::string> depInConflict;
     for (auto const id : dft->getAllIds()) {
@@ -92,8 +98,8 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftModularizationChecker<Va
         if (it != samplePoints.end()) {
             // Replace element by BE
             builder.addBasicElementSamples(element->name(), it->second);
-        } else {
-            // Keep element
+        } else if (dynamicElements.find(id) == dynamicElements.end()) {
+            // Element is not part of a dynamic module -> keep
             builder.cloneElement(element);
             // Remember dependency conflict
             if (element->isDependency() && dft->isDependencyInConflict(id)) {
@@ -111,45 +117,17 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftModularizationChecker<Va
             newDft->setDependencyNotInConflict(id);
         }
     }
-
-    return getSubDFT(newDft, newDft->getTopLevelElement());
-}
-
-template<typename ValueType>
-std::shared_ptr<storm::dft::storage::DFT<ValueType>> DftModularizationChecker<ValueType>::getSubDFT(
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> const dft, DFTElementCPointer const element) {
-    storm::dft::builder::DFTBuilder<ValueType> builder{};
-    std::unordered_set<std::string> depInConflict;
-    for (auto const id : dft->getIndependentSubDftRoots(element->id())) {
-        auto const tmpElement{dft->getElement(id)};
-        builder.cloneElement(tmpElement);
-        // Remember dependency conflict
-        if (tmpElement->isDependency() && dft->isDependencyInConflict(tmpElement->id())) {
-            depInConflict.insert(tmpElement->name());
-        }
-    }
-    builder.setTopLevel(element->name());
-    auto subdft = std::make_shared<storm::dft::storage::DFT<ValueType>>(builder.build());
-    // Update dependency conflicts
-    for (size_t id : subdft->getDependencies()) {
-        // Set dependencies not in conflict
-        if (depInConflict.find(subdft->getElement(id)->name()) == depInConflict.end()) {
-            subdft->setDependencyNotInConflict(id);
-        }
-    }
-    return subdft;
+    STORM_LOG_DEBUG("Remaining static FT: " << newDft->getElementsString());
+    return newDft;
 }
 
 template<typename ValueType>
 typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results DftModularizationChecker<ValueType>::analyseDynamicModule(
     storm::dft::storage::DftIndependentModule const& module, std::vector<ValueType> const& timepoints) {
-    auto element = dft->getElement(module.getRepresentative());
-    STORM_LOG_ASSERT(!element->isBasicElement(), "Dynamic module should not be a single BE.");
     STORM_LOG_ASSERT(!module.isStatic() && !module.isFullyStatic(), "Module should be dynamic.");
+    STORM_LOG_ASSERT(!dft->getElement(module.getRepresentative())->isBasicElement(), "Dynamic module should not be a single BE.");
 
-    auto subDFT{getSubDFT(dft, element)};
-    auto wellFormedResult = storm::dft::api::isWellFormed(*subDFT, true);
-    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::InvalidModelException, wellFormedResult.second);
+    auto subDft = module.getSubtree(*dft);
 
     // Create properties
     std::stringstream propertyStream{};
@@ -158,7 +136,7 @@ typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results DftMo
     }
     auto const props{storm::api::extractFormulasFromProperties(storm::api::parseProperties(propertyStream.str()))};
 
-    return std::move(modelchecker.check(*subDFT, props, false, false, {}));
+    return std::move(modelchecker.check(subDft, props, false, false, {}));
 }
 
 // Explicitly instantiate the class.
