@@ -9,6 +9,7 @@
 #include "storm-pars/storage/ParameterRegion.h"
 #include "Order.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 
 namespace storm {
@@ -35,14 +36,6 @@ namespace storm {
              */
             AssumptionChecker(storage::SparseMatrix<ValueType> matrix, std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel = nullptr);
 
-            /*!
-             * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
-             *
-             * @param formula The formula to check.
-             * @param model The mdp model to check the formula on.
-             * @param numberOfSamples Number of sample points.
-             */
-            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t const numberOfSamples);
 
             /*!
              * Initializes the given number of sample points for a given model, formula and region.
@@ -52,7 +45,7 @@ namespace storm {
              * @param region The region of the model's parameters.
              * @param numberOfSamples Number of sample points.
              */
-            void initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
+            void initializeCheckingOnSamples(const std::shared_ptr<logic::Formula const>& formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
 
             /*!
              * Sets the sample values to the given vector and useSamples to true.
@@ -77,9 +70,9 @@ namespace storm {
            private:
 
             AssumptionStatus validateAssumptionSMTSolver(uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValue) const;
-            AssumptionStatus validateAssumptionSMTSolverTwoSucc(uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValue) const;
+            AssumptionStatus validateAssumptionSMTSolverTwoSucc(uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, const std::shared_ptr<expressions::BinaryRelationExpression>& assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValue) const;
 
-            AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
+            AssumptionStatus checkOnSamples(const std::shared_ptr<expressions::BinaryRelationExpression>& assumption) const;
 
             bool useSamples;
 
@@ -91,6 +84,15 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel;
 
             std::set<uint_fast64_t> getSuccessors(uint_fast64_t state, uint_fast64_t action) const;
+            expressions::Expression getExpressionBounds(const std::shared_ptr<expressions::ExpressionManager>& manager, const storage::ParameterRegion<ValueType>& region,
+                                                        const std::set<expressions::Variable>& stateVariables, const std::set<expressions::Variable>& topVariables,
+                                                        const std::set<expressions::Variable>& bottomVariables, const std::vector<ConstantType>& minValues,
+                                                        const std::vector<ConstantType>& maxValues) const;
+            expressions::Expression getExpressionOrderSuccessors(const std::shared_ptr<expressions::ExpressionManager>& manager, std::shared_ptr<Order> order,
+                                                                 const std::set<uint_fast64_t>& successors, const std::set<uint_fast64_t>& successors2 = {}) const;
+            expressions::Expression getStateExpression(const std::shared_ptr<expressions::ExpressionManager>& manager, uint_fast64_t state, uint_fast64_t action) const;
+            expressions::Expression getAdditionalStateExpression(const std::shared_ptr<expressions::ExpressionManager>& manager, uint_fast64_t state,
+                                                                 uint_fast64_t action) const;
         };
     }
 }
