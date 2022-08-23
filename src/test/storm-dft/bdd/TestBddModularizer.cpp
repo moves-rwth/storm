@@ -78,6 +78,11 @@ static std::vector<ModularizerTestData> modularizerTestData{
         STORM_TEST_RESOURCES_DIR "/dft/spare5.dft",
         0.2017690905,
     },
+    {
+        "MCS",
+        STORM_TEST_RESOURCES_DIR "/dft/mcs.dft",
+        0.9984947969,
+    },
 };
 INSTANTIATE_TEST_SUITE_P(BddModularizer, BddModularizerTest, testing::ValuesIn(modularizerTestData), [](auto const &info) { return info.param.testname; });
 

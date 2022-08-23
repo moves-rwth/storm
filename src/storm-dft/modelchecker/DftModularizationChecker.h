@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/DftModule.h"
 #include "storm-dft/storage/SylvanBddManager.h"
@@ -21,10 +22,8 @@ namespace modelchecker {
 template<typename ValueType>
 class DftModularizationChecker {
    public:
-    using ElementId = size_t;
     using DFTElementCPointer = std::shared_ptr<storm::dft::storage::elements::DFTElement<ValueType> const>;
-    using FormulaCPointer = std::shared_ptr<storm::logic::Formula const>;
-    using FormulaVector = std::vector<FormulaCPointer>;
+    using FormulaVector = typename DFTModelChecker<ValueType>::property_vector;
 
     /*!
      * Initializes and computes all modules.
@@ -60,46 +59,45 @@ class DftModularizationChecker {
     }
 
    private:
-    // Complete DFT.
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft;
-    // Current DFT.
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> workDFT{};
+    /*!
+     * Recursively populate the list of dynamic modules.
+     * @param module Current module to consider.
+     */
+    void populateDynamicModules(storm::dft::storage::DftIndependentModule const &module);
 
     /*!
      * Calculate results for dynamic modules and replace them with BE's in workDFT.
-     * @param element Current DFT element.
      * @param timepoints Time points for which the failure probability should be computed.
+     * @return Dft where dynamic modules are replaced.
      */
-    void replaceDynamicModules(DFTElementCPointer const element, std::vector<ValueType> const &timepoints);
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> replaceDynamicModules(std::vector<ValueType> const &timepoints);
 
     /*!
      * Return DFT with the given element as the root.
+     * @param dft Original DFT.
      * @param element Root element.
      * @return Sub-DFT with given element as root.
      */
-    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getSubDFT(DFTElementCPointer const element);
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> getSubDFT(std::shared_ptr<storm::dft::storage::DFT<ValueType>> const dft,
+                                                                   DFTElementCPointer const element);
 
     /*!
-     * Update the workDFT.
-     * Replace the given element with a BE for which the failure probabilities correspond to the given sample points.
-     * @param element Element to replace.
-     * @param activeSamples Sample points for the new BE.
-     */
-    void updateWorkDFT(DFTElementCPointer const element, std::map<ValueType, ValueType> activeSamples);
-
-    /*!
-     * Analyse the dynamic module with the given element as the root.
-     * @param element Root element of the module.
+     * Analyse the given dynamic module.
+     * @param module Module.
      * @param timepoints Time points for which the failure probability of element should be computed.
-     * @note Updates the workDFT with the calculated probability.
      */
-    void analyseDynamic(DFTElementCPointer const element, std::vector<ValueType> const &timepoints);
+    typename storm::dft::modelchecker::DFTModelChecker<ValueType>::dft_results analyseDynamicModule(storm::dft::storage::DftIndependentModule const &module,
+                                                                                                    std::vector<ValueType> const &timepoints);
 
+    // DFT.
+    std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft;
+    // DFT modelchecker
+    storm::dft::modelchecker::DFTModelChecker<ValueType> modelchecker;
     // don't reinitialize Sylvan BDD
     // temporary
     std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager;
     // Independent modules with their top element
-    std::map<ElementId, storm::dft::storage::DftIndependentModule> modules;
+    std::vector<storm::dft::storage::DftIndependentModule> dynamicModules;
 };
 
 }  // namespace modelchecker
