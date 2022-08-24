@@ -112,16 +112,5 @@ There may be problems with this auto-detection mechanism if you have multiple ve
 
 ## Boost
 
-Storm requires [Boost](http://www.boost.org/){:target="_blank"} to be available in a version that is at least 1.61. On the [supported operating systems](requirements.html) this can be easily achieved with readily available package managers. If your system does not allow for an easy installation of this Boost version, you might need to build it yourself.
-
-```console
-$ wget https://sourceforge.net/projects/boost/files/boost/1.63.0/boost_1_63_0.tar.gz
-$ tar -xzf boost_1_63_0.tar.gz
-$ cd boost_1_63_0
-$ ./bootstrap.sh
-$ ./bjam
-```
-
-If you want to install Boost in some other location, you can provide a `--prefix=path/to/installation/prefix` to bootstrap.
-
-If you installed your self-built Boost version into standard system locations, it should automatically be found by Storm. However, if it resides in a non-standard location, you need to make Storm aware of it, by passing `-DBOOST_ROOT=/path/to/boost` to the `cmake` invocation in the [configuration step](installation.html#configuration-step).
+Storm requires [Boost](http://www.boost.org/){:target="_blank"} to be available in a version that is at least 1.65.1. On the [supported operating systems](requirements.html) this can be easily achieved with readily available package managers.
+If Boost is not present in a standard system locations (for example because it was manually built), it might not automatically be found by Storm. You can make Storm aware of the Boost location by passing `-DBOOST_ROOT=/path/to/boost` to the `cmake` invocation in the [configuration step](installation.html#configuration-step).
