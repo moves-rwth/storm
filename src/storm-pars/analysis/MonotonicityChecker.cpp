@@ -10,6 +10,31 @@ namespace storm {
 
         /*** Public methods ***/
         template <typename ValueType>
+        typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkLocalMonotonicity(std::shared_ptr<Order> const& order, uint_fast64_t state, VariableType const& var, storage::ParameterRegion<ValueType> const& region) {
+            if (order->isActionSetAtState(state)) {
+                return checkLocalMonotonicity(order,state, var, region, order->getActionAtState(state));
+            } else {
+                Monotonicity localMonotonicity = checkLocalMonotonicity(order,state, var, region,0);
+                for (auto act = 1; act < this->matrix.getRowGroupSize(state); ++act) {
+                    if (localMonotonicity == Monotonicity::Constant) {
+                        localMonotonicity = checkLocalMonotonicity(order, state, var, region, act);
+                    } else if (localMonotonicity == Monotonicity::Not || localMonotonicity == Monotonicity::Unknown) {
+                        break;
+                    } else {
+                        auto res = checkLocalMonotonicity(order, state, var, region, act);
+                        if (res != localMonotonicity) {
+                            localMonotonicity = Monotonicity::Unknown;
+                            break;
+                        }
+                    }
+                }
+                return localMonotonicity;
+            }
+        }
+
+        /*** Private methods ***/
+
+        template <typename ValueType>
         typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkLocalMonotonicity(std::shared_ptr<Order> const& order, uint_fast64_t state, VariableType const& var, storage::ParameterRegion<ValueType> const& region, uint_fast64_t action) {
             // Create + fill Vector containing the Monotonicity of the transitions to the succs
             auto row = matrix.getRow(state, action);
@@ -49,31 +74,31 @@ namespace storm {
                 // In this case we can ignore the last entry, as this will have a probability of 1 - the other
                 succSize = 1;
             }
-//            if (succsSorted[succSize - 1] == matrix.getColumnCount()) {
-//                // Maybe we can still do something
-//                // If one is decreasing and all others increasing, and this one is above all others or vice versa
-//                if (checkAllow) {
-//                    if (statesIncr.size() == 1 && statesDecr.size() > 1) {
-//                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
-//                        if (comp.first) {
-//                            // All decreasing states are above the increasing state, therefore decreasing
-//                            return Monotonicity::Decr;
-//                        } else if (comp.second) {
-//                            // All decreasing states are below the increasing state, therefore increasing
-//                            return Monotonicity::Incr;
-//                        }
-//                    } else if (statesDecr.size() == 1 && statesIncr.size() > 1) {
-//                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
-//                        if (comp.first) {
-//                            // All increasing states are below the decreasing state, therefore increasing
-//                            return Monotonicity::Incr;
-//                        } else if (comp.second) {
-//                            // All increasing states are above the decreasing state, therefore decreasing
-//                            return Monotonicity::Decr;
-//                        }
-//                    }
-//                }
-//            }
+            //            if (succsSorted[succSize - 1] == matrix.getColumnCount()) {
+            //                // Maybe we can still do something
+            //                // If one is decreasing and all others increasing, and this one is above all others or vice versa
+            //                if (checkAllow) {
+            //                    if (statesIncr.size() == 1 && statesDecr.size() > 1) {
+            //                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
+            //                        if (comp.first) {
+            //                            // All decreasing states are above the increasing state, therefore decreasing
+            //                            return Monotonicity::Decr;
+            //                        } else if (comp.second) {
+            //                            // All decreasing states are below the increasing state, therefore increasing
+            //                            return Monotonicity::Incr;
+            //                        }
+            //                    } else if (statesDecr.size() == 1 && statesIncr.size() > 1) {
+            //                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
+            //                        if (comp.first) {
+            //                            // All increasing states are below the decreasing state, therefore increasing
+            //                            return Monotonicity::Incr;
+            //                        } else if (comp.second) {
+            //                            // All increasing states are above the decreasing state, therefore decreasing
+            //                            return Monotonicity::Decr;
+            //                        }
+            //                    }
+            //                }
+            //            }
 
             // First check as long as it stays constant and either incr or decr
             bool allowedToSwap = true;
@@ -115,7 +140,6 @@ namespace storm {
             return localMonotonicity;
         }
 
-        /*** Private methods ***/
         template <typename ValueType>
         typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkTransitionMonRes(ValueType function, typename MonotonicityChecker<ValueType>::VariableType param, typename MonotonicityChecker<ValueType>::Region region) {
             std::pair<bool, bool> res = MonotonicityChecker<ValueType>::checkDerivative(getDerivative(function, param), region);

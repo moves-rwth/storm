@@ -70,8 +70,6 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for property" << formulas[0]);
                 }
             } else if (model->isOfType(models::ModelType::Mdp)) {
-                // TODO: @Jip this doesn't work for min props
-                // TODO where to get prMax? Based on what was given via --prop?
                 this->extender = new analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for model type: ");
@@ -170,18 +168,6 @@ namespace storm {
                 }
             }
             return monResults;
-        }
-
-        template<typename ValueType, typename ConstantType>
-        std::shared_ptr<LocalMonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>> MonotonicityHelper<ValueType, ConstantType>::createLocalMonotonicityResult(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
-            LocalMonotonicityResult<VariableType> localMonRes(model->getNumberOfStates());
-            for (uint_fast64_t state = 0; state < model->getNumberOfStates(); ++state) {
-                for (auto& var : extender->getVariablesOccuringAtState()[state]) {
-                    localMonRes.setMonotonicity(state, var, extender->getMonotonicityChecker().checkLocalMonotonicity(order, state, var, region));
-                }
-            }
-            localMonRes.setDone(order->getDoneBuilding());
-            return std::make_shared<LocalMonotonicityResult<VariableType>>(localMonRes);
         }
 
         /*** Private methods ***/

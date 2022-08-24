@@ -36,9 +36,9 @@ namespace storm {
 
                 std::pair<uint64_t, uint64_t> rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action, std::vector<uint64_t> orderedSuccs);
 
-                storage::BitVector getHitSuccs(uint64_t state, uint64_t action, std::vector<uint64_t> orderedSuccs);
-
-                std::pair<bool, uint64_t> simpleActionCheck(uint64_t state, std::vector<uint64_t> orderedSuccs);
+//                storage::BitVector getHitSuccs(uint64_t state, uint64_t action, std::vector<uint64_t> orderedSuccs);
+//
+//                std::pair<bool, uint64_t> simpleActionCheck(uint64_t state, std::vector<uint64_t> orderedSuccs, bool maximize);
 
                 ReachabilityOrderExtenderMdp::ActionComparison actionSMTCompare(std::shared_ptr<Order> order, std::vector<uint64_t> const& orderedSuccs, storage::ParameterRegion<ValueType>& region, Rows action1, Rows action2);
 

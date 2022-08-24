@@ -70,7 +70,7 @@ namespace storm {
             auto labelFormula = std::make_shared<storm::logic::AtomicLabelFormula const> (targetLabel);
             auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula const>(labelFormula, storm::logic::FormulaContext::Probability);
             this->simplifiedFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula const>(eventuallyFormula, formula.getOperatorInformation());
-            
+
             // Eliminate all states for which all outgoing transitions are constant
             storm::storage::BitVector considerForElimination = ~this->simplifiedModel->getInitialStates();
             if (mergerResult.targetState) {

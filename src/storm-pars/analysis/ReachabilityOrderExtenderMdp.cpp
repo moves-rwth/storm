@@ -51,119 +51,84 @@ namespace storm {
             auto successors = this->getSuccessors(state, order);
             auto orderedSuccs = order->sortStates(successors.second);
             if (orderedSuccs.back() == this->numberOfStates){
+                order->toDotOutput();
                 STORM_LOG_WARN("    No best action found, as the successors could not be ordered.");
                 return false;
             }
             auto nrOfSuccs = orderedSuccs.size();
             if (prMax) {
                 STORM_LOG_INFO("   Interested in PrMax." << std::endl);
-                // Check for the simple case
-                auto simpleCheckResult = simpleActionCheck(state, orderedSuccs);
-                if(simpleCheckResult.first == true) {
-                    bestAct = simpleCheckResult.second;
-                    STORM_LOG_INFO("Best action found");
-                } else {
-                    // else use SMT solver
-                    std::vector<uint64_t> candidates;
-                    uint_fast64_t index = 0;
-                    auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
-                    while (index < numberOfOptionsForState) {
-                        auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + index);
-                        bool in = true;
-                        for (uint_fast64_t i = 0; i < candidates.size(); i++){
-                            auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + candidates[i]);
-                            auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
-                            if(compRes == GEQ){
-                                candidates.erase(candidates.begin()+i);
-                            } else if (compRes == LEQ) {
-                                in = false;
-                                // TODO put break; here?
-                            }
-                        }
-                        if (in) {
-                            candidates.push_back(index);
-                        }
-                        index++;
-                    }
-                    if (candidates.size() == 1) {
-                        bestAct = candidates[0];
-                        STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-                    } else {
-                        assert (false);
-                        STORM_LOG_WARN("No best action found. Take action 0 as default.");
-                    }
-                }
-//                }
-            } else {
-                // We are interested in PrMin
-                STORM_LOG_INFO("   Interested in PrMin." << std::endl);
-                if (nrOfSuccs == 2) {
-                    uint64_t bestSucc = orderedSuccs[1];
-                    boost::optional<storm::RationalFunction> bestFunc;
-                    auto index = 0;
-                    auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
-                    while (index < numberOfOptionsForState) {
-                        auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[state]);
-                        auto itr = row.begin();
-                        while (itr != row.end() && itr->getColumn() != bestSucc) {
-                            itr++;
-                        }
-                        if (!bestFunc || (itr != row.end() && isFunctionGreaterEqual(bestFunc.get(), itr->getValue(), region))) {
-                            bestFunc = itr->getValue();
-                            bestAct = index;
-                        }
-                        index++;
-                    }
-                    STORM_LOG_INFO("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-
-                } else {
-                    // more than 2 succs
-                    // Check for the simple case
-                    // TODO do we need an extra vector for the reversed succs?
-                    std::vector<uint64_t> revOrderedSuccs = std::vector<uint64_t>(orderedSuccs);
-                    std::reverse(orderedSuccs.begin(), orderedSuccs.end());
-                    auto simpleCheckResult = simpleActionCheck(state, revOrderedSuccs);
-                    if(simpleCheckResult.first == true) {
-                        bestAct = simpleCheckResult.second;
-                    } else {
-                        // else use SMT solver
-                        std::vector<uint64_t> candidates;
-                        auto index = 0;
-                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
-                        while (index < numberOfOptionsForState) {
-                            auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + index);
-                            bool in = true;
-                            for (uint_fast64_t i = 0; i < candidates.size(); i++){
-                                auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[state] + candidates[i]);
+                auto action = 0;
+                auto bestSoFar = action;
+                auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
+                std::set<uint_fast64_t> actionsToIgnore;
+                while (action < numberOfOptionsForState) {
+                    if (actionsToIgnore.find(action) == actionsToIgnore.end()) {
+                        auto rowA = this->matrix.getRow(state, action);
+                        bool changed = false;
+                        for (uint_fast64_t i = action + 1; i < numberOfOptionsForState; ++i) {
+                            if (actionsToIgnore.find(i) == actionsToIgnore.end()) {
+                                auto rowB = this->matrix.getRow(state, i);
                                 auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
-                                if(compRes == LEQ){
-                                    candidates.erase(candidates.begin()+i);
-                                } else if (compRes == GEQ) {
-                                    in = false;
-                                    // TODO put break; here?
+                                if (compRes == GEQ) {
+                                    // rowA is smaller or equal than rowB, so action is smaller than i, so we continue with action
+                                    // We will ignore i as we know action is better
+                                    actionsToIgnore.insert(i);
+                                } else if (compRes == LEQ) {
+                                    changed = true;
+                                } else {
+                                    // we ignore both action and i as i is sometimes better than action and vice versa
+                                    actionsToIgnore.insert(i);
+                                    actionsToIgnore.insert(action);
                                 }
                             }
-                            if (in) {
-                                candidates.push_back(index);
-                            }
-                            index++;
                         }
-                        if (candidates.size() == 1) {
-                            bestAct = candidates [0];
-                            STORM_LOG_INFO("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
-                        } else {
-                            STORM_LOG_WARN("No best action found. Take action 0 as default.");
+                        if (!changed) {
+                            // this action is better than all other actions
+                            order->addToMdpScheduler(state, action);
+                            return true;
                         }
                     }
-
+                    action++;
                 }
+                return false;
+            } else {
+                STORM_LOG_INFO("   Interested in PrMin." << std::endl);
+                auto action = 0;
+                auto bestSoFar = action;
+                auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
+                std::set<uint_fast64_t> actionsToIgnore;
+                while (action < numberOfOptionsForState) {
+                    if (actionsToIgnore.find(action) == actionsToIgnore.end()) {
+                        auto rowA = this->matrix.getRow(state, action);
+                        bool changed = false;
+                        for (uint_fast64_t i = action + 1; i < numberOfOptionsForState; ++i) {
+                            if (actionsToIgnore.find(i) == actionsToIgnore.end()) {
+                                auto rowB = this->matrix.getRow(state, i);
+                                auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
+                                if (compRes == LEQ) {
+                                    // rowA is smaller or equal than rowB, so action is smaller than i, so we continue with action
+                                    // We will ignore i as we know action is better
+                                    actionsToIgnore.insert(i);
+                                } else if (compRes == GEQ) {
+                                    changed = true;
+                                } else {
+                                    // we ignore both action and i as i is sometimes better than action and vice versa
+                                    actionsToIgnore.insert(i);
+                                    actionsToIgnore.insert(action);
+                                }
+                            }
+                        }
+                        if (!changed) {
+                            // this action is better than all other actions
+                            order->addToMdpScheduler(state, action);
+                            return true;
+                        }
+                    }
+                    action++;
+                }
+                return false;
             }
-            if (bestAct != this->matrix.getRowCount()) {
-                order->addToMdpScheduler(state, bestAct);
-                STORM_LOG_INFO("Best action for state " << state << ": " << bestAct);
-                return true;
-            }
-            return false;
         }
 
         template<typename ValueType, typename ConstantType>
@@ -217,49 +182,6 @@ namespace storm {
             }
 
             return std::make_pair(start,end);
-        }
-
-        template<typename ValueType, typename ConstantType>
-        storage::BitVector ReachabilityOrderExtenderMdp<ValueType, ConstantType>::getHitSuccs(uint64_t state, uint64_t action, std::vector<uint64_t> orderedSuccs){
-            storage::BitVector res = storage::BitVector(orderedSuccs.size(), false);
-            for (auto succ : this->stateMap[state][action]) {
-                for (uint64_t i = 0; i < orderedSuccs.size(); i++) {
-                    if (succ == orderedSuccs[i]) {
-                        res.set(i, true);
-                    }
-                }
-            }
-
-            return res;
-        }
-
-        template<typename ValueType, typename ConstantType>
-        std::pair<bool, uint64_t> ReachabilityOrderExtenderMdp<ValueType, ConstantType>::simpleActionCheck(uint64_t state, std::vector<uint64_t> orderedSuccs){
-            uint64_t noa = this->stateMap[state].size();
-            uint64_t bestAct;
-            std::vector<storage::BitVector> bitVecTable = std::vector<storage::BitVector>(noa);
-            bool foundOne = false;
-            for (uint_fast64_t i = 0; i < noa; i++) {
-                storage::BitVector hitSuccs = getHitSuccs(state, i, orderedSuccs);
-                if (hitSuccs[0]){
-                    if (foundOne) {
-                        return std::make_pair(false, 0);
-                    } else {
-                        bestAct = i;
-                        foundOne = true;
-                    }
-                }
-                bitVecTable[i] = hitSuccs;
-            }
-            storage::BitVector candidate = bitVecTable[bestAct];
-            storage::BitVector others = storage::BitVector(orderedSuccs.size(), false);
-            for (uint_fast64_t i = 0; i < noa; i++) {
-                if(i != bestAct) others |= bitVecTable[i];
-            }
-
-            if ((candidate & others).empty()) return std::make_pair(true, bestAct);
-            else return std::make_pair(false, 0);
-
         }
 
         template<typename ValueType, typename ConstantType>

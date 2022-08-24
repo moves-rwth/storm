@@ -367,6 +367,13 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
+    // Apply bisimulation
+    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
+    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
+        bisimType = storm::storage::BisimulationType::Weak;
+    }
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto region=storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.2", modelParameters);
@@ -383,7 +390,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
-    // OrderExtender
+    // OrderExtender without bounds
     auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
     auto res = extender.toOrder(region, false);
     EXPECT_TRUE(std::get<0>(res)->getDoneBuilding());

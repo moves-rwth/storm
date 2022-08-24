@@ -83,7 +83,6 @@ namespace storm {
             } else {
                 addBetween(state, top, bottom);
             }
-//            addStateToHandle(state);
         }
 
         void Order::addAbove(uint_fast64_t state, Node *node) {
@@ -322,7 +321,6 @@ namespace storm {
         }
 
         bool Order::getDoneBuilding() const {
-            // assert (!sufficientForState.full() || numberOfAddedStates == numberOfStates);
             return sufficientForState.full();
         }
 

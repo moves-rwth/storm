@@ -70,7 +70,6 @@ namespace storm {
            private:
 
             AssumptionStatus validateAssumptionSMTSolver(uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValue) const;
-            AssumptionStatus validateAssumptionSMTSolverTwoSucc(uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, const std::shared_ptr<expressions::BinaryRelationExpression>& assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValue) const;
 
             AssumptionStatus checkOnSamples(const std::shared_ptr<expressions::BinaryRelationExpression>& assumption) const;
 
@@ -85,6 +84,8 @@ namespace storm {
 
             std::set<uint_fast64_t> getSuccessors(uint_fast64_t state, uint_fast64_t action) const;
             expressions::Expression getExpressionBounds(const std::shared_ptr<expressions::ExpressionManager>& manager, const storage::ParameterRegion<ValueType>& region,
+                                                        std::string state1,
+                                                        std::string state2,
                                                         const std::set<expressions::Variable>& stateVariables, const std::set<expressions::Variable>& topVariables,
                                                         const std::set<expressions::Variable>& bottomVariables, const std::vector<ConstantType>& minValues,
                                                         const std::vector<ConstantType>& maxValues) const;

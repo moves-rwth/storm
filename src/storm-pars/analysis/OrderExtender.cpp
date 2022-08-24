@@ -575,6 +575,12 @@ namespace storm {
             }
             return stateMapAllSucc[state];
         }
+        template<typename ValueType, typename ConstantType>
+        std::vector<uint_fast64_t>& OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, uint_fast64_t action) {
+            STORM_LOG_ASSERT(state < stateMap.size(), "State number too large");
+            STORM_LOG_ASSERT(action < stateMap[state].size(), "Action number too large");
+            return stateMap[state][action];
+        }
 
         template<typename ValueType, typename ConstantType>
         std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> OrderExtender<ValueType, ConstantType>::sortForFowardReasoning(
@@ -642,7 +648,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
-            auto transposeMatrix = this->matrix.transpose();
+            auto transposeMatrix = this->matrix.getSquareMatrix().transpose();
             auto &min = this->minValues[order];
             auto &max = this->maxValues[order];
 

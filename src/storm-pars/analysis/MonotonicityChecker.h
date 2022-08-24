@@ -98,12 +98,14 @@ namespace storm {
              * @param region The region on which we check the monotonicity.
              * @return Incr, Decr, Constant, Unknown or Not
              */
-            Monotonicity checkLocalMonotonicity(std::shared_ptr<Order> const & order, uint_fast64_t state, VariableType const& var, storage::ParameterRegion<ValueType> const& region, uint_fast64_t action = 0);
+            Monotonicity checkLocalMonotonicity(std::shared_ptr<Order> const & order, uint_fast64_t state, VariableType const& var, storage::ParameterRegion<ValueType> const& region);
 
         private:
             Monotonicity checkTransitionMonRes(ValueType function, VariableType param, Region region);
 
             ValueType& getDerivative(ValueType function, VariableType var);
+            Monotonicity checkLocalMonotonicity(std::shared_ptr<Order> const & order, uint_fast64_t state, VariableType const& var, storage::ParameterRegion<ValueType> const& region, uint_fast64_t action);
+
 
             storage::SparseMatrix<ValueType> matrix;
 

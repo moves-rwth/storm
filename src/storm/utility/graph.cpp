@@ -1890,7 +1890,7 @@ std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<T>
     auto sortedTopological = getTopologicalSort(matrix, ignoredStates);
 
     for (auto i = 0; i < sortedTopological.size(); ++i) {
-        auto state = sortedTopological[i];
+        auto state = sortedTopological[sortedTopological.size() - i - 1];
         if (std::find(result.begin(), result.end(), state) == result.end()) {
             result[count] = state;
             count --;

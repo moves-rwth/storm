@@ -108,7 +108,7 @@ namespace storm {
             
             // get the action-based reward values
             std::vector<typename SparseModelType::ValueType> actionRewards;
-            if(rewardModelName) {
+            if (rewardModelName) {
                 actionRewards = model.getRewardModel(*rewardModelName).getTotalRewardVector(sparseMatrix);
             } else {
                 actionRewards = std::vector<typename SparseModelType::ValueType>(model.getTransitionMatrix().getRowCount(), storm::utility::zero<typename SparseModelType::ValueType>());

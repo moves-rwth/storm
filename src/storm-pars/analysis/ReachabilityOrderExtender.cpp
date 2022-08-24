@@ -31,43 +31,96 @@ namespace storm {
                     currentStateMode = this->getNextState(order, currentState, true);
                     currentState = currentStateMode.first;
                 }
-                findBestAction(order, region, currentState);
+                bool actionFound = findBestAction(order, region, currentState);
 
-                auto const & successorRes = this->getSuccessors(currentState, order);
-                auto const & successors = successorRes.second;
-                std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
+                std::pair<uint_fast64_t, uint_fast64_t> result = {this->numberOfStates, this->numberOfStates};
+                auto const& successorRes = this->getSuccessors(currentState, order);
+                auto const& successors = successorRes.second;
 
-
-                if (successors.size() == 1) {
-                    if (order->contains(successors[0])) {
-                        this->handleOneSuccessor(order, currentState, successors[0]);
-                    } else {
-                        result = {successors[0], successors[0]};
-                    }
-                } else if (!successors.empty() || successorRes.first) {
-                    if (order->isOnlyInitialOrder()) {
-                        order->add(currentState);
-                        if (!order->isTrivial(currentState)) {
-                            // This state is part of an scc, therefore, we could do forward reasoning here
-                            result = this->extendByForwardReasoning(order, region, currentState);
+                if (actionFound) {
+                    assert (successorRes.first);
+                    if (successors.size() == 1) {
+                        if (order->contains(successors[0])) {
+                            this->handleOneSuccessor(order, currentState, successors[0]);
                         } else {
-                            result = {this->numberOfStates, this->numberOfStates};
+                            result = {successors[0], successors[0]};
                         }
-                    } else {
-                        result = this->extendNormal(order, region, currentState);
+                    } else if (!successors.empty()) {
+                        if (order->isOnlyInitialOrder()) {
+                            order->add(currentState);
+                            if (!order->isTrivial(currentState)) {
+                                // This state is part of an scc, therefore, we could do forward reasoning here
+                                result = this->extendByForwardReasoning(order, region, currentState);
+                            } else {
+                                result = {this->numberOfStates, this->numberOfStates};
+                            }
+                        } else {
+                            result = this->extendNormal(order, region, currentState);
+                        }
                     }
-                } else if (!successorRes.first) {
-                    // there is no best action
-                    // at least one of the actions has only one successor
-                    // TODO: what to do here
-                    assert (false);
+                } else if (currentStateMode.second) {
+                    // We have a non-deterministic state, and cannot (yet) fix the action
+                    // We only go into here if we need to handle the state because it was its turn by the ordering
+                    assert (!successorRes.first);
+                    bool sufficientForState = true;
+                    for (auto itr1 = successors.begin(); itr1 < successors.end(); ++itr1) {
+                        for (auto itr2 = itr1 + 1; itr2 < successors.end(); ++itr2) {
+                            // compare all successors with each other
+                            if (order->compare(*itr1, *itr2) == Order::NodeComparison::UNKNOWN) {
+                                auto assumptions = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
+                                                       ? this->assumptionMaker->createAndCheckAssumptions(*itr1, *itr2, order, region, this->minValues[order],
+                                                                                                          this->maxValues[order])
+                                                       : this->assumptionMaker->createAndCheckAssumptions(*itr1, *itr2, order, region);
+                                if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                                    this->handleAssumption(order, assumptions.begin()->first);
+                                    findBestAction(order, region, *itr1);
+                                    actionFound = findBestAction(order, region, currentState);
+                                } else if (sufficientForState) {
+                                    result = {*itr1, *itr2};
+                                    sufficientForState = false;
+                                }
+                            }
+                            if (actionFound) {
+                                break;
+                            }
+                        }
+                        if (actionFound) {
+                            break;
+                        }
+                    }
+                    if (actionFound) {
+                        // We restart the loop as we now did find an action
+                        continue;
+                    }
+
+                    if (sufficientForState) {
+                        for (auto itr1 = successors.begin(); itr1 < successors.end(); ++itr1) {
+                            // compare all successors with each other
+                            if (order->compare(*itr1, currentState) == Order::NodeComparison::UNKNOWN) {
+                                auto assumptions = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
+                                                       ? this->assumptionMaker->createAndCheckAssumptions(*itr1, currentState, order, region, this->minValues[order],
+                                                                                                          this->maxValues[order])
+                                                       : this->assumptionMaker->createAndCheckAssumptions(*itr1, currentState, order, region);
+                                if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                                    this->handleAssumption(order, assumptions.begin()->first);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // We couldn't deal with the state, its statemode is from statesToHandle
+                    // we reset result
+                    result = {currentState, currentState};
                 }
 
+                // Now that we tried to order it, see what we should do next
                 if (result.first == this->numberOfStates) {
                     // We did extend the order
-                    STORM_LOG_ASSERT (result.second == this->numberOfStates, "Expecting both parts of result to contain the number of states");
-                    STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Something went wrong while sorting states, number of states differs");
-                    STORM_LOG_ASSERT (order->contains(currentState) && order->getNode(currentState) != nullptr, "Expecting order to contain the current State");
+                    STORM_LOG_ASSERT(result.second == this->numberOfStates, "Expecting both parts of result to contain the number of states");
+                    STORM_LOG_ASSERT(order->sortStates(successors).size() == successors.size(),
+                                     "Something went wrong while sorting states, number of states differs");
+                    STORM_LOG_ASSERT(order->contains(currentState) && order->getNode(currentState) != nullptr,
+                                     "Expecting order to contain the current State");
 
                     if (monRes != nullptr) {
                         for (auto& param : this->occuringVariablesAtState[currentState]) {
@@ -77,8 +130,11 @@ namespace storm {
                     // Get the next state
                     currentStateMode = this->getNextState(order, currentState, true);
                 } else {
-                    STORM_LOG_ASSERT (result.first < this->numberOfStates && result.second < this->numberOfStates, "Expecting both result numbers to correspond to states");
-                    STORM_LOG_ASSERT (order->compare(result.first, result.second) == Order::UNKNOWN && order->compare(result.second, result.first) == Order::UNKNOWN, "Expecting relation between the two states to be unknown");
+                    STORM_LOG_ASSERT(result.first < this->numberOfStates && result.second < this->numberOfStates,
+                                     "Expecting both result numbers to correspond to states");
+                    STORM_LOG_ASSERT(
+                        order->compare(result.first, result.second) == Order::UNKNOWN && order->compare(result.second, result.first) == Order::UNKNOWN,
+                        "Expecting relation between the two states to be unknown");
                     // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
                     if (currentStateMode.second && this->extendWithAssumption(order, region, result.first, result.second)) {
                         continue;
@@ -87,7 +143,9 @@ namespace storm {
                     if (this->nonParametricStates.find(currentState) != this->nonParametricStates.end()) {
                         if (!order->contains(currentState)) {
                             // State is not parametric, so we hope that just adding it between =) and =( will help us
+                            // We set is as sufficient as it is non-parametric and non-parametric states are by definition sufficient
                             order->add(currentState);
+                            order->setSufficientForState(currentState);
                         }
                         if (this->matrix.getRowGroupSize(currentState) > 1) {
                             // State is non-deterministic
@@ -114,8 +172,8 @@ namespace storm {
                         }
                     }
                 }
-                STORM_LOG_ASSERT (order->sortStates(successors).size() == successors.size(), "Expecting all successor states to be sorted");
-            }
+                STORM_LOG_ASSERT(order->sortStates(successors).size() == successors.size(), "Expecting all successor states to be sorted");
+                }
 
             STORM_LOG_ASSERT (order->getDoneBuilding(), "Expecting to have a final order");
             if (monRes != nullptr) {
@@ -199,12 +257,7 @@ namespace storm {
             } else {
                 auto squareMatrix = this->matrix.getSquareMatrix();
                 auto statesSorted = storm::utility::graph::getBFSTopologicalSort(squareMatrix.transpose(), this->matrix, firstStates);
-                std::cout << "Sorting of states" << std::endl;
-                for (auto & state : statesSorted) {
-                    std::cout << state << std::endl;
-                }
                 order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition), std::move(statesSorted), isOptimistic));
-
             }
             this->buildStateMap();
 

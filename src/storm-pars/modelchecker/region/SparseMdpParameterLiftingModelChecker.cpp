@@ -433,30 +433,10 @@ namespace storm {
                     if (variables.size() == 0 || order->isBottomState(state) || order->isTopState(state)) {
                         localMonotonicityResult->setConstant(state);
                     } else {
-                        if (order->isActionSetAtState(state)) {
-                            for (auto const& var : variables) {
-                                auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                                if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
-                                    monotonicity = this->monotonicityChecker->checkLocalMonotonicity(order, state, var, region, order->getActionAtState(state));
-                                    localMonotonicityResult->setMonotonicity(state, var, monotonicity);
-                                }
-                            }
-                        } else {
-                            for (auto const& var : variables) {
-                                auto tempMonotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                                bool initialized = false;
-                                Monotonicity monotonicity;
-                                for (auto action = 0; action < this->parametricModel->getTransitionMatrix().getRowGroupSize(state); ++action) {
-                                    if (tempMonotonicity == Monotonicity::Unknown || tempMonotonicity == Monotonicity::Not) {
-                                        tempMonotonicity = this->monotonicityChecker->checkLocalMonotonicity(order, state, var, region, action);
-                                        if (!initialized) {
-                                            monotonicity = tempMonotonicity;
-                                            initialized = true;
-                                        } else if (monotonicity != tempMonotonicity) {
-                                            monotonicity = Monotonicity::Unknown;
-                                        }
-                                    }
-                                }
+                        for (auto const& var : variables) {
+                            auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                            if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
+                                monotonicity = this->monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
                                 localMonotonicityResult->setMonotonicity(state, var, monotonicity);
                             }
                         }

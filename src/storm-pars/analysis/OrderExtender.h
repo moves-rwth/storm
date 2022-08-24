@@ -145,6 +145,7 @@ namespace storm {
              * @return
              */
             std::pair<bool, std::vector<uint_fast64_t>&> getSuccessors(uint_fast64_t state, std::shared_ptr<Order> order);
+            std::vector<uint_fast64_t>& getSuccessors(uint_fast64_t state, uint_fast64_t action);
 
 
             /**

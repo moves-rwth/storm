@@ -110,23 +110,17 @@ namespace storm {
              * @return Map which maps each order to its Reachability Order and used assumptions.
              */
             std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, bool isOptimistic, bool useBoundsFromPLA, std::string dotOutfileName = "dotOutput");
-
-            /*!
-             * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity.
-             *
-             */
-            std::shared_ptr<LocalMonotonicityResult<VariableType>> createLocalMonotonicityResult(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
-
-            /*!
-             * Checks for local monotonicity at the given state.
-             *
-             * @param order the order on which the monotonicity should be checked
-             * @param state the considerd state
-             * @param var the variable in which we check for monotonicity
-             * @param region the region on which we check the monotonicity
-             * @return Incr, Decr, Constant, Unknown or Not
-             */
-            Monotonicity checkLocalMonotonicity(std::shared_ptr<Order> order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region);
+//
+//            /*!
+//             * Checks for local monotonicity at the given state.
+//             *
+//             * @param order the order on which the monotonicity should be checked
+//             * @param state the considerd state
+//             * @param var the variable in which we check for monotonicity
+//             * @param region the region on which we check the monotonicity
+//             * @return Incr, Decr, Constant, Unknown or Not
+//             */
+//            Monotonicity checkLocalMonotonicity(std::shared_ptr<Order> order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region);
 
         private:
 
