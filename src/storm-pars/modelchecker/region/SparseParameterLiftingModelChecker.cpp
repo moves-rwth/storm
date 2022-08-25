@@ -15,9 +15,8 @@
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
-#include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
-#include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
+#include "storm-pars/analysis/RewardOrderExtender.h"
+#include "storm-pars/analysis/ReachabilityOrderExtender.h"
 
 namespace storm {
     namespace modelchecker {
@@ -660,17 +659,13 @@ namespace storm {
         SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInitialOrder(storm::storage::ParameterRegion<ValueType> region, bool isOptimistic) {
             if (this->orderExtender) {
                 std::tuple<std::shared_ptr<storm::analysis::Order>, uint_fast64_t, uint_fast64_t> res = {nullptr, 0,0};
-                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>> castedPointerReachDtmc = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
-                if (castedPointerReachDtmc != nullptr) {
-                    res = castedPointerReachDtmc->toOrder(region, isOptimistic);
+                std::shared_ptr<storm::analysis::ReachabilityOrderExtender<ValueType, ConstantType>> castedPointerReach = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtender<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerReach != nullptr) {
+                    res = castedPointerReach->toOrder(region, isOptimistic);
                 }
-                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>> castedPointerReachMdp = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>>(this->orderExtender);
-                if (castedPointerReachMdp != nullptr) {
-                    res = castedPointerReachMdp->toOrder(region, isOptimistic);
-                }
-                std::shared_ptr<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>> castedPointerRewDtmc = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
-                if (castedPointerRewDtmc != nullptr) {
-                    res = castedPointerRewDtmc->toOrder(region, isOptimistic);
+                std::shared_ptr<storm::analysis::RewardOrderExtender<ValueType, ConstantType>> castedPointerRew = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtender<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerRew != nullptr) {
+                    res = castedPointerRew->toOrder(region, isOptimistic);
                 }
                 std::shared_ptr<storm::analysis::Order> order = std::get<0>(res);
                 if (order == nullptr || order->getNumberOfStates() == 1) {

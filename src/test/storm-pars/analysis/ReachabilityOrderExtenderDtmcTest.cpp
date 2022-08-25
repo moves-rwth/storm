@@ -1,5 +1,5 @@
 #include <storm-pars/analysis/OrderExtender.h>
-#include <storm-pars/analysis/ReachabilityOrderExtenderDtmc.h>
+#include <storm-pars/analysis/ReachabilityOrderExtender.h>
 #include "storm-config.h"
 
 #include "storm-pars/api/storm-pars.h"
@@ -46,9 +46,9 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_model) {
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
 
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(model, formulas[0]);
-    auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(region, false, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
+    auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>;
+    auto criticalTuple = extender.toOrder(region, false, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
 
@@ -85,9 +85,9 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_without_bisimulation_on_model) {
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
 
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(model, formulas[0]);
-    auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(region, false, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
+    auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>;
+    auto criticalTuple = extender.toOrder(region, false, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(183ul, std::get<1>(criticalTuple));
     EXPECT_EQ(186ul, std::get<2>(criticalTuple));
 }
@@ -130,7 +130,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_matrix) {
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
     auto res = extender.toOrder(region, false);
     auto order = std::get<0>(res);
     EXPECT_EQ(order->getNumberOfAddedStates(), model->getNumberOfStates());
@@ -174,7 +174,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_without_bisimulation_on_matrix) {
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
     auto res = extender.toOrder(region, false);
     auto order = std::get<0>(res);
     EXPECT_FALSE(order->getNumberOfAddedStates() == order->getNumberOfStates());
@@ -199,7 +199,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_model) {
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
 
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(model, formulas[0]);
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto order = std::get<0>(extender.toOrder(region, false));
     EXPECT_EQ(5ul, order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
@@ -248,7 +248,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_matrix) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
     // OrderExtender
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
     auto res = extender.toOrder(region, false);
     auto order = std::get<0>(res);
     EXPECT_EQ(model->getNumberOfStates(), order->getNumberOfAddedStates());
@@ -285,7 +285,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_model) {
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
     auto region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
 
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(model, formulas[0]);
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto order = std::get<0>(extender.toOrder(region, false));
 
     EXPECT_EQ(5ul, order->getNumberOfAddedStates());
@@ -334,7 +334,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_matrix) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
     // OrderExtender
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
     auto res = extender.toOrder(region, false);
     auto order = std::get<0>(res);
     EXPECT_EQ( model->getNumberOfStates(), order->getNumberOfAddedStates());
@@ -391,7 +391,7 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
     // OrderExtender without bounds
-    auto extender = storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
     auto res = extender.toOrder(region, false);
     EXPECT_TRUE(std::get<0>(res)->getDoneBuilding());
 }

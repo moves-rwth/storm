@@ -1,8 +1,7 @@
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
-#include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
-#include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
+#include "storm-pars/analysis/ReachabilityOrderExtender.h"
 #include "storm-pars/analysis/Order.h"
-#include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
+#include "storm-pars/analysis/RewardOrderExtender.h"
 
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
@@ -130,7 +129,7 @@ namespace storm {
                 // For monotonicity checking
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
                     storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
-                this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(
+                this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtender<ValueType, ConstantType>>(
                     statesWithProbability01.second, statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
             }
         }
@@ -171,7 +170,7 @@ namespace storm {
             if (RegionModelChecker<ValueType>::isUseMonotonicitySet()) {
                 STORM_LOG_THROW(!statesWithProbability01.first.empty(), storm::exceptions::InvalidPropertyException, "There should be state with probability of reaching goal of 0");
                 STORM_LOG_THROW(!statesWithProbability01.second.empty(), storm::exceptions::InvalidPropertyException, "There should be state with probability of reaching goal of 1");
-                this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(
+                this->orderExtender = std::make_shared<storm::analysis::ReachabilityOrderExtender<ValueType, ConstantType>>(
                     statesWithProbability01.second, statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
             }
         }
@@ -212,7 +211,7 @@ namespace storm {
 
             if (RegionModelChecker<ValueType>::isUseMonotonicitySet()) {
                 storm::storage::BitVector topStates(this->parametricModel->getNumberOfStates(), false);
-                this->orderExtender = std::make_shared<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(
+                this->orderExtender = std::make_shared<storm::analysis::RewardOrderExtender<ValueType, ConstantType>>(
                     topStates, targetStates, this->parametricModel->getTransitionMatrix(), this->parametricModel->getUniqueRewardModel());
             }
         }
@@ -562,17 +561,13 @@ namespace storm {
             STORM_LOG_ASSERT (order != nullptr, "Cannot extend a non-existing nullptr");
             if (this->orderExtender) {
                 std::tuple<std::shared_ptr<storm::analysis::Order>, uint_fast64_t, uint_fast64_t> res = {nullptr, 0,0};
-                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>> castedPointerReachDtmc = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
-                if (castedPointerReachDtmc != nullptr) {
-                    res = castedPointerReachDtmc->extendOrder(order, region);
+                std::shared_ptr<storm::analysis::ReachabilityOrderExtender<ValueType, ConstantType>> castedPointerReach = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtender<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerReach != nullptr) {
+                    res = castedPointerReach->extendOrder(order, region);
                 }
-                std::shared_ptr<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>> castedPointerReachMdp = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>>(this->orderExtender);
-                if (castedPointerReachMdp != nullptr) {
-                    res = castedPointerReachMdp->extendOrder(order, region);
-                }
-                std::shared_ptr<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>> castedPointerRewDtmc = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>>(this->orderExtender);
-                if (castedPointerRewDtmc != nullptr) {
-                    res = castedPointerRewDtmc->extendOrder(order, region);
+                std::shared_ptr<storm::analysis::RewardOrderExtender<ValueType, ConstantType>> castedPointerRew = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtender<ValueType, ConstantType>>(this->orderExtender);
+                if (castedPointerRew != nullptr) {
+                    res = castedPointerRew->extendOrder(order, region);
                 }
                 STORM_LOG_ASSERT(std::get<0>(res) != nullptr, "Unexpected order extender type");
                 order = std::get<0>(res);

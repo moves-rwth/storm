@@ -2,7 +2,7 @@
 #include "storm-config.h"
 
 #include "storm-pars/api/storm-pars.h"
-#include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
+#include "storm-pars/analysis/RewardOrderExtender.h"
 #include "storm-pars/analysis/Order.h"
 
 #include "storm-parsers/api/storm-parsers.h"
@@ -17,11 +17,11 @@
 
 #include "test/storm_gtest.h"
 namespace {
-class RewardOrderExtenderDtmcTester : public storm::analysis::RewardOrderExtenderDtmc<storm::RationalFunction, double> {
+class RewardOrderExtenderTester : public storm::analysis::RewardOrderExtender<storm::RationalFunction, double> {
    public:
-    RewardOrderExtenderDtmcTester(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
+    RewardOrderExtenderTester(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
                                   std::shared_ptr<storm::logic::Formula const> formula)
-        : storm::analysis::RewardOrderExtenderDtmc<storm::RationalFunction, double>(model, formula) {
+        : storm::analysis::RewardOrderExtender<storm::RationalFunction, double>(model, formula) {
         // Intentionally left empty
     }
 
@@ -49,12 +49,11 @@ TEST(RewardOrderExtenderTest, RewardTest1) {
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);
 
     // Extender
-    auto extender = RewardOrderExtenderDtmcTester(model, formulas[0]);
+    auto extender = RewardOrderExtenderTester(model, formulas[0]);
     auto order = extender.getInitialOrder(false);
     ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
 
     extender.initializeMinMaxValues(region, order);
-    order->toDotOutput();
 
     // Note: Due to Storm's parsing, state 6 is s5 in the model and state 5 is s6 in the model.
     // Everything else is the same
@@ -90,7 +89,6 @@ TEST(RewardOrderExtenderTest, RewardTest1) {
 
     // s1 check
     extender.extendByBackwardReasoning(order, region, 1);
-    order->toDotOutput();
     EXPECT_EQ(order->compare(1, 2), storm::analysis::Order::NodeComparison::UNKNOWN);
     EXPECT_EQ(order->compare(1, 3), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(1, 4), storm::analysis::Order::NodeComparison::UNKNOWN);
@@ -124,7 +122,7 @@ TEST(RewardOrderExtenderTest, RewardTest2) {
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);
 
     // Extender
-    auto extender = RewardOrderExtenderDtmcTester(model, formulas[0]);
+    auto extender = RewardOrderExtenderTester(model, formulas[0]);
     auto order = extender.getInitialOrder(false);
     ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
 
@@ -142,7 +140,6 @@ TEST(RewardOrderExtenderTest, RewardTest2) {
 
     // s4 check
     extender.extendByBackwardReasoning(order, region, 4);
-    order->toDotOutput();
     EXPECT_EQ(order->compare(4, 5), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(4, 6), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(4, 7), storm::analysis::Order::NodeComparison::ABOVE);
@@ -192,7 +189,7 @@ TEST(RewardOrderExtenderTest, RewardTest3) {
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);
 
     // Extender
-    auto extender = RewardOrderExtenderDtmcTester(model, formulas[0]);
+    auto extender = RewardOrderExtenderTester(model, formulas[0]);
     auto order = extender.getInitialOrder(false);
     extender.initializeMinMaxValues(region, order);
     extender.extendOrder(order, region);
@@ -238,7 +235,7 @@ TEST(RewardOrderExtenderTest, RewardTest4) {
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);
 
     // Extender
-    auto extender = RewardOrderExtenderDtmcTester(model, formulas[0]);
+    auto extender = RewardOrderExtenderTester(model, formulas[0]);
     auto order = extender.getInitialOrder(false);
     extender.initializeMinMaxValues(region, order);
     extender.extendOrder(order, region);

@@ -1,4 +1,4 @@
-#include <storm-pars/analysis/ReachabilityOrderExtenderDtmc.h>
+#include <storm-pars/analysis/ReachabilityOrderExtender.h>
 #include <storm/storage/StronglyConnectedComponentDecomposition.h>
 #include "storm-config.h"
 #include "test/storm_gtest.h"
@@ -19,13 +19,15 @@
 TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -38,7 +40,8 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     ASSERT_EQ(193ul, model->getNumberOfStates());
     ASSERT_EQ(383ul, model->getNumberOfTransitions());
 
-    storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>* extender = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, double>(model, formulas[0]);
+    storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>* extender =
+        new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto criticalTuple = extender->toOrder(region, false);
     ASSERT_EQ(183ul, std::get<1>(criticalTuple));
     ASSERT_EQ(186ul, std::get<2>(criticalTuple));
@@ -66,7 +69,6 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
 }
 
-
 TEST(AssumptionMakerTest, Simple1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
@@ -74,8 +76,10 @@ TEST(AssumptionMakerTest, Simple1) {
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -125,8 +129,10 @@ TEST(AssumptionMakerTest, Casestudy1) {
 
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();

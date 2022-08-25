@@ -10,9 +10,8 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "storm-pars/analysis/AssumptionChecker.h"
-#include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
-#include "storm-pars/analysis/ReachabilityOrderExtenderMdp.h"
-#include "storm-pars/analysis/RewardOrderExtenderDtmc.h"
+#include "storm-pars/analysis/ReachabilityOrderExtender.h"
+#include "storm-pars/analysis/RewardOrderExtender.h"
 
 namespace storm {
     namespace analysis {
@@ -62,17 +61,17 @@ namespace storm {
 
             if (model->isOfType(models::ModelType::Dtmc)) {
                 if (formulas[0]->isProbabilityOperatorFormula()) {
-                    this->extender = new analysis::ReachabilityOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
+                    this->extender = new analysis::ReachabilityOrderExtender<ValueType, ConstantType>(model, formulas[0]);
                 } else if (formulas[0]->isRewardOperatorFormula()) {
-                    this->extender = new analysis::RewardOrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
+                    this->extender = new analysis::RewardOrderExtender<ValueType, ConstantType>(model, formulas[0]);
 
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for property" << formulas[0]);
                 }
             } else if (model->isOfType(models::ModelType::Mdp)) {
-                this->extender = new analysis::ReachabilityOrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true);
+                this->extender = new analysis::ReachabilityOrderExtender<ValueType, ConstantType>(model, formulas[0]);
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for model type: ");
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for model type: " << model->getType());
             }
 
             for (uint_fast64_t i = 0; i < matrix.getRowCount(); ++i) {
@@ -118,7 +117,6 @@ namespace storm {
 
             } else if (monResults.size() > 1) {
                 storm::analysis::MonotonicityResult<VariableType> finalRes;
-                bool first = true;
                 for (auto itr : monResults) {
                     finalRes.merge(itr.second.first);
                 }
@@ -263,17 +261,13 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHelper<ValueType, ConstantType>::toOrder(storage::ParameterRegion<ValueType> region, bool isOptimistic, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            ReachabilityOrderExtenderDtmc<ValueType, ConstantType>* castedPointerReachDtmc = dynamic_cast<ReachabilityOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
-            if (castedPointerReachDtmc != nullptr) {
-                return castedPointerReachDtmc->toOrder(region, isOptimistic, monRes);
+            ReachabilityOrderExtender<ValueType, ConstantType>* castedPointerReach = dynamic_cast<ReachabilityOrderExtender<ValueType, ConstantType>*>(extender);
+            if (castedPointerReach != nullptr) {
+                return castedPointerReach->toOrder(region, isOptimistic, monRes);
             }
-            ReachabilityOrderExtenderMdp<ValueType, ConstantType>* castedPointerReachMdp = dynamic_cast<ReachabilityOrderExtenderMdp<ValueType, ConstantType>*>(extender);
-            if (castedPointerReachMdp != nullptr) {
-                return castedPointerReachMdp->toOrder(region, isOptimistic, monRes);
-            }
-            RewardOrderExtenderDtmc<ValueType, ConstantType>* castedPointerRewDtmc = dynamic_cast<RewardOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
-            if (castedPointerRewDtmc != nullptr) {
-                return castedPointerRewDtmc->toOrder(region, isOptimistic, monRes);
+            RewardOrderExtender<ValueType, ConstantType>* castedPointerRew = dynamic_cast<RewardOrderExtender<ValueType, ConstantType>*>(extender);
+            if (castedPointerRew != nullptr) {
+                return castedPointerRew->toOrder(region, isOptimistic, monRes);
             }
             STORM_LOG_ASSERT(false, "Unexpected order extender type");
             return extender->toOrder(region, isOptimistic, monRes);
@@ -281,17 +275,13 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHelper<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            ReachabilityOrderExtenderDtmc<ValueType, ConstantType>* castedPointerReachDtmc = dynamic_cast<ReachabilityOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
-            if (castedPointerReachDtmc != nullptr) {
-                return castedPointerReachDtmc->extendOrder(order, region, monRes, assumption);
+            ReachabilityOrderExtender<ValueType, ConstantType>* castedPointerReach = dynamic_cast<ReachabilityOrderExtender<ValueType, ConstantType>*>(extender);
+            if (castedPointerReach != nullptr) {
+                return castedPointerReach->extendOrder(order, region, monRes, assumption);
             }
-            ReachabilityOrderExtenderMdp<ValueType, ConstantType>* castedPointerReachMdp = dynamic_cast<ReachabilityOrderExtenderMdp<ValueType, ConstantType>*>(extender);
-            if (castedPointerReachMdp != nullptr) {
-                return castedPointerReachMdp->extendOrder(order, region, monRes, assumption);
-            }
-            RewardOrderExtenderDtmc<ValueType, ConstantType>* castedPointerRewDtmc = dynamic_cast<RewardOrderExtenderDtmc<ValueType, ConstantType>*>(extender);
-            if (castedPointerRewDtmc != nullptr) {
-                return castedPointerRewDtmc->extendOrder(order, region, monRes, assumption);
+            RewardOrderExtender<ValueType, ConstantType>* castedPointerRew = dynamic_cast<RewardOrderExtender<ValueType, ConstantType>*>(extender);
+            if (castedPointerRew != nullptr) {
+                return castedPointerRew->extendOrder(order, region, monRes, assumption);
             }
             STORM_LOG_ASSERT(false, "Unexpected order extender type");
             return extender->extendOrder(order, region, monRes, assumption);
