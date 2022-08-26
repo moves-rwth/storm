@@ -53,7 +53,7 @@ TEST(MonotonicityCheckerTest, Simple1_larger_region) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
     auto orderExtender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto order = std::get<0>(orderExtender.toOrder(region, false));
+    auto order = std::get<0>(orderExtender.toOrder(region));
     // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
@@ -98,7 +98,7 @@ TEST(MonotonicityCheckerTest, Simple1_small_region) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
     auto orderExtender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto order = std::get<0>(orderExtender.toOrder(region, false));
+    auto order = std::get<0>(orderExtender.toOrder(region));
     // TODO: this shouldn't be necessary, check orderextender
 //    order->addRelation(1,2);
     // monchecker
@@ -146,7 +146,7 @@ TEST(MonotonicityCheckerTest, Casestudy1) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
     auto orderExtender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto res = orderExtender.toOrder(region, false);
+    auto res = orderExtender.toOrder(region);
     auto order = std::get<0>(res);
     ASSERT_TRUE(order->getDoneBuilding());
 
@@ -195,7 +195,7 @@ TEST(MonotonicityCheckerTest, Casestudy2) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
     auto orderExtender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
     // Order
-    auto res = orderExtender.toOrder(region, false);
+    auto res = orderExtender.toOrder(region);
     auto order = std::get<0>(res);
     order->addRelation(1,3);
     order->addRelation(3,2);
@@ -247,7 +247,7 @@ TEST(MonotonicityCheckerTest, Casestudy3) {
     // Order
     storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>* extender = new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, matrix);
 
-    auto res = extender->toOrder(region, false);
+    auto res = extender->toOrder(region);
     auto order = std::get<0>(res);
     ASSERT_TRUE(order->getDoneBuilding());
 

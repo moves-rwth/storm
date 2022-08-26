@@ -32,6 +32,7 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sp
         STORM_LOG_ASSERT(formula->isProbabilityOperatorFormula(), "Expecting reward or probability formula");
         this->prMax = formula->asProbabilityOperatorFormula().getOptimalityType() == OptimizationDirection::Maximize;
     }
+    this->actionComparator = ActionComparator<ValueType>();
 }
 
 template<typename ValueType, typename ConstantType>
@@ -46,6 +47,7 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector&
     this->numberOfStates = this->matrix.getColumnCount();
     this->deterministic = matrix.getRowGroupCount() == matrix.getRowCount();
     this->prMax = prMax;
+    this->actionComparator = ActionComparator<ValueType>();
 }
 
 template<typename ValueType, typename ConstantType>
@@ -123,8 +125,8 @@ void OrderExtender<ValueType, ConstantType>::buildStateMap() {
 
 template<typename ValueType, typename ConstantType>
 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(
-    storage::ParameterRegion<ValueType> region, bool isOptimistic, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-    auto order = getInitialOrder(isOptimistic);
+    storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+    auto order = getInitialOrder();
     if (order == nullptr) {
         return {nullptr, numberOfStates, numberOfStates};
     }
@@ -318,82 +320,41 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
         }
         return Order::SAME;
     }
-
-    if (order->isOptimistic()) {
-        if (mins[state1] > mins[state2] && maxs[state1] > maxs[state2]) {
-            // state 1 will probably be larger than state2
-            if (!order->contains(state1)) {
-                order->add(state1);
-                order->addStateToHandle(state1);
-            }
-            if (!order->contains(state2)) {
-                order->add(state2);
-                order->addStateToHandle(state2);
-            }
-            STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
-            STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
-            STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
-
-            order->addRelation(state1, state2);
-
-            return Order::ABOVE;
-        } else if (mins[state2] > mins[state1] && maxs[state2] > maxs[state1]) {
-            // state2 will probably be larger than state1
-            if (!order->contains(state1)) {
-                order->add(state1);
-                order->addStateToHandle(state1);
-            }
-            if (!order->contains(state2)) {
-                order->add(state2);
-                order->addStateToHandle(state2);
-            }
-            STORM_LOG_ASSERT(order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
-            STORM_LOG_ASSERT(order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
-            STORM_LOG_INFO("Adding state " << state2 << " above " << state1 << " based on min max values");
-            order->addRelation(state2, state1);
-            return Order::BELOW;
-        } else {
-            // Couldn't add relation between state1 and state 2 based on min/max values;
-            return Order::UNKNOWN;
+    if (mins[state1] > maxs[state2]) {
+        // state 1 will always be larger than state2
+        if (!order->contains(state1)) {
+            order->add(state1);
+            order->addStateToHandle(state1);
         }
+        if (!order->contains(state2)) {
+            order->add(state2);
+            order->addStateToHandle(state2);
+        }
+        STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
+        STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
+        STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
 
+        order->addRelation(state1, state2);
+
+        return Order::ABOVE;
+    } else if (mins[state2] > maxs[state1]) {
+        // state2 will always be larger than state1
+        if (!order->contains(state1)) {
+            order->add(state1);
+            order->addStateToHandle(state1);
+        }
+        if (!order->contains(state2)) {
+            order->add(state2);
+            order->addStateToHandle(state2);
+        }
+        STORM_LOG_ASSERT(order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
+        STORM_LOG_ASSERT(order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
+        STORM_LOG_INFO("Adding state " << state2 << " above " << state1 << " based on min max values");
+        order->addRelation(state2, state1);
+        return Order::BELOW;
     } else {
-        if (mins[state1] > maxs[state2]) {
-            // state 1 will always be larger than state2
-            if (!order->contains(state1)) {
-                order->add(state1);
-                order->addStateToHandle(state1);
-            }
-            if (!order->contains(state2)) {
-                order->add(state2);
-                order->addStateToHandle(state2);
-            }
-            STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
-            STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
-            STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
-
-            order->addRelation(state1, state2);
-
-            return Order::ABOVE;
-        } else if (mins[state2] > maxs[state1]) {
-            // state2 will always be larger than state1
-            if (!order->contains(state1)) {
-                order->add(state1);
-                order->addStateToHandle(state1);
-            }
-            if (!order->contains(state2)) {
-                order->add(state2);
-                order->addStateToHandle(state2);
-            }
-            STORM_LOG_ASSERT(order->compare(state2, state1) != Order::BELOW, "Expecting " << state2 << " to NOT be BELOW " << state1 << ".");
-            STORM_LOG_ASSERT(order->compare(state2, state1) != Order::SAME, "Expecting " << state2 << " to NOT be SAME " << state1 << ".");
-            STORM_LOG_INFO("Adding state " << state2 << " above " << state1 << " based on min max values");
-            order->addRelation(state2, state1);
-            return Order::BELOW;
-        } else {
-            // Couldn't add relation between state1 and state 2 based on min/max values;
-            return Order::UNKNOWN;
-        }
+        // Couldn't add relation between state1 and state 2 based on min/max values;
+        return Order::UNKNOWN;
     }
 }
 
@@ -758,12 +719,12 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                 for (uint_fast64_t i = action + 1; i < numberOfOptionsForState; ++i) {
                     if (actionsToIgnore.find(i) == actionsToIgnore.end()) {
                         auto rowB = this->matrix.getRow(state, i);
-                        auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
-                        if (compRes == GEQ) {
+                        auto compRes = actionComparator.actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
+                        if (compRes == CompareResult::GEQ) {
                             // rowA is smaller or equal than rowB, so action is smaller than i, so we continue with action
                             // We will ignore i as we know action is better
                             actionsToIgnore.insert(i);
-                        } else if (compRes == LEQ) {
+                        } else if (compRes == CompareResult::LEQ) {
                             changed = true;
                         } else {
                             // we ignore both action and i as i is sometimes better than action and vice versa
@@ -793,12 +754,12 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                 for (uint_fast64_t i = action + 1; i < numberOfOptionsForState; ++i) {
                     if (actionsToIgnore.find(i) == actionsToIgnore.end()) {
                         auto rowB = this->matrix.getRow(state, i);
-                        auto compRes = actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
-                        if (compRes == LEQ) {
+                        auto compRes = actionComparator.actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
+                        if (compRes == CompareResult::LEQ) {
                             // rowA is smaller or equal than rowB, so action is smaller than i, so we continue with action
                             // We will ignore i as we know action is better
                             actionsToIgnore.insert(i);
-                        } else if (compRes == GEQ) {
+                        } else if (compRes == CompareResult::GEQ) {
                             changed = true;
                         } else {
                             // we ignore both action and i as i is sometimes better than action and vice versa
@@ -818,156 +779,6 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
         return false;
     }
 }
-
-template<typename ValueType, typename ConstantType>
-bool OrderExtender<ValueType, ConstantType>::isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2,
-                                                                       storage::ParameterRegion<ValueType> region) {
-    // We want to prove f1 >= f2, so we need UNSAT for f1 < f2
-    std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-
-    // Transform functions into expressions
-    auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
-    auto exprF1 = valueTypeToExpression.toExpression(f1);
-    auto exprF2 = valueTypeToExpression.toExpression(f2);
-
-    // Add bounds for parameters from region
-    expressions::Expression exprBounds = manager->boolean(true);
-    auto variables = manager->getVariables();
-    for (auto var : variables) {
-        auto lb = utility::convertNumber<RationalNumber>(region.getLowerBoundary(var.getName()));
-        auto ub = utility::convertNumber<RationalNumber>(region.getUpperBoundary(var.getName()));
-        exprBounds = exprBounds && manager->rational(lb) < var && var < manager->rational(ub);
-    }
-
-    // Use SMTSolver
-    auto exprToCheck = exprF1 < exprF2;
-    solver::Z3SmtSolver s(*manager);
-    s.add(exprToCheck);
-    s.add(exprBounds);
-    auto smtRes = s.check();
-
-    // Evaluate Result
-    if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-template<typename ValueType, typename ConstantType>
-std::pair<uint64_t, uint64_t> OrderExtender<ValueType, ConstantType>::rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action,
-                                                                                               std::vector<uint64_t> orderedSuccs) {
-    uint64_t start = orderedSuccs.size();
-    uint64_t end = 0;
-    for (auto entry : *action) {
-        auto succ = entry.getColumn();
-        for (uint64_t i = 0; i < orderedSuccs.size(); i++) {
-            if (succ == orderedSuccs[i] && i < start) {
-                start = i;
-            }
-            if (succ == orderedSuccs[i] && i > end) {
-                end = i;
-            }
-        }
-    }
-
-    return std::make_pair(start, end);
-}
-
-template<typename ValueType, typename ConstantType>
-typename OrderExtender<ValueType, ConstantType>::ActionComparison OrderExtender<ValueType, ConstantType>::actionSMTCompare(
-    std::shared_ptr<Order> order, const std::vector<uint64_t>& orderedSuccs, storage::ParameterRegion<ValueType>& region, OrderExtender::Rows action1,
-    OrderExtender::Rows action2) {
-    std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-
-    // Get ordered vector of the succs actually occurring in the two actions
-    std::vector<uint64_t> occSuccs = std::vector<uint64_t>();
-    std::set<uint64_t> occSuccSet = std::set<uint64_t>();
-    for (auto entry : *action1) {
-        occSuccSet.insert(entry.getColumn());
-    }
-    for (auto entry : *action2) {
-        occSuccSet.insert(entry.getColumn());
-    }
-    for (auto a : orderedSuccs) {
-        if (occSuccSet.find(a) != occSuccSet.end()) {
-            occSuccs.push_back(a);
-        }
-    }
-
-    // Turn everything we know about our succs into expressions
-    expressions::Expression exprStateVars = manager->boolean(true);
-    std::set<std::string> stateVarNames;
-    for (uint_fast64_t i = 0; i < occSuccs.size(); i++) {
-        std::string varName = "s" + std::to_string(occSuccs[i]);
-        stateVarNames.insert(varName);
-        auto var = manager->declareRationalVariable(varName);
-        exprStateVars = exprStateVars && manager->rational(0) < var && var < manager->rational(1);
-        if (i > 0) {
-            if (order->compare(occSuccs[i], occSuccs[i - 1]) == Order::SAME) {
-                auto sameVar = manager->getVariable("s" + std::to_string(occSuccs[i - 1]));
-                expressions::Expression exprSame = sameVar.getExpression() = var.getExpression();
-                exprStateVars = exprStateVars && exprSame;
-            } else {
-                auto biggerVar = manager->getVariable("s" + std::to_string(occSuccs[i - 1]));
-                expressions::Expression exprBigger = biggerVar.getExpression() > var.getExpression();
-                exprStateVars = exprStateVars && exprBigger;
-            }
-        }
-    }
-
-    // Turn rational functions into expressions
-    auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
-    auto exprF1 = manager->rational(0);
-    for (auto entry : *action1) {
-        uint64_t column = entry.getColumn();
-        std::string name = "s" + std::to_string(column);
-        exprF1 = exprF1 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable(name);
-    }
-    auto exprF2 = manager->rational(0);
-    for (auto entry : *action2) {
-        uint64_t column = entry.getColumn();
-        std::string name = "s" + std::to_string(column);
-        exprF2 = exprF2 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable(name);
-    }
-
-    // Turn parameter bounds into expressions
-    expressions::Expression exprParamBounds = manager->boolean(true);
-    auto variables = manager->getVariables();
-    for (auto var : variables) {
-        std::string name = var.getName();
-        if (stateVarNames.find(name) == stateVarNames.end()) {
-            auto lb = utility::convertNumber<RationalNumber>(region.getLowerBoundary(name));
-            auto ub = utility::convertNumber<RationalNumber>(region.getUpperBoundary(name));
-            exprParamBounds = exprParamBounds && manager->rational(lb) < var && var < manager->rational(ub);
-        }
-    }
-
-    // Check if (action1 >= action2) -> check if (action2 > action1) is UNSAT. If yes --> GEQ. If no --> continue
-    auto exprToCheck = exprF1 < exprF2;
-    solver::Z3SmtSolver s1(*manager);
-    s1.add(exprToCheck);
-    s1.add(exprStateVars);
-    s1.add(exprParamBounds);
-    auto smtRes = s1.check();
-    if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
-        return GEQ;
-    }
-
-    // Check if (action2 >= action1) -> check if (action1 > action2) is UNSAT. If yes --> LEQ. If no --> UNKNOWN
-    exprToCheck = exprF2 < exprF1;
-    solver::Z3SmtSolver s2(*manager);
-    s2.add(exprToCheck);
-    s2.add(exprStateVars);
-    s2.add(exprParamBounds);
-    smtRes = s2.check();
-    if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
-        return LEQ;
-    } else {
-        return UNKNOWN;
-    }
-}
-
 template class OrderExtender<RationalFunction, double>;
 template class OrderExtender<RationalFunction, RationalNumber>;
 }  // namespace analysis

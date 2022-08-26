@@ -50,7 +50,7 @@ TEST(RewardOrderExtenderTest, RewardTest1) {
 
     // Extender
     auto extender = RewardOrderExtenderTester(model, formulas[0]);
-    auto order = extender.getInitialOrder(false);
+    auto order = extender.getInitialOrder();
     ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
 
     extender.initializeMinMaxValues(region, order);
@@ -123,7 +123,7 @@ TEST(RewardOrderExtenderTest, RewardTest2) {
 
     // Extender
     auto extender = RewardOrderExtenderTester(model, formulas[0]);
-    auto order = extender.getInitialOrder(false);
+    auto order = extender.getInitialOrder();
     ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
 
     extender.initializeMinMaxValues(region, order);
@@ -190,7 +190,7 @@ TEST(RewardOrderExtenderTest, RewardTest3) {
 
     // Extender
     auto extender = RewardOrderExtenderTester(model, formulas[0]);
-    auto order = extender.getInitialOrder(false);
+    auto order = extender.getInitialOrder();
     extender.initializeMinMaxValues(region, order);
     extender.extendOrder(order, region);
 
@@ -236,7 +236,7 @@ TEST(RewardOrderExtenderTest, RewardTest4) {
 
     // Extender
     auto extender = RewardOrderExtenderTester(model, formulas[0]);
-    auto order = extender.getInitialOrder(false);
+    auto order = extender.getInitialOrder();
     extender.initializeMinMaxValues(region, order);
     extender.extendOrder(order, region);
 

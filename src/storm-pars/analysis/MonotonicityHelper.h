@@ -109,25 +109,14 @@ namespace storm {
              * @param dotOutfileName Name for the files of the dot outputs should they be generated
              * @return Map which maps each order to its Reachability Order and used assumptions.
              */
-            std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, bool isOptimistic, bool useBoundsFromPLA, std::string dotOutfileName = "dotOutput");
-//
-//            /*!
-//             * Checks for local monotonicity at the given state.
-//             *
-//             * @param order the order on which the monotonicity should be checked
-//             * @param state the considerd state
-//             * @param var the variable in which we check for monotonicity
-//             * @param region the region on which we check the monotonicity
-//             * @return Incr, Decr, Constant, Unknown or Not
-//             */
-//            Monotonicity checkLocalMonotonicity(std::shared_ptr<Order> order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region);
+            std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, bool useBoundsFromPLA, std::string dotOutfileName = "dotOutput");
 
         private:
 
-            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, bool isOptimistic, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
             std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
 
-            void createOrder(bool isOptimistic);
+            void createOrder();
 
             void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 

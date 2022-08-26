@@ -84,7 +84,7 @@ namespace storm {
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
 
-            virtual std::shared_ptr<storm::analysis::Order> getInitialOrder(storm::storage::ParameterRegion<ParametricType> region, bool isOptimistic);
+            virtual std::shared_ptr<storm::analysis::Order> getInitialOrder(storm::storage::ParameterRegion<ParametricType> region);
 
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
@@ -97,7 +97,6 @@ namespace storm {
             void setUseMonotonicity(bool monotonicity = true);
             void setUseBounds(bool bounds = true);
             void setUseOnlyGlobal(bool global = true);
-            void setUseOptimisticOrder(bool optimistic = true);
             void setDisableOptimization(bool disableOptimization = true);
 
             void setMonotoneParameters(std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneParameters);

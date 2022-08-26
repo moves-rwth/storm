@@ -35,14 +35,12 @@ namespace storm {
             bool useMonotonicity;
             bool useOnlyGlobalMonotonicity;
             bool useBoundsFromPLA;
-            bool useOptimisticOrder;
             bool disableOptimization;
 
-            explicit MonotonicitySetting(bool useMonotonicity = false, bool useOnlyGlobalMonotonicity = false, bool useBoundsFromPLA = false, bool useOptimisticOrder = false, bool disableOptimization = false) {
+            explicit MonotonicitySetting(bool useMonotonicity = false, bool useOnlyGlobalMonotonicity = false, bool useBoundsFromPLA = false, bool disableOptimization = false) {
                 this->useMonotonicity = useMonotonicity;
                 this->useOnlyGlobalMonotonicity = useOnlyGlobalMonotonicity;
                 this->useBoundsFromPLA = useBoundsFromPLA;
-                this->useOptimisticOrder = useOptimisticOrder;
                 this->disableOptimization = disableOptimization;
             }
         };
@@ -168,7 +166,6 @@ namespace storm {
                 checker->setUseMonotonicity(monotonicitySetting.useMonotonicity);
                 checker->setUseOnlyGlobal(monotonicitySetting.useOnlyGlobalMonotonicity);
                 checker->setUseBounds(monotonicitySetting.useBoundsFromPLA);
-                checker->setUseOptimisticOrder(monotonicitySetting.useOptimisticOrder);
                 checker->setDisableOptimization(monotonicitySetting.disableOptimization);
                 if (monotonicitySetting.useMonotonicity && monotoneParameters) {
                     checker->setMonotoneParameters(monotoneParameters.get());
@@ -178,7 +175,6 @@ namespace storm {
                 checker->setUseMonotonicity(monotonicitySetting.useMonotonicity);
                 checker->setUseOnlyGlobal(monotonicitySetting.useOnlyGlobalMonotonicity);
                 checker->setUseBounds(monotonicitySetting.useBoundsFromPLA);
-                checker->setUseOptimisticOrder(monotonicitySetting.useOptimisticOrder);
                 checker->setDisableOptimization(monotonicitySetting.disableOptimization);
                 if (monotonicitySetting.useMonotonicity && monotoneParameters) {
                     checker->setMonotoneParameters(monotoneParameters.get());
@@ -271,7 +267,6 @@ namespace storm {
         template <typename ValueType>
         std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, boost::optional<ValueType> const& coverageThreshold, boost::optional<uint64_t> const& refinementDepthThreshold = boost::none, storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool allowModelSimplification = true, MonotonicitySetting monotonicitySetting = MonotonicitySetting(), uint64_t monThresh = 0) {
             Environment env;
-            STORM_LOG_THROW(!monotonicitySetting.useOptimisticOrder, storm::exceptions::NotImplementedException, "Using optimistic order not yet implemented for checking extremal value");
             bool preconditionsValidated = false;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine, true, allowModelSimplification, preconditionsValidated, monotonicitySetting);
             return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, monThresh);
@@ -297,7 +292,6 @@ namespace storm {
         template <typename ValueType>
         std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> getBound(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dir, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
             Environment env;
-            STORM_LOG_THROW(!monotonicitySetting.useOptimisticOrder, storm::exceptions::NotImplementedException, "Using optimistic order not yet implemented for checking extremal value");
             bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
             auto regionChecker = initializeParameterLiftingRegionModelChecker(env, model, task, generateSplitEstimates, allowModelSimplification, monotonicitySetting, monotoneParameters);
             return regionChecker->getBound(env, region, dir);
@@ -314,7 +308,6 @@ namespace storm {
         template <typename ValueType>
         bool checkExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, bool absolutePrecision, ValueType const& suggestion, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false,  boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
             Environment env;
-            STORM_LOG_THROW(!monotonicitySetting.useOptimisticOrder, storm::exceptions::NotImplementedException, "Using optimistic order not yet implemented for checking extremal value");
             bool preconditionsValidated = false;
             bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting, monotoneParameters);

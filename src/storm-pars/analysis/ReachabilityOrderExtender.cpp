@@ -208,7 +208,7 @@ void ReachabilityOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std:
 }
 
 template<typename ValueType, typename ConstantType>
-std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder(bool isOptimistic) {
+std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder() {
     std::shared_ptr<Order> order;
     if (this->bottomStates == boost::none || this->topStates == boost::none) {
         STORM_LOG_ASSERT(this->model != nullptr, "Can't get initial order if model is not specified");
@@ -267,12 +267,12 @@ std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getIn
     if (this->matrix.getColumnCount() == this->matrix.getRowCount()) {
         auto statesSorted = storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates);
         order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition),
-                                                 std::move(statesSorted), isOptimistic));
+                                                 std::move(statesSorted)));
     } else {
         auto squareMatrix = this->matrix.getSquareMatrix();
         auto statesSorted = storm::utility::graph::getBFSTopologicalSort(squareMatrix.transpose(), this->matrix, firstStates);
         order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition),
-                                                 std::move(statesSorted), isOptimistic));
+                                                 std::move(statesSorted)));
     }
     this->buildStateMap();
 

@@ -365,7 +365,7 @@ namespace storm {
 
         template <typename ParametricType>
         std::shared_ptr<storm::analysis::Order>
-        RegionModelChecker<ParametricType>::getInitialOrder(storm::storage::ParameterRegion<ParametricType> region, bool isOptimistic) {
+        RegionModelChecker<ParametricType>::getInitialOrder(storm::storage::ParameterRegion<ParametricType> region) {
             STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             // Does nothing
             return nullptr;
@@ -393,11 +393,6 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isUseOptimisticOrderSet() const {
-            return useOptimisticOrder;
-        }
-
-        template <typename ParametricType>
         bool RegionModelChecker<ParametricType>::isDisableOptimizationSet() const {
             return disableOptimization;
         }
@@ -417,12 +412,6 @@ namespace storm {
         void RegionModelChecker<ParametricType>::setUseOnlyGlobal(bool global) {
             assert (!global || useMonotonicity);
             this->useOnlyGlobal = global;
-        }
-
-        template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::setUseOptimisticOrder(bool optimistic){
-            assert (!optimistic || useMonotonicity && useBounds);
-            this->useOptimisticOrder = optimistic;
         }
 
         template <typename ParametricType>

@@ -273,7 +273,7 @@ namespace storm {
                     }
                     orderExtender->setMinMaxValues(minBound.getValueVector(), maxBound.getValueVector());
                 }
-                auto order = this->getInitialOrder(region, this->isUseOptimisticOrderSet());
+                auto order = this->getInitialOrder(region);
                 if (order != nullptr) {
                     auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(
                         new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
@@ -281,16 +281,11 @@ namespace storm {
                     this->extendLocalMonotonicityResult(region, order, monRes);
                     monotonicityWatch.stop();
                     STORM_LOG_INFO("\nTotal time for monotonicity checking: " << monotonicityWatch << ".\n\n");
-
-                    if (order->isOptimistic()) {
-                        STORM_LOG_WARN("Optimistic monotonicity is used, the obtained extremum cannot be guaranteed to be correct");
-                    }
                     regionQueue.emplace(region, order, monRes, initBound);
                 } else {
                     this->setUseMonotonicity(false);
                     useMonotonicity = false;
                     this->setUseBounds(false);
-                    this->setUseOptimisticOrder(false);
                     regionQueue.emplace(region, nullptr, nullptr, initBound);
                 }
             } else {
@@ -656,16 +651,17 @@ namespace storm {
 
         template<typename SparseModelType, typename ConstantType>
         std::shared_ptr<storm::analysis::Order>
-        SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInitialOrder(storm::storage::ParameterRegion<ValueType> region, bool isOptimistic) {
+        SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInitialOrder(storm::storage::ParameterRegion<ValueType> region) {
             if (this->orderExtender) {
                 std::tuple<std::shared_ptr<storm::analysis::Order>, uint_fast64_t, uint_fast64_t> res = {nullptr, 0,0};
                 std::shared_ptr<storm::analysis::ReachabilityOrderExtender<ValueType, ConstantType>> castedPointerReach = std::dynamic_pointer_cast<storm::analysis::ReachabilityOrderExtender<ValueType, ConstantType>>(this->orderExtender);
                 if (castedPointerReach != nullptr) {
-                    res = castedPointerReach->toOrder(region, isOptimistic);
+                    res = castedPointerReach->toOrder(region);
                 }
                 std::shared_ptr<storm::analysis::RewardOrderExtender<ValueType, ConstantType>> castedPointerRew = std::dynamic_pointer_cast<storm::analysis::RewardOrderExtender<ValueType, ConstantType>>(this->orderExtender);
                 if (castedPointerRew != nullptr) {
-                    res = castedPointerRew->toOrder(region, isOptimistic);
+                    res = castedPointerRew->toOrder(region);
+                    res = castedPointerRew->toOrder(region);
                 }
                 std::shared_ptr<storm::analysis::Order> order = std::get<0>(res);
                 if (order == nullptr || order->getNumberOfStates() == 1) {

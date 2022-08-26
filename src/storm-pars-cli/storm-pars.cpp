@@ -762,9 +762,9 @@ namespace storm {
             if (!monSettings.isMonSolutionSet()) {
                 auto monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(model, formulas, regions, monSettings.getNumberOfSamples(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision(), monSettings.isDotOutputSet());
                 if (monSettings.isExportMonotonicitySet()) {
-                    monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isOptimisticOrderSet(), monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
+                    monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
                 } else {
-                    monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.isOptimisticOrderSet(), monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
+                    monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
                 }
             } else {
                 // Checking monotonicity based on solution function
@@ -834,17 +834,11 @@ namespace storm {
                 STORM_LOG_THROW(property.getRawFormula()->hasQuantitativeResult(), storm::exceptions::NotSupportedException, "Extremum cannot be computed for this type of property.");
                 for (auto const& region : regions) {
                     if (monotonicitySettings.useMonotonicity) {
-                        if (monotonicitySettings.useOptimisticOrder) {
-                            STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
-                                                                                         << *property.getRawFormula()
-                                                                                         << " within region " << region
-                                                                                         << " and using optimistic monotonicity ..." << std::endl);
-                        } else {
-                            STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
-                                                                                         << *property.getRawFormula()
-                                                                                         << " within region " << region
-                                                                                         << " and using monotonicity ..." << std::endl);
-                        }
+                        STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
+                                                                                     << *property.getRawFormula()
+                                                                                     << " within region " << region
+                                                                                     << " and using monotonicity ..." << std::endl);
+
 
                     } else {
                         STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
@@ -1093,7 +1087,7 @@ namespace storm {
                                     model->as<storm::models::sparse::Model<ValueType>>()));
                 }
 // TODO: is onlyGlobalSet was used here
-                verifyParametricModel<DdType, ValueType>(model, input, regions, samples, storm::api::MonotonicitySetting(parSettings.isUseMonotonicitySet(), false, monSettings.isUsePLABoundsSet(), monSettings.isOptimisticOrderSet(), monSettings.isDisableOptimizationSet()), monotoneParameters, monSettings.getMonotonicityThreshold(), omittedParameters);
+                verifyParametricModel<DdType, ValueType>(model, input, regions, samples, storm::api::MonotonicitySetting(parSettings.isUseMonotonicitySet(), false, monSettings.isUsePLABoundsSet(), monSettings.isDisableOptimizationSet()), monotoneParameters, monSettings.getMonotonicityThreshold(), omittedParameters);
             }
         }
 

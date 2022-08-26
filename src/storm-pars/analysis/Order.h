@@ -42,7 +42,7 @@ namespace storm {
              * @param sccsSorted TODO ??
              * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
              */
-            Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted, bool isOptimistic);
+            Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted);
 
             /*!
              * Constructs an order with the given top state and bottom state.
@@ -53,7 +53,7 @@ namespace storm {
              * @param sccsSorted TODO ??
              * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
              */
-            Order(uint_fast64_t top, uint_fast64_t bottom, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted, bool isOptimistic);
+            Order(uint_fast64_t top, uint_fast64_t bottom, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted);
 
             /*!
              * Constructs a new Order.
@@ -438,9 +438,6 @@ namespace storm {
             bool isSufficientForState(uint_fast64_t state) const;
             bool isDoneForState(uint_fast64_t state) const;
 
-            bool isOptimistic() const;
-
-            void setOptimistic(bool isOptimistic);
             void setChanged(bool changed);
 
             bool getChanged() const;
@@ -476,7 +473,7 @@ namespace storm {
              * @param decomposition TODO ??
              * @param doneBuilding
              */
-            void init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool isOptimistic, bool doneBuilding = false);
+            void init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool doneBuilding = false);
 
             /*!
              * Creates a name for a node in the dotOutput that represents a node in the order
@@ -520,10 +517,6 @@ namespace storm {
 
             // The bottom node
             Node* bottom;
-
-            // In case it is an optimistic order, it might be that it isn't a correct order.
-            bool optimistic;
-
 
             /*** Important sets of states: ***/
 

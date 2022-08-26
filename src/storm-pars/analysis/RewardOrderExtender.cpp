@@ -184,7 +184,7 @@ void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::share
 }
 
 template<typename ValueType, typename ConstantType>
-std::shared_ptr<Order> RewardOrderExtender<ValueType, ConstantType>::getInitialOrder(bool isOptimistic) {
+std::shared_ptr<Order> RewardOrderExtender<ValueType, ConstantType>::getInitialOrder() {
     if (this->bottomStates == boost::none || this->topStates == boost::none) {
         assert(this->model != nullptr);
         STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,
@@ -226,7 +226,7 @@ std::shared_ptr<Order> RewardOrderExtender<ValueType, ConstantType>::getInitialO
 
     // Create Order
     std::shared_ptr<Order> order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates,
-                                                                    std::move(decomposition), std::move(statesSorted), isOptimistic));
+                                                                    std::move(decomposition), std::move(statesSorted)));
     this->buildStateMap();
     for (auto& state : this->statesToHandleInitially) {
         order->addStateToHandle(state);

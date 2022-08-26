@@ -7,9 +7,9 @@
 
 namespace storm {
     namespace analysis {
-        Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool isOptimistic) {
+        Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
             STORM_LOG_ASSERT(bottomStates->getNumberOfSetBits() > 0, "Expecting order to contain at least one bottom state");
-            init(numberOfStates, decomposition, isOptimistic);
+            init(numberOfStates, decomposition);
             this->numberOfAddedStates = 0;
             this->onlyInitialOrder = true;
             if(!topStates->empty()){
@@ -42,8 +42,8 @@ namespace storm {
             changed = true;
         }
 
-        Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool isOptimistic) {
-            init(numberOfStates, decomposition, isOptimistic);
+        Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
+            init(numberOfStates, decomposition);
 
             this->onlyInitialOrder = true;
             this->sufficientForState.set(topState);
@@ -70,7 +70,6 @@ namespace storm {
         }
 
         Order::Order() {
-            this->optimistic = true;
             this->changed = false;
         }
 
@@ -548,7 +547,6 @@ namespace storm {
             copiedOrder->doneForState = storm::storage::BitVector(doneForState);
             copiedOrder->numberOfAddedStates = this->numberOfAddedStates;
             copiedOrder->doneBuilding = this->doneBuilding;
-            copiedOrder->setOptimistic(this->isOptimistic());
             copiedOrder->setChanged(this->getChanged());
 
             auto seenStates = storm::storage::BitVector(numberOfStates, false);
@@ -688,8 +686,7 @@ namespace storm {
 
         /*** Private methods ***/
 
-        void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool isOptimistic, bool doneBuilding) {
-            this->optimistic = isOptimistic;
+        void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool doneBuilding) {
             this->numberOfStates = numberOfStates;
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
             this->sufficientForState = storm::storage::BitVector(numberOfStates, false);
@@ -881,14 +878,6 @@ namespace storm {
 
         bool Order::isDoneForState(uint_fast64_t stateNumber) const {
             return doneForState[stateNumber];
-        }
-
-        bool Order::isOptimistic() const {
-           return optimistic;
-        }
-
-        void Order::setOptimistic(bool isOptimistic) {
-            this->optimistic = isOptimistic;
         }
 
         void Order::setChanged(bool changed) {

@@ -42,7 +42,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
 
     storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>* extender =
         new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
-    auto criticalTuple = extender->toOrder(region, false);
+    auto criticalTuple = extender->toOrder(region);
     ASSERT_EQ(183ul, std::get<1>(criticalTuple));
     ASSERT_EQ(186ul, std::get<2>(criticalTuple));
 
@@ -99,7 +99,7 @@ TEST(AssumptionMakerTest, Simple1) {
     options.forceTopologicalSort();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted, false));
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
@@ -153,7 +153,7 @@ TEST(AssumptionMakerTest, Casestudy1) {
     options.forceTopologicalSort();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted, false));
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);

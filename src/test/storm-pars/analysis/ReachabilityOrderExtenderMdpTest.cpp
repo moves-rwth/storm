@@ -38,7 +38,7 @@ TEST(ReachabilityOrderExtenderMdpTest, SimpleCaseCheck1_max) {
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
 
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(region, false, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto criticalTuple = extender.toOrder(region, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
 
@@ -94,7 +94,7 @@ TEST(ReachabilityOrderExtenderMdpTest, SimpleCaseCheck1_min) {
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
 
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(region, false, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto criticalTuple = extender.toOrder(region, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
 
@@ -158,7 +158,7 @@ TEST(ReachabilityOrderExtenderMdpTest, SmtInvolvedChecking_max) {
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
 
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(region, false, std::make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto criticalTuple = extender.toOrder(region, std::make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
 
@@ -217,7 +217,7 @@ TEST(ReachabilityOrderExtenderMdpTest, SmtInvolvedChecking_min) {
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
 
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(region, false, std::make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto criticalTuple = extender.toOrder(region, std::make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
 

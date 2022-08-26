@@ -64,7 +64,7 @@ namespace storm {
 
             SparseModelType const& getConsideredParametricModel() const;
             CheckTask<storm::logic::Formula, ConstantType> const& getCurrentCheckTask() const;
-            std::shared_ptr<storm::analysis::Order> getInitialOrder(storm::storage::ParameterRegion<ValueType> region, bool isOptimistic) override;
+            std::shared_ptr<storm::analysis::Order> getInitialOrder(storm::storage::ParameterRegion<ValueType> region) override;
 
         protected:
             void specifyFormula(Environment const& env, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);

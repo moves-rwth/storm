@@ -10,6 +10,7 @@
 
 #include "AssumptionMaker.h"
 #include "storm-pars/analysis/LocalMonotonicityResult.h"
+#include "storm-pars/analysis/ActionComparator.h"
 #include "storm-pars/analysis/MonotonicityChecker.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
 #include "storm-pars/analysis/Order.h"
@@ -23,13 +24,8 @@ class OrderExtender {
     typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
     typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
     typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
+    typedef typename ActionComparator<ValueType>::ComparisonResult CompareResult;
     typedef typename storage::SparseMatrix<ValueType>::rows* Rows;
-    enum ActionComparison {
-        GEQ,
-        LEQ,
-        UNKNOWN,
-    };
-
     /*!
      * Constructs a new OrderExtender.
      *
@@ -54,13 +50,12 @@ class OrderExtender {
      * Creates an order based on the given formula.
      *
      * @param region The region for the order.
-     * @param isOptimistic Boolean if optimistic order or normal order should be build
      * @param monRes The monotonicity result so far.
      * @return A triple with a pointer to the order and two states of which the current place in the order
      *         is unknown but needed. When the states have as number the number of states, no states are
      *         unplaced but needed.
      */
-    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, bool isOptimistic,
+    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
 
     /**
@@ -196,10 +191,9 @@ class OrderExtender {
      * The order is based on either the formula and model or the provided top/bottom states.
      * These are provided when constructing the OrderExtender.
      *
-     * @param isOptimistic bool ean whether the order should be optimistic or not
      * @return pointer to the created order
      */
-    virtual std::shared_ptr<Order> getInitialOrder(bool isOptimistic) = 0;
+    virtual std::shared_ptr<Order> getInitialOrder() = 0;
     bool findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state);
     virtual std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                               uint_fast64_t currentState) = 0;
@@ -246,19 +240,7 @@ class OrderExtender {
     MonotonicityChecker<ValueType> monotonicityChecker;
     bool useAssumptions;
     ConstantType error = storm::utility::convertNumber<ConstantType>(0.000001);
-    /*!
-     * Compares two rational functions
-     * @param f1 The first rational function
-     * @param f2 The second reational function
-     * @param region The region for parameters
-     * @return true iff The first function is greater or equal to the second one
-     */
-    bool isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2, storage::ParameterRegion<ValueType> region);
-
-    std::pair<uint64_t, uint64_t> rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action, std::vector<uint64_t> orderedSuccs);
-
-    ActionComparison actionSMTCompare(std::shared_ptr<Order> order, std::vector<uint64_t> const& orderedSuccs, storage::ParameterRegion<ValueType>& region,
-                                      Rows action1, Rows action2);
+    ActionComparator<ValueType> actionComparator;
 
     bool prMax;
 };
