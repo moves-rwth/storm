@@ -32,7 +32,7 @@ The following two lists provide an overview over the *required* and *recommended
 Required:
 - git
 - cmake
-- boost (>= 1.61)
+- boost
 - cln
 - gmp
 - ginac
