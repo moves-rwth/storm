@@ -1,5 +1,4 @@
 #include "storm-pars/analysis/RewardOrderExtender.h"
-#include <storage/StronglyConnectedComponentDecomposition.h>
 
 namespace storm {
 namespace analysis {
@@ -39,7 +38,8 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
     }
-}template<typename ValueType, typename ConstantType>
+}
+template<typename ValueType, typename ConstantType>
 RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage::BitVector& topStates, storm::storage::BitVector& bottomStates,
                                                                   storm::storage::SparseMatrix<ValueType> matrix,
                                                                   storm::models::sparse::StandardRewardModel<ValueType> rewardModel)
@@ -184,11 +184,9 @@ void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::share
 }
 
 template<typename ValueType, typename ConstantType>
-std::shared_ptr<Order> RewardOrderExtender<ValueType, ConstantType>::getInitialOrder() {
+void RewardOrderExtender<ValueType, ConstantType>::setBottomTopStates() {
     if (this->bottomStates == boost::none || this->topStates == boost::none) {
-        assert(this->model != nullptr);
-        STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,
-                        "Creating order not supported for non-square matrix");
+        STORM_LOG_ASSERT(this->model != nullptr, "Can't get initial order if model is not specified");
         modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*(this->model));
 
         // TODO check if eventually formula is true for all initial states?
@@ -200,54 +198,10 @@ std::shared_ptr<Order> RewardOrderExtender<ValueType, ConstantType>::getInitialO
                                  ->asExplicitQualitativeCheckResult()
                                  .getTruthValuesVector();
     }
+}
 
-    if (this->bottomStates->getNumberOfSetBits() == 0) {
-        return nullptr;
-    }
-
-    std::vector<uint64_t> firstStates;
-    storm::storage::BitVector subStates(this->bottomStates->size(), true);
-
-    for (auto state : (this->bottomStates.get())) {
-        firstStates.push_back(state);
-        subStates.set(state, false);
-    }
-
-    this->cyclic = storm::utility::graph::hasCycle(this->matrix, subStates);
-    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
-    if (this->cyclic) {
-        storm::storage::StronglyConnectedComponentDecompositionOptions options;
-        options.forceTopologicalSort();
-        decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);
-    }
-
-    transposeMatrix = this->matrix.transpose();
-    auto statesSorted = storm::utility::graph::getTopologicalSort(transposeMatrix, firstStates);
-
-    // Create Order
-    std::shared_ptr<Order> order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates,
-                                                                    std::move(decomposition), std::move(statesSorted)));
-    this->buildStateMap();
-    for (auto& state : this->statesToHandleInitially) {
-        order->addStateToHandle(state);
-    }
-
-    if (this->minValuesInit) {
-        this->minValues[order] = this->minValuesInit.get();
-    }
-
-    if (this->maxValuesInit) {
-        this->maxValues[order] = this->maxValuesInit.get();
-    }
-
-    if (this->minValuesInit && this->maxValuesInit) {
-        this->continueExtending[order] = true;
-        this->usePLA[order] = true;
-        this->addStatesMinMax(order);
-    } else {
-        this->usePLA[order] = false;
-    }
-    this->continueExtending[order] = true;
+template<typename ValueType, typename ConstantType>
+void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::shared_ptr<Order> order) {
 
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         auto& successors = this->getSuccessors(i, order).second;
@@ -262,6 +216,7 @@ std::shared_ptr<Order> RewardOrderExtender<ValueType, ConstantType>::getInitialO
         }
     }
 
+    // TODO aanpassen voor mdps
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         auto& successorsI = this->getSuccessors(i, order).second;
         if (successorsI.size() == 2) {
@@ -307,8 +262,8 @@ std::shared_ptr<Order> RewardOrderExtender<ValueType, ConstantType>::getInitialO
             }
         }
     }
-    return order;
 }
+
 template<typename ValueType, typename ConstantType>
 std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoning(
     std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {

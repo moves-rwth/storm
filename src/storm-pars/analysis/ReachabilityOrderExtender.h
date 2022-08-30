@@ -23,11 +23,13 @@ class ReachabilityOrderExtender : public OrderExtender<ValueType, ConstantType> 
    protected:
     // Override methods from OrderExtender
     void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) override;
-    std::shared_ptr<Order> getInitialOrder() override;
     std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                       uint_fast64_t currentState) override;
     std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                      uint_fast64_t currentState) override;
+    void setBottomTopStates() override;
+    void checkRewardsForOrder(std::shared_ptr<Order> order) override;
+
 
 };
 }  // namespace analysis

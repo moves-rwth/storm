@@ -15,6 +15,7 @@
 #include "storm-pars/analysis/MonotonicityResult.h"
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storage/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
 namespace analysis {
@@ -58,6 +59,10 @@ class OrderExtender {
     std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
 
+
+    //------------------------------------------------------------------------------
+    // Min/Max values for bounds on the reward/probability
+    //------------------------------------------------------------------------------
     /**
      * Initializes the min max values for a given region.
      * Stored for the given order, if the order is provided.
@@ -80,6 +85,17 @@ class OrderExtender {
                          std::shared_ptr<Order> order = nullptr);
 
     /**
+     * Copies the min max values for one order to the other one (deep-copy).
+     *
+     * @param orderOriginal original order.
+     * @param orderCopy order for which we want the min max values to be copied to.
+     */
+    void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
+
+    //------------------------------------------------------------------------------
+    // Two states that couldn't be ordered
+    //------------------------------------------------------------------------------
+    /**
      * Sets the states which could not be ordered for the given order.
      *
      * @param order Order in which the states could not be ordered.
@@ -96,20 +112,7 @@ class OrderExtender {
      */
     void copyUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
 
-    /**
-     * Copies the min max values for one order to the other one (deep-copy).
-     *
-     * @param orderOriginal original order.
-     * @param orderCopy order for which we want the min max values to be copied to.
-     */
-    void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
 
-    /**
-     * Returns the monotonicity checker used for checking monotonicity whilst creating the order.
-     *
-     * @return monotonicity checker.
-     */
-    MonotonicityChecker<ValueType>& getMonotonicityChecker();
 
     /**
      * Checks if there is hope to continue extending the current order.
@@ -118,12 +121,6 @@ class OrderExtender {
      */
     bool isHope(std::shared_ptr<Order> order) const;
 
-    /**
-     * Returns all variables occuring at the outgoing transitions of states.
-     *
-     * @return vector with sets of variables, vector index corresponds to state number.
-     */
-    std::vector<std::set<VariableType>> const& getVariablesOccuringAtState();
 
     /**
      * Returns a vector with the successors for this state.
@@ -184,6 +181,7 @@ class OrderExtender {
     void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
     std::pair<uint_fast64_t, bool> getNextState(std::shared_ptr<Order> order, uint_fast64_t stateNumber, bool done);
     void addStatesMinMax(std::shared_ptr<Order> order);
+    bool findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state);
 
     // Virtual protected methods
     /*!
@@ -193,14 +191,16 @@ class OrderExtender {
      *
      * @return pointer to the created order
      */
-    virtual std::shared_ptr<Order> getInitialOrder() = 0;
-    bool findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state);
+    std::shared_ptr<Order> getInitialOrder();
     virtual std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                               uint_fast64_t currentState) = 0;
     virtual std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                              uint_fast64_t currentState) = 0;
     virtual void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) = 0;
+    virtual void setBottomTopStates() = 0;
+    std::pair<std::vector<uint_fast64_t>,storage::StronglyConnectedComponentDecomposition<ValueType>> sortStatesAndDecomposeForOrder();
 
+    virtual void checkRewardsForOrder(std::shared_ptr<Order> order) = 0;
     // Order properties
     boost::optional<storm::storage::BitVector> topStates;
     boost::optional<storm::storage::BitVector> bottomStates;
@@ -237,6 +237,7 @@ class OrderExtender {
     bool deterministic;
 
    private:
+    void init(storm::storage::SparseMatrix<ValueType> matrix);
     MonotonicityChecker<ValueType> monotonicityChecker;
     bool useAssumptions;
     ConstantType error = storm::utility::convertNumber<ConstantType>(0.000001);

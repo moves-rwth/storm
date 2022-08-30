@@ -20,19 +20,19 @@ template<typename ValueType, typename ConstantType>
 OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula)
     : monotonicityChecker(model->getTransitionMatrix()) {
     this->model = model;
-    this->matrix = model->getTransitionMatrix();
-    this->numberOfStates = this->model->getNumberOfStates();
+    init(model->getTransitionMatrix());
     this->formula = formula;
     this->bottomStates = boost::none;
     this->topStates = boost::none;
-    this->deterministic = matrix.getRowGroupCount() == matrix.getRowCount();
     if (!deterministic && formula->isRewardOperatorFormula()) {
         this->prMax = formula->asRewardOperatorFormula().getOptimalityType() == OptimizationDirection::Maximize;
     } else if (!deterministic) {
         STORM_LOG_ASSERT(formula->isProbabilityOperatorFormula(), "Expecting reward or probability formula");
         this->prMax = formula->asProbabilityOperatorFormula().getOptimalityType() == OptimizationDirection::Maximize;
+    } else {
+        // Don't care as it is non-deterministic
+        this->prMax = true;
     }
-    this->actionComparator = ActionComparator<ValueType>();
 }
 
 template<typename ValueType, typename ConstantType>
@@ -40,13 +40,19 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector&
                                                       storm::storage::SparseMatrix<ValueType> matrix, bool prMax)
     : monotonicityChecker(matrix) {
     STORM_LOG_ASSERT(topStates.size() == bottomStates.size(), "Expecting the bitvectors for the top- and bottom states to have the same size");
-    this->matrix = matrix;
+    init(matrix);
     this->model = nullptr;
+    this->formula = nullptr;
     this->topStates = std::move(topStates);
     this->bottomStates = std::move(bottomStates);
+    this->prMax = prMax;
+}
+
+template<typename ValueType, typename ConstantType>
+void OrderExtender<ValueType, ConstantType>::init(storm::storage::SparseMatrix<ValueType> matrix) {
+    this->matrix = matrix;
     this->numberOfStates = this->matrix.getColumnCount();
     this->deterministic = matrix.getRowGroupCount() == matrix.getRowCount();
-    this->prMax = prMax;
     this->actionComparator = ActionComparator<ValueType>();
 }
 
@@ -121,6 +127,76 @@ void OrderExtender<ValueType, ConstantType>::buildStateMap() {
         }
         stateMapAllSucc[state] = {res, std::move(successors)};
     }
+}
+
+template<typename ValueType, typename ConstantType>
+std::pair<std::vector<uint_fast64_t>,storage::StronglyConnectedComponentDecomposition<ValueType>> OrderExtender<ValueType, ConstantType>::sortStatesAndDecomposeForOrder() {
+    // Sorting the states
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+
+    this->numberOfStates = this->matrix.getColumnCount();
+    std::vector<uint64_t> firstStates;
+
+    storm::storage::BitVector subStates(this->topStates->size(), true);
+    for (auto state : (this->topStates.get())) {
+        firstStates.push_back(state);
+        subStates.set(state, false);
+    }
+    for (auto state : (this->bottomStates.get())) {
+        firstStates.push_back(state);
+        subStates.set(state, false);
+    }
+    this->cyclic = storm::utility::graph::hasCycle(this->matrix, subStates);
+    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
+    if (this->cyclic) {
+        decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);
+    }
+    if (this->matrix.getColumnCount() == this->matrix.getRowCount()) {
+        return {storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates), decomposition};
+    } else {
+        auto squareMatrix = this->matrix.getSquareMatrix();
+        return {storm::utility::graph::getBFSTopologicalSort(squareMatrix.transpose(), this->matrix, firstStates), decomposition};
+    }
+}
+
+template<typename ValueType, typename ConstantType>
+std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getInitialOrder() {
+    setBottomTopStates();
+    STORM_LOG_THROW(this->bottomStates.is_initialized(), storm::exceptions::UnexpectedException, "Expecting the formula to yield bottom states for the order");
+    if (this->bottomStates->getNumberOfSetBits() == 0 && (this->topStates == boost::none || this->topStates->getNumberOfSetBits() == 0)) {
+        return nullptr;
+    }
+
+    auto statesSortedAndDecomposition = this->sortStatesAndDecomposeForOrder();
+
+    // Create Order
+    std::shared_ptr<Order> order = std::shared_ptr<Order>(
+        new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(statesSortedAndDecomposition.second), std::move(statesSortedAndDecomposition.first)));
+    this->buildStateMap();
+    for (auto& state : this->statesToHandleInitially) {
+        order->addStateToHandle(state);
+    }
+
+    if (this->minValuesInit) {
+        this->minValues[order] = this->minValuesInit.get();
+    }
+
+    if (this->maxValuesInit) {
+        this->maxValues[order] = this->maxValuesInit.get();
+    }
+
+    if (this->minValuesInit && this->maxValuesInit) {
+        this->continueExtending[order] = true;
+        this->usePLA[order] = true;
+        this->addStatesMinMax(order);
+    } else {
+        this->usePLA[order] = false;
+    }
+    this->continueExtending[order] = true;
+
+    checkRewardsForOrder(order);
+    return order;
 }
 
 template<typename ValueType, typename ConstantType>
@@ -538,16 +614,6 @@ bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order
 }
 
 template<typename ValueType, typename ConstantType>
-const vector<std::set<typename OrderExtender<ValueType, ConstantType>::VariableType>>& OrderExtender<ValueType, ConstantType>::getVariablesOccuringAtState() {
-    return occuringVariablesAtState;
-}
-
-template<typename ValueType, typename ConstantType>
-MonotonicityChecker<ValueType>& OrderExtender<ValueType, ConstantType>::getMonotonicityChecker() {
-    return monotonicityChecker;
-}
-
-template<typename ValueType, typename ConstantType>
 std::pair<bool, std::vector<uint_fast64_t>&> OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, std::shared_ptr<Order> order) {
     if (this->stateMap[state].size() == 1) {
         assert(stateMap[state][0].size() > 0);
@@ -668,7 +734,6 @@ void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Ord
         }
     }
 }
-
 
 template<typename ValueType, typename ConstantType>
 bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state) {

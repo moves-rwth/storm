@@ -208,12 +208,9 @@ void ReachabilityOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std:
 }
 
 template<typename ValueType, typename ConstantType>
-std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getInitialOrder() {
-    std::shared_ptr<Order> order;
+void ReachabilityOrderExtender<ValueType, ConstantType>::setBottomTopStates() {
     if (this->bottomStates == boost::none || this->topStates == boost::none) {
         STORM_LOG_ASSERT(this->model != nullptr, "Can't get initial order if model is not specified");
-        // STORM_LOG_THROW(this->matrix.getRowCount() == this->matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for
-        // non-square matrix");
         modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*(this->model));
         storage::BitVector phiStates;
         storage::BitVector psiStates;
@@ -242,57 +239,11 @@ std::shared_ptr<Order> ReachabilityOrderExtender<ValueType, ConstantType>::getIn
         STORM_LOG_THROW(this->topStates->begin() != this->topStates->end(), exceptions::NotSupportedException, "Formula yields to no 1 states");
         STORM_LOG_THROW(this->bottomStates->begin() != this->bottomStates->end(), exceptions::NotSupportedException, "Formula yields to no zero states");
     }
+}
 
-    storm::storage::StronglyConnectedComponentDecompositionOptions options;
-    options.forceTopologicalSort();
-
-    this->numberOfStates = this->matrix.getColumnCount();
-    std::vector<uint64_t> firstStates;
-
-    storm::storage::BitVector subStates(this->topStates->size(), true);
-    for (auto state : (this->topStates.get())) {
-        firstStates.push_back(state);
-        subStates.set(state, false);
-    }
-    for (auto state : (this->bottomStates.get())) {
-        firstStates.push_back(state);
-        subStates.set(state, false);
-    }
-    this->cyclic = storm::utility::graph::hasCycle(this->matrix, subStates);
-    storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
-    if (this->cyclic) {
-        decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);
-    }
-
-    if (this->matrix.getColumnCount() == this->matrix.getRowCount()) {
-        auto statesSorted = storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates);
-        order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition),
-                                                 std::move(statesSorted)));
-    } else {
-        auto squareMatrix = this->matrix.getSquareMatrix();
-        auto statesSorted = storm::utility::graph::getBFSTopologicalSort(squareMatrix.transpose(), this->matrix, firstStates);
-        order = std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates, std::move(decomposition),
-                                                 std::move(statesSorted)));
-    }
-    this->buildStateMap();
-
-    if (this->minValuesInit) {
-        this->minValues[order] = this->minValuesInit.get();
-    }
-
-    if (this->maxValuesInit) {
-        this->maxValues[order] = this->maxValuesInit.get();
-    }
-
-    if (this->minValuesInit && this->maxValuesInit) {
-        this->continueExtending[order] = true;
-        this->usePLA[order] = true;
-        this->addStatesMinMax(order);
-    } else {
-        this->usePLA[order] = false;
-    }
-
-    return order;
+template<typename ValueType, typename ConstantType>
+void ReachabilityOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::shared_ptr<Order> order) {
+    // Intentionally left empty
 }
 
 template<typename ValueType, typename ConstantType>
