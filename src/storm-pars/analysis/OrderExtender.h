@@ -126,7 +126,7 @@ class OrderExtender {
      * @param order
      * @return
      */
-    std::pair<bool, boost::container::flat_set<uint_fast64_t>&> getSuccessors(uint_fast64_t state, std::shared_ptr<Order> order);
+    boost::container::flat_set<uint_fast64_t>& getSuccessors(uint_fast64_t state, std::shared_ptr<Order> order);
     boost::container::flat_set<uint_fast64_t>& getSuccessors(uint_fast64_t state, uint_fast64_t action);
 
     /**
@@ -221,7 +221,7 @@ class OrderExtender {
     std::vector<std::set<VariableType>> occuringVariablesAtState;
     std::map<uint_fast64_t, std::vector<boost::container::flat_set<uint_fast64_t>>> stateMap;
 
-    std::map<uint_fast64_t, std::pair<bool, boost::container::flat_set<uint_fast64_t>>> stateMapAllSucc;
+    std::map<uint_fast64_t, boost::container::flat_set<uint_fast64_t>> stateMapAllSucc;
 
     boost::container::flat_set<uint_fast64_t> nonParametricStates;
 

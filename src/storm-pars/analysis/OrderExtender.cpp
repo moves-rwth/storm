@@ -109,7 +109,6 @@ void OrderExtender<ValueType, ConstantType>::buildStateMap() {
     }
     for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
         bool first = true;
-        bool res = false;
         boost::container::flat_set<uint_fast64_t> successors;
         for (auto& succs : this->stateMap[state]) {
             if (first) {
@@ -120,13 +119,12 @@ void OrderExtender<ValueType, ConstantType>::buildStateMap() {
             } else {
                 for (auto succ : succs) {
                     if (std::find(successors.begin(), successors.end(), succ) == successors.end()) {
-                        res = false;
                         successors.insert(succ);
                     }
                 }
             }
         }
-        stateMapAllSucc[state] = {res, std::move(successors)};
+        stateMapAllSucc[state] = std::move(successors);
     }
 }
 
@@ -233,7 +231,7 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
                                                                                              uint_fast64_t currentState) {
     // when it is cyclic and the current state is part of an SCC we do forwardreasoning
     if (this->cyclic && !order->isTrivial(currentState) && !order->contains(currentState)) {
-        boost::container::flat_set<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
+        boost::container::flat_set<uint_fast64_t> const& successors = this->getSuccessors(currentState, order);
         if (successors.size() == 2 && (*(successors.begin()) == currentState || *(successors.begin() + 1) == currentState)) {
             order->add(currentState);
         }
@@ -600,18 +598,17 @@ bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order
 }
 
 template<typename ValueType, typename ConstantType>
-std::pair<bool, boost::container::flat_set<uint_fast64_t>&> OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state,
-                                                                                                                  std::shared_ptr<Order> order) {
-    if (this->stateMap[state].size() == 1) {
-        assert(stateMap[state][0].size() > 0);
-        return {true, stateMap[state][0]};
+boost::container::flat_set<uint_fast64_t>& OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, std::shared_ptr<Order> order) {
+    if (this->deterministic || this->stateMap[state].size() == 1) {
+        return getSuccessors(state, 0);
     }
     if (order->isActionSetAtState(state)) {
         assert(stateMap[state][order->getActionAtState(state)].size() > 0);
-        return {true, stateMap[state][order->getActionAtState(state)]};
+        return getSuccessors(state, order->getActionAtState(state));
     }
     return stateMapAllSucc[state];
 }
+
 template<typename ValueType, typename ConstantType>
 boost::container::flat_set<uint_fast64_t>& OrderExtender<ValueType, ConstantType>::getSuccessors(uint_fast64_t state, uint_fast64_t action) {
     STORM_LOG_ASSERT(state < stateMap.size(), "State number too large");
@@ -630,7 +627,7 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
     bool unknown = false;
     uint_fast64_t s1 = this->numberOfStates;
     uint_fast64_t s2 = this->numberOfStates;
-    boost::container::flat_set<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
+    boost::container::flat_set<uint_fast64_t> const& successors = this->getSuccessors(currentState, order);
     for (auto& state : successors) {
         unknown = false;
         bool added = false;
@@ -700,7 +697,7 @@ void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Ord
     auto fakeRegion = storm::api::createRegion<ValueType>("0", vars);
     for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
         auto state = states[this->numberOfStates - i - 1];
-        auto& successors = this->getSuccessors(state, order).second;
+        auto& successors = this->getSuccessors(state, order);
         bool allSorted = true;
         for (uint_fast64_t i1 = 0; i1 < successors.size(); ++i1) {
             for (uint_fast64_t i2 = i1 + 1; i2 < successors.size(); ++i2) {
@@ -753,7 +750,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
 
     // note that succs in this function mean potential succs
     auto successors = this->getSuccessors(state, order);
-    auto orderedSuccs = order->sortStates(successors.second);
+    auto orderedSuccs = order->sortStates(successors);
     if (orderedSuccs.back() == this->numberOfStates) {
         STORM_LOG_WARN("    No best action found, as the successors could not be ordered.");
         return false;

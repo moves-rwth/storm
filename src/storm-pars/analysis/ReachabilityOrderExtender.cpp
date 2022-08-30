@@ -47,11 +47,9 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrd
         bool actionFound = this->findBestAction(order, region, currentState);
 
         std::pair<uint_fast64_t, uint_fast64_t> result = {this->numberOfStates, this->numberOfStates};
-        auto const& successorRes = this->getSuccessors(currentState, order);
-        auto const& successors = successorRes.second;
+        auto const& successors = this->getSuccessors(currentState, order);
 
         if (actionFound) {
-            assert(successorRes.first);
             uint_fast64_t succ0 = *(successors.begin());
             if (successors.size() == 1) {
                 if (order->contains(succ0)) {
@@ -75,7 +73,6 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrd
         } else if (currentStateMode.second) {
             // We have a non-deterministic state, and cannot (yet) fix the action
             // We only go into here if we need to handle the state because it was its turn by the ordering
-            assert(!successorRes.first);
             bool sufficientForState = true;
             for (auto itr1 = successors.begin(); itr1 < successors.end(); ++itr1) {
                 for (auto itr2 = itr1 + 1; itr2 < successors.end(); ++itr2) {
@@ -162,7 +159,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrd
                     // State is non-deterministic
                     // If one of the successors is not yet in the order, we add it to a waitinglist and see if we can handle it as soon as we are done for the
                     // successor
-                    for (auto& succ : this->getSuccessors(currentState, order).second) {
+                    for (auto& succ : this->getSuccessors(currentState, order)) {
                         if (!order->isSufficientForState(succ)) {
                             this->dependentStates[succ].insert(currentState);
                         }
@@ -251,7 +248,7 @@ template<typename ValueType, typename ConstantType>
 std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(
     std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
     std::vector<uint_fast64_t> sortedSuccs;
-    auto const& successors = this->getSuccessors(currentState, order).second;
+    auto const& successors = this->getSuccessors(currentState, order);
 
     auto temp = order->sortStatesUnorderedPair(successors);
     if (temp.first.first != this->numberOfStates) {
@@ -300,7 +297,7 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
     uint_fast64_t s2 = sorted.first.second;
     std::vector<uint_fast64_t>& statesSorted = sorted.second;
     if (s1 == this->numberOfStates) {
-        STORM_LOG_ASSERT(statesSorted.size() == this->getSuccessors(currentState, order).second.size() + 1, "Expecting all states to be sorted, done for now");
+        STORM_LOG_ASSERT(statesSorted.size() == this->getSuccessors(currentState, order).size() + 1, "Expecting all states to be sorted, done for now");
         // all could be sorted, no need to do anything
     } else if (s2 == this->numberOfStates) {
         if (!order->contains(s1)) {
