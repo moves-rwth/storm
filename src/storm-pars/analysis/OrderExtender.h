@@ -27,6 +27,10 @@ class OrderExtender {
     typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
     typedef typename ActionComparator<ValueType>::ComparisonResult CompareResult;
     typedef typename storage::SparseMatrix<ValueType>::rows* Rows;
+    //------------------------------------------------------------------------------
+    // Constructors
+    //------------------------------------------------------------------------------
+
     /*!
      * Constructs a new OrderExtender.
      *
@@ -47,6 +51,9 @@ class OrderExtender {
      */
     OrderExtender(storm::storage::BitVector& topStates, storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax);
 
+    //------------------------------------------------------------------------------
+    // Order creation/extension
+    //------------------------------------------------------------------------------
     /*!
      * Creates an order based on the given formula.
      *
@@ -58,6 +65,27 @@ class OrderExtender {
      */
     std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
+
+    /*!
+     * Extends the order for the given region.
+     *
+     * @param order Pointer to the order.
+     * @param region The region on which the order needs to be extended.
+     * @return Two states of which the current place in the order
+     *         is unknown but needed. When the states have as number the number of states, no states are
+     *         unplaced or needed.
+     */
+    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
+                                                                                 storm::storage::ParameterRegion<ValueType> region,
+                                                                                 std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
+                                                                                 std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+
+    /**
+     * Checks if there is hope to continue extending the current order.
+     * @param order Order for which we want to check.
+     * @return true if the unknown states for this order can be sorted based on the min max values.
+     */
+    bool isHope(std::shared_ptr<Order> order) const;
 
     //------------------------------------------------------------------------------
     // Min/Max values for bounds on the reward/probability
@@ -111,24 +139,30 @@ class OrderExtender {
      */
     void copyUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
 
+    //------------------------------------------------------------------------------
+    // Getters
+    //------------------------------------------------------------------------------
     /**
-     * Checks if there is hope to continue extending the current order.
-     * @param order Order for which we want to check.
-     * @return true if the unknown states for this order can be sorted based on the min max values.
-     */
-    bool isHope(std::shared_ptr<Order> order) const;
-
-    /**
-     * Returns a vector with the successors for this state.
+     * Returns a set with the successors for this state.
      * If an action is set in the order, the successors for this action are returned, otherwise all possible successors are returned.
-     * The boolean is true if the action is set, or all actions have the same successors
-     * @param state
-     * @param order
-     * @return
+     *
+     * @param state Considered state
+     * @param order Considered order
+     * @return Set with successors
      */
     boost::container::flat_set<uint_fast64_t>& getSuccessors(uint_fast64_t state, std::shared_ptr<Order> order);
+    /**
+     * Returns a set with the successors for this state.
+     *
+     * @param state Considered state
+     * @param action Considered action
+     * @return Set with successors
+     */
     boost::container::flat_set<uint_fast64_t>& getSuccessors(uint_fast64_t state, uint_fast64_t action);
 
+    //------------------------------------------------------------------------------
+    // Checking for monotonicity
+    //------------------------------------------------------------------------------
     /**
      * Checks for local monotonicity at state for variable param in the given order. It updates the given monotonicity result.
      * @param state State for which monotonicity has to be checked.
@@ -140,57 +174,50 @@ class OrderExtender {
     void checkParOnStateMonRes(uint_fast64_t state, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param,
                                storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
-    // Virtual public methods
-    /*!
-     * Extends the order for the given region.
-     *
-     * @param order Pointer to the order.
-     * @param region The region on which the order needs to be extended.
-     * @return Two states of which the current place in the order
-     *         is unknown but needed. When the states have as number the number of states, no states are
-     *         unplaced or needed.
-     */
-    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
-                                                                                 storm::storage::ParameterRegion<ValueType> region,
-                                                                                 std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
-                                                                                 std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
-
    protected:
-    void buildStateMap();
+    //------------------------------------------------------------------------------
+    // Order creation/extension
+    //------------------------------------------------------------------------------
+    std::shared_ptr<Order> getInitialOrder();
+    std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
+                                                         uint_fast64_t currentState);
+    void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
+
+    //------------------------------------------------------------------------------
+    // Sorting states
+    //------------------------------------------------------------------------------
     std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortForFowardReasoning(uint_fast64_t currentState,
                                                                                                           std::shared_ptr<Order> order);
     std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(
         boost::container::flat_set<uint_fast64_t> const& states, std::shared_ptr<Order> order);
 
-    // Order extension
-    Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
-    bool extendWithAssumption(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t succState2,
-                              uint_fast64_t succState1);
-    std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
-                                                         uint_fast64_t currentState);
-    void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
-    std::pair<uint_fast64_t, bool> getNextState(std::shared_ptr<Order> order, uint_fast64_t stateNumber, bool done);
+    //------------------------------------------------------------------------------
+    // Min/Max values for bounds on the reward/probability
+    //------------------------------------------------------------------------------
     void addStatesMinMax(std::shared_ptr<Order> order);
+    Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
+
+    //------------------------------------------------------------------------------
+    // Getters
+    //------------------------------------------------------------------------------
+    std::pair<uint_fast64_t, bool> getNextState(std::shared_ptr<Order> order, uint_fast64_t stateNumber, bool done);
+
+    //------------------------------------------------------------------------------
+    // MDP
+    //------------------------------------------------------------------------------
     bool findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state);
 
     // Virtual protected methods
-    /*!
-     * Creates the initial order.
-     * The order is based on either the formula and model or the provided top/bottom states.
-     * These are provided when constructing the OrderExtender.
-     *
-     * @return pointer to the created order
-     */
-    std::shared_ptr<Order> getInitialOrder();
     virtual std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                               uint_fast64_t currentState) = 0;
     virtual std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                              uint_fast64_t currentState) = 0;
     virtual void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) = 0;
     virtual void setBottomTopStates() = 0;
-    std::pair<std::vector<uint_fast64_t>, storage::StronglyConnectedComponentDecomposition<ValueType>> sortStatesAndDecomposeForOrder();
 
     virtual void checkRewardsForOrder(std::shared_ptr<Order> order) = 0;
+
+
     // Order properties
     boost::optional<storm::storage::BitVector> topStates;
     boost::optional<storm::storage::BitVector> bottomStates;
@@ -229,6 +256,15 @@ class OrderExtender {
 
    private:
     void init(storm::storage::SparseMatrix<ValueType> matrix);
+    void buildStateMap();
+    std::pair<std::vector<uint_fast64_t>, storage::StronglyConnectedComponentDecomposition<ValueType>> sortStatesAndDecomposeForOrder();
+
+    //------------------------------------------------------------------------------
+    // Order creation/extension
+    //------------------------------------------------------------------------------
+    bool extendWithAssumption(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t succState2,
+                              uint_fast64_t succState1);
+
     MonotonicityChecker<ValueType> monotonicityChecker;
     bool useAssumptions;
     ConstantType error = storm::utility::convertNumber<ConstantType>(0.000001);

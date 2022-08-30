@@ -368,67 +368,6 @@ bool Order::isOnlyInitialOrder() const {
     return onlyInitialOrder;
 }
 
-std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(std::vector<uint_fast64_t> const& states) {
-    uint_fast64_t numberOfStatesToSort = states.size();
-    std::vector<uint_fast64_t> result;
-    // Go over all states
-    for (auto state : states) {
-        if (result.size() == 0) {
-            result.push_back(state);
-        } else {
-            bool added = false;
-            for (auto itr = result.begin(); itr != result.end(); ++itr) {
-                auto compareRes = compare(state, (*itr));
-                if (compareRes == ABOVE || compareRes == SAME) {
-                    // insert at current pointer (while keeping other values)
-                    result.insert(itr, state);
-                    added = true;
-                    break;
-                } else if (compareRes == UNKNOWN) {
-                    return {{(*itr), state}, std::move(result)};
-                }
-            }
-            if (!added) {
-                result.push_back(state);
-            }
-        }
-    }
-
-    assert(result.size() == numberOfStatesToSort);
-    return {{numberOfStates, numberOfStates}, std::move(result)};
-}
-
-std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(
-    boost::container::flat_set<uint_fast64_t> const& states) {
-    uint_fast64_t numberOfStatesToSort = states.size();
-    std::vector<uint_fast64_t> result;
-    // Go over all states
-    for (auto state : states) {
-        if (result.size() == 0) {
-            result.push_back(state);
-        } else {
-            bool added = false;
-            for (auto itr = result.begin(); itr != result.end(); ++itr) {
-                auto compareRes = compare(state, (*itr));
-                if (compareRes == ABOVE || compareRes == SAME) {
-                    // insert at current pointer (while keeping other values)
-                    result.insert(itr, state);
-                    added = true;
-                    break;
-                } else if (compareRes == UNKNOWN) {
-                    return {{(*itr), state}, std::move(result)};
-                }
-            }
-            if (!added) {
-                result.push_back(state);
-            }
-        }
-    }
-
-    assert(result.size() == numberOfStatesToSort);
-    return {{numberOfStates, numberOfStates}, std::move(result)};
-}
-
 std::vector<uint_fast64_t> Order::sortStates(std::vector<uint_fast64_t> const& states) {
     assert(states.size() > 0);
     uint_fast64_t numberOfStatesToSort = states.size();

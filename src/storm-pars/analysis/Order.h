@@ -301,10 +301,6 @@ class Order {
     std::vector<uint_fast64_t> sortStates(std::vector<uint_fast64_t> const& states);
     std::vector<uint_fast64_t> sortStates(boost::container::flat_set<uint_fast64_t> const& states);
 
-    std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesUnorderedPair(std::vector<uint_fast64_t> const& states);
-    std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesUnorderedPair(
-        boost::container::flat_set<uint_fast64_t> const& states);
-
     /*!
      * Checks if a set of states are all above (or equal) or all below (or equal) a certain state
      * @param states A vector containing the states to check

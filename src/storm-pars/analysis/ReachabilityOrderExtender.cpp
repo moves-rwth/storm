@@ -80,14 +80,17 @@ void ReachabilityOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(st
 template<typename ValueType, typename ConstantType>
 std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(
     std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
-    std::vector<uint_fast64_t> sortedSuccs;
+    STORM_LOG_INFO("Doing backward reasoning");
+    bool addedSomething = false;
     auto const& successors = this->getSuccessors(currentState, order);
+    // We sort the states, and then apply min/max comparison.
+    // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
 
-    auto temp = order->sortStatesUnorderedPair(successors);
-    if (temp.first.first != this->numberOfStates) {
-        return temp.first;
+    auto sortedSuccStates = this->sortStatesOrderAndMinMax(successors, order);
+    if (sortedSuccStates.first.first != this->numberOfStates) {
+        return sortedSuccStates.first;
     }
-    sortedSuccs = std::move(temp.second);
+    auto sortedSuccs = std::move(sortedSuccStates.second);
 
     if (order->compare(sortedSuccs[0], sortedSuccs[sortedSuccs.size() - 1]) == Order::SAME) {
         if (!order->contains(currentState)) {
