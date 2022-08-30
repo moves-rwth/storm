@@ -265,12 +265,7 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
         } else {
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
-
         if (reward.isZero()) {
-            if (!order->contains(realSucc)) {
-                order->add(realSucc);
-                order->addStateToHandle(realSucc);
-            }
             order->addToNode(currentState, order->getNode(realSucc));
         } else {
             if (!order->contains(realSucc)) {
@@ -283,6 +278,8 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
         auto bottomState = order->isBottomState(succ0) ? succ0 : succ1;
         auto otherState = bottomState == succ0 ? succ1 : succ0;
         // If there is only one transition going into bottomState (+ selfloop) we can do some normal forward reasoning
+        // Other state will always go through currentState to get to bottom state, as currentState is the only one with a transition to bottom
+        // So other state will be above currentState
         if (this->transposeMatrix.getRow(bottomState).getNumberOfEntries() == 2) {
             if (!order->contains(otherState)) {
                 order->add(otherState);

@@ -25,6 +25,10 @@ class ReachabilityOrderExtender : public OrderExtender<ValueType, ConstantType> 
                                                                      uint_fast64_t currentState) override;
     void setBottomTopStates() override;
     void checkRewardsForOrder(std::shared_ptr<Order> order) override;
+
+   private:
+    // There is only one interesting successor, as the other one is either the current state, or a bottom state
+    bool extendByForwardReasoningOneSucc(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState);
 };
 }  // namespace analysis
 }  // namespace storm

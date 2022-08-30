@@ -30,11 +30,7 @@ template<typename ValueType, typename ConstantType>
 void ReachabilityOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
     STORM_LOG_ASSERT(order->contains(successor), "Can't handle state with one successor if successor is not contained in order");
     if (currentState != successor) {
-        if (order->contains(currentState)) {
-            order->merge(currentState, successor);
-        } else {
-            order->addToNode(currentState, order->getNode(successor));
-        }
+        order->addToNode(currentState, order->getNode(successor));
     }
 }
 
@@ -93,11 +89,7 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
     auto sortedSuccs = std::move(sortedSuccStates.second);
 
     if (order->compare(sortedSuccs[0], sortedSuccs[sortedSuccs.size() - 1]) == Order::SAME) {
-        if (!order->contains(currentState)) {
-            order->addToNode(currentState, order->getNode(sortedSuccs[0]));
-        } else {
-            order->merge(currentState, sortedSuccs[0]);
-        }
+        order->addToNode(currentState, order->getNode(sortedSuccs[0]));
     } else {
         if (!order->contains(sortedSuccs[0])) {
             assert(order->isBottomState(sortedSuccs[sortedSuccs.size() - 1]));
@@ -124,10 +116,15 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
 
 template<typename ValueType, typename ConstantType>
 std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendByForwardReasoning(
-    std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
-    STORM_LOG_ASSERT(order->contains(currentState), "Can't apply forward reasoning if order doesn't contain current state");
-    STORM_LOG_ASSERT(this->cyclic, "Needs cyclic model for forward reasoning");
+    sstd::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
+    STORM_LOG_INFO("Doing Forward reasoning");
+    STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
+    auto const& successors = this->getSuccessors(currentState, order);
+
+    if (successors.size() == 2 && this->extendByForwardReasoningOneSucc(order, region, currentState)) {
+        return {this->numberOfStates, this->numberOfStates};
+    }
     std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
     uint_fast64_t s1 = sorted.first.first;
     uint_fast64_t s2 = sorted.first.second;
@@ -141,11 +138,11 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
         }
         if (statesSorted[0] == currentState) {
             order->addRelation(s1, statesSorted[0]);
-            order->addRelation(s1, statesSorted[statesSorted.size() - 1]);  //, allowMerge);
+            order->addRelation(s1, statesSorted[statesSorted.size() - 1]);
             order->addStateToHandle(s1);
         } else if (statesSorted[statesSorted.size() - 1] == currentState) {
-            order->addRelation(statesSorted[0], s1);                        //, allowMerge);
-            order->addRelation(statesSorted[statesSorted.size() - 1], s1);  //, allowMerge);
+            order->addRelation(statesSorted[0], s1);
+            order->addRelation(statesSorted[statesSorted.size() - 1], s1);
             order->addStateToHandle(s1);
         } else {
             bool continueSearch = true;
@@ -170,6 +167,48 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
     assert(order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE &&
            order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW);
     return {this->numberOfStates, this->numberOfStates};
+}
+
+template<typename ValueType, typename ConstantType>
+bool ReachabilityOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSucc(std::shared_ptr<Order> order,
+                                                                                         storm::storage::ParameterRegion<ValueType> region,
+                                                                                         uint_fast64_t currentState) {
+    STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
+
+    auto const& successors = this->getSuccessors(currentState, order);
+    STORM_LOG_ASSERT(successors.size() == 2, "Expecting only two successors");
+
+    auto succ0 = *(successors.begin());
+    auto succ1 = *(successors.begin() + 1);
+    if (succ0 == currentState || succ1 == currentState) {
+        // current state actually only has one real successor
+        auto realSucc = order->getNode(succ0 == currentState ? succ1 : succ0);
+        if (!order->contains(realSucc)) {
+            order->add(realSucc);
+            order->addStateToHandle(realSucc);
+        }
+        order->addToNode(currentState, realSucc);
+    } else if (order->isBottomState(succ0) || order->isBottomState(succ1)) {
+        auto bottomState = order->isBottomState(succ0) ? succ0 : succ1;
+        auto otherState = bottomState == succ0 ? succ1 : succ0;
+        if (!order->contains(otherState)) {
+            order->add(otherState);
+            order->addStateToHandle(otherState);
+        }
+        order->addBetween(currentState, otherState, bottomState);
+    } else if (order->isTopState(succ0) || order->isTopState(succ1)) {
+        auto topState = order->isTopState(succ0) ? succ0 : succ1;
+        auto otherState = topState == succ0 ? succ1 : succ0;
+        // If there is only one transition going into bottomState (+ selfloop) we can do some normal forward reasoning
+        if (!order->contains(otherState)) {
+            order->add(otherState);
+            order->addStateToHandle(otherState);
+        }
+        order->addBetween(currentState, topState, otherState);
+    } else {
+        return false;
+    }
+    return true;
 }
 
 template class ReachabilityOrderExtender<RationalFunction, double>;
