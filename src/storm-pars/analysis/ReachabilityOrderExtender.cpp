@@ -116,7 +116,7 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
 
 template<typename ValueType, typename ConstantType>
 std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendByForwardReasoning(
-    sstd::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
+    std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
     STORM_LOG_INFO("Doing Forward reasoning");
     STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
@@ -182,12 +182,12 @@ bool ReachabilityOrderExtender<ValueType, ConstantType>::extendByForwardReasonin
     auto succ1 = *(successors.begin() + 1);
     if (succ0 == currentState || succ1 == currentState) {
         // current state actually only has one real successor
-        auto realSucc = order->getNode(succ0 == currentState ? succ1 : succ0);
+        auto realSucc = succ0 == currentState ? succ1 : succ0;
         if (!order->contains(realSucc)) {
             order->add(realSucc);
             order->addStateToHandle(realSucc);
         }
-        order->addToNode(currentState, realSucc);
+        order->addToNode(currentState, order->getNode(realSucc));
     } else if (order->isBottomState(succ0) || order->isBottomState(succ1)) {
         auto bottomState = order->isBottomState(succ0) ? succ0 : succ1;
         auto otherState = bottomState == succ0 ? succ1 : succ0;
