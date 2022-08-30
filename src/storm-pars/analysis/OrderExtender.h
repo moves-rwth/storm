@@ -235,6 +235,8 @@ class OrderExtender {
 
     std::vector<std::set<uint_fast64_t>> dependentStates;
     bool deterministic;
+    storage::SparseMatrix<ValueType> transposeMatrix;
+
 
    private:
     void init(storm::storage::SparseMatrix<ValueType> matrix);

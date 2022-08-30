@@ -45,7 +45,6 @@ class RewardOrderExtender : public OrderExtender<ValueType, ConstantType> {
     /*** Model Info ***/
     // Reward model of our model
     storm::models::sparse::StandardRewardModel<ValueType> rewardModel;
-    storage::SparseMatrix<ValueType> transposeMatrix;
     storage::BitVector assumptionsCreated;
 };
 }  // namespace analysis

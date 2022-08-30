@@ -115,7 +115,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> RewardOrderExte
                     this->checkParOnStateMonRes(currentState, order, param, region, monRes);
                 }
             }
-            for (auto& entry : transposeMatrix.getRow(currentState)) {
+            for (auto& entry : this->transposeMatrix.getRow(currentState)) {
                 order->addStateToHandle(entry.getColumn());
             }
             // Get the next state
@@ -134,7 +134,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> RewardOrderExte
                     // State is not parametric, so we hope that just adding it between =) and =( will help us
                     order->add(currentState);
                 }
-                for (auto& entry : transposeMatrix.getRow(currentState)) {
+                for (auto& entry : this->transposeMatrix.getRow(currentState)) {
                     order->addStateToHandle(entry.getColumn());
                 }
                 currentStateMode = this->getNextState(order, currentState, true);
@@ -211,7 +211,7 @@ void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::sha
     }
 
     for (uint_fast64_t i : order->getBottom()->states) {
-        for (auto& entry : transposeMatrix.getRow(i)) {
+        for (auto& entry : this->transposeMatrix.getRow(i)) {
             order->addStateToHandle(entry.getColumn());
         }
     }
@@ -389,7 +389,7 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
         auto bottomState = order->isBottomState(successors.at(0)) ? successors.at(0) : successors.at(1);
         auto otherState = order->isBottomState(successors.at(0)) ? successors.at(1) : successors.at(0);
         // If there is only one transition going into bottomState (+ selfloop) we can do some normal forward reasoning
-        if (transposeMatrix.getRow(bottomState).getNumberOfEntries() == 2) {
+        if (this->transposeMatrix.getRow(bottomState).getNumberOfEntries() == 2) {
             if (!order->contains(otherState)) {
                 order->add(otherState);
                 order->addStateToHandle(otherState);

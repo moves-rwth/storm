@@ -54,6 +54,7 @@ void OrderExtender<ValueType, ConstantType>::init(storm::storage::SparseMatrix<V
     this->numberOfStates = this->matrix.getColumnCount();
     this->deterministic = matrix.getRowGroupCount() == matrix.getRowCount();
     this->actionComparator = ActionComparator<ValueType>();
+    this->transposeMatrix = this->matrix.getSquareMatrix().transpose();
 }
 
 template<typename ValueType, typename ConstantType>
@@ -153,10 +154,9 @@ std::pair<std::vector<uint_fast64_t>,storage::StronglyConnectedComponentDecompos
         decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);
     }
     if (this->matrix.getColumnCount() == this->matrix.getRowCount()) {
-        return {storm::utility::graph::getTopologicalSort(this->matrix.transpose(), firstStates), decomposition};
+        return {storm::utility::graph::getTopologicalSort(transposeMatrix, firstStates), decomposition};
     } else {
-        auto squareMatrix = this->matrix.getSquareMatrix();
-        return {storm::utility::graph::getBFSTopologicalSort(squareMatrix.transpose(), this->matrix, firstStates), decomposition};
+        return {storm::utility::graph::getBFSTopologicalSort(transposeMatrix, this->matrix, firstStates), decomposition};
     }
 }
 
@@ -698,7 +698,6 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
-    auto transposeMatrix = this->matrix.getSquareMatrix().transpose();
     auto& min = this->minValues[order];
     auto& max = this->maxValues[order];
 
