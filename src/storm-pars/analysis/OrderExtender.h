@@ -150,9 +150,10 @@ class OrderExtender {
      *         is unknown but needed. When the states have as number the number of states, no states are
      *         unplaced or needed.
      */
-    virtual std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(
-        std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
-        std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) = 0;
+    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
+                                                                                 storm::storage::ParameterRegion<ValueType> region,
+                                                                                 std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
+                                                                                 std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
 
    protected:
     void buildStateMap();
