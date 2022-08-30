@@ -85,11 +85,12 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> RewardOrderExte
         std::pair<uint_fast64_t, uint_fast64_t> result = {this->numberOfStates, this->numberOfStates};
 
         if (successors.size() == 1) {
-            if (!currentStateMode.second && !order->contains(successors[0])) {
-                order->add(successors[0]);
+            auto succ0 = *(successors.begin());
+            if (!currentStateMode.second && !order->contains(succ0)) {
+                order->add(succ0);
             }
-            STORM_LOG_ASSERT(order->contains(successors[0]), "Expecting order to contain successor of state " << currentState);
-            this->handleOneSuccessor(order, currentState, successors[0]);
+            STORM_LOG_ASSERT(order->contains(succ0), "Expecting order to contain successor of state " << currentState);
+            this->handleOneSuccessor(order, currentState, succ0);
         } else if (!successors.empty()) {
             if (order->isOnlyInitialOrder()) {
                 order->add(currentState);
@@ -202,11 +203,10 @@ void RewardOrderExtender<ValueType, ConstantType>::setBottomTopStates() {
 
 template<typename ValueType, typename ConstantType>
 void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::shared_ptr<Order> order) {
-
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         auto& successors = this->getSuccessors(i, order).second;
         if (successors.size() == 2) {
-            rewardHack(order, i, successors.at(0), successors.at(1));
+            rewardHack(order, i, *(successors.begin()), *(successors.begin() + 1));
         }
     }
 
@@ -224,7 +224,7 @@ void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::sha
                 auto& successorsJ = this->getSuccessors(j, order).second;
                 bool checkReward = false;
 
-                if (successorsI[0] == successorsJ[0] && successorsI[1] == successorsJ[1]) {
+                if (*(successorsI.begin()) == *(successorsJ.begin()) && *(successorsI.begin() + 1) == *(successorsJ.begin() + 1)) {
                     checkReward = this->matrix.getRow(i).begin()->getValue() == this->matrix.getRow(j).begin()->getValue();
                 }
 
@@ -270,7 +270,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
     STORM_LOG_INFO("Doing Forward reasoning");
     STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
-    std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
+    auto const& successors = this->getSuccessors(currentState, order).second;
 
     if (successors.size() == 2 && this->extendByForwardReasoningOneSucc(order, region, currentState)) {
         return {this->numberOfStates, this->numberOfStates};
@@ -357,12 +357,14 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
                                                                                    uint_fast64_t currentState) {
     STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
 
-    std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
+    auto const& successors = this->getSuccessors(currentState, order).second;
     STORM_LOG_ASSERT(successors.size() == 2, "Expecting only two successors");
 
-    if (successors.at(0) == currentState || successors.at(1) == currentState) {
+    auto succ0 = *(successors.begin());
+    auto succ1 = *(successors.begin() + 1);
+    if (succ0 == currentState || succ1 == currentState) {
         // current state actually only has one real successor
-        auto realSucc = successors.at(0) == currentState ? successors.at(1) : successors.at(0);
+        auto realSucc = succ0 == currentState ? succ1 : succ0;
         ValueType reward = ValueType(0);
         if (rewardModel.hasStateActionRewards()) {
             reward = rewardModel.getStateActionReward(currentState);
@@ -385,9 +387,9 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
             }
             order->addAbove(currentState, order->getNode(realSucc));
         }
-    } else if (order->isBottomState(successors.at(0)) || order->isBottomState(successors.at(1))) {
-        auto bottomState = order->isBottomState(successors.at(0)) ? successors.at(0) : successors.at(1);
-        auto otherState = order->isBottomState(successors.at(0)) ? successors.at(1) : successors.at(0);
+    } else if (order->isBottomState(succ0) || order->isBottomState(succ1)) {
+        auto bottomState = order->isBottomState(succ0) ? succ0 : succ1;
+        auto otherState = bottomState == succ0 ? succ1 : succ0;
         // If there is only one transition going into bottomState (+ selfloop) we can do some normal forward reasoning
         if (this->transposeMatrix.getRow(bottomState).getNumberOfEntries() == 2) {
             if (!order->contains(otherState)) {
@@ -407,15 +409,15 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
     std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
     STORM_LOG_INFO("Doing backward reasoning");
     bool addedSomething = false;
-    std::vector<uint_fast64_t> const& successors = this->getSuccessors(currentState, order).second;
+    auto const& successors = this->getSuccessors(currentState, order).second;
     // We sort the states, and then apply min/max comparison.
     // This also adds states to the order if they are not yet sorted, but can be sorted based on min/max values
 
     auto sortedSuccStates = this->sortStatesOrderAndMinMax(successors, order);
     if (sortedSuccStates.first.first != this->numberOfStates) {
-        if (successors.size() == 2 && (successors.at(0) == currentState || successors.at(1) == currentState)) {
+        if (successors.size() == 2 && (*(successors.begin()) == currentState || *(successors.begin() + 1) == currentState)) {
             // current state actually only has one real successor
-            auto realSucc = successors.at(0) == currentState ? successors.at(1) : successors.at(0);
+            auto realSucc = *(successors.begin()) == currentState ? *(successors.begin() + 1) : *(successors.begin());
             ValueType reward = ValueType(0);
             if (rewardModel.hasStateActionRewards()) {
                 reward = rewardModel.getStateActionReward(currentState);
@@ -546,7 +548,7 @@ template<typename ValueType, typename ConstantType>
 bool RewardOrderExtender<ValueType, ConstantType>::rewardHack(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t succ0,
                                                               uint_fast64_t succ1) {
     auto& successors0 = this->getSuccessors(succ0, order).second;
-    if (successors0.size() == 1 && successors0.at(0) == currentState) {
+    if (successors0.size() == 1 && *(successors0.begin()) == currentState) {
         // We have curr --> succ0 and curr --> succ1 and succ0 --> curr
         if (!order->contains(currentState)) {
             order->add(currentState);
@@ -565,7 +567,7 @@ bool RewardOrderExtender<ValueType, ConstantType>::rewardHack(std::shared_ptr<Or
     }
     auto& successors1 = this->getSuccessors(succ1, order).second;
 
-    if (successors1.size() == 1 && successors1.at(0) == currentState) {
+    if (successors1.size() == 1 && *(successors1.begin()) == currentState) {
         // We have curr --> succ0 and curr --> succ1 and succ1 --> curr
         if (!order->contains(currentState)) {
             order->add(currentState);

@@ -52,11 +52,12 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrd
 
         if (actionFound) {
             assert(successorRes.first);
+            uint_fast64_t succ0 = *(successors.begin());
             if (successors.size() == 1) {
-                if (order->contains(successors[0])) {
-                    this->handleOneSuccessor(order, currentState, successors[0]);
+                if (order->contains(succ0)) {
+                    this->handleOneSuccessor(order, currentState, succ0);
                 } else {
-                    result = {successors[0], successors[0]};
+                    result = {succ0, succ0};
                 }
             } else if (!successors.empty()) {
                 if (order->isOnlyInitialOrder()) {
