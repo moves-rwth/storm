@@ -140,15 +140,6 @@ class OrderExtender {
     void checkParOnStateMonRes(uint_fast64_t state, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param,
                                storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
-    /**
-     * Sort the states based on the order and if available the min/max values
-     * @param states
-     * @param order
-     * @return pair with the sorted states and a pair of states which could not be sorted
-     */
-    std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(
-        boost::container::flat_set<uint_fast64_t> const& states, std::shared_ptr<Order> order);
-
     // Virtual public methods
     /*!
      * Extends the order for the given region.
@@ -167,6 +158,8 @@ class OrderExtender {
     void buildStateMap();
     std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortForFowardReasoning(uint_fast64_t currentState,
                                                                                                           std::shared_ptr<Order> order);
+    std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(
+        boost::container::flat_set<uint_fast64_t> const& states, std::shared_ptr<Order> order);
 
     // Order extension
     Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;

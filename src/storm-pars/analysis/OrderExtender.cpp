@@ -58,12 +58,11 @@ void OrderExtender<ValueType, ConstantType>::init(storm::storage::SparseMatrix<V
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order,
+void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t state, std::shared_ptr<Order> order,
                                                                    typename OrderExtender<ValueType, ConstantType>::VariableType param,
                                                                    storm::storage::ParameterRegion<ValueType> region,
                                                                    std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
-    auto mon = monotonicityChecker.checkLocalMonotonicity(order, s, param, region);
-    monResult->updateMonotonicityResult(param, mon);
+    monResult->updateMonotonicityResult(param, monotonicityChecker.checkLocalMonotonicity(order, state, param, region));
 }
 
 template<typename ValueType, typename ConstantType>
@@ -324,41 +323,38 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
             }
         } else {
             bool added = false;
-            for (auto index = 0; index < result.size(); ++index) {
-                auto compareRes = order->compare(state, result[index]);
+            for (auto itr = result.begin(); itr != result.end(); ++itr) {
+                auto nextState = *itr;
+                auto compareRes = order->compareFast(state, nextState);
+                // If fast sorting didn't work, we try using PLA
+                if (compareRes == Order::NodeComparison::UNKNOWN && usePLA[order]) {
+                    compareRes = addStatesBasedOnMinMax(order, state, nextState);
+                }
+                // If fast sorting and PLA didn't work, we try using normal sorting
+                if (compareRes == Order::NodeComparison::UNKNOWN) {
+                    compareRes = order->compare(state, nextState);
+                }
                 if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
                     if (!order->contains(state)) {
-                        // This can only happen if *itr refers to top/bottom state
+                        // This can only happen if index refers to top/bottom state
                         order->add(state);
                         order->addStateToHandle(state);
                     }
                     // insert at current pointer (while keeping other values)
-                    result.insert(result.begin() + index, state);
+                    result.insert(itr, state);
                     added = true;
                     break;
                 } else if (compareRes == Order::NodeComparison::UNKNOWN) {
-                    if (usePLA[order]) {
-                        compareRes = addStatesBasedOnMinMax(order, state, result[index]);
-                    }
-                    if (compareRes == Order::NodeComparison::ABOVE || compareRes == Order::NodeComparison::SAME) {
-                        // insert at current pointer (while keeping other values)
-                        result.insert(result.begin() + index, state);
-                        added = true;
-                        STORM_LOG_ASSERT(order->contains(state), "Expecting order to contain state" << state);
-                        STORM_LOG_ASSERT(order->contains(result[index]), "Expecting order to contain state" << result[index]);
-                        break;
-                    } else if (compareRes == Order::NodeComparison::UNKNOWN) {
-                        return {{(result[index]), state}, std::move(result)};
-                    }
+                    return {{(nextState), state}, std::move(result)};
                 }
             }
             if (!added) {
+                // In this case our state is below all currently added states
                 result.push_back(state);
             }
         }
     }
-
-    assert(result.size() == numberOfStatesToSort);
+    STORM_LOG_ASSERT(result.size() == numberOfStatesToSort, "Expecting all states to be sorted");
     return {{numberOfStates, numberOfStates}, std::move(result)};
 }
 
@@ -396,7 +392,7 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
         }
         return Order::SAME;
     }
-    if (mins[state1] > maxs[state2]) {
+    if (mins[state1] > error && mins[state1] > maxs[state2]) {
         // state 1 will always be larger than state2
         if (!order->contains(state1)) {
             order->add(state1);
@@ -413,7 +409,7 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
         order->addRelation(state1, state2);
 
         return Order::ABOVE;
-    } else if (mins[state2] > maxs[state1]) {
+    } else if (mins[state2] > error && mins[state2] > maxs[state1]) {
         // state2 will always be larger than state1
         if (!order->contains(state1)) {
             order->add(state1);
