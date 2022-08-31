@@ -186,8 +186,8 @@ class OrderExtender {
     //------------------------------------------------------------------------------
     // Sorting states
     //------------------------------------------------------------------------------
-    std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortForFowardReasoning(uint_fast64_t currentState,
-                                                                                                          std::shared_ptr<Order> order);
+    std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortForForwardReasoning(uint_fast64_t currentState,
+                                                                                                           std::shared_ptr<Order> order);
     std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesOrderAndMinMax(
         boost::container::flat_set<uint_fast64_t> const& states, std::shared_ptr<Order> order);
 
@@ -216,7 +216,6 @@ class OrderExtender {
     virtual void setBottomTopStates() = 0;
 
     virtual void checkRewardsForOrder(std::shared_ptr<Order> order) = 0;
-
 
     // Order properties
     boost::optional<storm::storage::BitVector> topStates;

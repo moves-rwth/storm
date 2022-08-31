@@ -846,7 +846,7 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
 }
 
 template<typename ValueType, typename ConstantType>
-std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> OrderExtender<ValueType, ConstantType>::sortForFowardReasoning(
+std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> OrderExtender<ValueType, ConstantType>::sortForForwardReasoning(
     uint_fast64_t currentState, std::shared_ptr<Order> order) {
     std::vector<uint_fast64_t> statesSorted;
     statesSorted.push_back(currentState);

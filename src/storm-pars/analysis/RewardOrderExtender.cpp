@@ -168,7 +168,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
     if (successors.size() == 2 && this->extendByForwardReasoningOneSucc(order, region, currentState)) {
         return {this->numberOfStates, this->numberOfStates};
     }
-    std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForFowardReasoning(currentState, order);
+    std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> sorted = this->sortForForwardReasoning(currentState, order);
     uint_fast64_t s1 = sorted.first.first;
     uint_fast64_t s2 = sorted.first.second;
     std::vector<uint_fast64_t>& statesSorted = sorted.second;
