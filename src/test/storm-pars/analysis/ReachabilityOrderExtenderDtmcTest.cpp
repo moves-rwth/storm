@@ -13,7 +13,6 @@
 #include "storm/api/storm.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "test/storm_gtest.h"
@@ -21,13 +20,15 @@
 TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_model) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -38,7 +39,8 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_model) {
         bisimType = storm::storage::BisimulationType::Weak;
     }
 
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
+                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
@@ -48,7 +50,10 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_model) {
 
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(region, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto criticalTuple = extender.toOrder(
+        region,
+        make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(
+            *monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
 
@@ -58,23 +63,25 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_model) {
     }
 
     // Check on some nodes
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94,5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7,13));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7, 13));
 }
 
 TEST(ReachabilityOrderExtenderDtmcTest, Brp_without_bisimulation_on_model) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -87,7 +94,10 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_without_bisimulation_on_model) {
 
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(region, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto criticalTuple = extender.toOrder(
+        region,
+        make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>::VariableType>>(
+            *monRes));
     EXPECT_EQ(183ul, std::get<1>(criticalTuple));
     EXPECT_EQ(186ul, std::get<2>(criticalTuple));
 }
@@ -95,13 +105,15 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_without_bisimulation_on_model) {
 TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_matrix) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -112,7 +124,8 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_matrix) {
         bisimType = storm::storage::BisimulationType::Weak;
     }
 
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
+                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
@@ -126,7 +139,8 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_matrix) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
@@ -137,23 +151,25 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_matrix) {
     EXPECT_TRUE(order->getDoneBuilding());
 
     // Check on some nodes
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94,5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7,13));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7, 13));
 }
 
 TEST(ReachabilityOrderExtenderDtmcTest, Brp_without_bisimulation_on_matrix) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";  // e.g. pL=0.9,TOACK=0.5
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -170,7 +186,8 @@ TEST(ReachabilityOrderExtenderDtmcTest, Brp_without_bisimulation_on_matrix) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
@@ -189,15 +206,17 @@ TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_model) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
 
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto order = std::get<0>(extender.toOrder(region));
@@ -205,16 +224,16 @@ TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_model) {
     EXPECT_TRUE(order->getDoneBuilding());
 
     // Check on all states
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,1));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2, 4));
 }
 
 TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_matrix) {
@@ -225,15 +244,17 @@ TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_matrix) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.51 <= p <= 0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.51 <= p <= 0.9", modelParameters);
 
     // For order extender
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalFunction>> propositionalChecker(*model);
@@ -243,7 +264,8 @@ TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_matrix) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
@@ -255,16 +277,16 @@ TEST(ReachabilityOrderExtenderDtmcTest, simple1_on_matrix) {
     EXPECT_TRUE(order->getDoneBuilding());
 
     // Check on all states, as this one automatically handles assumptions (if there is one valid) all are ABOVE
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,1));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2, 4));
 }
 
 TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_model) {
@@ -275,15 +297,17 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_model) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
 
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
     auto order = std::get<0>(extender.toOrder(region));
@@ -291,16 +315,16 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_model) {
     EXPECT_EQ(5ul, order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
     // Check on all states
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,1));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2, 4));
 }
 
 TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_matrix) {
@@ -311,15 +335,17 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_matrix) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.51 <= p <= 0.9", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.51 <= p <= 0.9", modelParameters);
 
     // For order extender
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalFunction>> propositionalChecker(*model);
@@ -329,7 +355,8 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_matrix) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 
@@ -337,20 +364,20 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_matrix) {
     auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(topStates, bottomStates, model->getTransitionMatrix());
     auto res = extender.toOrder(region);
     auto order = std::get<0>(res);
-    EXPECT_EQ( model->getNumberOfStates(), order->getNumberOfAddedStates());
+    EXPECT_EQ(model->getNumberOfStates(), order->getNumberOfAddedStates());
     EXPECT_TRUE(order->getDoneBuilding());
 
     // Check on all states
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,1));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2, 4));
 }
 
 TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
@@ -361,8 +388,10 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
     // model
     storm::prism::Program program = storm::api::parseProgram(programFile);
     program = storm::utility::prism::preprocess(program, constantsAsString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
@@ -372,11 +401,12 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
     if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
         bisimType = storm::storage::BisimulationType::Weak;
     }
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
+                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.2", modelParameters);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.2", modelParameters);
 
     // For order extender
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalFunction>> propositionalChecker(*model);
@@ -386,7 +416,8 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
     storm::logic::EventuallyFormula formula = formulas[0]->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula();
     psiStates = propositionalChecker.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
     // Get the maybeStates
-    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
+    std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 =
+        storm::utility::graph::performProb01(model->getBackwardTransitions(), phiStates, psiStates);
     storm::storage::BitVector topStates = statesWithProbability01.second;
     storm::storage::BitVector bottomStates = statesWithProbability01.first;
 

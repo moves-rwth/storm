@@ -1,7 +1,6 @@
-#include <storm/storage/StronglyConnectedComponentDecomposition.h>
 #include "storm-config.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
-#include "storm-pars/api/analysis.h"
 #include "storm-pars/api/region.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
