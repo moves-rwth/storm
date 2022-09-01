@@ -8,6 +8,10 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.7.x
 -------------
 
+## Version 1.7.1
+- `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
+- `storm-dft`: added checks whether a given DFT is well-formed and conventional.
+
 ## Version 1.7.0 (2022/07)
 - Fixed a bug in LP-based MDP model checking.
 - DRN Parser is now more robust, e.g., it does no longer depend on tabs.
