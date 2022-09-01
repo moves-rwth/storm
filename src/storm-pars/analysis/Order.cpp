@@ -676,7 +676,6 @@ bool Order::aboveFast(Node* node1, Node* node2) const {
 }
 
 bool Order::above(Node* node1, Node* node2) {
-    assert(!aboveFast(node1, node2));
     // Check whether node1 is above node2 by going over all states that are above state 2
     bool above = false;
     // Only do this when we have to deal with forward reasoning or we are not yet done with the building of the order

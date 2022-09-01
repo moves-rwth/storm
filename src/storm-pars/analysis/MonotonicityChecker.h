@@ -108,7 +108,7 @@ class MonotonicityChecker {
 
     storage::SparseMatrix<ValueType> matrix;
 
-    boost::container::flat_map<ValueType, boost::container::flat_map<VariableType, ValueType>> derivatives;
+    boost::container::flat_map<std::pair<VariableType, ValueType>, ValueType> derivatives;
 };
 }  // namespace analysis
 }  // namespace storm

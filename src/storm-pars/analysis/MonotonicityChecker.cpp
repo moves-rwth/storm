@@ -42,10 +42,38 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
                                                                                                              uint_fast64_t action) {
     // Create + fill Vector containing the Monotonicity of the transitions to the succs
     auto row = matrix.getRow(state, action);
+
+    if (row.getNumberOfEntries() == 1) {
+        return Monotonicity::Constant;
+    }
+    if (row.getNumberOfEntries() == 2) {
+        auto succ0 = row.begin()->getColumn();
+        auto succ1 = (row.begin() + 1)->getColumn();
+        if (row.begin()->getValue().isConstant()) {
+            // All transitions are constant
+            return Monotonicity::Constant;
+        }
+
+        auto sorting = order->compare(succ0, succ1);
+        if (sorting == Order::NodeComparison::SAME) {
+            // It doesn't matter what we do, as it results to nodes at the same level in the order
+            return Monotonicity::Constant;
+        }
+
+        if (sorting == Order::ABOVE) {
+            // 0 is above 1
+            return checkTransitionMonRes(row.begin()->getValue(), var, region);
+        } else if (sorting == Order::BELOW) {
+            return checkTransitionMonRes((row.begin() + 1)->getValue(), var, region);
+        } else {
+            return Monotonicity::Unknown;
+        }
+    }
+
     // Ignore if all entries are constant
     bool ignore = true;
 
-    std::vector<uint_fast64_t> succs;
+    std::vector<uint_fast64_t> succs(row.getNumberOfEntries());
     std::vector<Monotonicity> succsMonUnsorted;
     std::vector<uint_fast64_t> statesIncr;
     std::vector<uint_fast64_t> statesDecr;
@@ -67,43 +95,9 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
     if (ignore) {
         return Monotonicity::Constant;
     }
-    if (succs.size() == 2 && order->compare(succs.at(0), succs.at(1)) == Order::NodeComparison::SAME) {
-        // It doesn't matter what we do, as it results to nodes at the same level in the order
-        return Monotonicity::Constant;
-    }
     auto succsSorted = order->sortStates(succs);
 
     uint_fast64_t succSize = succs.size();
-    if (succSize == 2) {
-        // In this case we can ignore the last entry, as this will have a probability of 1 - the other
-        succSize = 1;
-    }
-    //            if (succsSorted[succSize - 1] == matrix.getColumnCount()) {
-    //                // Maybe we can still do something
-    //                // If one is decreasing and all others increasing, and this one is above all others or vice versa
-    //                if (checkAllow) {
-    //                    if (statesIncr.size() == 1 && statesDecr.size() > 1) {
-    //                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
-    //                        if (comp.first) {
-    //                            // All decreasing states are above the increasing state, therefore decreasing
-    //                            return Monotonicity::Decr;
-    //                        } else if (comp.second) {
-    //                            // All decreasing states are below the increasing state, therefore increasing
-    //                            return Monotonicity::Incr;
-    //                        }
-    //                    } else if (statesDecr.size() == 1 && statesIncr.size() > 1) {
-    //                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
-    //                        if (comp.first) {
-    //                            // All increasing states are below the decreasing state, therefore increasing
-    //                            return Monotonicity::Incr;
-    //                        } else if (comp.second) {
-    //                            // All increasing states are above the decreasing state, therefore decreasing
-    //                            return Monotonicity::Decr;
-    //                        }
-    //                    }
-    //                }
-    //            }
-
     // First check as long as it stays constant and either incr or decr
     bool allowedToSwap = true;
     Monotonicity localMonotonicity = Monotonicity::Constant;
@@ -162,11 +156,6 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
 template<typename ValueType>
 ValueType MonotonicityChecker<ValueType>::getDerivative(ValueType function, typename MonotonicityChecker<ValueType>::VariableType var) {
     return function.derivative(var);
-    auto& derivativeMap = derivatives[function];
-    if (derivativeMap.find(var) == derivativeMap.end()) {
-        derivativeMap[var] = function.derivative(var);
-    }
-    return derivativeMap[var];
 }
 
 template class MonotonicityChecker<RationalFunction>;

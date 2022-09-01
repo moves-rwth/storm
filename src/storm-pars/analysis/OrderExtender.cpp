@@ -715,6 +715,10 @@ void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Ord
                     order->addStateToHandle(entry.getColumn());
                 }
             }
+        } else if (allSorted && this->cyclic) {
+            // All successors are sorted, but the model is cyclic, so it might be that we are missing the forward reasoning for this state. Therefore we add it
+            // to the stateToHandle queue.
+            order->addStateToHandle(state);
         }
     }
 }
@@ -857,6 +861,46 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
     uint_fast64_t s1 = this->numberOfStates;
     uint_fast64_t s2 = this->numberOfStates;
     boost::container::flat_set<uint_fast64_t> const& successors = this->getSuccessors(currentState, order);
+
+    // Quick hack for 2 successors
+    if (successors.size() == 2) {
+        auto succ0 = *(successors.begin());
+        auto succ1 = *(successors.begin() + 1);
+        auto res1 = order->compareFast(currentState, succ0);
+        auto res2 = order->compareFast(currentState, succ1);
+        auto res3 = order->compareFast(succ0, succ1);
+
+        bool unknownOne = res1 == Order::NodeComparison::UNKNOWN;
+        bool unknownTwo = res2 == Order::NodeComparison::UNKNOWN;
+        bool unknownThree = res3 == Order::NodeComparison::UNKNOWN;
+
+        oneUnknown =
+            (unknownOne && !unknownTwo && !unknownThree) || (!unknownOne && unknownTwo && !unknownThree) || (!unknownOne && !unknownTwo && unknownThree);
+        if (oneUnknown && res1) {
+            if (res1 == Order::NodeComparison::ABOVE) {
+                // succ0 is below current state
+                statesSorted.push_back(succ0);
+            } else {
+                // succ0 is above current state
+                statesSorted.insert(statesSorted.begin(), succ0);
+            }
+            return {{succ1, s2}, std::move(statesSorted)};
+        } else if (oneUnknown && res2) {
+            if (res2 == Order::NodeComparison::ABOVE) {
+                statesSorted.push_back(succ1);
+            } else {
+                statesSorted.insert(statesSorted.begin(), succ1);
+            }
+            return {{succ0, s2}, std::move(statesSorted)};
+        } else if (oneUnknown && res3) {
+            return {{currentState, succ1}, std::move(statesSorted)};
+        } else if (!res1 && !res2 && !res3) {
+            // everything is already ordered
+        }
+        // Otherwise we do the normal sorting
+    }
+    oneUnknown = false;
+
     for (auto& state : successors) {
         unknown = false;
         bool added = false;
