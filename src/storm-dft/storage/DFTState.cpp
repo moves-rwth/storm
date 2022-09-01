@@ -377,7 +377,7 @@ void DFTState<ValueType>::propagateActivation(size_t representativeId) {
     if (representativeId != mDft.getTopLevelIndex()) {
         activate(representativeId);
     }
-    for (size_t elem : mDft.module(representativeId)) {
+    for (size_t elem : mDft.module(representativeId).getElements()) {
         if (mDft.isBasicElement(elem) && isOperational(elem) && !isEventDisabledViaRestriction(elem)) {
             std::shared_ptr<const storm::dft::storage::elements::DFTBE<ValueType>> be = mDft.getBasicElement(elem);
             if (be->canFail()) {
@@ -394,7 +394,7 @@ void DFTState<ValueType>::propagateActivation(size_t representativeId) {
                         break;
                     }
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->beType() << "' is not supported.");
                 }
             }
         } else if (mDft.getElement(elem)->isSpareGate()) {

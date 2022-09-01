@@ -42,14 +42,14 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
                                 "Child '" << spareReprs->name() << "' of spare '" << elem->name() << "' must be gate or BE.");
                 std::set<size_t> module = {spareReprs->id()};
                 spareReprs->extendSpareModule(module);
-                std::vector<size_t> sparesAndBes;
+                std::set<size_t> sparesAndBes;
                 for (size_t modelem : module) {
                     if (mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
-                        sparesAndBes.push_back(modelem);
+                        sparesAndBes.insert(modelem);
                         mRepresentants.insert(std::make_pair(modelem, spareReprs->id()));
                     }
                 }
-                mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
+                mModules.insert(std::make_pair(spareReprs->id(), storm::dft::storage::DftModule(spareReprs->id(), sparesAndBes)));
             }
         } else if (elem->isDependency()) {
             mDependencies.push_back(elem->id());
@@ -66,27 +66,31 @@ DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& t
         }
     }
     // Erase spare modules
-    for (auto const& module : mSpareModules) {
-        for (auto const& index : module.second) {
+    for (auto const& module : mModules) {
+        for (auto const& index : module.second.getElements()) {
             topModuleSet.erase(index);
         }
     }
     // Extend top module and insert those elements which are part of the top module and a spare module
     mElements[mTopLevelIndex]->extendSpareModule(topModuleSet);
-    mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
+    storm::dft::storage::DftModule topModule(mTopLevelIndex, topModuleSet);
 
     // Clear all spare modules where at least one element is also in the top module.
     // These spare modules will be activated from the beginning.
-    if (!mTopModule.empty()) {
-        for (auto& module : mSpareModules) {
-            if (std::find(module.second.begin(), module.second.end(), mTopModule.front()) != module.second.end()) {
+    if (!topModule.getElements().empty()) {
+        size_t topModuleId = *topModule.getElements().begin();
+        for (auto& module : mModules) {
+            auto& spareModule = module.second;
+            auto const& spareModuleElements = spareModule.getElements();
+            if (std::find(spareModuleElements.begin(), spareModuleElements.end(), topModuleId) != spareModuleElements.end()) {
                 STORM_LOG_WARN("Elements of spare module '"
-                               << getElement(module.first)->name()
+                               << getElement(spareModule.getRepresentative())->name()
                                << "' also contained in top module. All elements of this spare module will be activated from the beginning on.");
-                module.second.clear();
+                spareModule.clear();
             }
         }
     }
+    mModules.insert(std::make_pair(mTopLevelIndex, topModule));
 
     // Reserve space for failed spares
     ++mMaxSpareChildCount;
@@ -138,14 +142,15 @@ void DFT<ValueType>::setDynamicBehaviorInfo() {
                     // Case 2: Triggering outside events
                     // If the SPARE was already detected to have dynamic behavior, do not proceed
                     if (!dynamicBehaviorVector[spare->id()]) {
-                        for (auto const& memberID : module(child->id())) {
+                        for (auto const& memberID : module(child->id()).getElements()) {
                             // Iterate over all members of the module child represents
                             auto member = getElement(memberID);
                             for (auto const& dep : member->outgoingDependencies()) {
                                 // If the member has outgoing dependencies, check if those trigger something outside the module
                                 for (auto const& depEvent : dep->dependentEvents()) {
                                     // If a dependent event is not found in the module, SPARE is dynamic
-                                    if (std::find(module(child->id()).begin(), module(child->id()).end(), depEvent->id()) == module(child->id()).end()) {
+                                    auto const& childModuleElements = module(child->id()).getElements();
+                                    if (std::find(childModuleElements.begin(), childModuleElements.end(), depEvent->id()) == childModuleElements.end()) {
                                         dynamicBehaviorVector[spare->id()] = true;
                                         break;  // depEvent-loop
                                     }
@@ -657,36 +662,10 @@ std::string DFT<ValueType>::getInfoString() const {
 }
 
 template<typename ValueType>
-std::string DFT<ValueType>::getSpareModulesString() const {
+std::string DFT<ValueType>::getModulesString() const {
     std::stringstream stream;
-    stream << "[" << mElements[mTopLevelIndex]->id() << "] {";
-    std::vector<size_t>::const_iterator it = mTopModule.begin();
-    if (it == mTopModule.end()) {
-        stream << "}\n";
-        return stream.str();
-    }
-    STORM_LOG_ASSERT(it != mTopModule.end(), "Element not found.");
-    stream << mElements[(*it)]->name();
-    ++it;
-    while (it != mTopModule.end()) {
-        stream << ", " << mElements[(*it)]->name();
-        ++it;
-    }
-    stream << "}\n";
-
-    for (auto const& spareModule : mSpareModules) {
-        stream << "[" << mElements[spareModule.first]->name() << "] = {";
-        if (!spareModule.second.empty()) {
-            std::vector<size_t>::const_iterator it = spareModule.second.begin();
-            STORM_LOG_ASSERT(it != spareModule.second.end(), "Element not found.");
-            stream << mElements[(*it)]->name();
-            ++it;
-            while (it != spareModule.second.end()) {
-                stream << ", " << mElements[(*it)]->name();
-                ++it;
-            }
-        }
-        stream << "}\n";
+    for (auto const& module : mModules) {
+        stream << module.second.toString(*this) << "\n";
     }
     return stream.str();
 }
@@ -778,13 +757,6 @@ size_t DFT<ValueType>::getNrChild(size_t spareId, size_t childId) const {
 }
 
 template<typename ValueType>
-std::vector<size_t> DFT<ValueType>::getIndependentSubDftRoots(size_t index) const {
-    auto elem = getElement(index);
-    auto ISD = elem->independentSubDft(false);
-    return ISD;
-}
-
-template<typename ValueType>
 std::vector<size_t> DFT<ValueType>::immediateFailureCauses(size_t index) const {
     if (isGate(index)) {
         STORM_LOG_ASSERT(false, "Is gate.");
@@ -797,46 +769,6 @@ std::vector<size_t> DFT<ValueType>::immediateFailureCauses(size_t index) const {
 template<typename ValueType>
 bool DFT<ValueType>::canHaveNondeterminism() const {
     return !getDependencies().empty();
-}
-
-template<typename ValueType>
-bool DFT<ValueType>::checkWellFormedness(bool validForAnalysis, std::ostream& stream) const {
-    bool wellformed = true;
-    // Check independence of spare modules
-    // TODO: comparing one element of each spare module sufficient?
-    for (auto module1 = mSpareModules.begin(); module1 != mSpareModules.end(); ++module1) {
-        if (!module1->second.empty()) {
-            // Empty modules are allowed for the primary module of a spare gate
-            size_t firstElement = module1->second.front();
-            for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
-                if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
-                    if (!wellformed) {
-                        stream << '\n';
-                    }
-                    stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name()
-                           << "' should not overlap.";
-                    wellformed = false;
-                }
-            }
-        }
-    }
-
-    if (validForAnalysis) {
-        // Check that each dependency is binary
-        for (size_t idDependency : this->getDependencies()) {
-            std::shared_ptr<storm::dft::storage::elements::DFTDependency<ValueType> const> dependency = this->getDependency(idDependency);
-            if (dependency->dependentEvents().size() != 1) {
-                if (!wellformed) {
-                    stream << '\n';
-                }
-                stream << "Dependency '" << dependency->name() << "' is not binary.";
-                wellformed = false;
-            }
-        }
-    }
-    // TODO check VOT gates
-    // TODO check only one constant failed event
-    return wellformed;
 }
 
 template<typename ValueType>
@@ -1264,7 +1196,6 @@ std::set<storm::RationalFunctionVariable> getParameters(DFT<storm::RationalFunct
 
 // Explicitly instantiate the class.
 template class DFT<double>;
-
 template class DFT<RationalFunction>;
 
 }  // namespace storage

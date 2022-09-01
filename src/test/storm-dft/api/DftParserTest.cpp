@@ -26,7 +26,7 @@ TEST(DftParserTest, LoadAllBeDistributionsFromGalileoFile) {
     std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTGalileoFile<double>(file);
     EXPECT_EQ(8ul, dft->nrElements());
     EXPECT_EQ(7ul, dft->nrBasicElements());
-    EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
+    EXPECT_TRUE(storm::dft::api::isWellFormed(*dft, false).first);
     EXPECT_EQ(storm::dft::storage::elements::BEType::CONSTANT, dft->getBasicElement(dft->getIndex("A"))->beType());
     EXPECT_EQ(storm::dft::storage::elements::BEType::CONSTANT, dft->getBasicElement(dft->getIndex("B"))->beType());
     EXPECT_EQ(storm::dft::storage::elements::BEType::PROBABILITY, dft->getBasicElement(dft->getIndex("C"))->beType());
@@ -51,7 +51,7 @@ TEST(DftParserTest, LoadAllBEDistributionsFromJsonFile) {
     std::shared_ptr<storm::dft::storage::DFT<double>> dft = storm::dft::api::loadDFTJsonFile<double>(file);
     EXPECT_EQ(8ul, dft->nrElements());
     EXPECT_EQ(7ul, dft->nrBasicElements());
-    EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
+    EXPECT_TRUE(storm::dft::api::isWellFormed(*dft, false).first);
     EXPECT_EQ(storm::dft::storage::elements::BEType::CONSTANT, dft->getBasicElement(dft->getIndex("A"))->beType());
     EXPECT_EQ(storm::dft::storage::elements::BEType::CONSTANT, dft->getBasicElement(dft->getIndex("B"))->beType());
     EXPECT_EQ(storm::dft::storage::elements::BEType::PROBABILITY, dft->getBasicElement(dft->getIndex("C"))->beType());
