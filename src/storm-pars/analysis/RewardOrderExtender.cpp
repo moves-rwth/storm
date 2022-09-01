@@ -61,19 +61,21 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
 
 template<typename ValueType, typename ConstantType>
 void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
-    ValueType reward = ValueType(0);
-    if (rewardModel.hasStateActionRewards()) {
-        reward = rewardModel.getStateActionReward(currentState);
-    } else if (rewardModel.hasStateRewards()) {
-        reward = rewardModel.getStateReward(currentState);
-    } else {
-        STORM_LOG_ASSERT(false, "Expecting reward");
-    }
-    if (reward == ValueType(0)) {
-        order->addToNode(currentState, order->getNode(successor));
-    } else {
-        STORM_LOG_ASSERT(!(reward < ValueType(0)), "Expecting reward to be positive");
-        order->addAbove(currentState, order->getNode(successor));
+    if (order->compareFast(currentState, successor) == Order::NodeComparison::UNKNOWN) {
+        ValueType reward = ValueType(0);
+        if (rewardModel.hasStateActionRewards()) {
+            reward = rewardModel.getStateActionReward(currentState);
+        } else if (rewardModel.hasStateRewards()) {
+            reward = rewardModel.getStateReward(currentState);
+        } else {
+            STORM_LOG_ASSERT(false, "Expecting reward");
+        }
+        if (reward == ValueType(0)) {
+            order->addToNode(currentState, order->getNode(successor));
+        } else {
+            STORM_LOG_ASSERT(!(reward < ValueType(0)), "Expecting reward to be positive");
+            order->addAbove(currentState, order->getNode(successor));
+        }
     }
 }
 
@@ -266,7 +268,14 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
         if (reward.isZero()) {
-            order->addToNode(currentState, order->getNode(realSucc));
+            if (!order->contains(realSucc)) {
+                if (!order->contains(currentState)) {
+                    order->add(currentState);
+                }
+                order->addToNode(realSucc, order->getNode(currentState));
+            } else {
+                order->addToNode(currentState, order->getNode(realSucc));
+            }
         } else {
             if (!order->contains(realSucc)) {
                 order->add(realSucc);

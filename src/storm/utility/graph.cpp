@@ -1836,7 +1836,7 @@ std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& mat
         for (auto const& successorEntry : matrix.getRowGroup(state)) {
             auto succ = successorEntry.getColumn();
             if (!seenStates[succ]) {
-                STORM_LOG_ASSERT (std::find(result.begin(), result.end(), succ) == result.end(), "state: " << succ << " already added");
+                STORM_LOG_ASSERT(std::find(result.begin(), result.end(), succ) == result.end(), "state: " << succ << " already added");
                 result[count] = succ;
                 seenStates.set(succ, true);
                 count--;
@@ -1844,13 +1844,14 @@ std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& mat
             }
         }
     }
-    STORM_LOG_ASSERT (std::find(result.begin(), result.end(), matrix.getRowGroupCount()) == result.end(), "Couldn't sort all states");
+    STORM_LOG_ASSERT(std::find(result.begin(), result.end(), matrix.getRowGroupCount()) == result.end(), "Couldn't sort all states");
 
     return result;
 }
 
 template<typename T>
-std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, storm::storage::SparseMatrix<T> const& originalMatrix, std::vector<uint64_t> const& firstStates) {
+std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, storm::storage::SparseMatrix<T> const& originalMatrix,
+                                                 std::vector<uint64_t> const& firstStates) {
     // first BFS on deterministic states, then topological on everything not yet sorted.
     storm::storage::BitVector seenStates(matrix.getRowGroupCount(), false);
     std::vector<uint_fast64_t> ignoredStates;
@@ -1893,12 +1894,11 @@ std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<T>
         auto state = sortedTopological[sortedTopological.size() - i - 1];
         if (std::find(result.begin(), result.end(), state) == result.end()) {
             result[count] = state;
-            count --;
+            count--;
         }
     }
 
-
-    STORM_LOG_ASSERT (std::find(result.begin(), result.end(), matrix.getRowGroupCount()) == result.end(), "Couldn't sort all states");
+    STORM_LOG_ASSERT(std::find(result.begin(), result.end(), matrix.getRowGroupCount()) == result.end(), "Couldn't sort all states");
 
     return result;
 }
@@ -2075,7 +2075,8 @@ template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<doub
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix, std::vector<uint64_t> const& firstStates);
 template std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<double> const& matrix, std::vector<uint64_t> const& firstStates);
-template std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<double> const& matrix, storm::storage::SparseMatrix<double> const& originalMatrix, std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<double> const& matrix,
+                                                          storm::storage::SparseMatrix<double> const& originalMatrix, std::vector<uint64_t> const& firstStates);
 
 // Instantiations for storm::RationalNumber.
 #ifdef STORM_HAVE_CARL
@@ -2206,8 +2207,7 @@ template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<stor
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,
                                                        std::vector<uint64_t> const& firstStates);
-template std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,
-                                                       std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix, std::vector<uint64_t> const& firstStates);
 template std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix,
                                                           storm::storage::SparseMatrix<storm::RationalNumber> const& originalMatrix,
                                                           std::vector<uint64_t> const& firstStates);
@@ -2316,8 +2316,7 @@ template std::pair<storm::storage::BitVector, storm::storage::BitVector> perform
 
 template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,
                                                        std::vector<uint64_t> const& firstStates);
-template std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,
-                                                       std::vector<uint64_t> const& firstStates);
+template std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix, std::vector<uint64_t> const& firstStates);
 template std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,
                                                           storm::storage::SparseMatrix<storm::RationalFunction> const& originalMatrix,
                                                           std::vector<uint64_t> const& firstStates);

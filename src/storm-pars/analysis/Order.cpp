@@ -287,13 +287,19 @@ Order::NodeComparison Order::compareFast(Node* node1, Node* node2, NodeCompariso
 }
 
 Order::NodeComparison Order::compare(Node* node1, Node* node2, NodeComparison hypothesis) {
+    if (node1 != nullptr && node1 == node2) {
+        return SAME;
+    }
     if (node1 != nullptr && node2 != nullptr) {
         auto comp = compareFast(node1, node2, hypothesis);
         if (comp != UNKNOWN) {
+            if (compareFast(node2, node1, UNKNOWN) == comp) {
+                mergeNodes(node1, node2);
+                return SAME;
+            }
             return comp;
         }
         if ((hypothesis == UNKNOWN || hypothesis == ABOVE) && above(node1, node2)) {
-            assert(!above(node2, node1));
             return ABOVE;
         }
 
