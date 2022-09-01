@@ -198,6 +198,6 @@ template class BitVectorHashMap<uint32_t>;
 // For example, the STAMINA project (built on STORM) uses this for thread indecies
 // in its multithreading implementation.
 template class BitVectorHashMap<uint8_t, Murmur3BitVectorHash<uint32_t>>;
-template class BitVectorHashMap<uint8_t, Murmur3BitVectorHash<uint16_t>>;
+template class BitVectorHashMap<uint8_t, Murmur3BitVectorHash<uint64_t>>;
 }  // namespace storage
 }  // namespace storm
