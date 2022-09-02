@@ -98,6 +98,8 @@ namespace storm {
 
             BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite);
 
+            std::string getObservationLabel(BeliefId const & beliefId);
+
         private:
 
             BeliefClipping clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector& isInfinite);

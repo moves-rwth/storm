@@ -150,6 +150,9 @@ namespace storm {
                             if(pomdp().hasChoiceLabeling()){
                                 components.choiceLabeling = pomdp().getChoiceLabeling();
                             }
+                            if(pomdp().hasObservationValuations()){
+                                components.observationValuations = pomdp().getObservationValuations();
+                            }
                             preprocessedPomdp = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
                             auto reachableFromSinkStates = storm::utility::graph::getReachableStates(pomdp().getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
                             reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
@@ -610,7 +613,7 @@ namespace storm {
                 statistics.overApproximationBuildTime.start();
                 storm::storage::BitVector refinedObservations;
                 if (!refine) {
-                    // If we build the model from scratch, we first have to setup the explorer for the overApproximation.
+                    // If we build the model from scratch, we first have to set up the explorer for the overApproximation.
                     if (computeRewards) {
                         overApproximation->startNewExploration(storm::utility::zero<ValueType>());
                     } else {
