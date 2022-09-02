@@ -507,6 +507,7 @@ class Order {
 
     // The vector of nodes in this order
     std::vector<Node*> nodes;
+    std::set<Node*> nodesSet;
 
     // The top node
     Node* top;

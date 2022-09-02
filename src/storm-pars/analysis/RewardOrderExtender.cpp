@@ -12,7 +12,9 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(std::shared_pt
         this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         if (rewardModel.hasStateActionRewards()) {
-            STORM_LOG_ASSERT(rewardModel.getStateActionReward(i).isConstant(), "Expecting rewards to be constant");
+            for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
+                STORM_LOG_ASSERT(rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(), "Expecting rewards to be constant");
+            }
         } else if (rewardModel.hasStateRewards()) {
             STORM_LOG_ASSERT(rewardModel.getStateReward(i).isConstant(), "Expecting rewards to be constant");
         } else {
@@ -31,7 +33,9 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
         new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         if (rewardModel.hasStateActionRewards()) {
-            STORM_LOG_ASSERT(rewardModel.getStateActionReward(i).isConstant(), "Expecting rewards to be constant");
+            for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
+                STORM_LOG_ASSERT(rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(), "Expecting rewards to be constant");
+            }
         } else if (rewardModel.hasStateRewards()) {
             STORM_LOG_ASSERT(rewardModel.getStateReward(i).isConstant(), "Expecting rewards to be constant");
         } else {
@@ -50,7 +54,9 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
         new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         if (rewardModel.hasStateActionRewards()) {
-            STORM_LOG_ASSERT(rewardModel.getStateActionReward(i).isConstant(), "Expecting rewards to be constant");
+            for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
+                STORM_LOG_ASSERT(rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(), "Expecting rewards to be constant");
+            }
         } else if (rewardModel.hasStateRewards()) {
             STORM_LOG_ASSERT(rewardModel.getStateReward(i).isConstant(), "Expecting rewards to be constant");
         } else {
@@ -62,19 +68,36 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
 template<typename ValueType, typename ConstantType>
 void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
     if (order->compareFast(currentState, successor) == Order::NodeComparison::UNKNOWN) {
-        ValueType reward = ValueType(0);
+        bool allZero = true;
+        bool allGreaterZero = true;
         if (rewardModel.hasStateActionRewards()) {
-            reward = rewardModel.getStateActionReward(currentState);
+            if (order->getActionAtState(currentState != std::numeric_limits<uint64_t>::max())) {
+                allZero = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
+                allGreaterZero = !allZero;
+            } else {
+                for (auto i = 0; i < this->matrix.getRowGroupSize(currentState); ++i) {
+                    bool zero = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
+                    allZero &= zero;
+                    allGreaterZero &= !zero;
+                }
+            }
         } else if (rewardModel.hasStateRewards()) {
-            reward = rewardModel.getStateReward(currentState);
+            allZero = rewardModel.getStateReward(currentState).isZero();
+            allGreaterZero = !allZero;
         } else {
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
-        if (reward == ValueType(0)) {
+        if (allZero) {
             order->addToNode(currentState, order->getNode(successor));
-        } else {
-            STORM_LOG_ASSERT(!(reward < ValueType(0)), "Expecting reward to be positive");
+        } else if (allGreaterZero) {
             order->addAbove(currentState, order->getNode(successor));
+        } else {
+            assert(false);
+            // TODO implement
+        }
+    } else {
+        if (!order->contains(currentState)) {
+            order->add(currentState);
         }
     }
 }
@@ -129,8 +152,10 @@ void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::sha
                     ValueType rewardI = ValueType(0);
                     ValueType rewardJ = ValueType(0);
                     if (rewardModel.hasStateActionRewards()) {
-                        rewardI = rewardModel.getStateActionReward(i);
-                        rewardJ = rewardModel.getStateActionReward(j);
+                        assert(order->getActionAtState(i) != std::numeric_limits<uint64_t>::max());
+                        assert(order->getActionAtState(j) != std::numeric_limits<uint64_t>::max());
+                        rewardI = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + order->getActionAtState(i));
+                        rewardJ = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + order->getActionAtState(j));
                     } else if (rewardModel.hasStateRewards()) {
                         rewardI = rewardModel.getStateReward(i);
                         rewardJ = rewardModel.getStateReward(j);
@@ -259,15 +284,26 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
     if (succ0 == currentState || succ1 == currentState) {
         // current state actually only has one real successor
         auto realSucc = succ0 == currentState ? succ1 : succ0;
-        ValueType reward = ValueType(0);
+        bool allZero = true;
+        bool allGreaterZero = true;
         if (rewardModel.hasStateActionRewards()) {
-            reward = rewardModel.getStateActionReward(currentState);
+            if (this->findBestAction(order, region, currentState)) {
+                allZero = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
+                allGreaterZero = !allZero;
+            } else {
+                for (auto i = 0; i < this->matrix.getRowGroupSize(currentState); ++i) {
+                    bool zero = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
+                    allZero &= zero;
+                    allGreaterZero &= !zero;
+                }
+            }
         } else if (rewardModel.hasStateRewards()) {
-            reward = rewardModel.getStateReward(currentState);
+            allZero = rewardModel.getStateReward(currentState).isZero();
+            allGreaterZero = !allZero;
         } else {
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
-        if (reward.isZero()) {
+        if (allZero) {
             if (!order->contains(realSucc)) {
                 if (!order->contains(currentState)) {
                     order->add(currentState);
@@ -276,12 +312,15 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
             } else {
                 order->addToNode(currentState, order->getNode(realSucc));
             }
-        } else {
+        } else if (allGreaterZero) {
             if (!order->contains(realSucc)) {
                 order->add(realSucc);
                 order->addStateToHandle(realSucc);
             }
             order->addAbove(currentState, order->getNode(realSucc));
+        } else {
+            assert(false);
+            // TODO Implement
         }
     } else if (order->isBottomState(succ0) || order->isBottomState(succ1)) {
         auto bottomState = order->isBottomState(succ0) ? succ0 : succ1;
@@ -316,11 +355,25 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
         if (successors.size() == 2 && (*(successors.begin()) == currentState || *(successors.begin() + 1) == currentState)) {
             // current state actually only has one real successor
             auto realSucc = *(successors.begin()) == currentState ? *(successors.begin() + 1) : *(successors.begin());
-            ValueType reward = ValueType(0);
+            bool allZero = true;
+            bool allGreaterZero = true;
             if (rewardModel.hasStateActionRewards()) {
-                reward = rewardModel.getStateActionReward(currentState);
+                if (this->findBestAction(order, region, currentState)) {
+                    bool zero =
+                        rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
+                    allZero &= zero;
+                    allGreaterZero &= !zero;
+                } else {
+                    for (auto i = 0; this->matrix.getRowGroupSize(currentState); ++i) {
+                        bool zero = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
+                        allZero &= zero;
+                        allGreaterZero &= !zero;
+                    }
+                }
             } else if (rewardModel.hasStateRewards()) {
-                reward = rewardModel.getStateReward(currentState);
+                bool zero = rewardModel.getStateReward(currentState).isZero();
+                allZero &= zero;
+                allGreaterZero &= !zero;
             } else {
                 STORM_LOG_ASSERT(false, "Expecting reward");
             }
@@ -329,115 +382,146 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                 order->add(realSucc);
                 order->addStateToHandle(realSucc);
             }
-            if (reward.isZero()) {
+            if (allZero) {
                 order->addToNode(currentState, order->getNode(realSucc));
-            } else {
+            } else if (allGreaterZero) {
                 order->addAbove(currentState, order->getNode(realSucc));
+            } else {
+                assert(false);
+                // TODO
             }
-
         } else {
             return sortedSuccStates.first;
         }
     } else {
-        // We could order all successor states
-        ValueType reward = ValueType(0);
-        if (rewardModel.hasStateActionRewards()) {
-            reward = rewardModel.getStateActionReward(currentState);
-        } else if (rewardModel.hasStateRewards()) {
-            reward = rewardModel.getStateReward(currentState);
+        ValueType rewardSmall = ValueType(0);
+        ValueType rewardLarge = ValueType(0);
+        if (order->compare(sortedSuccStates.second[0], sortedSuccStates.second[sortedSuccStates.second.size() - 1]) == Order::NodeComparison::SAME) {
+            // All successors are at the same node
+            this->handleOneSuccessor(order, currentState, sortedSuccStates.second[0]);
         } else {
-            STORM_LOG_ASSERT(false, "Expecting reward");
-        }
-
-        STORM_LOG_INFO("Reward at this state (" << currentState << "): " << reward);
-
-        if (reward.isZero()) {
-            if (order->compare(*(sortedSuccStates.second.begin()), sortedSuccStates.second.back()) == Order::NodeComparison::SAME) {
-                order->addToNode(currentState, order->getNode(sortedSuccStates.second.back()));
+            // We could order all successor states
+            bool allZero = true;
+            bool allGreaterZero = true;
+            if (rewardModel.hasStateActionRewards()) {
+                if (this->findBestAction(order, region, currentState)) {
+                    rewardSmall = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState));
+                    rewardLarge = rewardSmall;
+                    bool zero = rewardSmall.isZero();
+                    allZero &= zero;
+                    allGreaterZero &= !zero;
+                } else {
+                    for (auto i = 0; this->matrix.getRowGroupSize(currentState); ++i) {
+                        auto rew = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState));
+                        rewardSmall = rew.constantPart() < rewardSmall.constantPart() ? rew : rewardSmall;
+                        rewardLarge = rew.constantPart() < rewardLarge.constantPart() ? rewardLarge : rew;
+                        bool zero = rew.isZero();
+                        allZero &= zero;
+                        allGreaterZero &= !zero;
+                    }
+                }
+            } else if (rewardModel.hasStateRewards()) {
+                rewardSmall = rewardModel.getStateReward(currentState);
+                rewardLarge = rewardSmall;
+                bool zero = rewardSmall.isZero();
+                allZero &= zero;
+                allGreaterZero &= !zero;
             } else {
-                order->addBetween(currentState, *(sortedSuccStates.second.begin()), sortedSuccStates.second.back());
+                STORM_LOG_ASSERT(false, "Expecting reward");
             }
-        } else {
-            // We are considering rewards, so our current state is always above the lowest one of all our successor states
-            order->addAbove(currentState, order->getNode(sortedSuccStates.second.back()));
-            // We check if we can also sort something based on assumptions.
-            if (this->usePLA[order]) {
-                for (uint_fast64_t succ : successors) {
-                    if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
-                        auto compare = this->addStatesBasedOnMinMax(order, currentState, succ);
-                        if (compare == Order::NodeComparison::UNKNOWN) {
-                            // check if r(s) > (1-P(s,sj)) * (max(sj) - min(s1))
-                            // for |successors| == 2 check if r(s) > P (s,s1)*(min(s2)-max(s1))
-                            // s1 is lowest in order
-                            // succ == sj == s2
-                            auto s1 = *(successors.begin());
-                            ValueType function;
-                            for (auto& entry : this->matrix.getRow(currentState)) {
-                                if (entry.getColumn() == succ) {
-                                    function = entry.getValue();
-                                    break;
-                                }
-                            }
-                            if (function.gatherVariables().size() == 1) {
-                                std::map<VariableType, CoefficientType> val1, val2;
-                                auto& var = *(function.gatherVariables().begin());
-                                val1.insert({var, region.getLowerBoundary(var)});
-                                val2.insert({var, region.getUpperBoundary(var)});
-                                CoefficientType res1 = function.evaluate(val1);
-                                CoefficientType res2 = function.evaluate(val2);
-                                if (res2 < res1) {
-                                    std::swap(res1, res2);
-                                }
-                                if (storm::utility::convertNumber<ConstantType>(reward.constantPart()) >
-                                    storm::utility::convertNumber<ConstantType>(res2) * (this->maxValues[order][succ] - this->minValues[order][s1])) {
-                                    if (!order->contains(succ)) {
-                                        order->add(succ);
-                                    }
-                                    order->addAbove(currentState, order->getNode(succ));
-                                    compare = Order::NodeComparison::ABOVE;
-                                } else if (successors.size() == 2 && succ == *(successors.begin())) {
-                                    if (storm::utility::convertNumber<ConstantType>(reward.constantPart()) <
-                                        storm::utility::convertNumber<ConstantType>(res1) * (this->minValues[order][succ] - this->maxValues[order][s1])) {
-                                        if (!order->contains(currentState)) {
-                                            order->add(currentState);
-                                        }
-                                        order->addAbove(succ, order->getNode(currentState));
-                                        compare = Order::NodeComparison::BELOW;
-                                    }
-                                }
-                            }
-                        }
 
-                        if (compare == Order::NodeComparison::UNKNOWN) {
-                            auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region, this->minValues[order],
-                                                                                                this->maxValues[order]);
+            if (allZero) {
+                if (order->compare(*(sortedSuccStates.second.begin()), sortedSuccStates.second.back()) == Order::NodeComparison::SAME) {
+                    order->addToNode(currentState, order->getNode(sortedSuccStates.second.back()));
+                } else {
+                    order->addBetween(currentState, *(sortedSuccStates.second.begin()), sortedSuccStates.second.back());
+                }
+            } else if (allGreaterZero) {
+                // We are considering rewards, so our current state is always above the lowest one of all our successor states
+                order->addAbove(currentState, order->getNode(sortedSuccStates.second.back()));
+                // We check if we can also sort something based on assumptions.
+                if (this->usePLA[order]) {
+                    for (uint_fast64_t succ : successors) {
+                        if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
+                            auto compare = this->addStatesBasedOnMinMax(order, currentState, succ);
+                            if (compare == Order::NodeComparison::UNKNOWN) {
+                                // check if r(s) > (1-P(s,sj)) * (max(sj) - min(s1))
+                                // for |successors| == 2 check if r(s) > P (s,s1)*(min(s2)-max(s1))
+                                // s1 is lowest in order
+                                // succ == sj == s2
+                                auto s1 = *(successors.begin());
+                                ValueType function;
+                                for (auto& entry : this->matrix.getRow(currentState)) {
+                                    if (entry.getColumn() == succ) {
+                                        function = entry.getValue();
+                                        break;
+                                    }
+                                }
+                                if (function.gatherVariables().size() == 1) {
+                                    std::map<VariableType, CoefficientType> val1, val2;
+                                    auto& var = *(function.gatherVariables().begin());
+                                    val1.insert({var, region.getLowerBoundary(var)});
+                                    val2.insert({var, region.getUpperBoundary(var)});
+                                    CoefficientType res1 = function.evaluate(val1);
+                                    CoefficientType res2 = function.evaluate(val2);
+                                    if (res2 < res1) {
+                                        std::swap(res1, res2);
+                                    }
+                                    if (storm::utility::convertNumber<ConstantType>(rewardSmall.constantPart()) >
+                                        storm::utility::convertNumber<ConstantType>(res2) * (this->maxValues[order][succ] - this->minValues[order][s1])) {
+                                        if (!order->contains(succ)) {
+                                            order->add(succ);
+                                        }
+                                        order->addAbove(currentState, order->getNode(succ));
+                                        compare = Order::NodeComparison::ABOVE;
+                                    } else if (successors.size() == 2 && succ == *(successors.begin())) {
+                                        if (storm::utility::convertNumber<ConstantType>(rewardLarge.constantPart()) <
+                                            storm::utility::convertNumber<ConstantType>(res1) * (this->minValues[order][succ] - this->maxValues[order][s1])) {
+                                            if (!order->contains(currentState)) {
+                                                order->add(currentState);
+                                            }
+                                            order->addAbove(succ, order->getNode(currentState));
+                                            compare = Order::NodeComparison::BELOW;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (compare == Order::NodeComparison::UNKNOWN) {
+                                auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region, this->minValues[order],
+                                                                                                    this->maxValues[order]);
+                                if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
+                                    this->handleAssumption(order, assumptions.begin()->first);
+                                }
+                            } else if (!order->contains(currentState)) {
+                                order->add(currentState);
+                            }
+                        } else if (!order->contains(currentState)) {
+                            order->add(currentState);
+                        }
+                    }
+                } else {
+                    for (uint_fast64_t succ : successors) {
+                        if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
+                            auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region);
                             if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
                                 this->handleAssumption(order, assumptions.begin()->first);
                             }
                         } else if (!order->contains(currentState)) {
                             order->add(currentState);
                         }
-                    } else if (!order->contains(currentState)) {
-                        order->add(currentState);
                     }
                 }
             } else {
-                for (uint_fast64_t succ : successors) {
-                    if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
-                        auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, succ, order, region);
-                        if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
-                            this->handleAssumption(order, assumptions.begin()->first);
-                        }
-                    } else if (!order->contains(currentState)) {
-                        order->add(currentState);
-                    }
-                }
+                assert(false);
+                // TODO implement
             }
         }
     }
 
     STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain state " << currentState);
-    STORM_LOG_ASSERT(order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE,
+    STORM_LOG_ASSERT(order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE ||
+                         order->compare(order->getNode(currentState), order->getBottom()) == Order::SAME,
                      "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
     return std::make_pair(this->numberOfStates, this->numberOfStates);
 }

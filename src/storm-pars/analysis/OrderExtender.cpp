@@ -197,7 +197,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
             uint_fast64_t succ0 = *(successors.begin());
             if (successors.size() == 1) {
                 if (order->contains(succ0)) {
-                    this->handleOneSuccessor(order, currentState, succ0);
+                    handleOneSuccessor(order, currentState, succ0);
                 } else {
                     result = {succ0, succ0};
                 }
@@ -285,20 +285,19 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
         } else {
             STORM_LOG_ASSERT(result.first < this->numberOfStates && result.second < this->numberOfStates,
                              "Expecting both result numbers to correspond to states");
-            STORM_LOG_ASSERT(order->compare(result.first, result.second) == Order::UNKNOWN && order->compare(result.second, result.first) == Order::UNKNOWN,
-                             "Expecting relation between the two states to be unknown");
-            // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
-            if (currentStateMode.second && this->extendWithAssumption(order, region, result.first, result.second)) {
-                continue;
-            }
+            STORM_LOG_ASSERT(
+                (!currentStateMode.second && result.first == currentState && result.first == result.second && !order->isActionSetAtState(currentState)) ||
+                    (order->compare(result.first, result.second) == Order::UNKNOWN && order->compare(result.second, result.first) == Order::UNKNOWN),
+                "Expecting relation between the two states to be unknown");
+
             // We couldn't extend the order
             if (this->nonParametricStates.find(currentState) != this->nonParametricStates.end()) {
                 if (!order->contains(currentState)) {
                     // State is not parametric, so we hope that just adding it between =) and =( will help us
-                    // We set is as sufficient as it is non-parametric and non-parametric states are by definition sufficient
                     order->add(currentState);
-                    order->setSufficientForState(currentState);
                 }
+                // We set is as sufficient as it is non-parametric and non-parametric states are by definition sufficient
+                order->setSufficientForState(currentState);
                 if (this->matrix.getRowGroupSize(currentState) > 1) {
                     // State is non-deterministic
                     // If one of the successors is not yet in the order, we add it to a waitinglist and see if we can handle it as soon as we are done for the
@@ -313,6 +312,10 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
                 continue;
             } else {
+                // Try to add states based on min/max and assumptions, only if we are not in statesToHandle mode
+                if (currentStateMode.second && this->extendWithAssumption(order, region, result.first, result.second)) {
+                    continue;
+                }
                 if (!currentStateMode.second) {
                     // The state was based on statesToHandle, so it is not bad if we cannot continue with this.
                     currentStateMode = this->getNextState(order, currentState, false);
@@ -329,7 +332,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
         STORM_LOG_ASSERT(order->sortStates(successors).size() == successors.size(), "Expecting all successor states to be sorted");
     }
 
-    STORM_LOG_ASSERT(order->getDoneBuilding(), "Expecting to have a final order");
+    STORM_LOG_ASSERT(order->getNumberOfSufficientStates() == this->numberOfStates, "Expecting to be sufficient for all states");
     if (monRes != nullptr) {
         // monotonicity result for the in-build checking of monotonicity
         monRes->setDone();

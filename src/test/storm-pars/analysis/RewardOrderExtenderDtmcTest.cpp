@@ -1,9 +1,9 @@
 #include <storage/StronglyConnectedComponentDecomposition.h>
 #include "storm-config.h"
 
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/analysis/RewardOrderExtender.h"
 #include "storm-pars/analysis/Order.h"
+#include "storm-pars/analysis/RewardOrderExtender.h"
+#include "storm-pars/api/storm-pars.h"
 
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/AutoParser.h"
@@ -20,7 +20,7 @@ namespace {
 class RewardOrderExtenderTester : public storm::analysis::RewardOrderExtender<storm::RationalFunction, double> {
    public:
     RewardOrderExtenderTester(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model,
-                                  std::shared_ptr<storm::logic::Formula const> formula)
+                              std::shared_ptr<storm::logic::Formula const> formula)
         : storm::analysis::RewardOrderExtender<storm::RationalFunction, double>(model, formula) {
         // Intentionally left empty
     }
@@ -51,12 +51,12 @@ TEST(RewardOrderExtenderTest, RewardTest1) {
     // Extender
     auto extender = RewardOrderExtenderTester(model, formulas[0]);
     auto order = extender.getInitialOrder();
-    ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
-
-    extender.initializeMinMaxValues(region, order);
 
     // Note: Due to Storm's parsing, state 6 is s5 in the model and state 5 is s6 in the model.
     // Everything else is the same
+    ASSERT_EQ(order->compare(5, 7), storm::analysis::Order::NodeComparison::SAME);
+
+    extender.initializeMinMaxValues(region, order);
 
     // s5 check
     extender.extendByBackwardReasoning(order, region, 6);
@@ -168,7 +168,6 @@ TEST(RewardOrderExtenderTest, RewardTest2) {
     EXPECT_EQ(order->compare(1, 5), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(1, 6), storm::analysis::Order::NodeComparison::UNKNOWN);
     EXPECT_EQ(order->compare(1, 7), storm::analysis::Order::NodeComparison::ABOVE);
-
 }
 
 TEST(RewardOrderExtenderTest, RewardTest3) {
@@ -262,4 +261,4 @@ TEST(RewardOrderExtenderTest, RewardTest4) {
     EXPECT_EQ(order->compare(4, 6), storm::analysis::Order::NodeComparison::ABOVE);
     EXPECT_EQ(order->compare(5, 6), storm::analysis::Order::NodeComparison::ABOVE);
 }
-}
+}  // namespace

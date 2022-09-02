@@ -213,42 +213,58 @@ void Order::addToNode(uint_fast64_t state, Node* node) {
     }
 }
 
-void Order::mergeNodes(storm::analysis::Order::Node* node1, storm::analysis::Order::Node* node2) {
+void Order::mergeNodes(Order::Node* node1, Order::Node* node2) {
     STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << '\n');
+    if (node1 == node2) {
+        return;
+    }
+
+    auto compareRes = compareFast(node1, node2);
+    compareRes = compareRes == UNKNOWN ? compare(node1, node2) : compareRes;
+    if (compareRes == BELOW) {
+        // Node2 lies below node1, to make life easer, we swap them
+        std::swap(node1, node2);
+    }
 
     // Merges node2 into node 1
-    // everything above n2 also above n1
-    node1->statesAbove |= ((node2->statesAbove));
-    // add states of node 2 to node 1
+    // Add the states from node2 to node 1
     node1->states.insert(node2->states.begin(), node2->states.end());
 
     for (auto const& i : node2->states) {
         nodes[i] = node1;
     }
 
+    // Every node which has node2 above it, should now have node1 above it
     for (auto const& node : nodes) {
-        if (node != nullptr) {
-            for (auto state2 : node2->states) {
-                if (node->statesAbove[state2]) {
-                    for (auto state1 : node1->states) {
-                        node->statesAbove.set(state1);
-                    }
-                    break;
-                }
+        if (node != node1 && node != node2 && compareFast(node2, node) == ABOVE) {
+            for (auto state1 : node1->states) {
+                node->statesAbove.set(state1);
             }
         }
     }
 
-    for (uint64_t i = 0; i < numberOfStates; ++i) {
-        for (uint64_t j = i + 1; j < numberOfStates; ++j) {
-            auto comp1 = compare(i, j);
-            auto comp2 = compare(j, i);
-            if (!((comp1 == BELOW && comp2 == ABOVE) || (comp1 == ABOVE && comp2 == BELOW) || (comp1 == UNKNOWN && comp2 == UNKNOWN) ||
-                  (comp1 == SAME && comp2 == SAME))) {
-                merge(i, j);
+    // everything above n2 also above n1
+    node1->statesAbove |= ((node2->statesAbove));
+    for (auto state : node1->states) {
+        node1->statesAbove.set(state, false);
+    }
+
+    if (compareRes == BELOW || compareRes == ABOVE) {
+        // We need to merge all states between node1 and node2 as well
+        // node1 will be above node2 right now, as we did swapping
+        // so we collect all nodes above node2 that are below node1
+        // we only do this for the ones directly above node2, as the other ones will be considered recursively
+        std::set<Node*> nodesAbove;
+        for (auto state : node2->statesAbove) {
+            nodesAbove.insert(getNode(state));
+        }
+        for (auto node : nodesAbove) {
+            if (compare(node1, node) == ABOVE) {
+                mergeNodes(node1, node);
             }
         }
     }
+    assert(compare(node1, bottom) == ABOVE && (top == nullptr || compare(node1, top) == BELOW));
 }
 
 void Order::merge(uint_fast64_t state1, uint_fast64_t state2) {
@@ -278,9 +294,9 @@ Order::NodeComparison Order::compareFast(Node* node1, Node* node2, NodeCompariso
         if ((hypothesis == UNKNOWN || hypothesis == BELOW) && ((node2 == top || node1 == bottom) || aboveFast(node2, node1))) {
             return BELOW;
         }
-    } else if ((top != nullptr && node1 == top) || node2 == bottom) {
+    } else if (!mdpScheduler.is_initialized() && ((top != nullptr && node1 == top) || node2 == bottom)) {
         return ABOVE;
-    } else if ((top != nullptr && node1 == top) || node1 == bottom) {
+    } else if (!mdpScheduler.is_initialized() && ((top != nullptr && node1 == top) || node1 == bottom)) {
         return BELOW;
     }
     return UNKNOWN;
@@ -323,7 +339,7 @@ Order::Node* Order::getBottom() const {
 }
 
 bool Order::getDoneBuilding() const {
-    return sufficientForState.full();
+    return doneForState.full();
 }
 
 uint_fast64_t Order::getNextSufficientState(uint_fast64_t state) const {
@@ -685,31 +701,31 @@ bool Order::above(Node* node1, Node* node2) {
     // Check whether node1 is above node2 by going over all states that are above state 2
     bool above = false;
     // Only do this when we have to deal with forward reasoning or we are not yet done with the building of the order
-    if (!trivialStates.full() || !doneBuilding) {
-        // First gather all states that are above node 2;
+    //    if (!trivialStates.full() || !doneBuilding) {
+    // First gather all states that are above node 2;
 
-        storm::storage::BitVector statesSeen((node2->statesAbove));
-        std::queue<uint_fast64_t> statesToHandle;
-        for (auto state : statesSeen) {
-            statesToHandle.push(state);
+    storm::storage::BitVector statesSeen((node2->statesAbove));
+    std::queue<uint_fast64_t> statesToHandle;
+    for (auto state : statesSeen) {
+        statesToHandle.push(state);
+    }
+    while (!above && !statesToHandle.empty()) {
+        // Get first item from the queue
+        auto state = statesToHandle.front();
+        statesToHandle.pop();
+        auto node = getNode(state);
+        if (aboveFast(node1, node)) {
+            above = true;
+            continue;
         }
-        while (!above && !statesToHandle.empty()) {
-            // Get first item from the queue
-            auto state = statesToHandle.front();
-            statesToHandle.pop();
-            auto node = getNode(state);
-            if (aboveFast(node1, node)) {
-                above = true;
-                continue;
-            }
-            for (auto newState : node->statesAbove) {
-                if (!statesSeen[newState]) {
-                    statesToHandle.push(newState);
-                    statesSeen.set(newState);
-                }
+        for (auto newState : node->statesAbove) {
+            if (!statesSeen[newState]) {
+                statesToHandle.push(newState);
+                statesSeen.set(newState);
             }
         }
     }
+    //    }
     if (above) {
         for (auto state : node1->states) {
             node2->statesAbove.set(state);
@@ -754,6 +770,7 @@ std::pair<uint_fast64_t, bool> Order::getNextStateNumber() {
         if (!doneForState[state]) {
             return {state, true};
         }
+        assert(sufficientForState[state]);
     }
     return {numberOfStates, true};
 }

@@ -226,6 +226,24 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
                                                                              std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
     std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+    for (auto& assumption : assumptions) {
+        // Check if the assumptions are still valid, otherwise we can stop
+        // One of the assumption was not valid on the entire region, so we don't need to further explore the order
+        // We use compareFast as the assumption is used, thus statesAbove of the node is set
+        auto state1 = std::stoi(assumption->getFirstOperand()->toExpression().toString());
+        auto state2 = std::stoi(assumption->getSecondOperand()->toExpression().toString());
+        if (assumption->asBinaryRelationExpression().getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
+            if (order->compareFast(state1, state2) != Order::NodeComparison::ABOVE) {
+                std::cout << "Removing order as assumption " << assumption->toExpression().toString() << " is invalid" << std::endl;
+                return;
+            }
+        } else {
+            if (order->compareFast(state1, state2) != Order::NodeComparison::SAME) {
+                std::cout << "Removing order as assumption " << assumption->toExpression().toString() << " is invalid" << std::endl;
+                return;
+            }
+        }
+    }
     auto numberOfStates = model->getNumberOfStates();
     if (val1 == numberOfStates || val2 == numberOfStates) {
         assert(val1 == val2);
