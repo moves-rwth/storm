@@ -1,3 +1,5 @@
+#pragma
+
 #include <vector>
 #include "storm-dft/storage/DFT.h"
 

@@ -8,7 +8,7 @@
 #include <memory>
 #include <vector>
 #include "storm-dft/adapters/SFTBDDPropertyFormulaAdapter.h"
-#include "storm-dft/modelchecker/DFTModularizer.h"
+#include "storm-dft/modelchecker/DftModularizationChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
@@ -33,7 +33,7 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<double>> const& dft,
     }
 
     if (useModularisation && calculateProbability) {
-        storm::dft::modelchecker::DFTModularizer checker{dft};
+        storm::dft::modelchecker::DftModularizationChecker checker{dft};
         if (chunksize == 1) {
             for (auto const& timebound : timepoints) {
                 auto const probability{checker.getProbabilityAtTimebound(timebound)};
