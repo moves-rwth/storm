@@ -165,23 +165,59 @@ TEST(OrderTest, merge_nodes) {
     order.addBetween(5, order.getNode(0), order.getNode(3));
     order.addBetween(6, order.getNode(5), order.getNode(3));
 
+    // Order should look like:
+    // 1 < 2,4 < 0
+    // 1 < 3 < 6 < 5 < 0
+
     order.mergeNodes(order.getNode(4), order.getNode(5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 5));
+    // Order should look like:
+    // 1 < 3 < 6 < 2,4,5 < 0
 
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 5));
+    EXPECT_FALSE(order.isInvalid());
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 3));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 4));
-
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(6, 2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(6, 4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(6, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 6));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 3));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 4));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(2, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(2, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(4, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(4, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(5, 6));
+    order.mergeNodes(order.getNode(6), order.getNode(5));
+    EXPECT_TRUE(order.isInvalid());
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(2, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(4, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(4, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(5, 6));
 }
 
 TEST(OrderTest, merge_nodes_2) {
@@ -220,6 +256,8 @@ TEST(OrderTest, merge_nodes_2) {
     order.addRelation(9, 11);
 
     order.merge(4, 8);
+    // Order should be invalid as we already had 4 above 8
+    EXPECT_TRUE(order.isInvalid());
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 3));
@@ -241,7 +279,6 @@ TEST(OrderTest, merge_nodes_2) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 9));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 10));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 11));
-
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(2, 3));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(2, 4));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(2, 5));
@@ -325,6 +362,7 @@ TEST(OrderTest, merge_nodes_3) {
     order.addRelation(9, 11);
 
     order.merge(8, 4);
+    EXPECT_TRUE(order.isInvalid());
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 3));
@@ -431,6 +469,7 @@ TEST(OrderTest, merge_nodes_4) {
     order.addRelation(9, 11);
 
     order.merge(2, 8);
+    EXPECT_TRUE(order.isInvalid());
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 3));
@@ -537,6 +576,7 @@ TEST(OrderTest, merge_nodes_5) {
     order.addRelation(9, 11);
 
     order.merge(2, 8);
+    EXPECT_TRUE(order.isInvalid());
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 3));
@@ -631,6 +671,7 @@ TEST(OrderTest, merge_nodes_7) {
     order.addRelation(6, 3);
 
     order.merge(2, 4);
+    EXPECT_TRUE(order.isInvalid());
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 3));
@@ -678,6 +719,8 @@ TEST(OrderTest, merge_nodes_8) {
     order.addRelation(5, 4);
     order.addRelation(6, 3);
 
+    order.merge(4, 2);
+    EXPECT_TRUE(order.isInvalid());
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 3));
@@ -727,6 +770,7 @@ TEST(OrderTest, merge_nodes_9) {
     order.addRelation(4, 2);
 
     order.merge(2, 4);
+    EXPECT_TRUE(order.isInvalid());
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 3));
@@ -748,6 +792,116 @@ TEST(OrderTest, merge_nodes_9) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 5));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 6));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(5, 6));
+}
+
+TEST(OrderTest, merge_nodes_10) {
+    auto numberOfStates = 9;
+    auto above = storm::storage::BitVector(numberOfStates);
+    above.set(0);
+    auto below = storm::storage::BitVector(numberOfStates);
+    below.set(1);
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2, 2, 2);
+    matrixBuilder.addNextValue(0, 0, storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1, 1, storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto matrix = matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    order.add(2);
+    order.add(3);
+    order.addToNode(4, order.getNode(2));
+    order.addBetween(5, order.getNode(0), order.getNode(3));
+    order.addBetween(6, order.getNode(5), order.getNode(3));
+    order.addBetween(7, order.getNode(2), order.getNode(1));
+    order.addBetween(8, order.getNode(0), order.getNode(2));
+
+    // Order should look like:
+    // 1 < 7 < 2,4 < 8 < 0
+    // 1 < 3 < 6 < 5 < 0
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 2));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 3));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 4));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 5));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 6));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 7));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 8));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 2));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 3));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 4));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 5));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 6));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 7));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 8));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(2, 3));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 4));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(2, 5));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(2, 6));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(2, 7));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 8));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(3, 4));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 5));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 6));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(3, 7));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(3, 8));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(4, 5));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(4, 6));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(4, 7));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 8));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(5, 6));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(5, 7));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(5, 8));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(6, 8));
+    ASSERT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(7, 8));
+    // 1 < 7 < 2,4 < 8 < 0
+    // 1 < 3 < 6 < 5 < 0
+
+    order.mergeNodes(order.getNode(4), order.getNode(6));
+    // Order should look like:
+    // 1 < 3 < 2,4,6 < 5 < 0
+    // 1 < 3 < 2,4,6 < 8 < 0
+    // 1 < 7 < 2,4,6 < 5 < 0
+    // 1 < 7 < 2,4,6 < 8 < 0
+
+    EXPECT_FALSE(order.isInvalid());
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 7));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 8));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 7));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 8));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(2, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(2, 7));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 8));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(3, 7));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 8));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(4, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(4, 7));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 8));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(5, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(5, 7));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(5, 8));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(6, 7));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(6, 8));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(7, 8));
 }
 
 TEST(OrderTest, sort_states) {

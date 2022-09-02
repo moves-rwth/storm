@@ -219,10 +219,16 @@ void Order::mergeNodes(Order::Node* node1, Order::Node* node2) {
         return;
     }
 
+    // if there are nodes between node1 and node2 the order is invalid
+
     auto compareRes = compareFast(node1, node2);
-    compareRes = compareRes == UNKNOWN ? compare(node1, node2) : compareRes;
+    compareRes = compareRes == ABOVE || compareRes == BELOW ? compareRes : compare(node1, node2);
+    if (compareRes == ABOVE || compareRes == BELOW) {
+        setInvalid();
+    }
+
     if (compareRes == BELOW) {
-        // Node2 lies below node1, to make life easer, we swap them
+        // To make life easier
         std::swap(node1, node2);
     }
 
