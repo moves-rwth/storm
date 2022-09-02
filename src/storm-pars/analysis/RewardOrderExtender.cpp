@@ -221,8 +221,43 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
         // TODO: change all usePLA[order] to find version.
         if (statesSorted.at(statesSorted.size() - 1) == currentState) {
             // the current state is lower than all other successors, so s1 should be smaller then all other successors
-            order->addBelow(s1, order->getNode(currentState));
-            order->addStateToHandle(s1);
+
+            if (statesSorted.size() == 2 && (order->compare(statesSorted[0], s1) == Order::BELOW || order->compare(statesSorted[1], s1) == Order::BELOW)) {
+                // This can only happen if we have seen assumptions
+                // We have currentState <= succ1 && currentState <= succ2
+                // we don't have negative rewards, so we should merge, probably assumptions will get invalid by this
+                bool allZero = true;
+                bool allGreaterZero = true;
+                if (rewardModel.hasStateActionRewards()) {
+                    if (this->findBestAction(order, region, currentState)) {
+                        allZero =
+                            rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
+                        allGreaterZero = !allZero;
+                    } else {
+                        for (auto i = 0; i < this->matrix.getRowGroupSize(currentState); ++i) {
+                            bool zero = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
+                            allZero &= zero;
+                            allGreaterZero &= !zero;
+                        }
+                    }
+                } else if (rewardModel.hasStateRewards()) {
+                    allZero = rewardModel.getStateReward(currentState).isZero();
+                    allGreaterZero = !allZero;
+                } else {
+                    STORM_LOG_ASSERT(false, "Expecting reward");
+                }
+                if (allGreaterZero) {
+                    order->setInvalid();
+                }
+                order->merge(currentState, *(successors.begin()));
+                order->merge(currentState, *(successors.begin() + 1));
+                STORM_LOG_ASSERT(order->compare(*(successors.begin()), currentState) == Order::SAME, "Expecting states to be at same state");
+                STORM_LOG_ASSERT(order->compare(*(successors.begin() + 1), currentState) == Order::SAME, "Expecting states to be at same state");
+                STORM_LOG_ASSERT(order->compare(*(successors.begin()), *(successors.begin() + 1)) == Order::SAME, "Expecting states to be at same state");
+            } else {
+                order->addBelow(s1, order->getNode(currentState));
+                order->addStateToHandle(s1);
+            }
             return {s2, s2};
         } else if (this->usePLA[order]) {
             // TODO: make use of forward reasoning and do backward as last solution
@@ -244,24 +279,18 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
             // Relation between s1 and currState is still unknown, maybe we can find out
 
             // We check if we can also sort something based on assumptions.
-            //                    if (!assumptionsCreated[currentState]) {
             if (this->usePLA[order]) {
                 auto assumptions =
                     this->assumptionMaker->createAndCheckAssumptions(currentState, s1, order, region, this->minValues[order], this->maxValues[order]);
                 if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
                     this->handleAssumption(order, assumptions.begin()->first);
-                    //                            } else {
-                    //                                assumptionsCreated.set(currentState);
                 }
             } else {
                 auto assumptions = this->assumptionMaker->createAndCheckAssumptions(currentState, s1, order, region);
                 if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
                     this->handleAssumption(order, assumptions.begin()->first);
-                    //                            } else {
-                    //                                assumptionsCreated.set(currentState);
                 }
             }
-            //                    }
             STORM_LOG_ASSERT(order->sortStates(this->getSuccessors(currentState, order)).size() == this->getSuccessors(currentState, order).size(),
                              "Expecting all successor states to be ordered");
             return {s2, s2};

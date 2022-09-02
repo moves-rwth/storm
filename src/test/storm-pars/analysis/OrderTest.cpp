@@ -606,6 +606,150 @@ TEST(OrderTest, merge_nodes_5) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(10, 11));
 }
 
+TEST(OrderTest, merge_nodes_7) {
+    auto numberOfStates = 7;
+    auto above = storm::storage::BitVector(numberOfStates);
+    auto below = storm::storage::BitVector(numberOfStates);
+    below.set(1);
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2, 2, 2);
+    matrixBuilder.addNextValue(0, 0, storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1, 1, storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto matrix = matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    order.add(2);
+    order.add(3);
+    order.add(4);
+    order.add(5);
+    order.add(6);
+    order.addRelation(3, 2);
+    order.addRelation(4, 3);
+    order.addRelation(5, 4);
+    order.addRelation(6, 3);
+
+    order.merge(2, 4);
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(5, 6));
+}
+
+TEST(OrderTest, merge_nodes_8) {
+    auto numberOfStates = 7;
+    auto above = storm::storage::BitVector(numberOfStates);
+    auto below = storm::storage::BitVector(numberOfStates);
+    below.set(1);
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2, 2, 2);
+    matrixBuilder.addNextValue(0, 0, storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1, 1, storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto matrix = matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    order.add(2);
+    order.add(3);
+    order.add(4);
+    order.add(5);
+    order.add(6);
+    order.addRelation(3, 2);
+    order.addRelation(4, 3);
+    order.addRelation(5, 4);
+    order.addRelation(6, 3);
+
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(5, 6));
+}
+
+TEST(OrderTest, merge_nodes_9) {
+    auto numberOfStates = 7;
+    auto above = storm::storage::BitVector(numberOfStates);
+    auto below = storm::storage::BitVector(numberOfStates);
+    below.set(1);
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2, 2, 2);
+    matrixBuilder.addNextValue(0, 0, storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1, 1, storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto matrix = matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    order.add(2);
+    order.add(3);
+    order.add(4);
+    order.add(5);
+    order.add(6);
+    order.addRelation(3, 2);
+    order.addRelation(4, 3);
+    order.addRelation(5, 4);
+    order.addRelation(6, 3);
+    order.addRelation(4, 2);
+
+    order.merge(2, 4);
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(0, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(2, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(2, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::SAME, order.compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(3, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(4, 6));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order.compare(5, 6));
+}
+
 TEST(OrderTest, sort_states) {
     auto numberOfStates = 7;
     auto above = storm::storage::BitVector(numberOfStates);

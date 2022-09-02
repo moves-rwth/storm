@@ -181,6 +181,9 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
     auto currentStateMode = this->getNextState(order, this->numberOfStates, false);
     while (currentStateMode.first != this->numberOfStates) {
+        if (order->isInvalid()) {
+            return {order, numberOfStates, numberOfStates};
+        }
         STORM_LOG_ASSERT(currentStateMode.first < this->numberOfStates, "Unexpected state number");
         auto& currentState = currentStateMode.first;
         STORM_LOG_INFO("Currently considering state " << currentState << " from " << (currentStateMode.second ? "sortedStates" : "statesToHandle"));
@@ -337,6 +340,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
         // monotonicity result for the in-build checking of monotonicity
         monRes->setDone();
     }
+    STORM_LOG_INFO("Done for order");
     return std::make_tuple(order, this->numberOfStates, this->numberOfStates);
 }
 
@@ -423,6 +427,7 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order,
                                                               std::shared_ptr<expressions::BinaryRelationExpression> assumption) const {
+    STORM_LOG_INFO("Handling assumption: " << assumption->toExpression().toString());
     STORM_LOG_ASSERT(assumption != nullptr, "Can't handle assumption when the assumption is a nullpointer");
     STORM_LOG_ASSERT(assumption->getFirstOperand()->isVariable() && assumption->getSecondOperand()->isVariable(),
                      "Expecting the assumption operands to be variables");

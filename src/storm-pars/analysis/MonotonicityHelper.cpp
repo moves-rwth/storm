@@ -108,7 +108,7 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::opt
     if (monResults.size() == 1) {
         auto itr = monResults.begin();
         if (itr->first != nullptr) {
-            STORM_LOG_INFO("Number of done states: " << itr->first->getNumberOfSufficientStates() << std::endl);
+            STORM_PRINT("Number of done states: " << itr->first->getNumberOfSufficientStates() << std::endl);
         }
         if (checkSamples) {
             for (auto& entry : resultCheckOnSamples.getMonotonicityResult()) {
@@ -122,9 +122,9 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::opt
             outfile.get() << "Monotonicity Result: \n"
                           << "    " << itr->second.first->toString() << "\n\n";
         } else {
-            STORM_LOG_INFO("Assumptions: no\n"
-                           << "Monotonicity Result: \n"
-                           << "    " << itr->second.first->toString() << "\n\n");
+            STORM_PRINT("Assumptions: no\n"
+                        << "Monotonicity Result: \n"
+                        << "    " << itr->second.first->toString() << "\n\n");
         }
     } else if (monResults.size() > 1) {
         storm::analysis::MonotonicityResult<VariableType> finalRes;
@@ -145,9 +145,9 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::opt
             outfile.get() << "Monotonicity Result: \n"
                           << "    " << finalRes.toString() << "\n\n";
         } else {
-            STORM_LOG_INFO("Assumptions: yes\n"
-                           << "Monotonicity Result: \n"
-                           << "    " << finalRes.toString() << "\n\n");
+            STORM_PRINT("Assumptions: yes\n"
+                        << "Monotonicity Result: \n"
+                        << "    " << finalRes.toString() << "\n\n");
         }
     } else {
         if (outfile) {
@@ -156,9 +156,9 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::opt
                 outfile.get() << "Monotonicity Result on samples: " << resultCheckOnSamples.toString() << '\n';
             }
         } else {
-            STORM_LOG_INFO("No monotonicity found, as the order is insufficient");
+            STORM_PRINT("No monotonicity found, as the order is insufficient");
             if (checkSamples) {
-                STORM_LOG_INFO("Monotonicity Result on samples: " << resultCheckOnSamples.toString());
+                STORM_PRINT("Monotonicity Result on samples: " << resultCheckOnSamples.toString());
             }
         }
     }
@@ -226,6 +226,10 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
                                                                              std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
     std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+    if (order->isInvalid()) {
+        STORM_LOG_INFO("Order is invalid, probably found with forward reasoning");
+        return;
+    }
     for (auto& assumption : assumptions) {
         // Check if the assumptions are still valid, otherwise we can stop
         // One of the assumption was not valid on the entire region, so we don't need to further explore the order
@@ -234,12 +238,12 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
         auto state2 = std::stoi(assumption->getSecondOperand()->toExpression().toString());
         if (assumption->asBinaryRelationExpression().getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
             if (order->compareFast(state1, state2) != Order::NodeComparison::ABOVE) {
-                std::cout << "Removing order as assumption " << assumption->toExpression().toString() << " is invalid" << std::endl;
+                STORM_LOG_INFO("Removing order as assumption " << assumption->toExpression().toString() << " is invalid");
                 return;
             }
         } else {
             if (order->compareFast(state1, state2) != Order::NodeComparison::SAME) {
-                std::cout << "Removing order as assumption " << assumption->toExpression().toString() << " is invalid" << std::endl;
+                STORM_LOG_INFO("Removing order as assumption " << assumption->toExpression().toString() << " is invalid");
                 return;
             }
         }

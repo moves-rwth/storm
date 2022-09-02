@@ -508,6 +508,7 @@ std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) 
 /*** Checking on helpfunctionality for building of order ***/
 
 std::shared_ptr<Order> Order::copy() const {
+    assert(!this->isInvalid());
     std::shared_ptr<Order> copiedOrder = std::make_shared<Order>();
     copiedOrder->nodes = std::vector<Node*>(numberOfStates, nullptr);
     copiedOrder->onlyInitialOrder = this->isOnlyInitialOrder();
@@ -564,6 +565,10 @@ void Order::setSufficientForState(uint_fast64_t stateNumber) {
 void Order::setDoneForState(uint_fast64_t stateNumber) {
     assert(sufficientForState[stateNumber] && contains(stateNumber));
     doneForState.set(stateNumber);
+}
+
+void Order::setInvalid() {
+    this->invalid = true;
 }
 
 /*** Output ***/
@@ -684,6 +689,7 @@ void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::S
     this->top->statesAbove = storm::storage::BitVector(numberOfStates, false);
     this->bottom->statesAbove = storm::storage::BitVector(numberOfStates, false);
     this->doneBuilding = doneBuilding;
+    this->invalid = false;
 }
 
 bool Order::aboveFast(Node* node1, Node* node2) const {
@@ -868,6 +874,10 @@ void Order::setChanged(bool changed) {
 
 bool Order::getChanged() const {
     return changed;
+}
+
+bool Order::isInvalid() const {
+    return invalid;
 }
 }  // namespace analysis
 }  // namespace storm

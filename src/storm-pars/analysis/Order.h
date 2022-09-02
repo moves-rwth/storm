@@ -441,6 +441,9 @@ class Order {
 
     bool getChanged() const;
 
+    void setInvalid();
+    bool isInvalid() const;
+
    protected:
     // storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
 
@@ -531,6 +534,7 @@ class Order {
 
     boost::optional<std::vector<uint64_t>> mdpScheduler;
     bool changed;
+    bool invalid;
 };
 }  // namespace analysis
 }  // namespace storm
