@@ -92,6 +92,12 @@ class BuildSettings : public ModuleSettings {
     bool isBuildStateValuationsSet() const;
 
     /*!
+     * Retrieves whether the observation valuations should be build. Only relevant for POMDPs
+     * @return
+     */
+    bool isBuildObservationValuationsSet() const;
+
+    /*!
      * Retrieves whether out of bounds state should be added
      * @return
      */
