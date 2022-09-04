@@ -303,12 +303,6 @@ SoplexLpSolver<ValueType>::SoplexLpSolver(OptimizationDirection const&) {
 }
 
 template<typename ValueType>
-SoplexLpSolver<ValueType>::SoplexLpSolver() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
-                                                          "requires this support. Please choose a version of support with Soplex support.";
-}
-
-template<typename ValueType>
 SoplexLpSolver<ValueType>::~SoplexLpSolver() {}
 
 template<typename ValueType>
