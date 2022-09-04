@@ -20,8 +20,6 @@
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-
-
 namespace storm {
 namespace solver {
 
@@ -38,8 +36,7 @@ storm::RationalNumber from_soplex_rational(soplex::Rational const& r) {
 }
 
 template<typename ValueType>
-SoplexLpSolver<ValueType>::SoplexLpSolver(std::string const& name, OptimizationDirection const& optDir)
-    : LpSolver<ValueType>(optDir) {
+SoplexLpSolver<ValueType>::SoplexLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir) {
     if (std::is_same_v<ValueType, storm::RationalNumber>) {
         solver.setIntParam(SoPlex::READMODE, SoPlex::READMODE_RATIONAL);
         solver.setIntParam(SoPlex::SOLVEMODE, SoPlex::SOLVEMODE_RATIONAL);
@@ -52,22 +49,17 @@ SoplexLpSolver<ValueType>::SoplexLpSolver(std::string const& name, OptimizationD
 }
 
 template<typename ValueType>
-SoplexLpSolver<ValueType>::SoplexLpSolver(std::string const& name)
-    : SoplexLpSolver(name, OptimizationDirection::Minimize) {
+SoplexLpSolver<ValueType>::SoplexLpSolver(std::string const& name) : SoplexLpSolver(name, OptimizationDirection::Minimize) {
     // Intentionally left empty.
 }
 
 template<typename ValueType>
-SoplexLpSolver<ValueType>::SoplexLpSolver(OptimizationDirection const& optDir)
-    : SoplexLpSolver("", optDir) {
+SoplexLpSolver<ValueType>::SoplexLpSolver(OptimizationDirection const& optDir) : SoplexLpSolver("", optDir) {
     // Intentionally left empty.
 }
 
-
 template<typename ValueType>
-SoplexLpSolver<ValueType>::~SoplexLpSolver() {
-
-}
+SoplexLpSolver<ValueType>::~SoplexLpSolver() {}
 
 template<typename ValueType>
 void SoplexLpSolver<ValueType>::update() const {
@@ -80,7 +72,6 @@ storm::expressions::Variable SoplexLpSolver<ValueType>::addBoundedContinuousVari
     storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
     this->addVariable(newVariable, lowerBound, upperBound, objectiveFunctionCoefficient);
     return newVariable;
-
 }
 
 template<typename ValueType>
@@ -107,7 +98,8 @@ storm::expressions::Variable SoplexLpSolver<ValueType>::addUnboundedContinuousVa
 }
 
 template<>
-void SoplexLpSolver<double>::addVariable(storm::expressions::Variable const& variable, double const& lowerBound, double const& upperBound, double const& objectiveFunctionCoefficient) {
+void SoplexLpSolver<double>::addVariable(storm::expressions::Variable const& variable, double const& lowerBound, double const& upperBound,
+                                         double const& objectiveFunctionCoefficient) {
     // Assert whether the variable does not exist yet.
     // Due to potential incremental usage (push(), pop()), a variable might be declared in the manager but not in the lp model.
     STORM_LOG_ASSERT(variableToIndexMap.count(variable) == 0, "Variable " << variable.getName() << " exists already in the model.");
@@ -116,27 +108,27 @@ void SoplexLpSolver<double>::addVariable(storm::expressions::Variable const& var
     solver.addColReal(soplex::LPColReal(objectiveFunctionCoefficient, variables, upperBound, lowerBound));
 }
 
-
 template<typename ValueType>
-void SoplexLpSolver<ValueType>::addVariable(storm::expressions::Variable const& variable, ValueType const& lowerBound, ValueType const& upperBound, ValueType const& objectiveFunctionCoefficient) {
+void SoplexLpSolver<ValueType>::addVariable(storm::expressions::Variable const& variable, ValueType const& lowerBound, ValueType const& upperBound,
+                                            ValueType const& objectiveFunctionCoefficient) {
     // Assert whether the variable does not exist yet.
     // Due to potential incremental usage (push(), pop()), a variable might be declared in the manager but not in the lp model.
     STORM_LOG_ASSERT(variableToIndexMap.count(variable) == 0, "Variable " << variable.getName() << " exists already in the model.");
     this->variableToIndexMap.emplace(variable, nextVariableIndex);
     ++nextVariableIndex;
-    solver.addColRational(soplex::LPColRational(to_soplex_rational(objectiveFunctionCoefficient), variables, to_soplex_rational(upperBound), to_soplex_rational(lowerBound)));
+    solver.addColRational(
+        soplex::LPColRational(to_soplex_rational(objectiveFunctionCoefficient), variables, to_soplex_rational(upperBound), to_soplex_rational(lowerBound)));
 }
 
-
 template<typename VT, typename VectType>
-void addRowToSolver(soplex::SoPlex& solver, VT const& lconst,   VectType const& row, VT const& rconst);
+void addRowToSolver(soplex::SoPlex& solver, VT const& lconst, VectType const& row, VT const& rconst);
 
 template<>
 void addRowToSolver<double, soplex::DSVector>(soplex::SoPlex& solver, double const& lconst, soplex::DSVector const& row, double const& rconst) {
     solver.addRowReal(LPRow(lconst, row, rconst));
 }
 
-template<typename VT,typename VectType>
+template<typename VT, typename VectType>
 void addRowToSolver(soplex::SoPlex& solver, storm::RationalNumber const& lconst, VectType const& row, storm::RationalNumber const& rconst) {
     solver.addRowRational(LPRowRational(to_soplex_rational(lconst), row, to_soplex_rational(rconst)));
 }
@@ -189,7 +181,7 @@ void SoplexLpSolver<ValueType>::optimize() const {
     // First incorporate all recent changes.
     this->update();
     //
-    if(this->getOptimizationDirection() == storm::solver::OptimizationDirection::Minimize) {
+    if (this->getOptimizationDirection() == storm::solver::OptimizationDirection::Minimize) {
         solver.setIntParam(SoPlex::OBJSENSE, SoPlex::OBJSENSE_MINIMIZE);
     } else {
         solver.setIntParam(SoPlex::OBJSENSE, SoPlex::OBJSENSE_MAXIMIZE);
@@ -213,7 +205,6 @@ bool SoplexLpSolver<ValueType>::isUnbounded() const {
     if (!this->currentModelHasBeenOptimized) {
         throw storm::exceptions::InvalidStateException() << "Illegal call to SoplexLpSolver<ValueType>::isUnbounded: model has not been optimized.";
     }
-
 
     return (status == soplex::SPxSolver::UNBOUNDED);
 }
@@ -276,7 +267,6 @@ void SoplexLpSolver<ValueType>::ensureSolved() const {
         STORM_LOG_THROW(false, storm::exceptions::InvalidAccessException, "Unable to get Soplex solution from unoptimized model.");
     }
 }
-
 
 template<typename ValueType>
 void SoplexLpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
@@ -345,7 +335,6 @@ storm::expressions::Variable SoplexLpSolver<ValueType>::addUnboundedContinuousVa
                                                           "requires this support. Please choose a version of support with Soplex support.";
 }
 
-
 template<typename ValueType>
 void SoplexLpSolver<ValueType>::update() const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for Soplex. Yet, a method was called that "
@@ -413,8 +402,6 @@ void SoplexLpSolver<ValueType>::pop() {
 }
 #endif
 
-
-
 template<typename ValueType>
 storm::expressions::Variable SoplexLpSolver<ValueType>::addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound,
                                                                                   ValueType objectiveFunctionCoefficient) {
@@ -453,7 +440,6 @@ bool SoplexLpSolver<ValueType>::getBinaryValue(storm::expressions::Variable cons
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support binary variables");
 }
 
-
 template<typename ValueType>
 void SoplexLpSolver<ValueType>::setMaximalMILPGap(ValueType const& gap, bool relative) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables.");
@@ -463,8 +449,6 @@ template<typename ValueType>
 ValueType SoplexLpSolver<ValueType>::getMILPGap(bool relative) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "SoPlex does not support integer variables.");
 }
-
-
 
 template class SoplexLpSolver<double>;
 template class SoplexLpSolver<storm::RationalNumber>;

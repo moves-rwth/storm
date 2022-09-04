@@ -2,9 +2,8 @@
 
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
-#include "storm/solver/Z3LpSolver.h"
 #include "storm/solver/SoplexLpSolver.h"
-
+#include "storm/solver/Z3LpSolver.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -36,7 +35,6 @@ template<typename ValueType>
 std::unique_ptr<LpSolverFactory<ValueType>> SoplexLpSolverFactory<ValueType>::clone() const {
     return std::make_unique<SoplexLpSolverFactory<ValueType>>(*this);
 }
-
 
 template<typename ValueType>
 GurobiLpSolverFactory<ValueType>::GurobiLpSolverFactory() {

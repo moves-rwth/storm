@@ -1,7 +1,6 @@
 #pragma once
 #include "soplex.h"
 
-
 #include <map>
 #include <optional>
 #include "storm/solver/LpSolver.h"
@@ -97,12 +96,12 @@ class SoplexLpSolver : public LpSolver<ValueType> {
 
    private:
     void ensureSolved() const;
-    void addVariable(storm::expressions::Variable const& variable,
-                     ValueType const& lowerBound, ValueType const& upperBound, ValueType const& objectiveFunctionCoefficient);
+    void addVariable(storm::expressions::Variable const& variable, ValueType const& lowerBound, ValueType const& upperBound,
+                     ValueType const& objectiveFunctionCoefficient);
 
 #ifdef STORM_HAVE_SOPLEX
-    typedef std::conditional_t<std::is_same_v<ValueType, double>, soplex::DVector, soplex:: DVectorRational > TypedDVector;
-    typedef std::conditional_t<std::is_same_v<ValueType, double>, soplex::DSVector, soplex:: DSVectorRational > TypedDSVector;
+    typedef std::conditional_t<std::is_same_v<ValueType, double>, soplex::DVector, soplex::DVectorRational> TypedDVector;
+    typedef std::conditional_t<std::is_same_v<ValueType, double>, soplex::DSVector, soplex::DSVectorRational> TypedDSVector;
 
     uint64_t nextVariableIndex = 0;
     uint64_t nextConstraintIndex = 0;
@@ -110,7 +109,6 @@ class SoplexLpSolver : public LpSolver<ValueType> {
     mutable soplex::SoPlex solver;
 
     mutable soplex::SPxSolver::Status status;
-
 
     //
     mutable TypedDVector primalSolution;
@@ -121,4 +119,4 @@ class SoplexLpSolver : public LpSolver<ValueType> {
     std::map<storm::expressions::Variable, uint64_t> variableToIndexMap;
 #endif
 };
-}
+}  // namespace storm::solver
