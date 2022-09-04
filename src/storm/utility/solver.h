@@ -43,6 +43,13 @@ class GlpkLpSolverFactory : public LpSolverFactory<ValueType> {
 };
 
 template<typename ValueType>
+class SoplexLpSolverFactory : public LpSolverFactory<ValueType> {
+   public:
+    virtual std::unique_ptr<storm::solver::LpSolver<ValueType>> create(std::string const& name) const override;
+    virtual std::unique_ptr<LpSolverFactory<ValueType>> clone() const override;
+};
+
+template<typename ValueType>
 class GurobiLpSolverFactory : public LpSolverFactory<ValueType> {
    public:
     GurobiLpSolverFactory();

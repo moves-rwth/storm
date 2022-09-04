@@ -82,6 +82,8 @@ std::string toString(LpSolverType t) {
             return "Glpk";
         case LpSolverType::Z3:
             return "Z3";
+        case LpSolverType::Soplex:
+            return "Soplex";
     }
     return "invalid";
 }

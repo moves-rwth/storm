@@ -3,6 +3,8 @@
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/solver/Z3LpSolver.h"
+#include "storm/solver/SoplexLpSolver.h"
+
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -24,6 +26,17 @@ template<typename ValueType>
 std::unique_ptr<LpSolverFactory<ValueType>> GlpkLpSolverFactory<ValueType>::clone() const {
     return std::make_unique<GlpkLpSolverFactory<ValueType>>(*this);
 }
+
+template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType>> SoplexLpSolverFactory<ValueType>::create(std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::SoplexLpSolver<ValueType>(name));
+}
+
+template<typename ValueType>
+std::unique_ptr<LpSolverFactory<ValueType>> SoplexLpSolverFactory<ValueType>::clone() const {
+    return std::make_unique<SoplexLpSolverFactory<ValueType>>(*this);
+}
+
 
 template<typename ValueType>
 GurobiLpSolverFactory<ValueType>::GurobiLpSolverFactory() {
@@ -72,6 +85,8 @@ std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::solver::Lp
             return std::unique_ptr<LpSolverFactory<ValueType>>(new GlpkLpSolverFactory<ValueType>());
         case storm::solver::LpSolverType::Z3:
             return std::unique_ptr<LpSolverFactory<ValueType>>(new Z3LpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Soplex:
+            return std::unique_ptr<LpSolverFactory<ValueType>>(new SoplexLpSolverFactory<ValueType>());
     }
     return nullptr;
 }
@@ -125,6 +140,8 @@ template class GurobiLpSolverFactory<double>;
 template class GurobiLpSolverFactory<storm::RationalNumber>;
 template class Z3LpSolverFactory<double>;
 template class Z3LpSolverFactory<storm::RationalNumber>;
+template class SoplexLpSolverFactory<double>;
+template class SoplexLpSolverFactory<storm::RationalNumber>;
 template std::unique_ptr<storm::solver::LpSolver<double>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType);
 template std::unique_ptr<storm::solver::LpSolver<storm::RationalNumber>> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType);
 }  // namespace solver
