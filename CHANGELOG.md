@@ -9,6 +9,7 @@ Version 1.7.x
 -------------
 
 ## Version 1.7.1
+- Added the Soplex LP solver
 - `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
 - `storm-dft`: added checks whether a given DFT is well-formed and conventional.
 
