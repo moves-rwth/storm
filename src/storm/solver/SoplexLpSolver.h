@@ -1,11 +1,14 @@
 #pragma once
-#include "soplex.h"
 
 #include <map>
-#include <optional>
+#include <type_traits>
 #include "storm/solver/LpSolver.h"
-// To detect whether the usage of Gurobi is possible, this include is neccessary.
+// To detect whether the usage of Soplex is possible, this include is neccessary.
 #include "storm-config.h"
+
+#ifdef STORM_HAVE_SOPLEX
+#include "soplex.h"
+#endif
 
 namespace storm::solver {
 
