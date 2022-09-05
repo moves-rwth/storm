@@ -371,11 +371,11 @@ namespace storm {
             template
             class PreprocessingPomdpValueBoundsModelChecker<storm::RationalNumber>;
 
-            template class PreprocessingPomdpValueBounds<double>;
-            template class PreprocessingPomdpValueBounds<storm::RationalNumber>;
+            template struct PreprocessingPomdpValueBounds<double>;
+            template struct PreprocessingPomdpValueBounds<storm::RationalNumber>;
 
-            template class ExtremePOMDPValueBound<double>;
-            template class ExtremePOMDPValueBound<storm::RationalNumber>;
+            template struct ExtremePOMDPValueBound<double>;
+            template struct ExtremePOMDPValueBound<storm::RationalNumber>;
         }
     }
 }
