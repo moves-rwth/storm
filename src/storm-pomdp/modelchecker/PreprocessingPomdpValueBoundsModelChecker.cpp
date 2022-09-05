@@ -117,6 +117,12 @@ namespace storm {
                         }
 
                     }
+                    // If the distribution is empty, i.e. no choice has had a suitable score, distribute uniformly
+                    if(choiceDistribution.size() == 0){
+                        for (auto choice = choiceIndices[state]; choice < choiceIndices[state + 1]; ++choice) {
+                            choiceDistribution.addProbability(choice - choiceIndices[state], scoreThreshold);
+                        }
+                    }
                     STORM_LOG_ASSERT(choiceDistribution.size() > 0, "Empty choice distribution.");
                 }
                 // Normalize all distributions
