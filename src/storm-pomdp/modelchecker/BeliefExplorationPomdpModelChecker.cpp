@@ -150,6 +150,9 @@ namespace storm {
                             if(pomdp().hasChoiceLabeling()){
                                 components.choiceLabeling = pomdp().getChoiceLabeling();
                             }
+                            if(pomdp().hasObservationValuations()){
+                                components.observationValuations = pomdp().getObservationValuations();
+                            }
                             preprocessedPomdp = std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
                             auto reachableFromSinkStates = storm::utility::graph::getReachableStates(pomdp().getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
                             reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
@@ -624,7 +627,7 @@ namespace storm {
                 statistics.overApproximationBuildTime.start();
                 storm::storage::BitVector refinedObservations;
                 if (!refine) {
-                    // If we build the model from scratch, we first have to setup the explorer for the overApproximation.
+                    // If we build the model from scratch, we first have to set up the explorer for the overApproximation.
                     if (computeRewards) {
                         overApproximation->startNewExploration(storm::utility::zero<ValueType>());
                     } else {
@@ -965,8 +968,9 @@ namespace storm {
                                 // Always restore old behavior if available
                                 if(pomdp().hasChoiceLabeling()){
                                     if(pomdp().getChoiceLabeling().getLabelsOfChoice(beliefManager->getRepresentativeState(currId)+action).size() > 0) {
+                                        auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];
                                         underApproximation->addChoiceLabelToCurrentState(
-                                            addedActions + action,*(pomdp().getChoiceLabeling().getLabelsOfChoice(beliefManager->getRepresentativeState(currId)+action).begin()));
+                                            addedActions + action,*(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).begin()));
                                     }
                                 }
                                 if (stateAlreadyExplored) {

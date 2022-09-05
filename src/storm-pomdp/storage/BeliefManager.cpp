@@ -951,6 +951,17 @@ namespace storm {
             return getBelief(beliefId).begin()->first;
         }
 
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::string BeliefManager<PomdpType, BeliefValueType, StateType>::getObservationLabel(BeliefId const &beliefId) {
+            if(pomdp.hasObservationValuations()){
+                return pomdp.getObservationValuations().getStateInfo(getBeliefObservation(beliefId));
+            } else {
+                STORM_LOG_WARN("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
+                return "";
+            }
+
+        }
+
         template class BeliefManager<storm::models::sparse::Pomdp<double>>;
 
         template class BeliefManager<storm::models::sparse::Pomdp<double>, storm::RationalNumber>;

@@ -522,6 +522,24 @@ namespace storm {
             clippedStates.resize(getCurrentNumberOfMdpStates(), false);
             mdpLabeling.addLabel("clipped", std::move(clippedStates));
 
+            for(uint64_t state = 0; state < getCurrentNumberOfMdpStates(); ++state){
+                if(state == extraBottomState || state == extraTargetState){
+                    if(!mdpLabeling.containsLabel("__extra")) {
+                        mdpLabeling.addLabel("__extra");
+                    }
+                    mdpLabeling.addLabelToState("__extra", state);
+                } else {
+                    STORM_LOG_DEBUG("Observation of MDP state " << state << " : " << beliefManager->getObservationLabel(mdpStateToBeliefIdMap[state]) << "\n");
+                    std::string obsLabel = beliefManager->getObservationLabel(mdpStateToBeliefIdMap[state]);
+                    if (!obsLabel.empty()) {
+                        if (!mdpLabeling.containsLabel(obsLabel)) {
+                            mdpLabeling.addLabel(obsLabel);
+                        }
+                        mdpLabeling.addLabelToState(obsLabel, state);
+                    }
+                }
+            }
+
             // Create a standard reward model (if rewards are available)
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> mdpRewardModels;
             if (!mdpActionRewards.empty()) {
