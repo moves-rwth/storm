@@ -55,7 +55,7 @@ target_sources(sylvan
 # C++14 is needed for CARL
 set_target_properties(sylvan PROPERTIES VERSION ${sylvan_VERSION} SOVERSION ${sylvan_VERSION_MAJOR})
 target_compile_features(sylvan PUBLIC c_std_11 cxx_std_14)
-target_compile_options(sylvan PRIVATE -Wall -Wextra -Werror -fno-strict-aliasing -Wno-deprecated)
+target_compile_options(sylvan PRIVATE -Wall -Wextra -fno-strict-aliasing -Wno-deprecated)
 target_include_directories(sylvan PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(sylvan PUBLIC m pthread lace)
 
