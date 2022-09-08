@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/DFTState.h"

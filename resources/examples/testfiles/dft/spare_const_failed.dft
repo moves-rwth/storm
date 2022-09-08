@@ -1,0 +1,8 @@
+toplevel "T";
+"T" and "A" "S";
+"S" spare "B" "C";
+"B" or "D" "E";
+"A" lambda=4 dorm=1;
+"C" lambda=2 dorm=0.5;
+"D" prob=1 dorm=1;
+"E" lambda=2 dorm=1;

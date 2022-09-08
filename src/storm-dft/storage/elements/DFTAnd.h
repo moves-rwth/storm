@@ -32,6 +32,10 @@ class DFTAnd : public DFTGate<ValueType> {
         return storm::dft::storage::elements::DFTElementType::AND;
     }
 
+    bool isStaticElement() const override {
+        return true;
+    }
+
     void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         if (state.isOperational(this->mId)) {
             for (auto const& child : this->children()) {

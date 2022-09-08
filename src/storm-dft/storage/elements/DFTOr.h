@@ -32,6 +32,10 @@ class DFTOr : public DFTGate<ValueType> {
         return storm::dft::storage::elements::DFTElementType::OR;
     }
 
+    bool isStaticElement() const override {
+        return true;
+    }
+
     void checkFails(storm::dft::storage::DFTState<ValueType>& state, storm::dft::storage::DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
         STORM_LOG_ASSERT(this->hasFailedChild(state), "No failed child.");
         if (state.isOperational(this->mId)) {

@@ -62,7 +62,7 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
 
     instantiationWatch.start();
 
-    // std::cout << valuation << std::endl;
+    // STORM_PRINT_AND_LOG(valuation << "\n");
 
     // Write results into the placeholders
     for (auto& functionResult : this->functionsUnderived) {
@@ -102,8 +102,8 @@ std::unique_ptr<modelchecker::ExplicitQuantitativeCheckResult<ConstantType>> Spa
     auto solver = factory.create(env);
 
     // Calculate (1-M)^-1 * resultVec
-    // std::cout << constrainedMatrixInstantiated << std::endl;
-    // std::cout << "calling solver" << std::endl;
+    // STORM_PRINT_AND_LOG(constrainedMatrixInstantiated << "\n");
+    // STORM_PRINT_AND_LOG("calling solver\n");
     solver->setMatrix(constrainedMatrixInstantiated);
     std::vector<ConstantType> finalResult(resultVec.size());
     solver->solveEquations(env, finalResult, resultVec);
@@ -315,13 +315,13 @@ void SparseDerivativeInstantiationModelChecker<FunctionType, ConstantType>::init
         if (storm::utility::isConstant(parametricEntryIt->getValue())) {
             // Constant entries can be inserted directly
             constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(parametricEntryIt->getValue()));
-            /* std::cout << "Setting constant entry" << std::endl; */
+            // STORM_PRINT_AND_LOG("Setting constant entry\n");
         } else {
             // insert the new function and store that the current constantMatrix entry needs to be set to the value of this function
             auto functionsIt = functions.insert(std::make_pair(parametricEntryIt->getValue(), dummyValue)).first;
             matrixMapping.emplace_back(std::make_pair(constantEntryIt, &(functionsIt->second)));
             // Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
-            /* std::cout << "Setting non-constant entry" << std::endl; */
+            // STORM_PRINT_AND_LOG("Setting non-constant entry\n");
         }
         ++constantEntryIt;
         ++parametricEntryIt;

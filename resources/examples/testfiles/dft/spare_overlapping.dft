@@ -1,0 +1,8 @@
+// Might lead to errors as the spare modules are not independent
+toplevel "A";
+"A" wsp "B" "C";
+"B" or "D" "E";
+"C" and "D" "F";
+"D" lambda=4 dorm=1;
+"E" lambda=4 dorm=1;
+"F" lambda=4 dorm=1;

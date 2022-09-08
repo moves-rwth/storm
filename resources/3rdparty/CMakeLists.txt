@@ -624,6 +624,7 @@ ExternalProject_Add(
 # Specify include dir
 ExternalProject_Get_Property(googletest source_dir)
 set(GTEST_INCLUDE_DIR ${source_dir}/googletest/include)
+set(GMOCK_INCLUDE_DIR ${source_dir}/googlemock/include)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
 set(GTEST_LIBRARIES ${binary_dir}/lib/libgtest${STATIC_EXT} ${binary_dir}/lib/libgtest_main${STATIC_EXT})

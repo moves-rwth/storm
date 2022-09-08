@@ -82,17 +82,17 @@ std::ostream& operator<<(std::ostream& stream, IntegerVariable const& variable) 
     stream << variable.getName() << ": ";
     if (variable.hasLowerBoundExpression() || variable.hasUpperBoundExpression()) {
         // The syntax for the case where there is only one bound is not standardized, yet.
-        std::cout << "[";
+        stream << "[";
         if (variable.hasLowerBoundExpression()) {
-            std::cout << variable.getLowerBoundExpression();
+            stream << variable.getLowerBoundExpression();
         }
-        std::cout << "..";
+        stream << "..";
         if (variable.hasUpperBoundExpression()) {
-            std::cout << variable.getUpperBoundExpression();
+            stream << variable.getUpperBoundExpression();
         }
-        std::cout << "]";
+        stream << "]";
     } else {
-        std::cout << "int";
+        stream << "int";
     }
     if (variable.hasInitialValue()) {
         stream << " init " << variable.getInitialValueExpression();
