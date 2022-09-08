@@ -61,11 +61,17 @@ InternalDdManager<DdType::Sylvan>::InternalDdManager() {
 
         // The default stacksize per worker is sometimes too large
         lace_set_stacksize(1024 * 1024);  // 1 MiB
+        // TODO: With the current set-up, storm runs concurrently to the n sylvan threads.
+        // Therefore, sylvan should leave one free ample thread for Storm
+        // We therefore recommend at most N-1 threads for sylvan, where N is the number of available processing units.
+        // This is a workaround until we improve our LACE usage, see https://github.com/moves-rwth/storm/pull/273
+        uint64_t numThreads = std::max(2u, lace_get_pu_count()) - 1;
         if (settings.isNumberOfThreadsSet()) {
-            lace_start(settings.getNumberOfThreads(), task_deque_size);
-        } else {
-            lace_start(0, task_deque_size);
+            STORM_LOG_WARN_COND(numThreads < settings.getNumberOfThreads(), "Setting the number of sylvan threads to " << settings.getNumberOfThreads() << " which exceeds the recommended number for your system (" << numThreads << ").");
+            numThreads = settings.getNumberOfThreads();
         }
+        lace_start(numThreads, task_deque_size);
+
 
         sylvan_set_limits(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024, 0, 0);
         sylvan_init_package();
