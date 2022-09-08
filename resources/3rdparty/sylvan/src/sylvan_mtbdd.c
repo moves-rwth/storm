@@ -265,6 +265,7 @@ VOID_TASK_0(mtbdd_refs_mark)
 void
 mtbdd_refs_init_key(void)
 {
+    assert(lace_is_worker()); // only use inside Lace workers
     mtbdd_refs_internal_t s = (mtbdd_refs_internal_t)malloc(sizeof(struct mtbdd_refs_internal));
     s->pcur = s->pbegin = (const MTBDD**)malloc(sizeof(MTBDD*) * 1024);
     s->pend = s->pbegin + 1024;
@@ -443,45 +444,50 @@ mtbdd_makeleaf(uint32_t type, uint64_t value)
     return (MTBDD)index;
 }
 
+void
+__attribute__ ((noinline))
+_mtbdd_makenode_gc(MTBDD low, MTBDD high)
+{
+    mtbdd_refs_push(low);
+    mtbdd_refs_push(high);
+    RUN(sylvan_gc);
+    mtbdd_refs_pop(2);
+}
+
+void
+__attribute__ ((noinline))
+_mtbdd_makenode_exit(void)
+{
+    fprintf(stderr, "BDD Unique table full, %zu of %zu buckets filled!\n", llmsset_count_marked(nodes), llmsset_get_size(nodes));
+    exit(1);
+}
+
 MTBDD
 _mtbdd_makenode(uint32_t var, MTBDD low, MTBDD high)
 {
     // Normalization to keep canonicity
     // low will have no mark
 
+    MTBDD result = low & mtbdd_complement;
+    low ^= result;
+    high ^= result;
+
     struct mtbddnode n;
-    int mark, created;
-
-    if (MTBDD_HASMARK(low)) {
-        mark = 1;
-        low = MTBDD_TOGGLEMARK(low);
-        high = MTBDD_TOGGLEMARK(high);
-    } else {
-        mark = 0;
-    }
-
     mtbddnode_makenode(&n, var, low, high);
 
-    MTBDD result;
+    int created;
     uint64_t index = llmsset_lookup(nodes, n.a, n.b, &created);
     if (index == 0) {
-        mtbdd_refs_push(low);
-        mtbdd_refs_push(high);
-        RUN(sylvan_gc);
-        mtbdd_refs_pop(2);
-
+        _mtbdd_makenode_gc(low, high);
         index = llmsset_lookup(nodes, n.a, n.b, &created);
-        if (index == 0) {
-            fprintf(stderr, "BDD Unique table full, %zu of %zu buckets filled!\n", llmsset_count_marked(nodes), llmsset_get_size(nodes));
-            exit(1);
-        }
+        if (index == 0) _mtbdd_makenode_exit();
     }
 
     if (created) sylvan_stats_count(BDD_NODES_CREATED);
     else sylvan_stats_count(BDD_NODES_REUSED);
 
-    result = index;
-    return mark ? result | mtbdd_complement : result;
+    result |= index;
+    return result;
 }
 
 MTBDD

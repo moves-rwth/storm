@@ -2318,10 +2318,9 @@ TASK_IMPL_1(MTBDD, zdd_cover_to_bdd, ZDD, zdd)
     }
 
     return result;
- }
+}
 
-
- ZDD
+ZDD
 zdd_cover_enum_first(ZDD dd, int32_t *arr)
 {
     if (dd == zdd_false) {

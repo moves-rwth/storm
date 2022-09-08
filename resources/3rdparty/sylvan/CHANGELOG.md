@@ -1,6 +1,45 @@
 # Change Log
 All notable changes to Sylvan will be documented in this file.
 
+
+## [1.7.1] - 2022-09-04
+### Added
+- Now complains when certain Sylvan functions are used outside a Lace worker thread.
+
+### Changed
+- Slightly streamlined `mtbdd_makenode` to generate more optimal code.
+- Lace is now a dependency of Sylvan instead of included in the source code.
+
+
+## [1.7.0] - 2022-09-03
+### Added
+- Rudimentary support for zero-suppressed decision diagrams (ZDDs). 
+- Implemented irredundant sum-of-products `ISOP` that computes the ZDD cover of a BDD.
+
+### Changed
+- Another new version of Lace, using C11 atomics instead of the old abuse of the volatile keyword. This is a fairly major change and so far it even appears to improve performance a little bit.
+- The name of Sylvan in CMake is now `sylvan` or `sylvan::sylvan`
+- Possibly breaking change: `mtbdd_enum_first` and `mtbdd_enum_next` no longer check if `variables` covers all variables encountered in the decision diagram, allowing partial evaluation.
+- Various small changes to the CMake scripts.
+
+### Removed
+- Support for Sylvan as a shared library is removed.
+
+### Fixed
+- Fixed OSX build
+- Fixed warnings on modern gcc in `sha2.c`
+- Fixed test and example programs that use Sylvan wrongly. Sylvan functions should always be executed from a Lace worker.
+- A major performance regression introduced in version 1.6.0 has been fixed.
+
+
+## [1.6.1] - 2021-06-20
+### Changed
+- New version of Lace with slightly better support for OSX and a few minor changes.
+
+### Fixed
+- A bug with `sylvan_set_limits` has been fixed.
+
+
 ## [1.6.0] - 2021-04-19
 ### Changed
 - Major API change in Lace. This will break things!

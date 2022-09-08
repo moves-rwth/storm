@@ -206,6 +206,7 @@ VOID_TASK_0(lddmc_refs_mark)
 void
 lddmc_refs_init_key(void)
 {
+    assert(lace_is_worker()); // only use inside Lace workers
     lddmc_refs_internal_t s = (lddmc_refs_internal_t)malloc(sizeof(struct lddmc_refs_internal));
     s->pcur = s->pbegin = (const MDD**)malloc(sizeof(MDD*) * 1024);
     s->pend = s->pbegin + 1024;

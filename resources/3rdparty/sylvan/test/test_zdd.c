@@ -672,41 +672,39 @@ TASK_0(int, test_zdd_isop_random)
 {
     BDD bdd_dom = mtbdd_fromarray((uint32_t[]){0,1,2,3,4,5,6,7,8,9,10,11}, 12);
 
-    for (int i=0; i<10; i++) {
-        // create a random BDD
-        MTBDD bdd_set = mtbdd_false;
-        int cubecount = rng(10,200);
-        for (int j=0; j<cubecount; j++) {
-            uint8_t arr[11];
-            for (int j=0; j<11; j++) arr[j] = rng(0, 2);
-            bdd_set = sylvan_or(bdd_set, sylvan_cube(bdd_dom, arr));
-        }
-
-        // convert to ISOP cover
-        MTBDD isop_bdd;
-        ZDD isop_zdd = zdd_isop(bdd_set, bdd_set, &isop_bdd);
-        MTBDD remade_bdd = zdd_cover_to_bdd(isop_zdd);
-
-        // manually count cubes
-        int arr[12];
-        ZDD res = zdd_cover_enum_first(isop_zdd, arr);
-        int count1 = 0;
-        while (res != zdd_false) {
-            res = zdd_cover_enum_next(isop_zdd, arr);
-            count1++;
-        }
-
-        // count cubes by counting paths
-        long zdd_cubes = zdd_pathcount(isop_zdd);
-
-        // printf("%6d cubes, %6ld PIs\n", cubecount, zdd_cubes);
-
-        // check if all is right
-        test_assert(isop_bdd == bdd_set);
-        test_assert(remade_bdd == bdd_set);
-        test_assert(count1 <= cubecount);
-        test_assert(count1 == zdd_cubes);
+    // create a random BDD
+    MTBDD bdd_set = mtbdd_false;
+    int cubecount = rng(1,200);
+    for (int j=0; j<cubecount; j++) {
+        uint8_t arr[11];
+        for (int j=0; j<11; j++) arr[j] = rng(0, 2);
+        bdd_set = sylvan_or(bdd_set, sylvan_cube(bdd_dom, arr));
     }
+
+    // convert to ISOP cover
+    MTBDD isop_bdd;
+    ZDD isop_zdd = zdd_isop(bdd_set, bdd_set, &isop_bdd);
+    MTBDD remade_bdd = zdd_cover_to_bdd(isop_zdd);
+
+    // manually count cubes
+    int arr[12];
+    ZDD res = zdd_cover_enum_first(isop_zdd, arr);
+    int count1 = 0;
+    while (res != zdd_false) {
+        res = zdd_cover_enum_next(isop_zdd, arr);
+        count1++;
+    }
+
+    // count cubes by counting paths
+    long zdd_cubes = zdd_pathcount(isop_zdd);
+
+    // printf("%6d cubes, %6ld PIs\n", cubecount, zdd_cubes);
+
+    // check if all is right
+    test_assert(isop_bdd == bdd_set);
+    test_assert(remade_bdd == bdd_set);
+    test_assert(count1 <= cubecount);
+    test_assert(count1 == zdd_cubes);
 
     return 0;
 }

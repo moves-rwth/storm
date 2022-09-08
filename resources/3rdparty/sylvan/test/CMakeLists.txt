@@ -21,7 +21,3 @@ target_compile_options(test_zdd PRIVATE -Wall -Wextra -Werror -Wno-deprecated)
 add_test(test_basic test_basic)
 add_test(test_cxx test_cxx)
 add_test(test_zdd test_zdd)
-
-add_code_coverage()
-target_code_coverage(test_basic)
-target_code_coverage(test_cxx)

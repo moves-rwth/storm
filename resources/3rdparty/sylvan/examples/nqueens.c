@@ -11,10 +11,6 @@
 #include <string.h>
 #include <sys/time.h>
 
-#ifdef HAVE_PROFILER
-#include <gperftools/profiler.h>
-#endif
-
 #include <sylvan.h>
 #include <sylvan_table.h>
 
@@ -24,17 +20,11 @@ static int report_minor = 0; // report minor steps
 static int report_stats = 0; // report stats at end
 static int workers = 0; // autodetect number of workers by default
 static size_t size = 0; // will be set by caller
-#ifdef HAVE_PROFILER
-static char* profile_filename = NULL; // filename for profiling
-#endif
 
 /* argp configuration */
 static struct argp_option options[] =
 {
     {"workers", 'w', "<workers>", 0, "Number of workers (default=0: autodetect)", 0},
-#ifdef HAVE_PROFILER
-    {"profiler", 'p', "<filename>", 0, "Filename for profiling", 0},
-#endif
     {"report-minterms", 1, 0, 0, "Report #minterms at every major step", 1},
     {"report-minor", 2, 0, 0, "Report minor steps", 1},
     {"report-stats", 3, 0, 0, "Report statistics at end", 1},
@@ -56,11 +46,6 @@ parse_opt(int key, char *arg, struct argp_state *state)
     case 3:
         report_stats = 1;
         break;
-#ifdef HAVE_PROFILER
-    case 'p':
-        profile_filename = arg;
-        break;
-#endif
     case ARGP_KEY_ARG:
         if (state->arg_num >= 1) argp_usage(state);
         size = atoi(arg);
@@ -129,9 +114,6 @@ main(int argc, char** argv)
     sylvan_gc_hook_pregc(TASK(gc_start));
     sylvan_gc_hook_postgc(TASK(gc_end));
 
-#ifdef HAVE_PROFILER
-    if (profile_filename != NULL) ProfilerStart(profile_filename);
-#endif
     double t1 = wctime();
 
     BDD zero = sylvan_false;
@@ -309,9 +291,6 @@ main(int argc, char** argv)
     }
 
     double t2 = wctime();
-#ifdef HAVE_PROFILER
-    if (profile_filename != NULL) ProfilerStop();
-#endif
 
     INFO("Result: NQueens(%zu) has %.0f solutions.\n", size, sylvan_satcount(res, vars));
     INFO("Result BDD has %zu nodes.\n", sylvan_nodecount(res));

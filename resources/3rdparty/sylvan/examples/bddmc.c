@@ -6,10 +6,6 @@
 #include <string.h>
 #include <sys/time.h>
 
-#ifdef HAVE_PROFILER
-#include <gperftools/profiler.h>
-#endif
-
 #include <getrss.h>
 
 #include <sylvan.h>
@@ -25,18 +21,12 @@ static int merge_relations = 0; // merge relations to 1 relation
 static int print_transition_matrix = 0; // print transition relation matrix
 static int workers = 0; // autodetect
 static char* model_filename = NULL; // filename of model
-#ifdef HAVE_PROFILER
-static char* profile_filename = NULL; // filename for profiling
-#endif
 
 /* argp configuration */
 static struct argp_option options[] =
 {
     {"workers", 'w', "<workers>", 0, "Number of workers (default=0: autodetect)", 0},
     {"strategy", 's', "<bfs|par|sat|chaining>", 0, "Strategy for reachability (default=sat)", 0},
-#ifdef HAVE_PROFILER
-    {"profiler", 'p', "<filename>", 0, "Filename for profiling", 0},
-#endif
     {"deadlocks", 3, 0, 0, "Check for deadlocks", 1},
     {"count-nodes", 5, 0, 0, "Report #nodes for BDDs", 1},
     {"count-states", 1, 0, 0, "Report #states at each level", 1},
@@ -77,11 +67,6 @@ parse_opt(int key, char *arg, struct argp_state *state)
     case 6:
         merge_relations = 1;
         break;
-#ifdef HAVE_PROFILER
-    case 'p':
-        profile_filename = arg;
-        break;
-#endif
     case ARGP_KEY_ARG:
         if (state->arg_num >= 1) argp_usage(state);
         model_filename = arg;
@@ -900,10 +885,6 @@ main(int argc, char **argv)
 
     print_memory_usage();
 
-#ifdef HAVE_PROFILER
-    if (profile_filename != NULL) ProfilerStart(profile_filename);
-#endif
-
     if (strategy == 0) {
         double t1 = wctime();
         RUN(bfs, states);
@@ -927,10 +908,6 @@ main(int argc, char **argv)
     } else {
         Abort("Invalid strategy set?!\n");
     }
-
-#ifdef HAVE_PROFILER
-    if (profile_filename != NULL) ProfilerStop();
-#endif
 
     // Now we just have states
     INFO("Final states: %'0.0f states\n", sylvan_satcount(states->bdd, states->variables));
