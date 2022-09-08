@@ -67,11 +67,12 @@ InternalDdManager<DdType::Sylvan>::InternalDdManager() {
         // This is a workaround until we improve our LACE usage, see https://github.com/moves-rwth/storm/pull/273
         uint64_t numThreads = std::max(2u, lace_get_pu_count()) - 1;
         if (settings.isNumberOfThreadsSet()) {
-            STORM_LOG_WARN_COND(numThreads < settings.getNumberOfThreads(), "Setting the number of sylvan threads to " << settings.getNumberOfThreads() << " which exceeds the recommended number for your system (" << numThreads << ").");
+            STORM_LOG_WARN_COND(numThreads < settings.getNumberOfThreads(),
+                                "Setting the number of sylvan threads to " << settings.getNumberOfThreads()
+                                                                           << " which exceeds the recommended number for your system (" << numThreads << ").");
             numThreads = settings.getNumberOfThreads();
         }
         lace_start(numThreads, task_deque_size);
-
 
         sylvan_set_limits(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024, 0, 0);
         sylvan_init_package();
