@@ -22,7 +22,7 @@
 
 namespace {
 
-enum class MdpEngine { PrismSparse, JaniSparse, JitSparse, Hybrid, PrismDd, JaniDd };
+enum class MdpEngine { PrismSparse, JaniSparse, Hybrid, PrismDd, JaniDd };
 
 class UnsoundEnvironment {
    public:

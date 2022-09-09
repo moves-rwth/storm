@@ -9,19 +9,14 @@
 #include "storm/storage/jani/eliminator/ArrayEliminator.h"
 
 namespace storm {
-namespace builder {
-namespace jit {
-template<typename StateType, typename ValueType>
-class Distribution;
-}
-}  // namespace builder
-
 namespace jani {
 class Edge;
 class EdgeDestination;
 }  // namespace jani
 
 namespace generator {
+template<typename StateType, typename ValueType>
+class Distribution;
 
 template<typename ValueType, typename StateType = uint32_t>
 class JaniNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
@@ -174,7 +169,7 @@ class JaniNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
                                             StateToIdCallback stateToIdCallback, std::vector<Choice<ValueType>>& newChoices);
     void generateSynchronizedDistribution(storm::storage::BitVector const& state, AutomataEdgeSets const& edgeCombination,
                                           std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList,
-                                          storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards,
+                                          storm::generator::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards,
                                           EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback);
 
     /*!

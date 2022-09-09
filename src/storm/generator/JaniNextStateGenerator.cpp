@@ -19,7 +19,7 @@
 
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
-#include "storm/builder/jit/Distribution.h"
+#include "storm/generator/Distribution.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -834,7 +834,7 @@ template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(storm::storage::BitVector const& state,
                                                                                     AutomataEdgeSets const& edgeCombination,
                                                                                     std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList,
-                                                                                    storm::builder::jit::Distribution<StateType, ValueType>& distribution,
+                                                                                    storm::generator::Distribution<StateType, ValueType>& distribution,
                                                                                     std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices,
                                                                                     StateToIdCallback stateToIdCallback) {
     // Collect some information of the edges.
@@ -961,7 +961,7 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
         iteratorList[i] = edgeCombination[i].second.cbegin();
     }
 
-    storm::builder::jit::Distribution<StateType, ValueType> distribution;
+    storm::generator::Distribution<StateType, ValueType> distribution;
 
     // As long as there is one feasible combination of commands, keep on expanding it.
     bool done = false;
