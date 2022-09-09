@@ -11,8 +11,6 @@
 #include "storm/storage/prism/CompositionToJaniVisitor.h"
 #include "storm/storage/prism/Program.h"
 
-#include "storm/settings/SettingsManager.h"
-
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 

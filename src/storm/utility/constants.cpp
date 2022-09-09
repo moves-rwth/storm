@@ -3,8 +3,6 @@
 #include <cmath>
 #include <type_traits>
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/StateType.h"
 
