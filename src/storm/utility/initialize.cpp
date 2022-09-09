@@ -37,7 +37,7 @@ void setOutputDigits(int digits) {
     std::cout.precision(digits);
 }
 
-void setOutputDigitsFromGeneralPrecision(float precision) {
+void setOutputDigitsFromGeneralPrecision(double precision) {
     if (precision >= 1 || precision < 0) {
         setOutputDigits(10);
     } else {

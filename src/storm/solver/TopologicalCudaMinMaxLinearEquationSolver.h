@@ -84,28 +84,6 @@ inline bool __basicValueIteration_mvReduce_minimize<uint_fast64_t, double>(
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without CUDA support.");
 #endif
 }
-template<>
-inline bool __basicValueIteration_mvReduce_minimize<uint_fast64_t, float>(
-    uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices,
-    std::vector<storm::storage::MatrixEntry<uint_fast64_t, float>> const& columnIndicesAndValues, std::vector<float>& x, std::vector<float> const& b,
-    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, size_t& iterationCount) {
-    (void)maxIterationCount;
-    (void)precision;
-    (void)relativePrecisionCheck;
-    (void)matrixRowIndices;
-    (void)columnIndicesAndValues;
-    (void)x;
-    (void)b;
-    (void)nondeterministicChoiceIndices;
-    (void)iterationCount;
-
-#ifdef STORM_HAVE_CUDA
-    return basicValueIteration_mvReduce_uint64_float_minimize(maxIterationCount, precision, relativePrecisionCheck, matrixRowIndices, columnIndicesAndValues, x,
-                                                              b, nondeterministicChoiceIndices, iterationCount);
-#else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without CUDA support.");
-#endif
-}
 
 template<typename IndexType, typename ValueType>
 bool __basicValueIteration_mvReduce_maximize(uint_fast64_t const, double const, bool const, std::vector<uint_fast64_t> const&,
@@ -131,28 +109,6 @@ inline bool __basicValueIteration_mvReduce_maximize<uint_fast64_t, double>(
 #ifdef STORM_HAVE_CUDA
     return basicValueIteration_mvReduce_uint64_double_maximize(maxIterationCount, precision, relativePrecisionCheck, matrixRowIndices, columnIndicesAndValues,
                                                                x, b, nondeterministicChoiceIndices, iterationCount);
-#else
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without CUDA support.");
-#endif
-}
-template<>
-inline bool __basicValueIteration_mvReduce_maximize<uint_fast64_t, float>(
-    uint_fast64_t const maxIterationCount, double const precision, bool const relativePrecisionCheck, std::vector<uint_fast64_t> const& matrixRowIndices,
-    std::vector<storm::storage::MatrixEntry<uint_fast64_t, float>> const& columnIndicesAndValues, std::vector<float>& x, std::vector<float> const& b,
-    std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, size_t& iterationCount) {
-    (void)maxIterationCount;
-    (void)precision;
-    (void)relativePrecisionCheck;
-    (void)matrixRowIndices;
-    (void)columnIndicesAndValues;
-    (void)x;
-    (void)b;
-    (void)nondeterministicChoiceIndices;
-    (void)iterationCount;
-
-#ifdef STORM_HAVE_CUDA
-    return basicValueIteration_mvReduce_uint64_float_maximize(maxIterationCount, precision, relativePrecisionCheck, matrixRowIndices, columnIndicesAndValues, x,
-                                                              b, nondeterministicChoiceIndices, iterationCount);
 #else
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without CUDA support.");
 #endif

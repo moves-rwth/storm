@@ -174,7 +174,7 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_FLOAT_EQ(timebound, 0.522079);
+    EXPECT_DOUBLE_EQ(timebound, 0.522079);
 #endif
     state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
@@ -183,7 +183,7 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_FLOAT_EQ(timebound, 0.9497214);
+    EXPECT_DOUBLE_EQ(timebound, 0.9497214);
 #endif
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));

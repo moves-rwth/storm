@@ -64,36 +64,9 @@ bool TopologicalCudaMinMaxLinearEquationSolver<ValueType>::internalSolveEquation
     uint64_t maxIters = env.solver().minMax().getMaximalNumberOfIterations();
     bool relative = env.solver().minMax().getMaximalNumberOfIterations();
 
-#ifdef GPU_USE_FLOAT
-#define __FORCE_FLOAT_CALCULATION true
-#else
-#define __FORCE_FLOAT_CALCULATION false
-#endif
-    if (__FORCE_FLOAT_CALCULATION && std::is_same<ValueType, double>::value) {
-        // FIXME: This actually allocates quite some storage, because of this conversion, is it really necessary?
-        storm::storage::SparseMatrix<float> newA = this->A->template toValueType<float>();
-
-        TopologicalCudaMinMaxLinearEquationSolver<float> newSolver(newA);
-
-        std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
-        std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
-
-        bool callConverged = newSolver.solveEquations(env, dir, new_x, new_b);
-
-        for (size_t i = 0, size = new_x.size(); i < size; ++i) {
-            x.at(i) = new_x.at(i);
-        }
-        return callConverged;
-    }
-
     // For testing only
-    if (sizeof(ValueType) == sizeof(double)) {
-        // std::cout << "<<< Using CUDA-DOUBLE Kernels >>>\n";
-        STORM_LOG_INFO("<<< Using CUDA-DOUBLE Kernels >>>");
-    } else {
-        // std::cout << "<<< Using CUDA-FLOAT Kernels >>>\n";
-        STORM_LOG_INFO("<<< Using CUDA-FLOAT Kernels >>>");
-    }
+    // std::cout << "<<< Using CUDA-DOUBLE Kernels >>>\n";
+    STORM_LOG_INFO("<<< Using CUDA-DOUBLE Kernels >>>");
 
     // Now, we need to determine the SCCs of the MDP and perform a topological sort.
     std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = this->A->getRowGroupIndices();

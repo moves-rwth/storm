@@ -600,11 +600,6 @@ void Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>:
     STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Json export not implemented for this model type.");
 }
 
-template<>
-void Model<float>::writeJsonToStream(std::ostream& outStream) const {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Json export not implemented for this model type.");
-}
-
 template<typename ValueType, typename RewardModelType>
 std::string Model<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
     return "";
@@ -715,7 +710,6 @@ std::set<storm::RationalFunctionVariable> getAllParameters(Model<storm::Rational
 #endif
 
 template class Model<double>;
-template class Model<float>;
 
 #ifdef STORM_HAVE_CARL
 template class Model<storm::RationalNumber>;
