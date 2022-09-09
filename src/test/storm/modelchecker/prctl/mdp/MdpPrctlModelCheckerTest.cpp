@@ -516,11 +516,11 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
 
 typedef ::testing::Types<SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironment, SparseDoubleValueIterationGmmxxRegularMultEnvironment,
                          SparseDoubleValueIterationNativeGaussSeidelMultEnvironment, SparseDoubleValueIterationNativeRegularMultEnvironment,
-                         JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment,
-                         SparseDoubleSoundValueIterationEnvironment, SparseDoubleOptimisticValueIterationEnvironment,
-                         SparseDoubleTopologicalValueIterationEnvironment, SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment,
-                         SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment,
-                         HybridCuddDoubleValueIterationEnvironment, HybridSylvanDoubleValueIterationEnvironment, HybridCuddDoubleSoundValueIterationEnvironment,
+                         JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseDoubleSoundValueIterationEnvironment,
+                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleTopologicalValueIterationEnvironment,
+                         SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment, SparseRationalPolicyIterationEnvironment,
+                         SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment, HybridCuddDoubleValueIterationEnvironment,
+                         HybridSylvanDoubleValueIterationEnvironment, HybridCuddDoubleSoundValueIterationEnvironment,
                          HybridCuddDoubleOptimisticValueIterationEnvironment, HybridSylvanRationalPolicyIterationEnvironment,
                          DdCuddDoubleValueIterationEnvironment, JaniDdCuddDoubleValueIterationEnvironment, DdSylvanDoubleValueIterationEnvironment,
                          DdCuddDoublePolicyIterationEnvironment, DdSylvanRationalRationalSearchEnvironment>

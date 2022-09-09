@@ -226,9 +226,8 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<SparseDoubleValueIterationEnvironment, JaniSparseDoubleValueIterationEnvironment,
-                         JaniHybridDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseRationalPolicyIterationEnvironment,
-                         SparseRationalRationalSearchEnvironment>
+typedef ::testing::Types<SparseDoubleValueIterationEnvironment, JaniSparseDoubleValueIterationEnvironment, JaniHybridDoubleValueIterationEnvironment,
+                         SparseDoubleIntervalIterationEnvironment, SparseRationalPolicyIterationEnvironment, SparseRationalRationalSearchEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(MarkovAutomatonCslModelCheckerTest, TestingTypes, );
