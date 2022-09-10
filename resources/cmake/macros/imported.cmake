@@ -8,7 +8,7 @@ endmacro(add_imported_library_interface)
 
 macro(add_imported_library name type lib include)
 # Workaround from https://cmake.org/Bug/view.php?id=15052
-	file(MAKE_DIRECTORY ${include})
+	file(MAKE_DIRECTORY "${include}")
 	if("${lib}" STREQUAL "")
 		if("${type}" STREQUAL "SHARED")
 			add_library(${name} INTERFACE IMPORTED)

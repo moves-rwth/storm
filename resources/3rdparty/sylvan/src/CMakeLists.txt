@@ -17,6 +17,8 @@ target_sources(sylvan
     sylvan_stats.c
     sylvan_table.c
     sylvan_zdd.c
+# Added by Storm
+    lace.c
     storm_wrapper.cpp
     sylvan_bdd_storm.c
     sylvan_mtbdd_storm.c
@@ -43,6 +45,9 @@ target_sources(sylvan
     sylvan_tls.h
     sylvan_zdd.h
     sylvan_zdd_int.h
+# Added by Storm
+    lace.h
+    lace_config.h
     storm_wrapper.h
     sylvan_bdd_storm.h
     sylvan_mtbdd_storm.h
@@ -57,7 +62,7 @@ set_target_properties(sylvan PROPERTIES VERSION ${sylvan_VERSION} SOVERSION ${sy
 target_compile_features(sylvan PUBLIC c_std_11 cxx_std_14)
 target_compile_options(sylvan PRIVATE -Wall -Wextra -fno-strict-aliasing -Wno-deprecated)
 target_include_directories(sylvan PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-target_link_libraries(sylvan PUBLIC m pthread lace)
+target_link_libraries(sylvan PUBLIC m pthread)
 
 ### MODIFICATIONS NEEDED FOR STORM
 target_include_directories(sylvan PUBLIC ${PROJECT_SOURCE_DIR}/../../../src)

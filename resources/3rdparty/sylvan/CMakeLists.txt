@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.13)
 
 project(sylvan
     VERSION 1.7.1
@@ -6,15 +6,6 @@ project(sylvan
     HOMEPAGE_URL "https://github.com/trolando/sylvan"
     LANGUAGES C CXX
 )
-
-# Dependencies
-include(FetchContent)
-FetchContent_Declare(
-    lace
-    GIT_REPOSITORY https://github.com/trolando/lace.git
-    GIT_TAG        v1.3.1
-)
-FetchContent_MakeAvailable(lace)
 
 # Add CMake modules path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/")

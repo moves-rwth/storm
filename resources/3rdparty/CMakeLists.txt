@@ -564,18 +564,12 @@ ExternalProject_Add(
         LOG_BUILD ON
         DEPENDS ${sylvan_dep}
         BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/src/libsylvan${STATIC_EXT}
-        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/_deps/lace-build/liblac${STATIC_EXT}
-        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/sylvan/_deps/lace-build/liblace14${STATIC_EXT}
         BUILD_ALWAYS 1
 )
 # BUILD ALWAYS ON due to: https://stackoverflow.com/questions/46708124/cmake-doesnt-rebuild-externalproject-on-changes
 
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
-list(APPEND lace_INCLUDE_DIRS "${binary_dir}/_deps/lace-src/src/" "${binary_dir}/_deps/lace-build/")
-set(lace_LIBRARY "${binary_dir}/_deps/lace-build/liblace${STATIC_EXT}")
-add_imported_library(lace STATIC ${lace_LIBRARY} "${lace_INCLUDE_DIRS}")
-add_dependencies(lace_STATIC lace)
 set(sylvan_INCLUDE_DIR "${source_dir}/src")
 set(sylvan_LIBRARY "${binary_dir}/src/libsylvan${STATIC_EXT}")
 message(STATUS "Storm - Using shipped version of sylvan.")
@@ -583,7 +577,7 @@ message(STATUS "Storm - Linking with sylvan.")
 add_imported_library(sylvan STATIC ${sylvan_LIBRARY} ${sylvan_INCLUDE_DIR})
 add_dependencies(sylvan_STATIC sylvan)
 
-list(APPEND STORM_DEP_TARGETS lace_STATIC sylvan_STATIC)
+list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
 #############################################################
 ##

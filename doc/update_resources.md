@@ -34,7 +34,7 @@ To update (shipped version of Spot), just change the url in `$STORM_DIR/resource
 
 ## Sylvan
 
-The currently shipped version of [sylvan](https://github.com/trolando/sylvan) is based on commit b08d75eb56461178a614188ad94cbab211adc253.
+The currently shipped version of [sylvan](https://github.com/trolando/sylvan) is based on commit b08d75eb56461178a614188ad94cbab211adc253 (tag 1.7.1)
 To update, you can follow these steps:
 
 1. Check out the above commit in a separate repository
