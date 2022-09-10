@@ -1,8 +1,5 @@
 #include "initialize.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/DebugSettings.h"
-
 #include <math.h>
 #include <fstream>
 #include <iostream>
@@ -64,12 +61,9 @@ void setLogLevel(l3pp::LogLevel level) {
     }
 }
 
-void initializeFileLogging() {
-    if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
-        std::string logFileName = storm::settings::getModule<storm::settings::modules::DebugSettings>().getLogfilename();
-        l3pp::SinkPtr sink = l3pp::FileSink::create(logFileName);
-        l3pp::Logger::getRootLogger()->addSink(sink);
-    }
+void initializeFileLogging(std::string const& logfileName) {
+    l3pp::SinkPtr sink = l3pp::FileSink::create(logfileName);
+    l3pp::Logger::getRootLogger()->addSink(sink);
 }
 
 }  // namespace utility

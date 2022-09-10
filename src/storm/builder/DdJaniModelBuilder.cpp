@@ -34,7 +34,6 @@
 #include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -169,7 +168,7 @@ bool DdJaniModelBuilder<Type, ValueType>::Options::isBuildAllLabelsSet() const {
 
 template<storm::dd::DdType Type, typename ValueType>
 void DdJaniModelBuilder<Type, ValueType>::Options::addLabel(std::string const& labelName) {
-    STORM_LOG_THROW(!buildAllLabels, storm::exceptions::InvalidSettingsException, "Cannot add label, because all labels are built anyway.");
+    STORM_LOG_THROW(!buildAllLabels, storm::exceptions::InvalidStateException, "Cannot add label, because all labels are built anyway.");
     labelNames.insert(labelName);
 }
 
@@ -2369,7 +2368,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
         preparedModel.substituteFunctions();
         features.remove(storm::jani::ModelFeature::Functions);
     }
-    STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException,
+    STORM_LOG_THROW(features.empty(), storm::exceptions::NotSupportedException,
                     "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
 
     // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).

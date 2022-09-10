@@ -117,7 +117,7 @@ inline bool isTerminate() {
 /*!
  * Register some signal handlers to detect and correctly handle abortion (due to timeout for example).
  */
-void installSignalHandler();
+void installSignalHandler(int maximalWaitTime);
 
 }  // namespace resources
 }  // namespace utility

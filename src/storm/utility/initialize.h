@@ -45,7 +45,7 @@ void setLogLevel(l3pp::LogLevel level);
 /*!
  * Sets up the logging to file.
  */
-void initializeFileLogging();
+void initializeFileLogging(std::string const& logfileName);
 
 }  // namespace utility
 }  // namespace storm
