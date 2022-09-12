@@ -42,5 +42,8 @@ To update, you can follow these steps:
 3. The diff for that commit shows you the modifications we made to the sylvan source code
 4. Merge the `master` of sylvan (or whatever version you want to update to) into your branch
 5. Resolve potential conflicts and review what has changed, in particular if it affects the API that Storm uses
-6. When this is all done, copy the contents back into the storm directory
-7. *Update commit hash mentioned in this document* 
+6. Update the shipped `lace` sources.
+As of now, sylvan downloads its dependency `lace` via cmake `FetchContent`.
+As this requires cmake 3.14, we decided to ship the files `lace.c` and `lace.h` directly (see Storm commit 095e78a897b01db20df95bca89e746229e6a85c8)
+7. When this is all done, copy the contents back into the storm directory
+8. *Update commit hash mentioned in this document* 
