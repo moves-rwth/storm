@@ -23,7 +23,7 @@ Result summary for the *often ε-correct* track:
 Further results for all tracks can be found in the [competition report](https://doi.org/10.1007/978-3-030-83723-5_15){:target="_blank"} and the detailed result tables on the [QComp 2020 website](http://qcomp.org/competition/2020/){:target="_blank"}.
 
 
-## The Probabilistic Model Checker Storm {% cite HJKQV21 %}
+## The Probabilistic Model Checker Storm {% cite HJKQV22 %}
 #### Setup
 The benchmarks were run on 4 cores of an Intel Xeon Platinum 8160 Processor with 12GB of memory available. The timeout was 1800 seconds.
 
