@@ -112,23 +112,23 @@ TYPED_TEST_SUITE(DftModelCheckerTest, TestingTypes, );
 
 TYPED_TEST(DftModelCheckerTest, AndMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
-    EXPECT_DOUBLE_EQ(result, 3);
+    EXPECT_FLOAT_EQ(result, 3);
 }
 
 TYPED_TEST(DftModelCheckerTest, OrMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/or.dft");
-    EXPECT_DOUBLE_EQ(result, 1);
+    EXPECT_FLOAT_EQ(result, 1);
 }
 
 TYPED_TEST(DftModelCheckerTest, VotingMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/voting.dft");
-    EXPECT_DOUBLE_EQ(result, 5 / 3.0);
+    EXPECT_FLOAT_EQ(result, 5 / 3.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/voting2.dft");
-    EXPECT_DOUBLE_EQ(result, 10 / 17.0);
+    EXPECT_FLOAT_EQ(result, 10 / 17.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/voting3.dft");
-    EXPECT_DOUBLE_EQ(result, 2685 / 1547.0);
+    EXPECT_FLOAT_EQ(result, 2685 / 1547.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/voting4.dft");
-    EXPECT_DOUBLE_EQ(result, 5 / 6.0);
+    EXPECT_FLOAT_EQ(result, 5 / 6.0);
 }
 
 TYPED_TEST(DftModelCheckerTest, PandMTTF) {
@@ -143,9 +143,9 @@ TYPED_TEST(DftModelCheckerTest, PorMTTF) {
 
 TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep2.dft");
-    EXPECT_DOUBLE_EQ(result, 2);
+    EXPECT_FLOAT_EQ(result, 2);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep3.dft");
-    EXPECT_DOUBLE_EQ(result, 5 / 2.0);
+    EXPECT_FLOAT_EQ(result, 5 / 2.0);
 
     if (this->getConfig().useMod) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
@@ -153,25 +153,25 @@ TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
     } else {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
-        EXPECT_DOUBLE_EQ(result, 2 / 3.0);
+        EXPECT_FLOAT_EQ(result, 2 / 3.0);
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft");
-        EXPECT_DOUBLE_EQ(result, 1);
+        EXPECT_FLOAT_EQ(result, 1);
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft");
-        EXPECT_DOUBLE_EQ(result, 3);
+        EXPECT_FLOAT_EQ(result, 3);
     }
 }
 
 TYPED_TEST(DftModelCheckerTest, PdepMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft");
-    EXPECT_DOUBLE_EQ(result, 8 / 3.0);
+    EXPECT_FLOAT_EQ(result, 8 / 3.0);
     if (this->getConfig().useMod && !this->getConfig().useDC) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft"), storm::exceptions::NotSupportedException);
     } else {
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
-        EXPECT_DOUBLE_EQ(result, 38 / 15.0);
+        EXPECT_FLOAT_EQ(result, 38 / 15.0);
     }
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep3.dft");
-    EXPECT_DOUBLE_EQ(result, 67 / 24.0);
+    EXPECT_FLOAT_EQ(result, 67 / 24.0);
 
     if (this->getConfig().useMod) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft"), storm::exceptions::NotSupportedException);
@@ -183,52 +183,52 @@ TYPED_TEST(DftModelCheckerTest, PdepMTTF) {
 
 TYPED_TEST(DftModelCheckerTest, SpareMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare.dft");
-    EXPECT_DOUBLE_EQ(result, 46 / 13.0);
+    EXPECT_FLOAT_EQ(result, 46 / 13.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare2.dft");
-    EXPECT_DOUBLE_EQ(result, 43 / 23.0);
+    EXPECT_FLOAT_EQ(result, 43 / 23.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare3.dft");
-    EXPECT_DOUBLE_EQ(result, 14 / 11.0);
+    EXPECT_FLOAT_EQ(result, 14 / 11.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare4.dft");
-    EXPECT_DOUBLE_EQ(result, 18836 / 3887.0);
+    EXPECT_FLOAT_EQ(result, 18836 / 3887.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare5.dft");
-    EXPECT_DOUBLE_EQ(result, 8 / 3.0);
+    EXPECT_FLOAT_EQ(result, 8 / 3.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare6.dft");
-    EXPECT_DOUBLE_EQ(result, 7 / 5.0);
+    EXPECT_FLOAT_EQ(result, 7 / 5.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare7.dft");
-    EXPECT_DOUBLE_EQ(result, 551 / 150.0);
+    EXPECT_FLOAT_EQ(result, 551 / 150.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare8.dft");
-    EXPECT_DOUBLE_EQ(result, 249 / 52.0);  // DFTCalc has result of 4.33779 due to different semantics of nested spares
+    EXPECT_FLOAT_EQ(result, 249 / 52.0);  // DFTCalc has result of 4.33779 due to different semantics of nested spares
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare_dc.dft");
-    EXPECT_DOUBLE_EQ(result, 78311 / 182700.0);
+    EXPECT_FLOAT_EQ(result, 78311 / 182700.0);
 }
 
 TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq.dft");
-    EXPECT_DOUBLE_EQ(result, 4);
+    EXPECT_FLOAT_EQ(result, 4);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq2.dft");
-    EXPECT_DOUBLE_EQ(result, 6);
+    EXPECT_FLOAT_EQ(result, 6);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq3.dft");
-    EXPECT_DOUBLE_EQ(result, 6);
+    EXPECT_FLOAT_EQ(result, 6);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq4.dft");
-    EXPECT_DOUBLE_EQ(result, 6);
+    EXPECT_FLOAT_EQ(result, 6);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft");
     EXPECT_EQ(result, storm::utility::infinity<double>());
 
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
-    EXPECT_DOUBLE_EQ(result, 1 / 2.0);
+    EXPECT_FLOAT_EQ(result, 1 / 2.0);
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
-    EXPECT_DOUBLE_EQ(result, storm::utility::infinity<double>());
+    EXPECT_FLOAT_EQ(result, storm::utility::infinity<double>());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
-    EXPECT_DOUBLE_EQ(result, storm::utility::infinity<double>());
+    EXPECT_FLOAT_EQ(result, storm::utility::infinity<double>());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft");
-    EXPECT_DOUBLE_EQ(result, 30000);
+    EXPECT_FLOAT_EQ(result, 30000);
 }
 
 TYPED_TEST(DftModelCheckerTest, Symmetry) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/symmetry6.dft");
-    EXPECT_DOUBLE_EQ(result, 2804183 / 2042040.0);
+    EXPECT_FLOAT_EQ(result, 2804183 / 2042040.0);
     result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/symmetry6.dft", 1.0);
-    EXPECT_DOUBLE_EQ(result, 0.3421934224);
+    EXPECT_FLOAT_EQ(result, 0.3421934224);
 }
 
 TYPED_TEST(DftModelCheckerTest, HecsReliability) {
@@ -238,6 +238,6 @@ TYPED_TEST(DftModelCheckerTest, HecsReliability) {
         return;
     }
     double result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/hecs_2_2.dft", 1.0);
-    EXPECT_DOUBLE_EQ(result, 0.00021997582);
+    EXPECT_FLOAT_EQ(result, 0.00021997582);
 }
 }  // namespace
