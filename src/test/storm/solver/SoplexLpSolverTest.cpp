@@ -9,6 +9,7 @@
 #include "storm/solver/SoplexLpSolver.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/Variable.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
 
 TEST(SoplexLpSolver, LPOptimizeMax) {
@@ -34,19 +35,20 @@ TEST(SoplexLpSolver, LPOptimizeMax) {
     ASSERT_FALSE(solver.isInfeasible());
     double xValue = 0;
     ASSERT_NO_THROW(xValue = solver.getContinuousValue(x));
-    ASSERT_LT(std::abs(xValue - 1), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(xValue, 1, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     double yValue = 0;
     ASSERT_NO_THROW(yValue = solver.getContinuousValue(y));
-    ASSERT_LT(std::abs(yValue - 6.5), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(yValue, 6.5, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     double zValue = 0;
     ASSERT_NO_THROW(zValue = solver.getContinuousValue(z));
-    ASSERT_LT(std::abs(zValue - 2.75), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(zValue, 2.75, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     double objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
-    ASSERT_LT(std::abs(objectiveValue - 14.75), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_NEAR(objectiveValue, 14.75, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
 TEST(SoplexLpSolver, LPOptimizeMaxExact) {
+    auto parseNumber = [](std::string const& input) { return storm::utility::convertNumber<storm::RationalNumber>(input); };
     auto solverPtr = storm::utility::solver::SoplexLpSolverFactory<storm::RationalNumber>().create("");
     auto& solver = static_cast<storm::solver::SoplexLpSolver<storm::RationalNumber>&>(*solverPtr);
     solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
@@ -69,16 +71,16 @@ TEST(SoplexLpSolver, LPOptimizeMaxExact) {
     ASSERT_FALSE(solver.isInfeasible());
     storm::RationalNumber xValue = 0;
     ASSERT_NO_THROW(xValue = solver.getContinuousValue(x));
-    ASSERT_LT(std::abs(xValue - 1), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_EQ(xValue, 1);
     storm::RationalNumber yValue = 0;
     ASSERT_NO_THROW(yValue = solver.getContinuousValue(y));
-    ASSERT_LT(std::abs(yValue - 6.5), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_EQ(yValue, parseNumber("13/2"));
     storm::RationalNumber zValue = 0;
     ASSERT_NO_THROW(zValue = solver.getContinuousValue(z));
-    ASSERT_LT(std::abs(zValue - 2.75), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_EQ(zValue, parseNumber("11/4"));
     storm::RationalNumber objectiveValue = 0;
     ASSERT_NO_THROW(objectiveValue = solver.getObjectiveValue());
-    ASSERT_LT(std::abs(objectiveValue - 14.75), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    EXPECT_EQ(objectiveValue, parseNumber("59/4"));
 }
 
 #endif
