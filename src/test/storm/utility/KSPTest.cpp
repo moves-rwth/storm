@@ -31,7 +31,7 @@ TEST(KSPTest, dijkstra) {
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, testState);
 
     double dist = spg.getDistance(1);
-    EXPECT_DOUBLE_EQ(0.015859334652581887, dist);
+    EXPECT_NEAR(0.015859334652581887, dist, 1e-12);
 }
 
 TEST(KSPTest, singleTarget) {
