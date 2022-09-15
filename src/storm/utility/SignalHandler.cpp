@@ -3,9 +3,6 @@
 #include <csignal>
 #include <iostream>
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/ResourceSettings.h"
-
 namespace storm {
 namespace utility {
 namespace resources {
@@ -58,9 +55,9 @@ void signalHandler(int signal) {
     }
 }
 
-void installSignalHandler() {
+void installSignalHandler(int maximalWaitTime) {
     // Set the waiting time
-    maxWaitTime = storm::settings::getModule<storm::settings::modules::ResourceSettings>().getSignalWaitingTimeInSeconds();
+    maxWaitTime = maximalWaitTime;
 
     // We use the newer sigaction instead of signal
     struct sigaction sa;

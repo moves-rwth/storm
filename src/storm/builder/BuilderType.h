@@ -12,7 +12,7 @@ class ModelFeatures;
 }
 
 namespace builder {
-enum class BuilderType { Explicit, Dd, Jit };
+enum class BuilderType { Explicit, Dd };
 
 storm::jani::ModelFeatures getSupportedJaniFeatures(BuilderType const& builderType);
 

@@ -7,14 +7,9 @@
 #include "storm/storage/prism/Program.h"
 
 namespace storm {
-namespace builder {
-namespace jit {
+namespace generator {
 template<typename StateType, typename ValueType>
 class Distribution;
-}
-}  // namespace builder
-
-namespace generator {
 
 template<typename ValueType, typename StateType = uint32_t>
 class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
@@ -126,7 +121,7 @@ class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> 
      */
     void generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position,
                                           std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList,
-                                          storm::builder::jit::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback);
+                                          storm::generator::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback);
 
     bool isCommandPotentiallySynchronizing(prism::Command const& command) const;
 

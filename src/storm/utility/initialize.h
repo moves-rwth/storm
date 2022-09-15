@@ -30,7 +30,7 @@ void setOutputDigits(int digits);
  * For a precision of 1e-n we output at least n digits.
  * @param precision General precision.
  */
-void setOutputDigitsFromGeneralPrecision(float precision);
+void setOutputDigitsFromGeneralPrecision(double precision);
 
 /*!
  * Gets the global log level
@@ -45,7 +45,7 @@ void setLogLevel(l3pp::LogLevel level);
 /*!
  * Sets up the logging to file.
  */
-void initializeFileLogging();
+void initializeFileLogging(std::string const& logfileName);
 
 }  // namespace utility
 }  // namespace storm

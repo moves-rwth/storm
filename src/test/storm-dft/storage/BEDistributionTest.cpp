@@ -13,7 +13,7 @@ TEST(BEDistributionTest, ConstantFail) {
     // Perform BDD-based analysis on FT
     auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
-    EXPECT_FLOAT_EQ(resultBDD, 0.3296799540);
+    EXPECT_NEAR(resultBDD, 0.3296799540, 1e-10);
 
     // Perform Markovian analysis on FT
     auto dft2 = storm::dft::api::prepareForMarkovAnalysis<double>(*dft);
@@ -21,7 +21,7 @@ TEST(BEDistributionTest, ConstantFail) {
     std::string property = "Pmax=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
     double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
-    EXPECT_FLOAT_EQ(resultBDD, resultMC);
+    EXPECT_NEAR(resultBDD, resultMC, 1e-10);
 }
 
 TEST(BEDistributionTest, ConstantNonFail) {
@@ -31,7 +31,7 @@ TEST(BEDistributionTest, ConstantNonFail) {
     // Perform BDD-based analysis on FT
     auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
-    EXPECT_FLOAT_EQ(resultBDD, 0.9592377960);
+    EXPECT_NEAR(resultBDD, 0.9592377960, 1e-10);
 
     // Perform Markovian analysis on FT
     auto dft2 = storm::dft::api::prepareForMarkovAnalysis<double>(*dft);
@@ -39,7 +39,7 @@ TEST(BEDistributionTest, ConstantNonFail) {
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
     double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
-    EXPECT_FLOAT_EQ(resultBDD, resultMC);
+    EXPECT_NEAR(resultBDD, resultMC, 1e-10);
 }
 
 TEST(BEDistributionTest, ConstantNonFail2) {
@@ -49,7 +49,7 @@ TEST(BEDistributionTest, ConstantNonFail2) {
     // Perform BDD-based analysis on FT
     auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
-    EXPECT_FLOAT_EQ(resultBDD, 0);
+    EXPECT_EQ(resultBDD, 0);
 
     // Perform Markovian analysis on FT
     auto dft2 = storm::dft::api::prepareForMarkovAnalysis<double>(*dft);
@@ -57,7 +57,7 @@ TEST(BEDistributionTest, ConstantNonFail2) {
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
     double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
-    EXPECT_FLOAT_EQ(resultBDD, resultMC);
+    EXPECT_EQ(resultBDD, resultMC);
 }
 
 TEST(BEDistributionTest, Probability) {
@@ -67,7 +67,7 @@ TEST(BEDistributionTest, Probability) {
     // Perform BDD-based analysis on FT
     auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
-    EXPECT_FLOAT_EQ(resultBDD, 0.1095403852);
+    EXPECT_NEAR(resultBDD, 0.1095403852, 1e-10);
 
     // Perform Markovian analysis on FT
     auto dft2 = storm::dft::api::prepareForMarkovAnalysis<double>(*dft);
@@ -75,7 +75,7 @@ TEST(BEDistributionTest, Probability) {
     std::string property = "Pmax=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
     double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
-    EXPECT_FLOAT_EQ(resultBDD, resultMC);
+    EXPECT_NEAR(resultBDD, resultMC, 1e-10);
 }
 
 TEST(BEDistributionTest, Exponential) {
@@ -85,7 +85,7 @@ TEST(BEDistributionTest, Exponential) {
     // Perform BDD-based analysis on FT
     auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
-    EXPECT_FLOAT_EQ(resultBDD, 0.108688872);
+    EXPECT_NEAR(resultBDD, 0.108688872, 1e-10);
 
     // Perform Markovian analysis on FT
     auto dft2 = storm::dft::api::prepareForMarkovAnalysis<double>(*dft);
@@ -93,7 +93,7 @@ TEST(BEDistributionTest, Exponential) {
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
     double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
-    EXPECT_FLOAT_EQ(resultBDD, resultMC);
+    EXPECT_NEAR(resultBDD, resultMC, 1e-10);
 }
 
 TEST(BEDistributionTest, Erlang) {
@@ -103,7 +103,7 @@ TEST(BEDistributionTest, Erlang) {
     // Perform BDD-based analysis on FT
     auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
-    EXPECT_FLOAT_EQ(resultBDD, 0.4949009834);
+    EXPECT_NEAR(resultBDD, 0.4949009834, 1e-10);
 
     // Perform Markovian analysis on FT
     auto dft2 = storm::dft::api::prepareForMarkovAnalysis<double>(*dft);
@@ -111,7 +111,7 @@ TEST(BEDistributionTest, Erlang) {
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
     double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
-    EXPECT_FLOAT_EQ(resultBDD, resultMC);
+    EXPECT_NEAR(resultBDD, resultMC, 1e-10);
 }
 
 TEST(BEDistributionTest, Weibull) {
@@ -121,7 +121,7 @@ TEST(BEDistributionTest, Weibull) {
     // Perform BDD-based analysis on FT
     auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
-    EXPECT_FLOAT_EQ(resultBDD, 0.0382982486);
+    EXPECT_NEAR(resultBDD, 0.0382982486, 1e-10);
 }
 
 TEST(BEDistributionTest, LogNormal) {
@@ -131,7 +131,7 @@ TEST(BEDistributionTest, LogNormal) {
     // Perform BDD-based analysis on FT
     auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
-    EXPECT_FLOAT_EQ(resultBDD, 0.2336675428);
+    EXPECT_NEAR(resultBDD, 0.2336675428, 1e-10);
 }
 
 }  // namespace
