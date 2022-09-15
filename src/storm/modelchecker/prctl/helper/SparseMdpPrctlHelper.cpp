@@ -1053,7 +1053,7 @@ void extendScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::sol
             scheduler.setChoice(0, state);
         }
     } else {
-        storm::utility::graph::computeSchedulerRewInf(qualitativeStateSets.infinityStates, transitionMatrix, scheduler);
+        storm::utility::graph::computeSchedulerRewInf(qualitativeStateSets.infinityStates, transitionMatrix, backwardTransitions, scheduler);
         for (auto state : qualitativeStateSets.rewardZeroStates) {
             scheduler.setChoice(0, state);
         }
