@@ -33,8 +33,10 @@ namespace storm {
             /** A list of tuples of observations. */
             std::vector<std::vector<uint_fast64_t>> joint_observations;
 
+            /** The unique initial state. **/
+            uint_fast64_t initial_state;
             /** Storm-esque transition matrix: for each state, a row group. */
-            std::vector<std::vector<StormRow>> storm_transition_matrix;
+            std::vector<std::vector<StormRow>> transition_matrix;
             /** For each state (row group), a mapping of a row to a joint action. */
             std::vector<std::vector<uint_fast64_t>> row_joint_action;
             /** State to joint observation map. */
@@ -44,10 +46,12 @@ namespace storm {
             
             /** Discount factor. */
             double discount;
+            /** Index of the sink state. */
+            uint_fast64_t sink_state;
             /** If true, the rewards are interpreted as costs. */
             bool reward_minimizing;
 
-
+            
             uint_fast64_t agent_num_actions(uint_fast64_t agent) {
                 return this->agent_action_labels[agent].size();
             }
@@ -61,7 +65,10 @@ namespace storm {
                 return this->joint_observations.size();
             }
 
-            uint_fast64_t num_states() {return this->storm_to_madp_states.size(); }
+            uint_fast64_t num_states() {
+                return this->storm_to_madp_states.size();
+            }
+
 
 
         private:
@@ -71,14 +78,16 @@ namespace storm {
             /** Storm to Madp state map. */
             std::vector<MadpState> storm_to_madp_states;
 
-            void collect_actions(DecPOMDPDiscrete *model);
-            void collect_observations(DecPOMDPDiscrete *model);
+            void collectActions(DecPOMDPDiscrete *model);
+            void collectObservations(DecPOMDPDiscrete *model);
             
-            uint_fast64_t fresh_joint_action(std::string action_label);
-            uint_fast64_t fresh_joint_observation(std::string observation_label);
+            uint_fast64_t freshJointAction(std::string action_label);
+            uint_fast64_t freshJointObservation(std::string observation_label);
 
-            bool have_madp_state(MadpState madp_state);
-            uint_fast64_t map_madp_state(MadpState madp_state);
+            bool haveMadpState(MadpState madp_state);
+            uint_fast64_t mapMadpState(MadpState madp_state);
+
+            void applyDiscountFactor();
         };
 
         

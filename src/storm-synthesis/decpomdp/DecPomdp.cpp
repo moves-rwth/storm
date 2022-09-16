@@ -12,7 +12,7 @@ namespace storm {
     namespace synthesis {
 
     
-        uint_fast64_t DecPomdp::fresh_joint_action(std::string action_label) {
+        uint_fast64_t DecPomdp::freshJointAction(std::string action_label) {
             std::vector<uint_fast64_t> action_tuple(this->num_agents);
             for(uint_fast64_t agent = 0; agent < this->num_agents; agent++) {
                 action_tuple[agent] = this->agent_num_actions(agent);
@@ -24,7 +24,7 @@ namespace storm {
         }
 
         
-        void DecPomdp::collect_actions(DecPOMDPDiscrete *model) {
+        void DecPomdp::collectActions(DecPOMDPDiscrete *model) {
             
             // individual actions
             this->agent_action_labels.resize(this->num_agents);
@@ -47,7 +47,7 @@ namespace storm {
         }
 
         
-        uint_fast64_t DecPomdp::fresh_joint_observation(std::string observation_label) {
+        uint_fast64_t DecPomdp::freshJointObservation(std::string observation_label) {
             std::vector<uint_fast64_t> observation_tuple(this->num_agents);
             for(uint_fast64_t agent = 0; agent < this->num_agents; agent++) {
                 observation_tuple[agent] = this->agent_num_observations(agent);
@@ -59,7 +59,7 @@ namespace storm {
         }
 
 
-        void DecPomdp::collect_observations(DecPOMDPDiscrete *model) {
+        void DecPomdp::collectObservations(DecPOMDPDiscrete *model) {
             
             // individual observations
             this->agent_observation_labels.resize(this->num_agents);
@@ -80,17 +80,17 @@ namespace storm {
         }
 
         
-        bool DecPomdp::have_madp_state(MadpState madp_state) {
+        bool DecPomdp::haveMadpState(MadpState madp_state) {
             return this->madp_to_storm_states.find(madp_state) != this->madp_to_storm_states.end();
         }
             
         
-        uint_fast64_t DecPomdp::map_madp_state(MadpState madp_state) {
+        uint_fast64_t DecPomdp::mapMadpState(MadpState madp_state) {
             uint_fast64_t new_state = this->num_states();
             auto const result = this->madp_to_storm_states.insert(std::make_pair(madp_state, new_state));
             if (result.second) {
                 this->storm_to_madp_states.push_back(madp_state);
-                this->storm_transition_matrix.resize(this->num_states());
+                this->transition_matrix.resize(this->num_states());
                 this->row_joint_action.resize(this->num_states());
             }
             return result.first->second;
@@ -104,8 +104,8 @@ namespace storm {
             this->discount = model->GetDiscount();
             this->reward_minimizing = model->GetRewardType() == COST;
 
-            this->collect_actions(model);
-            this->collect_observations(model);
+            this->collectActions(model);
+            this->collectObservations(model);
 
             // multiply transition and observation probabilities
             std::vector<std::vector<std::vector<std::pair<MadpState,double>>>> madp_transition_matrix;
@@ -135,11 +135,11 @@ namespace storm {
             }
 
             // create initial observation for the (unique) initial state
-            uint_fast64_t init_joint_observation = this->fresh_joint_observation("init");
+            uint_fast64_t init_joint_observation = this->freshJointObservation("init");
             // create action that corresponds to the execution of the initial distribution
-            uint_fast64_t init_joint_action = this->fresh_joint_action("init");
+            uint_fast64_t init_joint_action = this->freshJointAction("init");
             // create empty observation for states in the initial distribution
-            uint_fast64_t empty_joint_observation = this->fresh_joint_observation("");
+            uint_fast64_t empty_joint_observation = this->freshJointObservation("");
 
             // collect initial distribution
             std::vector<MadpRow> initial_distribution_row_group(1);
@@ -152,18 +152,17 @@ namespace storm {
             }
             
             // explore the reachable state space from the initial state
-            uint_fast64_t initial_state = model->GetNrStates();
             std::stack<MadpState> reachable_states;
-            MadpState madp_initial = std::make_pair(initial_state,init_joint_observation);
-            uint_fast64_t storm_initial = this->map_madp_state(madp_initial);
+            MadpState madp_initial = std::make_pair(0,init_joint_observation);
+            this->initial_state = this->mapMadpState(madp_initial);
             reachable_states.push(madp_initial);
             while(!reachable_states.empty()) {
                 MadpState madp_src = reachable_states.top();
                 reachable_states.pop();
-                uint_fast64_t storm_src = this->map_madp_state(madp_src);
+                uint_fast64_t storm_src = this->mapMadpState(madp_src);
                 
                 std::vector<std::vector<std::pair<MadpState,double>>> *row_group;
-                if(madp_src.first == initial_state) {
+                if(storm_src == this->initial_state) {
                     row_group = &initial_distribution_row_group;
                 } else {
                     row_group = &madp_transition_matrix[madp_src.first];
@@ -174,15 +173,15 @@ namespace storm {
                     StormRow storm_row;
                     for(auto &madp_state_prob: row) {
                         MadpState madp_dst = madp_state_prob.first;
-                        if(!this->have_madp_state(madp_dst)) {
+                        if(!this->haveMadpState(madp_dst)) {
                             reachable_states.push(madp_dst);
                         }
-                        uint_fast64_t storm_dst = this->map_madp_state(madp_dst);
+                        uint_fast64_t storm_dst = this->mapMadpState(madp_dst);
                         storm_row.push_back(std::make_pair(storm_dst, madp_state_prob.second));
                     }
                     storm_row_group.push_back(std::move(storm_row));
                 }
-                this->storm_transition_matrix[storm_src] = std::move(storm_row_group);
+                this->transition_matrix[storm_src] = std::move(storm_row_group);
             }
 
             // map rows to joint actions and rewards
@@ -194,12 +193,9 @@ namespace storm {
             this->row_reward.resize(this->num_states());
             for(uint_fast64_t storm_state = 0; storm_state < this->num_states(); storm_state++) {
                 MadpState madp_state = this->storm_to_madp_states[storm_state];
-                if(storm_state == storm_initial) {
-                    std::vector<uint_fast64_t> initial_row_group;
-                    initial_row_group.push_back(init_joint_action);
-                    this->row_joint_action[storm_state] = initial_row_group;
-                    std::vector<double> initial_reward(1,0);
-                    this->row_reward[storm_state] = std::move(initial_reward);
+                if(storm_state == this->initial_state) {
+                    this->row_joint_action[storm_state] = std::vector<uint_fast64_t>(1,init_joint_action);
+                    this->row_reward[storm_state] = std::vector<double>(1,0);
                 } else {
                     this->row_joint_action[storm_state] = madp_row_group;
                     std::vector<double> rewards;
@@ -217,10 +213,9 @@ namespace storm {
                 this->state_joint_observation[state] = madp_state.second;
             }
 
-
-
-
+            this->applyDiscountFactor();
         }
+
 
         POMDPDiscrete *parse_as_pomdp(std::string filename) {
             try {
@@ -279,6 +274,38 @@ namespace storm {
             std::unique_ptr<DecPomdp> decpomdp = std::make_unique<DecPomdp>(madp_decpomdp);
             free(madp_decpomdp);
             return decpomdp;
+        }
+
+        
+        void DecPomdp::applyDiscountFactor() {
+
+            if(this->discount == 1) {
+                return;
+            }
+
+            uint_fast64_t sink_joint_observation = this->freshJointObservation("sink");
+            MadpState madp_sink = std::make_pair(0,sink_joint_observation);
+            this->sink_state = this->mapMadpState(madp_sink);
+
+            for(uint_fast64_t state = 0; state < this->num_states(); state++) {
+                if(state == this->initial_state) {
+                    // no discounting
+                    continue;
+                }
+                if(state == this->sink_state) {
+                    // self loop
+                    this->transition_matrix[this->sink_state] = std::vector<StormRow>(
+                        1, StormRow(1, std::make_pair(this->sink_state,1)));
+                    continue;
+                }
+                for(StormRow &row: this->transition_matrix[state]) {
+                    // redirect probability of the row to the sink
+                    for(auto &entry: row) {
+                        entry.second *= discount;
+                    }
+                    row.push_back(std::make_pair(this->sink_state,1-discount));
+                }
+            }
         }
 
     } // namespace synthesis
