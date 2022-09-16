@@ -35,7 +35,7 @@ std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> 
     // - either no relevant event remains (i.e., all relevant events have failed already), or
     // - no BE can fail
     if (!state->hasOperationalRelevantEvent() || iterFailable == state->getFailableElements().end()) {
-        STORM_LOG_TRACE("No sucessor states available for " << state->getId());
+        STORM_LOG_TRACE("No successor states available for " << state->getId());
         return std::make_tuple(iterFailable, -1, true);
     }
 
