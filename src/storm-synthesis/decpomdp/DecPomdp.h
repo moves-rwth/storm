@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "storm-synthesis/madp/src/base/POMDPDiscrete.h"
-#include "storm-synthesis/madp/src/base/DecPOMDPDiscrete.h"
+#include "storm-synthesis/decpomdp/madp/src/base/POMDPDiscrete.h"
+#include "storm-synthesis/decpomdp/madp/src/base/DecPOMDPDiscrete.h"
 
 #include <string>
 

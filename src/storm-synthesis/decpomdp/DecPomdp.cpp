@@ -1,10 +1,10 @@
 // author: Roman Andriushchenko
 
-#include "storm-synthesis/madp/DecPomdp.h"
+#include "storm-synthesis/decpomdp/DecPomdp.h"
 
-#include "storm-synthesis/madp/src/base/Globals.h"
-#include "storm-synthesis/madp/src/base/E.h"
-#include "storm-synthesis/madp/src/parser/MADPParser.h"
+#include "storm-synthesis/decpomdp/madp/src/base/Globals.h"
+#include "storm-synthesis/decpomdp/madp/src/base/E.h"
+#include "storm-synthesis/decpomdp/madp/src/parser/MADPParser.h"
 
 #include <stack>
 
