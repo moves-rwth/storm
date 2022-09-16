@@ -20,8 +20,8 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
-#include "storm-synthesis/madp/include/versions.h" //+
-#include "storm-synthesis/madp/include/configuration.h" //+
+#include "versions.h"
+#include "configuration.h"
 #include <limits.h>
 
 #if USE_ARBITRARY_PRECISION_INDEX
