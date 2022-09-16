@@ -1,50 +1,4 @@
-This module uses MADP Toolbox for parsing .pomdp and .dpomdp files. Below is a
-list of used MADP Toolbox components (all under GNU GPL v3 license found below):
-
-src/base
-src/include
-src/parser
-
-The following are the contents of the original COPYING file.
-
-----------------------------------------------------------------------
-
-The Multiagent Decision Process Toolbox
-Copyright (C) 2007,2008,2014,2015,2016
-
-The MADP Toolbox is released under a GNU GPL v3 license, which is
-found below. Note that the MADP distribution includes other software
-which is distributed under its own license. To avoid any confusion, we
-explicitly list the components included in this distribution here.
-
-MADP Toolbox components (all under GPL v3):
-src/base
-src/example
-src/include
-src/parser
-src/planning
-src/solvers
-src/support
-src/utils
-src/tests
-
-Included other software:
-
-src/libDAI - libDAI 
-http://staff.science.uva.nl/~jmooij1/libDAI/
-libDAI is licensed under the BSD 2-clause license (also known as the FreeBSD license).
-
-src/boost - boost libraries
-http://www.boost.org/
-Licensed under the Boost Software License.
-
-
-
-
-
-----------------------------------------------------------------------
-
-                    GNU GENERAL PUBLIC LICENSE
+GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
  Copyright (C) 2007 Free Software Foundation, Inc. <http://fsf.org/>
@@ -677,8 +631,8 @@ to attach them to the start of each source file to most effectively
 state the exclusion of warranty; and each file should have at least
 the "copyright" line and a pointer to where the full notice is found.
 
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
+    {one line to give the program's name and a brief idea of what it does.}
+    Copyright (C) {year}  {name of author}
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -698,7 +652,7 @@ Also add information on how to contact you by electronic and paper mail.
   If the program does terminal interaction, make it output a short
 notice like this when it starts in an interactive mode:
 
-    <program>  Copyright (C) <year>  <name of author>
+    {project}  Copyright (C) {year}  {fullname}
     This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
     This is free software, and you are welcome to redistribute it
     under certain conditions; type `show c' for details.
@@ -718,3 +672,4 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
+

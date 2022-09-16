@@ -37,9 +37,9 @@ add_dependencies(storm-synthesis copy_storm_syn_headers)
 # MADP include directories
 target_include_directories(storm-synthesis
  PRIVATE
-  madp/base/
-  madp/include/
-  madp/parser/
+  madp/src/base/
+  madp/src/include/
+  madp/src/parser/
   )
 
 # installation
