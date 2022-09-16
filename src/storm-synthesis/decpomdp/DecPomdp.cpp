@@ -78,7 +78,7 @@ namespace storm {
                 }
             }
         }
-        
+
         
         bool DecPomdp::have_madp_state(MadpState madp_state) {
             return this->madp_to_storm_states.find(madp_state) != this->madp_to_storm_states.end();
@@ -134,8 +134,6 @@ namespace storm {
                 madp_transition_matrix.push_back(row_group);
             }
 
-            // TODO collect rewards/costs
-
             // create initial observation for the (unique) initial state
             uint_fast64_t init_joint_observation = this->fresh_joint_observation("init");
             // create action that corresponds to the execution of the initial distribution
@@ -187,19 +185,28 @@ namespace storm {
                 this->storm_transition_matrix[storm_src] = std::move(storm_row_group);
             }
 
-            // map rows to joint actions
+            // map rows to joint actions and rewards
             std::vector<uint_fast64_t> madp_row_group;
             for(uint_fast64_t joint_action = 0; joint_action < model->GetNrJointActions(); joint_action++) {
                 madp_row_group.push_back(joint_action);
             }
             this->row_joint_action.resize(this->num_states());
+            this->row_reward.resize(this->num_states());
             for(uint_fast64_t storm_state = 0; storm_state < this->num_states(); storm_state++) {
+                MadpState madp_state = this->storm_to_madp_states[storm_state];
                 if(storm_state == storm_initial) {
                     std::vector<uint_fast64_t> initial_row_group;
                     initial_row_group.push_back(init_joint_action);
                     this->row_joint_action[storm_state] = initial_row_group;
+                    std::vector<double> initial_reward(1,0);
+                    this->row_reward[storm_state] = std::move(initial_reward);
                 } else {
                     this->row_joint_action[storm_state] = madp_row_group;
+                    std::vector<double> rewards;
+                    for(uint_fast64_t joint_action = 0; joint_action < model->GetNrJointActions(); joint_action++) {
+                        rewards.push_back(model->GetReward(madp_state.first, joint_action));
+                    }
+                    this->row_reward[storm_state] = std::move(rewards);
                 }
             }
             
@@ -209,6 +216,8 @@ namespace storm {
                 MadpState madp_state = this->storm_to_madp_states[state];
                 this->state_joint_observation[state] = madp_state.second;
             }
+
+
 
 
         }

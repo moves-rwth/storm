@@ -32,17 +32,21 @@ namespace storm {
             std::vector<std::vector<std::string>> agent_observation_labels;
             /** A list of tuples of observations. */
             std::vector<std::vector<uint_fast64_t>> joint_observations;
-            
+
             /** Storm-esque transition matrix: for each state, a row group. */
             std::vector<std::vector<StormRow>> storm_transition_matrix;
             /** For each state (row group), a mapping of a row to a joint action. */
             std::vector<std::vector<uint_fast64_t>> row_joint_action;
             /** State to joint observation map. */
             std::vector<uint_fast64_t> state_joint_observation;
+            /** For each state (row group), a mapping of a row to its reward. */
+            std::vector<std::vector<double>> row_reward;
             
-
+            /** Discount factor. */
             double discount;
+            /** If true, the rewards are interpreted as costs. */
             bool reward_minimizing;
+
 
             uint_fast64_t agent_num_actions(uint_fast64_t agent) {
                 return this->agent_action_labels[agent].size();
