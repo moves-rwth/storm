@@ -20,8 +20,8 @@
 #include <vector>
 #include <cmath>
 #include <iostream>
-#include "versions.h"
-#include "configuration.h"
+#include "storm-synthesis/decpomdp/madp/src/include/versions.h"
+#include "storm-synthesis/decpomdp/madp/src/include/configuration.h"
 #include <limits.h>
 
 #if USE_ARBITRARY_PRECISION_INDEX
