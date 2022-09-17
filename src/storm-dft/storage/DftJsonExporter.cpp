@@ -66,6 +66,9 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateE
     // Make lower case
     std::transform(type.begin(), type.end(), type.begin(), ::tolower);
     nodeData["type"] = type;
+    if (element->isRelevant()) {
+        nodeData["relevant"] = true;
+    }
 
     if (element->isGate() || element->isRestriction()) {
         // Set children for gate/restriction
