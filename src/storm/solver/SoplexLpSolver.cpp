@@ -268,9 +268,14 @@ void SoplexLpSolver<ValueType>::ensureSolved() const {
     }
 }
 
+template<>
+void SoplexLpSolver<double>::writeModelToFile(std::string const& filename) const {
+    solver.writeFileReal(filename.c_str(), NULL, NULL, NULL);
+}
+
 template<typename ValueType>
 void SoplexLpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
-    solver.writeFileReal(filename.c_str(), NULL, NULL, NULL);
+    solver.writeFileRational(filename.c_str(), NULL, NULL, NULL);
 }
 
 template<typename ValueType>
