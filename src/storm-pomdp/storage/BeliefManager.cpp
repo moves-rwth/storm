@@ -956,7 +956,7 @@ namespace storm {
             if(pomdp.hasObservationValuations()){
                 return pomdp.getObservationValuations().getStateInfo(getBeliefObservation(beliefId));
             } else {
-                STORM_LOG_WARN("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
+                STORM_LOG_TRACE("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
                 return "";
             }
 
