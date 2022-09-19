@@ -85,7 +85,7 @@ namespace storm {
         template <typename ValueType>
         bool IterativePolicySearch<ValueType>::initialize(uint64_t k) {
             STORM_LOG_INFO("Start intializing solver...");
-
+            bool delayedSwitching = false; // Notice that delayed switching is currently broken.
             bool lookaheadConstraintsRequired;
             if (options.forceLookahead) {
                 lookaheadConstraintsRequired = true;
@@ -238,19 +238,23 @@ namespace storm {
                 for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
                     std::vector<storm::expressions::Expression> subexprreachSwitch;
                     std::vector<storm::expressions::Expression> subexprreachNoSwitch;
+
                     subexprreachSwitch.push_back(!reachVarExpressions[state]);
                     subexprreachSwitch.push_back(!actionSelectionVarExpressions[pomdp.getObservation(state)][action]);
                     subexprreachSwitch.push_back(!switchVarExpressions[pomdp.getObservation(state)]);
+                    subexprreachSwitch.push_back(followVarExpressions[pomdp.getObservation(state)]);
+
                     subexprreachNoSwitch.push_back(!reachVarExpressions[state]);
                     subexprreachNoSwitch.push_back(!actionSelectionVarExpressions[pomdp.getObservation(state)][action]);
                     subexprreachNoSwitch.push_back(switchVarExpressions[pomdp.getObservation(state)]);
-                    subexprreachSwitch.push_back(followVarExpressions[pomdp.getObservation(state)]);
                     subexprreachNoSwitch.push_back(followVarExpressions[pomdp.getObservation(state)]);
+
                     for (auto const &entries : pomdp.getTransitionMatrix().getRow(rowindex)) {
-                        if (pomdp.getObservation(entries.getColumn()) == pomdp.getObservation(state)) {
+                        if (!delayedSwitching || pomdp.getObservation(entries.getColumn()) != pomdp.getObservation(state)) {
                             subexprreachSwitch.push_back(continuationVarExpressions.at(entries.getColumn()));
                         } else {
                             subexprreachSwitch.push_back(reachVarExpressions.at(entries.getColumn()));
+                            subexprreachSwitch.push_back(continuationVarExpressions.at(entries.getColumn()));
                         }
                         smtSolver->add(storm::expressions::disjunction(subexprreachSwitch));
                         subexprreachSwitch.pop_back();
@@ -309,18 +313,17 @@ namespace storm {
 
                             for (uint64_t j = 1; j < k; ++j) {
                                 std::vector<storm::expressions::Expression> pathsubexprs;
-
                                 for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
                                     pathsubexprs.push_back(actionSelectionVarExpressions.at(pomdp.getObservation(state)).at(action) && storm::expressions::disjunction(pathsubsubexprs[j - 1][action]));
                                 }
-                                pathsubexprs.push_back(switchVarExpressions.at(pomdp.getObservation(state)));
-                                pathsubexprs.push_back(followVarExpressions[pomdp.getObservation(state)]);
+                                if (!delayedSwitching) {
+                                    pathsubexprs.push_back(switchVarExpressions.at(pomdp.getObservation(state)));
+                                    pathsubexprs.push_back(followVarExpressions[pomdp.getObservation(state)]);
+                                }
                                 smtSolver->add(storm::expressions::iff(pathVarExpressions[state][j],
                                                                            storm::expressions::disjunction(pathsubexprs)));
-
                             }
                         } else {
-
                             std::vector<storm::expressions::Expression> actPathDisjunction;
                             for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
                                 std::vector<storm::expressions::Expression> pathDisjunction;
@@ -330,8 +333,10 @@ namespace storm {
                                 actPathDisjunction.push_back(storm::expressions::disjunction(pathDisjunction) && actionSelectionVarExpressions.at(pomdp.getObservation(state)).at(action));
                                 rowindex++;
                             }
-                            actPathDisjunction.push_back(switchVarExpressions.at(pomdp.getObservation(state)));
-                            actPathDisjunction.push_back(followVarExpressions[pomdp.getObservation(state)]);
+                            if (!delayedSwitching) {
+                                actPathDisjunction.push_back(switchVarExpressions.at(pomdp.getObservation(state)));
+                                actPathDisjunction.push_back(followVarExpressions[pomdp.getObservation(state)]);
+                            }
                             actPathDisjunction.push_back(!reachVarExpressions[state]);
                             smtSolver->add(storm::expressions::disjunction(actPathDisjunction));
                         }
@@ -363,9 +368,8 @@ namespace storm {
                 ++obs;
             }
 
-            // PAPER COMMENT 9
-            for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
-                smtSolver->add(storm::expressions::implies(switchVarExpressions[obs], storm::expressions::disjunction(reachVarExpressionsPerObservation[obs])));
+            for (uint64_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
+                smtSolver->add(storm::expressions::implies(switchVarExpressions[observation], storm::expressions::disjunction(reachVarExpressionsPerObservation[observation])));
             }
             return lookaheadConstraintsRequired;
         }
@@ -503,6 +507,8 @@ namespace storm {
                     if (winningRegion.getWinningSetsPerObservation(obs).empty()) {
                         updateForObservationExpressions.push_back(
                                 storm::expressions::disjunction(reachVarExpressionsPerObservation[obs]));
+                        // Here is some opportunity for further constraints,
+                        // but one has to be careful that the constraints added here are never removed (the push happens after adding these constraints)
                     } else {
                         updateForObservationExpressions.push_back(winningRegion.extensionExpression(obs, reachVarExpressionsPerObservation[obs]));
                     }
@@ -549,6 +555,7 @@ namespace storm {
                 observationUpdated.clear();
                 bool newSchedulerDiscovered = false;
                 if (!allOfTheseAssumption.empty()) {
+                    ++iterations;
                     bool foundResult = this->smtCheck(iterations, allOfTheseAssumption);
                     if (foundResult) {
                         // Consider storing the scheduler
