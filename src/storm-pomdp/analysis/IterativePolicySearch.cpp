@@ -63,8 +63,8 @@ namespace storm {
             smtSolver = smtSolverFactory->create(*expressionManager);
             // Initialize states per observation.
             for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
-                statesPerObservation.push_back(std::vector<uint64_t>()); // Consider using bitvectors instead.
-                reachVarExpressionsPerObservation.push_back(std::vector<storm::expressions::Expression>());
+                statesPerObservation.emplace_back(); // TODO Consider using bitvectors instead.
+                reachVarExpressionsPerObservation.emplace_back();
             }
             uint64_t state = 0;
             for (auto obs : pomdp.getObservations()) {
@@ -191,7 +191,6 @@ namespace storm {
                 ++obs;
             }
 
-            // PAPER COMMENT: 1
             obs = 0;
             for (auto const& actionVars : actionSelectionVarExpressions) {
                 std::vector<storm::expressions::Expression> actExprs = actionVars;
@@ -223,12 +222,9 @@ namespace storm {
                        smtSolver->add(pathVarExpressions[state][0] >= expressionManager->integer(0));
 
                    }
-                    //assert(false);
                 }
-
             }
 
-            // PAPER COMMENT: 4
             uint64_t rowindex = 0;
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 if (targetStates.get(state) || surelyReachSinkStates.get(state)) {
@@ -262,14 +258,12 @@ namespace storm {
                         smtSolver->add(storm::expressions::disjunction(subexprreachNoSwitch));
                         subexprreachNoSwitch.pop_back();
                     }
-
                     rowindex++;
                 }
             }
 
             rowindex = 0;
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
-                // PAPER COMMENT 5
                 if (surelyReachSinkStates.get(state)) {
                     smtSolver->add(!reachVarExpressions[state]);
                     smtSolver->add(!continuationVarExpressions[state]);
@@ -285,14 +279,9 @@ namespace storm {
                     rowindex += pomdp.getNumberOfChoices(state);
                 } else if(!targetStates.get(state)) {
                     if (lookaheadConstraintsRequired) {
-
-
                         if(options.pathVariableType == MemlessSearchPathVariables::BooleanRanking) {
-                            // PAPER COMMENT 6
                             smtSolver->add(storm::expressions::implies(reachVarExpressions.at(state),
                                                                            pathVarExpressions.at(state).back()));
-                            // PAPER COMMENT 7
-
                             std::vector<std::vector<std::vector<storm::expressions::Expression>>> pathsubsubexprs;
                             for (uint64_t j = 1; j < k; ++j) {
                                 pathsubsubexprs.push_back(std::vector<std::vector<storm::expressions::Expression>>());
@@ -356,7 +345,6 @@ namespace storm {
                 }
             }
 
-            // PAPER COMMENT 8
             obs = 0;
             for(auto const& statesForObservation : statesPerObservation) {
                 for(auto const& state : statesForObservation) {
@@ -451,7 +439,6 @@ namespace storm {
             }
             stats.winningRegionUpdatesTimer.stop();
 
-
             uint64_t maximalNrActions = 0;
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 maximalNrActions = std::max(pomdp.getTransitionMatrix().getRowGroupSize(state),maximalNrActions);
@@ -461,11 +448,9 @@ namespace storm {
                 STORM_LOG_ASSERT(reachVarExpressions.size() > state, "state id " << state << " exceeds number of states (" <<  reachVarExpressions.size() << ")" );
                 atLeastOneOfStates.push_back(reachVarExpressions[state]);
             }
-            // PAPER COMMENT 11
             if (!atLeastOneOfStates.empty()) {
                 smtSolver->add(storm::expressions::disjunction(atLeastOneOfStates));
             }
-
 
             std::set<storm::expressions::Expression> allOfTheseAssumption;
             std::vector<storm::expressions::Expression> updateForObservationExpressions;
@@ -483,7 +468,6 @@ namespace storm {
                     schedulerForObs.push_back(0);
                 }
             } else {
-
                 uint64_t obs = 0;
                 for (auto const &statesForObservation : statesPerObservation) {
                     schedulerForObs.push_back(0);
@@ -495,7 +479,6 @@ namespace storm {
                         for (auto const &stateOffset : ~winningSet) {
                             uint64_t state = statesForObservation[stateOffset];
                             STORM_LOG_TRACE("State " << state << " with observation " << obs << " does not allow scheduler " << constant);
-                            // PAPER COMMENT 14:
                             smtSolver->add(!(continuationVarExpressions[state] &&
                                              (schedulerVariableExpressions[obs] == constant)));
                             smtSolver->add(!(reachVarExpressions[state] &&
@@ -698,7 +681,9 @@ namespace storm {
                 smtSolver->pop();
 
                 if(options.computeDebugOutput()) {
-                    printCoveredStates(~coveredStates);
+                    std::stringstream strstr;
+                    coveredStatesToStream(strstr, ~coveredStates);
+                    STORM_LOG_DEBUG(strstr.str());
                     // generates info output, but here we only want it for debug level.
                     // For consistency, all output on info level.
                     STORM_LOG_DEBUG("the scheduler: ");
@@ -740,7 +725,7 @@ namespace storm {
                 if (foundWhatWeLookFor) {
                     return true;
                 }
-                if (newTargetObservations>0) {
+                if (newTargetObservations > 0) {
                     stats.graphSearchTime.start();
                     storm::analysis::QualitativeAnalysisOnGraphs<ValueType> graphanalysis(pomdp);
                     uint64_t targetStatesBefore = targetStates.getNumberOfSetBits();
@@ -772,7 +757,7 @@ namespace storm {
                                 updated.set(observation);
                             }
                         }
-                        STORM_LOG_DEBUG("Graph based winning obs: " << stats.getGraphBasedwinningObservations());
+                        STORM_LOG_DEBUG("Graph-based winning obs: " << stats.getGraphBasedwinningObservations());
                         observationsWithPartialWinners &= potentialWinner;
                         for (auto const& observation : observationsWithPartialWinners) {
                             uint64_t nrStatesForObs  = statesPerObservation[observation].size();
@@ -833,7 +818,6 @@ namespace storm {
                             for (auto const &state : statesForObservation) {
                                 if (!coveredStates.get(state)) {
 
-                                    // PAPER COMMENT 14:
                                     smtSolver->add(!(continuationVarExpressions[state] &&
                                                      (schedulerVariableExpressions[obs] == constant)));
                                     smtSolver->add(!(reachVarExpressions[state] &&
@@ -853,16 +837,12 @@ namespace storm {
                 for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
                     if(winningRegion.observationIsWinning(obs)) {
                         auto constant = expressionManager->integer(schedulerForObs[obs]);
-                        // PAPER COMMENT 13
                         // Scheduler variable is already fixed.
-                        // PAPER COMMENT 12
                         // Observation will not be updated.
                         smtSolver->add(!observationUpdatedExpressions[obs]);
                     } else {
                         auto constant = expressionManager->integer(schedulerForObs[obs]);
-                        // PAPER COMMENT 13
                         smtSolver->add(schedulerVariableExpressions[obs] <= constant);
-                        // PAPER COMMENT 12
                         smtSolver->add(storm::expressions::iff(observationUpdatedExpressions[obs],
                                                                updateForObservationExpressions[obs]));
                     }
@@ -898,14 +878,23 @@ namespace storm {
         
 
         template<typename ValueType>
-        void IterativePolicySearch<ValueType>::printCoveredStates(storm::storage::BitVector const &remaining) const {
-            STORM_LOG_DEBUG("states that are okay");
+        void IterativePolicySearch<ValueType>::coveredStatesToStream(std::ostream& os, storm::storage::BitVector const &remaining) const {
+            bool first = true;
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 if (!remaining.get(state)) {
-                    std::cout << " " << state;
+                    if (first) {
+                        first = false;
+                    } else {
+                        os << ", ";
+                    }
+                    std::cout << state;
+                    if (pomdp.hasStateValuations()) {
+                        os << ":" << pomdp.getStateValuations().getStateInfo(state);
+                    }
+
                 }
             }
-            std::cout << '\n';
+            os << '\n';
         }
 
         template<typename ValueType>
@@ -960,7 +949,5 @@ namespace storm {
 
         template class IterativePolicySearch<double>;
         template class IterativePolicySearch<storm::RationalNumber>;
-
-
-    }
 }
+
