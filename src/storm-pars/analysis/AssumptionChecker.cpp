@@ -461,7 +461,8 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
     // when this is not the case, the order is invalid
     // however, it could be that the sat solver didn't finish in time, in that case we just continue.
     if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
-        STORM_LOG_WARN("The order of successors plus the bounds should be satisfiable, probably the order is invalid, this may be due to assumptions");
+        STORM_LOG_WARN("The order of successors plus the bounds should be satisfiable, the order is invalid, this may be due to assumptions");
+        order->setInvalid();
         return AssumptionStatus::INVALID;
     }
 

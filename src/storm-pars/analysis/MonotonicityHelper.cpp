@@ -423,7 +423,78 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
 template<typename ValueType, typename ConstantType>
 void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
-    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Checking monotonicity on samples not implemented for mdps");
+    assert(numberOfSamples > 2);
+
+    auto instantiator = utility::ModelInstantiator<models::sparse::Mdp<ValueType>, models::sparse::Mdp<ConstantType>>(*model);
+    std::set<VariableType> variables = models::sparse::getProbabilityParameters(*model);
+    std::vector<std::vector<ConstantType>> samples;
+    // For each of the variables create a model in which we only change the value for this specific variable
+    for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
+        ConstantType previous = -1;
+        bool monDecr = true;
+        bool monIncr = true;
+
+        // Check monotonicity in variable (*itr) by instantiating the model
+        // all other variables fixed on lb, only increasing (*itr)
+        for (uint_fast64_t i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
+            // Create valuation
+            auto valuation = utility::parametric::Valuation<ValueType>();
+            for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
+                // Only change value for current variable
+                if ((*itr) == (*itr2)) {
+                    auto lb = region.getLowerBoundary(itr->name());
+                    auto ub = region.getUpperBoundary(itr->name());
+                    // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
+                    valuation[*itr2] = (lb + utility::convertNumber<CoefficientType>(i / (numberOfSamples - 1)) * (ub - lb));
+                } else {
+                    auto lb = region.getLowerBoundary(itr2->name());
+                    valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
+                }
+            }
+
+            // Instantiate model and get result
+            models::sparse::Mdp<ConstantType> sampleModel = instantiator.instantiate(valuation);
+            auto checker = modelchecker::SparseMdpPrctlModelChecker<models::sparse::Mdp<ConstantType>>(sampleModel);
+            std::unique_ptr<modelchecker::CheckResult> checkResult;
+            auto formula = formulas[0];
+            if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
+                modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask =
+                    modelchecker::CheckTask<logic::UntilFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
+                checkTask.setOptimizationDirection(formula->asProbabilityOperatorFormula().getOptimalityType());
+                checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
+            } else if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
+                modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>(
+                    (*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
+                checkTask.setOptimizationDirection(formula->asProbabilityOperatorFormula().getOptimalityType());
+                checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
+            } else {
+                STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
+            }
+
+            auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
+            std::vector<ConstantType> values = quantitativeResult.getValueVector();
+            auto initialStates = model->getInitialStates();
+            ConstantType initial = 0;
+            // Get total probability from initial states
+            for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j + 1)) {
+                initial += values[j];
+            }
+            // Calculate difference with result for previous valuation
+            assert(initial >= 0 - precision && initial <= 1 + precision);
+            ConstantType diff = previous - initial;
+            assert(previous == -1 || (diff >= -1 - precision && diff <= 1 + precision));
+
+            if (previous != -1 && (diff > precision || diff < -precision)) {
+                monDecr &= diff > precision;  // then previous value is larger than the current value from the initial states
+                monIncr &= diff < -precision;
+            }
+            previous = initial;
+            samples.push_back(std::move(values));
+        }
+        auto res = (!monIncr && !monDecr) ? MonotonicityResult<VariableType>::Monotonicity::Not : MonotonicityResult<VariableType>::Monotonicity::Unknown;
+        resultCheckOnSamples.addMonotonicityResult(*itr, res);
+    }
+    assumptionMaker.setSampleValues(std::move(samples));
 }
 
 template class MonotonicityHelper<RationalFunction, double>;

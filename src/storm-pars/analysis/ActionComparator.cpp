@@ -1,10 +1,10 @@
 #include "ActionComparator.h"
 
-#include "storm/storage/SparseMatrix.h"
-#include "storm/utility/macros.h"
 #include "storm-pars/api/export.h"
 #include "storm-pars/api/region.h"
 #include "storm/api/verification.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace analysis {
@@ -15,9 +15,11 @@ ActionComparator<ValueType>::ActionComparator() {
 }
 
 template<typename ValueType>
-typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionSMTCompare(
-    std::shared_ptr<Order> order, const std::vector<uint64_t>& orderedSuccs, storage::ParameterRegion<ValueType>& region, ActionComparator::Rows action1,
-    ActionComparator::Rows action2) const {
+typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionSMTCompare(std::shared_ptr<Order> order,
+                                                                                                     const std::vector<uint64_t>& orderedSuccs,
+                                                                                                     storage::ParameterRegion<ValueType>& region,
+                                                                                                     ActionComparator::Rows action1,
+                                                                                                     ActionComparator::Rows action2) const {
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
     // Get ordered vector of the succs actually occurring in the two actions
@@ -46,7 +48,7 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
         if (i > 0) {
             if (order->compare(occSuccs[i], occSuccs[i - 1]) == Order::SAME) {
                 auto sameVar = manager->getVariable("s" + std::to_string(occSuccs[i - 1]));
-                expressions::Expression exprSame = sameVar.getExpression() = var.getExpression();
+                expressions::Expression exprSame = sameVar.getExpression() == var.getExpression();
                 exprStateVars = exprStateVars && exprSame;
             } else {
                 auto biggerVar = manager->getVariable("s" + std::to_string(occSuccs[i - 1]));
@@ -108,10 +110,9 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
     }
 }
 
-
 template<typename ValueType>
 bool ActionComparator<ValueType>::isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2,
-                                                                    storage::ParameterRegion<ValueType> region) const {
+                                                         storage::ParameterRegion<ValueType> region) const {
     // We want to prove f1 >= f2, so we need UNSAT for f1 < f2
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
@@ -146,7 +147,7 @@ bool ActionComparator<ValueType>::isFunctionGreaterEqual(storm::RationalFunction
 
 template<typename ValueType>
 std::pair<uint64_t, uint64_t> ActionComparator<ValueType>::rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action,
-                                                                                            std::vector<uint64_t> orderedSuccs) const {
+                                                                                 std::vector<uint64_t> orderedSuccs) const {
     uint64_t start = orderedSuccs.size();
     uint64_t end = 0;
     for (auto entry : *action) {
@@ -163,7 +164,6 @@ std::pair<uint64_t, uint64_t> ActionComparator<ValueType>::rangeOfSuccsForAction
 
     return std::make_pair(start, end);
 }
-
 
 template class ActionComparator<RationalFunction>;
 }  // namespace analysis
