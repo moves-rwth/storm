@@ -1,6 +1,4 @@
-#ifndef ORDER_ORDER_H
-#define ORDER_ORDER_H
-
+#pragma once
 #include <boost/container/flat_set.hpp>
 #include <iostream>
 #include <memory>
@@ -538,4 +536,3 @@ class Order {
 };
 }  // namespace analysis
 }  // namespace storm
-#endif  // ORDER_ORDER_H

@@ -7,11 +7,11 @@
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/Z3SmtSolver.h"
+#include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/VariableExpression.h"
 #include "storm/utility/solver.h"
-
 namespace storm {
 namespace analysis {
 template<typename ValueType, typename ConstantType>
@@ -71,98 +71,61 @@ void AssumptionChecker<ValueType, ConstantType>::setSampleValues(std::vector<std
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(uint_fast64_t state1, uint_fast64_t state2,
-                                                                                std::shared_ptr<expressions::BinaryRelationExpression> assumption,
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(uint_fast64_t state1, uint_fast64_t state2, Assumption fullAssumption,
                                                                                 std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
                                                                                 std::vector<ConstantType> const minValues,
                                                                                 std::vector<ConstantType> const maxValues) const {
-    // First check if based on sample points the assumption can be discharged
-    assert(state1 == std::stoull(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
-    assert(state2 == std::stoull(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
     AssumptionStatus result = AssumptionStatus::UNKNOWN;
-    if (useSamples) {
-        result = checkOnSamples(assumption);
-    }
-    assert(result != AssumptionStatus::VALID);
+    if (fullAssumption.isStateAssumption()) {
+        auto assumption = fullAssumption.getAssumption();
+        // First check if based on sample points the assumption can be discharged
+        assert(state1 == std::stoull(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
+        assert(state2 == std::stoull(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
+        if (useSamples) {
+            result = checkOnSamples(fullAssumption);
+        }
+        assert(result != AssumptionStatus::VALID);
 
-    // TODO: use Optimistic here as well?
-    if (minValues.size() != 0) {
-        if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
-            if (minValues[state1] > maxValues[state2]) {
-                return AssumptionStatus::VALID;
-            } else if (minValues[state1] == maxValues[state2] && minValues[state1] == maxValues[state1] && minValues[state2] == maxValues[state2]) {
-                return AssumptionStatus::INVALID;
-            } else if (minValues[state2] > maxValues[state1]) {
-                return AssumptionStatus::INVALID;
-            }
-        } else {
-            if (minValues[state1] == maxValues[state2] && minValues[state1] == maxValues[state1] && minValues[state2] == maxValues[state2]) {
-                return AssumptionStatus::VALID;
-            } else if (minValues[state1] > maxValues[state2]) {
-                return AssumptionStatus::INVALID;
-            } else if (minValues[state2] > maxValues[state1]) {
-                return AssumptionStatus::INVALID;
+        // TODO: use Optimistic here as well?
+        if (minValues.size() != 0) {
+            if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
+                if (minValues[state1] > maxValues[state2]) {
+                    return AssumptionStatus::VALID;
+                } else if (minValues[state1] == maxValues[state2] && minValues[state1] == maxValues[state1] && minValues[state2] == maxValues[state2]) {
+                    return AssumptionStatus::INVALID;
+                } else if (minValues[state2] > maxValues[state1]) {
+                    return AssumptionStatus::INVALID;
+                }
+            } else {
+                if (minValues[state1] == maxValues[state2] && minValues[state1] == maxValues[state1] && minValues[state2] == maxValues[state2]) {
+                    return AssumptionStatus::VALID;
+                } else if (minValues[state1] > maxValues[state2]) {
+                    return AssumptionStatus::INVALID;
+                } else if (minValues[state2] > maxValues[state1]) {
+                    return AssumptionStatus::INVALID;
+                }
             }
         }
-    }
 
-    if (result == AssumptionStatus::UNKNOWN) {
-        // If result from sample checking was unknown, the assumption might hold
-        STORM_LOG_THROW(assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater ||
-                            assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal,
-                        exceptions::NotSupportedException, "Only Greater Or Equal assumptions supported");
+        if (result == AssumptionStatus::UNKNOWN) {
+            // If result from sample checking was unknown, the assumption might hold
+            STORM_LOG_THROW(assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater ||
+                                assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal,
+                            exceptions::NotSupportedException, "Only Greater Or Equal assumptions supported");
 
-        if (order->isActionSetAtState(state1) && order->isActionSetAtState(state2)) {
-            STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state1)
-                                                    << " for state " << state1 << " and action " << order->getActionAtState(state2) << " for state " << state2);
-            result = validateAssumptionSMTSolver(state1, state2, order->getActionAtState(state1), order->getActionAtState(state2), assumption, order, region,
-                                                 minValues, maxValues);
-        } else if (order->isActionSetAtState(state1)) {
-            STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state1)
-                                                    << " for state " << state1 << " and all actions for " << state2);
-            bool initialized = false;
-            for (auto action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
-                auto tempResult =
-                    validateAssumptionSMTSolver(state1, state2, order->getActionAtState(state1), action2, assumption, order, region, minValues, maxValues);
-                if (!initialized) {
-                    result = tempResult;
-                    initialized = true;
-                } else if (result == AssumptionStatus::VALID && tempResult == AssumptionStatus::INVALID) {
-                    result = AssumptionStatus::UNKNOWN;
-                } else if (result == AssumptionStatus::INVALID && tempResult == AssumptionStatus::VALID) {
-                    result = AssumptionStatus::UNKNOWN;
-                }
-                if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
-                    break;
-                }
-            }
-        } else if (order->isActionSetAtState(state2)) {
-            STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state2)
-                                                    << " for state " << state2 << " and all actions for " << state1);
-
-            bool initialized = false;
-            for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
-                auto tempResult =
-                    validateAssumptionSMTSolver(state1, state2, action1, order->getActionAtState(state2), assumption, order, region, minValues, maxValues);
-                if (!initialized) {
-                    result = tempResult;
-                    initialized = true;
-                } else if (result == AssumptionStatus::VALID && tempResult == AssumptionStatus::INVALID) {
-                    result = AssumptionStatus::UNKNOWN;
-                } else if (result == AssumptionStatus::INVALID && tempResult == AssumptionStatus::VALID) {
-                    result = AssumptionStatus::UNKNOWN;
-                }
-                if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
-                    break;
-                }
-            }
-        } else {
-            STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with all actions for " << state1 << " and " << state2);
-
-            bool initialized = false;
-            for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
+            if (order->isActionSetAtState(state1) && order->isActionSetAtState(state2)) {
+                STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state1)
+                                                        << " for state " << state1 << " and action " << order->getActionAtState(state2) << " for state "
+                                                        << state2);
+                result = validateAssumptionSMTSolver(state1, state2, order->getActionAtState(state1), order->getActionAtState(state2), fullAssumption, order,
+                                                     region, minValues, maxValues);
+            } else if (order->isActionSetAtState(state1)) {
+                STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state1)
+                                                        << " for state " << state1 << " and all actions for " << state2);
+                bool initialized = false;
                 for (auto action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
-                    auto tempResult = validateAssumptionSMTSolver(state1, state2, action1, action2, assumption, order, region, minValues, maxValues);
+                    auto tempResult = validateAssumptionSMTSolver(state1, state2, order->getActionAtState(state1), action2, fullAssumption, order, region,
+                                                                  minValues, maxValues);
                     if (!initialized) {
                         result = tempResult;
                         initialized = true;
@@ -175,29 +138,75 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                         break;
                     }
                 }
+            } else if (order->isActionSetAtState(state2)) {
+                STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state2)
+                                                        << " for state " << state2 << " and all actions for " << state1);
+
+                bool initialized = false;
+                for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
+                    auto tempResult = validateAssumptionSMTSolver(state1, state2, action1, order->getActionAtState(state2), fullAssumption, order, region,
+                                                                  minValues, maxValues);
+                    if (!initialized) {
+                        result = tempResult;
+                        initialized = true;
+                    } else if (result == AssumptionStatus::VALID && tempResult == AssumptionStatus::INVALID) {
+                        result = AssumptionStatus::UNKNOWN;
+                    } else if (result == AssumptionStatus::INVALID && tempResult == AssumptionStatus::VALID) {
+                        result = AssumptionStatus::UNKNOWN;
+                    }
+                    if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
+                        break;
+                    }
+                }
+            } else {
+                STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with all actions for " << state1 << " and " << state2);
+
+                bool initialized = false;
+                for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
+                    for (auto action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
+                        auto tempResult = validateAssumptionSMTSolver(state1, state2, action1, action2, fullAssumption, order, region, minValues, maxValues);
+                        if (!initialized) {
+                            result = tempResult;
+                            initialized = true;
+                        } else if (result == AssumptionStatus::VALID && tempResult == AssumptionStatus::INVALID) {
+                            result = AssumptionStatus::UNKNOWN;
+                        } else if (result == AssumptionStatus::INVALID && tempResult == AssumptionStatus::VALID) {
+                            result = AssumptionStatus::UNKNOWN;
+                        }
+                        if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
+                            break;
+                        }
+                    }
+                }
             }
         }
+    } else {
+        STORM_LOG_WARN("Checking action assumptions not yet implemented, assuming they are valid");
     }
     return result;
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(const std::shared_ptr<expressions::BinaryRelationExpression>& assumption) const {
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(const Assumption& assumption) const {
     auto result = AssumptionStatus::UNKNOWN;
-    std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
-    assumption->gatherVariables(vars);
-    for (auto values : samples) {
-        auto valuation = expressions::SimpleValuation(assumption->getManager().getSharedPointer());
-        for (auto var : vars) {
-            auto index = std::stoi(var.getName());
-            valuation.setRationalValue(var, utility::convertNumber<double>(values[index]));
-        }
+    if (assumption.isStateAssumption()) {
+        std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
+        assumption.getAssumption()->gatherVariables(vars);
+        for (auto values : samples) {
+            auto valuation = expressions::SimpleValuation(assumption.getAssumption()->getManager().getSharedPointer());
+            for (auto var : vars) {
+                auto index = std::stoi(var.getName());
+                valuation.setRationalValue(var, utility::convertNumber<double>(values[index]));
+            }
 
-        assert(assumption->hasBooleanType());
-        if (!assumption->evaluateAsBool(&valuation)) {
-            result = AssumptionStatus::INVALID;
-            break;
+            assert(assumption.getAssumption()->hasBooleanType());
+            if (!assumption.getAssumption()->evaluateAsBool(&valuation)) {
+                result = AssumptionStatus::INVALID;
+                break;
+            }
         }
+    } else {
+        STORM_LOG_WARN("Checking action assumption on samples not yet implemented");
     }
     return result;
 }
@@ -356,141 +365,145 @@ std::set<uint_fast64_t> AssumptionChecker<ValueType, ConstantType>::getSuccessor
 
 template<typename ValueType, typename ConstantType>
 AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(
-    uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, std::shared_ptr<expressions::BinaryRelationExpression> assumption,
-    std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues,
-    std::vector<ConstantType> const maxValues) const {
-    STORM_LOG_ASSERT(!order->isActionSetAtState(state1) || action1 == order->getActionAtState(state1),
-                     "Expecting action to either not be set, or to correspond to the action set in the order");
-    STORM_LOG_ASSERT(!order->isActionSetAtState(state2) || action2 == order->getActionAtState(state2),
-                     "Expecting action to either not be set, or to correspond to the action set in the order");
+    uint_fast64_t state1, uint_fast64_t state2, uint_fast64_t action1, uint_fast64_t action2, Assumption assumption, std::shared_ptr<Order> order,
+    storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
+    if (assumption.isStateAssumption()) {
+        STORM_LOG_ASSERT(!order->isActionSetAtState(state1) || action1 == order->getActionAtState(state1),
+                         "Expecting action to either not be set, or to correspond to the action set in the order");
+        STORM_LOG_ASSERT(!order->isActionSetAtState(state2) || action2 == order->getActionAtState(state2),
+                         "Expecting action to either not be set, or to correspond to the action set in the order");
 
-    auto var1 = assumption->getFirstOperand()->asVariableExpression().getVariableName();
-    auto var2 = assumption->getSecondOperand()->asVariableExpression().getVariableName();
+        auto var1 = assumption.getAssumption()->getFirstOperand()->asVariableExpression().getVariableName();
+        auto var2 = assumption.getAssumption()->getSecondOperand()->asVariableExpression().getVariableName();
 
-    // We first try to validate it with an slightly modification
-    auto successors1 = getSuccessors(state1, action1);
-    auto successors2 = getSuccessors(state2, action2);
+        // We first try to validate it with an slightly modification
+        auto successors1 = getSuccessors(state1, action1);
+        auto successors2 = getSuccessors(state2, action2);
 
-    // We need a new manager as the one from the assumption is const.
-    std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
+        // We need a new manager as the one from the assumption is const.
+        std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
-    // --------------------------------------------------------------------------------
-    // Add all necessary state variables
-    // --------------------------------------------------------------------------------
-    std::set<expressions::Variable> stateVariables;
-    std::set<expressions::Variable> topVariables;
-    std::set<expressions::Variable> bottomVariables;
-    for (auto state : successors1) {
-        auto varname1 = "s" + std::to_string(state);
+        // --------------------------------------------------------------------------------
+        // Add all necessary state variables
+        // --------------------------------------------------------------------------------
+        std::set<expressions::Variable> stateVariables;
+        std::set<expressions::Variable> topVariables;
+        std::set<expressions::Variable> bottomVariables;
+        for (auto state : successors1) {
+            auto varname1 = "s" + std::to_string(state);
+            if (!manager->hasVariable(varname1)) {
+                if (order->isTopState(state)) {
+                    topVariables.insert(manager->declareRationalVariable(varname1));
+                } else if (order->isBottomState(state)) {
+                    bottomVariables.insert(manager->declareRationalVariable(varname1));
+                } else {
+                    stateVariables.insert(manager->declareRationalVariable(varname1));
+                }
+            }
+        }
+        for (auto state : successors2) {
+            auto varname1 = "s" + std::to_string(state);
+            if (!manager->hasVariable(varname1)) {
+                if (order->isTopState(state)) {
+                    topVariables.insert(manager->declareRationalVariable(varname1));
+                } else if (order->isBottomState(state)) {
+                    bottomVariables.insert(manager->declareRationalVariable(varname1));
+                } else {
+                    stateVariables.insert(manager->declareRationalVariable(varname1));
+                }
+            }
+        }
+        auto varname1 = "s" + std::to_string(state1);
         if (!manager->hasVariable(varname1)) {
-            if (order->isTopState(state)) {
+            if (order->isTopState(state1)) {
                 topVariables.insert(manager->declareRationalVariable(varname1));
-            } else if (order->isBottomState(state)) {
+            } else if (order->isBottomState(state1)) {
                 bottomVariables.insert(manager->declareRationalVariable(varname1));
             } else {
                 stateVariables.insert(manager->declareRationalVariable(varname1));
             }
         }
-    }
-    for (auto state : successors2) {
-        auto varname1 = "s" + std::to_string(state);
-        if (!manager->hasVariable(varname1)) {
-            if (order->isTopState(state)) {
-                topVariables.insert(manager->declareRationalVariable(varname1));
-            } else if (order->isBottomState(state)) {
-                bottomVariables.insert(manager->declareRationalVariable(varname1));
+        auto varname2 = "s" + std::to_string(state2);
+        if (!manager->hasVariable(varname2)) {
+            if (order->isTopState(state2)) {
+                topVariables.insert(manager->declareRationalVariable(varname2));
+            } else if (order->isBottomState(state2)) {
+                bottomVariables.insert(manager->declareRationalVariable(varname2));
             } else {
-                stateVariables.insert(manager->declareRationalVariable(varname1));
+                stateVariables.insert(manager->declareRationalVariable(varname2));
             }
         }
-    }
-    auto varname1 = "s" + std::to_string(state1);
-    if (!manager->hasVariable(varname1)) {
-        if (order->isTopState(state1)) {
-            topVariables.insert(manager->declareRationalVariable(varname1));
-        } else if (order->isBottomState(state1)) {
-            bottomVariables.insert(manager->declareRationalVariable(varname1));
-        } else {
-            stateVariables.insert(manager->declareRationalVariable(varname1));
+        // --------------------------------------------------------------------------------
+        // Expressions for the states of the assumption
+        // --------------------------------------------------------------------------------
+        // We need to do this first, otherwise the probabilistic parameters might not be there when we get the bounds for the variables
+        expressions::Expression expr1 = manager->getVariableExpression(varname1);
+        expressions::Expression expr2 = manager->getVariableExpression(varname2);
+
+        solver::Z3SmtSolver s(*manager);
+        // --------------------------------------------------------------------------------
+        // Expression for the successors of our state
+        // --------------------------------------------------------------------------------
+        s.add(getExpressionOrderSuccessors(manager, order, successors1, successors2));
+
+        // --------------------------------------------------------------------------------
+        // Unrolling for states with only one successor
+        // --------------------------------------------------------------------------------
+        s.add(getAdditionalStateExpression(manager, state1, action1) && getAdditionalStateExpression(manager, state2, action2));
+
+        // --------------------------------------------------------------------------------
+        // Expression for the states
+        // --------------------------------------------------------------------------------
+        expressions::Expression stateExpression =
+            expr1 == getStateExpression(manager, state1, action1) && expr2 == getStateExpression(manager, state2, action2);
+        s.add(stateExpression);
+
+        // --------------------------------------------------------------------------------
+        // Expression for the bounds on the variables, need to do this last, otherwise we might not have all variables yet
+        // --------------------------------------------------------------------------------
+        s.add(getExpressionBounds(manager, region, varname1, varname2, stateVariables, topVariables, bottomVariables, minValues, maxValues));
+
+        // --------------------------------------------------------------------------------
+        // Check if the order of the successors + the bounds is satisfiable
+        // --------------------------------------------------------------------------------
+        s.setTimeout(1000);
+        // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
+        // when this is not the case, the order is invalid
+        // however, it could be that the sat solver didn't finish in time, in that case we just continue.
+        if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
+            STORM_LOG_WARN("The order of successors plus the bounds should be satisfiable, the order is invalid, this may be due to assumptions");
+            order->setInvalid();
+            return AssumptionStatus::INVALID;
         }
-    }
-    auto varname2 = "s" + std::to_string(state2);
-    if (!manager->hasVariable(varname2)) {
-        if (order->isTopState(state2)) {
-            topVariables.insert(manager->declareRationalVariable(varname2));
-        } else if (order->isBottomState(state2)) {
-            bottomVariables.insert(manager->declareRationalVariable(varname2));
+
+        // Create expression for the assumption based on the relation to successors
+        // It is the negation of actual assumption
+
+        expressions::Expression exprToCheck;
+        if (assumption.getAssumption()->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
+            exprToCheck = expr1 <= expr2;
         } else {
-            stateVariables.insert(manager->declareRationalVariable(varname2));
+            exprToCheck = expr1 != expr2;
         }
-    }
-    // --------------------------------------------------------------------------------
-    // Expressions for the states of the assumption
-    // --------------------------------------------------------------------------------
-    // We need to do this first, otherwise the probabilistic parameters might not be there when we get the bounds for the variables
-    expressions::Expression expr1 = manager->getVariableExpression(varname1);
-    expressions::Expression expr2 = manager->getVariableExpression(varname2);
-
-    solver::Z3SmtSolver s(*manager);
-    // --------------------------------------------------------------------------------
-    // Expression for the successors of our state
-    // --------------------------------------------------------------------------------
-    s.add(getExpressionOrderSuccessors(manager, order, successors1, successors2));
-
-    // --------------------------------------------------------------------------------
-    // Unrolling for states with only one successor
-    // --------------------------------------------------------------------------------
-    s.add(getAdditionalStateExpression(manager, state1, action1) && getAdditionalStateExpression(manager, state2, action2));
-
-    // --------------------------------------------------------------------------------
-    // Expression for the states
-    // --------------------------------------------------------------------------------
-    expressions::Expression stateExpression = expr1 == getStateExpression(manager, state1, action1) && expr2 == getStateExpression(manager, state2, action2);
-    s.add(stateExpression);
-
-    // --------------------------------------------------------------------------------
-    // Expression for the bounds on the variables, need to do this last, otherwise we might not have all variables yet
-    // --------------------------------------------------------------------------------
-    s.add(getExpressionBounds(manager, region, varname1, varname2, stateVariables, topVariables, bottomVariables, minValues, maxValues));
-
-    // --------------------------------------------------------------------------------
-    // Check if the order of the successors + the bounds is satisfiable
-    // --------------------------------------------------------------------------------
-    s.setTimeout(1000);
-    // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
-    // when this is not the case, the order is invalid
-    // however, it could be that the sat solver didn't finish in time, in that case we just continue.
-    if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
-        STORM_LOG_WARN("The order of successors plus the bounds should be satisfiable, the order is invalid, this may be due to assumptions");
-        order->setInvalid();
-        return AssumptionStatus::INVALID;
-    }
-
-    // Create expression for the assumption based on the relation to successors
-    // It is the negation of actual assumption
-
-    expressions::Expression exprToCheck;
-    if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
-        exprToCheck = expr1 <= expr2;
+        s.add(exprToCheck);
+        s.unsetTimeout();
+        solver::SmtSolver::CheckResult smtRes = s.check();
+        if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
+            // If it is unsatisfiable the original assumtpion should be valid
+            return AssumptionStatus::VALID;
+        }
     } else {
-        exprToCheck = expr1 != expr2;
+        STORM_LOG_WARN("Validating action assumption not yet implemented");
     }
-    s.add(exprToCheck);
-    s.unsetTimeout();
-    solver::SmtSolver::CheckResult smtRes = s.check();
-    if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
-        // If it is unsatisfiable the original assumtpion should be valid
-        return AssumptionStatus::VALID;
-    }
+
     return AssumptionStatus::UNKNOWN;
 }
 
 template<typename ValueType, typename ConstantType>
-AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption,
-                                                                                std::shared_ptr<Order> order,
+AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(Assumption assumption, std::shared_ptr<Order> order,
                                                                                 storage::ParameterRegion<ValueType> region) const {
-    auto var1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
-    auto var2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
+    auto var1 = std::stoi(assumption.getAssumption()->getFirstOperand()->asVariableExpression().getVariableName());
+    auto var2 = std::stoi(assumption.getAssumption()->getSecondOperand()->asVariableExpression().getVariableName());
     std::vector<ConstantType> vals;
     return validateAssumption(var1, var2, assumption, order, region, vals, vals);
 }

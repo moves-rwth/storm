@@ -1,9 +1,7 @@
+#pragma once
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/storage/ParameterRegion.h"
 
-
-#ifndef REGION_H_ActionComparison_H
-#define REGION_H_ActionComparison_H
 namespace storm {
 namespace analysis {
 template<typename ValueType>
@@ -35,9 +33,6 @@ class ActionComparator {
     bool isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2, storage::ParameterRegion<ValueType> region) const;
 
     std::pair<uint64_t, uint64_t> rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action, std::vector<uint64_t> orderedSuccs) const;
-
 };
-}
-}
-
-#endif  // REGION_H_ActionComparison_H
+}  // namespace analysis
+}  // namespace storm

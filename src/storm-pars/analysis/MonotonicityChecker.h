@@ -1,6 +1,4 @@
-#ifndef STORM_MONOTONICITYCHECKER_H
-#define STORM_MONOTONICITYCHECKER_H
-
+#pragma once
 #include <boost/container/flat_map.hpp>
 #include <map>
 #include "LocalMonotonicityResult.h"
@@ -112,4 +110,3 @@ class MonotonicityChecker {
 };
 }  // namespace analysis
 }  // namespace storm
-#endif  // STORM_MONOTONICITYCHECKER_H

@@ -569,7 +569,8 @@ void Order::setSufficientForState(uint_fast64_t stateNumber) {
 }
 
 void Order::setDoneForState(uint_fast64_t stateNumber) {
-    assert(sufficientForState[stateNumber] && contains(stateNumber));
+    STORM_LOG_ASSERT(sufficientForState[stateNumber], "Cannot set state " << stateNumber << " as done as the order is not yet sufficient for the state");
+    STORM_LOG_ASSERT(contains(stateNumber), "Cannot set state " << stateNumber << " as done as the order does not contain the state");
     doneForState.set(stateNumber);
 }
 

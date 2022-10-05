@@ -92,8 +92,8 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
 
 /*** Public methods ***/
 template<typename ValueType, typename ConstantType>
-std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>,
-                                           std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>
+std::map<std::shared_ptr<Order>,
+         std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<Assumption>>>
 MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::optional<std::ostream&> outfile, bool useBoundsFromPLA,
                                                                       std::string dotOutfileName) {
     if (useBoundsFromPLA) {
@@ -199,21 +199,17 @@ void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
     auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
     criticalTuple = toOrder(region, monRes);
     // Continue based on not (yet) sorted states
-    std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+    std::map<std::shared_ptr<Order>, std::vector<Assumption>> result;
 
     auto val1 = std::get<1>(criticalTuple);
     auto val2 = std::get<2>(criticalTuple);
     auto numberOfStates = model->getNumberOfStates();
-    std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions;
+    std::vector<Assumption> assumptions;
 
     if (val1 == numberOfStates && val2 == numberOfStates) {
-        auto resAssumptionPair =
-            std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes,
-                                                                                                                                              assumptions);
-        monResults.insert(
-            std::pair<std::shared_ptr<Order>,
-                      std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(
-                std::get<0>(criticalTuple), resAssumptionPair));
+        auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>(monRes, assumptions);
+        monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>>(
+            std::get<0>(criticalTuple), resAssumptionPair));
     } else if (val1 != numberOfStates && val2 != numberOfStates) {
         extendOrderWithAssumptions(std::get<0>(criticalTuple), val1, val2, assumptions, monRes);
     } else {
@@ -223,9 +219,9 @@ void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
 
 template<typename ValueType, typename ConstantType>
 void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2,
-                                                                             std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions,
+                                                                             std::vector<Assumption> assumptions,
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-    std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+    std::map<std::shared_ptr<Order>, std::vector<Assumption>> result;
     if (order->isInvalid()) {
         STORM_LOG_INFO("Order is invalid, probably found with forward reasoning");
         return;
@@ -234,36 +230,40 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
         // Check if the assumptions are still valid, otherwise we can stop
         // One of the assumption was not valid on the entire region, so we don't need to further explore the order
         // We use compareFast as the assumption is used, thus statesAbove of the node is set
-        auto state1 = std::stoi(assumption->getFirstOperand()->toExpression().toString());
-        auto state2 = std::stoi(assumption->getSecondOperand()->toExpression().toString());
-        if (assumption->asBinaryRelationExpression().getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
-            if (order->compareFast(state1, state2) != Order::NodeComparison::ABOVE) {
-                STORM_LOG_INFO("Removing order as assumption " << assumption->toExpression().toString() << " is invalid");
-                return;
+        if (assumption.isStateAssumption()) {
+            auto state1 = std::stoi(assumption.getAssumption()->getFirstOperand()->toExpression().toString());
+            auto state2 = std::stoi(assumption.getAssumption()->getSecondOperand()->toExpression().toString());
+            if (assumption.getAssumption()->asBinaryRelationExpression().getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
+                if (order->compareFast(state1, state2) != Order::NodeComparison::ABOVE) {
+                    STORM_LOG_INFO("Removing order as assumption " << assumption.getAssumption()->toExpression().toString() << " is invalid");
+                    return;
+                }
+            } else {
+                if (order->compareFast(state1, state2) != Order::NodeComparison::SAME) {
+                    STORM_LOG_INFO("Removing order as assumption " << assumption.getAssumption()->toExpression().toString() << " is invalid");
+                    return;
+                }
             }
         } else {
-            if (order->compareFast(state1, state2) != Order::NodeComparison::SAME) {
-                STORM_LOG_INFO("Removing order as assumption " << assumption->toExpression().toString() << " is invalid");
-                return;
-            }
+            // assumption is based on the actions
+            STORM_LOG_INFO("Not quickly validating action assumption as this is too expensive");
         }
     }
     auto numberOfStates = model->getNumberOfStates();
     if (val1 == numberOfStates || val2 == numberOfStates) {
         assert(val1 == val2);
         assert(order->getNumberOfAddedStates() == order->getNumberOfStates());
-        auto resAssumptionPair =
-            std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes,
-                                                                                                                                              assumptions);
-        monResults.insert(
-            std::pair<std::shared_ptr<Order>,
-                      std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(
-                std::move(order), std::move(resAssumptionPair)));
+        auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>(monRes, assumptions);
+        monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>>(
+            std::move(order), std::move(resAssumptionPair)));
     } else {
-        // Make the three assumptions
-        STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2 << ". ");
+        // Make the assumptions
+        if (val1 == val2) {
+            STORM_LOG_INFO("Creating assumptions for the actions of " << val1 << ". ");
+        } else {
+            STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2 << ". ");
+        }
         auto newAssumptions = assumptionMaker.createAndCheckAssumptions(val1, val2, order, region);
-        assert(newAssumptions.size() <= 3);
         auto itr = newAssumptions.begin();
         if (newAssumptions.size() == 0) {
             monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
@@ -279,7 +279,11 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
             monResults.insert({order, {monRes, assumptions}});
             STORM_LOG_INFO("    None of the assumptions were valid, we stop exploring the current order");
         } else {
-            STORM_LOG_INFO("    Created " << newAssumptions.size() << " assumptions, we continue extending the current order");
+            if (newAssumptions.begin()->first.isStateAssumption()) {
+                STORM_LOG_INFO("    Created " << newAssumptions.size() << " state assumptions, we continue extending the current order");
+            } else {
+                STORM_LOG_INFO("    Created " << newAssumptions.size() << " action assumptions, we continue extending the current order");
+            }
         }
 
         while (itr != newAssumptions.end()) {
@@ -289,14 +293,13 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
                 if (itr != newAssumptions.end()) {
                     // We make a copy of the order and the assumptions
                     auto orderCopy = order->copy();
-                    auto assumptionsCopy = std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>(assumptions);
+                    auto assumptionsCopy = std::vector<Assumption>(assumptions);
                     auto monResCopy = monRes->copy();
 
                     if (assumption.second == AssumptionStatus::UNKNOWN) {
                         // only add assumption to the set of assumptions if it is unknown whether it holds or not
                         assumptionsCopy.push_back(std::move(assumption.first));
                     }
-                    // TODO hier gaat ergens iets fout met de assumption
                     auto criticalTuple = extendOrder(orderCopy, region, monResCopy, assumption.first);
                     extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
                 } else {
@@ -331,7 +334,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHel
 template<typename ValueType, typename ConstantType>
 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> MonotonicityHelper<ValueType, ConstantType>::extendOrder(
     std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes,
-    std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+    std::optional<Assumption> assumption) {
     ReachabilityOrderExtender<ValueType, ConstantType>* castedPointerReach = dynamic_cast<ReachabilityOrderExtender<ValueType, ConstantType>*>(extender);
     if (castedPointerReach != nullptr) {
         return castedPointerReach->extendOrder(order, region, monRes, assumption);

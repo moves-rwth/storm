@@ -1,29 +1,22 @@
-#ifndef STORM_MONOTONICITYHELPER_H
-#define STORM_MONOTONICITYHELPER_H
-
+#pragma once
 #include <map>
+#include "Assumption.h"
 #include "AssumptionMaker.h"
 #include "LocalMonotonicityResult.h"
 #include "MonotonicityResult.h"
 #include "Order.h"
 #include "ReachabilityOrderExtender.h"
-
+#include "storm-pars/api/region.h"
 #include "storm/logic/Formula.h"
-
 #include "storm/models/ModelBase.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-
 #include "storm/solver/Z3SmtSolver.h"
-
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
-
 #include "storm/utility/constants.h"
-
-#include "storm-pars/api/region.h"
 
 namespace storm {
 namespace analysis {
@@ -108,9 +101,8 @@ class MonotonicityHelper {
      * @param dotOutfileName Name for the files of the dot outputs should they be generated
      * @return Map which maps each order to its Reachability Order and used assumptions.
      */
-    std::map<std::shared_ptr<Order>,
-             std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>
-    checkMonotonicityInBuild(boost::optional<std::ostream&> outfile, bool useBoundsFromPLA, std::string dotOutfileName = "dotOutput");
+    std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>> checkMonotonicityInBuild(
+        boost::optional<std::ostream&> outfile, bool useBoundsFromPLA, std::string dotOutfileName = "dotOutput");
 
    private:
     std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region,
@@ -118,7 +110,7 @@ class MonotonicityHelper {
     std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
                                                                                  storm::storage::ParameterRegion<ValueType> region,
                                                                                  std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
-                                                                                 std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+                                                                                 std::optional<Assumption> assumption = {});
 
     void createOrder();
 
@@ -126,8 +118,7 @@ class MonotonicityHelper {
 
     void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
-    void extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2,
-                                    std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions,
+    void extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<Assumption> assumptions,
                                     std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
     Monotonicity checkTransitionMonRes(ValueType function, VariableType param, Region region);
@@ -148,9 +139,7 @@ class MonotonicityHelper {
 
     std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
 
-    std::map<std::shared_ptr<Order>,
-             std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>
-        monResults;
+    std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>> monResults;
 
     OrderExtender<ValueType, ConstantType>* extender;
 
@@ -166,4 +155,3 @@ class MonotonicityHelper {
 };
 }  // namespace analysis
 }  // namespace storm
-#endif  // STORM_MONOTONICITYHELPER_H

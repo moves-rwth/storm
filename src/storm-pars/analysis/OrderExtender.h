@@ -1,6 +1,4 @@
-#ifndef STORM_ORDEREXTENDER_H
-#define STORM_ORDEREXTENDER_H
-
+#pragma once
 #include <boost/container/flat_set.hpp>
 #include "storm/api/storm.h"
 #include "storm/logic/Formula.h"
@@ -8,6 +6,7 @@
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/VariableExpression.h"
 
+#include "Assumption.h"
 #include "AssumptionMaker.h"
 #include "storage/StronglyConnectedComponentDecomposition.h"
 #include "storm-pars/analysis/ActionComparator.h"
@@ -78,7 +77,7 @@ class OrderExtender {
     std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order,
                                                                                  storm::storage::ParameterRegion<ValueType> region,
                                                                                  std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
-                                                                                 std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+                                                                                 std::optional<Assumption> assumption = {});
 
     /**
      * Checks if there is hope to continue extending the current order.
@@ -181,7 +180,7 @@ class OrderExtender {
     std::shared_ptr<Order> getInitialOrder();
     std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                          uint_fast64_t currentState);
-    void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
+    void handleAssumption(std::shared_ptr<Order> order, Assumption assumption) const;
 
     //------------------------------------------------------------------------------
     // Sorting states
@@ -273,5 +272,3 @@ class OrderExtender {
 };
 }  // namespace analysis
 }  // namespace storm
-
-#endif  // STORM_ORDEREXTENDER_H

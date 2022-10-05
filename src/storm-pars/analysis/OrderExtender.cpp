@@ -167,16 +167,16 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
     if (order == nullptr) {
         return {nullptr, numberOfStates, numberOfStates};
     }
-    return extendOrder(order, region, monRes, nullptr);
+    return extendOrder(order, region, monRes);
 }
 
 template<typename ValueType, typename ConstantType>
 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(
     std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes,
-    std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+    std::optional<Assumption> assumption) {
     STORM_LOG_ASSERT(order != nullptr, "Order should be provided");
-    if (assumption != nullptr) {
-        this->handleAssumption(order, assumption);
+    if (assumption.has_value()) {
+        this->handleAssumption(order, assumption.value());
     }
 
     auto currentStateMode = this->getNextState(order, this->numberOfStates, false);
@@ -220,51 +220,9 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
         } else if (currentStateMode.second) {
             // We have a non-deterministic state, and cannot (yet) fix the action
             // We only go into here if we need to handle the state because it was its turn by the ordering
-            bool sufficientForState = true;
-            for (auto itr1 = successors.begin(); itr1 < successors.end(); ++itr1) {
-                for (auto itr2 = itr1 + 1; itr2 < successors.end(); ++itr2) {
-                    // compare all successors with each other
-                    if (order->compare(*itr1, *itr2) == Order::NodeComparison::UNKNOWN) {
-                        auto assumptions =
-                            this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
-                                ? this->assumptionMaker->createAndCheckAssumptions(*itr1, *itr2, order, region, this->minValues[order], this->maxValues[order])
-                                : this->assumptionMaker->createAndCheckAssumptions(*itr1, *itr2, order, region);
-                        if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                            this->handleAssumption(order, assumptions.begin()->first);
-                            this->findBestAction(order, region, *itr1);
-                            actionFound = this->findBestAction(order, region, currentState);
-                        } else if (sufficientForState) {
-                            result = {*itr1, *itr2};
-                            sufficientForState = false;
-                        }
-                    }
-                    if (actionFound) {
-                        break;
-                    }
-                }
-                if (actionFound) {
-                    break;
-                }
-            }
-            if (actionFound) {
-                // We restart the loop as we now did find an action
-                continue;
-            }
-
-            if (sufficientForState) {
-                for (auto itr1 = successors.begin(); itr1 < successors.end(); ++itr1) {
-                    // compare all successors with each other
-                    if (order->compare(*itr1, currentState) == Order::NodeComparison::UNKNOWN) {
-                        auto assumptions = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
-                                               ? this->assumptionMaker->createAndCheckAssumptions(*itr1, currentState, order, region, this->minValues[order],
-                                                                                                  this->maxValues[order])
-                                               : this->assumptionMaker->createAndCheckAssumptions(*itr1, currentState, order, region);
-                        if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                            this->handleAssumption(order, assumptions.begin()->first);
-                        }
-                    }
-                }
-            }
+            order->addStateSorted(currentState);
+            this->continueExtending[order] = false;
+            return {order, currentState, currentState};
         } else {
             // We couldn't deal with the state, its statemode is from statesToHandle
             // we reset result
@@ -425,56 +383,63 @@ std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::
 }
 
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order,
-                                                              std::shared_ptr<expressions::BinaryRelationExpression> assumption) const {
-    STORM_LOG_INFO("Handling assumption: " << assumption->toExpression().toString());
-    STORM_LOG_ASSERT(assumption != nullptr, "Can't handle assumption when the assumption is a nullpointer");
-    STORM_LOG_ASSERT(assumption->getFirstOperand()->isVariable() && assumption->getSecondOperand()->isVariable(),
-                     "Expecting the assumption operands to be variables");
+void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order, Assumption assumption) const {
+    STORM_LOG_INFO("Handling " << assumption);
+    if (assumption.isStateAssumption()) {
+        STORM_LOG_ASSERT(assumption.getAssumption()->getFirstOperand()->isVariable() && assumption.getAssumption()->getSecondOperand()->isVariable(),
+                         "Expecting the assumption operands to be variables");
 
-    expressions::Variable var1 = assumption->getFirstOperand()->asVariableExpression().getVariable();
-    expressions::Variable var2 = assumption->getSecondOperand()->asVariableExpression().getVariable();
-    auto const& val1 = std::stoul(var1.getName(), nullptr, 0);
-    auto const& val2 = std::stoul(var2.getName(), nullptr, 0);
+        expressions::Variable var1 = assumption.getAssumption()->getFirstOperand()->asVariableExpression().getVariable();
+        expressions::Variable var2 = assumption.getAssumption()->getSecondOperand()->asVariableExpression().getVariable();
+        auto const& val1 = std::stoul(var1.getName(), nullptr, 0);
+        auto const& val2 = std::stoul(var2.getName(), nullptr, 0);
 
-    STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "Assumption for states that are already ordered, expecting them to be unordered");
+        STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "Assumption for states that are already ordered, expecting them to be unordered");
 
-    Order::Node* n1 = order->getNode(val1);
-    Order::Node* n2 = order->getNode(val2);
+        Order::Node* n1 = order->getNode(val1);
+        Order::Node* n2 = order->getNode(val2);
 
-    if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal) {
-        if (n1 != nullptr && n2 != nullptr) {
-            order->mergeNodes(n1, n2);
-        } else if (n1 != nullptr) {
-            order->addToNode(val2, n1);
-        } else if (n2 != nullptr) {
-            order->addToNode(val1, n2);
-        } else {
-            order->add(val1);
-            order->addStateToHandle(val1);
-
-            order->addToNode(val2, order->getNode(val1));
-        }
-    } else {
-        STORM_LOG_ASSERT(assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater,
-                         "Unknown comparision type found, it is neither equal nor greater");
-        if (n1 != nullptr && n2 != nullptr) {
-            order->addRelationNodes(n1, n2);  //, true);
-        } else if (n1 != nullptr) {
-            order->addBetween(val2, n1, order->getBottom());
-        } else if (n2 != nullptr) {
-            // TODO: This should be moved to reward/reachorderextender, as top is only nullptr for rewards
-            if (order->getTop() == nullptr) {
-                order->addAbove(val1, n2);
+        if (assumption.getAssumption()->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal) {
+            if (n1 != nullptr && n2 != nullptr) {
+                order->mergeNodes(n1, n2);
+            } else if (n1 != nullptr) {
+                order->addToNode(val2, n1);
+            } else if (n2 != nullptr) {
+                order->addToNode(val1, n2);
             } else {
-                order->addBetween(val1, order->getTop(), n2);
+                order->add(val1);
+                order->addStateToHandle(val1);
+
+                order->addToNode(val2, order->getNode(val1));
             }
         } else {
-            order->add(val1);
-            order->addStateToHandle(val1);
+            STORM_LOG_ASSERT(assumption.getAssumption()->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater,
+                             "Unknown comparision type found, it is neither equal nor greater");
+            if (n1 != nullptr && n2 != nullptr) {
+                order->addRelationNodes(n1, n2);  //, true);
+            } else if (n1 != nullptr) {
+                order->addBetween(val2, n1, order->getBottom());
+            } else if (n2 != nullptr) {
+                // TODO: This should be moved to reward/reachorderextender, as top is only nullptr for rewards
+                if (order->getTop() == nullptr) {
+                    order->addAbove(val1, n2);
+                } else {
+                    order->addBetween(val1, order->getTop(), n2);
+                }
+            } else {
+                order->add(val1);
+                order->addStateToHandle(val1);
 
-            order->addBetween(val2, order->getNode(val1), order->getBottom());
+                order->addBetween(val2, order->getNode(val1), order->getBottom());
+            }
         }
+    } else {
+        expressions::Variable var1 = assumption.getAssumption()->getFirstOperand()->asVariableExpression().getVariable();
+        expressions::Variable var2 = assumption.getAssumption()->getSecondOperand()->asVariableExpression().getVariable();
+        auto const& val1 = std::stoul(var1.getName(), nullptr, 0);
+        auto const& val2 = std::stoul(var2.getName(), nullptr, 0);
+        order->addToMdpScheduler(val1, val2);
+        STORM_LOG_ASSERT(val2 < this->matrix.getRowGroupSize(val1), "Expecting the action to be a valid action for state " << val1);
     }
 }
 
@@ -759,7 +724,9 @@ std::pair<uint_fast64_t, bool> OrderExtender<ValueType, ConstantType>::getNextSt
             // only non-deterministic, non-parametric states can occur in here
             order->addSpecialStateToHandle(state);
             order->setSufficientForState(state);
-            order->setDoneForState(state);
+            if (order->contains(state)) {
+                order->setDoneForState(state);
+            }
         }
     }
     if (order->existsStateToHandle()) {
@@ -780,7 +747,7 @@ boost::container::flat_set<uint_fast64_t>& OrderExtender<ValueType, ConstantType
         return getSuccessors(state, 0);
     }
     if (order->isActionSetAtState(state)) {
-        assert(stateMap[state][order->getActionAtState(state)].size() > 0);
+        STORM_LOG_ASSERT(stateMap[state][order->getActionAtState(state)].size() > 0, "Expecting state " << state << " to have successors.");
         return getSuccessors(state, order->getActionAtState(state));
     }
     return stateMapAllSucc[state];
@@ -998,7 +965,6 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
     auto successors = this->getSuccessors(state, order);
     auto orderedSuccs = order->sortStates(successors);
     if (orderedSuccs.back() == this->numberOfStates) {
-        STORM_LOG_WARN("    No best action found, as the successors could not be ordered.");
         return false;
     }
     if (prMax) {
