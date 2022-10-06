@@ -63,7 +63,7 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
         checkSamples = false;
     }
 
-    if (model->isOfType(models::ModelType::Dtmc)) {
+    if (model->isOfType(models::ModelType::Dtmc) || model->isOfType(models::ModelType::Mdp)) {
         if (formulas[0]->isProbabilityOperatorFormula()) {
             this->extender = new analysis::ReachabilityOrderExtender<ValueType, ConstantType>(model, formulas[0]);
         } else if (formulas[0]->isRewardOperatorFormula()) {
@@ -72,8 +72,6 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for property" << formulas[0]);
         }
-    } else if (model->isOfType(models::ModelType::Mdp)) {
-        this->extender = new analysis::ReachabilityOrderExtender<ValueType, ConstantType>(model, formulas[0]);
     } else {
         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Monotonicity checking not implemented for model type: " << model->getType());
     }
@@ -393,6 +391,14 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
                     modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>(
                         (*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
                 checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
+            } else if (formula->isRewardOperatorFormula() && formula->asRewardOperatorFormula().getSubformula().isUntilFormula()) {
+                const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask =
+                    modelchecker::CheckTask<logic::UntilFormula, ConstantType>((*formula).asRewardOperatorFormula().getSubformula().asUntilFormula());
+                checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
+            } else if (formula->isRewardOperatorFormula() && formula->asRewardOperatorFormula().getSubformula().isEventuallyFormula()) {
+                const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask =
+                    modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>((*formula).asRewardOperatorFormula().getSubformula().asEventuallyFormula());
+                checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
             } else {
                 STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
             }
@@ -469,6 +475,16 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
                 modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>(
                     (*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
                 checkTask.setOptimizationDirection(formula->asProbabilityOperatorFormula().getOptimalityType());
+                checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
+            } else if (formula->isRewardOperatorFormula() && formula->asRewardOperatorFormula().getSubformula().isUntilFormula()) {
+                modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask =
+                    modelchecker::CheckTask<logic::UntilFormula, ConstantType>((*formula).asRewardOperatorFormula().getSubformula().asUntilFormula());
+                checkTask.setOptimizationDirection(formula->asRewardOperatorFormula().getOptimalityType());
+                checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
+            } else if (formula->isRewardOperatorFormula() && formula->asRewardOperatorFormula().getSubformula().isEventuallyFormula()) {
+                modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask =
+                    modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>((*formula).asRewardOperatorFormula().getSubformula().asEventuallyFormula());
+                checkTask.setOptimizationDirection(formula->asRewardOperatorFormula().getOptimalityType());
                 checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
             } else {
                 STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
