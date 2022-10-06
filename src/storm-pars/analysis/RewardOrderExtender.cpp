@@ -71,7 +71,7 @@ void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::share
         bool allZero = true;
         bool allGreaterZero = true;
         if (rewardModel.hasStateActionRewards()) {
-            if (order->getActionAtState(currentState != std::numeric_limits<uint64_t>::max())) {
+            if (order->isActionSetAtState(currentState)) {
                 allZero = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
                 allGreaterZero = !allZero;
             } else {
@@ -92,8 +92,7 @@ void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::share
         } else if (allGreaterZero) {
             order->addAbove(currentState, order->getNode(successor));
         } else {
-            assert(false);
-            // TODO implement
+            STORM_LOG_ASSERT(false, "Cannot handle one successor with different rewards");
         }
     } else {
         if (!order->contains(currentState)) {
