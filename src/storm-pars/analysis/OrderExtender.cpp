@@ -24,7 +24,29 @@ OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sp
     : monotonicityChecker(model->getTransitionMatrix()) {
     this->model = model;
     init(model->getTransitionMatrix());
-    this->formula = formula;
+    STORM_LOG_THROW(formula->isProbabilityOperatorFormula() || formula->isRewardOperatorFormula(), storm::exceptions::NotSupportedException,
+                    "Only supporting reward and probability operator formula's");
+    if (formula->hasQualitativeResult()) {
+        storm::logic::OperatorInformation opInfo;
+        if (model->isOfType(storm::models::ModelType::Mdp)) {
+            opInfo = storm::logic::OperatorInformation(formula->asOperatorFormula().getOptimalityType(), boost::none);
+        } else {
+            opInfo = storm::logic::OperatorInformation(boost::none, boost::none);
+        }
+
+        if (formula->isProbabilityOperatorFormula()) {
+            this->formula =
+                std::make_shared<storm::logic::ProbabilityOperatorFormula>(formula->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), opInfo);
+        } else {
+            STORM_LOG_ASSERT(formula->isRewardOperatorFormula(), "Expecting formula to be reward formula");
+            this->formula = std::make_shared<storm::logic::RewardOperatorFormula>(formula->asRewardOperatorFormula().getSubformula().asSharedPointer(),
+                                                                                  model->getUniqueRewardModelName(), opInfo);
+        }
+    } else {
+        this->formula = formula;
+    }
+    assert(this->formula->hasQuantitativeResult());
+
     this->bottomStates = boost::none;
     this->topStates = boost::none;
     if (!deterministic && formula->isRewardOperatorFormula()) {
@@ -466,25 +488,13 @@ bool OrderExtender<ValueType, ConstantType>::extendWithAssumption(std::shared_pt
 // public
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::ParameterRegion<ValueType> region, std::shared_ptr<Order> order) {
+    assert(this->formula != nullptr);
+    assert(this->formula->hasQuantitativeResult());
+
     if (model != nullptr) {
         std::unique_ptr<modelchecker::CheckResult> checkResult;
         auto env = Environment();
-        boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTask;
-        if (this->formula->hasQuantitativeResult()) {
-            checkTask = storm::api::createTask<ValueType>(formula, false);
-        } else {
-            storm::logic::OperatorInformation opInfo(boost::none, boost::none);
-            if (formula->isProbabilityOperatorFormula()) {
-                auto newFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
-                    formula->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), opInfo);
-                checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
-            } else {
-                STORM_LOG_ASSERT(formula->isRewardOperatorFormula(), "Expecting formula to be reward formula");
-                auto newFormula = std::make_shared<storm::logic::RewardOperatorFormula>(formula->asRewardOperatorFormula().getSubformula().asSharedPointer(),
-                                                                                        model->getUniqueRewardModelName(), opInfo);
-                checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*newFormula);
-            }
-        }
+        boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTask = storm::api::createTask<ValueType>(formula, false);
         if (model->isOfType(storm::models::ModelType::Dtmc)) {
             // Use parameter lifting modelchecker to get initial min/max values for order creation
             modelchecker::SparseDtmcParameterLiftingModelChecker<models::sparse::Dtmc<ValueType>, ConstantType> plaModelChecker;
@@ -511,6 +521,7 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
             plaModelChecker.specify(env, model, checkTask.get(), false, false);
 
+            assert(checkTask->getFormula().hasQuantitativeResult());
             modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck =
                 plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
             modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck =
