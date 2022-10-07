@@ -28,7 +28,8 @@
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
-
+#include "storm-pomdp/parser/AlphaVectorPolicyParser.h"
+#include "storm-pomdp/modelchecker/AlphaVectorModelChecker.h"
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -451,6 +452,13 @@ namespace storm {
                     if (performTransformation<ValueType, DdType>(pomdp, *formula)) {
                         sw.stop();
                         STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "s.\n");
+                    }
+
+                    if(beliefExplSettings.isAlphaVectorProcessingSet()){
+                        auto policy = storm::pomdp::parser::AlphaVectorPolicyParser<ValueType>::parseAlphaVectorPolicy(beliefExplSettings.getAlphaVectorFileName());
+                        storm::pomdp::modelchecker::AlphaVectorModelChecker<storm::models::sparse::Pomdp<ValueType>, ValueType, ValueType> avmc(pomdp, policy);
+                        avmc.check(*formula);
+                        return;
                     }
                     
                     sw.restart();

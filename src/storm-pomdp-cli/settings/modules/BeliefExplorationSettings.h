@@ -40,6 +40,9 @@ namespace storm {
                 
                 bool isExplorationTimeLimitSet() const;
                 uint64_t getExplorationTimeLimit() const;
+
+                bool isAlphaVectorProcessingSet() const;
+                std::string getAlphaVectorFileName() const;
                 
                 /// Discretization Resolution
                 uint64_t getResolutionInit() const;

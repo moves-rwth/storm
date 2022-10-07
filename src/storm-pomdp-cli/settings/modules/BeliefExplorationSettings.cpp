@@ -37,6 +37,7 @@ namespace storm {
             const std::string cutZeroGapOption = "cut-zero-gap";
             const std::string parametricPreprocessingOption = "par-preprocessing";
             const std::string explicitCutoffOption = "explicit-cutoff";
+            const std::string alphaVectorOption = "import-alphavec";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -74,6 +75,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricPreprocessingOption, false, "If this is set, the POMDP will be transformed to a pMC for preprocessing steps.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memoryBound", "number of memory states").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("gd-eps", "epsilon for gradient descent").setDefaultValueDouble(1e-6).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxInstantiations", "max. number of initial instantiations to use for gradient descent").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitCutoffOption, false, "If this is set, the additional unfolding step for cut-off beliefs is skipped.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, alphaVectorOption, false, "Loads a set of alpha vectors that is used for preprocessing.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file containing the alpha vectors").build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -289,6 +291,13 @@ namespace storm {
                 }
                 STORM_LOG_WARN("Number Type for belief unknown, use default.");
                 return storm::pomdp::Default;
+            }
+
+            bool BeliefExplorationSettings::isAlphaVectorProcessingSet() const {
+                return this->getOption(alphaVectorOption).getHasOptionBeenSet();
+            }
+            std::string BeliefExplorationSettings::getAlphaVectorFileName() const {
+                return this->getOption(alphaVectorOption).getArgumentByName("filename").getValueAsString();
             }
 
             template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<double>& options) const;
