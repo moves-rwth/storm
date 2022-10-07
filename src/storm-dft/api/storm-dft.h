@@ -8,7 +8,6 @@
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
-#include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
 #include "storm-dft/transformations/DftTransformer.h"
 #include "storm-dft/utility/DftValidator.h"
@@ -267,9 +266,7 @@ void analyzeDFTSMT(storm::dft::storage::DFT<ValueType> const& dft, bool printOut
  * @param file File.
  */
 template<typename ValueType>
-void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file) {
-    storm::dft::storage::DftJsonExporter<ValueType>::toFile(dft, file);
-}
+void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file);
 
 /*!
  * Export DFT to JSON string.
@@ -278,11 +275,7 @@ void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::st
  * @return DFT in JSON format.
  */
 template<typename ValueType>
-std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft) {
-    std::stringstream stream;
-    storm::dft::storage::DftJsonExporter<ValueType>::toStream(dft, stream);
-    return stream.str();
-}
+std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft);
 
 /*!
  * Export DFT to SMT encoding.

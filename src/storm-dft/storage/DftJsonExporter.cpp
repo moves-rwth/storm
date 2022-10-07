@@ -29,7 +29,10 @@ typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translate(
     // Top level element
     jsonDft["toplevel"] = std::to_string(dft.getTopLevelIndex());
     // Parameters
-    jsonDft["parameters"] = translateParameters(dft);
+    Json jsonParameters = translateParameters(dft);
+    if (!jsonParameters.empty()) {
+        jsonDft["parameters"] = jsonParameters;
+    }
     // Nodes
     Json jsonNodes;
     for (size_t i = 0; i < dft.nrElements(); ++i) {
@@ -54,7 +57,7 @@ typename DftJsonExporter<storm::RationalFunction>::Json DftJsonExporter<storm::R
 template<typename ValueType>
 typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateParameters(storm::dft::storage::DFT<ValueType> const& dft) {
     // No parameters for non-parametric models
-    return {};
+    return Json::array();
 }
 
 template<typename ValueType>
