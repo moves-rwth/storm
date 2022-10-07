@@ -1,7 +1,6 @@
-#include <storm/storage/StronglyConnectedComponentDecomposition.h>
-#include "storm-config.h"
 #include "storm-pars/api/analysis.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "test/storm_gtest.h"
 
 TEST(OrderTest, Simple) {

@@ -5,8 +5,10 @@ namespace analysis {
 Assumption::Assumption(bool stateAssumption, std::shared_ptr<expressions::ExpressionManager> expressionManager, uint_fast64_t val1, uint_fast64_t val2,
                        expressions::BinaryRelationExpression::RelationType type) {
     this->stateAssumption = stateAssumption;
-    expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
-    expressions::Variable var2 = expressionManager->getVariable(std::to_string(val2));
+    expressions::Variable var1 = expressionManager->hasVariable(std::to_string(val1)) ? expressionManager->getVariable(std::to_string(val1))
+                                                                                      : expressionManager->declareRationalVariable(std::to_string(val1));
+    expressions::Variable var2 = expressionManager->hasVariable(std::to_string(val2)) ? expressionManager->getVariable(std::to_string(val2))
+                                                                                      : expressionManager->declareRationalVariable(std::to_string(val2));
     assumption = std::make_shared<expressions::BinaryRelationExpression>(
         expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(), var1.getExpression().getBaseExpressionPointer(),
                                               var2.getExpression().getBaseExpressionPointer(), type));

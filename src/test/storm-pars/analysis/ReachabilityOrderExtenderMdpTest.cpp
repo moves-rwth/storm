@@ -158,6 +158,7 @@ TEST(ReachabilityOrderExtenderMdpTest, SmtInvolvedChecking_max) {
     model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
                 ->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
 
+    model->getTransitionMatrix().printAsMatlabMatrix(std::cout);
     ASSERT_EQ(6, model->getNumberOfStates());
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.999999, 0.00001 <= q <= 0.999999", vars);

@@ -1,20 +1,16 @@
-#include <storm-pars/analysis/OrderExtender.h>
-#include <storm-pars/analysis/ReachabilityOrderExtender.h>
 #include "storm-config.h"
-
+#include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/analysis/ReachabilityOrderExtender.h"
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/PrismParser.h"
-
 #include "storm/api/builder.h"
 #include "storm/api/storm.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
 #include "test/storm_gtest.h"
 
 TEST(ReachabilityOrderExtenderDtmcTest, Brp_with_bisimulation_on_model) {

@@ -53,8 +53,8 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
 
     for (auto res : result) {
         EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, res.second);
-        EXPECT_EQ(true, res.first->getFirstOperand()->isVariable());
-        EXPECT_EQ(true, res.first->getSecondOperand()->isVariable());
+        EXPECT_EQ(true, res.first.getAssumption()->getFirstOperand()->isVariable());
+        EXPECT_EQ(true, res.first.getAssumption()->getSecondOperand()->isVariable());
     }
 
     assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
@@ -62,11 +62,11 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("186", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("183", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(true, itr->first.getAssumption()->getFirstOperand()->isVariable());
+    EXPECT_EQ(true, itr->first.getAssumption()->getSecondOperand()->isVariable());
+    EXPECT_EQ("186", itr->first.getAssumption()->getFirstOperand()->asVariableExpression().getVariable().getName());
+    EXPECT_EQ("183", itr->first.getAssumption()->getSecondOperand()->asVariableExpression().getVariable().getName());
+    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first.getAssumption()->getRelationType());
 }
 
 TEST(AssumptionMakerTest, Simple1) {
@@ -115,11 +115,11 @@ TEST(AssumptionMakerTest, Simple1) {
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(true, itr->first.getAssumption()->getFirstOperand()->isVariable());
+    EXPECT_EQ(true, itr->first.getAssumption()->getSecondOperand()->isVariable());
+    EXPECT_EQ("1", itr->first.getAssumption()->getFirstOperand()->asVariableExpression().getVariable().getName());
+    EXPECT_EQ("2", itr->first.getAssumption()->getSecondOperand()->asVariableExpression().getVariable().getName());
+    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first.getAssumption()->getRelationType());
 }
 
 TEST(AssumptionMakerTest, Casestudy1) {
@@ -161,9 +161,9 @@ TEST(AssumptionMakerTest, Casestudy1) {
     EXPECT_EQ(1ul, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
-    EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
-    EXPECT_EQ(true, itr->first->getSecondOperand()->isVariable());
-    EXPECT_EQ("1", itr->first->getFirstOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ("2", itr->first->getSecondOperand()->asVariableExpression().getVariable().getName());
-    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first->getRelationType());
+    EXPECT_EQ(true, itr->first.getAssumption()->getFirstOperand()->isVariable());
+    EXPECT_EQ(true, itr->first.getAssumption()->getSecondOperand()->isVariable());
+    EXPECT_EQ("1", itr->first.getAssumption()->getFirstOperand()->asVariableExpression().getVariable().getName());
+    EXPECT_EQ("2", itr->first.getAssumption()->getSecondOperand()->asVariableExpression().getVariable().getName());
+    EXPECT_EQ(storm::expressions::BinaryRelationExpression::RelationType::Greater, itr->first.getAssumption()->getRelationType());
 }
