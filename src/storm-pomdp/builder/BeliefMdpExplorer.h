@@ -236,6 +236,8 @@ namespace storm {
 
             const std::shared_ptr<storm::storage::Scheduler<BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>> &getSchedulerForExploredMdp() const;
 
+            std::vector<BeliefValueType> computeProductWithSparseMatrix(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix) const;
+
         private:
             MdpStateType noState() const;
 

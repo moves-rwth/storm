@@ -1210,6 +1210,11 @@ namespace storm {
             return pomdpValueBounds.upperSchedulers;
         }
 
+        template<typename PomdpType, typename BeliefValueType>
+        std::vector<BeliefValueType> BeliefMdpExplorer<PomdpType, BeliefValueType>::computeProductWithSparseMatrix(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix) const{
+            return beliefManager->computeMatrixBeliefProduct(beliefId, matrix);
+        }
+
         template
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>>;
 

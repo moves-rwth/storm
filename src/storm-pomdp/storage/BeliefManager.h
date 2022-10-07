@@ -6,11 +6,12 @@
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 
-#include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/solver.h"
+#include "storage/SparseMatrix.h"
 #include "storm/solver/LpSolver.h"
-#include "storm/utility/constants.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/solver.h"
 
 namespace storm {
     namespace storage {
@@ -100,7 +101,13 @@ namespace storm {
 
             std::string getObservationLabel(BeliefId const & beliefId);
 
+            std::vector<BeliefValueType> computeMatrixBeliefProduct(BeliefId const & beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix);
+
         private:
+
+            std::vector<BeliefValueType> getBeliefAsVector(BeliefId const &beliefId);
+
+            std::vector<BeliefValueType> getBeliefAsVector(const BeliefType &belief);
 
             BeliefClipping clipBeliefToGrid(BeliefType const &belief, uint64_t resolution, const storm::storage::BitVector& isInfinite);
 

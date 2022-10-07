@@ -962,6 +962,28 @@ namespace storm {
 
         }
 
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType>::getBeliefAsVector(BeliefId const &beliefId){
+            return getBeliefAsVector(getBelief(beliefId));
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType>::getBeliefAsVector(const BeliefType &belief){
+            std::vector<BeliefValueType> res(pomdp.getNumberOfStates(), storm::utility::zero<BeliefValueType>());
+            for(auto const &stateprob : belief){
+                res[stateprob.first] = stateprob.second;
+            }
+            return res;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::vector<BeliefValueType> BeliefManager<PomdpType, BeliefValueType, StateType>::computeMatrixBeliefProduct(const BeliefId &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix){
+            std::vector<BeliefValueType> beliefAsVector = getBeliefAsVector(beliefId);
+            std::vector<BeliefValueType> res(matrix.getRowCount());
+            matrix.multiplyWithVector(beliefAsVector, res);
+            return res;
+        }
+
         template class BeliefManager<storm::models::sparse::Pomdp<double>>;
 
         template class BeliefManager<storm::models::sparse::Pomdp<double>, storm::RationalNumber>;
