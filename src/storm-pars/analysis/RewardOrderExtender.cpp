@@ -551,6 +551,17 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
     STORM_LOG_ASSERT(order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE ||
                          order->compare(order->getNode(currentState), order->getBottom()) == Order::SAME,
                      "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
+    // if number of successors is 3 we do a hack to see if we can also order state wrt other state
+    if (sortedSuccStates.second.size() == 3) {
+        auto middleState = sortedSuccStates.second[1];
+        auto assumptions =
+            this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
+                ? this->assumptionMaker->createAndCheckAssumptions(currentState, middleState, order, region, this->minValues[order], this->maxValues[order])
+                : this->assumptionMaker->createAndCheckAssumptions(currentState, middleState, order, region);
+        if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+            this->handleAssumption(order, assumptions.begin()->first);
+        }
+    }
     return std::make_pair(this->numberOfStates, this->numberOfStates);
 }
 

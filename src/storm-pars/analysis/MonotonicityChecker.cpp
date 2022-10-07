@@ -43,16 +43,26 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
     // Create + fill Vector containing the Monotonicity of the transitions to the succs
     auto row = matrix.getRow(state, action);
 
-    if (row.getNumberOfEntries() == 1) {
+    uint_fast64_t numberOfConstantEntries = 0;
+    for (auto& entry : row) {
+        if (entry.getValue().isConstant()) {
+            numberOfConstantEntries++;
+        }
+    }
+    if (row.getNumberOfEntries() == numberOfConstantEntries) {
         return Monotonicity::Constant;
     }
-    if (row.getNumberOfEntries() == 2) {
-        auto succ0 = row.begin()->getColumn();
-        auto succ1 = (row.begin() + 1)->getColumn();
-        if (row.begin()->getValue().isConstant()) {
-            // All transitions are constant
-            return Monotonicity::Constant;
+    if (row.getNumberOfEntries() - numberOfConstantEntries == 2) {
+        uint_fast64_t offset1 = 0;
+        while (row.begin()->getValue().isConstant()) {
+            offset1++;
         }
+        auto succ0 = (row.begin() + offset1)->getColumn();
+        uint_fast64_t offset2 = offset1 + 1;
+        while (row.begin()->getValue().isConstant()) {
+            offset2++;
+        }
+        auto succ1 = (row.begin() + offset2)->getColumn();
 
         auto sorting = order->compare(succ0, succ1);
         if (sorting == Order::NodeComparison::SAME) {
@@ -73,10 +83,8 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
     // Ignore if all entries are constant
     bool ignore = true;
 
-    std::vector<uint_fast64_t> succs(row.getNumberOfEntries());
+    std::vector<uint_fast64_t> succs;
     std::vector<Monotonicity> succsMonUnsorted;
-    std::vector<uint_fast64_t> statesIncr;
-    std::vector<uint_fast64_t> statesDecr;
     bool checkAllow = true;
     for (auto entry : row) {
         auto succState = entry.getColumn();
@@ -84,13 +92,6 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
         succsMonUnsorted.push_back(mon);
         succs.push_back(succState);
         ignore &= entry.getValue().isConstant();
-        if (mon == Monotonicity::Incr) {
-            statesIncr.push_back(succState);
-        } else if (mon == Monotonicity::Decr) {
-            statesDecr.push_back(succState);
-        } else if (mon == Monotonicity::Not) {
-            checkAllow = false;
-        }
     }
     if (ignore) {
         return Monotonicity::Constant;
