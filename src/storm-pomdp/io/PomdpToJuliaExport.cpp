@@ -32,8 +32,8 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
             auto choiceLabeling = pomdp->getChoiceLabeling();
             auto labelsOfChoice = choiceLabeling.getLabelsOfChoice(rowIndex+action);
             if(labelsOfChoice.empty()){
-                actions.insert("__sink");
-                stateActionMap[state].push_back("__sink");
+                actions.insert("__unlabeled");
+                stateActionMap[state].push_back("__unlabeled");
             } else {
                 std::string label = *(labelsOfChoice.begin());
                 std::replace( label.begin(), label.end(), '\t', ' ');
@@ -57,58 +57,28 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
         std::replace( obs.begin(), obs.end(), '\n', ' ');
         observations.insert(obs);
     }
-
-    os << "using QuickPOMDPs: QuickPOMDP \n" << "using POMDPTools: Deterministic, SparseCat\n\n"
-          << "pomdp = QuickPOMDP( \n"
-          << "   states = [";
+    os << "using QuickPOMDPs: QuickPOMDP \n" << "using POMDPTools: Deterministic, SparseCat\n\n";
+    os << "function ExportedPOMDP()\n";
+    os << "   return QuickPOMDP( \n"
+       << "   states = [";
     for(uint64_t state = 0; state < pomdp->getNumberOfStates(); ++state){
-        os << "\"" << state << "\"";
-        if(state != pomdp->getNumberOfStates()-1){
-            os << ",";
-        }
+        os << "\"" << state << "\",";
     }
-    os << "],\n";
+    os << "\"__sink\"],\n";
     std::string allActions;
     for (auto const & action : actions){
         allActions += "\"" + action + "\", ";
     }
     allActions.pop_back();
     allActions.pop_back();
-    os << "   actions = function(s = nothing)\n"
-    << "      if isnothing(s)\n"
-    << "         return [" << allActions << "]\n"
-    << "      end\n";
-    for(uint64_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-        if (state == 0) {
-            os << "      if s == \"0\"\n";
-        } else if (state != pomdp->getNumberOfStates() - 1) {
-            os << "      elseif s == \"" << state << "\"\n";
-        } else {
-            os << "      else\n";
-        }
-        std::string actionStr;
-        for(auto const &entry : stateActionMap[state]){
-            actionStr += "\"" + entry + "\", ";
-        }
-        actionStr.pop_back();
-        actionStr.pop_back();
-        os << "         return [" << actionStr << "]\n";
-        if (state == pomdp->getNumberOfStates()-1){
-            os << "      end\n";
-        }
-    }
-    os << "   end,\n"
+    os << "   actions = [" << allActions << "],\n"
 
        << "   observations = [";
     uint64_t i = 0;
     for(auto const &obs : observations){
-        os << "\"" << obs << "\"";
-        if(i != observations.size()-1){
-            os << ",";
-        }
-        ++i;
+        os << "\"" << obs << "\",";
     }
-    os << "],\n"
+    os << "\"__sink\"],\n"
     << "   discount = " << std::to_string(discount) << ",\n";
 
     os << "   transition = function(s, a)\n";
@@ -117,16 +87,14 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
         if(state == 0){
             os << "      if s == \"0\"\n";
         }
-        else if (state != pomdp->getNumberOfStates()-1){
+        else {
             os << "      elseif s == \"" << state << "\"\n";
-        } else {
-            os << "      else\n";
         }
         for (uint64_t action = 0; action < pomdp->getNumberOfChoices(state); ++action){
             std::string label;
             auto labelsOfChoice = pomdp->getChoiceLabeling().getLabelsOfChoice(rowIndex+action);
             if(labelsOfChoice.empty()){
-                label = "__sink";
+                label = "__unlabeled";
             } else {
                 label = *(labelsOfChoice.begin());
             }
@@ -134,10 +102,8 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
             std::replace( label.begin(), label.end(), '\n', ' ');
             if(action == 0) {
                 os << "         if a == \"" << label << "\"\n";
-            } else if (action != pomdp->getNumberOfChoices(state)-1){
-                os << "         elseif a == \"" << label << "\"\n";
             } else {
-                os << "         else\n";
+                os << "         elseif a == \"" << label << "\"\n";
             }
             // Collect successors
             std::string successorStateStr;
@@ -152,35 +118,33 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
             successorProbStr.pop_back();
 
             os << "            return SparseCat([" << successorStateStr << "], [" << successorProbStr << "])\n";
-
-            if (action == pomdp->getNumberOfChoices(state)-1){
-                os << "         end\n";
-            }
         }
-
-        if (state == pomdp->getNumberOfStates()-1){
-            os << "      end\n";
-        }
+        os << "         else\n"
+           << "            return Deterministic(\"__sink\")\n"
+           << "         end\n";
     }
+
+    os << "      else\n"
+       << "         return Deterministic(\"__sink\")\n"
+       << "      end\n";
+
     os << "   end,\n";
 
     os << "   observation = function(a, sp)\n";
     for(uint64_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
         if (state == 0) {
             os << "      if sp == \"0\"\n";
-        } else if (state != pomdp->getNumberOfStates() - 1) {
-            os << "      elseif sp == \"" << state << "\"\n";
         } else {
-            os << "      else\n";
+            os << "      elseif sp == \"" << state << "\"\n";
         }
         auto obs = pomdp->getObservationValuations().getStateInfo(pomdp->getObservation(state));
         std::replace( obs.begin(), obs.end(), '\t', ' ');
         std::replace( obs.begin(), obs.end(), '\n', ' ');
         os << "         return Deterministic(\"" << obs << "\")\n";
-        if (state == pomdp->getNumberOfStates()-1){
-            os << "      end\n";
-        }
     }
+    os << "      else\n"
+       << "         return Deterministic(\"__sink\")\n"
+       << "      end\n";
     os << "   end,\n";
 
     os << "   reward = function(s, a, sp)\n";
@@ -191,10 +155,8 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
         for(auto const &target : targetStates){
             if(i == 0){
                 os << "      if sp == \"" << target << "\"\n";
-            } else if (i != targetStates.getNumberOfSetBits()-1) {
-                os << "      elseif sp == \"" << target << "\"\n";
             } else {
-                os << "      else\n";
+                os << "      elseif sp == \"" << target << "\"\n";
             }
                 os << "         return ";
                 if(min){
@@ -202,29 +164,35 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
                 }
                   os << "1.0\n";
             if (i == targetStates.getNumberOfSetBits()-1){
-                os << "      end\n";
+
             }
             ++i;
         }
+        os << "      else\n"
+           << "         return 0.0\n"
+           << "      end\n";
     } else {
+        // TODO check if correct for state based rewards
         auto rewardModel = pomdp->getRewardModel(formulaInfo.getRewardModelName());
         for(uint64_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
             if (state == 0) {
                 os << "      if s == \"0\"\n";
-            } else if (state != pomdp->getNumberOfStates() - 1) {
-                os << "      elseif s == \"" << state << "\"\n";
             } else {
-                os << "      else\n";
+                os << "      elseif s == \"" << state << "\"\n";
             }
             if(rewardModel.hasOnlyStateRewards()){
-                os << "         return " << rewardModel.getStateReward(state) << "\n";
+                os << "         return ";
+                if(min){
+                    os << "-";
+                }
+                os << rewardModel.getStateReward(state) << "\n";
             } else {
                 auto rowIndex = pomdp->getTransitionMatrix().getRowGroupIndices()[state];
                 for (uint64_t action = 0; action < pomdp->getNumberOfChoices(state); ++action){
                     std::string label;
                     auto labelsOfState = pomdp->getChoiceLabeling().getLabelsOfChoice(rowIndex+action);
                     if(labelsOfState.empty()){
-                        label = "__sink";
+                        label = "__unlabeled";
                     } else {
                         label = *(labelsOfState.begin());
                     }
@@ -232,10 +200,8 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
                     std::replace( label.begin(), label.end(), '\n', ' ');
                     if(action == 0) {
                         os << "         if a == \"" << label << "\"\n";
-                    } else if (action != pomdp->getNumberOfChoices(state)-1){
-                        os << "         elseif a == \"" << label << "\"\n";
                     } else {
-                        os << "         else\n";
+                        os << "         elseif a == \"" << label << "\"\n";
                     }
                     if(rewardModel.hasTransitionRewards()){
                         //TODO iterate over all successors
@@ -247,15 +213,15 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
                         }
                         os << rewardModel.getStateActionReward(rowIndex + action) << "\n";
                     }
-                    if (action == pomdp->getNumberOfChoices(state)-1){
-                        os << "         end\n";
-                    }
                 }
-            }
-            if (state == pomdp->getNumberOfStates() - 1) {
-                os << "      end\n";
+                os << "         else\n"
+                   << "            return -typemax(Int64)"
+                   << "         end\n";
             }
         }
+        os << "      else\n"
+           << "         return -typemax(Int64)\n"
+           << "      end\n";
     }
     os << "   end,\n";
 
@@ -271,6 +237,7 @@ void exportPomdpToJulia(std::ostream& os, std::shared_ptr<storm::models::sparse:
     }
     os << ")\n";
     os << ")\n";
+    os << "end";
 }
 
 template void exportPomdpToJulia<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp, double discount, storm::logic::Formula const& formula);
