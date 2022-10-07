@@ -111,6 +111,18 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
     }
     assert(order->contains(currentState) && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE &&
            order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW);
+    // if number of successors is 3 we do a hack to see if we can also order state wrt other state
+    if (sortedSuccs.size() == 3) {
+        auto middleState = sortedSuccs[1];
+        auto assumptions =
+            this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
+                ? this->assumptionMaker->createAndCheckAssumptions(currentState, middleState, order, region, this->minValues[order], this->maxValues[order])
+                : this->assumptionMaker->createAndCheckAssumptions(currentState, middleState, order, region);
+        if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+            this->handleAssumption(order, assumptions.begin()->first);
+        }
+    }
+
     return {this->numberOfStates, this->numberOfStates};
 }
 

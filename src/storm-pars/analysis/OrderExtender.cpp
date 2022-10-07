@@ -242,9 +242,13 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
         } else if (currentStateMode.second) {
             // We have a non-deterministic state, and cannot (yet) fix the action
             // We only go into here if we need to handle the state because it was its turn by the ordering
-            order->addStateSorted(currentState);
-            this->continueExtending[order] = false;
-            return {order, currentState, currentState};
+            result = this->extendNormal(order, region, currentState);
+            if (result.first != this->numberOfStates) {
+                // We could not extend it, so we first make assumptions for the actions (therefore we return order, currentState, currentState)
+                order->addStateSorted(currentState);
+                this->continueExtending[order] = false;
+                return {order, currentState, currentState};
+            }
         } else {
             // We couldn't deal with the state, its statemode is from statesToHandle
             // we reset result
@@ -948,26 +952,26 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
         return true;
     }
     // Finding the best action for the current state
-    STORM_LOG_INFO("Looking for best action for state " << state << std::endl);
+    STORM_LOG_INFO("Looking for best action for state " << state);
     if (order->isActionSetAtState(state)) {
-        STORM_LOG_INFO("Best action for state " << state << " is already set." << std::endl);
+        STORM_LOG_INFO("Best action for state " << state << " is already set.");
         return true;
     }
     if (this->stateMap[state].size() == 1) {
         // if we only have one possible action, we already know which one we take.
-        STORM_LOG_INFO("   Only one Action available, take it." << std::endl);
+        STORM_LOG_INFO("Only one Action available, take it.");
         order->addToMdpScheduler(state, 0);
         return true;
     }
     if (order->isTopState(state)) {
         // in this case the state should be absorbing so we just take action 0
-        STORM_LOG_INFO("   State is top state, thus absorbing. Take action 0." << std::endl);
+        STORM_LOG_INFO("State is top state, thus absorbing. Take action 0.");
         order->addToMdpScheduler(state, 0);
         return true;
     }
     if (order->isBottomState(state)) {
         // in this case the state should be absorbing so we just take action 0
-        STORM_LOG_INFO("   State is bottom state, thus absorbing. Take action 0." << std::endl);
+        STORM_LOG_INFO("State is bottom state, thus absorbing. Take action 0.");
         order->addToMdpScheduler(state, 0);
         return true;
     }
@@ -976,10 +980,11 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
     auto successors = this->getSuccessors(state, order);
     auto orderedSuccs = order->sortStates(successors);
     if (orderedSuccs.back() == this->numberOfStates) {
+        STORM_LOG_INFO("No best action found for state " << state << ".");
         return false;
     }
     if (prMax) {
-        STORM_LOG_INFO("   Interested in PrMax." << std::endl);
+        STORM_LOG_INFO("Interested in PrMax.");
         uint_fast64_t action = 0;
         auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
         std::set<uint_fast64_t> actionsToIgnore;
@@ -1007,14 +1012,16 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                 if (!changed) {
                     // this action is better than all other actions
                     order->addToMdpScheduler(state, action);
+                    STORM_LOG_INFO("Best action for state " << state << " is " << action << ".");
                     return true;
                 }
             }
             action++;
         }
+        STORM_LOG_INFO("No best action found for state " << state << ".");
         return false;
     } else {
-        STORM_LOG_INFO("   Interested in PrMin." << std::endl);
+        STORM_LOG_INFO("Interested in PrMin.");
         auto action = 0;
         auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
         std::set<uint_fast64_t> actionsToIgnore;
@@ -1042,11 +1049,13 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                 if (!changed) {
                     // this action is better than all other actions
                     order->addToMdpScheduler(state, action);
+                    STORM_LOG_INFO("Best action for state " << state << " is " << action << ".");
                     return true;
                 }
             }
             action++;
         }
+        STORM_LOG_INFO("No best action found for state " << state << ".");
         return false;
     }
 }
