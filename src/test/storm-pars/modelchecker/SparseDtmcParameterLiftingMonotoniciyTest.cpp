@@ -10,7 +10,7 @@
 
 #include "storm-parsers/api/storm-parsers.h"
 
-#include "storm-pars/analysis/ReachabilityOrderExtenderDtmc.h"
+#include "storm-pars/analysis/ReachabilityOrderExtender.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
@@ -99,7 +99,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_LEQ) {
 
     // Reachability order, as it is already done building we don't need to recreate the order for each region
     auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
-    auto order = monHelper->checkMonotonicityInBuild(boost::none, false, false).begin()->first;
+    auto order = monHelper->checkMonotonicityInBuild(boost::none, false).begin()->first;
     ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
     ASSERT_TRUE(order->getDoneBuilding());
 
@@ -179,7 +179,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_GEQ) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     // Reachability order, as it is already done building we don't need to recreate the order for each region
-    auto o = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
+    auto o = new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, ValueType>(model, formulas[0]);
     auto res = o->toOrder(storm::api::parseRegion<storm::RationalFunction>("0.01<=pL<=0.99,0.01<=pK<=0.99", modelParameters));
     auto order = std::get<0>(res);
     ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
@@ -260,7 +260,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_LEQ_Incr) {
 
     // Reachability order, as it is already done building we don't need to recreate the order for each region
     auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
-    auto order = monHelper->checkMonotonicityInBuild(boost::none, false, false).begin()->first;
+    auto order = monHelper->checkMonotonicityInBuild(boost::none, false).begin()->first;
     ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
     ASSERT_TRUE(order->getDoneBuilding());
 
@@ -338,7 +338,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_GEQ_Incr) {
     modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
     // Reachability order, as it is already done building we don't need to recreate the order for each region
-    auto o = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
+    auto o = new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, ValueType>(model, formulas[0]);
     auto res = o->toOrder(storm::api::parseRegion<storm::RationalFunction>("0.01<=pL<=0.99,0.01<=pK<=0.99", modelParameters));
     auto order = std::get<0>(res);
 
@@ -426,7 +426,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Parametric_Die_Mon) {
 
     // Start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.2,0.8<=q<=0.9", modelParameters);
-    auto o = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
+    auto o = new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, ValueType>(model, formulas[0]);
     auto res = o->toOrder(allSatRegion);
     auto order = std::get<0>(res);
     auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -497,7 +497,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Simple1_Mon) {
 
     // Start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.6", modelParameters);
-    auto o = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
+    auto o = new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, ValueType>(model, formulas[0]);
     auto res = o->toOrder(allSatRegion);
     auto order = std::get<0>(res);
     auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -568,7 +568,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy1_Mon) {
 
     // Start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.5", modelParameters);
-    auto o = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
+    auto o = new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, ValueType>(model, formulas[0]);
     auto res = o->toOrder(allSatRegion);
     auto order = std::get<0>(res);
     auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -639,7 +639,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy2_Mon) {
 
     // Start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.4", modelParameters);
-    auto o = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
+    auto o = new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, ValueType>(model, formulas[0]);
     auto res = o->toOrder(allSatRegion);
     auto order = std::get<0>(res);
     auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -710,7 +710,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Casestudy3_Mon) {
 
     // Start testing
     auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.6<=p<=0.9", modelParameters);
-    auto o = new storm::analysis::ReachabilityOrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
+    auto o = new storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, ValueType>(model, formulas[0]);
     auto res = o->toOrder(allSatRegion);
     auto order = std::get<0>(res);
     auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
