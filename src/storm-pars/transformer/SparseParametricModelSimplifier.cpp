@@ -1,23 +1,17 @@
 #include "storm-pars/transformer/SparseParametricModelSimplifier.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/InvalidPropertyException.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/solver/Z3SmtSolver.h"
 #include "storm/solver/stateelimination/NondeterministicModelStateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
-#include "storm/utility/vector.h"
-
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/NotImplementedException.h"
-
-#include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
-#include "storm/storage/expressions/Expressionmanager.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/vector.h"
 
 namespace storm {
 namespace transformer {
