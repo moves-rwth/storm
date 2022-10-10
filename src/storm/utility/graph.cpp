@@ -1871,23 +1871,37 @@ std::vector<uint_fast64_t> getBFSTopologicalSort(storm::storage::SparseMatrix<T>
         }
     }
 
-    // Perform a BFS.
+    // Perform a BFS only for the initial states
     while (!stateQueue.empty()) {
         auto state = stateQueue.front();
         stateQueue.pop();
         for (auto const& successorEntry : matrix.getRowGroup(state)) {
             auto succ = successorEntry.getColumn();
-            if (originalMatrix.getRowGroupSize(succ) > 1) {
+            bool ignore = originalMatrix.getRowGroupSize(succ) > 1;
+            bool allSuccsSeen = true;
+            auto rowGroup = originalMatrix.getRowGroup(succ);
+            if (ignore) {
+                for (auto& entry : rowGroup) {
+                    allSuccsSeen &= seenStates[entry.getColumn()];
+                    if (!allSuccsSeen) {
+                        break;
+                    }
+                }
+            }
+            ignore &= !allSuccsSeen;
+
+            if (ignore) {
                 ignoredStates.push_back(succ);
             } else if (!seenStates[succ]) {
                 STORM_LOG_ASSERT(std::find(result.begin(), result.end(), succ) == result.end(), "state: " << succ << " already added");
                 result[count] = succ;
                 seenStates.set(succ, true);
                 count--;
-                stateQueue.push(succ);
+                //                stateQueue.push(succ);
             }
         }
     }
+    // next get a topological sorting
     auto sortedTopological = getTopologicalSort(matrix, ignoredStates);
 
     for (auto i = 0; i < sortedTopological.size(); ++i) {

@@ -174,6 +174,7 @@ OrderExtender<ValueType, ConstantType>::sortStatesAndDecomposeForOrder() {
     if (this->matrix.getColumnCount() == this->matrix.getRowCount()) {
         return {storm::utility::graph::getTopologicalSort(transposeMatrix, firstStates), decomposition};
     } else {
+        //        return {storm::utility::graph::getTopologicalSort(transposeMatrix, firstStates), decomposition};
         return {storm::utility::graph::getBFSTopologicalSort(transposeMatrix, this->matrix, firstStates), decomposition};
     }
 }
@@ -980,6 +981,67 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
     auto successors = this->getSuccessors(state, order);
     auto orderedSuccs = order->sortStates(successors);
     if (orderedSuccs.back() == this->numberOfStates) {
+        if (successors.size() == 2) {
+            bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
+            auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region,
+                                                                                            this->minValues[order], this->maxValues[order])
+                                         : this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region);
+            if (assumptions.size() == 1) {
+                this->handleAssumption(order, (assumptions.begin()->first));
+                auto comp = order->compare(*(successors.begin()), *(successors.begin() + 1));
+                if (comp == Order::NodeComparison::SAME) {
+                    order->addToMdpScheduler(state, 0);
+                    STORM_LOG_INFO("Best action for state " << state << " set to 0.");
+                    return true;
+                } else if (comp == Order::NodeComparison::ABOVE && prMax || comp == Order::NodeComparison::BELOW && !prMax) {
+                    order->addToMdpScheduler(state, 0);
+                    STORM_LOG_INFO("Best action for state " << state << " set to 0.");
+                    return true;
+                } else if (comp == Order::NodeComparison::BELOW && prMax || comp == Order::NodeComparison::ABOVE && !prMax) {
+                    order->addToMdpScheduler(state, 1);
+                    STORM_LOG_INFO("Best action for state " << state << " set to 1.");
+                    return true;
+                }
+            }
+        } else if (successors.size() == 3) {
+            bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
+            auto succ0 = *(successors.begin());
+            auto succ1 = *(successors.begin() + 1);
+            auto succ2 = *(successors.begin() + 2);
+            auto comp01 = order->compareFast(succ0, succ1);
+            auto comp02 = order->compareFast(succ0, succ2);
+            auto comp12 = order->compareFast(succ1, succ2);
+            if (comp01 == Order::NodeComparison::UNKNOWN) {
+                auto assumptions =
+                    usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ0, succ1, order, region, this->minValues[order], this->maxValues[order])
+                              : this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region);
+                if (assumptions.size() == 1) {
+                    this->handleAssumption(order, (assumptions.begin()->first));
+                    auto comp01 = order->compare(*(successors.begin()), *(successors.begin() + 1));
+                }
+            }
+            if (comp01 != Order::NodeComparison::UNKNOWN && comp02 == Order::NodeComparison::UNKNOWN) {
+                auto assumptions =
+                    usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ0, succ2, order, region, this->minValues[order], this->maxValues[order])
+                              : this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region);
+                if (assumptions.size() == 1) {
+                    this->handleAssumption(order, (assumptions.begin()->first));
+                    auto comp01 = order->compare(*(successors.begin()), *(successors.begin() + 1));
+                }
+            }
+            if (comp01 != Order::NodeComparison::UNKNOWN && comp02 != Order::NodeComparison::UNKNOWN && comp12 == Order::NodeComparison::UNKNOWN) {
+                auto assumptions =
+                    usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ1, succ2, order, region, this->minValues[order], this->maxValues[order])
+                              : this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region);
+                if (assumptions.size() == 1) {
+                    this->handleAssumption(order, (assumptions.begin()->first));
+                    auto comp01 = order->compare(*(successors.begin()), *(successors.begin() + 1));
+                }
+            }
+            if (comp01 != Order::NodeComparison::UNKNOWN && comp02 != Order::NodeComparison::UNKNOWN && comp12 != Order::NodeComparison::UNKNOWN) {
+                return findBestAction(order, region, state);
+            }
+        }
         STORM_LOG_INFO("No best action found for state " << state << ".");
         return false;
     }
