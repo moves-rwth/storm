@@ -31,7 +31,7 @@
 
 namespace {
 
-enum class DtmcEngine { PrismSparse, JaniSparse, JitSparse, Hybrid, PrismDd, JaniDd };
+enum class DtmcEngine { PrismSparse, JaniSparse, Hybrid, PrismDd, JaniDd };
 
 class SparseGmmxxGmresIluEnvironment {
    public:
@@ -54,23 +54,6 @@ class JaniSparseGmmxxGmresIluEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
     static const DtmcEngine engine = DtmcEngine::JaniSparse;
-    static const bool isExact = false;
-    typedef double ValueType;
-    typedef storm::models::sparse::Dtmc<ValueType> ModelType;
-    static storm::Environment createEnvironment() {
-        storm::Environment env;
-        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
-        env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
-        env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-        env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-        return env;
-    }
-};
-
-class JitSparseGmmxxGmresIluEnvironment {
-   public:
-    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
-    static const DtmcEngine engine = DtmcEngine::JitSparse;
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::sparse::Dtmc<ValueType> ModelType;
@@ -488,10 +471,10 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
         if (TestType::engine == DtmcEngine::PrismSparse) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
-        } else if (TestType::engine == DtmcEngine::JaniSparse || TestType::engine == DtmcEngine::JitSparse) {
+        } else if (TestType::engine == DtmcEngine::JaniSparse) {
             auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.second = storm::api::extractFormulasFromProperties(janiData.second);
-            result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == DtmcEngine::JitSparse)->template as<MT>();
+            result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second)->template as<MT>();
         }
 
         return result;
@@ -528,7 +511,7 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     template<typename MT = typename TestType::ModelType>
     typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type createModelChecker(
         std::shared_ptr<MT> const& model) const {
-        if (TestType::engine == DtmcEngine::PrismSparse || TestType::engine == DtmcEngine::JaniSparse || TestType::engine == DtmcEngine::JitSparse) {
+        if (TestType::engine == DtmcEngine::PrismSparse || TestType::engine == DtmcEngine::JaniSparse) {
             return std::make_shared<storm::modelchecker::SparseDtmcPrctlModelChecker<SparseModelType>>(*model);
         }
     }
@@ -570,14 +553,13 @@ class DtmcPrctlModelCheckerTest : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, JitSparseGmmxxGmresIluEnvironment, SparseGmmxxGmresDiagEnvironment,
-                         SparseGmmxxBicgstabIluEnvironment, SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment, SparseEigenRationalLUEnvironment,
-                         SparseRationalEliminationEnvironment, SparseNativeJacobiEnvironment, SparseNativeWalkerChaeEnvironment, SparseNativeSorEnvironment,
-                         SparseNativePowerEnvironment, SparseNativeSoundValueIterationEnvironment, SparseNativeOptimisticValueIterationEnvironment,
-                         SparseNativeIntervalIterationEnvironment, SparseNativeRationalSearchEnvironment, SparseTopologicalEigenLUEnvironment,
-                         HybridSylvanGmmxxGmresEnvironment, HybridCuddNativeJacobiEnvironment, HybridCuddNativeSoundValueIterationEnvironment,
-                         HybridSylvanNativeRationalSearchEnvironment, DdSylvanNativePowerEnvironment, JaniDdSylvanNativePowerEnvironment,
-                         DdCuddNativeJacobiEnvironment, DdSylvanRationalSearchEnvironment>
+typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, SparseGmmxxGmresDiagEnvironment, SparseGmmxxBicgstabIluEnvironment,
+                         SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment, SparseEigenRationalLUEnvironment, SparseRationalEliminationEnvironment,
+                         SparseNativeJacobiEnvironment, SparseNativeWalkerChaeEnvironment, SparseNativeSorEnvironment, SparseNativePowerEnvironment,
+                         SparseNativeSoundValueIterationEnvironment, SparseNativeOptimisticValueIterationEnvironment, SparseNativeIntervalIterationEnvironment,
+                         SparseNativeRationalSearchEnvironment, SparseTopologicalEigenLUEnvironment, HybridSylvanGmmxxGmresEnvironment,
+                         HybridCuddNativeJacobiEnvironment, HybridCuddNativeSoundValueIterationEnvironment, HybridSylvanNativeRationalSearchEnvironment,
+                         DdSylvanNativePowerEnvironment, JaniDdSylvanNativePowerEnvironment, DdCuddNativeJacobiEnvironment, DdSylvanRationalSearchEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(DtmcPrctlModelCheckerTest, TestingTypes, );
@@ -733,7 +715,7 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesDie) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse || TypeParam::engine == DtmcEngine::JitSparse) {
+    if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
         result = checker->check(tasks[0]);
         EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -780,7 +762,7 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesSynchronousLeader) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse || TypeParam::engine == DtmcEngine::JitSparse) {
+    if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
         result = checker->check(tasks[0]);
         EXPECT_NEAR(this->parseNumber("16/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -830,7 +812,7 @@ TYPED_TEST(DtmcPrctlModelCheckerTest, HOAProbabilitiesDie) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse || TypeParam::engine == DtmcEngine::JitSparse) {
+    if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse) {
         result = checker->check(tasks[0]);
         EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 

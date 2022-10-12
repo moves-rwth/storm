@@ -32,6 +32,14 @@ class DFTBE : public DFTElement<ValueType> {
      */
     virtual storm::dft::storage::elements::BEType beType() const = 0;
 
+    bool isBasicElement() const override {
+        return true;
+    }
+
+    bool isStaticElement() const override {
+        return true;
+    }
+
     size_t nrChildren() const override {
         return 0;
     }
@@ -76,10 +84,6 @@ class DFTBE : public DFTElement<ValueType> {
      */
     std::vector<std::shared_ptr<DFTDependency<ValueType>>> const& ingoingDependencies() const {
         return mIngoingDependencies;
-    }
-
-    bool isBasicElement() const override {
-        return true;
     }
 
     void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override;

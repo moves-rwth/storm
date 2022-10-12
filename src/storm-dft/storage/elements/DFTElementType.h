@@ -16,45 +16,6 @@ enum class DFTElementType { BE, AND, OR, VOT, PAND, POR, SPARE, PDEP, SEQ, MUTEX
  */
 enum class BEType { CONSTANT, PROBABILITY, EXPONENTIAL, ERLANG, WEIBULL, LOGNORMAL, SAMPLES };
 
-inline bool isGateType(DFTElementType const& type) {
-    switch (type) {
-        case DFTElementType::AND:
-        case DFTElementType::OR:
-        case DFTElementType::VOT:
-        case DFTElementType::PAND:
-        case DFTElementType::POR:
-        case DFTElementType::SPARE:
-            return true;
-        case DFTElementType::BE:
-        case DFTElementType::PDEP:
-        case DFTElementType::SEQ:
-        case DFTElementType::MUTEX:
-            return false;
-        default:
-            STORM_LOG_ASSERT(false, "DFT type not known.");
-            return false;
-    }
-}
-
-inline bool isStaticGateType(DFTElementType const& type) {
-    if (!isGateType(type)) {
-        return false;
-    }
-    switch (type) {
-        case DFTElementType::AND:
-        case DFTElementType::OR:
-        case DFTElementType::VOT:
-            return true;
-        case DFTElementType::PAND:
-        case DFTElementType::POR:
-        case DFTElementType::SPARE:
-            return false;
-        default:
-            STORM_LOG_ASSERT(false, "DFT gate type not known.");
-            return false;
-    }
-}
-
 inline std::string toString(DFTElementType const& type) {
     switch (type) {
         case DFTElementType::BE:

@@ -15,6 +15,7 @@
 
 #include "storm-dft/storage/DFTLayoutInfo.h"
 #include "storm-dft/storage/DFTStateGenerationInfo.h"
+#include "storm-dft/storage/DftModule.h"
 #include "storm-dft/storage/SymmetricUnits.h"
 #include "storm-dft/storage/elements/DFTElements.h"
 
@@ -68,9 +69,8 @@ class DFT {
     size_t mTopLevelIndex;
     size_t mStateVectorSize;
     size_t mMaxSpareChildCount;
-    std::map<size_t, std::vector<size_t>> mSpareModules;
+    std::map<size_t, storm::dft::storage::DftModule> mModules;
     std::vector<size_t> mDependencies;
-    std::vector<size_t> mTopModule;
     std::map<size_t, size_t> mRepresentants;  // id element -> id representative
     std::vector<std::vector<size_t>> mSymmetries;
     std::map<size_t, DFTLayoutInfo> mLayoutInfo;
@@ -133,13 +133,19 @@ class DFT {
         return indices;
     }
 
-    std::vector<size_t> const& module(size_t representativeId) const {
-        if (representativeId == mTopLevelIndex) {
-            return mTopModule;
-        } else {
-            STORM_LOG_ASSERT(mSpareModules.count(representativeId) > 0, "Representative not found.");
-            return mSpareModules.find(representativeId)->second;
+    storm::dft::storage::DftModule const& module(size_t representativeId) const {
+        STORM_LOG_ASSERT(mModules.count(representativeId) > 0, "Representative not found.");
+        return mModules.at(representativeId);
+    }
+
+    std::vector<storm::dft::storage::DftModule> getSpareModules() const {
+        std::vector<storm::dft::storage::DftModule> spareModules;
+        for (auto const& pair : mModules) {
+            if (pair.first != mTopLevelIndex) {
+                spareModules.push_back(pair.second);
+            }
         }
+        return spareModules;
     }
 
     bool isDependencyInConflict(size_t id) const {
@@ -248,15 +254,6 @@ class DFT {
 
     bool canHaveNondeterminism() const;
 
-    /*!
-     * Check if the DFT is well-formed.
-     *
-     * @param validForAnalysis If true, additional (more restrictive) checks are performed to check whether the DFT is valid for analysis.
-     * @param stream Output stream where warnings about non-well-formed parts are written.
-     * @return True iff the DFT is well-formed.
-     */
-    bool checkWellFormedness(bool validForAnalysis, std::ostream& stream) const;
-
     uint64_t maxRank() const;
 
     std::vector<DFT<ValueType>> topModularisation() const;
@@ -321,15 +318,13 @@ class DFT {
 
     std::string getInfoString() const;
 
-    std::string getSpareModulesString() const;
+    std::string getModulesString() const;
 
     std::string getElementsWithStateString(DFTStatePointer const& state) const;
 
     std::string getStateString(DFTStatePointer const& state) const;
 
     std::string getStateString(storm::storage::BitVector const& status, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const;
-
-    std::vector<size_t> getIndependentSubDftRoots(size_t index) const;
 
     DFTColouring<ValueType> colourDFT() const;
 

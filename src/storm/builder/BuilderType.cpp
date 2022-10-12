@@ -4,7 +4,6 @@
 
 #include "storm/builder/DdJaniModelBuilder.h"
 #include "storm/builder/DdPrismModelBuilder.h"
-#include "storm/builder/jit/ExplicitJitJaniModelBuilder.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/storage/jani/ModelFeatures.h"
@@ -24,8 +23,6 @@ storm::jani::ModelFeatures getSupportedJaniFeatures(BuilderType const& builderTy
             return storm::generator::JaniNextStateGenerator<ValueType>::getSupportedJaniFeatures();
         case BuilderType::Dd:
             return storm::builder::DdJaniModelBuilder<ddType, ValueType>::getSupportedJaniFeatures();
-        case BuilderType::Jit:
-            return storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType>::getSupportedJaniFeatures();
     }
     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected builder type.");
 }
@@ -53,8 +50,6 @@ bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDesc
             } else {
                 return storm::builder::DdJaniModelBuilder<ddType, ValueType>::canHandle(modelDescription.asJaniModel(), properties);
             }
-        case BuilderType::Jit:
-            return storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType>::canHandle(modelDescription.asJaniModel());
     }
     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled builderType.");
     return false;

@@ -46,8 +46,6 @@ std::string toString(Engine const& engine) {
             return "dd";
         case Engine::DdSparse:
             return "dd-to-sparse";
-        case Engine::Jit:
-            return "jit";
         case Engine::Exploration:
             return "expl";
         case Engine::AbstractionRefinement:
@@ -91,8 +89,6 @@ storm::builder::BuilderType getBuilderType(Engine const& engine) {
             return storm::builder::BuilderType::Dd;
         case Engine::DdSparse:
             return storm::builder::BuilderType::Dd;
-        case Engine::Jit:
-            return storm::builder::BuilderType::Jit;
         case Engine::Exploration:
             return storm::builder::BuilderType::Explicit;
         case Engine::AbstractionRefinement:
@@ -114,7 +110,6 @@ bool canHandle(storm::utility::Engine const& engine, storm::storage::SymbolicMod
     switch (engine) {
         case Engine::Sparse:
         case Engine::DdSparse:
-        case Engine::Jit:
             switch (modelType) {
                 case ModelType::DTMC:
                     return storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>::canHandleStatic(checkTask);

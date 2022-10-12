@@ -69,8 +69,6 @@ std::ostream& operator<<(std::ostream& out, SchedulerChoice<ValueType> const& sc
 
 template class SchedulerChoice<double>;
 template std::ostream& operator<<(std::ostream& out, SchedulerChoice<double> const& schedulerChoice);
-template class SchedulerChoice<float>;
-template std::ostream& operator<<(std::ostream& out, SchedulerChoice<float> const& schedulerChoice);
 template class SchedulerChoice<storm::RationalNumber>;
 template std::ostream& operator<<(std::ostream& out, SchedulerChoice<storm::RationalNumber> const& schedulerChoice);
 template class SchedulerChoice<storm::RationalFunction>;

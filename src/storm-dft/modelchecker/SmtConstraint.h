@@ -1,3 +1,5 @@
+#pragma once
+
 #include <storm/storage/expressions/Expression.h>
 #include <string>
 

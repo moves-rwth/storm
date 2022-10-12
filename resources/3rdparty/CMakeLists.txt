@@ -149,7 +149,7 @@ endforeach()
 #############################################################
 
 # Use the shipped version of cpphoafparser
-message (STATUS "storm - Including cpphoafparser 0.99.2")
+message (STATUS "Storm - Including cpphoafparser 0.99.2")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cpphoafparser-0.99.2/include")
 
 #############################################################
@@ -592,16 +592,6 @@ endif()
 
 #############################################################
 ##
-##	cpptemplate
-##
-#############################################################
-
-add_imported_library_interface(CppTemplate "${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/")
-list(APPEND STORM_DEP_TARGETS CppTemplate)
-list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cpptempl.cpp)
-
-#############################################################
-##
 ##	Google Test gtest
 ##
 #############################################################
@@ -629,6 +619,7 @@ ExternalProject_Add(
 # Specify include dir
 ExternalProject_Get_Property(googletest source_dir)
 set(GTEST_INCLUDE_DIR ${source_dir}/googletest/include)
+set(GMOCK_INCLUDE_DIR ${source_dir}/googlemock/include)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
 set(GTEST_LIBRARIES ${binary_dir}/lib/libgtest${STATIC_EXT} ${binary_dir}/lib/libgtest_main${STATIC_EXT})

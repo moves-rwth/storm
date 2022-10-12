@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "storm-dft/builder/DFTBuilder.h"
+#include "storm-dft/utility/RelevantEvents.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/io/file.h"
@@ -34,6 +35,7 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
     storm::dft::builder::DFTBuilder<ValueType> builder;
     storm::parser::ValueParser<ValueType> valueParser;
     std::string toplevelName = "";
+    storm::dft::utility::RelevantEvents relevantEvents;
 
     std::string currentLocation;
     try {
@@ -67,6 +69,10 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
             currentLocation = parseValue(element);
             Json const& data = element.at("data");
             std::string name = parseName(data.at("name"));
+            // TODO: use contains() if modernjson is updated
+            if (data.count("relevant") > 0) {
+                relevantEvents.insert(name);
+            }
             // Create list of children
             std::vector<std::string> childNames;
             // TODO: use contains() if modernjson is updated
@@ -146,8 +152,11 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
 
     // Build DFT
     storm::dft::storage::DFT<ValueType> dft = builder.build();
-    STORM_LOG_DEBUG("Elements:\n" << dft.getElementsString());
-    STORM_LOG_DEBUG("Spare Modules:\n" << dft.getSpareModulesString());
+    STORM_LOG_DEBUG("DFT elements:\n" << dft.getElementsString());
+    STORM_LOG_DEBUG("Spare modules:\n" << dft.getModulesString());
+    // Set relevant events
+    dft.setRelevantEvents(relevantEvents, false);
+    STORM_LOG_DEBUG("Relevant events: " << dft.getRelevantEventsString());
     return dft;
 }
 

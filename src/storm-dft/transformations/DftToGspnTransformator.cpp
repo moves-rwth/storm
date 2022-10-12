@@ -818,7 +818,7 @@ void DftToGspnTransformator<ValueType>::translateSPARE(std::shared_ptr<storm::df
 
         // Activate all elements in spare module
         uint64_t l = 0;
-        for (uint64_t k : mDft.module(child->id())) {
+        for (uint64_t k : mDft.module(child->id()).getElements()) {
             uint64_t tActivate = builder.addImmediateTransition(prio, 0.0, dftSpare->name() + "_activate_" + std::to_string(i) + "_" + std::to_string(k));
             prio++;
             builder.setTransitionLayoutInfo(tActivate, storm::gspn::LayoutInfo(xcenter - 18.0 + (i + l) * 3, ycenter - 12.0));

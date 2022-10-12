@@ -19,10 +19,9 @@
 
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
-#include "storm/builder/jit/Distribution.h"
+#include "storm/generator/Distribution.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -48,7 +47,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
       hasStateActionRewards(false),
       evaluateRewardExpressionsAtEdges(false),
       evaluateRewardExpressionsAtDestinations(false) {
-    STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException,
+    STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::NotSupportedException,
                     "JANI next-state generator cannot generate choice labels.");
 
     auto features = this->model.getModelFeatures();
@@ -60,7 +59,7 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
         this->options.substituteExpressions([this](storm::expressions::Expression const& exp) { return arrayEliminatorData.transformExpression(exp); });
         features.remove(storm::jani::ModelFeature::Arrays);
     }
-    STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException,
+    STORM_LOG_THROW(features.empty(), storm::exceptions::NotSupportedException,
                     "The explicit next-state generator does not support the following model feature(s): " << features.toString() << ".");
 
     // Get the reward expressions to be build. Also find out whether there is a non-trivial one.
@@ -112,14 +111,14 @@ JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani
                 // If it's a label, i.e. refers to a transient boolean variable we do some sanity checks first
                 if (expressionOrLabelAndBool.first.getLabel() != "init" && expressionOrLabelAndBool.first.getLabel() != "deadlock") {
                     STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()),
-                                    storm::exceptions::InvalidSettingsException,
+                                    storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
 
                     storm::jani::Variable const& variable = this->model.getGlobalVariables().getVariable(expressionOrLabelAndBool.first.getLabel());
                     STORM_LOG_THROW(variable.getType().isBasicType() && variable.getType().asBasicType().isBooleanType(),
-                                    storm::exceptions::InvalidSettingsException,
+                                    storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
-                    STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException,
+                    STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidArgumentException,
                                     "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
 
                     this->terminalStates.emplace_back(variable.getExpressionVariable().getExpression(), expressionOrLabelAndBool.second);
@@ -834,7 +833,7 @@ template<typename ValueType, typename StateType>
 void JaniNextStateGenerator<ValueType, StateType>::generateSynchronizedDistribution(storm::storage::BitVector const& state,
                                                                                     AutomataEdgeSets const& edgeCombination,
                                                                                     std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList,
-                                                                                    storm::builder::jit::Distribution<StateType, ValueType>& distribution,
+                                                                                    storm::generator::Distribution<StateType, ValueType>& distribution,
                                                                                     std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices,
                                                                                     StateToIdCallback stateToIdCallback) {
     // Collect some information of the edges.
@@ -961,7 +960,7 @@ void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombin
         iteratorList[i] = edgeCombination[i].second.cbegin();
     }
 
-    storm::builder::jit::Distribution<StateType, ValueType> distribution;
+    storm::generator::Distribution<StateType, ValueType> distribution;
 
     // As long as there is one feasible combination of commands, keep on expanding it.
     bool done = false;

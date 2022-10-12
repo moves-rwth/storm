@@ -29,7 +29,6 @@
 #include "storm/settings/modules/GurobiSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/LongRunAverageSolverSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
@@ -704,7 +703,6 @@ void initializeAll(std::string const& name, std::string const& executableName) {
     storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
     storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     storm::settings::addModule<storm::settings::modules::AbstractionSettings>();
-    storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
     storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
     storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
     storm::settings::addModule<storm::settings::modules::TransformationSettings>();
