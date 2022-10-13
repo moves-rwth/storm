@@ -50,7 +50,7 @@ namespace storm {
 
                 void printStatisticsToStream(std::ostream& stream) const;
 
-                void precomputeValueBounds(const logic::Formula& formula);
+                void precomputeValueBounds(const logic::Formula& formula, storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
                 
             private:
                 

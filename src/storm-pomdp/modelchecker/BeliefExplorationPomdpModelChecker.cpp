@@ -83,12 +83,12 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula, storm::solver::MinMaxMethod minMaxMethod) {
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
 
                 // Compute some initial bounds on the values for each state of the pomdp
                 // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
-                auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getValueBounds(formula, formulaInfo);
+                auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod).getValueBounds(formula, formulaInfo);
 
                 std::vector<ValueType> pMCValueBound;
                 if(options.useParametricPreprocessing && options.unfold){
@@ -100,7 +100,7 @@ namespace storm {
                 // If we clip and compute rewards, compute the values necessary for the correction terms
                 if((options.clippingThresholdInit > 0 || options.useGridClipping) && formula.isRewardOperatorFormula()){
                     pomdpValueBounds.extremePomdpValueBound =
-                        PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
+                        PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod).getExtremeValueBound(formula, formulaInfo);
                 }
             }
 
@@ -117,7 +117,7 @@ namespace storm {
                 // Extract the relevant information from the formula
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
                 
-                precomputeValueBounds(formula);
+                precomputeValueBounds(formula, options.preProcMinMaxMethod);
                 if(!additionalUnderApproximationBounds.empty()){
                     if(formulaInfo.minimize()){
                         pomdpValueBounds.trivialPomdpValueBounds.upper.insert(pomdpValueBounds.trivialPomdpValueBounds.upper.end(), std::make_move_iterator(additionalUnderApproximationBounds.begin()), std::make_move_iterator(additionalUnderApproximationBounds.end()));
