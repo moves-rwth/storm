@@ -92,6 +92,8 @@ namespace storm {
                 bool isExplicitCutoffSet() const;
 
                 storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
+
+                storm::solver::MinMaxMethod getPreProcMinMaxMethod() const;
     
                 template<typename ValueType>
                 void setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const;

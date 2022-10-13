@@ -56,6 +56,8 @@ namespace storm {
 
                 storm::builder::ExplorationHeuristic explorationHeuristic = storm::builder::ExplorationHeuristic::BreadthFirst;
 
+                storm::solver::MinMaxMethod preProcMinMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration;
+
             };
         }
     }
