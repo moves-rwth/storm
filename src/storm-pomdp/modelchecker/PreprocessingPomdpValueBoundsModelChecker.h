@@ -73,7 +73,7 @@ namespace storm {
             public:
                 typedef PreprocessingPomdpValueBounds<ValueType> ValueBounds;
                 typedef ExtremePOMDPValueBound<ValueType> ExtremeValueBound;
-                PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp);
+                PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
                 
                 ValueBounds getValueBounds(storm::logic::Formula const& formula);
                 
@@ -83,6 +83,8 @@ namespace storm {
 
             private:
                 storm::models::sparse::Pomdp<ValueType> const& pomdp;
+
+                storm::Environment mcEnvironment;
 
                 std::vector<ValueType> getChoiceValues(std::vector<ValueType> const& stateValues, std::vector<ValueType>* actionBasedRewards);
 
