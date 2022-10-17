@@ -1181,6 +1181,45 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex) {
+                statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
+                auto clipping = beliefManager->clipBeliefToGrid(clippingStateId, options.clippingGridRes,
+                                                                beliefExplorer->getStateExtremeBoundIsInfinite());
+                if (clipping.isClippable) {
+                    // The belief is not on the grid and there is a candidate with finite reward
+                    statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
+                    // Transition probability to candidate is clipping value
+                    BeliefValueType transitionProb = (utility::one<BeliefValueType>() - clipping.delta);
+                    bool addedCandidate = beliefExplorer->addTransitionToBelief(localActionIndex, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);
+                    beliefExplorer->markAsGridBelief(clipping.targetBelief);
+                    if (computeRewards) {
+                        // collect cumulative reward bounds
+                        auto reward = utility::zero<BeliefValueType>();
+                        for (auto const &deltaValue : clipping.deltaValues) {
+                            reward += deltaValue.second * utility::convertNumber<BeliefValueType>((beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first)));
+                        }
+                        if(reward == utility::infinity<ValueType>()){
+                            STORM_LOG_WARN("Infinite reward in clipping!");
+                            // If the reward is infinite, add a transition to the sink state to collect infinite reward in our semantics
+                            beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clipping.delta));
+                        } else {
+                            beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::convertNumber<BeliefMDPType>(clipping.delta));
+                            BeliefValueType totalRewardVal = reward / clipping.delta;
+                            beliefExplorer->addClippingRewardToCurrentState(localActionIndex, utility::convertNumber<BeliefMDPType>(totalRewardVal));
+                        }
+                    } else {
+                        beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clipping.delta));
+                    }
+                    beliefExplorer->addChoiceLabelToCurrentState(localActionIndex, "clip");
+                } else {
+                    if(clipping.onGrid){
+                        // If the belief is not clippable, but on the grid, it may need to be explored, too
+                        beliefExplorer->markAsGridBelief(clippingStateId);
+                    }
+                }
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             PomdpModelType const& BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::pomdp() const {
                 if (preprocessedPomdp) {
                     return *preprocessedPomdp;

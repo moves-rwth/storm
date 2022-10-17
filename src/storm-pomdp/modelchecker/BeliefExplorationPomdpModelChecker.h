@@ -114,6 +114,17 @@ namespace storm {
                 void clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer);
 
                 /**
+                 * Clips the belief with the given state ID to a belief grid.
+                 * If a new candidate is added to the belief space, it is expanded. If necessary, its direct successors are added to the exploration queue to be handled by the main exploration routine.
+                 * @param clippingStateId the state ID of the clipping belief
+                 * @param computeRewards true, if rewards are computed
+                 * @param min true, if objective is to minimise
+                 * @param beliefManager the belief manager used
+                 * @param beliefExplorer the belief MDP explorer used
+                 */
+                void clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex);
+
+                /**
                  * Clips the belief with the given state ID using already explored beliefs as candidates ("classic clipping")
                  * A clipping threshold can be given and a reduction of the candidate set to a given size using the belief difference 1-norm is applied if it is not disabled
                  * @param clippingStateId the state ID of the clipping belief
