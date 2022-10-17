@@ -83,12 +83,12 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::precomputeValueBounds(storm::logic::Formula const& formula, storm::solver::MinMaxMethod minMaxMethod) {
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
 
                 // Compute some initial bounds on the values for each state of the pomdp
                 // We work with the Belief MDP value type, so if the POMDP is exact, but the belief MDP is not, we need to convert
-                auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getValueBounds(formula, formulaInfo);
+                auto initialPomdpValueBounds = PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod).getValueBounds(formula, formulaInfo);
 
                 std::vector<ValueType> pMCValueBound;
                 if(options.useParametricPreprocessing && options.unfold){
@@ -100,7 +100,7 @@ namespace storm {
                 // If we clip and compute rewards, compute the values necessary for the correction terms
                 if((options.clippingThresholdInit > 0 || options.useGridClipping) && formula.isRewardOperatorFormula()){
                     pomdpValueBounds.extremePomdpValueBound =
-                        PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
+                        PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp(), minMaxMethod).getExtremeValueBound(formula, formulaInfo);
                 }
             }
 
@@ -117,7 +117,7 @@ namespace storm {
                 // Extract the relevant information from the formula
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
                 
-                precomputeValueBounds(formula);
+                precomputeValueBounds(formula, options.preProcMinMaxMethod);
                 if(!additionalUnderApproximationBounds.empty()){
                     if(formulaInfo.minimize()){
                         pomdpValueBounds.trivialPomdpValueBounds.upper.insert(pomdpValueBounds.trivialPomdpValueBounds.upper.end(), std::make_move_iterator(additionalUnderApproximationBounds.begin()), std::make_move_iterator(additionalUnderApproximationBounds.end()));
@@ -341,27 +341,35 @@ namespace storm {
                             newLabeling.addLabel("sched_" + std::to_string(i));
                         }
                         newLabeling.addLabel("cutoff");
+                        newLabeling.addLabel("clipping");
+
+                        auto transMatrix = scheduledModel->getTransitionMatrix();
                         for(uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i){
                             if(newLabeling.getStateHasLabel("truncated",i)){
-                                newLabeling.addLabelToState("sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()),i);
-                                newLabeling.addLabelToState("cutoff", i);
+                                bool hasClipping = (approx->getExploredMdp()->getNumberOfChoices(i) != nrPreprocessingScheds);
+                                uint64_t chosenActionIndex = approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
+                                if(hasClipping){
+                                    if(chosenActionIndex == 0){
+                                        newLabeling.addLabelToState("clipping", i);
+                                        auto chosenRow = transMatrix.getRow(i,0);
+                                        auto candidateIndex = (chosenRow.end() - 1)->getColumn();
+                                        transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
+                                    } else {
+                                        newLabeling.addLabelToState(
+                                            "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1), i);
+                                        newLabeling.addLabelToState("cutoff", i);
+                                    }
+                                } else {
+                                    newLabeling.addLabelToState(
+                                        "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
+                                    newLabeling.addLabelToState("cutoff", i);
+                                }
                             }
                         }
                         newLabeling.removeLabel("truncated");
-                        // TODO replace labels by exporting a map
-                        for(uint64_t i = 0; i < pomdp().getNrObservations(); ++i){
-                            newLabeling.addLabel("obs_" + std::to_string(i));
-                        }
-                        newLabeling.addLabel("no_obs");
-                        for(uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i){
-                            if (observations[i] <= pomdp().getNrObservations()) {
-                                newLabeling.addLabelToState("obs_" + std::to_string(observations[i]), i);
-                            } else {
-                                newLabeling.addLabelToState("no_obs", i);
-                            }
-                        }
 
-                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling, scheduledModel->getRewardModels());
+                        transMatrix.dropZeroEntries();
+                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
                         if(scheduledModel->hasChoiceLabeling()){
                             modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
                         }
@@ -932,28 +940,34 @@ namespace storm {
                         bool clipBelief = false;
                         if (timeLimitExceeded) {
                             clipBelief = useBeliefClipping;
-                            stopExploration = true;
-                            underApproximation->setCurrentStateIsTruncated();
+                            stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                         } else if (!stateAlreadyExplored) {
                             // Check whether we want to explore the state now!
                             ValueType gap =
                                 getGap(underApproximation->getLowerValueBoundAtCurrentState(), underApproximation->getUpperValueBoundAtCurrentState());
                             if ((gap < heuristicParameters.gapThreshold) || (gap == 0 && options.cutZeroGap)) {
                                 stopExploration = true;
-                                underApproximation->setCurrentStateIsTruncated();
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >=
                                        heuristicParameters.sizeThreshold /*&& !statistics.beliefMdpDetectedToBeFinite*/) {
                                 clipBelief = useBeliefClipping;
-                                stopExploration = true;
-                                underApproximation->setCurrentStateIsTruncated();
+                                stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
                             }
                         }
 
-                        if (clipBelief) {
+                        if (clipBelief && !underApproximation->isMarkedAsGridBelief(currId)) {
                             if (options.useGridClipping) {
                                 // Use a belief grid as clipping candidates
-                                clipToGrid(currId, computeRewards, min, beliefManager, underApproximation);
-                                addedActions += beliefManager->getBeliefNumberOfChoices(currId);
+                                if(options.useExplicitCutoff){
+                                    clipToGridExplicitly(currId, computeRewards, min, beliefManager, underApproximation,0);
+                                    // Set again as the current belief might have been detected to be a grid belief
+                                    stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
+                                    if(stopExploration){
+                                        addedActions += 1;
+                                    }
+                                } else {
+                                    clipToGrid(currId, computeRewards, min, beliefManager, underApproximation);
+                                    addedActions += beliefManager->getBeliefNumberOfChoices(currId);
+                                }
                             } else {
                                 // Use clipping with explored beliefs as candidates ("classic" clipping)
                                 if (clipToExploredBeliefs(currId, storm::utility::convertNumber<BeliefValueType>(heuristicParameters.clippingThreshold),
@@ -962,6 +976,10 @@ namespace storm {
                                 }
                             }
                         }  // end Clipping Procedure
+
+                        if(stopExploration){
+                            underApproximation->setCurrentStateIsTruncated();
+                        }
                         if(!options.useExplicitCutoff || !stopExploration){
                             // Add successor transitions or cut-off transitions when exploration is stopped
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
@@ -1013,15 +1031,17 @@ namespace storm {
                             }
                         } else {
                             for (uint64_t i = 0; i < nrCutoffStrategies; ++i) {
-                                auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i) : underApproximation->computeLowerValueBoundForScheduler(currId, i) ;
+                                auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i)
+                                                       : underApproximation->computeLowerValueBoundForScheduler(currId, i);
                                 if (computeRewards) {
-                                    underApproximation->addTransitionsToExtraStates(i, storm::utility::one<ValueType>());
-                                    underApproximation->addRewardToCurrentState(i, cutOffValue);
+                                    underApproximation->addTransitionsToExtraStates(addedActions + i, storm::utility::one<ValueType>());
+                                    underApproximation->addRewardToCurrentState(addedActions + i, cutOffValue);
                                 } else {
-                                    underApproximation->addTransitionsToExtraStates(i, cutOffValue,storm::utility::one<ValueType>() - cutOffValue);
+                                    underApproximation->addTransitionsToExtraStates(addedActions + i, cutOffValue,
+                                                                                    storm::utility::one<ValueType>() - cutOffValue);
                                 }
-                                if(pomdp().hasChoiceLabeling()){
-                                    underApproximation->addChoiceLabelToCurrentState(i, "sched_" + std::to_string(i));
+                                if (pomdp().hasChoiceLabeling()) {
+                                    underApproximation->addChoiceLabelToCurrentState(addedActions + i, "sched_" + std::to_string(i));
                                 }
                             }
                         }
@@ -1190,6 +1210,45 @@ namespace storm {
                     }
                     if(computeRewards){
                         beliefExplorer->computeRewardAtCurrentState(action);
+                    }
+                }
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex) {
+                statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
+                auto clipping = beliefManager->clipBeliefToGrid(clippingStateId, options.clippingGridRes,
+                                                                beliefExplorer->getStateExtremeBoundIsInfinite());
+                if (clipping.isClippable) {
+                    // The belief is not on the grid and there is a candidate with finite reward
+                    statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
+                    // Transition probability to candidate is clipping value
+                    BeliefValueType transitionProb = (utility::one<BeliefValueType>() - clipping.delta);
+                    bool addedCandidate = beliefExplorer->addTransitionToBelief(localActionIndex, clipping.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb), false);
+                    beliefExplorer->markAsGridBelief(clipping.targetBelief);
+                    if (computeRewards) {
+                        // collect cumulative reward bounds
+                        auto reward = utility::zero<BeliefValueType>();
+                        for (auto const &deltaValue : clipping.deltaValues) {
+                            reward += deltaValue.second * utility::convertNumber<BeliefValueType>((beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first)));
+                        }
+                        if(reward == utility::infinity<ValueType>()){
+                            STORM_LOG_WARN("Infinite reward in clipping!");
+                            // If the reward is infinite, add a transition to the sink state to collect infinite reward in our semantics
+                            beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clipping.delta));
+                        } else {
+                            beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::convertNumber<BeliefMDPType>(clipping.delta));
+                            BeliefValueType totalRewardVal = reward / clipping.delta;
+                            beliefExplorer->addClippingRewardToCurrentState(localActionIndex, utility::convertNumber<BeliefMDPType>(totalRewardVal));
+                        }
+                    } else {
+                        beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clipping.delta));
+                    }
+                    beliefExplorer->addChoiceLabelToCurrentState(localActionIndex, "clip");
+                } else {
+                    if(clipping.onGrid){
+                        // If the belief is not clippable, but on the grid, it may need to be explored, too
+                        beliefExplorer->markAsGridBelief(clippingStateId);
                     }
                 }
             }

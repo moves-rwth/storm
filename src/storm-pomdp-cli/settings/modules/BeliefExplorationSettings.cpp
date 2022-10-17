@@ -37,6 +37,7 @@ namespace storm {
             const std::string cutZeroGapOption = "cut-zero-gap";
             const std::string parametricPreprocessingOption = "par-preprocessing";
             const std::string explicitCutoffOption = "explicit-cutoff";
+            const std::string preProcMinMaxMethodOption = "preproc-minmax";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -74,6 +75,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricPreprocessingOption, false, "If this is set, the POMDP will be transformed to a pMC for preprocessing steps.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memoryBound", "number of memory states").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("gd-eps", "epsilon for gradient descent").setDefaultValueDouble(1e-6).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxInstantiations", "max. number of initial instantiations to use for gradient descent").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitCutoffOption, false, "If this is set, the additional unfolding step for cut-off beliefs is skipped.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, preProcMinMaxMethodOption, false,"Sets the method to be used for model checking during pre-processing.").setIsAdvanced().addArgument(
+                                                                                                                                                                                     storm::settings::ArgumentBuilder::createStringArgument("method","the method to use").setDefaultValueString("svi").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"svi", "pi"})).build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -219,6 +222,15 @@ namespace storm {
             double BeliefExplorationSettings::getParametricGDEpsilon() const {
                 return this->getOption(parametricPreprocessingOption).getArgumentByName("gd-eps").getValueAsDouble();
             }
+
+            storm::solver::MinMaxMethod BeliefExplorationSettings::getPreProcMinMaxMethod() const {
+                if(this->getOption(preProcMinMaxMethodOption).getArgumentByName("method").getValueAsString() == "svi") {
+                    return storm::solver::MinMaxMethod::SoundValueIteration;
+                }
+                if(this->getOption(preProcMinMaxMethodOption).getArgumentByName("method").getValueAsString() == "pi") {
+                    return storm::solver::MinMaxMethod::PolicyIteration;
+                }
+            }
             
             template<typename ValueType>
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
@@ -271,6 +283,8 @@ namespace storm {
                 options.explorationHeuristic = getExplorationHeuristic();
 
                 options.cutZeroGap = isCutZeroGapSet();
+
+                options.preProcMinMaxMethod = getPreProcMinMaxMethod();
             }
 
             bool BeliefExplorationSettings::isBeliefTypeSetFromDefault() const {

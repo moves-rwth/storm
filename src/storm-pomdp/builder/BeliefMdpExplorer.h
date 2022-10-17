@@ -234,6 +234,10 @@ namespace storm {
 
             uint64_t getNrSchedulersForLowerBounds();
 
+            void markAsGridBelief(BeliefId const &beliefId);
+
+            bool isMarkedAsGridBelief(BeliefId const &beliefId);
+
             const std::shared_ptr<storm::storage::Scheduler<BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>> &getSchedulerForExploredMdp() const;
 
             std::vector<uint32_t> getObservationForMdpStates() const;
@@ -284,6 +288,7 @@ namespace storm {
             storm::storage::BitVector clippedStates;
             MdpStateType initialMdpState;
             storm::storage::BitVector delayedExplorationChoices;
+            std::unordered_set<BeliefId> gridBeliefs;
 
             // Final Mdp
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
