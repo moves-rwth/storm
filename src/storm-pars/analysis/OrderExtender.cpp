@@ -218,7 +218,6 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
         std::pair<uint_fast64_t, uint_fast64_t> result = {this->numberOfStates, this->numberOfStates};
         auto const& successors = this->getSuccessors(currentState, order);
-
         if (actionFound) {
             uint_fast64_t succ0 = *(successors.begin());
             if (successors.size() == 1) {
@@ -1014,28 +1013,28 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
             if (comp01 == Order::NodeComparison::UNKNOWN) {
                 auto assumptions =
                     usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ0, succ1, order, region, this->minValues[order], this->maxValues[order])
-                              : this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region);
+                              : this->assumptionMaker->createAndCheckAssumptions(succ0, succ1, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
-                    auto comp01 = order->compare(*(successors.begin()), *(successors.begin() + 1));
+                    auto comp01 = order->compare(succ0, succ1);
                 }
             }
             if (comp01 != Order::NodeComparison::UNKNOWN && comp02 == Order::NodeComparison::UNKNOWN) {
                 auto assumptions =
                     usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ0, succ2, order, region, this->minValues[order], this->maxValues[order])
-                              : this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region);
+                              : this->assumptionMaker->createAndCheckAssumptions(succ0, succ2, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
-                    auto comp01 = order->compare(*(successors.begin()), *(successors.begin() + 1));
+                    auto comp01 = order->compare(succ0, succ2);
                 }
             }
             if (comp01 != Order::NodeComparison::UNKNOWN && comp02 != Order::NodeComparison::UNKNOWN && comp12 == Order::NodeComparison::UNKNOWN) {
                 auto assumptions =
                     usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ1, succ2, order, region, this->minValues[order], this->maxValues[order])
-                              : this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region);
+                              : this->assumptionMaker->createAndCheckAssumptions(succ1, succ2, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
-                    auto comp01 = order->compare(*(successors.begin()), *(successors.begin() + 1));
+                    auto comp01 = order->compare(succ1, succ2);
                 }
             }
             if (comp01 != Order::NodeComparison::UNKNOWN && comp02 != Order::NodeComparison::UNKNOWN && comp12 != Order::NodeComparison::UNKNOWN) {
