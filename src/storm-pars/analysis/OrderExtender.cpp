@@ -167,6 +167,11 @@ OrderExtender<ValueType, ConstantType>::sortStatesAndDecomposeForOrder() {
         subStates.set(state, false);
     }
     this->cyclic = storm::utility::graph::hasCycle(this->matrix, subStates);
+    if (this->cyclic) {
+        STORM_PRINT("Model is cyclic");
+    } else {
+        STORM_PRINT("Model is acyclic");
+    }
     storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
     if (this->cyclic) {
         decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(this->matrix, options);

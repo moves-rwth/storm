@@ -1,17 +1,12 @@
 #include "MonotonicityHelper.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/NotSupportedException.h"
-
-#include "storm/models/ModelType.h"
-
-#include "storm/modelchecker/results/CheckResult.h"
-
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
 #include "storm-pars/analysis/AssumptionChecker.h"
 #include "storm-pars/analysis/ReachabilityOrderExtender.h"
 #include "storm-pars/analysis/RewardOrderExtender.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/ModelType.h"
 
 namespace storm {
 namespace analysis {

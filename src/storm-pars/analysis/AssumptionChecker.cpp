@@ -135,6 +135,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                         result = AssumptionStatus::UNKNOWN;
                     }
                     if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
+                        result = AssumptionStatus::UNKNOWN;
                         break;
                     }
                 }
@@ -155,6 +156,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                         result = AssumptionStatus::UNKNOWN;
                     }
                     if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
+                        result = AssumptionStatus::UNKNOWN;
                         break;
                     }
                 }
@@ -174,6 +176,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                             result = AssumptionStatus::UNKNOWN;
                         }
                         if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
+                            result = AssumptionStatus::UNKNOWN;
                             break;
                         }
                     }
