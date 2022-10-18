@@ -98,7 +98,7 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::opt
         storm::utility::Stopwatch plaWatch(true);
         this->extender->initializeMinMaxValues(region);
         plaWatch.stop();
-        STORM_LOG_INFO("\nTotal time for pla checking: " << plaWatch << ".\n\n");
+        STORM_PRINT("\nTotal time for pla checking: " << plaWatch << ".\n\n");
     }
     createOrder();
 
