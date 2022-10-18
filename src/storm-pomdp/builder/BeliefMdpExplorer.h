@@ -240,6 +240,7 @@ namespace storm {
 
             const std::shared_ptr<storm::storage::Scheduler<BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>> &getSchedulerForExploredMdp() const;
 
+            std::vector<uint32_t> getObservationForMdpStates() const;
         private:
             MdpStateType noState() const;
 

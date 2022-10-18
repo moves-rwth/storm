@@ -1220,6 +1220,22 @@ namespace storm {
             return pomdpValueBounds.upperSchedulers;
         }
 
+        template<typename PomdpType, typename BeliefValueType>
+        std::vector<uint32_t> BeliefMdpExplorer<PomdpType, BeliefValueType>::getObservationForMdpStates() const {
+            std::vector<uint32_t> obs;
+            uint64_t nrMdpStates = exploredMdp->getNumberOfStates();
+            for(uint64_t mdpState = 0; mdpState< nrMdpStates; ++mdpState) {
+                uint64_t beliefId = this->getBeliefId(mdpState);
+                if (beliefId != beliefManager->noId()) {
+                    obs.push_back(this->beliefManager->getBeliefObservation(beliefId));
+                } else {
+                    obs.push_back(-1);
+                }
+            }
+            STORM_LOG_ASSERT(obs.size() == nrMdpStates, "There should be an entry for every MDP state");
+            return obs;
+        }
+
         template
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>>;
 

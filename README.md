@@ -1,10 +1,15 @@
 Storm - A Modern Probabilistic Model Checker
 ============================================
 
-[![Build Status](https://github.com/moves-rwth/storm/workflows/Build%20Test/badge.svg)](https://github.com/moves-rwth/storm/actions)
-[![GitHub release](https://img.shields.io/github/release/moves-rwth/storm.svg)](https://github.com/moves-rwth/storm/releases/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896)
+<!-- [![Build Status](https://github.com/moves-rwth/storm/workflows/Build%20Test/badge.svg)](https://github.com/moves-rwth/storm/actions) -->
+<!-- [![GitHub release](https://img.shields.io/github/release/moves-rwth/storm.svg)](https://github.com/moves-rwth/storm/releases/) -->
+<!-- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896) -->
 
+Storm fork containing the `storm-synthesis` module used for the synthesis of probabilistic programs in [PAYNT](https://github.com/randriu/synthesis).
+The module is compiled using make e.g. as follows:
+```shell
+make storm-synthesis
+```
 
 For installation and usage instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
 
