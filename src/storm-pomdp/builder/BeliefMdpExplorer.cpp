@@ -998,6 +998,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::markAsGridBelief(BeliefId const &beliefId){
+            gridBeliefs.insert(beliefId);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::isMarkedAsGridBelief(BeliefId const &beliefId){
+            return gridBeliefs.count(beliefId) > 0;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpExplorer<PomdpType, BeliefValueType>::getExploredMdpState(BeliefId const &beliefId) const {
             if (beliefId < exploredBeliefIds.size() && exploredBeliefIds.get(beliefId)) {
                 return beliefIdToMdpStateMap.at(beliefId);
