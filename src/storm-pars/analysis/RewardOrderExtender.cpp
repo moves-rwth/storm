@@ -191,6 +191,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
     std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
     STORM_LOG_INFO("Doing Forward reasoning");
     STORM_LOG_ASSERT(order->contains(currentState), "Expecting order to contain the current state for forward reasoning");
+    STORM_LOG_ASSERT(order->isActionSetAtState(currentState), "Expecting action to be set at state for backward reasoning");
 
     auto const& successors = this->getSuccessors(currentState, order);
 
@@ -376,6 +377,8 @@ template<typename ValueType, typename ConstantType>
 std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(
     std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState) {
     STORM_LOG_INFO("Doing backward reasoning");
+    STORM_LOG_ASSERT(order->isActionSetAtState(currentState), "Expecting action to be set at state for backward reasoning");
+
     bool addedSomething = false;
     auto const& successors = this->getSuccessors(currentState, order);
     // We sort the states, and then apply min/max comparison.

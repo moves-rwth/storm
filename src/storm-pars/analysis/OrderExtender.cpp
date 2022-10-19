@@ -168,9 +168,9 @@ OrderExtender<ValueType, ConstantType>::sortStatesAndDecomposeForOrder() {
     }
     this->cyclic = storm::utility::graph::hasCycle(this->matrix, subStates);
     if (this->cyclic) {
-        STORM_PRINT("Model is cyclic");
+        STORM_PRINT("Model is cyclic" << std::endl);
     } else {
-        STORM_PRINT("Model is acyclic");
+        STORM_PRINT("Model is acyclic" << std::endl);
     }
     storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
     if (this->cyclic) {
@@ -191,7 +191,7 @@ OrderExtender<ValueType, ConstantType>::sortStatesAndDecomposeForOrder() {
 template<typename ValueType, typename ConstantType>
 std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(
     storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-    auto order = getInitialOrder();
+    auto order = getInitialOrder(region);
     if (order == nullptr) {
         return {nullptr, numberOfStates, numberOfStates};
     }
@@ -246,90 +246,8 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
             }
         } else if (currentStateMode.second) {
             // We have a non-deterministic state, and cannot (yet) fix the action
-            // We only go into here if we need to handle the state because it was its turn by the ordering
-            result = this->extendNormal(order, region, currentState);
-            // If this didnt work we see if we have some structure like: currentState --> succ0 and currentState --> succ1 (both with prob 1)
-            // then succ0 --> succ00 and succ01 with prob f and 1-f, and succ1 --> succ10 and succ11 with prob f and 1-f
-            // succ00 == succ10 and succ00 above succ01 and succ10 above succ11 and only probabilities
-            // in this case succ0 below succ00
-            // succ00 == succ10 and succ00 below succ01 and succ10 below succ11 (both probabilities and rewards)
-            // in this case succ0 above succ00
-            if (result.first != this->numberOfStates) {
-                if (this->stateMap[currentState].size() == 2) {
-                    auto& succ0 = this->getSuccessors(currentState, 0);
-                    auto& succ1 = this->getSuccessors(currentState, 1);
-                    auto state0 = *succ0.begin();
-                    auto state1 = *succ1.begin();
-                    if (succ0.size() == 1 && succ1.size() == 1 && this->stateMap[*succ0.begin()].size() == 1 && this->stateMap[*succ1.begin()].size() == 1) {
-                        succ0 = this->getSuccessors(state0, 0);
-                        succ1 = this->getSuccessors(state1, 0);
-                    }
-                    if (succ0.size() == 2 && succ1.size() == 2) {
-                        auto succ00 = *(succ0.begin());
-                        auto succ01 = *(succ0.begin() + 1);
-                        auto succ10 = *(succ1.begin());
-                        auto succ11 = *(succ1.begin() + 1);
-                        bool swap0 = false;
-                        bool swap1 = false;
-                        if (succ00 == succ11) {
-                            std::swap(succ10, succ11);
-                            swap1 = true;
-                        } else if (succ01 == succ10) {
-                            std::swap(succ00, succ01);
-                            swap0 = true;
-                        } else if (succ01 == succ11) {
-                            std::swap(succ10, succ11);
-                            std::swap(succ00, succ01);
-                            swap0 = true;
-                            swap1 = true;
-                        }
 
-                        if (succ00 == succ10) {
-                            assert(succ01 != succ11);
-                            auto comp0 = order->compare(succ00, succ01);
-                            auto comp1 = order->compare(succ10, succ11);
-                            if (comp0 == comp1 && comp0 == Order::ABOVE && !this->rewards) {
-                                auto row0 = matrix.getRow(state0, 0);
-                                auto row1 = matrix.getRow(state1, 0);
-                                auto val0 = *row0.begin();
-                                auto val1 = *row1.begin();
-                                if (swap0) {
-                                    val0 = *(row0.begin() + 1);
-                                }
-                                if (swap1) {
-                                    val1 = *(row1.begin() + 1);
-                                }
-                                if (val0.getValue() == val1.getValue()) {
-                                    order->addBelow(currentState, order->getNode(succ00));
-                                    assert(val0.getColumn() == val1.getColumn());
-                                    STORM_LOG_INFO("State "
-                                                   << currentState
-                                                   << " is sufficient as successors all have prob1, and for the successors we can sort their successors");
-                                    result = {numberOfStates, numberOfStates};
-                                }
-                            } else if (comp0 == comp1 && comp0 == Order::BELOW) {
-                                auto row0 = matrix.getRow(currentState, 0);
-                                auto row1 = matrix.getRow(currentState, 1);
-                                auto val0 = *row0.begin();
-                                auto val1 = *row1.begin();
-                                if (swap0) {
-                                    val0 = *(row0.begin() + 1);
-                                }
-                                if (swap1) {
-                                    val1 = *(row1.begin() + 1);
-                                }
-                                if (val0.getValue() == val1.getValue()) {
-                                    order->addAbove(currentState, order->getNode(succ00));
-                                    assert(val0.getColumn() == val1.getColumn());
-                                    STORM_LOG_INFO("State " << currentState << " is sufficient by hack");
-                                    result = {numberOfStates, numberOfStates};
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (result.first != this->numberOfStates) {
+            if (!this->extendNonDeterministic(order, region, currentState)) {
                 // We could not extend it, so we first make assumptions for the actions (therefore we return order, currentState, currentState)
                 order->addStateSorted(currentState);
                 this->continueExtending[order] = false;
@@ -347,12 +265,6 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
             STORM_LOG_ASSERT(result.second == this->numberOfStates, "Expecting both parts of result to contain the number of states");
             STORM_LOG_ASSERT(order->sortStates(successors).size() == successors.size(), "Something went wrong while sorting states, number of states differs");
             STORM_LOG_ASSERT(order->contains(currentState) && order->getNode(currentState) != nullptr, "Expecting order to contain the current State");
-
-            if (monRes != nullptr) {
-                for (auto& param : this->occuringVariablesAtState[currentState]) {
-                    this->checkParOnStateMonRes(currentState, order, param, region, monRes);
-                }
-            }
             // Get the next state
             currentStateMode = this->getNextState(order, currentState, true);
         } else {
@@ -407,11 +319,162 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
 
     STORM_LOG_ASSERT(order->getNumberOfSufficientStates() == this->numberOfStates, "Expecting to be sufficient for all states");
     if (monRes != nullptr) {
-        // monotonicity result for the in-build checking of monotonicity
+        if (this->deterministic) {
+            for (auto state = 0; state < numberOfStates; ++state) {
+                for (auto& param : this->occuringVariablesAtState[state]) {
+                    this->checkParOnStateMonRes(state, order, param, region, monRes);
+                }
+            }
+        } else {
+            for (auto state = 0; state < numberOfStates; ++state) {
+                if (this->isStateReachable(state, order)) {
+                    for (auto& param : this->occuringVariablesAtState[state]) {
+                        this->checkParOnStateMonRes(state, order, param, region, monRes);
+                    }
+                }
+            }
+        }
         monRes->setDone();
     }
     STORM_LOG_INFO("Done for order");
     return std::make_tuple(order, this->numberOfStates, this->numberOfStates);
+}
+
+template<typename ValueType, typename ConstantType>
+bool OrderExtender<ValueType, ConstantType>::extendNonDeterministic(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
+                                                                    uint_fast64_t currentState) {
+    auto& successors = this->getSuccessors(currentState, order);
+    auto sortedSuccs = this->sortStatesOrderAndMinMax(successors, order);
+    if (successors.size() == sortedSuccs.second.size()) {
+        // We could order all successors, now check if all actions yield at least two successors
+        order->setSufficientForState(currentState);
+        bool allManySuccs;
+        for (auto act = 0; act < this->stateMap[currentState].size(); ++act) {
+            auto row = matrix.getRow(currentState, act);
+            allManySuccs = (row.begin() + 1) != row.end();
+        }
+        if (allManySuccs) {
+            if (this->rewards) {
+                order->addAbove(currentState, order->getNode(sortedSuccs.second[sortedSuccs.second.size() - 1]));
+                order->setDoneForState(currentState);
+
+            } else {
+                order->addBetween(currentState, sortedSuccs.second[0], sortedSuccs.second[sortedSuccs.second.size() - 1]);
+                order->setDoneForState(currentState);
+            }
+            return true;
+        }
+    }
+
+    // If this didnt work we see if we have some structure like: currentState --> succ0 and currentState --> succ1 (both with prob 1)
+    // then succ0 --> succ00 and succ01 with prob f and 1-f, and succ1 --> succ10 and succ11 with prob f and 1-f
+    // succ00 == succ10 and succ00 above succ01 and succ10 above succ11 and only probabilities
+    // in this case succ0 below succ00
+    // succ00 == succ10 and succ00 below succ01 and succ10 below succ11 (both probabilities and rewards)
+    // in this case succ0 above succ00
+    if (this->stateMap[currentState].size() == 2) {
+        auto& succ0 = this->getSuccessors(currentState, 0);
+        auto& succ1 = this->getSuccessors(currentState, 1);
+        auto state0 = *succ0.begin();
+        auto state1 = *succ1.begin();
+        if (succ0.size() == 1 && succ1.size() == 1 && this->stateMap[*succ0.begin()].size() == 1 && this->stateMap[*succ1.begin()].size() == 1) {
+            succ0 = this->getSuccessors(state0, 0);
+            succ1 = this->getSuccessors(state1, 0);
+        }
+        if (succ0.size() == 2 && succ1.size() == 2) {
+            auto succ00 = *(succ0.begin());
+            auto succ01 = *(succ0.begin() + 1);
+            auto succ10 = *(succ1.begin());
+            auto succ11 = *(succ1.begin() + 1);
+            bool swap0 = false;
+            bool swap1 = false;
+            if (succ00 == succ11) {
+                std::swap(succ10, succ11);
+                swap1 = true;
+            } else if (succ01 == succ10) {
+                std::swap(succ00, succ01);
+                swap0 = true;
+            } else if (succ01 == succ11) {
+                std::swap(succ10, succ11);
+                std::swap(succ00, succ01);
+                swap0 = true;
+                swap1 = true;
+            }
+
+            if (succ00 == succ10) {
+                assert(succ01 != succ11);
+                auto comp0 = order->compare(succ00, succ01);
+                auto comp1 = order->compare(succ10, succ11);
+                if (comp0 == comp1 && comp0 == Order::ABOVE && !this->rewards) {
+                    auto row0 = matrix.getRow(state0, 0);
+                    auto row1 = matrix.getRow(state1, 0);
+                    auto val0 = *row0.begin();
+                    auto val1 = *row1.begin();
+                    if (swap0) {
+                        val0 = *(row0.begin() + 1);
+                    }
+                    if (swap1) {
+                        val1 = *(row1.begin() + 1);
+                    }
+                    if (val0.getValue() == val1.getValue()) {
+                        order->addBelow(currentState, order->getNode(succ00));
+                        assert(val0.getColumn() == val1.getColumn());
+                        STORM_LOG_INFO("State " << currentState
+                                                << " is sufficient as successors all have prob1, and for the successors we can sort their successors");
+                        return true;
+                    }
+                } else if (comp0 == comp1 && comp0 == Order::BELOW) {
+                    auto row0 = matrix.getRow(currentState, 0);
+                    auto row1 = matrix.getRow(currentState, 1);
+                    auto val0 = *row0.begin();
+                    auto val1 = *row1.begin();
+                    if (swap0) {
+                        val0 = *(row0.begin() + 1);
+                    }
+                    if (swap1) {
+                        val1 = *(row1.begin() + 1);
+                    }
+                    if (val0.getValue() == val1.getValue()) {
+                        order->addAbove(currentState, order->getNode(succ00));
+                        assert(val0.getColumn() == val1.getColumn());
+                        STORM_LOG_INFO("State " << currentState << " is sufficient by hack");
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+template<typename ValueType, typename ConstantType>
+bool OrderExtender<ValueType, ConstantType>::isStateReachable(uint_fast64_t state, std::shared_ptr<Order> order) {
+    if (!reachableStates.has_value()) {
+        reachableStates = model->getInitialStates();
+        storm::storage::BitVector seenStates(numberOfStates, false);
+        std::queue<uint_fast64_t> stateQueue;
+        for (auto state : (*reachableStates)) {
+            stateQueue.push(state);
+        }
+        while (!stateQueue.empty()) {
+            state = stateQueue.front();
+            stateQueue.pop();
+            if (!seenStates[state]) {
+                seenStates.set(state);
+                if (order->isActionSetAtState(state)) {
+                    for (auto& entry : matrix.getRow(state, order->getActionAtState(state))) {
+                        reachableStates->set(entry.getColumn());
+                        stateQueue.push(entry.getColumn());
+                    }
+                } else {
+                    for (auto& entry : matrix.getRowGroup(state)) {
+                        reachableStates->set(entry.getColumn());
+                        stateQueue.push(entry.getColumn());
+                    }
+                }
+            }
+        }
+    }
+    return (*reachableStates)[state];
 }
 
 template<typename ValueType, typename ConstantType>
@@ -424,7 +487,7 @@ bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order
 
 // protected
 template<typename ValueType, typename ConstantType>
-std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getInitialOrder() {
+std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getInitialOrder(storage::ParameterRegion<ValueType> region) {
     setBottomTopStates();
     STORM_LOG_THROW(this->bottomStates.is_initialized(), storm::exceptions::UnexpectedException, "Expecting the formula to yield bottom states for the order");
     if (this->bottomStates->getNumberOfSetBits() == 0 && (this->topStates == boost::none || this->topStates->getNumberOfSetBits() == 0)) {
@@ -453,7 +516,7 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getInitialOrder()
     if (this->minValuesInit && this->maxValuesInit) {
         this->continueExtending[order] = true;
         this->usePLA[order] = true;
-        this->addStatesMinMax(order);
+        this->addStatesMinMax(order, region);
     } else {
         this->usePLA[order] = false;
     }
@@ -756,7 +819,7 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
     }
 }
 template<typename ValueType, typename ConstantType>
-void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order) {
+void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
     auto& min = this->minValues[order];
     auto& max = this->maxValues[order];
 
@@ -769,30 +832,36 @@ void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Ord
         }
     }
     auto& states = order->getStatesSorted();
-    auto fakeRegion = storm::api::createRegion<ValueType>("0", vars);
     for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
         auto state = states[this->numberOfStates - i - 1];
-        auto& successors = this->getSuccessors(state, order);
-        bool allSorted = true;
-        for (uint_fast64_t i1 = 0; i1 < successors.size(); ++i1) {
-            for (uint_fast64_t i2 = i1 + 1; i2 < successors.size(); ++i2) {
-                auto succ1 = *(successors.begin() + i1);
-                auto succ2 = *(successors.begin() + i2);
-                allSorted &= this->addStatesBasedOnMinMax(order, succ1, succ2) != Order::NodeComparison::UNKNOWN;
-            }
-        }
-        if (!this->cyclic && (allSorted && successors.size() > 1 || (successors.size() == 1 && state != *(successors.begin())))) {
-            STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
-            order->setSufficientForState(state);
-            for (auto& entry : transposeMatrix.getRow(state)) {
-                if (!order->isSufficientForState(entry.getColumn())) {
-                    order->addStateToHandle(entry.getColumn());
+        if (!order->isTopState(state) && !order->isBottomState(state)) {
+            auto& successors = this->getSuccessors(state, order);
+            bool allSorted = true;
+            for (uint_fast64_t i1 = 0; i1 < successors.size(); ++i1) {
+                for (uint_fast64_t i2 = i1 + 1; i2 < successors.size(); ++i2) {
+                    auto succ1 = *(successors.begin() + i1);
+                    auto succ2 = *(successors.begin() + i2);
+                    allSorted &= this->addStatesBasedOnMinMax(order, succ1, succ2) != Order::NodeComparison::UNKNOWN;
                 }
             }
-        } else if (allSorted && this->cyclic) {
-            // All successors are sorted, but the model is cyclic, so it might be that we are missing the forward reasoning for this state. Therefore we add it
-            // to the stateToHandle queue.
-            order->addStateToHandle(state);
+            if (allSorted) {
+                STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
+                order->setSufficientForState(state);
+                if (!this->deterministic) {
+                    findBestAction(order, region, state);
+                    auto res = extendByBackwardReasoning(order, region, state);
+                    STORM_LOG_ASSERT(res.first == this->numberOfStates, "Expecting backwards reasoning to succeed if all successors are sorted");
+                    order->setDoneForState(state);
+                }
+                for (auto& entry : transposeMatrix.getRow(state)) {
+                    if (!order->isSufficientForState(entry.getColumn())) {
+                        order->addStateToHandle(entry.getColumn());
+                    }
+                }
+            }
+        } else {
+            order->setSufficientForState(state);
+            order->setDoneForState(state);
         }
     }
 }

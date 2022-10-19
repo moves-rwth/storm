@@ -32,6 +32,8 @@ class ActionComparator {
      */
     bool isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2, storage::ParameterRegion<ValueType> region) const;
 
+    ComparisonResult actionQuickCheck(std::shared_ptr<Order> order, std::vector<uint64_t> const& orderedSuccs, storage::ParameterRegion<ValueType>& region,
+                                      Rows action1, Rows action2) const;
     std::pair<uint64_t, uint64_t> rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action, std::vector<uint64_t> orderedSuccs) const;
 };
 }  // namespace analysis

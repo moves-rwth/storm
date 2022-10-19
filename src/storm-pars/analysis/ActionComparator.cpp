@@ -20,6 +20,10 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
                                                                                                      storage::ParameterRegion<ValueType>& region,
                                                                                                      ActionComparator::Rows action1,
                                                                                                      ActionComparator::Rows action2) const {
+    auto res = actionQuickCheck(order, orderedSuccs, region, action1, action2);
+    if (res != UNKNOWN) {
+        return res;
+    }
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
     // Get ordered vector of the succs actually occurring in the two actions
@@ -108,6 +112,65 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
     } else {
         return UNKNOWN;
     }
+}
+
+template<typename ValueType>
+typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionQuickCheck(std::shared_ptr<Order> order,
+                                                                                                     const std::vector<uint64_t>& orderedSuccs,
+                                                                                                     storage::ParameterRegion<ValueType>& region,
+                                                                                                     ActionComparator::Rows row1,
+                                                                                                     ActionComparator::Rows row2) const {
+    if (row1->begin() + 1 == row1->end() && row2->begin() + 1 == row2->end()) {
+        // row1 and row2 only have one entry
+        if (orderedSuccs.size() == 1) {
+            // they have same order
+            return GEQ;
+        }
+        for (auto i = 0; i < orderedSuccs.size() - 2; ++i) {
+            if (orderedSuccs[i] == row1->begin()->getColumn()) {
+                // row1 is above row2
+                return GEQ;
+            } else if (orderedSuccs[i] == row2->begin()->getColumn()) {
+                return LEQ;
+            }
+        }
+    }
+    if (row1->begin() + 1 == row1->end() && orderedSuccs[0] == row1->begin()->getColumn()) {
+        // row1 only has one successor, and this succ is above all others
+        return GEQ;
+    }
+    if (row1->begin() + 1 == row1->end() && orderedSuccs[orderedSuccs.size() - 1] == row1->begin()->getColumn()) {
+        // row1 only has one successor, and this succ is below all others
+        return LEQ;
+    }
+    if (row2->begin() + 1 == row2->end() && orderedSuccs[0] == row2->begin()->getColumn()) {
+        // row2 only has one successor, and this succ is above all others
+        return LEQ;
+    }
+    if (row2->begin() + 1 == row2->end() && orderedSuccs[orderedSuccs.size() - 1] == row2->begin()->getColumn()) {
+        // row2 only has one successor, and this succ is below all others
+        return GEQ;
+    }
+
+    bool intersect = true;
+    for (auto& entry1 : *row1) {
+        bool found = false;
+        for (auto& entry2 : *row2) {
+            found = entry1.getColumn() == entry2.getColumn();
+            if (found) {
+                intersect &= entry1.getValue() == entry2.getValue();
+                break;
+            }
+        }
+        intersect &= found;
+        if (!intersect) {
+            break;
+        }
+    }
+    if (intersect) {
+        return GEQ;
+    }
+    return UNKNOWN;
 }
 
 template<typename ValueType>

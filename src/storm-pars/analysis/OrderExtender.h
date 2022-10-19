@@ -177,7 +177,7 @@ class OrderExtender {
     //------------------------------------------------------------------------------
     // Order creation/extension
     //------------------------------------------------------------------------------
-    std::shared_ptr<Order> getInitialOrder();
+    std::shared_ptr<Order> getInitialOrder(storage::ParameterRegion<ValueType> region);
     std::pair<uint_fast64_t, uint_fast64_t> extendNormal(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                          uint_fast64_t currentState);
     void handleAssumption(std::shared_ptr<Order> order, Assumption assumption) const;
@@ -193,7 +193,7 @@ class OrderExtender {
     //------------------------------------------------------------------------------
     // Min/Max values for bounds on the reward/probability
     //------------------------------------------------------------------------------
-    void addStatesMinMax(std::shared_ptr<Order> order);
+    void addStatesMinMax(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
     Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
 
     //------------------------------------------------------------------------------
@@ -211,6 +211,8 @@ class OrderExtender {
                                                                               uint_fast64_t currentState) = 0;
     virtual std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                              uint_fast64_t currentState) = 0;
+
+    bool extendNonDeterministic(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t currentState);
     virtual void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) = 0;
     virtual void setBottomTopStates() = 0;
 
@@ -256,6 +258,8 @@ class OrderExtender {
    private:
     void init(storm::storage::SparseMatrix<ValueType> matrix);
     void buildStateMap();
+    bool isStateReachable(uint_fast64_t state, std::shared_ptr<Order> order);
+    std::optional<storm::storage::BitVector> reachableStates;
     std::pair<std::vector<uint_fast64_t>, storage::StronglyConnectedComponentDecomposition<ValueType>> sortStatesAndDecomposeForOrder();
 
     //------------------------------------------------------------------------------
