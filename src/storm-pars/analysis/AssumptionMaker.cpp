@@ -32,7 +32,7 @@ std::map<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>:
     std::map<Assumption, AssumptionStatus> result;
     if (val1 != val2) {
         STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2);
-        assert(order->compare(val1, val2) == Order::UNKNOWN);
+        STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "It makes no sense to create assumptions when the order is known");
         auto assumptionPair =
             createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);
         if (assumptionPair.second != AssumptionStatus::INVALID) {

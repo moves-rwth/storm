@@ -288,11 +288,17 @@ Order::NodeComparison Order::compareFast(uint_fast64_t state1, uint_fast64_t sta
 }
 
 Order::NodeComparison Order::compareFast(Node* node1, Node* node2, NodeComparison hypothesis) const {
+    if (node1 == top || node2 == bottom) {
+        return ABOVE;
+    }
+    if (node1 == bottom || node2 == top) {
+        return BELOW;
+    }
+
     if (node1 != nullptr && node2 != nullptr) {
         if (node1 == node2) {
             return SAME;
         }
-
         if ((hypothesis == UNKNOWN || hypothesis == ABOVE) && ((node1 == top || node2 == bottom) || aboveFast(node1, node2))) {
             return ABOVE;
         }
