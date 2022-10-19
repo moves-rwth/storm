@@ -123,7 +123,11 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::opt
     } else if (monResults.size() > 1) {
         storm::analysis::MonotonicityResult<VariableType> finalRes;
         for (auto itr : monResults) {
-            finalRes.merge(itr.second.first);
+            if (!itr.first->isInvalid()) {
+                // only merge results of valid orders
+                assert(itr.second.first->isDone());
+                finalRes.merge(itr.second.first);
+            }
         }
 
         if (checkSamples) {

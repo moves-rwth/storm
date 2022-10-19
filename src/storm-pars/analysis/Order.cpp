@@ -88,7 +88,7 @@ void Order::add(uint_fast64_t state) {
 void Order::addAbove(uint_fast64_t state, Node* node) {
     STORM_LOG_ASSERT(node != nullptr, "Expecting node to not be a nullptr");
     STORM_LOG_ASSERT(state < numberOfStates, "Invalid state number");
-    STORM_LOG_INFO("Add " << state << " above " << *node->states.begin() << std::endl);
+    STORM_LOG_INFO("Add " << state << " above " << *node->states.begin());
 
     if (nodes[state] == nullptr) {
         Node* newNode = new Node();
@@ -138,7 +138,7 @@ void Order::addBelow(uint_fast64_t state, Node* node) {
 
 void Order::addBetween(uint_fast64_t state, Node* above, Node* below) {
     STORM_LOG_INFO("Add " << state << " between (above) " << *above->states.begin() << " and " << *below->states.begin());
-    
+
     STORM_LOG_ASSERT(above != below, "Cannot add between the same nodes");
     if (above == nullptr) {
         addAbove(state, below);
@@ -288,10 +288,10 @@ Order::NodeComparison Order::compareFast(uint_fast64_t state1, uint_fast64_t sta
 }
 
 Order::NodeComparison Order::compareFast(Node* node1, Node* node2, NodeComparison hypothesis) const {
-    if (node1 == top || node2 == bottom) {
+    if ((node1 == top && node1 != nullptr) || node2 == bottom) {
         return ABOVE;
     }
-    if (node1 == bottom || node2 == top) {
+    if (node1 == bottom || (node2 == top && node2 != nullptr)) {
         return BELOW;
     }
 

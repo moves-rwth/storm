@@ -835,6 +835,7 @@ void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Ord
     for (uint_fast64_t i = 0; i < this->numberOfStates; i++) {
         auto state = states[this->numberOfStates - i - 1];
         if (!order->isTopState(state) && !order->isBottomState(state)) {
+            STORM_LOG_INFO("Checking min/max for successors of state " << state);
             auto& successors = this->getSuccessors(state, order);
             bool allSorted = true;
             for (uint_fast64_t i1 = 0; i1 < successors.size(); ++i1) {

@@ -70,7 +70,8 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
 
 template<typename ValueType, typename ConstantType>
 void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
-    if (order->compareFast(currentState, successor) == Order::NodeComparison::UNKNOWN) {
+    auto compRes = order->compareFast(currentState, successor);
+    if (compRes == Order::NodeComparison::UNKNOWN) {
         bool allZero = true;
         bool allGreaterZero = true;
         if (rewardModel.hasStateActionRewards()) {
@@ -99,8 +100,15 @@ void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::share
         }
     } else {
         if (!order->contains(currentState)) {
-            order->add(currentState);
+            if (compRes == Order::SAME) {
+                order->addToNode(currentState, order->getNode(successor));
+            } else if (compRes == Order::ABOVE) {
+                order->addAbove(currentState, order->getNode(successor));
+            } else if (compRes == Order::BELOW) {
+                order->addBelow(currentState, order->getNode(successor));
+            }
         }
+        assert(order->contains(currentState));
     }
 }
 
@@ -558,7 +566,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                          order->compare(order->getNode(currentState), order->getBottom()) == Order::SAME,
                      "Expecting " << currentState << " to be above " << *order->getBottom()->states.begin());
     // if number of successors is 3 we do a hack to see if we can also order state wrt other state
-    if (sortedSuccStates.second.size() == 3) {
+    if (sortedSuccStates.second.size() == 3 && order->compareFast(currentState, sortedSuccStates.second[1]) == Order::UNKNOWN) {
         auto middleState = sortedSuccStates.second[1];
         auto assumptions =
             this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
