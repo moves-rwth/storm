@@ -102,7 +102,7 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::opt
     if (monResults.size() == 1) {
         auto itr = monResults.begin();
         if (itr->first != nullptr) {
-            STORM_PRINT("Number of done states: " << itr->first->getNumberOfSufficientStates() << std::endl);
+            STORM_PRINT("Number of sufficient states: " << itr->first->getNumberOfSufficientStates() << std::endl);
         }
         if (checkSamples) {
             for (auto& entry : resultCheckOnSamples.getMonotonicityResult()) {
@@ -204,7 +204,7 @@ void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
     auto numberOfStates = model->getNumberOfStates();
     std::vector<Assumption> assumptions;
 
-    if (val1 == numberOfStates && val2 == numberOfStates) {
+    if (val1 == numberOfStates && val2 == numberOfStates && !std::get<0>(criticalTuple)->isInvalid()) {
         auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>(monRes, assumptions);
         monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>>(
             std::get<0>(criticalTuple), resAssumptionPair));

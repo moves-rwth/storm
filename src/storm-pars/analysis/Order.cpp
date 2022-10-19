@@ -565,6 +565,13 @@ std::shared_ptr<Order> Order::copy() const {
             assert(copiedOrder->nodes[state] == nullptr);
         }
     }
+    if (this->mdpScheduler) {
+        for (auto i = 0; i < numberOfStates; ++i) {
+            if (this->isActionSetAtState(i)) {
+                copiedOrder->addToMdpScheduler(i, this->getActionAtState(i));
+            }
+        }
+    }
 
     return copiedOrder;
 }
@@ -768,8 +775,10 @@ std::string Order::nodeLabel(Node* n) const {
     auto itr = n->states.begin();
     std::string label = "s" + std::to_string(*itr);
     ++itr;
-    if (itr != n->states.end())
-        label = "[" + label + "]";
+    while (itr != n->states.end()) {
+        label += ", s" + std::to_string(*itr);
+        ++itr;
+    }
     return label;
 }
 
@@ -863,6 +872,9 @@ uint64_t Order::getActionAtState(uint_fast64_t state) const {
     if (mdpScheduler == boost::none) {
         return 0;
     }
+    if (this->isTopState(state) || this->isBottomState(state)) {
+        return 0;
+    }
     STORM_LOG_ASSERT(mdpScheduler->size() > state, "Cannot get action for a state which is outside the mdpscheduler range");
     return mdpScheduler->at(state);
 }
@@ -870,6 +882,9 @@ uint64_t Order::getActionAtState(uint_fast64_t state) const {
 bool Order::isActionSetAtState(uint_fast64_t state) const {
     if (mdpScheduler == boost::none || (state >= mdpScheduler->size()))
         return false;
+    if (this->isTopState(state) || this->isBottomState(state)) {
+        return true;
+    }
     return mdpScheduler->at(state) != std::numeric_limits<uint64_t>::max();
 }
 

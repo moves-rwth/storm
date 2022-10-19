@@ -326,13 +326,18 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
                 }
             }
         } else {
+            auto ignoredStates = 0;
+            this->reachableStates.reset();
             for (auto state = 0; state < numberOfStates; ++state) {
                 if (this->isStateReachable(state, order)) {
                     for (auto& param : this->occuringVariablesAtState[state]) {
                         this->checkParOnStateMonRes(state, order, param, region, monRes);
                     }
+                } else {
+                    ignoredStates++;
                 }
             }
+            this->reachableStates.reset();
         }
         monRes->setDone();
     }
@@ -462,13 +467,17 @@ bool OrderExtender<ValueType, ConstantType>::isStateReachable(uint_fast64_t stat
                 seenStates.set(state);
                 if (order->isActionSetAtState(state)) {
                     for (auto& entry : matrix.getRow(state, order->getActionAtState(state))) {
-                        reachableStates->set(entry.getColumn());
-                        stateQueue.push(entry.getColumn());
+                        if (!seenStates[entry.getColumn()]) {
+                            reachableStates->set(entry.getColumn());
+                            stateQueue.push(entry.getColumn());
+                        }
                     }
                 } else {
                     for (auto& entry : matrix.getRowGroup(state)) {
-                        reachableStates->set(entry.getColumn());
-                        stateQueue.push(entry.getColumn());
+                        if (!seenStates[entry.getColumn()]) {
+                            reachableStates->set(entry.getColumn());
+                            stateQueue.push(entry.getColumn());
+                        }
                     }
                 }
             }

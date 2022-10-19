@@ -86,7 +86,6 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
         }
         assert(result != AssumptionStatus::VALID);
 
-        // TODO: use Optimistic here as well?
         if (minValues.size() != 0) {
             if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
                 if (minValues[state1] > maxValues[state2]) {
@@ -107,6 +106,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
             }
         }
 
+        // Invalid can only happen if the assumptionchecker yields unsat for the basic problem without the assumption
         if (result == AssumptionStatus::UNKNOWN) {
             // If result from sample checking was unknown, the assumption might hold
             STORM_LOG_THROW(assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater ||
@@ -119,46 +119,81 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                                                         << state2);
                 result = validateAssumptionSMTSolver(state1, state2, order->getActionAtState(state1), order->getActionAtState(state2), fullAssumption, order,
                                                      region, minValues, maxValues);
+                if (result == AssumptionStatus::INVALID) {
+                    order->setInvalid();
+                }
             } else if (order->isActionSetAtState(state1)) {
                 STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state1)
                                                         << " for state " << state1 << " and all actions for " << state2);
                 bool initialized = false;
+                bool viableActionSeen = false;
+                bool viableActionsSeen = false;
+                auto actionFound = 0;
                 for (auto action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
+                    // TODO: check if the action is not overruled by another action
                     auto tempResult = validateAssumptionSMTSolver(state1, state2, order->getActionAtState(state1), action2, fullAssumption, order, region,
                                                                   minValues, maxValues);
-                    if (!initialized) {
+                    if (tempResult == AssumptionStatus::INVALID) {
+                        // Do nothing, action2 should never be picked
+                    } else if (!initialized) {
                         result = tempResult;
                         initialized = true;
-                    } else if (result == AssumptionStatus::VALID && tempResult == AssumptionStatus::INVALID) {
-                        result = AssumptionStatus::UNKNOWN;
-                    } else if (result == AssumptionStatus::INVALID && tempResult == AssumptionStatus::VALID) {
-                        result = AssumptionStatus::UNKNOWN;
+                        viableActionSeen = true;
+                        actionFound = action2;
+                    } else {
+                        viableActionsSeen = true;
+                        if (tempResult == AssumptionStatus::UNKNOWN) {
+                            result = tempResult;
+                        }
                     }
-                    if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
-                        result = AssumptionStatus::UNKNOWN;
+                    if (initialized && result == AssumptionStatus::UNKNOWN && viableActionsSeen) {
                         break;
                     }
+                }
+                if (viableActionSeen && !viableActionsSeen) {
+                    STORM_LOG_INFO("Best action for state " << state2 << " found by assumption checking and set to " << actionFound);
+                    order->addToMdpScheduler(state2, actionFound);
+                }
+                if (!initialized) {
+                    order->setInvalid();
+                    result = AssumptionStatus::INVALID;
                 }
             } else if (order->isActionSetAtState(state2)) {
                 STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state2)
                                                         << " for state " << state2 << " and all actions for " << state1);
 
                 bool initialized = false;
+                bool viableActionSeen = false;
+                bool viableActionsSeen = false;
+                auto actionFound = 0;
                 for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
+                    // TODO: check if the action is not overruled by another action
                     auto tempResult = validateAssumptionSMTSolver(state1, state2, action1, order->getActionAtState(state2), fullAssumption, order, region,
                                                                   minValues, maxValues);
-                    if (!initialized) {
+                    if (tempResult == AssumptionStatus::INVALID) {
+                        // Do nothing, action2 should never be picked
+                    } else if (!initialized) {
                         result = tempResult;
                         initialized = true;
-                    } else if (result == AssumptionStatus::VALID && tempResult == AssumptionStatus::INVALID) {
-                        result = AssumptionStatus::UNKNOWN;
-                    } else if (result == AssumptionStatus::INVALID && tempResult == AssumptionStatus::VALID) {
-                        result = AssumptionStatus::UNKNOWN;
+                        viableActionSeen = true;
+                        actionFound = action1;
+                    } else {
+                        viableActionsSeen = true;
+                        if (tempResult == AssumptionStatus::UNKNOWN) {
+                            result = tempResult;
+                        }
                     }
-                    if (result == AssumptionStatus::UNKNOWN || tempResult == AssumptionStatus::UNKNOWN) {
-                        result = AssumptionStatus::UNKNOWN;
+                    if (initialized && result == AssumptionStatus::UNKNOWN && viableActionsSeen) {
                         break;
                     }
+                }
+                if (viableActionSeen && !viableActionsSeen) {
+                    STORM_LOG_INFO("Best action for state " << state1 << " found by assumption checking and set to " << actionFound);
+                    order->addToMdpScheduler(state1, actionFound);
+                }
+                if (!initialized) {
+                    order->setInvalid();
+                    result = AssumptionStatus::INVALID;
                 }
             } else {
                 STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with all actions for " << state1 << " and " << state2);
@@ -180,6 +215,9 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                             break;
                         }
                     }
+                }
+                if (result == AssumptionStatus::INVALID) {
+                    order->setInvalid();
                 }
             }
         }
@@ -474,8 +512,6 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         // when this is not the case, the order is invalid
         // however, it could be that the sat solver didn't finish in time, in that case we just continue.
         if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
-            STORM_LOG_WARN("The order of successors plus the bounds should be satisfiable, the order is invalid, this may be due to assumptions");
-            order->setInvalid();
             return AssumptionStatus::INVALID;
         }
 
