@@ -234,6 +234,7 @@ class OrderExtender {
     storage::SparseMatrix<ValueType> matrix;
     bool cyclic;
     uint_fast64_t numberOfStates;
+    bool rewards;
 
     // States, transitions and variables occuring
     std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;

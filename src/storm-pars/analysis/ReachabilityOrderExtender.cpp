@@ -9,6 +9,7 @@ ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(st
                                                                               std::shared_ptr<logic::Formula const> formula)
     : OrderExtender<ValueType, ConstantType>(model, formula) {
     this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
+    this->rewards = false;
 }
 
 template<typename ValueType, typename ConstantType>
@@ -16,6 +17,7 @@ ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(st
                                                                               storm::storage::SparseMatrix<ValueType> matrix, bool prMax)
     : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, prMax) {
     this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
+    this->rewards = false;
 }
 
 template<typename ValueType, typename ConstantType>
@@ -23,6 +25,7 @@ ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(st
                                                                               storm::storage::SparseMatrix<ValueType> matrix)
     : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, false) {
     this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
+    this->rewards = false;
     STORM_LOG_ASSERT(this->deterministic, "Expecting model to be deterministic if prMax is not set");
 }
 

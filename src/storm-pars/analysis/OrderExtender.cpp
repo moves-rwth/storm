@@ -248,6 +248,87 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
             // We have a non-deterministic state, and cannot (yet) fix the action
             // We only go into here if we need to handle the state because it was its turn by the ordering
             result = this->extendNormal(order, region, currentState);
+            // If this didnt work we see if we have some structure like: currentState --> succ0 and currentState --> succ1 (both with prob 1)
+            // then succ0 --> succ00 and succ01 with prob f and 1-f, and succ1 --> succ10 and succ11 with prob f and 1-f
+            // succ00 == succ10 and succ00 above succ01 and succ10 above succ11 and only probabilities
+            // in this case succ0 below succ00
+            // succ00 == succ10 and succ00 below succ01 and succ10 below succ11 (both probabilities and rewards)
+            // in this case succ0 above succ00
+            if (result.first != this->numberOfStates) {
+                if (this->stateMap[currentState].size() == 2) {
+                    auto& succ0 = this->getSuccessors(currentState, 0);
+                    auto& succ1 = this->getSuccessors(currentState, 1);
+                    auto state0 = *succ0.begin();
+                    auto state1 = *succ1.begin();
+                    if (succ0.size() == 1 && succ1.size() == 1 && this->stateMap[*succ0.begin()].size() == 1 && this->stateMap[*succ1.begin()].size() == 1) {
+                        succ0 = this->getSuccessors(state0, 0);
+                        succ1 = this->getSuccessors(state1, 0);
+                    }
+                    if (succ0.size() == 2 && succ1.size() == 2) {
+                        auto succ00 = *(succ0.begin());
+                        auto succ01 = *(succ0.begin() + 1);
+                        auto succ10 = *(succ1.begin());
+                        auto succ11 = *(succ1.begin() + 1);
+                        bool swap0 = false;
+                        bool swap1 = false;
+                        if (succ00 == succ11) {
+                            std::swap(succ10, succ11);
+                            swap1 = true;
+                        } else if (succ01 == succ10) {
+                            std::swap(succ00, succ01);
+                            swap0 = true;
+                        } else if (succ01 == succ11) {
+                            std::swap(succ10, succ11);
+                            std::swap(succ00, succ01);
+                            swap0 = true;
+                            swap1 = true;
+                        }
+
+                        if (succ00 == succ10) {
+                            assert(succ01 != succ11);
+                            auto comp0 = order->compare(succ00, succ01);
+                            auto comp1 = order->compare(succ10, succ11);
+                            if (comp0 == comp1 && comp0 == Order::ABOVE && !this->rewards) {
+                                auto row0 = matrix.getRow(state0, 0);
+                                auto row1 = matrix.getRow(state1, 0);
+                                auto val0 = *row0.begin();
+                                auto val1 = *row1.begin();
+                                if (swap0) {
+                                    val0 = *(row0.begin() + 1);
+                                }
+                                if (swap1) {
+                                    val1 = *(row1.begin() + 1);
+                                }
+                                if (val0.getValue() == val1.getValue()) {
+                                    order->addBelow(currentState, order->getNode(succ00));
+                                    assert(val0.getColumn() == val1.getColumn());
+                                    STORM_LOG_INFO("State "
+                                                   << currentState
+                                                   << " is sufficient as successors all have prob1, and for the successors we can sort their successors");
+                                    result = {numberOfStates, numberOfStates};
+                                }
+                            } else if (comp0 == comp1 && comp0 == Order::BELOW) {
+                                auto row0 = matrix.getRow(currentState, 0);
+                                auto row1 = matrix.getRow(currentState, 1);
+                                auto val0 = *row0.begin();
+                                auto val1 = *row1.begin();
+                                if (swap0) {
+                                    val0 = *(row0.begin() + 1);
+                                }
+                                if (swap1) {
+                                    val1 = *(row1.begin() + 1);
+                                }
+                                if (val0.getValue() == val1.getValue()) {
+                                    order->addAbove(currentState, order->getNode(succ00));
+                                    assert(val0.getColumn() == val1.getColumn());
+                                    STORM_LOG_INFO("State " << currentState << " is sufficient by hack");
+                                    result = {numberOfStates, numberOfStates};
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if (result.first != this->numberOfStates) {
                 // We could not extend it, so we first make assumptions for the actions (therefore we return order, currentState, currentState)
                 order->addStateSorted(currentState);

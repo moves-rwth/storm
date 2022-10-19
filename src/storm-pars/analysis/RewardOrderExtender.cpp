@@ -10,6 +10,7 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(std::shared_pt
     this->rewardModel = this->model->getUniqueRewardModel();
     this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(
         this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
+    this->rewards = true;
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         if (rewardModel.hasStateActionRewards()) {
             for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
@@ -31,6 +32,7 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
     this->rewardModel = rewardModel;
     this->assumptionMaker =
         new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
+    this->rewards = true;
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         if (rewardModel.hasStateActionRewards()) {
             for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
@@ -52,6 +54,7 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
     this->rewardModel = rewardModel;
     this->assumptionMaker =
         new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
+    this->rewards = true;
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
         if (rewardModel.hasStateActionRewards()) {
             for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
