@@ -1214,7 +1214,7 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex) {
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex) {
                 statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
                 auto clipping = beliefManager->clipBeliefToGrid(clippingStateId, options.clippingGridRes,
                                                                 beliefExplorer->getStateExtremeBoundIsInfinite());
@@ -1244,12 +1244,14 @@ namespace storm {
                         beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clipping.delta));
                     }
                     beliefExplorer->addChoiceLabelToCurrentState(localActionIndex, "clip");
+                    return true;
                 } else {
                     if(clipping.onGrid){
                         // If the belief is not clippable, but on the grid, it may need to be explored, too
                         beliefExplorer->markAsGridBelief(clippingStateId);
                     }
                 }
+                return false;
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
