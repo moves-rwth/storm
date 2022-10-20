@@ -41,7 +41,7 @@ TEST(AssumptionCheckerReachabilityMdpTest, simpleCase1_max) {
     bottomStates.set(5);
     bottomStates.set(6);
     auto order = std::make_shared<storm::analysis::Order>(
-        storm::analysis::Order(&topStates, &bottomStates, 7, storm::storage::Decomposition<storm::storage::StronglyConnectedComponent>(), {}));
+        storm::analysis::Order(&topStates, &bottomStates, 7, storm::storage::Decomposition<storm::storage::StronglyConnectedComponent>(), {}, false));
     order->add(1);
     order->add(2);
     order->add(3);
