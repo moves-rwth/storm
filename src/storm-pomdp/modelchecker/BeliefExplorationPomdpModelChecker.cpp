@@ -977,10 +977,10 @@ namespace storm {
                             if (options.useGridClipping) {
                                 // Use a belief grid as clipping candidates
                                 if(options.useExplicitCutoff){
-                                    clipToGridExplicitly(currId, computeRewards, min, beliefManager, underApproximation,0);
+                                    bool successfulClip = clipToGridExplicitly(currId, computeRewards, min, beliefManager, underApproximation,0);
                                     // Set again as the current belief might have been detected to be a grid belief
                                     stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
-                                    if(stopExploration){
+                                    if(successfulClip){
                                         addedActions += 1;
                                     }
                                 } else {
@@ -1004,8 +1004,8 @@ namespace storm {
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available
                                 if(pomdp().hasChoiceLabeling()){
-                                    if(pomdp().getChoiceLabeling().getLabelsOfChoice(beliefManager->getRepresentativeState(currId)+action).size() > 0) {
-                                        auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];
+                                    auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];
+                                    if(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).size() > 0) {
                                         underApproximation->addChoiceLabelToCurrentState(
                                             addedActions + action,*(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).begin()));
                                     }
@@ -1234,7 +1234,7 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex) {
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex) {
                 statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
                 auto clipping = beliefManager->clipBeliefToGrid(clippingStateId, options.clippingGridRes,
                                                                 beliefExplorer->getStateExtremeBoundIsInfinite());
@@ -1264,12 +1264,14 @@ namespace storm {
                         beliefExplorer->addTransitionsToExtraStates(localActionIndex, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clipping.delta));
                     }
                     beliefExplorer->addChoiceLabelToCurrentState(localActionIndex, "clip");
+                    return true;
                 } else {
                     if(clipping.onGrid){
                         // If the belief is not clippable, but on the grid, it may need to be explored, too
                         beliefExplorer->markAsGridBelief(clippingStateId);
                     }
                 }
+                return false;
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>

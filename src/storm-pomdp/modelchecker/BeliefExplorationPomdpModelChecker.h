@@ -122,7 +122,7 @@ namespace storm {
                  * @param beliefManager the belief manager used
                  * @param beliefExplorer the belief MDP explorer used
                  */
-                void clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex);
+                bool clipToGridExplicitly(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer, uint64_t localActionIndex);
 
                 /**
                  * Clips the belief with the given state ID using already explored beliefs as candidates ("classic clipping")
