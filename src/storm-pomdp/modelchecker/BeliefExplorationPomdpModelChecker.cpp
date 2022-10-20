@@ -984,8 +984,8 @@ namespace storm {
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available
                                 if(pomdp().hasChoiceLabeling()){
-                                    if(pomdp().getChoiceLabeling().getLabelsOfChoice(beliefManager->getRepresentativeState(currId)+action).size() > 0) {
-                                        auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];
+                                    auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];
+                                    if(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).size() > 0) {
                                         underApproximation->addChoiceLabelToCurrentState(
                                             addedActions + action,*(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).begin()));
                                     }
