@@ -221,7 +221,7 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
                                                                              std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
     std::map<std::shared_ptr<Order>, std::vector<Assumption>> result;
     if (order->isInvalid()) {
-        STORM_LOG_INFO("Order is invalid, probably found with forward reasoning");
+        STORM_LOG_INFO("Order is invalid, probably due to assumptions");
         return;
     }
     for (auto& assumption : assumptions) {
@@ -291,6 +291,7 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
                 if (itr != newAssumptions.end()) {
                     // We make a copy of the order and the assumptions
                     auto orderCopy = order->copy();
+                    assert(!orderCopy->isInvalid());
                     auto assumptionsCopy = std::vector<Assumption>(assumptions);
                     auto monResCopy = monRes->copy();
 
@@ -301,6 +302,7 @@ void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std
                     auto criticalTuple = extendOrder(orderCopy, region, monResCopy, assumption.first);
                     extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
                 } else {
+                    assert(!order->isInvalid());
                     // It is the last one, so we don't need to create a copy.
                     if (assumption.second == AssumptionStatus::UNKNOWN) {
                         // only add assumption to the set of assumptions if it is unknown whether it holds or not

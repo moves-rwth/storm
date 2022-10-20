@@ -508,7 +508,7 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getInitialOrder(s
     // Create Order
     std::shared_ptr<Order> order =
         std::shared_ptr<Order>(new Order(&(this->topStates.get()), &(this->bottomStates.get()), this->numberOfStates,
-                                         std::move(statesSortedAndDecomposition.second), std::move(statesSortedAndDecomposition.first)));
+                                         std::move(statesSortedAndDecomposition.second), std::move(statesSortedAndDecomposition.first), this->deterministic));
     this->buildStateMap();
     for (auto& state : this->statesToHandleInitially) {
         order->addStateToHandle(state);

@@ -17,7 +17,7 @@ TEST(OrderTest, Simple) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1, 0));
     EXPECT_EQ(nullptr, order.getNode(2));
@@ -88,14 +88,14 @@ TEST(OrderTest, copy_order) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));
     order.addBetween(5, order.getNode(0), order.getNode(3));
     order.addBetween(6, order.getNode(5), order.getNode(3));
 
-    auto orderCopy = storm::analysis::Order(order);
+    auto orderCopy = *order.copy();
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, orderCopy.compare(0, 1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, orderCopy.compare(1, 0));
 
@@ -128,7 +128,7 @@ TEST(OrderTest, copy_order) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, orderCopy.compare(5, 4));
 
     order.addRelationNodes(order.getNode(6), order.getNode(4));
-    orderCopy = storm::analysis::Order(order);
+    orderCopy = *order.copy();
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, orderCopy.compare(6, 0));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, orderCopy.compare(0, 6));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, orderCopy.compare(6, 1));
@@ -157,7 +157,7 @@ TEST(OrderTest, merge_nodes) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));
@@ -233,7 +233,7 @@ TEST(OrderTest, merge_nodes_2) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.add(4);
@@ -339,7 +339,7 @@ TEST(OrderTest, merge_nodes_3) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.add(4);
@@ -445,7 +445,7 @@ TEST(OrderTest, merge_nodes_4) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.add(4);
@@ -552,7 +552,7 @@ TEST(OrderTest, merge_nodes_5) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.add(4);
@@ -658,7 +658,7 @@ TEST(OrderTest, merge_nodes_7) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.add(4);
@@ -707,7 +707,7 @@ TEST(OrderTest, merge_nodes_8) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.add(4);
@@ -756,7 +756,7 @@ TEST(OrderTest, merge_nodes_9) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.add(4);
@@ -807,7 +807,7 @@ TEST(OrderTest, merge_nodes_10) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));
@@ -917,7 +917,7 @@ TEST(OrderTest, sort_states) {
     auto matrix = matrixBuilder.build();
     auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
     auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted, true);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));

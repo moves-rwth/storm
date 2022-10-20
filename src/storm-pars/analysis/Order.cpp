@@ -7,9 +7,9 @@
 namespace storm {
 namespace analysis {
 Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates,
-             storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
+             storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool deterministic) {
     STORM_LOG_ASSERT(bottomStates->getNumberOfSetBits() > 0, "Expecting order to contain at least one bottom state");
-    init(numberOfStates, decomposition);
+    init(numberOfStates, decomposition, deterministic, false);
     this->numberOfAddedStates = 0;
     this->onlyInitialOrder = true;
     if (!topStates->empty()) {
@@ -43,8 +43,8 @@ Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bo
 }
 
 Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates,
-             storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
-    init(numberOfStates, decomposition);
+             storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool deterministic) {
+    init(numberOfStates, decomposition, deterministic, false);
 
     this->onlyInitialOrder = true;
     this->sufficientForState.set(topState);
@@ -306,9 +306,9 @@ Order::NodeComparison Order::compareFast(Node* node1, Node* node2, NodeCompariso
         if ((hypothesis == UNKNOWN || hypothesis == BELOW) && ((node2 == top || node1 == bottom) || aboveFast(node2, node1))) {
             return BELOW;
         }
-    } else if (!mdpScheduler.is_initialized() && ((top != nullptr && node1 == top) || node2 == bottom)) {
+    } else if (deterministic && ((top != nullptr && node1 == top) || node2 == bottom)) {
         return ABOVE;
-    } else if (!mdpScheduler.is_initialized() && ((top != nullptr && node1 == top) || node1 == bottom)) {
+    } else if (deterministic && ((top != nullptr && node1 == top) || node1 == bottom)) {
         return BELOW;
     }
     return UNKNOWN;
@@ -523,17 +523,19 @@ std::shared_ptr<Order> Order::copy() const {
     assert(!this->isInvalid());
     std::shared_ptr<Order> copiedOrder = std::make_shared<Order>();
     copiedOrder->nodes = std::vector<Node*>(numberOfStates, nullptr);
-    copiedOrder->onlyInitialOrder = this->isOnlyInitialOrder();
-    copiedOrder->numberOfStates = this->getNumberOfStates();
+    copiedOrder->onlyInitialOrder = isOnlyInitialOrder();
+    copiedOrder->numberOfStates = getNumberOfStates();
     copiedOrder->statesSorted = std::vector<uint_fast64_t>(this->statesSorted);
     copiedOrder->statesToHandle = std::vector<uint_fast64_t>(this->statesToHandle);
     copiedOrder->specialStatesToHandle = std::vector<uint_fast64_t>(this->specialStatesToHandle);
     copiedOrder->trivialStates = storm::storage::BitVector(trivialStates);
     copiedOrder->sufficientForState = storm::storage::BitVector(sufficientForState);
     copiedOrder->doneForState = storm::storage::BitVector(doneForState);
-    copiedOrder->numberOfAddedStates = this->numberOfAddedStates;
-    copiedOrder->doneBuilding = this->doneBuilding;
+    copiedOrder->numberOfAddedStates = numberOfAddedStates;
+    copiedOrder->doneBuilding = doneBuilding;
     copiedOrder->setChanged(this->getChanged());
+    copiedOrder->setInvalid(this->invalid);
+    copiedOrder->deterministic = deterministic;
 
     auto seenStates = storm::storage::BitVector(numberOfStates, false);
     // copy nodes
@@ -565,7 +567,8 @@ std::shared_ptr<Order> Order::copy() const {
             assert(copiedOrder->nodes[state] == nullptr);
         }
     }
-    if (this->mdpScheduler) {
+    if (!deterministic) {
+        copiedOrder->mdpScheduler = std::vector<uint64_t>(numberOfStates, std::numeric_limits<uint64_t>::max());
         for (auto i = 0; i < numberOfStates; ++i) {
             if (this->isActionSetAtState(i)) {
                 copiedOrder->addToMdpScheduler(i, this->getActionAtState(i));
@@ -587,8 +590,8 @@ void Order::setDoneForState(uint_fast64_t stateNumber) {
     doneForState.set(stateNumber);
 }
 
-void Order::setInvalid() {
-    this->invalid = true;
+void Order::setInvalid(bool invalid) {
+    this->invalid = invalid;
 }
 
 /*** Output ***/
@@ -689,7 +692,8 @@ void Order::dotOutputToFile(std::ostream& dotOutfile) const {
 
 /*** Private methods ***/
 
-void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool doneBuilding) {
+void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool deterministic,
+                 bool doneBuilding) {
     this->numberOfStates = numberOfStates;
     this->nodes = std::vector<Node*>(numberOfStates, nullptr);
     this->sufficientForState = storm::storage::BitVector(numberOfStates, false);
@@ -710,6 +714,10 @@ void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::S
     this->bottom->statesAbove = storm::storage::BitVector(numberOfStates, false);
     this->doneBuilding = doneBuilding;
     this->invalid = false;
+    this->deterministic = deterministic;
+    if (!this->deterministic) {
+        mdpScheduler = std::vector<uint64_t>(numberOfStates, std::numeric_limits<uint64_t>::max());
+    }
 }
 
 bool Order::aboveFast(Node* node1, Node* node2) const {
@@ -861,31 +869,31 @@ uint_fast64_t Order::getNumberOfSufficientStates() const {
 }
 
 void Order::addToMdpScheduler(uint_fast64_t state, uint_fast64_t action) {
-    if (!mdpScheduler) {
-        mdpScheduler = std::vector<uint64_t>(numberOfStates);
-        std::fill(mdpScheduler->begin(), mdpScheduler->end(), std::numeric_limits<uint64_t>::max());
+    if (!deterministic) {
+        mdpScheduler[state] = action;
+    } else {
+        STORM_LOG_WARN("Trying to add a action to the scheduler for a deterministic model");
     }
-    mdpScheduler.get()[state] = action;
 }
 
 uint64_t Order::getActionAtState(uint_fast64_t state) const {
-    if (mdpScheduler == boost::none) {
+    if (deterministic) {
         return 0;
     }
     if (this->isTopState(state) || this->isBottomState(state)) {
         return 0;
     }
-    STORM_LOG_ASSERT(mdpScheduler->size() > state, "Cannot get action for a state which is outside the mdpscheduler range");
-    return mdpScheduler->at(state);
+    STORM_LOG_ASSERT(mdpScheduler.size() > state, "Cannot get action for a state which is outside the mdpscheduler range");
+    return mdpScheduler.at(state);
 }
 
 bool Order::isActionSetAtState(uint_fast64_t state) const {
-    if (mdpScheduler == boost::none || (state >= mdpScheduler->size()))
-        return false;
-    if (this->isTopState(state) || this->isBottomState(state)) {
+    STORM_LOG_THROW(deterministic || state < mdpScheduler.size(), storm::exceptions::InvalidOperationException,
+                    "Expecting model to be deterministic or state to be a valid statenumber");
+    if (deterministic || this->isTopState(state) || this->isBottomState(state)) {
         return true;
     }
-    return mdpScheduler->at(state) != std::numeric_limits<uint64_t>::max();
+    return mdpScheduler.at(state) != std::numeric_limits<uint64_t>::max();
 }
 
 bool Order::isSufficientForState(uint_fast64_t state) const {

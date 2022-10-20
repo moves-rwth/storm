@@ -499,9 +499,10 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                                         break;
                                     }
                                 }
-                                if (function.gatherVariables().size() == 1) {
+                                auto vars = function.gatherVariables();
+                                if (vars.size() == 1) {
                                     std::map<VariableType, CoefficientType> val1, val2;
-                                    auto& var = *(function.gatherVariables().begin());
+                                    auto& var = *(vars.begin());
                                     val1.insert({var, region.getLowerBoundary(var)});
                                     val2.insert({var, region.getUpperBoundary(var)});
                                     CoefficientType res1 = function.evaluate(val1);

@@ -39,7 +39,7 @@ class Order {
      * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
      */
     Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates,
-          storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted);
+          storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted, bool deterministic);
 
     /*!
      * Constructs an order with the given top state and bottom state.
@@ -51,7 +51,7 @@ class Order {
      * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
      */
     Order(uint_fast64_t top, uint_fast64_t bottom, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted,
-          std::vector<uint_fast64_t> statesSorted);
+          std::vector<uint_fast64_t> statesSorted, bool deterministic);
 
     /*!
      * Constructs a new Order.
@@ -439,7 +439,7 @@ class Order {
 
     bool getChanged() const;
 
-    void setInvalid();
+    void setInvalid(bool invalid = true);
     bool isInvalid() const;
 
    protected:
@@ -473,7 +473,7 @@ class Order {
      * @param decomposition TODO ??
      * @param doneBuilding
      */
-    void init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool doneBuilding = false);
+    void init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool deterministic, bool doneBuilding);
 
     /*!
      * Creates a name for a node in the dotOutput that represents a node in the order
@@ -530,9 +530,10 @@ class Order {
     std::vector<uint_fast64_t> statesToHandle;
     std::vector<uint_fast64_t> specialStatesToHandle;
 
-    boost::optional<std::vector<uint64_t>> mdpScheduler;
+    std::vector<uint64_t> mdpScheduler;
     bool changed;
     bool invalid;
+    bool deterministic;
 };
 }  // namespace analysis
 }  // namespace storm
