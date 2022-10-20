@@ -957,10 +957,10 @@ namespace storm {
                             if (options.useGridClipping) {
                                 // Use a belief grid as clipping candidates
                                 if(options.useExplicitCutoff){
-                                    clipToGridExplicitly(currId, computeRewards, min, beliefManager, underApproximation,0);
+                                    bool successfulClip = clipToGridExplicitly(currId, computeRewards, min, beliefManager, underApproximation,0);
                                     // Set again as the current belief might have been detected to be a grid belief
                                     stopExploration = !underApproximation->isMarkedAsGridBelief(currId);
-                                    if(stopExploration){
+                                    if(successfulClip){
                                         addedActions += 1;
                                     }
                                 } else {
