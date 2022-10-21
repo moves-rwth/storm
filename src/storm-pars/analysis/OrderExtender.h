@@ -237,6 +237,7 @@ class OrderExtender {
     bool cyclic;
     uint_fast64_t numberOfStates;
     bool rewards;
+    storm::models::sparse::StandardRewardModel<ValueType> rewardModel;
 
     // States, transitions and variables occuring
     std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;

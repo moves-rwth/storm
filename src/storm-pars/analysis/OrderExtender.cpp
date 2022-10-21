@@ -680,14 +680,39 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             // Use parameter lifting modelchecker to get initial min/max values for order creation
             modelchecker::SparseMdpParameterLiftingModelChecker<models::sparse::Mdp<ValueType>, ConstantType> plaModelChecker;
 
-            STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
-            plaModelChecker.specify(env, model, checkTask.get(), false, false);
+            modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck;
+            modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck;
+            if (formula->asOperatorFormula().getOptimalityType() == OptimizationDirection::Maximize) {
+                storm::logic::OperatorInformation opInfo = storm::logic::OperatorInformation(OptimizationDirection::Minimize, boost::none);
+                auto otherFormula = std::make_shared<storm::logic::RewardOperatorFormula>(formula->asRewardOperatorFormula().getSubformula().asSharedPointer(),
+                                                                                          model->getUniqueRewardModelName(), opInfo);
 
-            assert(checkTask->getFormula().hasQuantitativeResult());
-            modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck =
-                plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-            modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck =
-                plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+                STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
+                plaModelChecker.specify(env, model, checkTask.get(), false, false);
+                maxCheck =
+                    plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+
+                assert(checkTask->getFormula().hasQuantitativeResult());
+                boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTaskOther = storm::api::createTask<ValueType>(otherFormula, false);
+                plaModelChecker.specify(env, model, checkTaskOther.get(), false, false);
+                minCheck =
+                    plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+            } else {
+                storm::logic::OperatorInformation opInfo = storm::logic::OperatorInformation(OptimizationDirection::Maximize, boost::none);
+                auto otherFormula = std::make_shared<storm::logic::RewardOperatorFormula>(formula->asRewardOperatorFormula().getSubformula().asSharedPointer(),
+                                                                                          model->getUniqueRewardModelName(), opInfo);
+
+                STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
+                plaModelChecker.specify(env, model, checkTask.get(), false, false);
+
+                assert(checkTask->getFormula().hasQuantitativeResult());
+                minCheck =
+                    plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+                boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTaskOther = storm::api::createTask<ValueType>(otherFormula, false);
+                plaModelChecker.specify(env, model, checkTaskOther.get(), false, false);
+                maxCheck =
+                    plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+            }
 
             if (order != nullptr) {
                 minValues[order] = minCheck.getValueVector();
@@ -697,6 +722,15 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
                 minValuesInit = minCheck.getValueVector();
                 maxValuesInit = maxCheck.getValueVector();
             }
+        }
+    }
+    if (order != nullptr) {
+        for (auto i = 0; i < minValues[order].size(); ++i) {
+            std::cout << i << ": " << minValues[order][i] << ", " << maxValues[order][i] << std::endl;
+        }
+    } else {
+        for (auto i = 0; i < minValuesInit.get().size(); ++i) {
+            std::cout << i << ": " << minValuesInit.get()[i] << ", " << maxValuesInit.get()[i] << std::endl;
         }
     }
 }
@@ -1221,7 +1255,16 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                 for (uint_fast64_t i = action + 1; i < numberOfOptionsForState; ++i) {
                     if (actionsToIgnore.find(i) == actionsToIgnore.end()) {
                         auto rowB = this->matrix.getRow(state, i);
-                        auto compRes = actionComparator.actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
+                        ValueType rew1(0);
+                        ValueType rew2(0);
+                        if (this->rewards) {
+                            if (this->rewardModel.hasStateActionRewards()) {
+                                // Reward only matters if we have state action rewards
+                                rew1 = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[state] + action);
+                                rew2 = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[state] + i);
+                            }
+                        }
+                        auto compRes = actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB);
                         if (compRes == CompareResult::GEQ) {
                             // rowA is smaller or equal than rowB, so action is smaller than i, so we continue with action
                             // We will ignore i as we know action is better
@@ -1258,7 +1301,17 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                 for (uint_fast64_t i = action + 1; i < numberOfOptionsForState; ++i) {
                     if (actionsToIgnore.find(i) == actionsToIgnore.end()) {
                         auto rowB = this->matrix.getRow(state, i);
-                        auto compRes = actionComparator.actionSMTCompare(order, orderedSuccs, region, &rowA, &rowB);
+                        ValueType rew1(0);
+                        ValueType rew2(0);
+                        if (this->rewards) {
+                            if (this->rewardModel.hasStateActionRewards()) {
+                                // Reward only matters if we have state action rewards
+                                rew1 = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[state] + action);
+                                rew2 = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[state] + i);
+                            }
+                        }
+                        auto compRes = actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB);
+
                         if (compRes == CompareResult::LEQ) {
                             // rowA is smaller or equal than rowB, so action is smaller than i, so we continue with action
                             // We will ignore i as we know action is better

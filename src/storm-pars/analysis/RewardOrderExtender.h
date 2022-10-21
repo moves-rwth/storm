@@ -20,9 +20,9 @@ class RewardOrderExtender : public OrderExtender<ValueType, ConstantType> {
     RewardOrderExtender(storm::storage::BitVector& topStates, storm::storage::BitVector& bottomStates, storm::storage::SparseMatrix<ValueType> matrix,
                         storm::models::sparse::StandardRewardModel<ValueType> rewardModel);
 
-//    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(
-//        std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
-//        std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
+    //    std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(
+    //        std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes =
+    //        nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
 
    protected:
     // Override methods from OrderExtender
@@ -31,10 +31,8 @@ class RewardOrderExtender : public OrderExtender<ValueType, ConstantType> {
                                                                       uint_fast64_t currentState) override;
     std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                      uint_fast64_t currentState) override;
-   void setBottomTopStates() override;
-   void checkRewardsForOrder(std::shared_ptr<Order> order) override;
-
-
+    void setBottomTopStates() override;
+    void checkRewardsForOrder(std::shared_ptr<Order> order) override;
 
    private:
     // There is only one interesting successor, as the other one is either the current state, or a bottom state
@@ -44,7 +42,6 @@ class RewardOrderExtender : public OrderExtender<ValueType, ConstantType> {
 
     /*** Model Info ***/
     // Reward model of our model
-    storm::models::sparse::StandardRewardModel<ValueType> rewardModel;
     storage::BitVector assumptionsCreated;
 };
 }  // namespace analysis

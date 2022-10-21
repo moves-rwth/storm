@@ -503,7 +503,6 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         // Expression for the bounds on the variables, need to do this last, otherwise we might not have all variables yet
         // --------------------------------------------------------------------------------
         s.add(getExpressionBounds(manager, region, varname1, varname2, stateVariables, topVariables, bottomVariables, minValues, maxValues));
-
         // --------------------------------------------------------------------------------
         // Check if the order of the successors + the bounds is satisfiable
         // --------------------------------------------------------------------------------

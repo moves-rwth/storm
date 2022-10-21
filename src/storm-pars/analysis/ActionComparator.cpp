@@ -15,12 +15,11 @@ ActionComparator<ValueType>::ActionComparator() {
 }
 
 template<typename ValueType>
-typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionSMTCompare(std::shared_ptr<Order> order,
-                                                                                                     const std::vector<uint64_t>& orderedSuccs,
-                                                                                                     storage::ParameterRegion<ValueType>& region,
-                                                                                                     ActionComparator::Rows action1,
-                                                                                                     ActionComparator::Rows action2) const {
-    auto res = actionQuickCheck(order, orderedSuccs, region, action1, action2);
+typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionSMTCompare(
+    std::shared_ptr<Order> order, const std::vector<uint64_t>& orderedSuccs, storage::ParameterRegion<ValueType>& region, ValueType reward1, ValueType reward2,
+    ActionComparator::Rows row1, ActionComparator::Rows row2) const {
+    STORM_LOG_ASSERT(reward1.isConstant() && reward2.isConstant(), "Expecting rewards to be constant");
+    auto res = actionQuickCheck(order, orderedSuccs, region, reward1, reward2, row1, row2);
     if (res != UNKNOWN) {
         return res;
     }
@@ -29,10 +28,10 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
     // Get ordered vector of the succs actually occurring in the two actions
     std::vector<uint64_t> occSuccs = std::vector<uint64_t>();
     std::set<uint64_t> occSuccSet = std::set<uint64_t>();
-    for (auto entry : *action1) {
+    for (auto entry : *row1) {
         occSuccSet.insert(entry.getColumn());
     }
-    for (auto entry : *action2) {
+    for (auto entry : *row2) {
         occSuccSet.insert(entry.getColumn());
     }
     for (auto a : orderedSuccs) {
@@ -64,14 +63,14 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
 
     // Turn rational functions into expressions
     auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
-    auto exprF1 = manager->rational(0);
-    for (auto entry : *action1) {
+    auto exprF1 = manager->rational(storm::utility::convertNumber<storm::RationalNumber>(reward1.constantPart()));
+    for (auto entry : *row1) {
         uint64_t column = entry.getColumn();
         std::string name = "s" + std::to_string(column);
         exprF1 = exprF1 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable(name);
     }
-    auto exprF2 = manager->rational(0);
-    for (auto entry : *action2) {
+    auto exprF2 = manager->rational(storm::utility::convertNumber<storm::RationalNumber>(reward2.constantPart()));
+    for (auto entry : *row2) {
         uint64_t column = entry.getColumn();
         std::string name = "s" + std::to_string(column);
         exprF2 = exprF2 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable(name);
@@ -115,39 +114,37 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
 }
 
 template<typename ValueType>
-typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionQuickCheck(std::shared_ptr<Order> order,
-                                                                                                     const std::vector<uint64_t>& orderedSuccs,
-                                                                                                     storage::ParameterRegion<ValueType>& region,
-                                                                                                     ActionComparator::Rows row1,
-                                                                                                     ActionComparator::Rows row2) const {
+typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionQuickCheck(
+    std::shared_ptr<Order> order, const std::vector<uint64_t>& orderedSuccs, storage::ParameterRegion<ValueType>& region, ValueType rew1, ValueType rew2,
+    ActionComparator::Rows row1, ActionComparator::Rows row2) const {
     if (row1->begin() + 1 == row1->end() && row2->begin() + 1 == row2->end()) {
         // row1 and row2 only have one entry
         if (orderedSuccs.size() == 1) {
             // they have same order
-            return GEQ;
+            return rew1.constantPart() >= rew2.constantPart() ? GEQ : LEQ;
         }
         for (auto i = 0; i < orderedSuccs.size() - 2; ++i) {
-            if (orderedSuccs[i] == row1->begin()->getColumn()) {
+            if (orderedSuccs[i] == row1->begin()->getColumn() && rew1.constantPart() >= rew2.constantPart()) {
                 // row1 is above row2
                 return GEQ;
-            } else if (orderedSuccs[i] == row2->begin()->getColumn()) {
+            } else if (orderedSuccs[i] == row2->begin()->getColumn() && rew2.constantPart() >= rew1.constantPart()) {
                 return LEQ;
             }
         }
     }
-    if (row1->begin() + 1 == row1->end() && orderedSuccs[0] == row1->begin()->getColumn()) {
+    if (row1->begin() + 1 == row1->end() && orderedSuccs[0] == row1->begin()->getColumn() && rew1.constantPart() >= rew2.constantPart()) {
         // row1 only has one successor, and this succ is above all others
         return GEQ;
     }
-    if (row1->begin() + 1 == row1->end() && orderedSuccs[orderedSuccs.size() - 1] == row1->begin()->getColumn()) {
+    if (row1->begin() + 1 == row1->end() && orderedSuccs[orderedSuccs.size() - 1] == row1->begin()->getColumn() && rew2.constantPart() >= rew1.constantPart()) {
         // row1 only has one successor, and this succ is below all others
         return LEQ;
     }
-    if (row2->begin() + 1 == row2->end() && orderedSuccs[0] == row2->begin()->getColumn()) {
+    if (row2->begin() + 1 == row2->end() && orderedSuccs[0] == row2->begin()->getColumn() && rew2.constantPart() >= rew1.constantPart()) {
         // row2 only has one successor, and this succ is above all others
         return LEQ;
     }
-    if (row2->begin() + 1 == row2->end() && orderedSuccs[orderedSuccs.size() - 1] == row2->begin()->getColumn()) {
+    if (row2->begin() + 1 == row2->end() && orderedSuccs[orderedSuccs.size() - 1] == row2->begin()->getColumn() && rew1.constantPart() >= rew2.constantPart()) {
         // row2 only has one successor, and this succ is below all others
         return GEQ;
     }
@@ -167,8 +164,10 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
             break;
         }
     }
-    if (intersect) {
+    if (intersect && rew1.constantPart() >= rew2.constantPart()) {
         return GEQ;
+    } else if (intersect && rew2.constantPart() >= rew1.constantPart()) {
+        return LEQ;
     }
     return UNKNOWN;
 }
