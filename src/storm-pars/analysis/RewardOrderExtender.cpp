@@ -158,35 +158,160 @@ void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::sha
 
                 if (checkReward) {
                     // check welke reward t grootste is
+                    if (order->isActionSetAtState(i) && order->isActionSetAtState(j)) {
+                        ValueType rewardI = ValueType(0);
+                        ValueType rewardJ = ValueType(0);
+                        if (rewardModel.hasStateActionRewards()) {
+                            STORM_LOG_ASSERT(order->getActionAtState(i) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
+                            STORM_LOG_ASSERT(order->getActionAtState(j) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
+                            rewardI = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + order->getActionAtState(i));
+                            rewardJ = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + order->getActionAtState(j));
+                        } else if (rewardModel.hasStateRewards()) {
+                            rewardI = rewardModel.getStateReward(i);
+                            rewardJ = rewardModel.getStateReward(j);
+                        } else {
+                            STORM_LOG_ASSERT(false, "Expecting reward");
+                        }
 
-                    ValueType rewardI = ValueType(0);
-                    ValueType rewardJ = ValueType(0);
-                    if (rewardModel.hasStateActionRewards()) {
-                        assert(order->getActionAtState(i) != std::numeric_limits<uint64_t>::max());
-                        assert(order->getActionAtState(j) != std::numeric_limits<uint64_t>::max());
-                        rewardI = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + order->getActionAtState(i));
-                        rewardJ = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + order->getActionAtState(j));
-                    } else if (rewardModel.hasStateRewards()) {
-                        rewardI = rewardModel.getStateReward(i);
-                        rewardJ = rewardModel.getStateReward(j);
-                    } else {
-                        STORM_LOG_ASSERT(false, "Expecting reward");
-                    }
+                        if (!order->contains(i)) {
+                            order->add(i);
+                            order->addStateToHandle(i);
+                        }
+                        if (!order->contains(j)) {
+                            order->add(j);
+                            order->addStateToHandle(j);
+                        }
+                        if (rewardI.constantPart() > rewardJ.constantPart()) {
+                            order->addAbove(i, order->getNode(j));
+                        } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                            order->addAbove(j, order->getNode(i));
+                        } else {
+                            order->addRelation(i, j, true);
+                        }
+                    } else if (order->isActionSetAtState(i)) {
+                        ValueType rewardI = ValueType(0);
+                        ValueType rewardJ = ValueType(0);
+                        bool iAboveJ = true;
+                        bool jAboveI = true;
+                        for (auto actJ = 0; actJ < this->stateMap[j].size(); ++actJ) {
+                            if (rewardModel.hasStateActionRewards()) {
+                                STORM_LOG_ASSERT(order->getActionAtState(i) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
+                                rewardI = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + order->getActionAtState(i));
+                                rewardJ = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + actJ);
+                            } else if (rewardModel.hasStateRewards()) {
+                                rewardI = rewardModel.getStateReward(i);
+                                rewardJ = rewardModel.getStateReward(j);
+                            } else {
+                                STORM_LOG_ASSERT(false, "Expecting reward");
+                            }
 
-                    if (!order->contains(i)) {
-                        order->add(i);
-                        order->addStateToHandle(i);
-                    }
-                    if (!order->contains(j)) {
-                        order->add(j);
-                        order->addStateToHandle(j);
-                    }
-                    if (rewardI.constantPart() > rewardJ.constantPart()) {
-                        order->addAbove(i, order->getNode(j));
-                    } else if (rewardJ.constantPart() > rewardI.constantPart()) {
-                        order->addAbove(j, order->getNode(i));
+                            if (rewardI.constantPart() > rewardJ.constantPart()) {
+                                jAboveI = false;
+                            } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                                iAboveJ = false;
+                            }
+                        }
+                        if (iAboveJ || jAboveI) {
+                            if (!order->contains(i)) {
+                                order->add(i);
+                                order->addStateToHandle(i);
+                            }
+                            if (!order->contains(j)) {
+                                order->add(j);
+                                order->addStateToHandle(j);
+                            }
+                            if (iAboveJ && jAboveI) {
+                                order->addRelation(i, j, true);
+
+                            } else if (jAboveI) {
+                                order->addAbove(j, order->getNode(i));
+                            } else {
+                                order->addAbove(i, order->getNode(j));
+                            }
+                        }
+                    } else if (order->isActionSetAtState(j)) {
+                        ValueType rewardI = ValueType(0);
+                        ValueType rewardJ = ValueType(0);
+                        bool iAboveJ = true;
+                        bool jAboveI = true;
+                        for (auto actI = 0; actI < this->stateMap[i].size(); ++actI) {
+                            if (rewardModel.hasStateActionRewards()) {
+                                STORM_LOG_ASSERT(order->getActionAtState(j) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
+                                rewardI = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + actI);
+                                rewardJ = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + order->getActionAtState(j));
+                            } else if (rewardModel.hasStateRewards()) {
+                                rewardI = rewardModel.getStateReward(i);
+                                rewardJ = rewardModel.getStateReward(j);
+                            } else {
+                                STORM_LOG_ASSERT(false, "Expecting reward");
+                            }
+
+                            if (rewardI.constantPart() > rewardJ.constantPart()) {
+                                jAboveI = false;
+                            } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                                iAboveJ = false;
+                            }
+                        }
+                        if (iAboveJ || jAboveI) {
+                            if (!order->contains(i)) {
+                                order->add(i);
+                                order->addStateToHandle(i);
+                            }
+                            if (!order->contains(j)) {
+                                order->add(j);
+                                order->addStateToHandle(j);
+                            }
+                            if (iAboveJ && jAboveI) {
+                                order->addRelation(i, j, true);
+
+                            } else if (jAboveI) {
+                                order->addAbove(j, order->getNode(i));
+                            } else {
+                                order->addAbove(i, order->getNode(j));
+                            }
+                        }
                     } else {
-                        order->addRelation(i, j, true);
+                        ValueType rewardI = ValueType(0);
+                        ValueType rewardJ = ValueType(0);
+                        bool iAboveJ = true;
+                        bool jAboveI = true;
+                        for (auto actI = 0; actI < this->stateMap[i].size(); ++actI) {
+                            for (auto actJ = 0; actJ < this->stateMap[j].size(); ++actJ) {
+                                if (rewardModel.hasStateActionRewards()) {
+                                    rewardI = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + actI);
+                                    rewardJ = rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + actJ);
+                                } else if (rewardModel.hasStateRewards()) {
+                                    rewardI = rewardModel.getStateReward(i);
+                                    rewardJ = rewardModel.getStateReward(j);
+                                } else {
+                                    STORM_LOG_ASSERT(false, "Expecting reward");
+                                }
+
+                                if (rewardI.constantPart() > rewardJ.constantPart()) {
+                                    jAboveI = false;
+                                } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                                    iAboveJ = false;
+                                }
+                            }
+                        }
+                        if (iAboveJ || jAboveI) {
+                            if (!order->contains(i)) {
+                                order->add(i);
+                                order->addStateToHandle(i);
+                            }
+                            if (!order->contains(j)) {
+                                order->add(j);
+                                order->addStateToHandle(j);
+                            }
+                            if (iAboveJ && jAboveI) {
+                                order->addRelation(i, j, true);
+
+                            } else if (jAboveI) {
+                                order->addAbove(j, order->getNode(i));
+                            } else {
+                                order->addAbove(i, order->getNode(j));
+                            }
+                        }
                     }
                 }
             }
