@@ -328,9 +328,13 @@ if (STORM_COMPILE_WITH_ADDRESS_SANITIZER)
 endif()
 
 # In release mode, we turn on even more optimizations if we do not have to provide a portable binary.
-if (NOT STORM_PORTABLE)
-	set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-endif ()
+if (NOT ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang"))
+	if (NOT STORM_PORTABLE)
+		set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+	endif ()
+else()
+	message(WARNING "AppleClang currently does not support -march=native compiler option on M1 chips.")
+endif()
 
 if (STORM_DEVELOPER)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")

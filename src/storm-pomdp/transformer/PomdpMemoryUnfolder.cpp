@@ -16,9 +16,9 @@ namespace storm {
                 // intentionally left empty
             }
 
-            
+
             template<typename ValueType>
-            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> PomdpMemoryUnfolder<ValueType>::transform() const {
+            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> PomdpMemoryUnfolder<ValueType>::transform(bool dropUnreachableStates) const {
                 // For simplicity we first build the 'full' product of pomdp and memory (with pomdp.numStates * memory.numStates states).
                 STORM_LOG_THROW(pomdp.isCanonic() , storm::exceptions::InvalidArgumentException, "POMDP must be canonical to unfold memory into it");
                 storm::storage::sparse::ModelComponents<ValueType> components;
@@ -27,15 +27,22 @@ namespace storm {
                 
                 // Now delete unreachable states.
                 storm::storage::BitVector allStates(components.transitionMatrix.getRowGroupCount(), true);
-                auto reachableStates = storm::utility::graph::getReachableStates(components.transitionMatrix, components.stateLabeling.getStates("init"), allStates, ~allStates);
-                components.transitionMatrix = components.transitionMatrix.getSubmatrix(true, reachableStates, reachableStates);
-                components.stateLabeling = components.stateLabeling.getSubLabeling(reachableStates);
-                if (keepStateValuations && pomdp.hasStateValuations()) {
-                    std::vector<uint64_t> newToOldStates(pomdp.getNumberOfStates() * memory.getNumberOfStates(), 0);
-                    for (uint64_t newState = 0; newState < newToOldStates.size(); newState++) {
-                        newToOldStates[newState] = getModelState(newState);
+
+                storm::storage::BitVector reachableStates = allStates;
+                if(dropUnreachableStates) {
+                    reachableStates = storm::utility::graph::getReachableStates(components.transitionMatrix,
+                                                                                components.stateLabeling.getStates(
+                                                                                        "init"), allStates, ~allStates);
+                    components.transitionMatrix = components.transitionMatrix.getSubmatrix(true, reachableStates,
+                                                                                           reachableStates);
+                    components.stateLabeling = components.stateLabeling.getSubLabeling(reachableStates);
+                    if (keepStateValuations && pomdp.hasStateValuations()) {
+                        std::vector<uint64_t> newToOldStates(pomdp.getNumberOfStates() * memory.getNumberOfStates(), 0);
+                        for (uint64_t newState = 0; newState < newToOldStates.size(); newState++) {
+                            newToOldStates[newState] = getModelState(newState);
+                        }
+                        components.stateValuations = pomdp.getStateValuations().blowup(newToOldStates).selectStates(reachableStates);
                     }
-                    components.stateValuations = pomdp.getStateValuations().blowup(newToOldStates).selectStates(reachableStates);
                 }
 
                 // build the remaining components

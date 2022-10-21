@@ -1,7 +1,6 @@
 #include "storm/api/storm.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/logging.h"
-#include "storm-pomdp/storage/Belief.h"
 #include "storm-pomdp/storage/BeliefManager.h"
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
@@ -17,12 +16,18 @@ namespace storm {
         namespace modelchecker {
             
             template<typename ValueType>
-            struct TrivialPomdpValueBounds;
+            struct PreprocessingPomdpValueBounds;
+
+            template<typename ValueType>
+            struct POMDPValueBounds{
+                storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> trivialPomdpValueBounds;
+                storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremePomdpValueBound;
+            };
             
-            template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType>
+            template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType, typename BeliefMDPType = typename PomdpModelType::ValueType>
             class BeliefExplorationPomdpModelChecker {
             public:
-                typedef typename PomdpModelType::ValueType ValueType;
+                typedef BeliefMDPType ValueType;
                 typedef typename PomdpModelType::RewardModelType RewardModelType;
                 typedef storm::storage::BeliefManager<PomdpModelType, BeliefValueType> BeliefManagerType;
                 typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;
@@ -35,13 +40,17 @@ namespace storm {
                     ValueType diff (bool relative = false) const;
                     bool updateLowerBound(ValueType const& value);
                     bool updateUpperBound(ValueType const& value);
+                    std::shared_ptr<storm::models::sparse::Model<ValueType>> schedulerAsMarkovChain;
+                    std::vector<storm::storage::Scheduler<ValueType>> cutoffSchedulers;
                 };
                 
                 BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
                 
-                Result check(storm::logic::Formula const& formula);
+                Result check(storm::logic::Formula const& formula, std::vector<std::vector<ValueType>> additionalUnderApproximationBounds = std::vector<std::vector<ValueType>>());
 
                 void printStatisticsToStream(std::ostream& stream) const;
+
+                void precomputeValueBounds(const logic::Formula& formula);
                 
             private:
                 
@@ -61,7 +70,7 @@ namespace storm {
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result);
+                void computeReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
                 
                 
                 /**
@@ -71,12 +80,13 @@ namespace storm {
                  * @param min true if minimum probability is to be computed
                  * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result);
+                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
                 
                 struct HeuristicParameters {
                     ValueType gapThreshold;
                     ValueType observationThreshold;
                     uint64_t sizeThreshold;
+                    ValueType clippingThreshold;
                     ValueType optimalChoiceValueEpsilon;
                 };
                 
@@ -92,10 +102,38 @@ namespace storm {
                  */
                 bool buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
 
+                /**
+                 * Clips the belief with the given state ID to a belief grid by clipping its direct successor ("grid clipping")
+                 * Transitions to explored successors and successors on the grid are added, otherwise successors are not generated
+                 * @param clippingStateId the state ID of the clipping belief
+                 * @param computeRewards true, if rewards are computed
+                 * @param min true, if objective is to minimise
+                 * @param beliefManager the belief manager used
+                 * @param beliefExplorer the belief MDP explorer used
+                 */
+                void clipToGrid(uint64_t clippingStateId, bool computeRewards, bool min, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer);
+
+                /**
+                 * Clips the belief with the given state ID using already explored beliefs as candidates ("classic clipping")
+                 * A clipping threshold can be given and a reduction of the candidate set to a given size using the belief difference 1-norm is applied if it is not disabled
+                 * @param clippingStateId the state ID of the clipping belief
+                 * @param threshold clipping threshold
+                 * @param computeRewards true, if rewards are computed
+                 * @param reducedCandidateSetSize target candidate set size of the differnce 1-norm reduction
+                 * @param beliefManager the belief manager used
+                 * @param beliefExplorer the belief MDP explorer used
+                 * @return true, if clipping using an adequate candidate is succcessful. Otherwise, false.
+                 */
+                bool clipToExploredBeliefs(uint64_t clippingStateId, BeliefValueType threshold, bool computeRewards, uint64_t reducedCandidateSetSize, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer);
+
+                /**
+                 * Heuristically rates the quality of the approximation described by the given successor observation info.
+                 * Here, 0 means a bad approximation and 1 means a good approximation.
+                 */
                 BeliefValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution);
                 
                 std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector);
-                
+
                 struct Statistics {
                     Statistics();
                     boost::optional<uint64_t> refinementSteps;
@@ -115,6 +153,11 @@ namespace storm {
                     storm::utility::Stopwatch underApproximationBuildTime;
                     storm::utility::Stopwatch underApproximationCheckTime;
                     boost::optional<uint64_t> underApproximationStateLimit;
+                    boost::optional<uint64_t> nrClippingAttempts;
+                    boost::optional<uint64_t> nrClippedStates;
+                    boost::optional<uint64_t> nrTruncatedStates;
+                    storm::utility::Stopwatch clipWatch;
+                    storm::utility::Stopwatch clippingPreTime;
                     
                     bool aborted;
                 };
@@ -124,7 +167,10 @@ namespace storm {
                 std::shared_ptr<PomdpModelType> preprocessedPomdp;
                 
                 Options options;
-                storm::utility::ConstantsComparator<ValueType> cc;
+                storm::utility::ConstantsComparator<BeliefValueType> beliefTypeCC;
+                storm::utility::ConstantsComparator<ValueType> valueTypeCC;
+
+                storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
             };
 
         }

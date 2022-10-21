@@ -34,8 +34,9 @@ namespace storm {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->originalModel, phiStates, psiStates);
             // Only consider the maybestates that are reachable from one initial state without hopping over a target (i.e., prob1) state
             storm::storage::BitVector reachableGreater0States = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & ~statesWithProbability01.first, ~statesWithProbability01.first, statesWithProbability01.second);
-            storm::storage::BitVector maybeStates = reachableGreater0States & ~statesWithProbability01.second;
-            
+            //storm::storage::BitVector maybeStates = reachableGreater0States & ~statesWithProbability01.second;
+            storm::storage::BitVector maybeStates = ~(statesWithProbability01.second | statesWithProbability01.first);
+
             // obtain the resulting subsystem
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);
             typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult =  goalStateMerger.mergeTargetAndSinkStates(maybeStates, statesWithProbability01.second, statesWithProbability01.first);
@@ -134,8 +135,9 @@ namespace storm {
             storm::storage::BitVector infinityStates = ~statesWithProb1;
             // Only consider the states that are reachable from an initial state without hopping over a target state
             storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->originalModel.getTransitionMatrix(), this->originalModel.getInitialStates() & statesWithProb1, statesWithProb1, targetStates);
-            storm::storage::BitVector maybeStates = reachableStates & ~targetStates;
-            
+            //storm::storage::BitVector maybeStates = reachableStates & ~targetStates;
+            storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
+
             // obtain the resulting subsystem
             std::vector<std::string> rewardModelNameAsVector(1, formula.hasRewardModelName() ? formula.getRewardModelName() : this->originalModel.getRewardModels().begin()->first);
             storm::transformer::GoalStateMerger<SparseModelType> goalStateMerger(this->originalModel);

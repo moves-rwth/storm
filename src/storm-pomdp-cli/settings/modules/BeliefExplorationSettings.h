@@ -2,6 +2,7 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
 namespace storm {
     namespace pomdp {
@@ -9,6 +10,10 @@ namespace storm {
             template<typename ValueType>
             struct BeliefExplorationPomdpModelCheckerOptions;
         }
+
+        enum BeliefNumberType {
+            Default, Float, Rational
+        };
     }
     
     namespace settings {
@@ -26,7 +31,8 @@ namespace storm {
                 BeliefExplorationSettings();
 
                 virtual ~BeliefExplorationSettings() = default;
-                
+
+                bool isCutZeroGapSet() const;
                 bool isRefineSet() const;
                 double getRefinePrecision() const;
                 bool isRefineStepLimitSet() const;
@@ -34,10 +40,17 @@ namespace storm {
                 
                 bool isExplorationTimeLimitSet() const;
                 uint64_t getExplorationTimeLimit() const;
+
+                bool isAlphaVectorProcessingSet() const;
+                std::string getAlphaVectorFileName() const;
                 
                 /// Discretization Resolution
                 uint64_t getResolutionInit() const;
                 double getResolutionFactor() const;
+
+                /// Clipping Grid Resolution
+                uint64_t getClippingGridResolution() const;
+
                 /// The maximal number of newly expanded MDP states in a refinement step
                 uint64_t getSizeThresholdInit() const;
                 double getSizeThresholdFactor() const;
@@ -45,6 +58,12 @@ namespace storm {
                 /// Controls how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore
                 double getGapThresholdInit() const;
                 double getGapThresholdFactor() const;
+
+                /// Controls how large the delta is allowed to be for clipping
+                double getClippingThresholdInit() const;
+
+                /// Controls if the clipping set reduction heuristic is used
+                bool isDisableClippingReductionSet() const;
                 
                 /// Controls whether "almost optimal" choices will be considered optimal
                 double getOptimalChoiceValueThresholdInit() const;
@@ -60,6 +79,22 @@ namespace storm {
                 
                 bool isDynamicTriangulationModeSet() const;
                 bool isStaticTriangulationModeSet() const;
+
+                /// Used to determine whether two beliefs are equal
+                bool isBeliefTypeSetFromDefault() const;
+                storm::pomdp::BeliefNumberType getBeliefType() const;
+
+                bool isClassicClippingModeSet() const;
+                bool isGridClippingModeSet() const;
+
+                bool isParametricPreprocessingSet() const;
+                double getParametricGDEpsilon() const;
+                uint64_t getParametricGDMaxInstantiations() const;
+                uint64_t getParametricPreprocessingMemoryBound() const;
+
+                bool isExplicitCutoffSet() const;
+
+                storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
     
                 template<typename ValueType>
                 void setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const;

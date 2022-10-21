@@ -4,16 +4,24 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <queue>
 #include <boost/optional.hpp>
 
-
-#include "storm/storage/BitVector.h"
+#include "storm-pomdp/modelchecker/PreprocessingPomdpValueBoundsModelChecker.h"
 #include "storm-pomdp/storage/BeliefManager.h"
-#include "storm-pomdp/modelchecker/TrivialPomdpValueBoundsModelChecker.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     
     namespace builder {
+        enum class ExplorationHeuristic {
+            BreadthFirst,
+            LowerBoundPrio,
+            UpperBoundPrio,
+            GapPrio,
+            ProbabilityPrio
+        };
+
         template<typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType>
         class BeliefMdpExplorer {
         public:
@@ -38,7 +46,7 @@ namespace storm {
                 ModelChecked
             };
 
-            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds);
+            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> const &pomdpValueBounds, ExplorationHeuristic explorationHeuristic = ExplorationHeuristic::BreadthFirst);
 
             BeliefMdpExplorer(BeliefMdpExplorer &&other) = default;
 
@@ -56,7 +64,11 @@ namespace storm {
 
             bool hasUnexploredState() const;
 
+            std::vector<uint64_t> getUnexploredStates();
+
             BeliefId exploreNextState();
+
+            void addChoiceLabelToCurrentState(uint64_t const &localActionIndex, std::string label);
 
             void addTransitionsToExtraStates(uint64_t const &localActionIndex, ValueType const &targetStateValue = storm::utility::zero<ValueType>(),
                                              ValueType const &bottomStateValue = storm::utility::zero<ValueType>());
@@ -75,15 +87,27 @@ namespace storm {
 
             void computeRewardAtCurrentState(uint64_t const &localActionIndex, ValueType extraReward = storm::utility::zero<ValueType>());
 
+            /*!
+             * Adds the provided reward value to the given action of the current state
+             *
+             * @param localActionIndex
+             * @param rewardValue
+             */
+            void addRewardToCurrentState(uint64_t const &localActionIndex, ValueType rewardValue);
+
             void setCurrentStateIsTarget();
 
             void setCurrentStateIsTruncated();
+
+            void setCurrentStateIsClipped();
 
             void setCurrentChoiceIsDelayed(uint64_t const &localActionIndex);
 
             bool currentStateHasOldBehavior() const;
 
             bool getCurrentStateWasTruncated() const;
+
+            bool getCurrentStateWasClipped() const;
 
             /*!
              * Retrieves whether the current state can be reached under an optimal scheduler
@@ -139,6 +163,20 @@ namespace storm {
 
             ValueType computeUpperValueBoundAtBelief(BeliefId const &beliefId) const;
 
+            ValueType computeLowerValueBoundForScheduler(BeliefId const &beliefId, uint64_t schedulerId) const;
+
+            ValueType computeUpperValueBoundForScheduler(BeliefId const &beliefId, uint64_t schedulerId) const;
+
+            storm::storage::Scheduler<ValueType> getUpperValueBoundScheduler(uint64_t schedulerId) const;
+
+            storm::storage::Scheduler<ValueType> getLowerValueBoundScheduler(uint64_t schedulerId) const;
+
+            std::vector<storm::storage::Scheduler<ValueType>> getUpperValueBoundSchedulers() const;
+
+            std::vector<storm::storage::Scheduler<ValueType>> getLowerValueBoundSchedulers() const;
+
+            ValueType computeParametricBoundAtBelief(BeliefId const &beliefId) const;
+
             void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir);
 
             bool hasComputedValues() const;
@@ -167,7 +205,39 @@ namespace storm {
              * @param relative if set, we consider the relative difference to detect ancillaryChoices
              */
             void computeOptimalChoicesAndReachableMdpStates(ValueType const &ancillaryChoicesEpsilon, bool relativeDifference);
-            
+
+            std::vector<BeliefId> getBeliefsWithObservationInMdp(uint32_t obs) const;
+
+            std::vector<BeliefId> getBeliefsInMdp();
+
+            void addClippingRewardToCurrentState(uint64_t const &localActionIndex, ValueType rewardValue);
+
+            ValueType getTrivialUpperBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            ValueType getTrivialLowerBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            ValueType getParametricBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            bool hasParametricBounds();
+
+            void setExtremeValueBound(storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> valueBound);
+
+            ValueType getExtremeValueBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            MdpStateType getExploredMdpState(BeliefId const &beliefId) const;
+
+            bool beliefHasMdpState(BeliefId const &beliefId) const;
+
+            storm::storage::BitVector getStateExtremeBoundIsInfinite();
+
+            uint64_t getNrSchedulersForUpperBounds();
+
+            uint64_t getNrSchedulersForLowerBounds();
+
+            const std::shared_ptr<storm::storage::Scheduler<BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>> &getSchedulerForExploredMdp() const;
+
+            std::vector<BeliefValueType> computeProductWithSparseMatrix(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix) const;
+
         private:
             MdpStateType noState() const;
 
@@ -183,30 +253,36 @@ namespace storm {
 
             void internalAddRowGroupIndex();
 
-            MdpStateType getExploredMdpState(BeliefId const &beliefId) const;
-
             void insertValueHints(ValueType const &lowerBound, ValueType const &upperBound);
 
-            MdpStateType getOrAddMdpState(BeliefId const &beliefId);
-            
+            MdpStateType getOrAddMdpState(BeliefId const &beliefId, ValueType const &transitionValue = storm::utility::zero<ValueType>());
+
             // Belief state related information
             std::shared_ptr<BeliefManagerType> beliefManager;
             std::vector<BeliefId> mdpStateToBeliefIdMap;
             std::map<BeliefId, MdpStateType> beliefIdToMdpStateMap;
             storm::storage::BitVector exploredBeliefIds;
-            
+            std::map<BeliefId, std::map<uint64_t, std::string>> mdpStateToChoiceLabelsMap;
+
             // Exploration information
-            std::deque<uint64_t> mdpStatesToExplore;
+            std::multimap<ValueType, uint64_t> mdpStatesToExplorePrioState;
+            std::map<uint64_t, ValueType> mdpStatesToExploreStatePrio;
+            std::vector<ValueType> probabilityEstimation;
             std::vector<std::map<MdpStateType, ValueType>> exploredMdpTransitions;
             std::vector<MdpStateType> exploredChoiceIndices;
             std::vector<ValueType> mdpActionRewards;
+            std::map<MdpStateType, ValueType> clippingTransitionRewards;
             uint64_t currentMdpState;
+            std::map<MdpStateType, MdpStateType> stateRemapping;
+            uint64_t nextId;
+            ValueType prio;
             
             // Special states and choices during exploration
             boost::optional<MdpStateType> extraTargetState;
             boost::optional<MdpStateType> extraBottomState;
             storm::storage::BitVector targetStates;
             storm::storage::BitVector truncatedStates;
+            storm::storage::BitVector clippedStates;
             MdpStateType initialMdpState;
             storm::storage::BitVector delayedExplorationChoices;
 
@@ -214,14 +290,17 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
             
             // Value and scheduler related information
-            storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> pomdpValueBounds;
+            storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> pomdpValueBounds;
+            storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremeValueBound;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;
             std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed
             boost::optional<storm::storage::BitVector> optimalChoices;
             boost::optional<storm::storage::BitVector> optimalChoicesReachableMdpStates;
+            std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler;
             
             // The current status of this explorer
+            ExplorationHeuristic explHeuristic;
             Status status;
         };
     }

@@ -95,13 +95,23 @@ namespace storm {
                 auto const& weights = observationChoiceWeights.at(pomdp.getObservation(state));
                 std::map<uint64_t, storm::RationalFunction> weightedTransitions;
                 for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
+                    auto ratSum = storm::utility::zero<storm::RationalFunction>();
+                    uint64_t nrEntries = pomdp.getTransitionMatrix().getRow(state, action).getNumberOfEntries();
+                    uint64_t currEntry = 1;
                     for (auto const& entry: pomdp.getTransitionMatrix().getRow(state, action)) {
                         auto it = weightedTransitions.find(entry.getColumn());
-                        if (it == weightedTransitions.end()) {
-                            weightedTransitions[entry.getColumn()] = storm::utility::convertNumber<storm::RationalFunction>(entry.getValue()) * weights[action];
-                        } else {
-                            it->second += storm::utility::convertNumber<storm::RationalFunction>(entry.getValue()) * weights[action];
+                        auto entryVal = storm::utility::convertNumber<storm::RationalFunction>(entry.getValue());
+                        ratSum += entryVal;
+                        if(currEntry == nrEntries && storm::utility::one<storm::RationalFunction>() - ratSum != storm::utility::zero<storm::RationalFunction>()){
+                            // In case there are numeric problems with the conversion, we simply add the lost mass to the last value
+                            entryVal += (storm::utility::one<storm::RationalFunction>() - ratSum);
                         }
+                        if (it == weightedTransitions.end()) {
+                            weightedTransitions[entry.getColumn()] = entryVal * weights[action];
+                        } else {
+                            it->second += entryVal * weights[action];
+                        }
+                        ++currEntry;
                     }
                 }
                 for (auto const& entry : weightedTransitions) {
