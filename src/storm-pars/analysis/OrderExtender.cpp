@@ -724,15 +724,15 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             }
         }
     }
-    if (order != nullptr) {
-        for (auto i = 0; i < minValues[order].size(); ++i) {
-            std::cout << i << ": " << minValues[order][i] << ", " << maxValues[order][i] << std::endl;
-        }
-    } else {
-        for (auto i = 0; i < minValuesInit.get().size(); ++i) {
-            std::cout << i << ": " << minValuesInit.get()[i] << ", " << maxValuesInit.get()[i] << std::endl;
-        }
-    }
+    //    if (order != nullptr) {
+    //        for (auto i = 0; i < minValues[order].size(); ++i) {
+    //            std::cout << i << ": " << minValues[order][i] << ", " << maxValues[order][i] << std::endl;
+    //        }
+    //    } else {
+    //        for (auto i = 0; i < minValuesInit.get().size(); ++i) {
+    //            std::cout << i << ": " << minValuesInit.get()[i] << ", " << maxValuesInit.get()[i] << std::endl;
+    //        }
+    //    }
 }
 
 template<typename ValueType, typename ConstantType>
