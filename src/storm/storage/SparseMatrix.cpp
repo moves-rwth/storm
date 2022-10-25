@@ -863,29 +863,39 @@ storm::storage::BitVector SparseMatrix<ValueType>::getRowGroupFilter(storm::stor
 }
 
 template<typename ValueType>
-void SparseMatrix<ValueType>::makeRowsAbsorbing(storm::storage::BitVector const& rows) {
+void SparseMatrix<ValueType>::makeRowsAbsorbing(storm::storage::BitVector const& rows, bool dropZeroEntries) {
+    // First transform ALL rows without dropping zero entries, then drop zero entries once
+    // This prevents iteration over the whole matrix every time an entry is set to zero.
     for (auto row : rows) {
-        makeRowDirac(row, row);
+        makeRowDirac(row, row, false);
+    }
+    if (dropZeroEntries) {
+        this->dropZeroEntries();
     }
 }
 
 template<typename ValueType>
-void SparseMatrix<ValueType>::makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint) {
+void SparseMatrix<ValueType>::makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, bool dropZeroEntries) {
+    // First transform ALL rows without dropping zero entries, then drop zero entries once.
+    // This prevents iteration over the whole matrix every time an entry is set to zero.
     if (!this->hasTrivialRowGrouping()) {
         for (auto rowGroup : rowGroupConstraint) {
             for (index_type row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {
-                makeRowDirac(row, rowGroup);
+                makeRowDirac(row, rowGroup, false);
             }
         }
     } else {
         for (auto rowGroup : rowGroupConstraint) {
-            makeRowDirac(rowGroup, rowGroup);
+            makeRowDirac(rowGroup, rowGroup, false);
         }
+    }
+    if (dropZeroEntries) {
+        this->dropZeroEntries();
     }
 }
 
 template<typename ValueType>
-void SparseMatrix<ValueType>::makeRowDirac(index_type row, index_type column) {
+void SparseMatrix<ValueType>::makeRowDirac(index_type row, index_type column, bool dropZeroEntries) {
     iterator columnValuePtr = this->begin(row);
     iterator columnValuePtrEnd = this->end(row);
 
@@ -918,6 +928,9 @@ void SparseMatrix<ValueType>::makeRowDirac(index_type row, index_type column) {
             --this->nonzeroEntryCount;
         }
         columnValuePtr->setValue(storm::utility::zero<ValueType>());
+    }
+    if (dropZeroEntries) {
+        this->dropZeroEntries();
     }
 }
 
@@ -1567,7 +1580,7 @@ void SparseMatrix<ValueType>::negateAllNonDiagonalEntries() {
 }
 
 template<typename ValueType>
-void SparseMatrix<ValueType>::deleteDiagonalEntries() {
+void SparseMatrix<ValueType>::deleteDiagonalEntries(bool dropZeroEntries) {
     // Iterate over all rows and negate all the elements that are not on the diagonal.
     for (index_type group = 0; group < this->getRowGroupCount(); ++group) {
         for (auto& entry : this->getRowGroup(group)) {
@@ -1576,6 +1589,9 @@ void SparseMatrix<ValueType>::deleteDiagonalEntries() {
                 entry.setValue(storm::utility::zero<ValueType>());
             }
         }
+    }
+    if (dropZeroEntries) {
+        this->dropZeroEntries();
     }
 }
 
