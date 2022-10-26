@@ -659,15 +659,19 @@ class SparseMatrix {
      * This function makes the given rows absorbing.
      *
      * @param rows A bit vector indicating which rows are to be made absorbing.
+     * @param dropZeroEntries if true, zero entries resulting from the transformation are dropped from the matrix after the transformation.
+     * Dropping zero entries takes time linear in the number of matrix entries.
      */
-    void makeRowsAbsorbing(storm::storage::BitVector const& rows);
+    void makeRowsAbsorbing(storm::storage::BitVector const& rows, bool dropZeroEntries = false);
 
     /*!
      * This function makes the groups of rows given by the bit vector absorbing.
      *
      * @param rowGroupConstraint A bit vector indicating which row groups to make absorbing.
+     * @param dropZeroEntries if true, zero entries resulting from the transformation are dropped from the matrix after the transformation.
+     * Dropping zero entries takes time linear in the number of matrix entries.
      */
-    void makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint);
+    void makeRowGroupsAbsorbing(storm::storage::BitVector const& rowGroupConstraint, bool dropZeroEntries = false);
 
     /*!
      * This function makes the given row Dirac. This means that all entries will be set to 0 except the one
@@ -675,8 +679,10 @@ class SparseMatrix {
      *
      * @param row The row to be made Dirac.
      * @param column The index of the column whose value is to be set to 1.
+     * @param dropZeroEntries if true, zero entries resulting from the transformation are dropped from the matrix after the transformation.
+     * Dropping zero entries takes time linear in the number of matrix entries.
      */
-    void makeRowDirac(index_type row, index_type column);
+    void makeRowDirac(index_type row, index_type column, bool dropZeroEntries = false);
 
     /*
      * Sums the entries in all rows.
@@ -847,8 +853,10 @@ class SparseMatrix {
 
     /*!
      * Sets all diagonal elements to zero.
+     * @param dropZeroEntries if true, zero entries resulting from the transformation are dropped from the matrix after the transformation.
+     * Dropping zero entries takes time linear in the number of matrix entries.
      */
-    void deleteDiagonalEntries();
+    void deleteDiagonalEntries(bool dropZeroEntries = false);
 
     /*!
      * Calculates the Jacobi decomposition of this sparse matrix. For this operation, the matrix must be square.
