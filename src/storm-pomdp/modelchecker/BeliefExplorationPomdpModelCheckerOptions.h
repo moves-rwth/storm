@@ -13,7 +13,8 @@ namespace storm {
                 BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold) : discretize(discretize), unfold(unfold) {
                     // Intentionally left empty
                 }
-                
+
+                // TODO documentation?
                 bool discretize;
                 bool unfold;
                 bool useGridClipping;
