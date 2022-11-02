@@ -1,17 +1,17 @@
 #include "OrderExtender.h"
 
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/storage/BitVector.h"
-#include "storm/storage/SparseMatrix.h"
-#include "storm/utility/macros.h"
-
 #include "storm-pars/api/export.h"
 #include "storm-pars/api/region.h"
 #include "storm/api/verification.h"
+#include "storm/exceptions/NotSupportedException.h"
+#include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/storage/BitVector.h"
+#include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace analysis {
@@ -680,59 +680,33 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             // Use parameter lifting modelchecker to get initial min/max values for order creation
             modelchecker::SparseMdpParameterLiftingModelChecker<models::sparse::Mdp<ValueType>, ConstantType> plaModelChecker;
 
-            modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck;
-            modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck;
-            if (formula->asOperatorFormula().getOptimalityType() == OptimizationDirection::Maximize) {
-                storm::logic::OperatorInformation opInfo = storm::logic::OperatorInformation(OptimizationDirection::Minimize, boost::none);
-                auto otherFormula = std::make_shared<storm::logic::RewardOperatorFormula>(formula->asRewardOperatorFormula().getSubformula().asSharedPointer(),
-                                                                                          model->getUniqueRewardModelName(), opInfo);
-
-                STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
-                plaModelChecker.specify(env, model, checkTask.get(), false, false);
-                maxCheck =
-                    plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-
-                assert(checkTask->getFormula().hasQuantitativeResult());
-                boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTaskOther = storm::api::createTask<ValueType>(otherFormula, false);
-                plaModelChecker.specify(env, model, checkTaskOther.get(), false, false);
-                minCheck =
-                    plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-            } else {
-                storm::logic::OperatorInformation opInfo = storm::logic::OperatorInformation(OptimizationDirection::Maximize, boost::none);
-                auto otherFormula = std::make_shared<storm::logic::RewardOperatorFormula>(formula->asRewardOperatorFormula().getSubformula().asSharedPointer(),
-                                                                                          model->getUniqueRewardModelName(), opInfo);
-
-                STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
-                plaModelChecker.specify(env, model, checkTask.get(), false, false);
-
-                assert(checkTask->getFormula().hasQuantitativeResult());
-                minCheck =
-                    plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-                boost::optional<modelchecker::CheckTask<logic::Formula, ValueType>> checkTaskOther = storm::api::createTask<ValueType>(otherFormula, false);
-                plaModelChecker.specify(env, model, checkTaskOther.get(), false, false);
-                maxCheck =
-                    plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-            }
+            STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask.get()), exceptions::NotSupportedException, "Cannot handle this formula");
+            plaModelChecker.specify(env, model, checkTask.get(), false, false);
+            modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck =
+                plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
+            modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck =
+                plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
 
             if (order != nullptr) {
                 minValues[order] = minCheck.getValueVector();
                 maxValues[order] = maxCheck.getValueVector();
                 usePLA[order] = true;
+                for (auto i = 0; i < minValues[order].size(); ++i) {
+                    if (minValues[order][i] - maxValues[order][i] > 0) {
+                        STORM_LOG_WARN("Bounds are invalid, please consider using a sound or exact method.");
+                    }
+                }
             } else {
                 minValuesInit = minCheck.getValueVector();
                 maxValuesInit = maxCheck.getValueVector();
+                for (auto i = 0; i < minValuesInit.get().size(); ++i) {
+                    if (minValuesInit.get()[i] - maxValuesInit.get()[i] > 0) {
+                        STORM_LOG_WARN("Bounds are invalid, please consider using a sound or exact method.");
+                    }
+                }
             }
         }
     }
-    //    if (order != nullptr) {
-    //        for (auto i = 0; i < minValues[order].size(); ++i) {
-    //            std::cout << i << ": " << minValues[order][i] << ", " << maxValues[order][i] << std::endl;
-    //        }
-    //    } else {
-    //        for (auto i = 0; i < minValuesInit.get().size(); ++i) {
-    //            std::cout << i << ": " << minValuesInit.get()[i] << ", " << maxValuesInit.get()[i] << std::endl;
-    //        }
-    //    }
 }
 
 template<typename ValueType, typename ConstantType>

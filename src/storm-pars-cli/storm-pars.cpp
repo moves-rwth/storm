@@ -316,7 +316,7 @@ std::shared_ptr<storm::models::ModelBase> removeDontCareChoices(std::shared_ptr<
     }
 
     simplifyingWatch.stop();
-    STORM_PRINT("\nTime for model simplification: " << simplifyingWatch << ".\n\n");
+    STORM_PRINT("\nTime for removing don't care non-determinism: " << simplifyingWatch << ".\n\n");
     result->printModelInformationToStream(std::cout);
     return result;
 }
@@ -389,7 +389,6 @@ PreprocessResult preprocessSparseModel(std::shared_ptr<storm::models::sparse::Mo
         result.model = storm::pars::eliminateScc<ValueType>(result.model);
         result.changed = true;
     }
-
     return result;
 }
 
