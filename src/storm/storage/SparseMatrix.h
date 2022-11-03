@@ -8,6 +8,7 @@
 
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
+#include <boost/range/irange.hpp>
 
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
@@ -597,6 +598,11 @@ class SparseMatrix {
      * @return The grouping of rows of this matrix.
      */
     std::vector<index_type> const& getRowGroupIndices() const;
+
+    /*!
+     * Returns the row indices within the given group
+     */
+    boost::integer_range<index_type> getRowGroupIndices(index_type group) const;
 
     /*!
      * Swaps the grouping of rows of this matrix.
