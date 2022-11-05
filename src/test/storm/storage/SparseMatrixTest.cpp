@@ -336,6 +336,43 @@ TEST(SparseMatrix, MakeRowGroupAbsorbing) {
     ASSERT_TRUE(matrix == matrix2);
 }
 
+TEST(SparseMatrix, rowGroupIndices) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 9, true, true, 4);
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(0));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 2, 1.2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(2, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(3, 2, 1.1));
+    ASSERT_NO_THROW(matrixBuilder.newRowGroup(4));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 0, 0.1));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 1, 0.2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 3, 0.3));
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = matrixBuilder.build());
+
+    EXPECT_EQ(4, matrix.getRowGroupCount());
+    std::vector<storm::storage::SparseMatrixIndexType> expected, actual;
+    expected.assign({0, 1});
+    auto indices = matrix.getRowGroupIndices(0);
+    actual.assign(indices.begin(), indices.end());
+    EXPECT_EQ(expected, actual);
+    expected.assign({2, 3});
+    indices = matrix.getRowGroupIndices(1);
+    actual.assign(indices.begin(), indices.end());
+    EXPECT_EQ(expected, actual);
+    expected.assign({4});
+    indices = matrix.getRowGroupIndices(2);
+    actual.assign(indices.begin(), indices.end());
+    EXPECT_EQ(expected, actual);
+    expected.assign({});
+    indices = matrix.getRowGroupIndices(3);
+    actual.assign(indices.begin(), indices.end());
+    EXPECT_EQ(expected, actual);
+}
+
 TEST(SparseMatrix, ConstrainedRowSumVector) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 9);
     ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));

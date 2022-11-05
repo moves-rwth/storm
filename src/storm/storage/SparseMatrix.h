@@ -8,6 +8,7 @@
 
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
+#include <boost/range/irange.hpp>
 
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
@@ -39,7 +40,7 @@ namespace storage {
 template<typename T>
 class SparseMatrix;
 
-typedef uint_fast64_t SparseMatrixIndexType;
+typedef uint64_t SparseMatrixIndexType;
 
 template<typename IndexType, typename ValueType>
 class MatrixEntry {
@@ -538,7 +539,7 @@ class SparseMatrix {
      *
      * @return The number of entries in the given row group of the matrix.
      */
-    uint_fast64_t getRowGroupEntryCount(uint_fast64_t const group) const;
+    index_type getRowGroupEntryCount(index_type const group) const;
 
     /*!
      * Returns the cached number of nonzero entries in the matrix.
@@ -597,6 +598,11 @@ class SparseMatrix {
      * @return The grouping of rows of this matrix.
      */
     std::vector<index_type> const& getRowGroupIndices() const;
+
+    /*!
+     * Returns the row indices within the given group
+     */
+    boost::integer_range<index_type> getRowGroupIndices(index_type group) const;
 
     /*!
      * Swaps the grouping of rows of this matrix.
@@ -833,7 +839,7 @@ class SparseMatrix {
      * @param keepZeros A flag indicating whether entries with value zero should be kept.
      *
      */
-    SparseMatrix<ValueType> transposeSelectedRowsFromRowGroups(std::vector<uint_fast64_t> const& rowGroupChoices, bool keepZeros = false) const;
+    SparseMatrix<ValueType> transposeSelectedRowsFromRowGroups(std::vector<uint64_t> const& rowGroupChoices, bool keepZeros = false) const;
 
     /*!
      * Transforms the matrix into an equation system. That is, it transforms the matrix A into a matrix (1-A).
@@ -924,28 +930,28 @@ class SparseMatrix {
      * @return The resulting vector the content of the given result vector.
      */
     void multiplyAndReduce(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector,
-                           std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+                           std::vector<ValueType> const* summand, std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
 
     void multiplyAndReduceForward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                   std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result,
-                                  std::vector<uint_fast64_t>* choices) const;
+                                  std::vector<uint64_t>* choices) const;
     template<typename Compare>
     void multiplyAndReduceForward(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* summand,
-                                  std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+                                  std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
 
     void multiplyAndReduceBackward(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                    std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result,
-                                   std::vector<uint_fast64_t>* choices) const;
+                                   std::vector<uint64_t>* choices) const;
     template<typename Compare>
     void multiplyAndReduceBackward(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b,
-                                   std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+                                   std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
 #ifdef STORM_HAVE_INTELTBB
     void multiplyAndReduceParallel(storm::solver::OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices,
                                    std::vector<ValueType> const& vector, std::vector<ValueType> const* b, std::vector<ValueType>& result,
-                                   std::vector<uint_fast64_t>* choices) const;
+                                   std::vector<uint64_t>* choices) const;
     template<typename Compare>
     void multiplyAndReduceParallel(std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType> const& vector, std::vector<ValueType> const* b,
-                                   std::vector<ValueType>& result, std::vector<uint_fast64_t>* choices) const;
+                                   std::vector<ValueType>& result, std::vector<uint64_t>* choices) const;
 #endif
 
     /*!
