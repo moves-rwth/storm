@@ -1180,13 +1180,12 @@ namespace storm {
                 return resultingRatings;
             }
 
-            // TODO change ValueType
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            ValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getGap(ValueType const& l, ValueType const& u) {
-                STORM_LOG_ASSERT(l >= storm::utility::zero<ValueType>() && u >= storm::utility::zero<ValueType>(), "Gap computation currently does not handle negative values.");
+            POMDPModelType::ValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getGap(POMDPModelType::ValueType const& l, POMDPModelType::ValueType const& u) {
+                STORM_LOG_ASSERT(l >= storm::utility::zero<POMDPModelType::ValueType>() && u >= storm::utility::zero<POMDPModelType::ValueType>(), "Gap computation currently does not handle negative values.");
                 if (storm::utility::isInfinity(u)) {
                     if (storm::utility::isInfinity(l)) {
-                        return storm::utility::zero<ValueType>();
+                        return storm::utility::zero<POMDPModelType::ValueType>();
                     } else {
                         return u;
                     }
@@ -1196,7 +1195,7 @@ namespace storm {
                 } else {
                     STORM_LOG_ASSERT(!storm::utility::isInfinity(l), "Lower bound is infinity, but upper bound is " << u << ".");
                     // get the relative gap
-                    return storm::utility::abs<ValueType>(u-l) * storm::utility::convertNumber<ValueType, uint64_t>(2) / (l+u);
+                    return storm::utility::abs<POMDPModelType::ValueType>(u-l) * storm::utility::convertNumber<POMDPModelType::ValueType, uint64_t>(2) / (l+u);
                 }
             }
 
