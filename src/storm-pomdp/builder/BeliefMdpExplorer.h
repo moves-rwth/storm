@@ -167,6 +167,8 @@ namespace storm {
 
             ValueType computeUpperValueBoundForScheduler(BeliefId const &beliefId, uint64_t schedulerId) const;
 
+            std::pair<bool, ValueType> computeFMSchedulerValueForMemoryNode(BeliefId const &beliefId, uint64_t memoryNode) const;
+
             storm::storage::Scheduler<ValueType> getUpperValueBoundScheduler(uint64_t schedulerId) const;
 
             storm::storage::Scheduler<ValueType> getLowerValueBoundScheduler(uint64_t schedulerId) const;
@@ -180,6 +182,8 @@ namespace storm {
             void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir);
 
             bool hasComputedValues() const;
+
+            bool hasFMSchedulerValues() const;
 
             std::vector<ValueType> const &getValuesOfExploredMdp() const;
 
@@ -240,6 +244,10 @@ namespace storm {
 
             const std::shared_ptr<storm::storage::Scheduler<BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>> &getSchedulerForExploredMdp() const;
 
+            void setFMSchedValueList(std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> valueList);
+
+            uint64_t getNrOfMemoryNodesForObservation(uint32_t observation) const;
+
         private:
             MdpStateType noState() const;
 
@@ -295,6 +303,7 @@ namespace storm {
             // Value and scheduler related information
             storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> pomdpValueBounds;
             storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremeValueBound;
+            std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> fmSchedulerValueList;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;
             std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed
