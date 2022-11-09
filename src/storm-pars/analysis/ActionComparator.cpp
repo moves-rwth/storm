@@ -2,22 +2,58 @@
 
 #include "storm-pars/api/export.h"
 #include "storm-pars/api/region.h"
+#include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm/api/verification.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 namespace analysis {
 
-template<typename ValueType>
-ActionComparator<ValueType>::ActionComparator() {
-    // Intentionally left empty
+template<typename ValueType, typename ConstantType>
+ActionComparator<ValueType, ConstantType>::ActionComparator(std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel) {
+    this->precision = storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision();
+    if (rewardModel != nullptr) {
+        this->rewardModel = rewardModel;
+    }
 }
 
-template<typename ValueType>
-typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionSMTCompare(
+template<typename ValueType, typename ConstantType>
+expressions::Expression ActionComparator<ValueType, ConstantType>::getExpressionBounds(const std::shared_ptr<expressions::ExpressionManager>& manager,
+                                                                                       storage::ParameterRegion<ValueType> const& region,
+                                                                                       std::set<std::string> states, std::vector<ConstantType> const& minValues,
+                                                                                       std::vector<ConstantType> const& maxValues) const {
+    expressions::Expression exprBounds = manager->boolean(true);
+    for (std::string stateName : states) {
+        auto state = std::stoi(stateName.substr(1, stateName.size() - 1));
+        if (minValues.size() > 0) {
+            exprBounds = exprBounds && manager->rational(minValues[state] - precision) <= manager->getVariable(stateName) &&
+                         manager->getVariable(stateName) <= manager->rational(maxValues[state] + precision);
+        } else if (rewardModel == nullptr) {
+            // Probability property
+            exprBounds = exprBounds && manager->rational(0) <= manager->getVariable(stateName) && manager->getVariable(stateName) <= manager->rational(1);
+        } else {
+            // Reward Property
+            exprBounds = exprBounds && manager->rational(0) <= manager->getVariable(stateName);
+        }
+    }
+    return exprBounds;
+}
+
+template<typename ValueType, typename ConstantType>
+typename ActionComparator<ValueType, ConstantType>::ComparisonResult ActionComparator<ValueType, ConstantType>::actionSMTCompare(
     std::shared_ptr<Order> order, const std::vector<uint64_t>& orderedSuccs, storage::ParameterRegion<ValueType>& region, ValueType reward1, ValueType reward2,
     ActionComparator::Rows row1, ActionComparator::Rows row2) const {
+    auto vec1 = std::vector<ConstantType>();
+    auto vec2 = std::vector<ConstantType>();
+    return actionSMTCompare(order, orderedSuccs, region, reward1, reward2, row1, row2, vec1, vec2);
+}
+
+template<typename ValueType, typename ConstantType>
+typename ActionComparator<ValueType, ConstantType>::ComparisonResult ActionComparator<ValueType, ConstantType>::actionSMTCompare(
+    std::shared_ptr<Order> order, const std::vector<uint64_t>& orderedSuccs, storage::ParameterRegion<ValueType>& region, ValueType reward1, ValueType reward2,
+    ActionComparator::Rows row1, ActionComparator::Rows row2, std::vector<ConstantType> const& minValues, std::vector<ConstantType> const& maxValues) const {
     STORM_LOG_ASSERT(reward1.isConstant() && reward2.isConstant(), "Expecting rewards to be constant");
     auto res = actionQuickCheck(order, orderedSuccs, region, reward1, reward2, row1, row2);
     if (res != UNKNOWN) {
@@ -46,8 +82,7 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
     for (uint_fast64_t i = 0; i < occSuccs.size(); i++) {
         std::string varName = "s" + std::to_string(occSuccs[i]);
         stateVarNames.insert(varName);
-        auto var = manager->declareRationalVariable(varName);
-        exprStateVars = exprStateVars && manager->rational(0) < var && var < manager->rational(1);
+        auto var = manager->hasVariable(varName) ? manager->getVariable(varName) : manager->declareRationalVariable(varName);
         if (i > 0) {
             if (order->compare(occSuccs[i], occSuccs[i - 1]) == Order::SAME) {
                 auto sameVar = manager->getVariable("s" + std::to_string(occSuccs[i - 1]));
@@ -60,6 +95,8 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
             }
         }
     }
+
+    expressions::Expression exprBounds = this->getExpressionBounds(manager, region, stateVarNames, minValues, maxValues);
 
     // Turn rational functions into expressions
     auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
@@ -94,6 +131,7 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
     s1.add(exprToCheck);
     s1.add(exprStateVars);
     s1.add(exprParamBounds);
+    s1.add(exprBounds);
     auto smtRes = s1.check();
     if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
         return GEQ;
@@ -105,6 +143,7 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
     s2.add(exprToCheck);
     s2.add(exprStateVars);
     s2.add(exprParamBounds);
+    s2.add(exprBounds);
     smtRes = s2.check();
     if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
         return LEQ;
@@ -113,8 +152,8 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
     }
 }
 
-template<typename ValueType>
-typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueType>::actionQuickCheck(
+template<typename ValueType, typename ConstantType>
+typename ActionComparator<ValueType, ConstantType>::ComparisonResult ActionComparator<ValueType, ConstantType>::actionQuickCheck(
     std::shared_ptr<Order> order, const std::vector<uint64_t>& orderedSuccs, storage::ParameterRegion<ValueType>& region, ValueType rew1, ValueType rew2,
     ActionComparator::Rows row1, ActionComparator::Rows row2) const {
     if (row1->begin() + 1 == row1->end() && row2->begin() + 1 == row2->end()) {
@@ -172,9 +211,9 @@ typename ActionComparator<ValueType>::ComparisonResult ActionComparator<ValueTyp
     return UNKNOWN;
 }
 
-template<typename ValueType>
-bool ActionComparator<ValueType>::isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2,
-                                                         storage::ParameterRegion<ValueType> region) const {
+template<typename ValueType, typename ConstantType>
+bool ActionComparator<ValueType, ConstantType>::isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2,
+                                                                       storage::ParameterRegion<ValueType> region) const {
     // We want to prove f1 >= f2, so we need UNSAT for f1 < f2
     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
@@ -207,9 +246,9 @@ bool ActionComparator<ValueType>::isFunctionGreaterEqual(storm::RationalFunction
     }
 }
 
-template<typename ValueType>
-std::pair<uint64_t, uint64_t> ActionComparator<ValueType>::rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action,
-                                                                                 std::vector<uint64_t> orderedSuccs) const {
+template<typename ValueType, typename ConstantType>
+std::pair<uint64_t, uint64_t> ActionComparator<ValueType, ConstantType>::rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action,
+                                                                                               std::vector<uint64_t> orderedSuccs) const {
     uint64_t start = orderedSuccs.size();
     uint64_t end = 0;
     for (auto entry : *action) {
@@ -227,6 +266,7 @@ std::pair<uint64_t, uint64_t> ActionComparator<ValueType>::rangeOfSuccsForAction
     return std::make_pair(start, end);
 }
 
-template class ActionComparator<RationalFunction>;
+template class ActionComparator<RationalFunction, double>;
+template class ActionComparator<RationalFunction, RationalNumber>;
 }  // namespace analysis
 }  // namespace storm

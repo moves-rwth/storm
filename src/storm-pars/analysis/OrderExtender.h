@@ -24,7 +24,7 @@ class OrderExtender {
     typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
     typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
     typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
-    typedef typename ActionComparator<ValueType>::ComparisonResult CompareResult;
+    typedef typename ActionComparator<ValueType, ConstantType>::ComparisonResult CompareResult;
     typedef typename storage::SparseMatrix<ValueType>::rows* Rows;
     //------------------------------------------------------------------------------
     // Constructors
@@ -237,7 +237,7 @@ class OrderExtender {
     bool cyclic;
     uint_fast64_t numberOfStates;
     bool rewards;
-    storm::models::sparse::StandardRewardModel<ValueType> rewardModel;
+    std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel;
 
     // States, transitions and variables occuring
     std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
@@ -250,6 +250,7 @@ class OrderExtender {
 
     // To make assumptions
     AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
+    ActionComparator<ValueType, ConstantType> actionComparator;
     std::vector<uint_fast64_t> statesToHandleInitially;
 
     std::vector<boost::container::flat_set<uint_fast64_t>> dependentStates;
@@ -271,8 +272,7 @@ class OrderExtender {
 
     MonotonicityChecker<ValueType> monotonicityChecker;
     bool useAssumptions;
-    ConstantType error = storm::utility::convertNumber<ConstantType>(0.000001);
-    ActionComparator<ValueType> actionComparator;
+    ConstantType precision;
 
     bool prMax;
 };

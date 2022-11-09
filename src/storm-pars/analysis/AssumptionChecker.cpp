@@ -1,23 +1,27 @@
 #include "AssumptionChecker.h"
 
+#include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm-pars/utility/ModelInstantiator.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/CheckTask.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/RationalFunctionToExpression.h"
 #include "storm/storage/expressions/SimpleValuation.h"
 #include "storm/storage/expressions/VariableExpression.h"
 #include "storm/utility/solver.h"
+
 namespace storm {
 namespace analysis {
 template<typename ValueType, typename ConstantType>
 AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(storage::SparseMatrix<ValueType> matrix,
                                                               std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel) {
     this->matrix = matrix;
+    this->precision = storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision();
     if (rewardModel != nullptr) {
         this->rewardModel = rewardModel;
     }
@@ -88,19 +92,19 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
 
         if (minValues.size() != 0) {
             if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
-                if (minValues[state1] > maxValues[state2]) {
+                if (minValues[state1] - maxValues[state2] > precision) {
                     return AssumptionStatus::VALID;
                 } else if (minValues[state1] == maxValues[state2] && minValues[state1] == maxValues[state1] && minValues[state2] == maxValues[state2]) {
                     return AssumptionStatus::INVALID;
-                } else if (minValues[state2] > maxValues[state1]) {
+                } else if (minValues[state2] - maxValues[state1] > precision) {
                     return AssumptionStatus::INVALID;
                 }
             } else {
                 if (minValues[state1] == maxValues[state2] && minValues[state1] == maxValues[state1] && minValues[state2] == maxValues[state2]) {
                     return AssumptionStatus::VALID;
-                } else if (minValues[state1] > maxValues[state2]) {
+                } else if (minValues[state1] - maxValues[state2] > precision) {
                     return AssumptionStatus::INVALID;
-                } else if (minValues[state2] > maxValues[state1]) {
+                } else if (minValues[state2] - maxValues[state1] > precision) {
                     return AssumptionStatus::INVALID;
                 }
             }
@@ -266,7 +270,7 @@ expressions::Expression AssumptionChecker<ValueType, ConstantType>::getExpressio
             STORM_LOG_ASSERT(state < this->matrix.getRowGroupCount(), "Invalid state number");
             //                    if (stateName != state1 && stateName != state2) {
             if (minValues.size() > 0) {
-                exprBounds = exprBounds && manager->rational(minValues[state]) <= var && var <= manager->rational(maxValues[state]);
+                exprBounds = exprBounds && manager->rational(minValues[state] - precision) <= var && var <= manager->rational(maxValues[state] + precision);
             } else if (rewardModel == nullptr) {
                 // Probability property
                 exprBounds = exprBounds && manager->rational(0) <= var && var <= manager->rational(1);

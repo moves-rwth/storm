@@ -211,7 +211,7 @@ void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
     } else if (val1 != numberOfStates && val2 != numberOfStates) {
         extendOrderWithAssumptions(std::get<0>(criticalTuple), val1, val2, assumptions, monRes);
     } else {
-        assert(false);
+        STORM_LOG_ASSERT(false, "Shouldn't get here, as this means the order is insufficient and invalid");
     }
 }
 

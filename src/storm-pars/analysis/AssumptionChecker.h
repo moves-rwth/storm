@@ -93,6 +93,7 @@ class AssumptionChecker {
     expressions::Expression getStateExpression(const std::shared_ptr<expressions::ExpressionManager>& manager, uint_fast64_t state, uint_fast64_t action) const;
     expressions::Expression getAdditionalStateExpression(const std::shared_ptr<expressions::ExpressionManager>& manager, uint_fast64_t state,
                                                          uint_fast64_t action) const;
+    ConstantType precision;
 };
 }  // namespace analysis
 }  // namespace storm

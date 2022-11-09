@@ -7,18 +7,20 @@ template<typename ValueType, typename ConstantType>
 RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model,
                                                                   std::shared_ptr<logic::Formula const> formula)
     : OrderExtender<ValueType, ConstantType>(model, formula) {
-    this->rewardModel = this->model->getUniqueRewardModel();
-    this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(
-        this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel()));
+    this->rewardModel = std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(this->model->getUniqueRewardModel());
+    this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, this->rewardModel);
+    this->actionComparator = ActionComparator<ValueType, ConstantType>(this->rewardModel);
     this->rewards = true;
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
-        if (this->rewardModel.hasStateActionRewards()) {
+        if (this->rewardModel->hasStateActionRewards()) {
             for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
-                STORM_LOG_ASSERT(this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(),
+                //                std::cout << i << " " << j << ": " << this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + j) <<
+                //                std::endl;
+                STORM_LOG_ASSERT(this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(),
                                  "Expecting rewards to be constant");
             }
-        } else if (this->rewardModel.hasStateRewards()) {
-            STORM_LOG_ASSERT(this->rewardModel.getStateReward(i).isConstant(), "Expecting rewards to be constant");
+        } else if (this->rewardModel->hasStateRewards()) {
+            STORM_LOG_ASSERT(this->rewardModel->getStateReward(i).isConstant(), "Expecting rewards to be constant");
         } else {
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
@@ -30,18 +32,20 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
                                                                   storm::storage::SparseMatrix<ValueType> matrix,
                                                                   storm::models::sparse::StandardRewardModel<ValueType> rewardModel, bool prMax)
     : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, prMax) {
-    this->rewardModel = rewardModel;
-    this->assumptionMaker =
-        new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
+    this->rewardModel = std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel);
+    this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, this->rewardModel);
+    this->actionComparator = ActionComparator<ValueType, ConstantType>(this->rewardModel);
     this->rewards = true;
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
-        if (this->rewardModel.hasStateActionRewards()) {
+        if (this->rewardModel->hasStateActionRewards()) {
             for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
-                STORM_LOG_ASSERT(this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(),
+                //                std::cout << i << " " << j << ": " << this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + j) <<
+                //                std::endl;
+                STORM_LOG_ASSERT(this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(),
                                  "Expecting rewards to be constant");
             }
-        } else if (this->rewardModel.hasStateRewards()) {
-            STORM_LOG_ASSERT(this->rewardModel.getStateReward(i).isConstant(), "Expecting rewards to be constant");
+        } else if (this->rewardModel->hasStateRewards()) {
+            STORM_LOG_ASSERT(this->rewardModel->getStateReward(i).isConstant(), "Expecting rewards to be constant");
         } else {
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
@@ -53,18 +57,19 @@ RewardOrderExtender<ValueType, ConstantType>::RewardOrderExtender(storm::storage
                                                                   storm::models::sparse::StandardRewardModel<ValueType> rewardModel)
     : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, false) {
     STORM_LOG_ASSERT(this->deterministic, "Expecting model to be deterministic if prMax is not set");
-    this->rewardModel = rewardModel;
-    this->assumptionMaker =
-        new AssumptionMaker<ValueType, ConstantType>(this->matrix, std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel));
+    this->rewardModel = std::make_shared<storm::models::sparse::StandardRewardModel<ValueType>>(rewardModel);
+    this->assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(this->matrix, this->rewardModel);
+    this->actionComparator = ActionComparator<ValueType, ConstantType>(this->rewardModel);
+
     this->rewards = true;
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
-        if (this->rewardModel.hasStateActionRewards()) {
+        if (this->rewardModel->hasStateActionRewards()) {
             for (auto j = 0; j < this->matrix.getRowGroupSize(i); ++j) {
-                STORM_LOG_ASSERT(this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(),
+                STORM_LOG_ASSERT(this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + j).isConstant(),
                                  "Expecting rewards to be constant");
             }
-        } else if (this->rewardModel.hasStateRewards()) {
-            STORM_LOG_ASSERT(this->rewardModel.getStateReward(i).isConstant(), "Expecting rewards to be constant");
+        } else if (this->rewardModel->hasStateRewards()) {
+            STORM_LOG_ASSERT(this->rewardModel->getStateReward(i).isConstant(), "Expecting rewards to be constant");
         } else {
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
@@ -77,20 +82,20 @@ void RewardOrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::share
     if (compRes == Order::NodeComparison::UNKNOWN) {
         bool allZero = true;
         bool allGreaterZero = true;
-        if (this->rewardModel.hasStateActionRewards()) {
+        if (this->rewardModel->hasStateActionRewards()) {
             if (order->isActionSetAtState(currentState)) {
                 allZero =
-                    this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
+                    this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
                 allGreaterZero = !allZero;
             } else {
                 for (auto i = 0; i < this->matrix.getRowGroupSize(currentState); ++i) {
-                    bool zero = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
+                    bool zero = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
                     allZero &= zero;
                     allGreaterZero &= !zero;
                 }
             }
-        } else if (this->rewardModel.hasStateRewards()) {
-            allZero = this->rewardModel.getStateReward(currentState).isZero();
+        } else if (this->rewardModel->hasStateRewards()) {
+            allZero = this->rewardModel->getStateReward(currentState).isZero();
             allGreaterZero = !allZero;
         } else {
             STORM_LOG_ASSERT(false, "Expecting reward");
@@ -135,48 +140,100 @@ void RewardOrderExtender<ValueType, ConstantType>::setBottomTopStates() {
 
 template<typename ValueType, typename ConstantType>
 void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::shared_ptr<Order> order) {
-    for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
-        auto& successors = this->getSuccessors(i, order);
-        if (successors.size() == 2) {
-            rewardHack(order, i, *(successors.begin()), *(successors.begin() + 1));
-        }
-    }
-
     for (uint_fast64_t i : order->getBottom()->states) {
         for (auto& entry : this->transposeMatrix.getRow(i)) {
             order->addStateToHandle(entry.getColumn());
         }
     }
 
-    // TODO aanpassen voor mdps
     for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
+        if (!order->isActionSetAtState(i)) {
+            if (this->deterministic || this->stateMap[i].size() == 1) {
+                order->addToMdpScheduler(i, 0);
+            } else {
+                continue;
+            }
+        }
+        auto& successors = this->getSuccessors(i, order);
+        if (successors.size() == 2 && order->isActionSetAtState(i)) {
+            rewardHack(order, i, *(successors.begin()), *(successors.begin() + 1));
+        }
+    }
+
+    for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
+        if (!order->isActionSetAtState(i)) {
+            continue;
+        }
         auto& successorsI = this->getSuccessors(i, order);
         if (successorsI.size() == 2) {
             for (uint_fast64_t j = i + 1; j < this->numberOfStates; ++j) {
+                if (!order->isActionSetAtState(j)) {
+                    continue;
+                }
                 auto& successorsJ = this->getSuccessors(j, order);
-                bool checkReward = false;
 
-                if (*(successorsI.begin()) == *(successorsJ.begin()) && *(successorsI.begin() + 1) == *(successorsJ.begin() + 1)) {
-                    checkReward = this->matrix.getRow(i).begin()->getValue() == this->matrix.getRow(j).begin()->getValue();
+                if (successorsJ.size() != 2 ||
+                    !(*(successorsI.begin()) == *(successorsJ.begin()) && *(successorsI.begin() + 1) == *(successorsJ.begin() + 1)) ||
+                    this->matrix.getRow(i, order->getActionAtState(i)).begin()->getValue() !=
+                        this->matrix.getRow(j, order->getActionAtState(j)).begin()->getValue()) {
+                    continue;
                 }
 
-                if (checkReward) {
-                    // check welke reward t grootste is
-                    if (order->isActionSetAtState(i) && order->isActionSetAtState(j)) {
-                        ValueType rewardI = ValueType(0);
-                        ValueType rewardJ = ValueType(0);
-                        if (this->rewardModel.hasStateActionRewards()) {
+                // check welke reward t grootste is
+                if (order->isActionSetAtState(i) && order->isActionSetAtState(j)) {
+                    ValueType rewardI = ValueType(0);
+                    ValueType rewardJ = ValueType(0);
+                    if (this->rewardModel->hasStateActionRewards()) {
+                        STORM_LOG_ASSERT(order->getActionAtState(i) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
+                        STORM_LOG_ASSERT(order->getActionAtState(j) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
+                        rewardI = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + order->getActionAtState(i));
+                        rewardJ = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[j] + order->getActionAtState(j));
+                    } else if (this->rewardModel->hasStateRewards()) {
+                        rewardI = this->rewardModel->getStateReward(i);
+                        rewardJ = this->rewardModel->getStateReward(j);
+                    } else {
+                        STORM_LOG_ASSERT(false, "Expecting reward");
+                    }
+
+                    if (!order->contains(i)) {
+                        order->add(i);
+                        order->addStateToHandle(i);
+                    }
+                    if (!order->contains(j)) {
+                        order->add(j);
+                        order->addStateToHandle(j);
+                    }
+                    if (rewardI.constantPart() > rewardJ.constantPart()) {
+                        order->addAbove(i, order->getNode(j));
+                    } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                        order->addAbove(j, order->getNode(i));
+                    } else {
+                        order->addRelation(i, j, true);
+                    }
+                } else if (order->isActionSetAtState(i)) {
+                    ValueType rewardI = ValueType(0);
+                    ValueType rewardJ = ValueType(0);
+                    bool iAboveJ = true;
+                    bool jAboveI = true;
+                    for (auto actJ = 0; actJ < this->stateMap[j].size(); ++actJ) {
+                        if (this->rewardModel->hasStateActionRewards()) {
                             STORM_LOG_ASSERT(order->getActionAtState(i) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
-                            STORM_LOG_ASSERT(order->getActionAtState(j) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
-                            rewardI = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + order->getActionAtState(i));
-                            rewardJ = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + order->getActionAtState(j));
-                        } else if (this->rewardModel.hasStateRewards()) {
-                            rewardI = this->rewardModel.getStateReward(i);
-                            rewardJ = this->rewardModel.getStateReward(j);
+                            rewardI = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + order->getActionAtState(i));
+                            rewardJ = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[j] + actJ);
+                        } else if (this->rewardModel->hasStateRewards()) {
+                            rewardI = this->rewardModel->getStateReward(i);
+                            rewardJ = this->rewardModel->getStateReward(j);
                         } else {
                             STORM_LOG_ASSERT(false, "Expecting reward");
                         }
 
+                        if (rewardI.constantPart() > rewardJ.constantPart()) {
+                            jAboveI = false;
+                        } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                            iAboveJ = false;
+                        }
+                    }
+                    if (iAboveJ || jAboveI) {
                         if (!order->contains(i)) {
                             order->add(i);
                             order->addStateToHandle(i);
@@ -185,26 +242,69 @@ void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::sha
                             order->add(j);
                             order->addStateToHandle(j);
                         }
-                        if (rewardI.constantPart() > rewardJ.constantPart()) {
-                            order->addAbove(i, order->getNode(j));
-                        } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                        if (iAboveJ && jAboveI) {
+                            order->addRelation(i, j, true);
+
+                        } else if (jAboveI) {
                             order->addAbove(j, order->getNode(i));
                         } else {
+                            order->addAbove(i, order->getNode(j));
+                        }
+                    }
+                } else if (order->isActionSetAtState(j)) {
+                    ValueType rewardI = ValueType(0);
+                    ValueType rewardJ = ValueType(0);
+                    bool iAboveJ = true;
+                    bool jAboveI = true;
+                    for (auto actI = 0; actI < this->stateMap[i].size(); ++actI) {
+                        if (this->rewardModel->hasStateActionRewards()) {
+                            STORM_LOG_ASSERT(order->getActionAtState(j) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
+                            rewardI = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + actI);
+                            rewardJ = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[j] + order->getActionAtState(j));
+                        } else if (this->rewardModel->hasStateRewards()) {
+                            rewardI = this->rewardModel->getStateReward(i);
+                            rewardJ = this->rewardModel->getStateReward(j);
+                        } else {
+                            STORM_LOG_ASSERT(false, "Expecting reward");
+                        }
+
+                        if (rewardI.constantPart() > rewardJ.constantPart()) {
+                            jAboveI = false;
+                        } else if (rewardJ.constantPart() > rewardI.constantPart()) {
+                            iAboveJ = false;
+                        }
+                    }
+                    if (iAboveJ || jAboveI) {
+                        if (!order->contains(i)) {
+                            order->add(i);
+                            order->addStateToHandle(i);
+                        }
+                        if (!order->contains(j)) {
+                            order->add(j);
+                            order->addStateToHandle(j);
+                        }
+                        if (iAboveJ && jAboveI) {
                             order->addRelation(i, j, true);
+
+                        } else if (jAboveI) {
+                            order->addAbove(j, order->getNode(i));
+                        } else {
+                            order->addAbove(i, order->getNode(j));
                         }
-                    } else if (order->isActionSetAtState(i)) {
-                        ValueType rewardI = ValueType(0);
-                        ValueType rewardJ = ValueType(0);
-                        bool iAboveJ = true;
-                        bool jAboveI = true;
+                    }
+                } else {
+                    ValueType rewardI = ValueType(0);
+                    ValueType rewardJ = ValueType(0);
+                    bool iAboveJ = true;
+                    bool jAboveI = true;
+                    for (auto actI = 0; actI < this->stateMap[i].size(); ++actI) {
                         for (auto actJ = 0; actJ < this->stateMap[j].size(); ++actJ) {
-                            if (this->rewardModel.hasStateActionRewards()) {
-                                STORM_LOG_ASSERT(order->getActionAtState(i) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
-                                rewardI = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + order->getActionAtState(i));
-                                rewardJ = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + actJ);
-                            } else if (this->rewardModel.hasStateRewards()) {
-                                rewardI = this->rewardModel.getStateReward(i);
-                                rewardJ = this->rewardModel.getStateReward(j);
+                            if (this->rewardModel->hasStateActionRewards()) {
+                                rewardI = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[i] + actI);
+                                rewardJ = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[j] + actJ);
+                            } else if (this->rewardModel->hasStateRewards()) {
+                                rewardI = this->rewardModel->getStateReward(i);
+                                rewardJ = this->rewardModel->getStateReward(j);
                             } else {
                                 STORM_LOG_ASSERT(false, "Expecting reward");
                             }
@@ -215,106 +315,23 @@ void RewardOrderExtender<ValueType, ConstantType>::checkRewardsForOrder(std::sha
                                 iAboveJ = false;
                             }
                         }
-                        if (iAboveJ || jAboveI) {
-                            if (!order->contains(i)) {
-                                order->add(i);
-                                order->addStateToHandle(i);
-                            }
-                            if (!order->contains(j)) {
-                                order->add(j);
-                                order->addStateToHandle(j);
-                            }
-                            if (iAboveJ && jAboveI) {
-                                order->addRelation(i, j, true);
-
-                            } else if (jAboveI) {
-                                order->addAbove(j, order->getNode(i));
-                            } else {
-                                order->addAbove(i, order->getNode(j));
-                            }
+                    }
+                    if (iAboveJ || jAboveI) {
+                        if (!order->contains(i)) {
+                            order->add(i);
+                            order->addStateToHandle(i);
                         }
-                    } else if (order->isActionSetAtState(j)) {
-                        ValueType rewardI = ValueType(0);
-                        ValueType rewardJ = ValueType(0);
-                        bool iAboveJ = true;
-                        bool jAboveI = true;
-                        for (auto actI = 0; actI < this->stateMap[i].size(); ++actI) {
-                            if (this->rewardModel.hasStateActionRewards()) {
-                                STORM_LOG_ASSERT(order->getActionAtState(j) != std::numeric_limits<uint64_t>::max(), "Expecting action to be set");
-                                rewardI = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + actI);
-                                rewardJ = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + order->getActionAtState(j));
-                            } else if (this->rewardModel.hasStateRewards()) {
-                                rewardI = this->rewardModel.getStateReward(i);
-                                rewardJ = this->rewardModel.getStateReward(j);
-                            } else {
-                                STORM_LOG_ASSERT(false, "Expecting reward");
-                            }
-
-                            if (rewardI.constantPart() > rewardJ.constantPart()) {
-                                jAboveI = false;
-                            } else if (rewardJ.constantPart() > rewardI.constantPart()) {
-                                iAboveJ = false;
-                            }
+                        if (!order->contains(j)) {
+                            order->add(j);
+                            order->addStateToHandle(j);
                         }
-                        if (iAboveJ || jAboveI) {
-                            if (!order->contains(i)) {
-                                order->add(i);
-                                order->addStateToHandle(i);
-                            }
-                            if (!order->contains(j)) {
-                                order->add(j);
-                                order->addStateToHandle(j);
-                            }
-                            if (iAboveJ && jAboveI) {
-                                order->addRelation(i, j, true);
+                        if (iAboveJ && jAboveI) {
+                            order->addRelation(i, j, true);
 
-                            } else if (jAboveI) {
-                                order->addAbove(j, order->getNode(i));
-                            } else {
-                                order->addAbove(i, order->getNode(j));
-                            }
-                        }
-                    } else {
-                        ValueType rewardI = ValueType(0);
-                        ValueType rewardJ = ValueType(0);
-                        bool iAboveJ = true;
-                        bool jAboveI = true;
-                        for (auto actI = 0; actI < this->stateMap[i].size(); ++actI) {
-                            for (auto actJ = 0; actJ < this->stateMap[j].size(); ++actJ) {
-                                if (this->rewardModel.hasStateActionRewards()) {
-                                    rewardI = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[i] + actI);
-                                    rewardJ = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[j] + actJ);
-                                } else if (this->rewardModel.hasStateRewards()) {
-                                    rewardI = this->rewardModel.getStateReward(i);
-                                    rewardJ = this->rewardModel.getStateReward(j);
-                                } else {
-                                    STORM_LOG_ASSERT(false, "Expecting reward");
-                                }
-
-                                if (rewardI.constantPart() > rewardJ.constantPart()) {
-                                    jAboveI = false;
-                                } else if (rewardJ.constantPart() > rewardI.constantPart()) {
-                                    iAboveJ = false;
-                                }
-                            }
-                        }
-                        if (iAboveJ || jAboveI) {
-                            if (!order->contains(i)) {
-                                order->add(i);
-                                order->addStateToHandle(i);
-                            }
-                            if (!order->contains(j)) {
-                                order->add(j);
-                                order->addStateToHandle(j);
-                            }
-                            if (iAboveJ && jAboveI) {
-                                order->addRelation(i, j, true);
-
-                            } else if (jAboveI) {
-                                order->addAbove(j, order->getNode(i));
-                            } else {
-                                order->addAbove(i, order->getNode(j));
-                            }
+                        } else if (jAboveI) {
+                            order->addAbove(j, order->getNode(i));
+                        } else {
+                            order->addAbove(i, order->getNode(j));
                         }
                     }
                 }
@@ -368,21 +385,21 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                 // we don't have negative rewards, so we should merge, probably assumptions will get invalid by this
                 bool allZero = true;
                 bool allGreaterZero = true;
-                if (this->rewardModel.hasStateActionRewards()) {
+                if (this->rewardModel->hasStateActionRewards()) {
                     if (this->findBestAction(order, region, currentState)) {
                         allZero =
-                            this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState))
+                            this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState))
                                 .isZero();
                         allGreaterZero = !allZero;
                     } else {
                         for (auto i = 0; i < this->matrix.getRowGroupSize(currentState); ++i) {
-                            bool zero = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
+                            bool zero = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
                             allZero &= zero;
                             allGreaterZero &= !zero;
                         }
                     }
-                } else if (this->rewardModel.hasStateRewards()) {
-                    allZero = this->rewardModel.getStateReward(currentState).isZero();
+                } else if (this->rewardModel->hasStateRewards()) {
+                    allZero = this->rewardModel->getStateReward(currentState).isZero();
                     allGreaterZero = !allZero;
                 } else {
                     STORM_LOG_ASSERT(false, "Expecting reward");
@@ -456,20 +473,20 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
         auto realSucc = succ0 == currentState ? succ1 : succ0;
         bool allZero = true;
         bool allGreaterZero = true;
-        if (this->rewardModel.hasStateActionRewards()) {
+        if (this->rewardModel->hasStateActionRewards()) {
             if (this->findBestAction(order, region, currentState)) {
                 allZero =
-                    this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
+                    this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState)).isZero();
                 allGreaterZero = !allZero;
             } else {
                 for (auto i = 0; i < this->matrix.getRowGroupSize(currentState); ++i) {
-                    bool zero = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
+                    bool zero = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
                     allZero &= zero;
                     allGreaterZero &= !zero;
                 }
             }
-        } else if (this->rewardModel.hasStateRewards()) {
-            allZero = this->rewardModel.getStateReward(currentState).isZero();
+        } else if (this->rewardModel->hasStateRewards()) {
+            allZero = this->rewardModel->getStateReward(currentState).isZero();
             allGreaterZero = !allZero;
         } else {
             STORM_LOG_ASSERT(false, "Expecting reward");
@@ -530,21 +547,21 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
             auto realSucc = *(successors.begin()) == currentState ? *(successors.begin() + 1) : *(successors.begin());
             bool allZero = true;
             bool allGreaterZero = true;
-            if (this->rewardModel.hasStateActionRewards()) {
+            if (this->rewardModel->hasStateActionRewards()) {
                 if (this->findBestAction(order, region, currentState)) {
-                    bool zero = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState))
+                    bool zero = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState))
                                     .isZero();
                     allZero &= zero;
                     allGreaterZero &= !zero;
                 } else {
-                    for (auto i = 0; this->matrix.getRowGroupSize(currentState); ++i) {
-                        bool zero = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
+                    for (auto i = 0; i < this->matrix.getRowGroupSize(currentState); ++i) {
+                        bool zero = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + i).isZero();
                         allZero &= zero;
                         allGreaterZero &= !zero;
                     }
                 }
-            } else if (this->rewardModel.hasStateRewards()) {
-                bool zero = this->rewardModel.getStateReward(currentState).isZero();
+            } else if (this->rewardModel->hasStateRewards()) {
+                bool zero = this->rewardModel->getStateReward(currentState).isZero();
                 allZero &= zero;
                 allGreaterZero &= !zero;
             } else {
@@ -576,10 +593,10 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
             // We could order all successor states
             bool allZero = true;
             bool allGreaterZero = true;
-            if (this->rewardModel.hasStateActionRewards()) {
+            if (this->rewardModel->hasStateActionRewards()) {
                 if (this->findBestAction(order, region, currentState)) {
                     rewardSmall =
-                        this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState));
+                        this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState));
                     rewardLarge = rewardSmall;
                     bool zero = rewardSmall.isZero();
                     allZero &= zero;
@@ -587,7 +604,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                 } else {
                     for (auto i = 0; this->matrix.getRowGroupSize(currentState); ++i) {
                         auto rew =
-                            this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState));
+                            this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[currentState] + order->getActionAtState(currentState));
                         rewardSmall = rew.constantPart() < rewardSmall.constantPart() ? rew : rewardSmall;
                         rewardLarge = rew.constantPart() < rewardLarge.constantPart() ? rewardLarge : rew;
                         bool zero = rew.isZero();
@@ -595,8 +612,8 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                         allGreaterZero &= !zero;
                     }
                 }
-            } else if (this->rewardModel.hasStateRewards()) {
-                rewardSmall = this->rewardModel.getStateReward(currentState);
+            } else if (this->rewardModel->hasStateRewards()) {
+                rewardSmall = this->rewardModel->getStateReward(currentState);
                 rewardLarge = rewardSmall;
                 bool zero = rewardSmall.isZero();
                 allZero &= zero;
@@ -615,7 +632,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                 // We are considering rewards, so our current state is always above the lowest one of all our successor states
                 order->addAbove(currentState, order->getNode(sortedSuccStates.second.back()));
                 // We check if we can also sort something based on assumptions.
-                if (this->usePLA[order]) {
+                if (this->usePLA[order] && order->isActionSetAtState(currentState)) {
                     for (uint_fast64_t succ : successors) {
                         if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
                             auto compare = this->addStatesBasedOnMinMax(order, currentState, succ);
@@ -626,7 +643,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                                 // succ == sj == s2
                                 auto s1 = *(successors.begin());
                                 ValueType function;
-                                for (auto& entry : this->matrix.getRow(currentState)) {
+                                for (auto& entry : this->matrix.getRow(currentState, order->getActionAtState(currentState))) {
                                     if (entry.getColumn() == succ) {
                                         function = entry.getValue();
                                         break;
@@ -716,6 +733,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
 template<typename ValueType, typename ConstantType>
 bool RewardOrderExtender<ValueType, ConstantType>::rewardHack(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t succ0,
                                                               uint_fast64_t succ1) {
+    STORM_LOG_ASSERT(order->isActionSetAtState(currentState), "Expecting action to be set for state");
     auto& successors0 = this->getSuccessors(succ0, order);
     if (successors0.size() == 1 && *(successors0.begin()) == currentState) {
         // We have curr --> succ0 and curr --> succ1 and succ0 --> curr

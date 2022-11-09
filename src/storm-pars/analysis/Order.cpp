@@ -186,7 +186,7 @@ void Order::addRelation(uint_fast64_t above, uint_fast64_t below, bool allowMerg
 }
 
 void Order::addRelationNodes(Order::Node* above, Order::Node* below) {
-    STORM_LOG_INFO("Add relation between (above) " << *above->states.begin() << " and " << *below->states.begin() << std::endl);
+    STORM_LOG_INFO("Add relation between (above) " << *above->states.begin() << " and " << *below->states.begin());
 
     below->statesAbove |= ((above->statesAbove));
     for (auto const& state : above->states) {
@@ -195,7 +195,7 @@ void Order::addRelationNodes(Order::Node* above, Order::Node* below) {
 }
 
 void Order::addToNode(uint_fast64_t state, Node* node) {
-    STORM_LOG_INFO("Add " << state << " to " << *node->states.begin() << std::endl);
+    STORM_LOG_INFO("Add " << state << " to " << *node->states.begin());
 
     if (nodes[state] == nullptr) {
         // State is not in the order yet
@@ -214,7 +214,11 @@ void Order::addToNode(uint_fast64_t state, Node* node) {
 }
 
 void Order::mergeNodes(Order::Node* node1, Order::Node* node2) {
-    STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin() << '\n');
+    if (invalid) {
+        STORM_LOG_INFO("Not merging " << *node1->states.begin() << " and " << *node2->states.begin() << " as order is invalid");
+        return;
+    }
+    STORM_LOG_INFO("Merge " << *node1->states.begin() << " and " << *node2->states.begin());
     if (node1 == node2) {
         return;
     }
@@ -322,6 +326,7 @@ Order::NodeComparison Order::compare(Node* node1, Node* node2, NodeComparison hy
         auto comp = compareFast(node1, node2, hypothesis);
         if (comp != UNKNOWN) {
             if (compareFast(node2, node1, UNKNOWN) == comp) {
+                this->toDotOutput(true);
                 mergeNodes(node1, node2);
                 return SAME;
             }

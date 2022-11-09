@@ -2,6 +2,7 @@
 
 #include "storm-pars/api/export.h"
 #include "storm-pars/api/region.h"
+#include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm/api/verification.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -81,8 +82,8 @@ void OrderExtender<ValueType, ConstantType>::init(storm::storage::SparseMatrix<V
     this->matrix = matrix;
     this->numberOfStates = this->matrix.getColumnCount();
     this->deterministic = matrix.getRowGroupCount() == matrix.getRowCount();
-    this->actionComparator = ActionComparator<ValueType>();
     this->transposeMatrix = this->matrix.getSquareMatrix().transpose();
+    this->precision = storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision();
 }
 
 template<typename ValueType, typename ConstantType>
@@ -700,6 +701,7 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
                 minValuesInit = minCheck.getValueVector();
                 maxValuesInit = maxCheck.getValueVector();
                 for (auto i = 0; i < minValuesInit.get().size(); ++i) {
+                    //                    std::cout << i << ": " << minValuesInit.get()[i] << ", " << maxValuesInit.get()[i] << std::endl;
                     if (minValuesInit.get()[i] - maxValuesInit.get()[i] > 0) {
                         STORM_LOG_WARN("Bounds are invalid, please consider using a sound or exact method.");
                     }
@@ -732,9 +734,9 @@ void OrderExtender<ValueType, ConstantType>::setMinMaxValues(boost::optional<std
             if (unknownStates.first != numberOfStates) {
                 // only continue if the difference is large enough to be correct
                 continueExtending[order] = (minValues.get()[unknownStates.first] > maxValues.get()[unknownStates.second] &&
-                                            (minValues.get()[unknownStates.first] - maxValues.get()[unknownStates.second]) > error) ||
+                                            (minValues.get()[unknownStates.first] - maxValues.get()[unknownStates.second]) > precision) ||
                                            (minValues.get()[unknownStates.second] > maxValues.get()[unknownStates.first] &&
-                                            ((minValues.get()[unknownStates.second] - maxValues.get()[unknownStates.first]) > error));
+                                            ((minValues.get()[unknownStates.second] - maxValues.get()[unknownStates.first]) > precision));
             } else {
                 continueExtending[order] = true;
             }
@@ -781,7 +783,7 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
                      "Cannot add states based on min max values if the minmax values are not initialized for this order");
     std::vector<ConstantType> const& mins = minValues.at(order);
     std::vector<ConstantType> const& maxs = maxValues.at(order);
-    if (mins[state1] > error && mins[state1] == maxs[state1] && mins[state2] == maxs[state2] && mins[state1] == mins[state2]) {
+    if (mins[state1] > precision && mins[state1] == maxs[state1] && mins[state2] == maxs[state2] && mins[state1] == mins[state2]) {
         if (order->contains(state1)) {
             if (order->contains(state2)) {
                 STORM_LOG_INFO("Merging state " << state1 << " and " << state2 << " based on min max values");
@@ -793,12 +795,11 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
             }
         } else if (order->contains(state2)) {
             STORM_LOG_INFO("Adding state " << state1 << " to " << state2 << " based on min max values");
-
             order->addToNode(state1, order->getNode(state2));
         }
         return Order::SAME;
     }
-    if (mins[state1] > error && mins[state1] > maxs[state2]) {
+    if (mins[state1] - maxs[state2] > 2 * precision) {
         // state 1 will always be larger than state2
         if (!order->contains(state1)) {
             order->add(state1);
@@ -811,11 +812,9 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
         STORM_LOG_ASSERT(order->compare(state1, state2) != Order::BELOW, "Expecting " << state1 << " to NOT be BELOW " << state2 << ".");
         STORM_LOG_ASSERT(order->compare(state1, state2) != Order::SAME, "Expecting " << state1 << " to NOT be SAME " << state2 << ".");
         STORM_LOG_INFO("Adding state " << state1 << " above " << state2 << " based on min max values");
-
         order->addRelation(state1, state2);
-
         return Order::ABOVE;
-    } else if (mins[state2] > error && mins[state2] > maxs[state1]) {
+    } else if (mins[state2] - maxs[state1] > 2 * precision) {
         // state2 will always be larger than state1
         if (!order->contains(state1)) {
             order->add(state1);
@@ -882,6 +881,7 @@ void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Ord
             order->setDoneForState(state);
         }
     }
+    STORM_LOG_ASSERT(!order->isInvalid(), "Expecting order to be valid after adding states based on min/max");
 }
 
 //------------------------------------------------------------------------------
@@ -1217,8 +1217,10 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
         STORM_LOG_INFO("No best action found for state " << state << ".");
         return false;
     }
+    bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
+
     if (prMax) {
-        STORM_LOG_INFO("Interested in PrMax.");
+        STORM_LOG_INFO("Interested in max.");
         uint_fast64_t action = 0;
         auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
         std::set<uint_fast64_t> actionsToIgnore;
@@ -1232,13 +1234,15 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                         ValueType rew1(0);
                         ValueType rew2(0);
                         if (this->rewards) {
-                            if (this->rewardModel.hasStateActionRewards()) {
+                            if (this->rewardModel->hasStateActionRewards()) {
                                 // Reward only matters if we have state action rewards
-                                rew1 = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[state] + action);
-                                rew2 = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[state] + i);
+                                rew1 = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[state] + action);
+                                rew2 = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[state] + i);
                             }
                         }
-                        auto compRes = actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB);
+                        auto compRes = usePLANow ? actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB,
+                                                                                     this->minValues[order], this->maxValues[order])
+                                                 : actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB);
                         if (compRes == CompareResult::GEQ) {
                             // rowA is smaller or equal than rowB, so action is smaller than i, so we continue with action
                             // We will ignore i as we know action is better
@@ -1264,7 +1268,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
         STORM_LOG_INFO("No best action found for state " << state << ".");
         return false;
     } else {
-        STORM_LOG_INFO("Interested in PrMin.");
+        STORM_LOG_INFO("Interested in min.");
         auto action = 0;
         auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
         std::set<uint_fast64_t> actionsToIgnore;
@@ -1278,13 +1282,15 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                         ValueType rew1(0);
                         ValueType rew2(0);
                         if (this->rewards) {
-                            if (this->rewardModel.hasStateActionRewards()) {
+                            if (this->rewardModel->hasStateActionRewards()) {
                                 // Reward only matters if we have state action rewards
-                                rew1 = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[state] + action);
-                                rew2 = this->rewardModel.getStateActionReward(this->matrix.getRowGroupIndices()[state] + i);
+                                rew1 = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[state] + action);
+                                rew2 = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[state] + i);
                             }
                         }
-                        auto compRes = actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB);
+                        auto compRes = usePLANow ? actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB,
+                                                                                     this->minValues[order], this->maxValues[order])
+                                                 : actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB);
 
                         if (compRes == CompareResult::LEQ) {
                             // rowA is smaller or equal than rowB, so action is smaller than i, so we continue with action

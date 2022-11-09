@@ -9,6 +9,7 @@ ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(st
                                                                               std::shared_ptr<logic::Formula const> formula)
     : OrderExtender<ValueType, ConstantType>(model, formula) {
     this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
+    this->actionComparator = ActionComparator<ValueType, ConstantType>();
     this->rewards = false;
 }
 
@@ -17,6 +18,7 @@ ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(st
                                                                               storm::storage::SparseMatrix<ValueType> matrix, bool prMax)
     : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, prMax) {
     this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
+    this->actionComparator = ActionComparator<ValueType, ConstantType>();
     this->rewards = false;
 }
 
@@ -25,6 +27,7 @@ ReachabilityOrderExtender<ValueType, ConstantType>::ReachabilityOrderExtender(st
                                                                               storm::storage::SparseMatrix<ValueType> matrix)
     : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix, false) {
     this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(this->matrix);
+    this->actionComparator = ActionComparator<ValueType, ConstantType>();
     this->rewards = false;
     STORM_LOG_ASSERT(this->deterministic, "Expecting model to be deterministic if prMax is not set");
 }
@@ -163,7 +166,7 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
             order->addStateToHandle(s1);
         } else {
             bool continueSearch = true;
-            for (auto& entry : this->matrix.getRow(currentState)) {
+            for (auto& entry : this->matrix.getRow(currentState, order->getActionAtState(currentState))) {
                 if (entry.getColumn() == s1) {
                     if (entry.getValue().isConstant()) {
                         continueSearch = false;
