@@ -701,7 +701,6 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
                 minValuesInit = minCheck.getValueVector();
                 maxValuesInit = maxCheck.getValueVector();
                 for (auto i = 0; i < minValuesInit.get().size(); ++i) {
-                    //                    std::cout << i << ": " << minValuesInit.get()[i] << ", " << maxValuesInit.get()[i] << std::endl;
                     if (minValuesInit.get()[i] - maxValuesInit.get()[i] > 0) {
                         STORM_LOG_WARN("Bounds are invalid, please consider using a sound or exact method.");
                     }
