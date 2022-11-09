@@ -22,7 +22,6 @@ namespace storm {
             this->joint_actions.push_back(std::move(action_tuple));
             return joint_action;
         }
-
         
         void DecPomdp::collectActions(DecPOMDPDiscrete *model) {
             
@@ -92,6 +91,7 @@ namespace storm {
                 this->storm_to_madp_states.push_back(madp_state);
                 this->transition_matrix.resize(this->num_states());
                 this->row_joint_action.resize(this->num_states());
+                this->row_reward.resize(this->num_states());
             }
             return result.first->second;
         }
@@ -101,7 +101,7 @@ namespace storm {
             
             // agents
             this->num_agents = model->GetNrAgents();
-            this->discount = model->GetDiscount();
+            this->discount_factor = model->GetDiscount();
             this->reward_minimizing = model->GetRewardType() == COST;
 
             this->collectActions(model);
@@ -189,8 +189,8 @@ namespace storm {
             for(uint_fast64_t joint_action = 0; joint_action < model->GetNrJointActions(); joint_action++) {
                 madp_row_group.push_back(joint_action);
             }
-            this->row_joint_action.resize(this->num_states());
-            this->row_reward.resize(this->num_states());
+            assert(this->row_joint_action.size() == this->num_states());
+            assert(this->row_reward.size() == this->num_states());
             for(uint_fast64_t storm_state = 0; storm_state < this->num_states(); storm_state++) {
                 MadpState madp_state = this->storm_to_madp_states[storm_state];
                 if(storm_state == this->initial_state) {
@@ -212,8 +212,90 @@ namespace storm {
                 MadpState madp_state = this->storm_to_madp_states[state];
                 this->state_joint_observation[state] = madp_state.second;
             }
+        }
 
-            this->applyDiscountFactor();
+        storm::models::sparse::StateLabeling DecPomdp::constructStateLabeling() {
+            storm::models::sparse::StateLabeling labeling(this->num_states());
+
+            storm::storage::BitVector init_flags(this->num_states(), false);
+            init_flags.set(this->initial_state);
+            labeling.addLabel("init", std::move(init_flags));
+
+            if(this->discounted) {
+                storm::storage::BitVector discount_sink_flags(this->num_states(), false);
+                discount_sink_flags.set(this->discount_sink_state);
+                labeling.addLabel(this->discount_sink_label, std::move(discount_sink_flags));
+            }
+            
+            return labeling;
+
+            /*
+            // we probably do not need this?
+            for(uint64_t joint_observation = 0; joint_observation < this->num_joint_observations(); joint_observation++) {
+                storm::storage::BitVector label_flags(num_states, false);
+                for(uint64_t state = 0; state < num_states; state++) {
+                    if (this->state_joint_observation[state] == joint_observation){
+                        label_flags.set(state);
+                    }
+                }
+                std::string label = "";
+                for(uint64_t agent = 0; agent < this->num_agents; agent++) {
+                    label = label + "_" + this->agent_observation_labels[agent][this->joint_observations[joint_observation][agent]];
+                }
+                labeling.addLabel(label, std::move(label_flags));
+            }    
+            std::cout << labeling << "agent_action_labels \n";
+            */   
+        }
+
+        storm::storage::SparseMatrix<double> DecPomdp::constructTransitionMatrix() {
+            // count number of rows
+            uint64_t num_rows = 0;
+            for(uint64_t state = 0; state < this->num_states(); state++) {
+                num_rows += this->transition_matrix[state].size();
+            }
+
+            storm::storage::SparseMatrixBuilder<double> builder(
+                    num_rows, this->num_states(), 0, true, true, this->num_states()
+            );
+            uint64_t current_row = 0;
+            for(uint64_t state = 0; state < this->num_states(); state++) {
+                builder.newRowGroup(current_row);
+                for(auto row: this->transition_matrix[state]) {
+                    for(auto entry: row) {
+                        builder.addNextValue(current_row, entry.first, entry.second);
+                    } 
+                    current_row++;
+                }
+            }
+            return builder.build();
+        }
+
+        storm::models::sparse::StandardRewardModel<double> DecPomdp::constructRewardModel() {
+            boost::optional<std::vector<double>> state_rewards;
+            boost::optional<std::vector<double>> action_rewards = std::vector<double>();
+            for(uint64_t state = 0; state < this->num_states(); state++) {
+                for(uint64_t row = 0; row < this->transition_matrix[state].size(); row++) {
+                    auto reward = this->row_reward[state][row];
+                    action_rewards->push_back(reward);
+                }
+            } 
+            return storm::models::sparse::StandardRewardModel<double>(std::move(state_rewards), std::move(action_rewards));
+        }
+
+
+        std::shared_ptr<storm::models::sparse::Mdp<double>> DecPomdp::constructMdp() { 
+            
+            storm::storage::sparse::ModelComponents<double> components;
+
+            components.transitionMatrix = this->constructTransitionMatrix();
+            components.stateLabeling = this->constructStateLabeling();
+
+
+            auto reward_model = this->constructRewardModel();
+            components.rewardModels.emplace(this->reward_model_name, reward_model);
+
+            return std::make_shared<storm::models::sparse::Mdp<double>>(std::move(components));
         }
 
 
@@ -248,12 +330,14 @@ namespace storm {
             std::cerr << "MADP: trying to parse as POMDP..." << std::endl;
             model = parse_as_pomdp(filename);
             if(model != NULL) {
+                std::cerr << "MADP: OK" << std::endl;
                 return model;
             }
 
             std::cerr << "MADP: trying to parse as dec-POMDP..." << std::endl;
             model = parse_as_decpomdp(filename);
             if(model != NULL) {
+                std::cerr << "MADP: OK" << std::endl;
                 return model;
             }
 
@@ -270,43 +354,49 @@ namespace storm {
                 return NULL;
             }
             // debug: MADP info
-            std::cerr << madp_decpomdp->SoftPrint() << std::endl;
+            // std::cerr << madp_decpomdp->SoftPrint() << std::endl;
             std::unique_ptr<DecPomdp> decpomdp = std::make_unique<DecPomdp>(madp_decpomdp);
             free(madp_decpomdp);
             return decpomdp;
         }
 
         
-        void DecPomdp::applyDiscountFactor() {
+        uint_fast64_t DecPomdp::addSink(std::string label) {
+            
+            uint_fast64_t joint_observation = this->freshJointObservation(label);
+            MadpState madp_new_state = std::make_pair(0,joint_observation);
+            uint_fast64_t new_state = this->mapMadpState(madp_new_state);
 
-            if(this->discount == 1) {
+            uint_fast64_t sink_action = this->freshJointAction(label);
+            this->row_joint_action[new_state] = std::vector<uint_fast64_t>(1, sink_action);
+            this->row_reward[new_state] = std::vector<double>(1, 0);
+            this->transition_matrix[new_state] = std::vector<StormRow>(1, StormRow(1, std::make_pair(new_state,1)));
+
+            return new_state;
+        }
+        
+        void DecPomdp::applyDiscountFactorTransformation() {
+
+            if(this->discounted || this->discount_factor == 1) {
                 return;
             }
 
-            uint_fast64_t sink_joint_observation = this->freshJointObservation("sink");
-            MadpState madp_sink = std::make_pair(0,sink_joint_observation);
-            this->sink_state = this->mapMadpState(madp_sink);
-
+            this->discount_sink_state = this->addSink(this->discount_sink_label);
             for(uint_fast64_t state = 0; state < this->num_states(); state++) {
-                if(state == this->initial_state) {
-                    // no discounting
-                    continue;
-                }
-                if(state == this->sink_state) {
-                    // self loop
-                    this->transition_matrix[this->sink_state] = std::vector<StormRow>(
-                        1, StormRow(1, std::make_pair(this->sink_state,1)));
+                if(state == this->initial_state || state == this->discount_sink_state) {
+                    // no discounting in the initial state because it selects the actual initial state
                     continue;
                 }
                 for(StormRow &row: this->transition_matrix[state]) {
-                    // redirect probability of the row to the sink
                     for(auto &entry: row) {
-                        entry.second *= discount;
+                        entry.second *= this->discount_factor;
                     }
-                    row.push_back(std::make_pair(this->sink_state,1-discount));
+                    row.push_back(std::make_pair(this->discount_sink_state,1-this->discount_factor));
                 }
             }
+            this->discounted = true;
         }
+
 
     } // namespace synthesis
 } // namespace storm
