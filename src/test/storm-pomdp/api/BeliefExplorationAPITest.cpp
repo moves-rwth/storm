@@ -269,3 +269,31 @@ TYPED_TEST(BeliefExplorationAPITest, refuel_Pmin) {
     EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
     EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1), std::out_of_range);
 }
+
+TYPED_TEST(BeliefExplorationAPITest, simple2_Rmax) {
+    typedef typename TestFixture::ValueType ValueType;
+
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple2.prism", "Rmax=?[F \"goal\"]");
+    auto task = storm::api::createTask<ValueType>(data.formula, false);
+    auto result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 10);
+
+    ValueType expected = this->parseNumber("59040588757/103747000000");
+    EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+
+    EXPECT_EQ(4, storm::pomdp::api::getNumberOfPreprocessingSchedulers<ValueType>(result));
+    EXPECT_NO_THROW(storm::pomdp::api::extractSchedulerAsMarkovChain<ValueType>(result));
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,0));
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,1));
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,2));
+    EXPECT_NO_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,3));
+    EXPECT_THROW(storm::pomdp::api::getCutoffScheduler<ValueType>(result,4), std::out_of_range);
+
+
+    std::vector<std::unordered_map<uint64_t, ValueType>> obs0vals{{{0,0},{1,0}},{{0,0.7}},{{0,1},{1,1}}};
+    std::vector<std::unordered_map<uint64_t, ValueType>> obs1vals{{{2,1}},{{2,1}}};
+    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalVals{obs0vals,obs1vals};
+
+    result = storm::pomdp::api::underapproximateWithCutoffs<ValueType>(this->env(), data.model, task, 10, additionalVals);
+
+    EXPECT_LE(result.lowerBound, storm::utility::one<ValueType>() + this->modelcheckingPrecision());
+}
