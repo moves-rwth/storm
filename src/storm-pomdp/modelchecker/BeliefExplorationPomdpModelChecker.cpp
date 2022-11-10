@@ -621,7 +621,6 @@ namespace storm {
 
                 if (underApproximation->hasComputedValues()) {
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
-                    std::vector<uint32_t> observations = underApproximation->getObservationForMdpStates();
                     storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
                     auto nrPreprocessingScheds = min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
                     for(uint64_t i = 0; i < nrPreprocessingScheds; ++i){
