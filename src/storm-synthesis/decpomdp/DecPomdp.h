@@ -5,16 +5,18 @@
 #include "storm-synthesis/decpomdp/madp/src/base/POMDPDiscrete.h"
 #include "storm-synthesis/decpomdp/madp/src/base/DecPOMDPDiscrete.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Pomdp.h"
 
 #include <string>
 
 namespace storm {
     namespace synthesis {
 
-        using MadpState = std::pair<uint_fast64_t,uint_fast64_t>;
+        using MadpState = std::pair<uint_fast64_t,uint_fast64_t>;   // state + observation
         using MadpRow = std::vector<std::pair<MadpState,double>>;
         using StormRow = std::vector<std::pair<uint_fast64_t,double>>;
 
+        
         class DecPomdp {
 
         public:
@@ -63,13 +65,17 @@ namespace storm {
                 return this->storm_to_madp_states.size();
             }
 
+            uint_fast64_t num_rows();
+
             /** Retrieve the underlying MDP. */
             std::shared_ptr<storm::models::sparse::Mdp<double>> constructMdp();
+            /** Retrieve the underlying POMDP. */
+            std::shared_ptr<storm::models::sparse::Pomdp<double>> constructPomdp();
 
             /** If true, the rewards are interpreted as costs. */
             bool reward_minimizing;
             /** Label associated with the reward model. */
-            std::string reward_model_name = "rew0";
+            std::string reward_model_name = "reward";
 
             double discount_factor;
 
@@ -92,22 +98,28 @@ namespace storm {
             void collectActions(DecPOMDPDiscrete *model);
             void collectObservations(DecPOMDPDiscrete *model);
             
-            uint_fast64_t freshJointAction(std::string action_label);
-            uint_fast64_t freshJointObservation(std::string observation_label);
-
             bool haveMadpState(MadpState madp_state);
+            /**
+             * TODO
+             */
             uint_fast64_t mapMadpState(MadpState madp_state);
 
-            storm::models::sparse::StateLabeling constructStateLabeling();
-            storm::storage::SparseMatrix<double> constructTransitionMatrix();
-            storm::models::sparse::StandardRewardModel<double> constructRewardModel();
-
+            uint_fast64_t freshJointAction(std::string action_label);
+            uint_fast64_t freshJointObservation(std::string observation_label);
             /**
              * Add new state having fresh observation with its self-loop denoted
              * by a fresh joint action with zero reward.
              * @return index of the created state
              */
-            uint_fast64_t addSink(std::string label);
+            uint_fast64_t freshSink(std::string label);
+
+            storm::models::sparse::StateLabeling constructStateLabeling();
+            storm::models::sparse::ChoiceLabeling constructChoiceLabeling();
+            storm::storage::SparseMatrix<double> constructTransitionMatrix();
+            storm::models::sparse::StandardRewardModel<double> constructRewardModel();
+            std::vector<uint32_t> constructObservabilityClasses();
+
+            
 
             
         };

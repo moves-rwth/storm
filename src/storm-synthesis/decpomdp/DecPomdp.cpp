@@ -10,18 +10,7 @@
 
 namespace storm {
     namespace synthesis {
-
-    
-        uint_fast64_t DecPomdp::freshJointAction(std::string action_label) {
-            std::vector<uint_fast64_t> action_tuple(this->num_agents);
-            for(uint_fast64_t agent = 0; agent < this->num_agents; agent++) {
-                action_tuple[agent] = this->agent_num_actions(agent);
-                this->agent_observation_labels[agent].push_back(action_label);
-            }
-            uint_fast64_t joint_action = this->num_joint_actions();
-            this->joint_actions.push_back(std::move(action_tuple));
-            return joint_action;
-        }
+        
         
         void DecPomdp::collectActions(DecPOMDPDiscrete *model) {
             
@@ -44,19 +33,6 @@ namespace storm {
                 }
             }
         }
-
-        
-        uint_fast64_t DecPomdp::freshJointObservation(std::string observation_label) {
-            std::vector<uint_fast64_t> observation_tuple(this->num_agents);
-            for(uint_fast64_t agent = 0; agent < this->num_agents; agent++) {
-                observation_tuple[agent] = this->agent_num_observations(agent);
-                this->agent_observation_labels[agent].push_back(observation_label);
-            }
-            uint_fast64_t joint_observation = this->num_joint_observations();
-            this->joint_observations.push_back(std::move(observation_tuple));
-            return joint_observation;
-        }
-
 
         void DecPomdp::collectObservations(DecPOMDPDiscrete *model) {
             
@@ -82,19 +58,60 @@ namespace storm {
         bool DecPomdp::haveMadpState(MadpState madp_state) {
             return this->madp_to_storm_states.find(madp_state) != this->madp_to_storm_states.end();
         }
-            
         
         uint_fast64_t DecPomdp::mapMadpState(MadpState madp_state) {
             uint_fast64_t new_state = this->num_states();
             auto const result = this->madp_to_storm_states.insert(std::make_pair(madp_state, new_state));
             if (result.second) {
+                // new state
                 this->storm_to_madp_states.push_back(madp_state);
                 this->transition_matrix.resize(this->num_states());
                 this->row_joint_action.resize(this->num_states());
                 this->row_reward.resize(this->num_states());
+
+                this->state_joint_observation.resize(this->num_states());
+                this->state_joint_observation[new_state] = madp_state.second;
             }
             return result.first->second;
         }
+
+        
+        uint_fast64_t DecPomdp::freshJointAction(std::string action_label) {
+            std::vector<uint_fast64_t> action_tuple(this->num_agents);
+            for(uint_fast64_t agent = 0; agent < this->num_agents; agent++) {
+                action_tuple[agent] = this->agent_num_actions(agent);
+                this->agent_action_labels[agent].push_back(action_label);
+            }
+            uint_fast64_t joint_action = this->num_joint_actions();
+            this->joint_actions.push_back(std::move(action_tuple));
+            return joint_action;
+        }
+        
+        uint_fast64_t DecPomdp::freshJointObservation(std::string observation_label) {
+            std::vector<uint_fast64_t> observation_tuple(this->num_agents);
+            for(uint_fast64_t agent = 0; agent < this->num_agents; agent++) {
+                observation_tuple[agent] = this->agent_num_observations(agent);
+                this->agent_observation_labels[agent].push_back(observation_label);
+            }
+            uint_fast64_t joint_observation = this->num_joint_observations();
+            this->joint_observations.push_back(std::move(observation_tuple));
+            return joint_observation;
+        }
+
+        uint_fast64_t DecPomdp::freshSink(std::string label) {
+            
+            uint_fast64_t joint_observation = this->freshJointObservation(label);
+            MadpState madp_new_state = std::make_pair(0,joint_observation);
+            uint_fast64_t new_state = this->mapMadpState(madp_new_state);
+
+            uint_fast64_t sink_action = this->freshJointAction(label);
+            this->row_joint_action[new_state] = std::vector<uint_fast64_t>(1, sink_action);
+            this->row_reward[new_state] = std::vector<double>(1, 0);
+            this->transition_matrix[new_state] = std::vector<StormRow>(1, StormRow(1, std::make_pair(new_state,1)));
+
+            return new_state;
+        }
+
 
 
         DecPomdp::DecPomdp(DecPOMDPDiscrete *model) {
@@ -205,14 +222,17 @@ namespace storm {
                     this->row_reward[storm_state] = std::move(rewards);
                 }
             }
-            
-            // map states to joint observations
-            this->state_joint_observation.resize(this->num_states());
-            for(uint_fast64_t state = 0; state < this->num_states(); state++) {
-                MadpState madp_state = this->storm_to_madp_states[state];
-                this->state_joint_observation[state] = madp_state.second;
-            }
         }
+
+        uint_fast64_t DecPomdp::num_rows() {
+            uint_fast64_t count = 0;
+            for(auto row_group: this->transition_matrix) {
+                count += row_group.size();
+            }
+            return count;
+        }
+
+
 
         storm::models::sparse::StateLabeling DecPomdp::constructStateLabeling() {
             storm::models::sparse::StateLabeling labeling(this->num_states());
@@ -228,35 +248,51 @@ namespace storm {
             }
             
             return labeling;
+        }
 
-            /*
-            // we probably do not need this?
-            for(uint64_t joint_observation = 0; joint_observation < this->num_joint_observations(); joint_observation++) {
-                storm::storage::BitVector label_flags(num_states, false);
-                for(uint64_t state = 0; state < num_states; state++) {
-                    if (this->state_joint_observation[state] == joint_observation){
-                        label_flags.set(state);
+        storm::models::sparse::ChoiceLabeling DecPomdp::constructChoiceLabeling() {
+            uint_fast64_t num_rows = this->num_rows();
+            
+            storm::models::sparse::ChoiceLabeling labeling(num_rows);
+            uint_fast64_t current_row = 0;
+            std::vector<std::string> row_label(num_rows);
+            std::set<std::string> all_labels;
+            for(auto row_group: this->row_joint_action) {
+                for(auto joint_action_index: row_group) {
+                    std::ostringstream sb;
+                    sb << "(";
+                    auto joint_action = this->joint_actions[joint_action_index];
+                    for(uint32_t agent = 0; agent < this->num_agents; agent++) {
+                        auto agent_action = joint_action[agent];
+                        auto agent_action_label = this->agent_action_labels[agent][agent_action];
+                        sb << agent_action_label;
+                        if(agent < this->num_agents-1) {
+                            sb << ",";
+                        }
                     }
+                    sb << ")";
+                    std::string label = sb.str();
+                    all_labels.insert(label);
+                    row_label[current_row] = label;
+                    current_row++;
                 }
-                std::string label = "";
-                for(uint64_t agent = 0; agent < this->num_agents; agent++) {
-                    label = label + "_" + this->agent_observation_labels[agent][this->joint_observations[joint_observation][agent]];
-                }
-                labeling.addLabel(label, std::move(label_flags));
-            }    
-            std::cout << labeling << "agent_action_labels \n";
-            */   
+            }
+            for(auto label: all_labels) {
+                storm::storage::BitVector flags(num_rows, false);
+                labeling.addLabel(label, flags);
+            }
+            for(uint64_t row = 0; row < num_rows; row++) {
+                labeling.addLabelToChoice(row_label[row], row);
+            }
+
+            return labeling;
         }
 
         storm::storage::SparseMatrix<double> DecPomdp::constructTransitionMatrix() {
-            // count number of rows
-            uint64_t num_rows = 0;
-            for(uint64_t state = 0; state < this->num_states(); state++) {
-                num_rows += this->transition_matrix[state].size();
-            }
+            
 
             storm::storage::SparseMatrixBuilder<double> builder(
-                    num_rows, this->num_states(), 0, true, true, this->num_states()
+                    this->num_rows(), this->num_states(), 0, true, true, this->num_states()
             );
             uint64_t current_row = 0;
             for(uint64_t state = 0; state < this->num_states(); state++) {
@@ -284,18 +320,33 @@ namespace storm {
         }
 
 
+
+        std::vector<uint32_t> DecPomdp::constructObservabilityClasses() {
+            std::vector<uint32_t> observation_classes(this->num_states());
+            for(uint64_t state = 0; state < this->num_states(); state++) {
+                observation_classes[state] = this->state_joint_observation[state];
+            }
+            return observation_classes;
+        }
+
+
         std::shared_ptr<storm::models::sparse::Mdp<double>> DecPomdp::constructMdp() { 
-            
             storm::storage::sparse::ModelComponents<double> components;
-
-            components.transitionMatrix = this->constructTransitionMatrix();
             components.stateLabeling = this->constructStateLabeling();
-
-
-            auto reward_model = this->constructRewardModel();
-            components.rewardModels.emplace(this->reward_model_name, reward_model);
-
+            components.choiceLabeling = this->constructChoiceLabeling();
+            components.transitionMatrix = this->constructTransitionMatrix();
+            components.rewardModels.emplace(this->reward_model_name, this->constructRewardModel());
             return std::make_shared<storm::models::sparse::Mdp<double>>(std::move(components));
+        }
+
+        std::shared_ptr<storm::models::sparse::Pomdp<double>> DecPomdp::constructPomdp() {
+            storm::storage::sparse::ModelComponents<double> components;
+            components.stateLabeling = this->constructStateLabeling();
+            components.choiceLabeling = this->constructChoiceLabeling();
+            components.transitionMatrix = this->constructTransitionMatrix();
+            components.rewardModels.emplace(this->reward_model_name, this->constructRewardModel());
+            components.observabilityClasses = this->constructObservabilityClasses();
+            return std::make_shared<storm::models::sparse::Pomdp<double>>(std::move(components));
         }
 
 
@@ -327,22 +378,23 @@ namespace storm {
             
             DecPOMDPDiscrete *model;
             
-            std::cerr << "MADP: trying to parse as POMDP..." << std::endl;
+            STORM_PRINT_AND_LOG("MADP: trying to parse as POMDP...\n");
             model = parse_as_pomdp(filename);
             if(model != NULL) {
-                std::cerr << "MADP: OK" << std::endl;
+                STORM_PRINT_AND_LOG("MADP: parsing success\n");
                 return model;
             }
 
-            std::cerr << "MADP: trying to parse as dec-POMDP..." << std::endl;
+            STORM_PRINT_AND_LOG("MADP: parsing success\n");
+            STORM_PRINT_AND_LOG("MADP: trying to parse as dec-POMDP...\n");
             model = parse_as_decpomdp(filename);
             if(model != NULL) {
-                std::cerr << "MADP: OK" << std::endl;
+                STORM_PRINT_AND_LOG("MADP: parsing success\n");
                 return model;
             }
 
             if(model == NULL) {
-                std::cerr << "MADP: parsing failed" << std::endl;
+                STORM_PRINT_AND_LOG("MADP: parsing failure\n");
             }
             return model;
             
@@ -361,27 +413,13 @@ namespace storm {
         }
 
         
-        uint_fast64_t DecPomdp::addSink(std::string label) {
-            
-            uint_fast64_t joint_observation = this->freshJointObservation(label);
-            MadpState madp_new_state = std::make_pair(0,joint_observation);
-            uint_fast64_t new_state = this->mapMadpState(madp_new_state);
-
-            uint_fast64_t sink_action = this->freshJointAction(label);
-            this->row_joint_action[new_state] = std::vector<uint_fast64_t>(1, sink_action);
-            this->row_reward[new_state] = std::vector<double>(1, 0);
-            this->transition_matrix[new_state] = std::vector<StormRow>(1, StormRow(1, std::make_pair(new_state,1)));
-
-            return new_state;
-        }
-        
         void DecPomdp::applyDiscountFactorTransformation() {
 
             if(this->discounted || this->discount_factor == 1) {
                 return;
             }
 
-            this->discount_sink_state = this->addSink(this->discount_sink_label);
+            this->discount_sink_state = this->freshSink(this->discount_sink_label);
             for(uint_fast64_t state = 0; state < this->num_states(); state++) {
                 if(state == this->initial_state || state == this->discount_sink_state) {
                     // no discounting in the initial state because it selects the actual initial state
