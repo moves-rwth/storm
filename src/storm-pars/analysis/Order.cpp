@@ -326,7 +326,6 @@ Order::NodeComparison Order::compare(Node* node1, Node* node2, NodeComparison hy
         auto comp = compareFast(node1, node2, hypothesis);
         if (comp != UNKNOWN) {
             if (compareFast(node2, node1, UNKNOWN) == comp) {
-                this->toDotOutput(true);
                 mergeNodes(node1, node2);
                 return SAME;
             }
