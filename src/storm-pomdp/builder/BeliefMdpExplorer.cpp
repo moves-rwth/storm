@@ -1241,6 +1241,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+
         bool BeliefMdpExplorer<PomdpType, BeliefValueType>::hasFMSchedulerValues() const {
             return !fmSchedulerValueList.empty();
         }

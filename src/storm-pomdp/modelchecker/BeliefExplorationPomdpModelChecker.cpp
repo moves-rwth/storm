@@ -333,6 +333,7 @@ namespace storm {
                         };
 
                         std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = approx->getExploredMdp();
+                        std::vector<uint32_t> observations = approx->getObservationForMdpStates();
                         storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
                         auto nrPreprocessingScheds = min ? approx->getNrSchedulersForUpperBounds() : approx->getNrSchedulersForLowerBounds();
                         for(uint64_t i = 0; i < nrPreprocessingScheds; ++i){
@@ -379,6 +380,25 @@ namespace storm {
 
                         transMatrix.dropZeroEntries();
                         storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
+                        
+                        /*
+                        // randriu: resolving conflict
+                        // TODO replace labels by exporting a map
+                        for(uint64_t i = 0; i < pomdp().getNrObservations(); ++i){
+                            newLabeling.addLabel("obs_" + std::to_string(i));
+                        }
+                        newLabeling.addLabel("no_obs");
+                        for(uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i){
+                            if (observations[i] <= pomdp().getNrObservations()) {
+                                newLabeling.addLabelToState("obs_" + std::to_string(observations[i]), i);
+                            } else {
+                                newLabeling.addLabelToState("no_obs", i);
+                            }
+                        }
+
+                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling, scheduledModel->getRewardModels());
+                        */
+
                         if(scheduledModel->hasChoiceLabeling()){
                             modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
                         }
@@ -453,7 +473,7 @@ namespace storm {
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
                     if (!underApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
-                    }
+                    } 
                     ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                     if (betterBound) {
@@ -560,6 +580,7 @@ namespace storm {
                         break;
                     }
                 }
+
                 if (underApproximation->hasComputedValues()) {
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
                     storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
@@ -582,6 +603,7 @@ namespace storm {
                                     auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                                     transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
                                 } else {
+
                                     if(!underApproximation->hasFMSchedulerValues() || underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1 < nrPreprocessingScheds) {
                                         newLabeling.addLabelToState(
                                             "sched_" + std::to_string(underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1), i);
