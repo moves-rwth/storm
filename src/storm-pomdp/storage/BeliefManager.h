@@ -60,6 +60,8 @@ namespace storm {
 
             ValueType getWeightedSum(BeliefId const &beliefId, std::vector<ValueType> const &summands);
 
+            std::pair<bool, ValueType> getWeightedSum(BeliefId const &beliefId, std::unordered_map<StateType, ValueType> const &summands);
+
             BeliefId const &getInitialBelief() const;
 
             ValueType getBeliefActionReward(BeliefId const &beliefId, uint64_t const &localActionIndex) const;
