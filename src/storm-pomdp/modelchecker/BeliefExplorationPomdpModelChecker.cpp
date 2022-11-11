@@ -105,7 +105,7 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(storm::logic::Formula const& formula, std::vector<std::vector<ValueType>> additionalUnderApproximationBounds) {
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::check(storm::logic::Formula const& formula, std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> const& additionalUnderApproximationBounds) {
                 STORM_LOG_ASSERT(options.unfold || options.discretize, "Invoked belief exploration but no task (unfold or discretize) given.");
                 
                 // Potentially reset preprocessed model from previous call
@@ -119,11 +119,7 @@ namespace storm {
                 
                 precomputeValueBounds(formula, options.preProcMinMaxMethod);
                 if(!additionalUnderApproximationBounds.empty()){
-                    if(formulaInfo.minimize()){
-                        pomdpValueBounds.trivialPomdpValueBounds.upper.insert(pomdpValueBounds.trivialPomdpValueBounds.upper.end(), std::make_move_iterator(additionalUnderApproximationBounds.begin()), std::make_move_iterator(additionalUnderApproximationBounds.end()));
-                    } else {
-                        pomdpValueBounds.trivialPomdpValueBounds.lower.insert(pomdpValueBounds.trivialPomdpValueBounds.lower.end(), std::make_move_iterator(additionalUnderApproximationBounds.begin()), std::make_move_iterator(additionalUnderApproximationBounds.end()));
-                    }
+                        pomdpValueBounds.fmSchedulerValueList = additionalUnderApproximationBounds;
                 }
                 uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
                 Result result(pomdpValueBounds.trivialPomdpValueBounds.getHighestLowerBound(initialPomdpState), pomdpValueBounds.trivialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
@@ -324,6 +320,9 @@ namespace storm {
                     if((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
                         approx->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                     }
+                    if(!valueBounds.fmSchedulerValueList.empty()){
+                        approx->setFMSchedValueList(valueBounds.fmSchedulerValueList);
+                    }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
                     if (approx->hasComputedValues()) {
                         auto printInfo = [&approx]() {
@@ -340,6 +339,9 @@ namespace storm {
                         for(uint64_t i = 0; i < nrPreprocessingScheds; ++i){
                             newLabeling.addLabel("sched_" + std::to_string(i));
                         }
+                        if(approx->hasFMSchedulerValues()){
+                            newLabeling.addLabel("finite_mem");
+                        }
                         newLabeling.addLabel("cutoff");
                         newLabeling.addLabel("clipping");
 
@@ -355,13 +357,21 @@ namespace storm {
                                         auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                                         transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
                                     } else {
-                                        newLabeling.addLabelToState(
-                                            "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1), i);
+                                        if(!approx->hasFMSchedulerValues() || approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1 < nrPreprocessingScheds) {
+                                            newLabeling.addLabelToState(
+                                                "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1), i);
+                                        } else {
+                                            newLabeling.addLabelToState("finite_mem", i);
+                                        }
                                         newLabeling.addLabelToState("cutoff", i);
                                     }
                                 } else {
-                                    newLabeling.addLabelToState(
-                                        "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
+                                    if(!approx->hasFMSchedulerValues() || approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() < nrPreprocessingScheds) {
+                                        newLabeling.addLabelToState(
+                                            "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
+                                    } else {
+                                        newLabeling.addLabelToState("finite_mem", i);
+                                    }
                                     newLabeling.addLabelToState("cutoff", i);
                                 }
                             }
@@ -554,7 +564,6 @@ namespace storm {
 
                 if (underApproximation->hasComputedValues()) {
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
-                    std::vector<uint32_t> observations = underApproximation->getObservationForMdpStates();
                     storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
                     auto nrPreprocessingScheds = min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
                     for(uint64_t i = 0; i < nrPreprocessingScheds; ++i){
@@ -575,13 +584,22 @@ namespace storm {
                                     auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                                     transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
                                 } else {
-                                    newLabeling.addLabelToState(
-                                        "sched_" + std::to_string(underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1), i);
+
+                                    if(!underApproximation->hasFMSchedulerValues() || underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1 < nrPreprocessingScheds) {
+                                        newLabeling.addLabelToState(
+                                            "sched_" + std::to_string(underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1), i);
+                                    } else {
+                                        newLabeling.addLabelToState("finite_mem", i);
+                                    }
                                     newLabeling.addLabelToState("cutoff", i);
                                 }
                             } else {
-                                newLabeling.addLabelToState(
-                                    "sched_" + std::to_string(underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
+                                if(!underApproximation->hasFMSchedulerValues() || underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() < nrPreprocessingScheds) {
+                                    newLabeling.addLabelToState(
+                                        "sched_" + std::to_string(underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
+                                } else {
+                                    newLabeling.addLabelToState("finite_mem", i);
+                                }
                                 newLabeling.addLabelToState("cutoff", i);
                             }
                         }
@@ -1094,6 +1112,32 @@ namespace storm {
                                 }
                                 if (pomdp().hasChoiceLabeling()) {
                                     underApproximation->addChoiceLabelToCurrentState(addedActions + i, "sched_" + std::to_string(i));
+                                }
+                            }
+                            addedActions += nrCutoffStrategies;
+                            if (underApproximation->hasFMSchedulerValues()) {
+                                uint64_t transitionNr = 0;
+                                for (uint64_t i = 0; i < underApproximation->getNrOfMemoryNodesForObservation(currObservation); ++i) {
+                                    auto resPair = underApproximation->computeFMSchedulerValueForMemoryNode(currId, i);
+                                    ValueType cutOffValue;
+                                    if (resPair.first) {
+                                        cutOffValue = resPair.second;
+                                    } else {
+                                        STORM_LOG_DEBUG("Skipped cut-off of belief with ID " << currId << " with finite memory scheduler in memory node " << i
+                                                                                             << ". Missing values.");
+                                        continue;
+                                    }
+                                    if (computeRewards) {
+                                        underApproximation->addTransitionsToExtraStates(addedActions + transitionNr, storm::utility::one<ValueType>());
+                                        underApproximation->addRewardToCurrentState(addedActions + transitionNr, cutOffValue);
+                                    } else {
+                                        underApproximation->addTransitionsToExtraStates(addedActions + transitionNr, cutOffValue,
+                                                                                        storm::utility::one<ValueType>() - cutOffValue);
+                                    }
+                                    if (pomdp().hasChoiceLabeling()) {
+                                        underApproximation->addChoiceLabelToCurrentState(addedActions + transitionNr, "mem_node_" + std::to_string(i));
+                                    }
+                                    ++transitionNr;
                                 }
                             }
                         }

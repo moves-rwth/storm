@@ -22,6 +22,7 @@ namespace storm {
             struct POMDPValueBounds{
                 storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> trivialPomdpValueBounds;
                 storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremePomdpValueBound;
+                std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> fmSchedulerValueList;
             };
             
             template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType, typename BeliefMDPType = typename PomdpModelType::ValueType>
@@ -46,7 +47,7 @@ namespace storm {
                 
                 BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
                 
-                Result check(storm::logic::Formula const& formula, std::vector<std::vector<ValueType>> additionalUnderApproximationBounds = std::vector<std::vector<ValueType>>());
+                Result check(storm::logic::Formula const& formula, std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> const& additionalUnderApproximationBounds = std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>>());
 
                 void printStatisticsToStream(std::ostream& stream) const;
 

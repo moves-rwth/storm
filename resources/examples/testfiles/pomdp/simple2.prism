@@ -1,0 +1,24 @@
+pomdp
+
+observables
+    o
+endobservables
+
+module model
+    s : [0..2] init 0;
+    o : [0..1] init 0;
+    
+    [a] s=0 -> 0.9 : (s'=0) & (o'=0) + 0.1 : (s'=1) & (o'=0);
+    [a] s=1 -> 1 : true;
+    [a] s=2 -> 1 : true;
+    [b] s=0 -> 1 : (s'=2) & (o'=1);
+    [b] s=1 -> 1 : (s'=2) & (o'=1);
+
+endmodule
+
+rewards
+	[b] s=0 : 0;
+	[b] s=1 : 1;
+endrewards
+
+label "goal" = o=1;

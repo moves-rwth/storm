@@ -780,6 +780,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        std::pair<bool, typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::computeFMSchedulerValueForMemoryNode(BeliefId const &beliefId, uint64_t memoryNode) const {
+            STORM_LOG_ASSERT(!fmSchedulerValueList.empty(), "Requested finite memory scheduler value bounds but none were available.");
+            auto obs = beliefManager->getBeliefObservation(beliefId);
+            STORM_LOG_ASSERT(fmSchedulerValueList.size() > obs, "Requested value bound for observation " << obs << " not available.");
+            STORM_LOG_ASSERT(fmSchedulerValueList.at(obs).size() > memoryNode, "Requested value bound for observation " << obs << " and memory node " << memoryNode << " not available.");
+            return beliefManager->getWeightedSum(beliefId, fmSchedulerValueList.at(obs).at(memoryNode));
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType
         BeliefMdpExplorer<PomdpType, BeliefValueType>::computeParametricBoundAtBelief(BeliefId const &beliefId) const {
             STORM_LOG_ASSERT(!pomdpValueBounds.parametric.empty(), "Parametric bounds not available.");
@@ -1200,6 +1210,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::setFMSchedValueList(std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> valueList){
+            fmSchedulerValueList = valueList;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        uint64_t BeliefMdpExplorer<PomdpType, BeliefValueType>::getNrOfMemoryNodesForObservation(uint32_t observation) const{
+            return fmSchedulerValueList.at(observation).size();
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplorer<PomdpType, BeliefValueType>::getExtremeValueBoundAtPOMDPState(const uint64_t &pomdpState){
             return extremeValueBound.getValueForState(pomdpState);
         }
@@ -1250,19 +1270,9 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        std::vector<uint32_t> BeliefMdpExplorer<PomdpType, BeliefValueType>::getObservationForMdpStates() const {
-            std::vector<uint32_t> obs;
-            uint64_t nrMdpStates = exploredMdp->getNumberOfStates();
-            for(uint64_t mdpState = 0; mdpState< nrMdpStates; ++mdpState) {
-                uint64_t beliefId = this->getBeliefId(mdpState);
-                if (beliefId != beliefManager->noId()) {
-                    obs.push_back(this->beliefManager->getBeliefObservation(beliefId));
-                } else {
-                    obs.push_back(-1);
-                }
-            }
-            STORM_LOG_ASSERT(obs.size() == nrMdpStates, "There should be an entry for every MDP state");
-            return obs;
+
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::hasFMSchedulerValues() const {
+            return !fmSchedulerValueList.empty();
         }
 
         template
