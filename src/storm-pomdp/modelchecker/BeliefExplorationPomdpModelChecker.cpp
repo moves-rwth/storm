@@ -379,24 +379,6 @@ namespace storm {
 
                         transMatrix.dropZeroEntries();
                         storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
-                        
-                        /*
-                        // randriu: resolving conflict
-                        // TODO replace labels by exporting a map
-                        for(uint64_t i = 0; i < pomdp().getNrObservations(); ++i){
-                            newLabeling.addLabel("obs_" + std::to_string(i));
-                        }
-                        newLabeling.addLabel("no_obs");
-                        for(uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i){
-                            if (observations[i] <= pomdp().getNrObservations()) {
-                                newLabeling.addLabelToState("obs_" + std::to_string(observations[i]), i);
-                            } else {
-                                newLabeling.addLabelToState("no_obs", i);
-                            }
-                        }
-
-                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling, scheduledModel->getRewardModels());
-                        */
 
                         if(scheduledModel->hasChoiceLabeling()){
                             modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
