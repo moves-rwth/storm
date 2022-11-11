@@ -333,7 +333,6 @@ namespace storm {
                         };
 
                         std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = approx->getExploredMdp();
-                        std::vector<uint32_t> observations = approx->getObservationForMdpStates();
                         storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
                         auto nrPreprocessingScheds = min ? approx->getNrSchedulersForUpperBounds() : approx->getNrSchedulersForLowerBounds();
                         for(uint64_t i = 0; i < nrPreprocessingScheds; ++i){
