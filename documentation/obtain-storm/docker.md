@@ -107,8 +107,11 @@ $ ./storm --prism ../../resources/examples/testfiles/dtmc/die.pm --io:exportexpl
 
 Afterwards there should be a file named `die.drn` in the shared directory now.
 
-In the end exit the container. A clean-up is performed automatically.
+In the end exit the container.
 
 ```console
 $ exit
 ```
+
+After exiting, the container is automatically removed.
+If you want to keep the container in a persistent state, remove the flag `--rm` when running the Docker container in the first place.
