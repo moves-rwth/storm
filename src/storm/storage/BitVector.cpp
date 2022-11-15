@@ -68,13 +68,6 @@ BitVector::BitVector() : bitCount(0), buckets(nullptr) {
     // Intentionally left empty.
 }
 
-BitVector::BitVector(const BitVector & other) {
-	bitCount = other.bitCount;
-    buckets = new uint64_t[other.bucketCount()];
-    std::copy_n(other.buckets, other.bucketCount(), buckets);
-
-}
-
 BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length), buckets(nullptr) {
     // Compute the correct number of buckets needed to store the given number of bits.
     uint_fast64_t bucketCount = length >> 6;
