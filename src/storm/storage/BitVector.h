@@ -179,7 +179,8 @@ class BitVector {
      * deep copy.
      */
     BitVector& operator=(BitVector const& other);
-
+	// Copy constructor which does the same thing
+	BitVector(BitVector const& other);
     /*!
      * Move assigns the given bit vector to the current bit vector.
      *
