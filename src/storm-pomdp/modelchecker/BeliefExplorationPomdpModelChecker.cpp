@@ -451,7 +451,7 @@ namespace storm {
                 }
                 
                 // Do some output
-                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
+                STORM_LOG_INFO("Completed (initial) computation. Current checktime is " << statistics.totalTime << ".");
                 bool computingLowerBound = false;
                 bool computingUpperBound = false;
                 if (options.discretize) {
@@ -463,92 +463,112 @@ namespace storm {
                     (min ? computingUpperBound : computingLowerBound) = true;
                 }
                 if (computingLowerBound && computingUpperBound) {
-                    STORM_LOG_INFO("\tCurrent result is [" << result.lowerBound << ", " << result.upperBound << "].");
+                    STORM_LOG_INFO("\tObtained result is [" << result.lowerBound << ", " << result.upperBound << "].");
                 } else if (computingLowerBound) {
-                    STORM_LOG_INFO("\tCurrent result is ≥" << result.lowerBound << ".");
+                    STORM_LOG_INFO("\tObtained result is ≥" << result.lowerBound << ".");
                 } else if (computingUpperBound) {
-                    STORM_LOG_INFO("\tCurrent result is ≤" << result.upperBound << ".");
+                    STORM_LOG_INFO("\tObtained result is ≤" << result.upperBound << ".");
                 }
                 
                 // Start refinement
-                STORM_LOG_WARN_COND(options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision), "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
-                STORM_LOG_WARN_COND(storm::utility::isZero(options.refinePrecision) || (options.unfold && options.discretize), "Refinement goal precision is given, but only one bound is going to be refined.");
-                while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps.get() < options.refineStepLimit.get()) && result.diff() > options.refinePrecision) {
-                    bool overApproxFixPoint = true;
-                    bool underApproxFixPoint = true;
-                    if (options.discretize) {
-                        // Refine over-approximation
-                        if (min) {
-                            overApproximation->takeCurrentValuesAsLowerBounds();
-                        } else {
-                            overApproximation->takeCurrentValuesAsUpperBounds();
-                        }
-                        overApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
-                        overApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType, uint64_t>(overApproximation->getExploredMdp()->getNumberOfStates()) * options.sizeThresholdFactor);
-                        overApproxHeuristicPar.observationThreshold += options.obsThresholdIncrementFactor * (storm::utility::one<ValueType>() - overApproxHeuristicPar.observationThreshold);
-                        overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
-                        overApproxFixPoint = buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
-                        if (overApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
-                            ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
-                            bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
-                            if (betterBound) {
-                                STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'.");
+                if (options.refine) {
+                    STORM_LOG_WARN_COND(
+                        options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision),
+                        "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
+                    STORM_LOG_WARN_COND(storm::utility::isZero(options.refinePrecision) || (options.unfold && options.discretize),
+                                        "Refinement goal precision is given, but only one bound is going to be refined.");
+                    while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps.get() < options.refineStepLimit.get()) &&
+                           result.diff() > options.refinePrecision) {
+                        bool overApproxFixPoint = true;
+                        bool underApproxFixPoint = true;
+                        if (options.discretize) {
+                            // Refine over-approximation
+                            if (min) {
+                                overApproximation->takeCurrentValuesAsLowerBounds();
+                            } else {
+                                overApproximation->takeCurrentValuesAsUpperBounds();
                             }
-                        } else {
-                            break;
+                            overApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
+                            overApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(
+                                storm::utility::convertNumber<ValueType, uint64_t>(overApproximation->getExploredMdp()->getNumberOfStates()) *
+                                options.sizeThresholdFactor);
+                            overApproxHeuristicPar.observationThreshold +=
+                                options.obsThresholdIncrementFactor * (storm::utility::one<ValueType>() - overApproxHeuristicPar.observationThreshold);
+                            overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
+                            overApproxFixPoint = buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, overApproxHeuristicPar,
+                                                                        observationResolutionVector, overApproxBeliefManager, overApproximation);
+                            if (overApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
+                                ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
+                                bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
+                                if (betterBound) {
+                                    STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " in refinement step #"
+                                                                                                       << (statistics.refinementSteps.get() + 1)
+                                                                                                       << ". New value is '" << newValue << "'.");
+                                }
+                            } else {
+                                break;
+                            }
                         }
-                    }
 
-                    if (options.unfold && result.diff() > options.refinePrecision) {
-                        // Refine under-approximation
-                        underApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
-                        underApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType, uint64_t>(underApproximation->getExploredMdp()->getNumberOfStates()) * options.sizeThresholdFactor);
-                        underApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
-                        underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
-                        if (underApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
-                            ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
-                            bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
-                            if (betterBound) {
-                                STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'.");
+                        if (options.unfold && result.diff() > options.refinePrecision) {
+                            // Refine under-approximation
+                            underApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
+                            underApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(
+                                storm::utility::convertNumber<ValueType, uint64_t>(underApproximation->getExploredMdp()->getNumberOfStates()) *
+                                options.sizeThresholdFactor);
+                            underApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
+                            underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true,
+                                                                          underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
+                            if (underApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
+                                ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
+                                bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
+                                if (betterBound) {
+                                    STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " in refinement step #"
+                                                                                                        << (statistics.refinementSteps.get() + 1)
+                                                                                                        << ". New value is '" << newValue << "'.");
+                                }
+                            } else {
+                                break;
                             }
+                        }
+
+                        if (storm::utility::resources::isTerminate()) {
+                            break;
                         } else {
+                            ++statistics.refinementSteps.get();
+                            // Don't make too many outputs (to avoid logfile clutter)
+                            if (statistics.refinementSteps.get() <= 1000) {
+                                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime
+                                                                       << ".");
+                                bool computingLowerBound = false;
+                                bool computingUpperBound = false;
+                                if (options.discretize) {
+                                    STORM_LOG_INFO("\tOver-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                    (min ? computingLowerBound : computingUpperBound) = true;
+                                }
+                                if (options.unfold) {
+                                    STORM_LOG_INFO("\tUnder-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                    (min ? computingUpperBound : computingLowerBound) = true;
+                                }
+                                if (computingLowerBound && computingUpperBound) {
+                                    STORM_LOG_INFO("\tCurrent result is [" << result.lowerBound << ", " << result.upperBound << "].");
+                                } else if (computingLowerBound) {
+                                    STORM_LOG_INFO("\tCurrent result is ≥" << result.lowerBound << ".");
+                                } else if (computingUpperBound) {
+                                    STORM_LOG_INFO("\tCurrent result is ≤" << result.upperBound << ".");
+                                }
+                                STORM_LOG_WARN_COND(statistics.refinementSteps.get() < 1000, "Refinement requires  more than 1000 iterations.");
+                            }
+                        }
+                        if (overApproxFixPoint && underApproxFixPoint) {
+                            STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations.\n");
+                            statistics.refinementFixpointDetected = true;
                             break;
                         }
-                    }
-                    
-                    if (storm::utility::resources::isTerminate()) {
-                        break;
-                    } else {
-                        ++statistics.refinementSteps.get();
-                        // Don't make too many outputs (to avoid logfile clutter)
-                        if (statistics.refinementSteps.get() <= 1000) {
-                            STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
-                            bool computingLowerBound = false;
-                            bool computingUpperBound = false;
-                            if (options.discretize) {
-                                STORM_LOG_INFO("\tOver-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
-                                (min ? computingLowerBound : computingUpperBound) = true;
-                            }
-                            if (options.unfold) {
-                                STORM_LOG_INFO("\tUnder-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
-                                (min ? computingUpperBound : computingLowerBound) = true;
-                            }
-                            if (computingLowerBound && computingUpperBound) {
-                                STORM_LOG_INFO("\tCurrent result is [" << result.lowerBound << ", " << result.upperBound << "].");
-                            } else if (computingLowerBound) {
-                                STORM_LOG_INFO("\tCurrent result is ≥" << result.lowerBound << ".");
-                            } else if (computingUpperBound) {
-                                STORM_LOG_INFO("\tCurrent result is ≤" << result.upperBound << ".");
-                            }
-                            STORM_LOG_WARN_COND(statistics.refinementSteps.get() < 1000, "Refinement requires  more than 1000 iterations.");
-                        }
-                    }
-                    if (overApproxFixPoint && underApproxFixPoint) {
-                        STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations.\n");
-                        statistics.refinementFixpointDetected = true;
-                        break;
                     }
                 }
+
+                // TODO printinfo
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
@@ -1181,11 +1201,11 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            POMDPModelType::ValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getGap(POMDPModelType::ValueType const& l, POMDPModelType::ValueType const& u) {
-                STORM_LOG_ASSERT(l >= storm::utility::zero<POMDPModelType::ValueType>() && u >= storm::utility::zero<POMDPModelType::ValueType>(), "Gap computation currently does not handle negative values.");
+            typename PomdpModelType::ValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getGap(typename PomdpModelType::ValueType const& l, typename PomdpModelType::ValueType const& u) {
+                STORM_LOG_ASSERT(l >= storm::utility::zero<typename PomdpModelType::ValueType>() && u >= storm::utility::zero<typename PomdpModelType::ValueType>(), "Gap computation currently does not handle negative values.");
                 if (storm::utility::isInfinity(u)) {
                     if (storm::utility::isInfinity(l)) {
-                        return storm::utility::zero<POMDPModelType::ValueType>();
+                        return storm::utility::zero<typename PomdpModelType::ValueType>();
                     } else {
                         return u;
                     }
@@ -1195,7 +1215,7 @@ namespace storm {
                 } else {
                     STORM_LOG_ASSERT(!storm::utility::isInfinity(l), "Lower bound is infinity, but upper bound is " << u << ".");
                     // get the relative gap
-                    return storm::utility::abs<POMDPModelType::ValueType>(u-l) * storm::utility::convertNumber<POMDPModelType::ValueType, uint64_t>(2) / (l+u);
+                    return storm::utility::abs<typename PomdpModelType::ValueType>(u-l) * storm::utility::convertNumber<typename PomdpModelType::ValueType, uint64_t>(2) / (l+u);
                 }
             }
 

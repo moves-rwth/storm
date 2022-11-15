@@ -176,10 +176,9 @@ namespace storm {
                 std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector);
 
                 // TODO doc
-                POMDPModelType::ValueType getGap(ValueType const& l, ValueType const& u);
+                typename PomdpModelType::ValueType getGap(typename PomdpModelType::ValueType const& l, typename PomdpModelType::ValueType const& u);
 
                 /*** Variables ***/
-                // TODO Maybe one-liner comments if purpose of vars not obvious
 
                 Statistics statistics;
                 Options options;
