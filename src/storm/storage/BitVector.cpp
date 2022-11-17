@@ -222,7 +222,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
         }
 
         if (newBucketCount > this->bucketCount()) {
-			std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
+			std::shared_ptr<uint64_t> newBuckets(new uint64_t[newBucketCount], std::default_delete<uint64_t[]>());
             std::copy_n(buckets, this->bucketCount(), newBuckets);
             if (init) {
                 if (this->bucketCount() > 0) {
