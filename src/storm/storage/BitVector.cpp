@@ -108,7 +108,7 @@ BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCou
 }
 
 BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), buckets(nullptr) {
-	std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
+	std::shared_ptr<uint64_t> newBuckets(new uint64_t[other.bucketCount()], std::default_delete<uint64_t[]>());
 	buckets = newBuckets;
 
     std::copy_n(other.buckets.get(), other.bucketCount(), buckets.get());
@@ -123,7 +123,7 @@ BitVector& BitVector::operator=(BitVector const& other) {
         }
         bitCount = other.bitCount;
         if (!buckets) {
-			std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
+			std::shared_ptr<uint64_t> newBuckets(new uint64_t[other.bucketCount()], std::default_delete<uint64_t[]>());
 			buckets = newBuckets;
         }
         std::copy_n(other.buckets.get(), other.bucketCount(), buckets.get());
