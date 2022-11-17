@@ -7,6 +7,7 @@
 #include <iterator>
 #include <ostream>
 #include <vector>
+#include <memory>
 
 namespace storm {
 namespace storage {
