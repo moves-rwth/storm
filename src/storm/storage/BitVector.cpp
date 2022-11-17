@@ -223,7 +223,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
 
         if (newBucketCount > this->bucketCount()) {
 			std::shared_ptr<uint64_t> newBuckets(new uint64_t[newBucketCount], std::default_delete<uint64_t[]>());
-            std::copy_n(buckets.get(), this->bucketCount(), newBuckets);
+            std::copy_n(buckets.get(), this->bucketCount(), newBuckets.get());
             if (init) {
                 if (this->bucketCount() > 0) {
                     newBuckets.get()[this->bucketCount() - 1] |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
@@ -254,7 +254,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
         // last bucket.
         if (newBucketCount < this->bucketCount()) {
 			std::shared_ptr<uint64_t> newBuckets(new uint64_t[newBucketCount], std::default_delete<uint64_t[]>());
-            std::copy_n(buckets, newBucketCount, newBuckets);
+            std::copy_n(buckets.get(), newBucketCount, newBuckets.get());
             // old buckets deletion occurs implicitly
 			// will not delete if another bv shared old buckets
 			buckets = newBuckets;
