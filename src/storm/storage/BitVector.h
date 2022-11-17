@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <functional>
 #include <iterator>
+#include <memory>
 #include <ostream>
 #include <vector>
-#include <memory>
 
 namespace storm {
 namespace storage {

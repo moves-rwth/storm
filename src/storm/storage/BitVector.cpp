@@ -104,7 +104,6 @@ BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCou
     STORM_LOG_ASSERT((bucketCount << 6) == bitCount, "Bit count does not match number of buckets.");
     std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
     buckets = newBuckets;
-
 }
 
 BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), buckets(nullptr) {
