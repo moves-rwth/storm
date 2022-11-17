@@ -79,7 +79,7 @@ BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length), bucket
     if (init) {
 		std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
 		buckets = newBuckets;
-        std::fill_n(buckets, bucketCount, -1ull);
+        std::fill_n(buckets.get(), bucketCount, -1ull);
         truncateLastBucket();
     } else {
 		std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
@@ -223,7 +223,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
 
         if (newBucketCount > this->bucketCount()) {
 			std::shared_ptr<uint64_t> newBuckets(new uint64_t[newBucketCount], std::default_delete<uint64_t[]>());
-            std::copy_n(buckets, this->bucketCount(), newBuckets);
+            std::copy_n(buckets.get(), this->bucketCount(), newBuckets);
             if (init) {
                 if (this->bucketCount() > 0) {
                     newBuckets.get()[this->bucketCount() - 1] |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
