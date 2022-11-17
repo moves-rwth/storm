@@ -77,18 +77,18 @@ BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length), bucket
 
     // Initialize the storage with the required values.
     if (init) {
-		std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
-		buckets = newBuckets;
+        std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
+        buckets = newBuckets;
         std::fill_n(buckets.get(), bucketCount, -1ull);
         truncateLastBucket();
     } else {
-		std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
-		buckets = newBuckets;
+        std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
+        buckets = newBuckets;
     }
 }
 
 BitVector::~BitVector() {
-	// Intentionally left empty. `buckets` now managed by c++ stl through shared_ptr
+    // Intentionally left empty. `buckets` now managed by c++ stl through shared_ptr
 }
 
 template<typename InputIterator>
@@ -102,14 +102,14 @@ BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t> setEntries
 
 BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCount(bitCount), buckets(nullptr) {
     STORM_LOG_ASSERT((bucketCount << 6) == bitCount, "Bit count does not match number of buckets.");
-	std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
-	buckets = newBuckets;
+    std::shared_ptr<uint64_t> newBuckets(new uint64_t[bucketCount], std::default_delete<uint64_t[]>());
+    buckets = newBuckets;
 
 }
 
 BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), buckets(nullptr) {
-	std::shared_ptr<uint64_t> newBuckets(new uint64_t[other.bucketCount()], std::default_delete<uint64_t[]>());
-	buckets = newBuckets;
+    std::shared_ptr<uint64_t> newBuckets(new uint64_t[other.bucketCount()], std::default_delete<uint64_t[]>());
+    buckets = newBuckets;
 
     std::copy_n(other.buckets.get(), other.bucketCount(), buckets.get());
 }
@@ -119,12 +119,12 @@ BitVector& BitVector::operator=(BitVector const& other) {
     if (this != &other) {
         if (buckets && bucketCount() != other.bucketCount()) {
             // deletion of buckets occurs implicitly due to std::shared_ptr
-			buckets = nullptr;
+            buckets = nullptr;
         }
         bitCount = other.bitCount;
         if (!buckets) {
-			std::shared_ptr<uint64_t> newBuckets(new uint64_t[other.bucketCount()], std::default_delete<uint64_t[]>());
-			buckets = newBuckets;
+            std::shared_ptr<uint64_t> newBuckets(new uint64_t[other.bucketCount()], std::default_delete<uint64_t[]>());
+            buckets = newBuckets;
         }
         std::copy_n(other.buckets.get(), other.bucketCount(), buckets.get());
     }
@@ -163,8 +163,8 @@ BitVector& BitVector::operator=(BitVector&& other) {
         bitCount = other.bitCount;
         other.bitCount = 0;
         // bucket deletion of current BitVector's buckets occurs implicitly
-		// it will not delete if there is another reference to the same buckets though
-		this->buckets = other.buckets;
+        // it will not delete if there is another reference to the same buckets though
+        this->buckets = other.buckets;
         other.buckets = nullptr;
     }
 
@@ -222,7 +222,7 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
         }
 
         if (newBucketCount > this->bucketCount()) {
-			std::shared_ptr<uint64_t> newBuckets(new uint64_t[newBucketCount], std::default_delete<uint64_t[]>());
+            std::shared_ptr<uint64_t> newBuckets(new uint64_t[newBucketCount], std::default_delete<uint64_t[]>());
             std::copy_n(buckets.get(), this->bucketCount(), newBuckets.get());
             if (init) {
                 if (this->bucketCount() > 0) {
@@ -233,8 +233,8 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
                 std::fill_n(newBuckets.get() + this->bucketCount(), newBucketCount - this->bucketCount(), 0);
             }
             // old bucket deletion occurs implicitly
-			// will not delete if another bitvector shares old buckets
-			buckets = newBuckets;
+            // will not delete if another bitvector shares old buckets
+            buckets = newBuckets;
             bitCount = newLength;
         } else {
             // If the underlying storage does not need to grow, we have to insert the missing bits.
@@ -253,11 +253,11 @@ void BitVector::resize(uint_fast64_t newLength, bool init) {
         // If the number of buckets needs to be reduced, we resize it now. Otherwise, we can just truncate the
         // last bucket.
         if (newBucketCount < this->bucketCount()) {
-			std::shared_ptr<uint64_t> newBuckets(new uint64_t[newBucketCount], std::default_delete<uint64_t[]>());
+            std::shared_ptr<uint64_t> newBuckets(new uint64_t[newBucketCount], std::default_delete<uint64_t[]>());
             std::copy_n(buckets.get(), newBucketCount, newBuckets.get());
             // old buckets deletion occurs implicitly
-			// will not delete if another bv shared old buckets
-			buckets = newBuckets;
+            // will not delete if another bv shared old buckets
+            buckets = newBuckets;
             bitCount = newLength;
         }
         bitCount = newLength;

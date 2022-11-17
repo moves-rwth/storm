@@ -616,7 +616,7 @@ class BitVector {
     uint_fast64_t bitCount;
 
     // The underlying storage of 64-bit buckets for all bits of this bit vector.
-	std::shared_ptr<uint64_t> buckets;
+    std::shared_ptr<uint64_t> buckets;
 
     // A bit mask that can be used to reduce a modulo 64 operation to a logical "and".
     static const uint_fast64_t mod64mask = (1 << 6) - 1;
