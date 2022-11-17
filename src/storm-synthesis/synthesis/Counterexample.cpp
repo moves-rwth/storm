@@ -315,7 +315,6 @@ namespace storm {
                 }
             } else {
                 // Reward formula: one reward model
-                assert(mdp_bounds != NULL);
                 assert(dtmc->hasRewardModel(this->formula_reward_name[formula_index]));
 
                 std::vector<ValueType> state_rewards_subdtmc(dtmc_states+2);

@@ -811,6 +811,35 @@ namespace storm {
                                           "Computed values are smaller than the lower bound.");
                 STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(upperValueBounds, values, std::greater_equal<ValueType>()),
                                           "Computed values are larger than the upper bound.");
+
+
+                // ============================================================================================
+                // == PRINTING BELIEF MDP INFO (REMOVE AFTER) TODO PAYNT ======================================
+                // ============================================================================================
+
+                std::ofstream myfile;
+                myfile.open("belief-mdp.txt");
+
+                storm::models::sparse::NondeterministicModel<ValueType> nd_model = (storm::models::sparse::NondeterministicModel<ValueType>) *exploredMdp;
+
+                storm::storage::BitVector actionSelection = res->asExplicitQuantitativeCheckResult<ValueType>().getScheduler().computeActionSupport(nd_model.getNondeterministicChoiceIndices());
+                storm::storage::BitVector allStates(nd_model.getNumberOfStates(), true);
+
+                //Belief MDP state information
+                myfile << "Belief MDP state information:\n\n";
+
+                for (MdpStateType i = beliefIdToMdpStateMap[0]; i < getCurrentNumberOfMdpStates(); i++)
+                {
+                    {
+                        myfile << "belief: " << getBeliefManager().toString(getBeliefId(i)) << 
+                                    "\n\tbelief MDP state: " << i << 
+                                    "\n\tobservation id: " << beliefManager->getBeliefObservation(getBeliefId(i)) << 
+                                    "\n\tchosen action: " << res->asExplicitQuantitativeCheckResult<ValueType>().getScheduler().getChoice(i).getDeterministicChoice() << 
+                                    "\n\tstate value: " << values[i] << "\n\n";
+                    }
+                }
+
+                myfile.close();
             } else {
                 STORM_LOG_ASSERT(storm::utility::resources::isTerminate(), "Empty check result!");
                 STORM_LOG_ERROR("No result obtained while checking.");

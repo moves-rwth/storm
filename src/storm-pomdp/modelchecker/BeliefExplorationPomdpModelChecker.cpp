@@ -379,7 +379,6 @@ namespace storm {
 
                         transMatrix.dropZeroEntries();
                         storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
-
                         if(scheduledModel->hasChoiceLabeling()){
                             modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
                         }
