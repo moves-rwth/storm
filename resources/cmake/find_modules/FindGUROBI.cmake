@@ -18,6 +18,7 @@ else (GUROBI_INCLUDE_DIR)
 find_path(GUROBI_INCLUDE_DIR 
           NAMES gurobi_c++.h
           PATHS "$ENV{GUROBI_HOME}/include"
+                    "/Library/gurobi1000/macos_universal2/include"
                     "/Library/gurobi951/macos_universal2/include"
                     "/Library/gurobi950/mac64/include"
                     "/Library/gurobi912/mac64/include"
@@ -39,6 +40,7 @@ find_path(GUROBI_INCLUDE_DIR
 
 find_library( GUROBI_LIBRARY 
               NAMES gurobi
+        gurobi100
         gurobi95
         gurobi91
         gurobi90
@@ -56,6 +58,7 @@ find_library( GUROBI_LIBRARY
         gurobi46
         gurobi45
               PATHS "$ENV{GUROBI_HOME}/lib"
+                    "/Library/gurobi1000/macos_universal2/lib"
                     "/Library/gurobi951/macos_universal2/lib"
                     "/Library/gurobi950/mac64/lib"
                     "/Library/gurobi912/mac64/lib"
@@ -78,6 +81,7 @@ find_library( GUROBI_LIBRARY
 find_library( GUROBI_CXX_LIBRARY 
               NAMES gurobi_c++
               PATHS "$ENV{GUROBI_HOME}/lib"
+                    "/Library/gurobi1000/macos_universal2/lib"
                     "/Library/gurobi951/macos_universal2/lib"
                     "/Library/gurobi950/mac64/lib"
                     "/Library/gurobi912/mac64/lib"
