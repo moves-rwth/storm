@@ -354,34 +354,38 @@ namespace storm {
                         };
 
                         std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = approx->getExploredMdp();
-                        storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
-                        auto nrPreprocessingScheds = min ? approx->getNrSchedulersForUpperBounds() : approx->getNrSchedulersForLowerBounds();
-                        for(uint64_t i = 0; i < nrPreprocessingScheds; ++i){
-                            newLabeling.addLabel("sched_" + std::to_string(i));
-                        }
-                        newLabeling.addLabel("cutoff");
-                        for(uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i){
-                            if(newLabeling.getStateHasLabel("truncated",i)){
-                                newLabeling.addLabelToState("sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()),i);
-                                newLabeling.addLabelToState("cutoff", i);
+                        if(options.useExplicitCutoff) {
+                            storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
+                            auto nrPreprocessingScheds = min ? approx->getNrSchedulersForUpperBounds() : approx->getNrSchedulersForLowerBounds();
+                            for (uint64_t i = 0; i < nrPreprocessingScheds; ++i) {
+                                newLabeling.addLabel("sched_" + std::to_string(i));
                             }
+                            newLabeling.addLabel("cutoff");
+                            for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
+                                if (newLabeling.getStateHasLabel("truncated", i)) {
+                                    newLabeling.addLabelToState(
+                                        "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
+                                    newLabeling.addLabelToState("cutoff", i);
+                                }
+                            }
+                            newLabeling.removeLabel("truncated");
+                            storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling,
+                                                                                               scheduledModel->getRewardModels());
+                            if (scheduledModel->hasChoiceLabeling()) {
+                                modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
+                            }
+                            storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
+                            auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), true);
+                            scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
+                            result.schedulerAsMarkovChain = scheduledModel;
+                            if (min) {
+                                result.cutoffSchedulers = approx->getUpperValueBoundSchedulers();
+                            } else {
+                                result.cutoffSchedulers = approx->getLowerValueBoundSchedulers();
+                            }
+                            ValueType& resultValue = min ? result.upperBound : result.lowerBound;
+                            resultValue = approx->getComputedValueAtInitialState();
                         }
-                        newLabeling.removeLabel("truncated");
-                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling, scheduledModel->getRewardModels());
-                        if(scheduledModel->hasChoiceLabeling()){
-                            modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
-                        }
-                        storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
-                        auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), true);
-                        scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
-                        result.schedulerAsMarkovChain = scheduledModel;
-                        if(min){
-                            result.cutoffSchedulers = approx->getUpperValueBoundSchedulers();
-                        } else {
-                            result.cutoffSchedulers = approx->getLowerValueBoundSchedulers();
-                        }
-                        ValueType &resultValue = min ? result.upperBound : result.lowerBound;
-                        resultValue = approx->getComputedValueAtInitialState();
                     }
                 }
             }
@@ -920,8 +924,8 @@ namespace storm {
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available
                                 if(pomdp().hasChoiceLabeling()){
-                                    if(pomdp().getChoiceLabeling().getLabelsOfChoice(beliefManager->getRepresentativeState(currId)+action).size() > 0) {
-                                        auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];
+                                    auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];
+                                    if(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).size() > 0) {
                                         underApproximation->addChoiceLabelToCurrentState(
                                             addedActions + action,*(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).begin()));
                                     }
