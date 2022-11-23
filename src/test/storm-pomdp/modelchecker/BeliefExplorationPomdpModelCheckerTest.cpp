@@ -123,7 +123,7 @@ namespace {
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {options.refine = true; options.refinePrecision = precision();}
     };
 
-    class PreprocessedCullingDoubleVIEnvironment {
+    class PreprocessedClippingDoubleVIEnvironment {
     public:
         typedef double ValueType;
         static storm::Environment createEnvironment() {
@@ -262,7 +262,7 @@ namespace {
             DefaultDoubleOVIEnvironment,
             DefaultRationalPIEnvironment,
             PreprocessedDefaultRationalPIEnvironment,
-            PreprocessedCullingDoubleVIEnvironment
+            PreprocessedClippingDoubleVIEnvironment
     > TestingTypes;
     
     TYPED_TEST_SUITE(BeliefExplorationTest, TestingTypes,);
