@@ -106,20 +106,7 @@ namespace storm {
                  * Returns the pomdp that is to be analyzed
                  */
                 PomdpModelType const& pomdp() const;
-                
-                /**
-                 * Helper method that handles the computation of reachability probabilities and rewards using the on-the-fly state space generation for a fixed grid size
-                 *
-                 * @param targetObservations set of target observations
-                 * @param min true if minimum value is to be computed
-                 * @param computeRewards true if rewards are to be computed, false if probability is computed
-                 * @param overApproximationMap optional mapping of original POMDP states to a naive overapproximation value
-                 * @param underApproximationMap optional mapping of original POMDP states to a naive underapproximation value
-                 * @param maxUaModelSize the maximum size of the underapproximation model to be generated
-                 * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values TODO this is a void function?
-                 */
-                void computeReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result& result);
-                
+
                 
                 /**
                  * Compute the reachability probability of given target observations on a POMDP using the automatic refinement loop
