@@ -156,11 +156,8 @@ namespace storm {
                     statistics.beliefMdpDetectedToBeFinite = true;
                 }
 
-                if (options.refine) {
-                    refineReachability(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
-                } else {
-                    computeReachability(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
-                }
+                refineReachability(targetObservations, formulaInfo.minimize(), rewardModelName, pomdpValueBounds, result);
+
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
                 if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
                     result.lowerBound = -storm::utility::infinity<ValueType>();
@@ -285,112 +282,6 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::computeReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& valueBounds, Result &result) {
-                auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
-                if (options.discretize) {
-                    std::vector<BeliefValueType> observationResolutionVector(pomdp().getNrObservations(),
-                                                                             storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), storm::utility::convertNumber<BeliefValueType>(options.numericPrecision),
-                                                                       options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic
-                                                                                                    : BeliefManagerType::TriangulationMode::Static);
-                    if (rewardModelName) {
-                        manager->setRewardModel(rewardModelName);
-                    }
-                    auto approx = std::make_shared<ExplorerType>(manager, trivialPOMDPBounds);
-                    HeuristicParameters heuristicParameters = {
-                            .gapThreshold = options.gapThresholdInit,
-                            .observationThreshold = options.obsThresholdInit, // Actually not relevant without refinement
-                            .sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit,
-                            .clippingThreshold = options.clippingThresholdInit,
-                            .optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit,};
-
-                    buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, observationResolutionVector, manager, approx);
-                    if (approx->hasComputedValues()) {
-                        auto printInfo = [&approx]() {
-                            std::stringstream str;
-                            str << "Explored and checked Over-Approximation MDP:\n";
-                            approx->getExploredMdp()->printModelInformationToStream(str);
-                            return str.str();
-                        };
-                        STORM_LOG_INFO(printInfo());
-                        ValueType &resultValue = min ? result.lowerBound : result.upperBound;
-                        resultValue = approx->getComputedValueAtInitialState();
-                    }
-                }
-                if (options.unfold) { // Underapproximation (uses a fresh Belief manager)
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), storm::utility::convertNumber<BeliefValueType>(options.numericPrecision),
-                                                                       options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic
-                                                                                                    : BeliefManagerType::TriangulationMode::Static);
-                    if (rewardModelName) {
-                        manager->setRewardModel(rewardModelName);
-                    }
-
-                    auto approx = std::make_shared<ExplorerType>(manager, trivialPOMDPBounds, options.explorationHeuristic);
-                    HeuristicParameters heuristicParameters = {
-                            .gapThreshold = options.gapThresholdInit,
-                            .observationThreshold = options.obsThresholdInit, // Actually not relevant without refinement
-                            .sizeThreshold = options.sizeThresholdInit,
-                            .clippingThreshold = options.clippingThresholdInit,
-                            .optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit,};
-                    if (heuristicParameters.sizeThreshold == 0) {
-                        if (options.explorationTimeLimit) {
-                            heuristicParameters.sizeThreshold = std::numeric_limits<uint64_t>::max();
-                        } else {
-                            heuristicParameters.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
-                            STORM_PRINT_AND_LOG("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << ".\n")
-                        }
-                    }
-                    // If we clip and compute rewards
-                    if((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
-                        approx->setExtremeValueBound(valueBounds.extremePomdpValueBound);
-                    }
-                    buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
-                    if (approx->hasComputedValues()) {
-                        auto printInfo = [&approx]() {
-                            std::stringstream str;
-                            str << "Explored and checked Under-Approximation MDP:\n";
-                            approx->getExploredMdp()->printModelInformationToStream(str);
-                            return str.str();
-                        };
-
-                        std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = approx->getExploredMdp();
-                        if(options.useExplicitCutoff) {
-                            storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
-                            auto nrPreprocessingScheds = min ? approx->getNrSchedulersForUpperBounds() : approx->getNrSchedulersForLowerBounds();
-                            for (uint64_t i = 0; i < nrPreprocessingScheds; ++i) {
-                                newLabeling.addLabel("sched_" + std::to_string(i));
-                            }
-                            newLabeling.addLabel("cutoff");
-                            for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
-                                if (newLabeling.getStateHasLabel("truncated", i)) {
-                                    newLabeling.addLabelToState(
-                                        "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
-                                    newLabeling.addLabelToState("cutoff", i);
-                                }
-                            }
-                            newLabeling.removeLabel("truncated");
-                            storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling,
-                                                                                               scheduledModel->getRewardModels());
-                            if (scheduledModel->hasChoiceLabeling()) {
-                                modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
-                            }
-                            storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
-                            auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), true);
-                            scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
-                            result.schedulerAsMarkovChain = scheduledModel;
-                            if (min) {
-                                result.cutoffSchedulers = approx->getUpperValueBoundSchedulers();
-                            } else {
-                                result.cutoffSchedulers = approx->getLowerValueBoundSchedulers();
-                            }
-                            ValueType& resultValue = min ? result.upperBound : result.lowerBound;
-                            resultValue = approx->getComputedValueAtInitialState();
-                        }
-                    }
-                }
-            }
-
-            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const & valueBounds, Result &result) {
                 statistics.refinementSteps = 0;
                 auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
@@ -411,6 +302,7 @@ namespace storm {
                     overApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
                     overApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     overApproxHeuristicPar.clippingThreshold = options.clippingThresholdInit;
+
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
                     if (!overApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
@@ -418,7 +310,7 @@ namespace storm {
                     ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
                     if (betterBound) {
-                        STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'.\n");
+                        STORM_LOG_INFO("Initial Over-approx result obtained after " << statistics.totalTime << ". Value is '" << newValue << "'.\n");
                     }
                 }
 
@@ -437,12 +329,18 @@ namespace storm {
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;
                     underApproxHeuristicPar.clippingThreshold = options.clippingThresholdInit;
                     if (underApproxHeuristicPar.sizeThreshold == 0) {
-                        // Select a decent value automatically
+                        if (!options.refine && options.explorationTimeLimit) {
+                            underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>::max();
+                        } else {
+                            underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
+                            STORM_PRINT_AND_LOG("Heuristically selected an under-approximation mdp size threshold of " << underApproxHeuristicPar.sizeThreshold << ".\n")
+                        }
                         underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
                     if((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
                         underApproximation->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                     }
+
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
                     if (!underApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
@@ -450,7 +348,7 @@ namespace storm {
                     ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                     if (betterBound) {
-                        STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'.\n");
+                        STORM_LOG_INFO("Initial Under-approx result obtained after " << statistics.totalTime << ". Value is '" << newValue << "'.\n");
                     }
                 }
                 
@@ -572,7 +470,63 @@ namespace storm {
                     }
                 }
 
-                // TODO printinfo
+                // TODO: UNDER CONSTRUCTION (START)
+                if (options.unfold) {
+                    std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
+                    if(options.useExplicitCutoff) {
+                        storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
+                        auto nrPreprocessingScheds =
+                            min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
+                        for (uint64_t i = 0; i < nrPreprocessingScheds; ++i) {
+                            newLabeling.addLabel("sched_" + std::to_string(i));
+                        }
+                        newLabeling.addLabel("cutoff");
+                        for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
+                            if (newLabeling.getStateHasLabel("truncated", i)) {
+                                newLabeling.addLabelToState(
+                                    "sched_" + std::to_string(underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
+                                newLabeling.addLabelToState("cutoff", i);
+                            }
+                        }
+                        newLabeling.removeLabel("truncated");
+                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(scheduledModel->getTransitionMatrix(), newLabeling,
+                                                                                           scheduledModel->getRewardModels());
+                        if (scheduledModel->hasChoiceLabeling()) {
+                            modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
+                        }
+                        storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
+                        auto inducedMC = newMDP.applyScheduler(*(underApproximation->getSchedulerForExploredMdp()), true);
+                        scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
+                    }
+                    result.schedulerAsMarkovChain = scheduledModel;
+                    if(min){
+                        result.cutoffSchedulers = underApproximation->getUpperValueBoundSchedulers();
+                    } else {
+                        result.cutoffSchedulers = underApproximation->getLowerValueBoundSchedulers();
+                    }
+                }
+                // TODO: UNDER CONSTRUCTION (END)
+
+
+                // Print model information of final over- / under-approximation MDP
+                if (overApproximation->hasComputedValues()) {
+                    auto printOverInfo = [&overApproximation]() {
+                        std::stringstream str;
+                        str << "Explored and checked Over-Approximation MDP:\n";
+                        overApproximation->getExploredMdp()->printModelInformationToStream(str);
+                        return str.str();
+                    };
+                    STORM_LOG_INFO(printOverInfo());
+                }
+                if (underApproximation->hasComputedValues()) {
+                    auto printUnderInfo = [&underApproximation]() {
+                        std::stringstream str;
+                        str << "Explored and checked Under-Approximation MDP:\n";
+                        underApproximation->getExploredMdp()->printModelInformationToStream(str);
+                        return str.str();
+                    };
+                    STORM_LOG_INFO(printUnderInfo());
+                }
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
