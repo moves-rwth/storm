@@ -348,7 +348,6 @@ namespace storm {
                             auto transMatrix = scheduledModel->getTransitionMatrix();
                             for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
                                 if (newLabeling.getStateHasLabel("truncated", i)) {
-                                    bool hasClipping = (approx->getExploredMdp()->getNumberOfChoices(i) != nrPreprocessingScheds);
                                     uint64_t localChosenActionIndex = approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
                                     auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
                                     if(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex+localChosenActionIndex).size() > 0) {
@@ -377,6 +376,9 @@ namespace storm {
                             }
                             storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
                             auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), true);
+                            scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
+                        } else {
+                            auto inducedMC = approx->getExploredMdp()->applyScheduler(*(approx->getSchedulerForExploredMdp()), true);
                             scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
                         }
                         result.schedulerAsMarkovChain = scheduledModel;
@@ -569,7 +571,6 @@ namespace storm {
                         auto transMatrix = scheduledModel->getTransitionMatrix();
                         for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
                             if (newLabeling.getStateHasLabel("truncated", i)) {
-                                bool hasClipping = (underApproximation->getExploredMdp()->getNumberOfChoices(i) != nrPreprocessingScheds);
                                 uint64_t localChosenActionIndex = underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
                                 auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
                                 if(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex+localChosenActionIndex).size() > 0) {
@@ -1086,21 +1087,21 @@ namespace storm {
                                 }
                             }
                         } else {
-                            for (uint64_t i = 0; i < nrCutoffStrategies; ++i) {
+                            for (uint64_t i = 0; i < nrCutoffStrategies && !options.skipHeuristicSchedulers; ++i) {
                                 auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i)
                                                        : underApproximation->computeLowerValueBoundForScheduler(currId, i);
                                 if (computeRewards) {
-                                    underApproximation->addTransitionsToExtraStates(addedActions + i, storm::utility::one<ValueType>());
-                                    underApproximation->addRewardToCurrentState(addedActions + i, cutOffValue);
+                                    underApproximation->addTransitionsToExtraStates(addedActions, storm::utility::one<ValueType>());
+                                    underApproximation->addRewardToCurrentState(addedActions, cutOffValue);
                                 } else {
-                                    underApproximation->addTransitionsToExtraStates(addedActions + i, cutOffValue,
+                                    underApproximation->addTransitionsToExtraStates(addedActions, cutOffValue,
                                                                                     storm::utility::one<ValueType>() - cutOffValue);
                                 }
                                 if (pomdp().hasChoiceLabeling()) {
-                                    underApproximation->addChoiceLabelToCurrentState(addedActions + i, "sched_" + std::to_string(i));
+                                    underApproximation->addChoiceLabelToCurrentState(addedActions, "sched_" + std::to_string(i));
                                 }
+                                addedActions++;
                             }
-                            addedActions += nrCutoffStrategies;
                             if (underApproximation->hasFMSchedulerValues()) {
                                 uint64_t transitionNr = 0;
                                 for (uint64_t i = 0; i < underApproximation->getNrOfMemoryNodesForObservation(currObservation); ++i) {
