@@ -349,33 +349,22 @@ namespace storm {
                             for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
                                 if (newLabeling.getStateHasLabel("truncated", i)) {
                                     bool hasClipping = (approx->getExploredMdp()->getNumberOfChoices(i) != nrPreprocessingScheds);
-                                    uint64_t chosenActionIndex = approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
-                                    if (hasClipping) {
-                                        if (chosenActionIndex == 0) {
+                                    uint64_t localChosenActionIndex = approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
+                                    auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
+                                    if(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex+localChosenActionIndex).size() > 0) {
+                                        auto label = *(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex+localChosenActionIndex).begin());
+                                        if (label.rfind("clip", 0) == 0) {
                                             newLabeling.addLabelToState("clipping", i);
                                             auto chosenRow = transMatrix.getRow(i, 0);
                                             auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                                             transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
+                                        } else if (label.rfind("mem_node", 0) == 0){
+                                            newLabeling.addLabelToState("finite_mem", i);
+                                            newLabeling.addLabelToState("cutoff", i);
                                         } else {
-                                            if (!approx->hasFMSchedulerValues() ||
-                                                approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1 < nrPreprocessingScheds) {
-                                                newLabeling.addLabelToState(
-                                                    "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1),
-                                                    i);
-                                            } else {
-                                                newLabeling.addLabelToState("finite_mem", i);
-                                            }
+                                            newLabeling.addLabelToState(label, i);
                                             newLabeling.addLabelToState("cutoff", i);
                                         }
-                                    } else {
-                                        if (!approx->hasFMSchedulerValues() ||
-                                            approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() < nrPreprocessingScheds) {
-                                            newLabeling.addLabelToState(
-                                                "sched_" + std::to_string(approx->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()), i);
-                                        } else {
-                                            newLabeling.addLabelToState("finite_mem", i);
-                                        }
-                                        newLabeling.addLabelToState("cutoff", i);
                                     }
                                 }
                             }
@@ -581,36 +570,22 @@ namespace storm {
                         for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
                             if (newLabeling.getStateHasLabel("truncated", i)) {
                                 bool hasClipping = (underApproximation->getExploredMdp()->getNumberOfChoices(i) != nrPreprocessingScheds);
-                                uint64_t chosenActionIndex = underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
-                                if (hasClipping) {
-                                    if (chosenActionIndex == 0) {
+                                uint64_t localChosenActionIndex = underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
+                                auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
+                                if(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex+localChosenActionIndex).size() > 0) {
+                                    auto label = *(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex+localChosenActionIndex).begin());
+                                    if (label.rfind("clip", 0) == 0) {
                                         newLabeling.addLabelToState("clipping", i);
                                         auto chosenRow = transMatrix.getRow(i, 0);
                                         auto candidateIndex = (chosenRow.end() - 1)->getColumn();
                                         transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
+                                    } else if (label.rfind("mem_node", 0) == 0){
+                                        newLabeling.addLabelToState("finite_mem", i);
+                                        newLabeling.addLabelToState("cutoff", i);
                                     } else {
-                                        if (!underApproximation->hasFMSchedulerValues() ||
-                                            underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1 <
-                                                nrPreprocessingScheds) {
-                                            newLabeling.addLabelToState(
-                                                "sched_" +
-                                                    std::to_string(underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() - 1),
-                                                i);
-                                        } else {
-                                            newLabeling.addLabelToState("finite_mem", i);
-                                        }
+                                        newLabeling.addLabelToState(label, i);
                                         newLabeling.addLabelToState("cutoff", i);
                                     }
-                                } else {
-                                    if (!underApproximation->hasFMSchedulerValues() ||
-                                        underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice() < nrPreprocessingScheds) {
-                                        newLabeling.addLabelToState(
-                                            "sched_" + std::to_string(underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice()),
-                                            i);
-                                    } else {
-                                        newLabeling.addLabelToState("finite_mem", i);
-                                    }
-                                    newLabeling.addLabelToState("cutoff", i);
                                 }
                             }
                         }
