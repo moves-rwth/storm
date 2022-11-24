@@ -379,7 +379,7 @@ namespace storm {
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
             STORM_LOG_ASSERT(exploredMdp, "No 'old' mdp available");
             uint64_t choice = exploredMdp->getNondeterministicChoiceIndices()[getCurrentMdpState()] + localActionIndex;
-            return exploredMdp->hasChoiceLabeling() && exploredMdp->getChoiceLabeling().getChoiceHasLabel("delayed", choice);
+            return exploredMdp->hasChoiceLabeling() && exploredMdp->getChoiceLabeling().getLabels().count("delayed") > 0 && exploredMdp->getChoiceLabeling().getChoiceHasLabel("delayed", choice);
         }
 
         template<typename PomdpType, typename BeliefValueType>
