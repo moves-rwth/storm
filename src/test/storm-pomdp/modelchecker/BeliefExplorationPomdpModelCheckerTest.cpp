@@ -246,7 +246,8 @@ namespace {
         }
         ValueType precision() const { return TestType::precision(); }
         ValueType modelcheckingPrecision() const { if (TestType::isExactModelChecking) return storm::utility::zero<ValueType>(); else return storm::utility::convertNumber<ValueType>(1e-6); }
-        
+        bool isExact() const { return TestType::isExactModelChecking; }
+
     private:
         storm::Environment _environment;
     };
@@ -312,11 +313,20 @@ namespace {
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
         auto result = checker.check(*data.formula);
-        
+
         ValueType expected = this->parseNumber("3/10");
-        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
-        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        if (this->isExact()) {
+            // This model's value can only be approximated arbitrarily close but never reached
+            // Exact arithmetics will thus not reach the value with absoulute precision either.
+            ValueType approxPrecision = storm::utility::convertNumber<ValueType>(1e-5);
+            EXPECT_LE(result.lowerBound, expected + approxPrecision);
+            EXPECT_GE(result.upperBound, expected - approxPrecision);
+        } else {
+            EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+            EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        }
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+
     }
     
     TYPED_TEST(BeliefExplorationTest, simple_Rmax) {
