@@ -352,8 +352,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
     boost::optional<ConstantType> value;
     Valuation valuation;
     if (!initialValue) {
-        auto init = (this->isUseMonotonicitySet() ) ? getGoodInitialPoint(env, region, dir, regionQueue.top().localMonRes)
-                                                                                        : getGoodInitialPoint(env, region, dir, nullptr);
+        auto init = getGoodInitialPoint(env, region, dir, regionQueue.top().localMonRes);
         if (this->isUseMonotonicitySet()) {
             STORM_LOG_INFO(
                 "Number of definitely monotone parameters:" << regionQueue.top().localMonRes->getGlobalMonotonicityResult()->getNumberOfMonotoneParameters());
@@ -440,7 +439,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
                     }
 
                     // Check whether this region contains a new 'good' value and set this value
-                    auto point = useMonotonicity
+                    auto point = useMonotonicity && this->isDisableOptimizationSet()
                                      ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()))
                                      : (useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()),
                                                                               possibleMonotoneIncrParameters, possibleMonotoneDecrParameters)
@@ -448,7 +447,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
                     auto currValue = getInstantiationChecker()
                                          .check(env, point)
                                          ->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    if (useMonotonicity ) {
+                    if (useMonotonicity && !this->isDisableOptimizationSet()) {
                         auto point2 = currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()));
                         auto currValue2 = getInstantiationChecker()
                                               .check(env, point2)
@@ -484,9 +483,9 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
 
                         // We set the bounds to extend the order for the new regions.
                         if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding() && orderExtender &&
-                            (this->isDisableOptimizationSet() || storm::utility::convertNumber<double>(order->getNumberOfSufficientStates()) /
-                                                                         storm::utility::convertNumber<double>(order->getNumberOfStates()) <
-                                                                     0.25)) {
+                            (storm::utility::convertNumber<double>(order->getNumberOfSufficientStates()) /
+                                 storm::utility::convertNumber<double>(order->getNumberOfStates()) <
+                             0.25)) {
                             numberOfPLACallsBounds++;
                             if (minimize) {
                                 orderExtender->setMinMaxValues(
@@ -721,17 +720,18 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getGoodInitia
         localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
         auto numMon = monIncr.size() + monDecr.size();
         STORM_PRINT("Number of monotone parameters: " << numMon << std::endl;);
-        if (numMon < region.getVariables().size()) {
-            checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
-            STORM_PRINT("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
-            STORM_PRINT("Number of definitely not monotone parameters on entire region: " << notMon.size() << std::endl;);
-        }
+        if (!this->isDisableOptimizationSet()) {
+            if (numMon < region.getVariables().size()) {
+                checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
+                STORM_PRINT("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
+                STORM_PRINT("Number of definitely not monotone parameters on entire region: " << notMon.size() << std::endl;);
+            }
 
-        for (auto var : notMon) {
-            localMonRes->getGlobalMonotonicityResult()->updateMonotonicityResult(var, Monotonicity::Not, true);
-            localMonRes->getGlobalMonotonicityResult()->setDoneForVar(var);
+            for (auto var : notMon) {
+                localMonRes->getGlobalMonotonicityResult()->updateMonotonicityResult(var, Monotonicity::Not, true);
+                localMonRes->getGlobalMonotonicityResult()->setDoneForVar(var);
+            }
         }
-
         valuation = region.getPoint(dir, monIncr, monDecr);
     } else {
         valuation = region.getCenterPoint();
