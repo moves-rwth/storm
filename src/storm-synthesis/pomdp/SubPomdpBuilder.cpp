@@ -16,8 +16,6 @@ namespace storm {
             std::string const& target_label
         )
             : pomdp(pomdp), reward_name(reward_name), target_label(target_label) {
-            
-            STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::InvalidArgumentException, "POMDP must be canonic");
 
             auto const& tm = pomdp.getTransitionMatrix();
             reachable_successors.resize(pomdp.getNumberOfStates());
@@ -126,23 +124,15 @@ namespace storm {
             label_init.set(this->initial_state);
             labeling.addLabel("init", std::move(label_init));
 
-            std::cout << "(1) ok" << std::endl;
-            
             storm::storage::BitVector label_target(this->num_states, false);
-            std::cout << "(2) ok" << std::endl;
             auto const& pomdp_labeling = this->pomdp.getStateLabeling();
-            std::cout << "(2.1) ok" << std::endl;
             auto const& pomdp_target_states = pomdp_labeling.getStates(this->target_label);
-            std::cout << "(3) ok" << std::endl;
             for(auto state: pomdp_target_states) {
                 label_target.set(this->state_map[state]);
             }
-            std::cout << "(4) ok" << std::endl;
             label_target.set(this->sink_state);
             labeling.addLabel(this->target_label, std::move(label_target));
             
-            std::cout << "(5) ok" << std::endl;
-
             return labeling;
         }
 
@@ -229,18 +219,12 @@ namespace storm {
             std::map<uint64_t,double> const& horizon_values
         ) {
             storm::storage::sparse::ModelComponents<double> components;
-            std::cout << "transition matrix" << std::endl;
             components.transitionMatrix = this->constructTransitionMatrix(initial_belief);
             uint64_t num_rows = components.transitionMatrix.getRowCount();
-            std::cout << "state labeling" << std::endl;
             components.stateLabeling = this->constructStateLabeling();
-            std::cout << "choice labeling" << std::endl;
             components.choiceLabeling = this->constructChoiceLabeling(num_rows);
-            std::cout << "observability classes" << std::endl;
             components.observabilityClasses = this->constructObservabilityClasses();
-            std::cout << "reward model" << std::endl;
             components.rewardModels.emplace(this->reward_name, this->constructRewardModel(num_rows,horizon_values));
-            std::cout << "done" << std::endl;
             return std::make_shared<storm::models::sparse::Pomdp<double>>(std::move(components));
         }
 
