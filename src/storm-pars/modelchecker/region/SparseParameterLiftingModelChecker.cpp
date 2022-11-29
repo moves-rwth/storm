@@ -352,7 +352,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
     boost::optional<ConstantType> value;
     Valuation valuation;
     if (!initialValue) {
-        auto init = (this->isUseMonotonicitySet() && !this->isDisableOptimizationSet()) ? getGoodInitialPoint(env, region, dir, regionQueue.top().localMonRes)
+        auto init = (this->isUseMonotonicitySet() ) ? getGoodInitialPoint(env, region, dir, regionQueue.top().localMonRes)
                                                                                         : getGoodInitialPoint(env, region, dir, nullptr);
         if (this->isUseMonotonicitySet()) {
             STORM_LOG_INFO(
@@ -440,7 +440,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
                     }
 
                     // Check whether this region contains a new 'good' value and set this value
-                    auto point = useMonotonicity && this->isDisableOptimizationSet()
+                    auto point = useMonotonicity
                                      ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()))
                                      : (useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()),
                                                                               possibleMonotoneIncrParameters, possibleMonotoneDecrParameters)
@@ -448,7 +448,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
                     auto currValue = getInstantiationChecker()
                                          .check(env, point)
                                          ->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    if (useMonotonicity && !this->isDisableOptimizationSet()) {
+                    if (useMonotonicity ) {
                         auto point2 = currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()));
                         auto currValue2 = getInstantiationChecker()
                                               .check(env, point2)
@@ -484,9 +484,9 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
 
                         // We set the bounds to extend the order for the new regions.
                         if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding() && orderExtender &&
-                            (storm::utility::convertNumber<double>(order->getNumberOfSufficientStates()) /
-                                 storm::utility::convertNumber<double>(order->getNumberOfStates()) <
-                             0.25)) {
+                            (this->isDisableOptimizationSet() || storm::utility::convertNumber<double>(order->getNumberOfSufficientStates()) /
+                                                                         storm::utility::convertNumber<double>(order->getNumberOfStates()) <
+                                                                     0.25)) {
                             numberOfPLACallsBounds++;
                             if (minimize) {
                                 orderExtender->setMinMaxValues(
