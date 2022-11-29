@@ -439,7 +439,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
                     }
 
                     // Check whether this region contains a new 'good' value and set this value
-                    auto point = useMonotonicity && this->isDisableOptimizationSet()
+                    auto point = useMonotonicity
                                      ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()))
                                      : (useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()),
                                                                               possibleMonotoneIncrParameters, possibleMonotoneDecrParameters)
@@ -447,7 +447,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
                     auto currValue = getInstantiationChecker()
                                          .check(env, point)
                                          ->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    if (useMonotonicity && !this->isDisableOptimizationSet()) {
+                    if (useMonotonicity ) {
                         auto point2 = currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult()));
                         auto currValue2 = getInstantiationChecker()
                                               .check(env, point2)
@@ -482,7 +482,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
                         }
 
                         // We set the bounds to extend the order for the new regions.
-                        if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding() && orderExtender &&
+                        if (useMonotonicity && !this->isDisableOptimizationSet() && this->isUseBoundsSet() && !order->getDoneBuilding() && orderExtender &&
                             (storm::utility::convertNumber<double>(order->getNumberOfSufficientStates()) /
                                  storm::utility::convertNumber<double>(order->getNumberOfStates()) <
                              0.25)) {
@@ -720,7 +720,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getGoodInitia
         localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
         auto numMon = monIncr.size() + monDecr.size();
         STORM_PRINT("Number of monotone parameters: " << numMon << std::endl;);
-        if (!this->isDisableOptimizationSet()) {
+//        if (!this->isDisableOptimizationSet()) {
             if (numMon < region.getVariables().size()) {
                 checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
                 STORM_PRINT("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
@@ -731,7 +731,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getGoodInitia
                 localMonRes->getGlobalMonotonicityResult()->updateMonotonicityResult(var, Monotonicity::Not, true);
                 localMonRes->getGlobalMonotonicityResult()->setDoneForVar(var);
             }
-        }
+//        }
         valuation = region.getPoint(dir, monIncr, monDecr);
     } else {
         valuation = region.getCenterPoint();
