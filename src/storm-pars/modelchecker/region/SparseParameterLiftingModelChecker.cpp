@@ -484,9 +484,8 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
                         // We set the bounds to extend the order for the new regions.
                         if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding() && orderExtender &&
                             (storm::utility::convertNumber<double>(order->getNumberOfSufficientStates()) /
-                                     storm::utility::convertNumber<double>(order->getNumberOfStates()) <
-                                 0.25 ||
-                             this->isDisableOptimizationSet())) {
+                                 storm::utility::convertNumber<double>(order->getNumberOfStates()) <
+                             0.25)) {
                             numberOfPLACallsBounds++;
                             if (minimize) {
                                 orderExtender->setMinMaxValues(
