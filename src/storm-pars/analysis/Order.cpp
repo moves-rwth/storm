@@ -355,7 +355,7 @@ Order::Node* Order::getBottom() const {
 }
 
 bool Order::getDoneBuilding() const {
-    return doneForState.full();
+    return sufficientForState.full();
 }
 
 uint_fast64_t Order::getNextSufficientState(uint_fast64_t state) const {

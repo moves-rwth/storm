@@ -715,10 +715,9 @@ void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::exte
             if (!order->contains(nextState)) {
                 order->add(nextState);
                 order->setSufficientForState(nextState);
-                order->setDoneForState(nextState);
             }
         }
-        assert(order->getDoneBuilding());
+        STORM_LOG_ASSERT(order->getDoneBuilding(), "Order should be done building");
     }
 }
 
