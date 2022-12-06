@@ -629,37 +629,35 @@ namespace storm {
                                 truncateAllActions = true; // Case 1.2
                                 overApproximation->setCurrentStateIsTruncated();
                             }
-                        } else {
-                            if (overApproximation->getCurrentStateWasTruncated()) {
-                                // Case 2
-                                if (!timeLimitExceeded && overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
-                                    exploreAllActions = true; // Case 2.1
-                                    STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because a previously truncated state is now explored.");
-                                    fixPoint = false;
-                                } else {
-                                    truncateAllActions = true; // Case 2.2
-                                    overApproximation->setCurrentStateIsTruncated();
-                                    if (fixPoint) {
-                                        // Properly check whether this can still be a fixpoint
-                                        if (overApproximation->currentStateIsOptimalSchedulerReachable() && !storm::utility::isZero(gap)) {
-                                            STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because we truncate a state with non-zero gap " << gap << " that is reachable via an optimal sched.");
-                                            fixPoint = false;
-                                        }
-                                        //} else {
-                                        // In this case we truncated a state that is not reachable under optimal schedulers.
-                                        // If no other state is explored (i.e. fixPoint remains true), these states should still not be reachable in subsequent iterations
-                                    }
-                                }
+                        } else if (overApproximation->getCurrentStateWasTruncated()) {
+                            // Case 2
+                            if (!timeLimitExceeded && overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
+                                exploreAllActions = true; // Case 2.1
+                                STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because a previously truncated state is now explored.");
+                                fixPoint = false;
                             } else {
-                                // Case 3
-                                // The decision for rewiring also depends on the corresponding action, but we have some criteria that lead to case 3.2 (independent of the action)
-                                if (!timeLimitExceeded && overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
-                                    checkRewireForAllActions = true; // Case 3.1 or Case 3.2
-                                } else {
-                                    restoreAllActions = true; // Definitely Case 3.2
-                                    // We still need to check for each action whether rewiring makes sense later
-                                    checkRewireForAllActions = true;
+                                truncateAllActions = true; // Case 2.2
+                                overApproximation->setCurrentStateIsTruncated();
+                                if (fixPoint) {
+                                    // Properly check whether this can still be a fixpoint
+                                    if (overApproximation->currentStateIsOptimalSchedulerReachable() && !storm::utility::isZero(gap)) {
+                                        STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because we truncate a state with non-zero gap " << gap << " that is reachable via an optimal sched.");
+                                        fixPoint = false;
+                                    }
+                                    //} else {
+                                    // In this case we truncated a state that is not reachable under optimal schedulers.
+                                    // If no other state is explored (i.e. fixPoint remains true), these states should still not be reachable in subsequent iterations
                                 }
+                            }
+                        } else {
+                            // Case 3
+                            // The decision for rewiring also depends on the corresponding action, but we have some criteria that lead to case 3.2 (independent of the action)
+                            if (!timeLimitExceeded && overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
+                                checkRewireForAllActions = true; // Case 3.1 or Case 3.2
+                            } else {
+                                restoreAllActions = true; // Definitely Case 3.2
+                                // We still need to check for each action whether rewiring makes sense later
+                                checkRewireForAllActions = true;
                             }
                         }
                         bool expandedAtLeastOneAction = false;
