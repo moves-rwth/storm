@@ -1,6 +1,6 @@
 // author: Roman Andriushchenko
 
-#include "storm-synthesis/synthesis/Counterexample.h"
+#include "storm-synthesis/synthesis/CounterexampleMdp.h"
 
 #include <queue>
 #include <deque>
@@ -32,7 +32,7 @@ namespace storm {
     namespace synthesis {
 
         template <typename ValueType, typename StateType>
-        std::shared_ptr<storm::modelchecker::ExplicitQualitativeCheckResult> CounterexampleGenerator<ValueType,StateType>::labelStates(
+        std::shared_ptr<storm::modelchecker::ExplicitQualitativeCheckResult> CounterexampleGeneratorMdp<ValueType,StateType>::labelStates(
             storm::models::sparse::Mdp<ValueType> const& mdp,
             storm::logic::Formula const& label
         ) {
@@ -45,7 +45,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename StateType>
-        CounterexampleGenerator<ValueType,StateType>::CounterexampleGenerator (
+        CounterexampleGeneratorMdp<ValueType,StateType>::CounterexampleGeneratorMdp (
             storm::models::sparse::Mdp<ValueType> const& quotient_mdp,
             uint_fast64_t hole_count,
             std::vector<std::set<uint_fast64_t>> const& mdp_holes,
@@ -112,12 +112,12 @@ namespace storm {
                 } else {
                     modified_formula = std::make_shared<storm::logic::RewardOperatorFormula>(modified_subformula, this->formula_reward_name.back(), of.getOperatorInformation());
                 }
-                this->formula_modified.push_back(modified_formula);
+                this->formula_modified.push_back(modified_formula);     
             }
         }
 
         template <typename ValueType, typename StateType>
-        void CounterexampleGenerator<ValueType,StateType>::prepareDtmc(
+        void CounterexampleGeneratorMdp<ValueType,StateType>::prepareMdp(
             storm::models::sparse::Dtmc<ValueType> const& dtmc,
             std::vector<uint_fast64_t> const& state_map
             ) {
@@ -254,7 +254,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename StateType>
-        void CounterexampleGenerator<ValueType,StateType>::prepareSubdtmc (
+        void CounterexampleGeneratorMdp<ValueType,StateType>::prepareSubdtmc (
             uint_fast64_t formula_index,
             std::shared_ptr<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType> const> mdp_bounds,
             std::vector<StateType> const& mdp_quotient_state_map,
@@ -341,7 +341,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename StateType>
-        bool CounterexampleGenerator<ValueType,StateType>::expandAndCheck (
+        bool CounterexampleGeneratorMdp<ValueType,StateType>::expandAndCheck (
             uint_fast64_t index,
             ValueType formula_bound,
             std::vector<std::vector<std::pair<StateType,ValueType>>> & matrix_subdtmc,
@@ -435,7 +435,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename StateType>
-        std::vector<uint_fast64_t> CounterexampleGenerator<ValueType,StateType>::constructConflict (
+        std::vector<uint_fast64_t> CounterexampleGeneratorMdp<ValueType,StateType>::constructConflict (
             uint_fast64_t formula_index,
             ValueType formula_bound,
             std::shared_ptr<storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType> const> mdp_bounds,
@@ -495,7 +495,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename StateType>
-        void CounterexampleGenerator<ValueType,StateType>::printProfiling() {
+        void CounterexampleGeneratorMdp<ValueType,StateType>::printProfiling() {
             std::cout << "[s] conflict: " << this->timer_conflict << std::endl;
             std::cout << "[s]     model checking: " << this->timer_model_check << std::endl;
         }
@@ -504,7 +504,7 @@ namespace storm {
 
 
          // Explicitly instantiate functions and classes.
-        template class CounterexampleGenerator<double, uint_fast64_t>;
+        template class CounterexampleGeneratorMdp<double, uint_fast64_t>;
 
     } // namespace research
 } // namespace storm
