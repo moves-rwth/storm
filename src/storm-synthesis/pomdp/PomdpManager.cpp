@@ -289,26 +289,17 @@ namespace storm {
             template<typename ValueType>
             storm::models::sparse::StandardRewardModel<ValueType> PomdpManager<ValueType>::constructRewardModel(
                 storm::models::sparse::StandardRewardModel<ValueType> const& reward_model
-                ) {
+            ) {
                 boost::optional<std::vector<ValueType>> state_rewards, action_rewards;
-                if (reward_model.hasStateRewards()) {
-                    state_rewards = std::vector<ValueType>();
-                    state_rewards->reserve(this->num_states);
-                    for(uint64_t state = 0; state < this->num_states; state++) {
-                        auto prototype = this->state_prototype[state];
-                        auto reward = reward_model.getStateReward(prototype);
-                        state_rewards->push_back(reward);
-                    }
+                STORM_LOG_THROW(!reward_model.hasStateRewards(), storm::exceptions::NotSupportedException, "state rewards are currently not supported.");
+                STORM_LOG_THROW(!reward_model.hasTransitionRewards(), storm::exceptions::NotSupportedException, "transition rewards are currently not supported.");
+                
+                action_rewards = std::vector<ValueType>();
+                for(uint64_t row = 0; row < this->num_rows; row++) {
+                    auto prototype = this->row_prototype[row];
+                    auto reward = reward_model.getStateActionReward(prototype);
+                    action_rewards->push_back(reward);
                 }
-                if (reward_model.hasStateActionRewards()) {
-                    action_rewards = std::vector<ValueType>();
-                    for(uint64_t row = 0; row < this->num_rows; row++) {
-                        auto prototype = this->row_prototype[row];
-                        auto reward = reward_model.getStateActionReward(prototype);
-                        action_rewards->push_back(reward);
-                    }
-                }
-                STORM_LOG_THROW(!reward_model.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are currently not supported.");
                 return storm::models::sparse::StandardRewardModel<ValueType>(std::move(state_rewards), std::move(action_rewards));
             }
 
