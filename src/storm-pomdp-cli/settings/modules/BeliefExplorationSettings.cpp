@@ -31,7 +31,7 @@ namespace storm {
             const std::string numericPrecisionOption = "numeric-precision";
             const std::string triangulationModeOption = "triangulationmode";
             const std::string explHeuristicOption = "expl-heuristic";
-            const std::string clippingModeOption = "clipping-mode";
+            const std::string clippingOption = "use-clipping";
             const std::string cutZeroGapOption = "cut-zero-gap";
             const std::string parametricPreprocessingOption = "par-preprocessing";
             const std::string explicitCutoffOption = "explicit-cutoff";
@@ -60,8 +60,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, triangulationModeOption, false,"Sets how to triangulate beliefs when discretizing.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the triangulation mode").setDefaultValueString("dynamic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"})).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, clippingModeOption, false, "Sets how to clip beliefs after the size-threshold was reached").setIsAdvanced().addArgument(
-                        storm::settings::ArgumentBuilder::createStringArgument("value","the clipping mode").setDefaultValueString("classic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"classic", "grid"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, clippingOption, false, "If this is set, unfolding will use  (grid) clipping instead of cut-offs only.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, beliefTypeOption, false,"Sets number type used to handle probabilities in beliefs").setIsAdvanced().addArgument(
@@ -162,12 +161,8 @@ namespace storm {
                 return this->getOption(triangulationModeOption).getArgumentByName("value").getValueAsString() == "static";
             }
 
-            bool BeliefExplorationSettings::isClassicClippingModeSet() const {
-                return this->getOption(clippingModeOption).getArgumentByName("value").getValueAsString() == "classic";
-            }
-
-            bool BeliefExplorationSettings::isGridClippingModeSet() const {
-                return this->getOption(clippingModeOption).getArgumentByName("value").getValueAsString() == "grid";
+            bool BeliefExplorationSettings::isUseClippingSet() const {
+                return this->getOption(clippingOption).getHasOptionBeenSet();
             }
 
             storm::builder::ExplorationHeuristic BeliefExplorationSettings::getExplorationHeuristic() const {
@@ -234,7 +229,7 @@ namespace storm {
                 options.optimalChoiceValueThresholdFactor = storm::utility::convertNumber<ValueType>(getOptimalChoiceValueThresholdFactor());
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
-                options.useGridClipping = isGridClippingModeSet();
+                options.useGridClipping = isUseClippingSet();
                 options.useExplicitCutoff = isExplicitCutoffSet();
 
                 options.useParametricPreprocessing = isParametricPreprocessingSet();

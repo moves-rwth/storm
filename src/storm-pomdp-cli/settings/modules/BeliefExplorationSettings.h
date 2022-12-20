@@ -58,12 +58,6 @@ namespace storm {
                 /// Controls how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore
                 double getGapThresholdInit() const;
                 double getGapThresholdFactor() const;
-
-                /// Controls how large the delta is allowed to be for clipping
-                double getClippingThresholdInit() const;
-
-                /// Controls if the clipping set reduction heuristic is used
-                bool isDisableClippingReductionSet() const;
                 
                 /// Controls whether "almost optimal" choices will be considered optimal
                 double getOptimalChoiceValueThresholdInit() const;
@@ -84,8 +78,8 @@ namespace storm {
                 bool isBeliefTypeSetFromDefault() const;
                 storm::pomdp::BeliefNumberType getBeliefType() const;
 
-                bool isClassicClippingModeSet() const;
-                bool isGridClippingModeSet() const;
+                /// Controls if (grid) clipping is to be used
+                bool isUseClippingSet() const;
 
                 bool isParametricPreprocessingSet() const;
                 double getParametricGDEpsilon() const;
