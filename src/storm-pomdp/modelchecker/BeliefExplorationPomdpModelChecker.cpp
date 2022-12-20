@@ -189,7 +189,7 @@ namespace storm {
                 pomdpValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
-                if((options.clippingThresholdInit > 0 || options.useGridClipping) && formula.isRewardOperatorFormula()){
+                if(options.useGridClipping && formula.isRewardOperatorFormula()){
                     pomdpValueBounds.extremePomdpValueBound =
                         PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
                 }
@@ -301,7 +301,6 @@ namespace storm {
                     overApproxHeuristicPar.observationThreshold = options.obsThresholdInit;
                     overApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
                     overApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
-                    overApproxHeuristicPar.clippingThreshold = options.clippingThresholdInit;
 
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
                     if (!overApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
@@ -327,7 +326,6 @@ namespace storm {
                     underApproxHeuristicPar.gapThreshold = options.gapThresholdInit;
                     underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;
-                    underApproxHeuristicPar.clippingThreshold = options.clippingThresholdInit;
                     if (underApproxHeuristicPar.sizeThreshold == 0) {
                         if (!options.refine && options.explorationTimeLimit) {
                             underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>::max();
@@ -337,7 +335,7 @@ namespace storm {
                         }
                         underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
-                    if((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
+                    if(options.useGridClipping && rewardModelName.is_initialized()) {
                         underApproximation->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                     }
 

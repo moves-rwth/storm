@@ -45,12 +45,9 @@ namespace storm {
                 // Controls which observations are refined.
                 ValueType obsThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
                 ValueType obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(0.1);
-                // Controls the delta value up to which clipping will be applied.
-                ValueType clippingThresholdInit = storm::utility::zero<ValueType>();
 
                 uint64_t clippingGridRes = 2;
 
-                bool disableClippingReduction = false;
                 
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)

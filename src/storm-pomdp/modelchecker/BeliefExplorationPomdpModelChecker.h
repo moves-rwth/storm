@@ -95,7 +95,6 @@ namespace storm {
                     ValueType gapThreshold;
                     ValueType observationThreshold;
                     uint64_t sizeThreshold;
-                    ValueType clippingThreshold;
                     ValueType optimalChoiceValueEpsilon;
                 };
 
