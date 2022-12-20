@@ -764,21 +764,11 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
-                bool useBeliefClipping = heuristicParameters.clippingThreshold > storm::utility::zero<ValueType>() || options.useGridClipping;
                 statistics.underApproximationBuildTime.start();
-                if(useBeliefClipping){
-                    if(options.useGridClipping){
-                        STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n")
-                    } else {
-                        STORM_PRINT_AND_LOG("Use Belief Clipping with threshold "
-                                            << storm::utility::to_string(heuristicParameters.clippingThreshold)
-                                            << "\n");
-                    }
+                if(options.useGridClipping){
+                    STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n")
                     statistics.nrClippingAttempts = 0;
                     statistics.nrClippedStates = 0;
-                    if(options.disableClippingReduction){
-                        STORM_PRINT_AND_LOG("Disable clipping candidate set reduction \n");
-                    }
                 }
 
                 uint64_t nrCutoffStrategies = min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
@@ -790,7 +780,7 @@ namespace storm {
                 if (!refine) {
                     // Build a new under approximation
                     if (computeRewards) {
-                        if(useBeliefClipping){
+                        if(options.useGridClipping){
                             // If we clip, use the sink state for infinite correction values
                             underApproximation->startNewExploration(storm::utility::zero<ValueType>(), storm::utility::infinity<ValueType>());
                         } else {
@@ -820,7 +810,7 @@ namespace storm {
                     if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
                         printUpdateStopwatch.restart();
                         STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n")
-                        if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && useBeliefClipping){
+                        if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useGridClipping){
                             STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.get() << " ##### " << "Clipped States: " << statistics.nrClippedStates.get() << "\n");
                         }
                     }
@@ -840,7 +830,7 @@ namespace storm {
                         bool stopExploration = false;
                         bool clipBelief = false;
                         if (timeLimitExceeded) {
-                            clipBelief = useBeliefClipping;
+                            clipBelief = options.useGridClipping;
                             stopExploration = true;
                             underApproximation->setCurrentStateIsTruncated();
                         } else if (!stateAlreadyExplored) {
@@ -852,25 +842,18 @@ namespace storm {
                                 underApproximation->setCurrentStateIsTruncated();
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >=
                                        heuristicParameters.sizeThreshold /*&& !statistics.beliefMdpDetectedToBeFinite*/) {
-                                clipBelief = useBeliefClipping;
+                                clipBelief = options.useGridClipping;
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
                             }
                         }
 
                         if (clipBelief) {
-                            if (options.useGridClipping) {
-                                // Use a belief grid as clipping candidates
-                                clipToGrid(currId, computeRewards, min, beliefManager, underApproximation);
-                                addedActions += beliefManager->getBeliefNumberOfChoices(currId);
-                            } else {
-                                // Use clipping with explored beliefs as candidates ("classic" clipping)
-                                if (clipToExploredBeliefs(currId, storm::utility::convertNumber<BeliefValueType>(heuristicParameters.clippingThreshold),
-                                                          computeRewards, 10, beliefManager, underApproximation)) {
-                                    ++addedActions;
-                                }
-                            }
+                            // Use a belief grid as clipping candidates
+                            clipToGrid(currId, computeRewards, min, beliefManager, underApproximation);
+                            addedActions += beliefManager->getBeliefNumberOfChoices(currId);
                         }  // end Clipping Procedure
+
                         if(!options.useExplicitCutoff || !stopExploration){
                             // Add successor transitions or cut-off transitions when exploration is stopped
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
@@ -1034,72 +1017,6 @@ namespace storm {
                         beliefExplorer->computeRewardAtCurrentState(action);
                     }
                 }
-            }
-
-            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
-            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::clipToExploredBeliefs(uint64_t clippingStateId, BeliefValueType threshold, bool computeRewards, uint64_t reducedCandidateSetSize, std::shared_ptr<BeliefManagerType> &beliefManager, std::shared_ptr<ExplorerType> &beliefExplorer) {// Preprocess suitable candidate beliefs
-                std::priority_queue<std::pair<BeliefValueType, uint64_t>, std::vector<std::pair<BeliefValueType, uint64_t>>, std::less<>> restrictedCandidates;
-                std::vector<uint64_t> candidates(reducedCandidateSetSize);
-                statistics.clippingPreTime.start();
-                // If the reduction is not disabled, we only pick the nrCandidate candidates with the smallest 1-norm of the difference between the candidate and the clipping belief
-                if(!options.disableClippingReduction) {
-                    for (auto const &candidateBelief : beliefExplorer->getBeliefsWithObservationInMdp(beliefManager->getBeliefObservation(clippingStateId))) {
-                        if (!beliefManager->isEqual(candidateBelief, clippingStateId)) {
-                            if (restrictedCandidates.size() < reducedCandidateSetSize) {
-                                restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, clippingStateId), candidateBelief));
-                            } else {
-                                auto currentWorst = restrictedCandidates.top().first;
-                                if (currentWorst > beliefManager->computeDifference1norm(candidateBelief, clippingStateId)) {
-                                    restrictedCandidates.pop();
-                                    restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, clippingStateId), candidateBelief));
-                                }
-                            }
-                        }
-                    }
-
-                    while (!restrictedCandidates.empty()) {
-                        candidates.push_back(restrictedCandidates.top().second);
-                        restrictedCandidates.pop();
-                    }
-                }
-                statistics.clippingPreTime.stop();
-                // Belief is to be clipped, find the best candidate from the restricted list
-                statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
-                statistics.clipWatch.start();
-                auto clippingResult = beliefManager->clipBelief(clippingStateId, threshold, options.disableClippingReduction ? beliefExplorer->getBeliefsInMdp() : candidates);
-                statistics.clipWatch.stop();
-                if (clippingResult.isClippable) {
-                    // An adequate clipping candidate has been found, add the transitions
-                    beliefExplorer->setCurrentStateIsClipped();
-                    statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
-                    BeliefValueType transitionProb = utility::one<BeliefValueType>() - clippingResult.delta;
-                    bool addedSucc = beliefExplorer->addTransitionToBelief(0, clippingResult.targetBelief, utility::convertNumber<BeliefMDPType>(transitionProb) , true);
-                    if (computeRewards) {
-                        //Determine a sound reward bound for the transition to the target state
-                        //Compute an over-/underapproximation for the original belief
-                        auto rewardBound = utility::zero<BeliefValueType>();
-                        for (auto const &deltaValue : clippingResult.deltaValues) {
-                            if(valueTypeCC.isEqual(beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first), utility::infinity<BeliefMDPType>())){
-                                rewardBound = utility::infinity<BeliefValueType>();
-                                break;
-                            } else {
-                                rewardBound += deltaValue.second * utility::convertNumber<BeliefValueType>(beliefExplorer->getExtremeValueBoundAtPOMDPState(deltaValue.first));
-                            }
-                        }
-                        if(beliefTypeCC.isEqual(rewardBound, utility::infinity<BeliefValueType>())){
-                            beliefExplorer->addTransitionsToExtraStates(0, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clippingResult.delta));
-                        } else {
-                            rewardBound /= clippingResult.delta;
-
-                            beliefExplorer->addTransitionsToExtraStates(0, utility::convertNumber<BeliefMDPType>(clippingResult.delta));
-                            beliefExplorer->addClippingRewardToCurrentState(0, utility::convertNumber<BeliefMDPType>(rewardBound));
-                        }
-                        beliefExplorer->addRewardToCurrentState(0, utility::zero<BeliefMDPType>());
-                    } else {
-                        beliefExplorer->addTransitionsToExtraStates(0, utility::zero<BeliefMDPType>(), utility::convertNumber<BeliefMDPType>(clippingResult.delta));
-                    }
-                } // end isClippable
-                return clippingResult.isClippable;
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>

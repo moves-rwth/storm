@@ -93,8 +93,6 @@ namespace storm {
 
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
 
-            BeliefClipping clipBelief(BeliefId const &beliefId, BeliefValueType threshold = storm::utility::one<BeliefValueType>(), boost::optional<std::vector<BeliefId>> const &targets = boost::none);
-
             BeliefValueType computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2);
 
             BeliefClipping clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution, storm::storage::BitVector isInfinite);
