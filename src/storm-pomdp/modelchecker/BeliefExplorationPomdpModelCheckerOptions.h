@@ -16,7 +16,8 @@ namespace storm {
                 
                 bool discretize;
                 bool unfold;
-                bool useGridClipping;
+                bool interactiveUnfolding = false;
+                bool useGridClipping = false;
                 bool refine = false;
                 bool cutZeroGap = false;
                 bool useParametricPreprocessing = false;
