@@ -248,6 +248,10 @@ namespace storm {
 
             uint64_t getNrOfMemoryNodesForObservation(uint32_t observation) const;
 
+            void storeExplorationState();
+
+            void restoreExplorationState();
+
         private:
             MdpStateType noState() const;
 
@@ -314,6 +318,30 @@ namespace storm {
             // The current status of this explorer
             ExplorationHeuristic explHeuristic;
             Status status;
+
+            struct ExplorationStorage{
+                std::vector<BeliefId> storedMdpStateToBeliefIdMap;
+                std::map<BeliefId, MdpStateType> storedBeliefIdToMdpStateMap;
+                storm::storage::BitVector storedExploredBeliefIds;
+                std::map<BeliefId, std::map<uint64_t, std::string>> storedMdpStateToChoiceLabelsMap;
+                std::multimap<ValueType, uint64_t> storedMdpStatesToExplorePrioState;
+                std::map<uint64_t, ValueType> storedMdpStatesToExploreStatePrio;
+                std::vector<ValueType> storedProbabilityEstimation;
+                std::vector<std::map<MdpStateType, ValueType>> storedExploredMdpTransitions;
+                std::vector<MdpStateType> storedExploredChoiceIndices;
+                std::vector<ValueType> storedMdpActionRewards;
+                std::map<MdpStateType, ValueType> storedClippingTransitionRewards;
+                uint64_t storedCurrentMdpState;
+                std::map<MdpStateType, MdpStateType> storedStateRemapping;
+                uint64_t storedNextId;
+                ValueType storedPrio;
+                std::vector<ValueType> storedLowerValueBounds;
+                std::vector<ValueType> storedUpperValueBounds;
+                std::vector<ValueType> storedValues;
+                storm::storage::BitVector storedTargetStates;
+            };
+
+            ExplorationStorage explorationStorage;
         };
     }
 }
