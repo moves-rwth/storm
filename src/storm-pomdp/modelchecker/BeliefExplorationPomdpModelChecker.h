@@ -33,6 +33,14 @@ namespace storm {
                 typedef storm::storage::BeliefManager<PomdpModelType, BeliefValueType> BeliefManagerType;
                 typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;
                 typedef BeliefExplorationPomdpModelCheckerOptions<ValueType> Options;
+
+                enum class Status {
+                    Uninitialized,
+                    Exploring,
+                    ModelExplorationFinished,
+                    ResultAvailable,
+                    Terminated,
+                };
                 
                 struct Result {
                     Result(ValueType lower, ValueType upper);
@@ -54,6 +62,11 @@ namespace storm {
                 void precomputeValueBounds(const logic::Formula& formula, storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
                 
             private:
+                 enum class UnfoldingControl {
+                     Run,
+                     Pause,
+                     Terminate
+                 };
                 
                 /**
                  * Returns the pomdp that is to be analyzed
@@ -183,6 +196,9 @@ namespace storm {
                 storm::utility::ConstantsComparator<ValueType> valueTypeCC;
 
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
+                Status unfoldingStatus;
+                UnfoldingControl unfoldingControl;
+                Result interactiveResult = Result(-storm::utility::infinity<ValueType>(), storm::utility::infinity<ValueType>());
             };
 
         }
