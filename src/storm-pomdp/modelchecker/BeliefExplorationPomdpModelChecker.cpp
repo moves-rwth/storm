@@ -507,7 +507,7 @@ namespace storm {
 
 
                 // Print model information of final over- / under-approximation MDP
-                if (overApproximation->hasComputedValues()) {
+                if (options.discretize && overApproximation->hasComputedValues()) {
                     auto printOverInfo = [&overApproximation]() {
                         std::stringstream str;
                         str << "Explored and checked Over-Approximation MDP:\n";
@@ -516,7 +516,7 @@ namespace storm {
                     };
                     STORM_LOG_INFO(printOverInfo());
                 }
-                if (underApproximation->hasComputedValues()) {
+                if (options.unfold && underApproximation->hasComputedValues()) {
                     auto printUnderInfo = [&underApproximation]() {
                         std::stringstream str;
                         str << "Explored and checked Under-Approximation MDP:\n";
