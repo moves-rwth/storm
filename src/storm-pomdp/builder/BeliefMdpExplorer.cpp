@@ -71,6 +71,7 @@ namespace storm {
             mdpStateToChoiceLabelsMap.clear();
             optimalChoices = boost::none;
             optimalChoicesReachableMdpStates = boost::none;
+            scheduler = nullptr;
             exploredMdp = nullptr;
             internalAddRowGroupIndex(); // Mark the start of the first row group
 
@@ -152,6 +153,62 @@ namespace storm {
 
             // Set up the initial state.
             initialMdpState = getOrAddMdpState(beliefManager->getInitialBelief());
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::storeExplorationState() {
+            explorationStorage.storedMdpStateToBeliefIdMap = std::vector<BeliefId>(mdpStateToBeliefIdMap);
+            explorationStorage.storedBeliefIdToMdpStateMap = std::map<BeliefId, MdpStateType>(beliefIdToMdpStateMap);
+            explorationStorage.storedExploredBeliefIds = storm::storage::BitVector(exploredBeliefIds);
+            explorationStorage.storedMdpStateToChoiceLabelsMap = std::map<BeliefId, std::map<uint64_t, std::string>>(mdpStateToChoiceLabelsMap);
+            explorationStorage.storedMdpStatesToExplorePrioState = std::multimap<ValueType, uint64_t>(mdpStatesToExplorePrioState);
+            explorationStorage.storedMdpStatesToExploreStatePrio = std::map<uint64_t, ValueType>(mdpStatesToExploreStatePrio);
+            explorationStorage.storedProbabilityEstimation = std::vector<ValueType>(probabilityEstimation);
+            explorationStorage.storedExploredMdpTransitions = std::vector<std::map<MdpStateType, ValueType>>(exploredMdpTransitions);
+            explorationStorage.storedExploredChoiceIndices = std::vector<MdpStateType>(exploredChoiceIndices);
+            explorationStorage.storedMdpActionRewards = std::vector<ValueType>(mdpActionRewards);
+            explorationStorage.storedClippingTransitionRewards = std::map<MdpStateType, ValueType>(clippingTransitionRewards);
+            explorationStorage.storedCurrentMdpState = currentMdpState;
+            explorationStorage.storedStateRemapping = std::map<MdpStateType, MdpStateType>(stateRemapping);
+            explorationStorage.storedNextId = nextId;
+            explorationStorage.storedPrio = ValueType(prio);
+            explorationStorage.storedLowerValueBounds = std::vector<ValueType>(lowerValueBounds);
+            explorationStorage.storedUpperValueBounds = std::vector<ValueType>(upperValueBounds);
+            explorationStorage.storedValues = std::vector<ValueType>(values);
+
+            explorationStorage.storedTargetStates = storm::storage::BitVector(targetStates);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::restoreExplorationState() {
+            mdpStateToBeliefIdMap = std::vector<BeliefId>(explorationStorage.storedMdpStateToBeliefIdMap);
+            beliefIdToMdpStateMap = std::map<BeliefId, MdpStateType>(explorationStorage.storedBeliefIdToMdpStateMap);
+            exploredBeliefIds = storm::storage::BitVector(explorationStorage.storedExploredBeliefIds);
+            mdpStateToChoiceLabelsMap = std::map<BeliefId, std::map<uint64_t, std::string>>(explorationStorage.storedMdpStateToChoiceLabelsMap);
+            mdpStatesToExplorePrioState = std::multimap<ValueType, uint64_t>(explorationStorage.storedMdpStatesToExplorePrioState);
+            mdpStatesToExploreStatePrio = std::map<uint64_t, ValueType>(explorationStorage.storedMdpStatesToExploreStatePrio);
+            probabilityEstimation = std::vector<ValueType>(explorationStorage.storedProbabilityEstimation);
+            exploredMdpTransitions = std::vector<std::map<MdpStateType, ValueType>>(explorationStorage.storedExploredMdpTransitions);
+            exploredChoiceIndices = std::vector<MdpStateType>(explorationStorage.storedExploredChoiceIndices);
+            mdpActionRewards = std::vector<ValueType>(explorationStorage.storedMdpActionRewards);
+            clippingTransitionRewards = std::map<MdpStateType, ValueType>(explorationStorage.storedClippingTransitionRewards);
+            currentMdpState = explorationStorage.storedCurrentMdpState;
+            stateRemapping = std::map<MdpStateType, MdpStateType>(explorationStorage.storedStateRemapping);
+            nextId = explorationStorage.storedNextId;
+            prio = ValueType(explorationStorage.storedPrio);
+            lowerValueBounds = explorationStorage.storedLowerValueBounds;
+            upperValueBounds = explorationStorage.storedUpperValueBounds;
+            values = explorationStorage.storedValues;
+            status = Status::Exploring;
+            targetStates = explorationStorage.storedTargetStates;
+
+            truncatedStates.clear();
+            clippedStates.clear();
+            delayedExplorationChoices.clear();
+            optimalChoices = boost::none;
+            optimalChoicesReachableMdpStates = boost::none;
+            exploredMdp = nullptr;
+            scheduler = nullptr;
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -379,7 +436,7 @@ namespace storm {
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
             STORM_LOG_ASSERT(exploredMdp, "No 'old' mdp available");
             uint64_t choice = exploredMdp->getNondeterministicChoiceIndices()[getCurrentMdpState()] + localActionIndex;
-            return exploredMdp->hasChoiceLabeling() && exploredMdp->getChoiceLabeling().getChoiceHasLabel("delayed", choice);
+            return exploredMdp->hasChoiceLabeling() && exploredMdp->getChoiceLabeling().getLabels().count("delayed") > 0 && exploredMdp->getChoiceLabeling().getChoiceHasLabel("delayed", choice);
         }
 
         template<typename PomdpType, typename BeliefValueType>

@@ -16,7 +16,8 @@ namespace storm {
                 
                 bool discretize;
                 bool unfold;
-                bool useGridClipping;
+                bool interactiveUnfolding = false;
+                bool useGridClipping = false;
                 bool refine = false;
                 bool cutZeroGap = false;
                 bool useParametricPreprocessing = false;
@@ -50,6 +51,8 @@ namespace storm {
                 uint64_t clippingGridRes = 2;
 
                 bool disableClippingReduction = false;
+
+                bool skipHeuristicSchedulers = false;
                 
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)

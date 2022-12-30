@@ -33,6 +33,14 @@ namespace storm {
                 typedef storm::storage::BeliefManager<PomdpModelType, BeliefValueType> BeliefManagerType;
                 typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;
                 typedef BeliefExplorationPomdpModelCheckerOptions<ValueType> Options;
+
+                enum class Status {
+                    Uninitialized,
+                    Exploring,
+                    ModelExplorationFinished,
+                    ResultAvailable,
+                    Terminated,
+                };
                 
                 struct Result {
                     Result(ValueType lower, ValueType upper);
@@ -52,8 +60,27 @@ namespace storm {
                 void printStatisticsToStream(std::ostream& stream) const;
 
                 void precomputeValueBounds(const logic::Formula& formula, storm::solver::MinMaxMethod minMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration);
-                
+
+                void unfoldInteractively(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const & valueBounds, Result &result);
+
+                void pauseUnfolding();
+
+                void continueUnfolding();
+
+                void terminateUnfolding();
+
+                bool isResultReady();
+
+                bool isExploring();
+
+                Result getInteractiveResult();
+
             private:
+                 enum class UnfoldingControl {
+                     Run,
+                     Pause,
+                     Terminate
+                 };
                 
                 /**
                  * Returns the pomdp that is to be analyzed
@@ -101,7 +128,9 @@ namespace storm {
                  * Builds and checks an MDP that under-approximates the POMDP behavior, i.e. provides a lower bound for maximizing and an upper bound for minimizing properties
                  * Returns true if a fixpoint for the refinement has been detected (i.e. if further refinement steps would not change the mdp)
                  */
-                bool buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
+                bool buildUnderApproximation(std::set<uint32_t> const& targetObservations, bool min, bool computeRewards, bool refine,
+                                             HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager,
+                                             std::shared_ptr<ExplorerType>& underApproximation, bool interactive);
 
                 /**
                  * Clips the belief with the given state ID to a belief grid by clipping its direct successor ("grid clipping")
@@ -146,6 +175,8 @@ namespace storm {
                 
                 std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector);
 
+                void setUnfoldingControl(UnfoldingControl newUnfoldingControl);
+
                 struct Statistics {
                     Statistics();
                     boost::optional<uint64_t> refinementSteps;
@@ -183,6 +214,9 @@ namespace storm {
                 storm::utility::ConstantsComparator<ValueType> valueTypeCC;
 
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
+                Status unfoldingStatus;
+                UnfoldingControl unfoldingControl;
+                Result interactiveResult = Result(-storm::utility::infinity<ValueType>(), storm::utility::infinity<ValueType>());
             };
 
         }

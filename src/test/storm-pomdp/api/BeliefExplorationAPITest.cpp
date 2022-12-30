@@ -297,3 +297,18 @@ TYPED_TEST(BeliefExplorationAPITest, simple2_Rmax) {
 
     EXPECT_LE(result.lowerBound, storm::utility::one<ValueType>() + this->modelcheckingPrecision());
 }
+
+TYPED_TEST(BeliefExplorationAPITest, noHeuristicValues) {
+    typedef typename TestFixture::ValueType ValueType;
+
+    auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple2.prism", "Rmax=?[F \"goal\"]");
+    auto task = storm::api::createTask<ValueType>(data.formula, false);
+
+    std::vector<std::unordered_map<uint64_t, ValueType>> obs0vals{{{0,0},{1,0}},{{0,0.7}},{{0,1},{1,1}}};
+    std::vector<std::unordered_map<uint64_t, ValueType>> obs1vals{{{2,1}},{{2,1}}};
+    std::vector<std::vector<std::unordered_map<uint64_t, ValueType>>> additionalVals{obs0vals,obs1vals};
+
+    auto result = storm::pomdp::api::underapproximateWithoutHeuristicValues<ValueType>(this->env(), data.model, task, 10, additionalVals);
+
+    EXPECT_LE(result.lowerBound, storm::utility::one<ValueType>() + this->modelcheckingPrecision());
+}
