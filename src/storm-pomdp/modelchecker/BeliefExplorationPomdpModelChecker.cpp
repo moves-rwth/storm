@@ -801,6 +801,22 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            int BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getStatus() {
+                if (unfoldingStatus == Status::Uninitialized)
+                    return 0;
+                if (unfoldingStatus == Status::Exploring)
+                    return 1;
+                if (unfoldingStatus == Status::ModelExplorationFinished)
+                    return 2;
+                if (unfoldingStatus == Status::ResultAvailable)
+                    return 3;
+                if (unfoldingStatus == Status::Terminated)
+                    return 4;
+
+                return -1;
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             BeliefValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
                 auto n = storm::utility::convertNumber<BeliefValueType, uint64_t>(info.support.size());
                 auto one = storm::utility::one<BeliefValueType>();
