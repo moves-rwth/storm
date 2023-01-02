@@ -75,6 +75,8 @@ namespace storm {
 
                 Result getInteractiveResult();
 
+                int getStatus();
+
             private:
                  enum class UnfoldingControl {
                      Run,
