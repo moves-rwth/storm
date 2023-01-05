@@ -21,7 +21,7 @@ namespace storm {
                 bool refine = false;
                 bool cutZeroGap = false;
                 bool useParametricPreprocessing = false;
-                bool useExplicitCutoff = false;
+                bool useStateEliminationCutoff = false;
                 uint64_t paramMemBound = 0;
                 double paramGDEps = 1e-6;
                 uint64_t paramGDMaxInstantiations = 1;

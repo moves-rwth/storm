@@ -471,7 +471,7 @@ namespace storm {
                 // TODO: UNDER CONSTRUCTION (START)
                 if (options.unfold) {
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
-                    if(options.useExplicitCutoff) {
+                    if(!options.useStateEliminationCutoff) {
                         storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
                         auto nrPreprocessingScheds =
                             min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
@@ -852,7 +852,7 @@ namespace storm {
                             addedActions += beliefManager->getBeliefNumberOfChoices(currId);
                         }  // end Clipping Procedure
 
-                        if(!options.useExplicitCutoff || !stopExploration){
+                        if(options.useStateEliminationCutoff || !stopExploration){
                             // Add successor transitions or cut-off transitions when exploration is stopped
                             for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available

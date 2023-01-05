@@ -34,7 +34,7 @@ namespace storm {
             const std::string clippingOption = "use-clipping";
             const std::string cutZeroGapOption = "cut-zero-gap";
             const std::string parametricPreprocessingOption = "par-preprocessing";
-            const std::string explicitCutoffOption = "explicit-cutoff";
+            const std::string stateEliminationCutoffOption = "state-elimination-cutoff";
             const std::string alphaVectorOption = "import-alphavec";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
@@ -68,7 +68,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, cutZeroGapOption, false,"Cut beliefs where the gap between over- and underapproximation is 0.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricPreprocessingOption, false, "If this is set, the POMDP will be transformed to a pMC for preprocessing steps.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memoryBound", "number of memory states").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("gd-eps", "epsilon for gradient descent").setDefaultValueDouble(1e-6).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxInstantiations", "max. number of initial instantiations to use for gradient descent").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, explicitCutoffOption, false, "If this is set, the additional unfolding step for cut-off beliefs is skipped.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, stateEliminationCutoffOption, false, "If this is set, an additional unfolding step for cut-off beliefs is performed.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, alphaVectorOption, false, "Loads a set of alpha vectors that is used for preprocessing.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file containing the alpha vectors").build()).build());
             }
 
@@ -76,8 +76,8 @@ namespace storm {
                 return this->getOption(refineOption).getHasOptionBeenSet();
             }
 
-            bool BeliefExplorationSettings::isExplicitCutoffSet() const {
-                return this->getOption(explicitCutoffOption).getHasOptionBeenSet();
+            bool BeliefExplorationSettings::isStateEliminationCutoffSet() const {
+                return this->getOption(stateEliminationCutoffOption).getHasOptionBeenSet();
             }
 
             double BeliefExplorationSettings::getRefinePrecision() const {
@@ -230,7 +230,7 @@ namespace storm {
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
                 options.useGridClipping = isUseClippingSet();
-                options.useExplicitCutoff = isExplicitCutoffSet();
+                options.useStateEliminationCutoff = isStateEliminationCutoffSet();
 
                 options.useParametricPreprocessing = isParametricPreprocessingSet();
                 options.paramMemBound = getParametricPreprocessingMemoryBound();
