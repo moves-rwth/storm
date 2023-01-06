@@ -628,7 +628,6 @@ namespace storm {
                 auto trivialPOMDPBounds = valueBounds.trivialPomdpValueBounds;
                 // Set up exploration data
                 std::shared_ptr<BeliefManagerType> underApproxBeliefManager;
-                std::shared_ptr<ExplorerType> underApproximation;
                 HeuristicParameters underApproxHeuristicPar;
                 bool firstIteration = true;
                 // Set up belief manager
@@ -640,18 +639,18 @@ namespace storm {
                 }
 
                 // set up belief MDP explorer
-                underApproximation = std::make_shared<ExplorerType>(underApproxBeliefManager, trivialPOMDPBounds, options.explorationHeuristic);
+                interactiveUnderApproximationExplorer = std::make_shared<ExplorerType>(underApproxBeliefManager, trivialPOMDPBounds, options.explorationHeuristic);
                 underApproxHeuristicPar.gapThreshold = options.gapThresholdInit;
                 underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                 underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>().max()-1;  // we don't set a size threshold
                 underApproxHeuristicPar.clippingThreshold = options.clippingThresholdInit;
 
                 if ((options.clippingThresholdInit > 0 || options.useGridClipping) && rewardModelName.is_initialized()) {
-                    underApproximation->setExtremeValueBound(valueBounds.extremePomdpValueBound);
+                    interactiveUnderApproximationExplorer->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                 }
 
                 if(!valueBounds.fmSchedulerValueList.empty()){
-                    underApproximation->setFMSchedValueList(valueBounds.fmSchedulerValueList);
+                    interactiveUnderApproximationExplorer->setFMSchedValueList(valueBounds.fmSchedulerValueList);
                 }
 
                 // Start iteration
@@ -662,20 +661,20 @@ namespace storm {
 
                     // Continue unfolding underapproximation
                     underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar,
-                                                                  underApproxBeliefManager, underApproximation, firstIteration);
-                    if (underApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
-                        ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
+                                                                  underApproxBeliefManager, interactiveUnderApproximationExplorer, firstIteration);
+                    if (interactiveUnderApproximationExplorer->hasComputedValues() && !storm::utility::resources::isTerminate()) {
+                        ValueType const& newValue = interactiveUnderApproximationExplorer->getComputedValueAtInitialState();
                         bool betterBound = min ? interactiveResult.updateUpperBound(newValue) : interactiveResult.updateLowerBound(newValue);
                         if (betterBound) {
                             STORM_LOG_INFO("Under-approximation result improved after " << statistics.totalTime << " in step #"
                                                                                         << (statistics.refinementSteps.get() + 1) << ". New value is '"
                                                                                         << newValue << "'.");
                         }
-                        std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
+                        std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = interactiveUnderApproximationExplorer->getExploredMdp();
                         if (options.useExplicitCutoff) {
                             storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
                             auto nrPreprocessingScheds =
-                                min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
+                                min ? interactiveUnderApproximationExplorer->getNrSchedulersForUpperBounds() : interactiveUnderApproximationExplorer->getNrSchedulersForLowerBounds();
                             for (uint64_t i = 0; i < nrPreprocessingScheds; ++i) {
                                 newLabeling.addLabel("sched_" + std::to_string(i));
                             }
@@ -688,7 +687,7 @@ namespace storm {
                                 if (newLabeling.getStateHasLabel("truncated", i)) {
                                     hasTruncatedStates = true;
                                     uint64_t localChosenActionIndex =
-                                        underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
+                                        interactiveUnderApproximationExplorer->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
                                     auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
                                     if (scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).size() > 0) {
                                         auto label = *(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).begin());
@@ -715,14 +714,14 @@ namespace storm {
                                 modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
                             }
                             storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
-                            auto inducedMC = newMDP.applyScheduler(*(underApproximation->getSchedulerForExploredMdp()), true);
+                            auto inducedMC = newMDP.applyScheduler(*(interactiveUnderApproximationExplorer->getSchedulerForExploredMdp()), true);
                             scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
                         }
                         interactiveResult.schedulerAsMarkovChain = scheduledModel;
                         if (min) {
-                            interactiveResult.cutoffSchedulers = underApproximation->getUpperValueBoundSchedulers();
+                            interactiveResult.cutoffSchedulers = interactiveUnderApproximationExplorer->getUpperValueBoundSchedulers();
                         } else {
-                            interactiveResult.cutoffSchedulers = underApproximation->getLowerValueBoundSchedulers();
+                            interactiveResult.cutoffSchedulers = interactiveUnderApproximationExplorer->getLowerValueBoundSchedulers();
                         }
                         if(firstIteration){
                             firstIteration = false;
@@ -743,7 +742,7 @@ namespace storm {
                             bool computingLowerBound = false;
                             bool computingUpperBound = false;
                             if (options.unfold) {
-                                STORM_LOG_INFO("\tUnder-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                STORM_LOG_INFO("\tUnder-approx MDP has size " << interactiveUnderApproximationExplorer->getExploredMdp()->getNumberOfStates() << ".");
                                 (min ? computingUpperBound : computingLowerBound) = true;
                             }
                             if (computingLowerBound && computingUpperBound) {
@@ -1549,6 +1548,11 @@ namespace storm {
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::isExploring(){
                 return unfoldingStatus == Status::Exploring;
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            std::shared_ptr<storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType>> BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getInteractiveBeliefExplorer(){
+                return interactiveUnderApproximationExplorer;
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
