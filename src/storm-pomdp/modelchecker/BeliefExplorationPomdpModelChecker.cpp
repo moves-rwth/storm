@@ -291,6 +291,27 @@ namespace storm {
                             approx->getExploredMdp()->printModelInformationToStream(str);
                             return str.str();
                         };
+
+                        std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = approx->getExploredMdp();
+                        storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
+
+                        auto transMatrix = scheduledModel->getTransitionMatrix();
+
+                        transMatrix.dropZeroEntries();
+                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
+                        if(scheduledModel->hasChoiceLabeling()){
+                            modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
+                        }
+                        storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
+                        auto inducedMC = newMDP.applyScheduler(*(approx->getSchedulerForExploredMdp()), true);
+                        scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
+                        result.schedulerAsMarkovChain = scheduledModel;
+                        if(min){
+                            result.cutoffSchedulers = approx->getLowerValueBoundSchedulers();
+                        } else {
+                            result.cutoffSchedulers = approx->getUpperValueBoundSchedulers();
+                        }
+
                         STORM_LOG_INFO(printInfo());
                         ValueType &resultValue = min ? result.lowerBound : result.upperBound;
                         resultValue = approx->getComputedValueAtInitialState();
@@ -779,6 +800,22 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            int BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::getStatus() {
+                if (unfoldingStatus == Status::Uninitialized)
+                    return 0;
+                if (unfoldingStatus == Status::Exploring)
+                    return 1;
+                if (unfoldingStatus == Status::ModelExplorationFinished)
+                    return 2;
+                if (unfoldingStatus == Status::ResultAvailable)
+                    return 3;
+                if (unfoldingStatus == Status::Terminated)
+                    return 4;
+
+                return -1;
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             BeliefValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
                 auto n = storm::utility::convertNumber<BeliefValueType, uint64_t>(info.support.size());
                 auto one = storm::utility::one<BeliefValueType>();
@@ -1054,6 +1091,16 @@ namespace storm {
                         }
                         if (expandedAtLeastOneAction) {
                             ++numRewiredOrExploredStates;
+                        }
+                    }
+
+                    for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                        if(pomdp().hasChoiceLabeling()){
+                            auto rowIndex = pomdp().getTransitionMatrix().getRowGroupIndices()[beliefManager->getRepresentativeState(currId)];
+                            if(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).size() > 0) {
+                                overApproximation->addChoiceLabelToCurrentState(
+                                    action,*(pomdp().getChoiceLabeling().getLabelsOfChoice(rowIndex+action).begin()));
+                            }
                         }
                     }
 

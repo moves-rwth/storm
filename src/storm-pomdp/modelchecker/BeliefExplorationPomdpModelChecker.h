@@ -77,6 +77,8 @@ namespace storm {
 
                 std::shared_ptr<ExplorerType> getInteractiveBeliefExplorer();
 
+                int getStatus();
+
             private:
                  enum class UnfoldingControl {
                      Run,
@@ -216,7 +218,9 @@ namespace storm {
                 storm::utility::ConstantsComparator<ValueType> valueTypeCC;
 
                 storm::pomdp::modelchecker::POMDPValueBounds<ValueType> pomdpValueBounds;
+
                 std::shared_ptr<ExplorerType> interactiveUnderApproximationExplorer;
+
                 Status unfoldingStatus;
                 UnfoldingControl unfoldingControl;
                 Result interactiveResult = Result(-storm::utility::infinity<ValueType>(), storm::utility::infinity<ValueType>());
