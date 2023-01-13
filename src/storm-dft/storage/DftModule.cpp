@@ -32,10 +32,11 @@ std::string DftModule::toString(storm::dft::storage::DFT<ValueType> const& dft) 
     return stream.str();
 }
 DftIndependentModule::DftIndependentModule(size_t representative, std::set<size_t> const& elements, std::set<DftIndependentModule> const& submodules,
-                                           bool staticElements, bool fullyStatic)
-    : DftModule(representative, elements), staticElements(staticElements), fullyStatic(fullyStatic), submodules(submodules) {
+                                           bool staticElements, bool fullyStatic, bool singleBE)
+    : DftModule(representative, elements), staticElements(staticElements), fullyStatic(fullyStatic), singleBE(singleBE), submodules(submodules) {
     STORM_LOG_ASSERT(std::find(this->elements.begin(), this->elements.end(), representative) != this->elements.end(),
                      "Representative " + std::to_string(representative) + " must be contained in module.");
+    STORM_LOG_ASSERT(!singleBE || (submodules.empty() && elements.size() == 1), "Module " + std::to_string(representative) + " is not a single BE.");
 }
 
 std::set<size_t> DftIndependentModule::getAllElements() const {

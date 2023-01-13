@@ -1,12 +1,10 @@
-#include "storm/builder/jit/DistributionEntry.h"
+#include "storm/generator/DistributionEntry.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/storage/BitVector.h"
 
-namespace storm {
-namespace builder {
-namespace jit {
+namespace storm::generator {
 
 template<typename StateType, typename ValueType>
 DistributionEntry<StateType, ValueType>::DistributionEntry() : state(0), value(0) {
@@ -46,6 +44,4 @@ template class DistributionEntry<storm::storage::BitVector, double>;
 template class DistributionEntry<storm::storage::BitVector, storm::RationalNumber>;
 template class DistributionEntry<storm::storage::BitVector, storm::RationalFunction>;
 
-}  // namespace jit
-}  // namespace builder
-}  // namespace storm
+}  // namespace storm::generator

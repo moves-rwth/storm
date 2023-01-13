@@ -149,7 +149,7 @@ endforeach()
 #############################################################
 
 # Use the shipped version of cpphoafparser
-message (STATUS "storm - Including cpphoafparser 0.99.2")
+message (STATUS "Storm - Including cpphoafparser 0.99.2")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cpphoafparser-0.99.2/include")
 
 #############################################################
@@ -578,16 +578,6 @@ add_imported_library(sylvan STATIC ${sylvan_LIBRARY} ${sylvan_INCLUDE_DIR})
 add_dependencies(sylvan_STATIC sylvan)
 
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
-
-#############################################################
-##
-##	cpptemplate
-##
-#############################################################
-
-add_imported_library_interface(CppTemplate "${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/")
-list(APPEND STORM_DEP_TARGETS CppTemplate)
-list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cpptempl.cpp)
 
 #############################################################
 ##

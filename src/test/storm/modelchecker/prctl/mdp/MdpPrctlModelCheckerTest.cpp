@@ -28,7 +28,7 @@
 
 namespace {
 
-enum class MdpEngine { PrismSparse, JaniSparse, JitSparse, Hybrid, PrismDd, JaniDd };
+enum class MdpEngine { PrismSparse, JaniSparse, Hybrid, PrismDd, JaniDd };
 
 class SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironment {
    public:
@@ -102,21 +102,6 @@ class JaniSparseDoubleValueIterationEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
     static const MdpEngine engine = MdpEngine::JaniSparse;
-    static const bool isExact = false;
-    typedef double ValueType;
-    typedef storm::models::sparse::Mdp<ValueType> ModelType;
-    static storm::Environment createEnvironment() {
-        storm::Environment env;
-        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
-        return env;
-    }
-};
-
-class JitSparseDoubleValueIterationEnvironment {
-   public:
-    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
-    static const MdpEngine engine = MdpEngine::JitSparse;
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::sparse::Mdp<ValueType> ModelType;
@@ -447,11 +432,11 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
         if (TestType::engine == MdpEngine::PrismSparse) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
-        } else if (TestType::engine == MdpEngine::JaniSparse || TestType::engine == MdpEngine::JitSparse) {
+        } else if (TestType::engine == MdpEngine::JaniSparse) {
             auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             janiData.first.substituteFunctions();
             result.second = storm::api::extractFormulasFromProperties(janiData.second);
-            result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == MdpEngine::JitSparse)->template as<MT>();
+            result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second)->template as<MT>();
         }
         return result;
     }
@@ -487,7 +472,7 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
     template<typename MT = typename TestType::ModelType>
     typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type createModelChecker(
         std::shared_ptr<MT> const& model) const {
-        if (TestType::engine == MdpEngine::PrismSparse || TestType::engine == MdpEngine::JaniSparse || TestType::engine == MdpEngine::JitSparse) {
+        if (TestType::engine == MdpEngine::PrismSparse || TestType::engine == MdpEngine::JaniSparse) {
             return std::make_shared<storm::modelchecker::SparseMdpPrctlModelChecker<SparseModelType>>(*model);
         }
     }
@@ -531,11 +516,11 @@ class MdpPrctlModelCheckerTest : public ::testing::Test {
 
 typedef ::testing::Types<SparseDoubleValueIterationGmmxxGaussSeidelMultEnvironment, SparseDoubleValueIterationGmmxxRegularMultEnvironment,
                          SparseDoubleValueIterationNativeGaussSeidelMultEnvironment, SparseDoubleValueIterationNativeRegularMultEnvironment,
-                         JaniSparseDoubleValueIterationEnvironment, JitSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment,
-                         SparseDoubleSoundValueIterationEnvironment, SparseDoubleOptimisticValueIterationEnvironment,
-                         SparseDoubleTopologicalValueIterationEnvironment, SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment,
-                         SparseRationalPolicyIterationEnvironment, SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment,
-                         HybridCuddDoubleValueIterationEnvironment, HybridSylvanDoubleValueIterationEnvironment, HybridCuddDoubleSoundValueIterationEnvironment,
+                         JaniSparseDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseDoubleSoundValueIterationEnvironment,
+                         SparseDoubleOptimisticValueIterationEnvironment, SparseDoubleTopologicalValueIterationEnvironment,
+                         SparseDoubleTopologicalSoundValueIterationEnvironment, SparseDoubleLPEnvironment, SparseRationalPolicyIterationEnvironment,
+                         SparseRationalViToPiEnvironment, SparseRationalRationalSearchEnvironment, HybridCuddDoubleValueIterationEnvironment,
+                         HybridSylvanDoubleValueIterationEnvironment, HybridCuddDoubleSoundValueIterationEnvironment,
                          HybridCuddDoubleOptimisticValueIterationEnvironment, HybridSylvanRationalPolicyIterationEnvironment,
                          DdCuddDoubleValueIterationEnvironment, JaniDdCuddDoubleValueIterationEnvironment, DdSylvanDoubleValueIterationEnvironment,
                          DdCuddDoublePolicyIterationEnvironment, DdSylvanRationalRationalSearchEnvironment>
@@ -702,7 +687,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, Team) {
 
     // This example considers an expected total reward formula, which is not supported in all engines
 
-    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("114/49"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     } else {
@@ -729,7 +714,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, LtlProbabilitiesCoin) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("4/9"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -772,7 +757,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, LtlDice) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -817,7 +802,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, LtlCoinFlips) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -867,7 +852,7 @@ TYPED_TEST(MdpPrctlModelCheckerTest, HOADice) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+    if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse) {
         result = checker->check(tasks[0]);
         EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
