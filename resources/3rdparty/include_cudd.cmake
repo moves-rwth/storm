@@ -25,7 +25,11 @@ else()
 endif()
 set(STORM_CUDD_FLAGS "CFLAGS=${STORM_CUDD_FLAGS} -w -DPIC -DHAVE_IEEE_754 -fno-common -ffast-math -fno-finite-math-only")
 if (NOT STORM_PORTABLE)
-	set(STORM_CUDD_FLAGS "${STORM_CUDD_FLAGS} -march=native")
+	if(NOT APPLE_SILICON OR (STORM_COMPILER_CLANG AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 15.0))
+		set(STORM_CUDD_FLAGS "${STORM_CUDD_FLAGS} -march=native")
+	elseif(STORM_COMPILER_APPLECLANG AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
+		set(STORM_CUDD_FLAGS "${STORM_CUDD_FLAGS} -mcpu=apple-m1")
+	endif()
 endif()
 
 # Set sysroot to circumvent problems in macOS "Mojave" (or higher) where the header files are no longer in /usr/include
