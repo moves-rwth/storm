@@ -92,6 +92,11 @@ if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 
+if ("${Boost_VERSION}" STREQUAL "108100")
+    message(STATUS "Storm - Using workaround for Boost 1.81")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_PHOENIX_STL_TUPLE_H_")
+endif()
+
 set(CNTVAR 1)
 foreach(BOOSTLIB ${Boost_LIBRARIES})
     add_imported_library(target-boost-${CNTVAR} SHARED ${BOOSTLIB} ${Boost_INCLUDE_DIRS})
