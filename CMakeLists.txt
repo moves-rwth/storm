@@ -182,10 +182,12 @@ else()
 ENDIF()
 message(STATUS "Storm - Detected operating system ${OPERATING_SYSTEM}.")
 
+set(SHIPPED_CARL_USE_CLN_NUMBERS ON)
+set(SHIPPED_CARL_USE_GINAC ON)
 # Detect Apple Silicon and adjust settings
 if(APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES arm64)
 	message(STATUS "Storm - Detected that target system uses Apple Silicon.")
-	message(WARNING "Storm currently does not compile natively on Apple Silicon! Please consider building Storm using Rosetta 2. FOr more information visit https://www.stormchecker.org/documentation/obtain-storm/apple-silicon.html")
+	message(WARNING "Storm currently does not compile natively on Apple Silicon! Please consider building Storm using Rosetta 2. For more information visit https://www.stormchecker.org/documentation/obtain-storm/apple-silicon.html")
 	set(APPLE_SILICON 1)
 	if(STORM_USE_CLN_EA OR STORM_USE_CLN_RF)
 		message(WARNING "CLN and GiNaC are currently not supported on Apple Silicon-based architectures. Disabling Storm and carl usage of the libraries.")
