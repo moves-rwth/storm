@@ -26,7 +26,7 @@ class DFTDependency;
  *
  * We distinguish between failures of BEs and failures of dependencies.
  * For dependencies, we further distinguish between non-conflicting and conflicting dependencies.
- * Non-conflicting dependencies will lead to spurious non-determinsm.
+ * Non-conflicting dependencies will lead to spurious non-determinism.
  *
  * The class supports iterators for all failable elements (either BE or dependencies).
  *

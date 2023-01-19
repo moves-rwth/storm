@@ -29,10 +29,10 @@ TEST(DftBETest, FailureProbability) {
     EXPECT_TRUE(be.canFail());
     EXPECT_EQ(0.2, be.passiveFailureProbability());
 
-    EXPECT_FLOAT_EQ(0.4, be.getUnreliability(0.4));
-    EXPECT_FLOAT_EQ(0.4, be.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(0.4, be.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.4, be.getUnreliability(5));
+    EXPECT_EQ(0.4, be.getUnreliability(0.4));
+    EXPECT_EQ(0.4, be.getUnreliability(0.5));
+    EXPECT_EQ(0.4, be.getUnreliability(1));
+    EXPECT_EQ(0.4, be.getUnreliability(5));
 }
 
 TEST(DftBETest, FailureExponential) {
@@ -42,9 +42,9 @@ TEST(DftBETest, FailureExponential) {
     EXPECT_EQ(1.5, be.passiveFailureRate());
 
     EXPECT_EQ(0, be.getUnreliability(0));
-    EXPECT_FLOAT_EQ(0.7768698399, be.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(0.9502129316, be.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.9975212478, be.getUnreliability(2));
+    EXPECT_NEAR(0.7768698399, be.getUnreliability(0.5), 1e-10);
+    EXPECT_NEAR(0.9502129316, be.getUnreliability(1), 1e-10);
+    EXPECT_NEAR(0.9975212478, be.getUnreliability(2), 1e-10);
 }
 
 TEST(DftBETest, FailureErlang) {
@@ -55,9 +55,9 @@ TEST(DftBETest, FailureErlang) {
     EXPECT_EQ(3, be.passiveFailureRate());
 
     EXPECT_EQ(0, be.getUnreliability(0));
-    EXPECT_FLOAT_EQ(0.7768698399, be.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(0.9502129316, be.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.9975212478, be.getUnreliability(2));
+    EXPECT_NEAR(0.7768698399, be.getUnreliability(0.5), 1e-10);
+    EXPECT_NEAR(0.9502129316, be.getUnreliability(1), 1e-10);
+    EXPECT_NEAR(0.9975212478, be.getUnreliability(2), 1e-10);
 
     // Multiple phases
     storm::dft::storage::elements::BEErlang<double> be2(0, "TestBE", 3, 4, 1);
@@ -66,11 +66,11 @@ TEST(DftBETest, FailureErlang) {
     EXPECT_EQ(3, be2.passiveFailureRate());
 
     EXPECT_EQ(0, be2.getUnreliability(0));
-    EXPECT_FLOAT_EQ(0.0656424544, be2.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(0.3527681112, be2.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.6577040442, be2.getUnreliability(1.5));
-    EXPECT_FLOAT_EQ(0.8487961172, be2.getUnreliability(2));
-    EXPECT_FLOAT_EQ(0.9997886215, be2.getUnreliability(5));
+    EXPECT_NEAR(0.0656424544, be2.getUnreliability(0.5), 1e-10);
+    EXPECT_NEAR(0.3527681112, be2.getUnreliability(1), 1e-10);
+    EXPECT_NEAR(0.6577040442, be2.getUnreliability(1.5), 1e-10);
+    EXPECT_NEAR(0.8487961172, be2.getUnreliability(2), 1e-10);
+    EXPECT_NEAR(0.9997886215, be2.getUnreliability(5), 1e-10);
 }
 
 TEST(DftBETest, FailureWeibullExponential) {
@@ -80,14 +80,14 @@ TEST(DftBETest, FailureWeibullExponential) {
     EXPECT_TRUE(be.canFail());
 
     EXPECT_EQ(0, be.getUnreliability(0));
-    EXPECT_FLOAT_EQ(0.7768698399, be.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(0.9502129316, be.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.9975212478, be.getUnreliability(2));
+    EXPECT_NEAR(0.7768698399, be.getUnreliability(0.5), 1e-10);
+    EXPECT_NEAR(0.9502129316, be.getUnreliability(1), 1e-10);
+    EXPECT_NEAR(0.9975212478, be.getUnreliability(2), 1e-10);
 
     // Compare with boost results
     boost::math::weibull_distribution<double> dist(1, 1.0 / 3.0);
     for (double t = 0; t <= 5.0; t += 0.25) {
-        EXPECT_FLOAT_EQ(boost::math::cdf(dist, t), be.getUnreliability(t));
+        EXPECT_NEAR(boost::math::cdf(dist, t), be.getUnreliability(t), 1e-10);
     }
 
     // Increasing failure rate
@@ -96,15 +96,15 @@ TEST(DftBETest, FailureWeibullExponential) {
     EXPECT_TRUE(be2.canFail());
 
     EXPECT_EQ(0, be2.getUnreliability(0));
-    EXPECT_FLOAT_EQ(0.0605869372, be2.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(0.2211992169, be2.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.6321205588, be2.getUnreliability(2));
-    EXPECT_FLOAT_EQ(0.9980695486, be2.getUnreliability(5));
+    EXPECT_NEAR(0.0605869372, be2.getUnreliability(0.5), 1e-10);
+    EXPECT_NEAR(0.2211992169, be2.getUnreliability(1), 1e-10);
+    EXPECT_NEAR(0.6321205588, be2.getUnreliability(2), 1e-10);
+    EXPECT_NEAR(0.9980695458, be2.getUnreliability(5), 1e-10);
 
     // Compare with boost results
     boost::math::weibull_distribution<double> dist2(2, 2);
     for (double t = 0; t <= 5.0; t += 0.25) {
-        EXPECT_FLOAT_EQ(boost::math::cdf(dist2, t), be2.getUnreliability(t));
+        EXPECT_NEAR(boost::math::cdf(dist2, t), be2.getUnreliability(t), 1e-10);
     }
 
     // Decreasing faiure rate
@@ -113,15 +113,15 @@ TEST(DftBETest, FailureWeibullExponential) {
     EXPECT_TRUE(be3.canFail());
 
     EXPECT_EQ(0, be3.getUnreliability(0));
-    EXPECT_FLOAT_EQ(0.4369287910, be3.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(0.5313308906, be3.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.6321205588, be3.getUnreliability(2));
-    EXPECT_FLOAT_EQ(0.7637110612, be3.getUnreliability(5));
+    EXPECT_NEAR(0.4369287910, be3.getUnreliability(0.5), 1e-10);
+    EXPECT_NEAR(0.5313308906, be3.getUnreliability(1), 1e-10);
+    EXPECT_NEAR(0.6321205588, be3.getUnreliability(2), 1e-10);
+    EXPECT_NEAR(0.7637110612, be3.getUnreliability(5), 1e-10);
 
     // Compare with boost results
     boost::math::weibull_distribution<double> dist3(0.4, 2);
     for (double t = 0; t <= 5.0; t += 0.25) {
-        EXPECT_FLOAT_EQ(boost::math::cdf(dist3, t), be3.getUnreliability(t));
+        EXPECT_NEAR(boost::math::cdf(dist3, t), be3.getUnreliability(t), 1e-10);
     }
 }
 
@@ -132,10 +132,10 @@ TEST(DftBETest, FailureLogNormal) {
     EXPECT_TRUE(be.canFail());
 
     EXPECT_EQ(0, be.getUnreliability(0));
-    EXPECT_FLOAT_EQ(0.0828285190, be.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(0.5, be.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.9171714810, be.getUnreliability(2));
-    EXPECT_FLOAT_EQ(0.9993565290, be.getUnreliability(5));
+    EXPECT_NEAR(0.0828285190, be.getUnreliability(0.5), 1e-10);
+    EXPECT_NEAR(0.5, be.getUnreliability(1), 1e-10);
+    EXPECT_NEAR(0.9171714810, be.getUnreliability(2), 1e-10);
+    EXPECT_NEAR(0.9993565290, be.getUnreliability(5), 1e-10);
 
     // Second distribution
     storm::dft::storage::elements::BELogNormal<double> be2(0, "TestBE", 1, 0.25);
@@ -143,10 +143,10 @@ TEST(DftBETest, FailureLogNormal) {
     EXPECT_TRUE(be2.canFail());
 
     EXPECT_EQ(0, be2.getUnreliability(0));
-    EXPECT_FLOAT_EQ(6.32491e-12, be2.getUnreliability(0.5));
-    EXPECT_FLOAT_EQ(3.167124183e-5, be2.getUnreliability(1));
-    EXPECT_FLOAT_EQ(0.1098340249, be2.getUnreliability(2));
-    EXPECT_FLOAT_EQ(0.9926105382, be2.getUnreliability(5));
+    EXPECT_NEAR(6.32491e-12, be2.getUnreliability(0.5), 1e-17);
+    EXPECT_NEAR(3.167124183e-5, be2.getUnreliability(1), 1e-14);
+    EXPECT_NEAR(0.1098340249, be2.getUnreliability(2), 1e-10);
+    EXPECT_NEAR(0.9926105382, be2.getUnreliability(5), 1e-10);
 }
 
 TEST(DftBETest, FailureSamples) {
@@ -167,7 +167,7 @@ TEST(DftBETest, FailureSamples) {
     // Compare with boost results
     boost::math::weibull_distribution<double> dist(5, 1);
     for (double t = 0; t <= 2.0; t += 0.25) {
-        EXPECT_FLOAT_EQ(boost::math::cdf(dist, t), be.getUnreliability(t));
+        EXPECT_NEAR(boost::math::cdf(dist, t), be.getUnreliability(t), 1e-10);
     }
 }
 

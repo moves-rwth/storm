@@ -496,21 +496,6 @@ template void StandardRewardModel<double>::setStateReward(uint_fast64_t state, d
 template class StandardRewardModel<double>;
 template std::ostream& operator<< <double>(std::ostream& out, StandardRewardModel<double> const& rewardModel);
 
-template std::vector<float> StandardRewardModel<float>::getTotalRewardVector(uint_fast64_t numberOfRows,
-                                                                             storm::storage::SparseMatrix<float> const& transitionMatrix,
-                                                                             storm::storage::BitVector const& filter) const;
-template std::vector<float> StandardRewardModel<float>::getTotalRewardVector(storm::storage::SparseMatrix<float> const& transitionMatrix) const;
-template std::vector<float> StandardRewardModel<float>::getTotalRewardVector(storm::storage::SparseMatrix<float> const& transitionMatrix,
-                                                                             std::vector<float> const& weights) const;
-template std::vector<float> StandardRewardModel<float>::getTotalActionRewardVector(storm::storage::SparseMatrix<float> const& transitionMatrix,
-                                                                                   std::vector<float> const& stateRewardWeights) const;
-template void StandardRewardModel<float>::reduceToStateBasedRewards(storm::storage::SparseMatrix<float> const& transitionMatrix, bool reduceToStateRewards,
-                                                                    std::vector<float> const* weights);
-template void StandardRewardModel<float>::setStateActionReward(uint_fast64_t choiceIndex, float const& newValue);
-template void StandardRewardModel<float>::setStateReward(uint_fast64_t state, float const& newValue);
-template class StandardRewardModel<float>;
-template std::ostream& operator<< <float>(std::ostream& out, StandardRewardModel<float> const& rewardModel);
-
 #ifdef STORM_HAVE_CARL
 template std::vector<storm::RationalNumber> StandardRewardModel<storm::RationalNumber>::getTotalRewardVector(
     uint_fast64_t numberOfRows, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& filter) const;

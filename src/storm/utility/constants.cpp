@@ -3,8 +3,6 @@
 #include <cmath>
 #include <type_traits>
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/StateType.h"
 
@@ -953,39 +951,6 @@ template double log10(double const& number);
 template typename NumberTraits<double>::IntegerType trunc(double const& number);
 template double mod(double const& first, double const& second);
 template std::string to_string(double const& value);
-
-// float
-template float one();
-template float zero();
-template float infinity();
-template bool isOne(float const& value);
-template bool isZero(float const& value);
-template bool isConstant(float const& value);
-template bool isInfinity(float const& value);
-template bool isInteger(float const& number);
-template float simplify(float value);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& matrixEntry);
-template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>&& simplify(
-    storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>&& matrixEntry);
-template std::pair<float, float> minmax(std::vector<float> const&);
-template float minimum(std::vector<float> const&);
-template float maximum(std::vector<float> const&);
-template std::pair<float, float> minmax(std::map<uint64_t, float> const&);
-template float minimum(std::map<uint64_t, float> const&);
-template float maximum(std::map<uint64_t, float> const&);
-template float pow(float const& value, int_fast64_t exponent);
-template float max(float const& first, float const& second);
-template float min(float const& first, float const& second);
-template float sqrt(float const& number);
-template float abs(float const& number);
-template float floor(float const& number);
-template float ceil(float const& number);
-template float round(float const& number);
-template float log(float const& number);
-template std::string to_string(float const& value);
 
 // int
 template int one();

@@ -93,7 +93,6 @@ bool ConstantsComparator<ValueType, ConstantsComparatorEnablePrecision<ValueType
 
 // Explicit instantiations.
 template class ConstantsComparator<double>;
-template class ConstantsComparator<float>;
 template class ConstantsComparator<int>;
 template class ConstantsComparator<storm::storage::sparse::state_type>;
 
