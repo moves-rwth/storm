@@ -40,6 +40,7 @@ namespace storm {
                     ModelExplorationFinished,
                     ResultAvailable,
                     Terminated,
+                    Converged,
                 };
                 
                 struct Result {
@@ -72,6 +73,8 @@ namespace storm {
                 bool isResultReady();
 
                 bool isExploring();
+
+                bool hasConverged();
 
                 Result getInteractiveResult();
 

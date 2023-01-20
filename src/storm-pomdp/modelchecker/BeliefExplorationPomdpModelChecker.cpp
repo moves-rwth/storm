@@ -679,112 +679,114 @@ namespace storm {
                     BeliefMDPType>::UnfoldingControl::Terminate)) {
                     bool underApproxFixPoint = true;
                     bool hasTruncatedStates = false;
-
-                    // Continue unfolding underapproximation
-                    underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar,
-                                                                  underApproxBeliefManager, interactiveUnderApproximationExplorer, firstIteration);
-                    if (interactiveUnderApproximationExplorer->hasComputedValues() && !storm::utility::resources::isTerminate()) {
-                        ValueType const& newValue = interactiveUnderApproximationExplorer->getComputedValueAtInitialState();
-                        bool betterBound = min ? interactiveResult.updateUpperBound(newValue) : interactiveResult.updateLowerBound(newValue);
-                        if (betterBound) {
-                            STORM_LOG_INFO("Under-approximation result improved after " << statistics.totalTime << " in step #"
-                                                                                        << (statistics.refinementSteps.get() + 1) << ". New value is '"
-                                                                                        << newValue << "'.");
-                        }
-                        std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = interactiveUnderApproximationExplorer->getExploredMdp();
-                        if (options.useExplicitCutoff) {
-                            storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
-                            auto nrPreprocessingScheds =
-                                min ? interactiveUnderApproximationExplorer->getNrSchedulersForUpperBounds() : interactiveUnderApproximationExplorer->getNrSchedulersForLowerBounds();
-                            for (uint64_t i = 0; i < nrPreprocessingScheds; ++i) {
-                                newLabeling.addLabel("sched_" + std::to_string(i));
+                    if(unfoldingStatus != Status::Converged) {
+                        // Continue unfolding underapproximation
+                        underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar,
+                                                                      underApproxBeliefManager, interactiveUnderApproximationExplorer, firstIteration);
+                        if (interactiveUnderApproximationExplorer->hasComputedValues() && !storm::utility::resources::isTerminate()) {
+                            ValueType const& newValue = interactiveUnderApproximationExplorer->getComputedValueAtInitialState();
+                            bool betterBound = min ? interactiveResult.updateUpperBound(newValue) : interactiveResult.updateLowerBound(newValue);
+                            if (betterBound) {
+                                STORM_LOG_INFO("Under-approximation result improved after " << statistics.totalTime << " in step #"
+                                                                                            << (statistics.refinementSteps.get() + 1) << ". New value is '"
+                                                                                            << newValue << "'.");
                             }
-                            newLabeling.addLabel("cutoff");
-                            newLabeling.addLabel("clipping");
-                            newLabeling.addLabel("finite_mem");
+                            std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = interactiveUnderApproximationExplorer->getExploredMdp();
+                            if (options.useExplicitCutoff) {
+                                storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
+                                auto nrPreprocessingScheds = min ? interactiveUnderApproximationExplorer->getNrSchedulersForUpperBounds()
+                                                                 : interactiveUnderApproximationExplorer->getNrSchedulersForLowerBounds();
+                                for (uint64_t i = 0; i < nrPreprocessingScheds; ++i) {
+                                    newLabeling.addLabel("sched_" + std::to_string(i));
+                                }
+                                newLabeling.addLabel("cutoff");
+                                newLabeling.addLabel("clipping");
+                                newLabeling.addLabel("finite_mem");
 
-                            auto transMatrix = scheduledModel->getTransitionMatrix();
-                            for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
-                                if (newLabeling.getStateHasLabel("truncated", i)) {
-                                    hasTruncatedStates = true;
-                                    uint64_t localChosenActionIndex =
-                                        interactiveUnderApproximationExplorer->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
-                                    auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
-                                    if (scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).size() > 0) {
-                                        auto label = *(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).begin());
-                                        if (label.rfind("clip", 0) == 0) {
-                                            newLabeling.addLabelToState("clipping", i);
-                                            auto chosenRow = transMatrix.getRow(i, 0);
-                                            auto candidateIndex = (chosenRow.end() - 1)->getColumn();
-                                            transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
-                                        } else if (label.rfind("mem_node", 0) == 0) {
-                                            newLabeling.addLabelToState("finite_mem", i);
-                                            newLabeling.addLabelToState("cutoff", i);
-                                        } else {
-                                            newLabeling.addLabelToState(label, i);
-                                            newLabeling.addLabelToState("cutoff", i);
+                                auto transMatrix = scheduledModel->getTransitionMatrix();
+                                for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
+                                    if (newLabeling.getStateHasLabel("truncated", i)) {
+                                        hasTruncatedStates = true;
+                                        uint64_t localChosenActionIndex =
+                                            interactiveUnderApproximationExplorer->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
+                                        auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
+                                        if (scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).size() > 0) {
+                                            auto label = *(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).begin());
+                                            if (label.rfind("clip", 0) == 0) {
+                                                newLabeling.addLabelToState("clipping", i);
+                                                auto chosenRow = transMatrix.getRow(i, 0);
+                                                auto candidateIndex = (chosenRow.end() - 1)->getColumn();
+                                                transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
+                                            } else if (label.rfind("mem_node", 0) == 0) {
+                                                newLabeling.addLabelToState("finite_mem", i);
+                                                newLabeling.addLabelToState("cutoff", i);
+                                            } else {
+                                                newLabeling.addLabelToState(label, i);
+                                                newLabeling.addLabelToState("cutoff", i);
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            newLabeling.removeLabel("truncated");
+                                newLabeling.removeLabel("truncated");
 
-                            transMatrix.dropZeroEntries();
-                            storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
-                            if (scheduledModel->hasChoiceLabeling()) {
-                                modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
+                                transMatrix.dropZeroEntries();
+                                storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
+                                if (scheduledModel->hasChoiceLabeling()) {
+                                    modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
+                                }
+                                storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
+                                auto inducedMC = newMDP.applyScheduler(*(interactiveUnderApproximationExplorer->getSchedulerForExploredMdp()), true);
+                                scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
                             }
-                            storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
-                            auto inducedMC = newMDP.applyScheduler(*(interactiveUnderApproximationExplorer->getSchedulerForExploredMdp()), true);
-                            scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
-                        }
-                        interactiveResult.schedulerAsMarkovChain = scheduledModel;
-                        if (min) {
-                            interactiveResult.cutoffSchedulers = interactiveUnderApproximationExplorer->getUpperValueBoundSchedulers();
+                            interactiveResult.schedulerAsMarkovChain = scheduledModel;
+                            if (min) {
+                                interactiveResult.cutoffSchedulers = interactiveUnderApproximationExplorer->getUpperValueBoundSchedulers();
+                            } else {
+                                interactiveResult.cutoffSchedulers = interactiveUnderApproximationExplorer->getLowerValueBoundSchedulers();
+                            }
+                            if (firstIteration) {
+                                firstIteration = false;
+                            }
+                            unfoldingStatus = Status::ResultAvailable;
                         } else {
-                            interactiveResult.cutoffSchedulers = interactiveUnderApproximationExplorer->getLowerValueBoundSchedulers();
+                            break;
                         }
-                        if(firstIteration){
-                            firstIteration = false;
-                        }
-                        unfoldingStatus = Status::ResultAvailable;
-                    } else {
-                        break;
-                    }
 
-                    if (storm::utility::resources::isTerminate()) {
-                        break;
-                    } else {
-                        ++statistics.refinementSteps.get();
-                        // Don't make too many outputs (to avoid logfile clutter)
-                        if (statistics.refinementSteps.get() <= 1000) {
-                            STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime
-                                                                   << ".");
-                            bool computingLowerBound = false;
-                            bool computingUpperBound = false;
-                            if (options.unfold) {
-                                STORM_LOG_INFO("\tUnder-approx MDP has size " << interactiveUnderApproximationExplorer->getExploredMdp()->getNumberOfStates() << ".");
-                                (min ? computingUpperBound : computingLowerBound) = true;
-                            }
-                            if (computingLowerBound && computingUpperBound) {
-                                STORM_LOG_INFO("\tCurrent result is [" << interactiveResult.lowerBound << ", " << interactiveResult.upperBound << "].");
-                            } else if (computingLowerBound) {
-                                STORM_LOG_INFO("\tCurrent result is ≥" << interactiveResult.lowerBound << ".");
-                            } else if (computingUpperBound) {
-                                STORM_LOG_INFO("\tCurrent result is ≤" << interactiveResult.upperBound << ".");
+                        if (storm::utility::resources::isTerminate()) {
+                            break;
+                        } else {
+                            ++statistics.refinementSteps.get();
+                            // Don't make too many outputs (to avoid logfile clutter)
+                            if (statistics.refinementSteps.get() <= 1000) {
+                                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime
+                                                                       << ".");
+                                bool computingLowerBound = false;
+                                bool computingUpperBound = false;
+                                if (options.unfold) {
+                                    STORM_LOG_INFO("\tUnder-approx MDP has size "
+                                                   << interactiveUnderApproximationExplorer->getExploredMdp()->getNumberOfStates() << ".");
+                                    (min ? computingUpperBound : computingLowerBound) = true;
+                                }
+                                if (computingLowerBound && computingUpperBound) {
+                                    STORM_LOG_INFO("\tCurrent result is [" << interactiveResult.lowerBound << ", " << interactiveResult.upperBound << "].");
+                                } else if (computingLowerBound) {
+                                    STORM_LOG_INFO("\tCurrent result is ≥" << interactiveResult.lowerBound << ".");
+                                } else if (computingUpperBound) {
+                                    STORM_LOG_INFO("\tCurrent result is ≤" << interactiveResult.upperBound << ".");
+                                }
                             }
                         }
-                    }
-                    if (underApproxFixPoint) {
-                        STORM_LOG_INFO("Fixpoint reached after " << statistics.refinementSteps.get() << " iterations.\n");
-                        statistics.refinementFixpointDetected = true;
-                        unfoldingStatus = Status::Terminated;
-                        break;
-                    }
-                    if(!hasTruncatedStates){
-                        STORM_LOG_INFO("No states have been truncated, so continued iteration does not yield new results.\n");
-                        unfoldingStatus = Status::Terminated;
-                        break;
+                        if (underApproxFixPoint) {
+                            STORM_LOG_INFO("Fixpoint reached after " << statistics.refinementSteps.get() << " iterations.\n");
+                            statistics.refinementFixpointDetected = true;
+                            unfoldingStatus = Status::Converged;
+                            unfoldingControl = UnfoldingControl::Pause;
+                        }
+                        if (!hasTruncatedStates) {
+                            STORM_LOG_INFO("No states have been truncated, so continued iteration does not yield new results.\n");
+                            unfoldingStatus = Status::Converged;
+                            unfoldingControl = UnfoldingControl::Pause;
+                        }
                     }
                     // While we tell the procedure to be paused, idle
                     while (unfoldingControl == storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType,
@@ -1589,7 +1591,12 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::isResultReady(){
-                return unfoldingStatus == Status::ResultAvailable;
+                return unfoldingStatus == Status::ResultAvailable || unfoldingStatus == Status::Converged;
+            }
+
+            template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::hasConverged(){
+                return unfoldingStatus == Status::Converged;
             }
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
