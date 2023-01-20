@@ -61,6 +61,7 @@ namespace storm {
             values.clear();
             exploredMdpTransitions.clear();
             exploredChoiceIndices.clear();
+            previousChoiceIndices.clear();
             probabilityEstimation.clear();
             mdpActionRewards.clear();
             targetStates.clear();
@@ -122,9 +123,10 @@ namespace storm {
             exploredBeliefIds.clear();
             exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
             exploredMdpTransitions.clear();
-            exploredMdpTransitions.resize(exploredMdp->getNumberOfChoices());
+            exploredMdpTransitions.reserve(exploredMdp->getNumberOfChoices());
             clippingTransitionRewards.clear();
-            exploredChoiceIndices = exploredMdp->getNondeterministicChoiceIndices();
+            previousChoiceIndices = exploredMdp->getNondeterministicChoiceIndices();
+            exploredChoiceIndices.clear();
             mdpActionRewards.clear();
             probabilityEstimation.clear();
             if (exploredMdp->hasRewardModel()) {
@@ -174,7 +176,7 @@ namespace storm {
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefId BeliefMdpExplorer<PomdpType, BeliefValueType>::exploreNextState() {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             // Mark the end of the previously explored row group.
-            if (currentMdpState != noState() && !currentStateHasOldBehavior()) {
+            if (currentMdpState != noState()) {
                 internalAddRowGroupIndex();
             }
 
@@ -212,8 +214,8 @@ namespace storm {
         void BeliefMdpExplorer<PomdpType, BeliefValueType>::addTransitionsToExtraStates(uint64_t const &localActionIndex, ValueType const &targetStateValue,
                                                                                         ValueType const &bottomStateValue) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
-            STORM_LOG_ASSERT(!currentStateHasOldBehavior() || localActionIndex < exploredChoiceIndices[currentMdpState + 1] - exploredChoiceIndices[currentMdpState],
-                             "Action index " << localActionIndex << " was not valid at state " << currentMdpState << " of the previously explored MDP.");
+            STORM_LOG_ASSERT(!currentStateHasOldBehavior() || localActionIndex < previousChoiceIndices[currentMdpState + 1] - previousChoiceIndices[currentMdpState] || getCurrentStateWasTruncated(),
+                             "Action index " << localActionIndex << " was not valid at non-truncated state " << currentMdpState << " of the previously explored MDP.");
             uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
             if (!storm::utility::isZero(bottomStateValue)) {
                 STORM_LOG_ASSERT(extraBottomState.is_initialized(), "Requested a transition to the extra bottom state but there is none.");
@@ -228,8 +230,8 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType>
         void BeliefMdpExplorer<PomdpType, BeliefValueType>::addSelfloopTransition(uint64_t const &localActionIndex, ValueType const &value) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
-            STORM_LOG_ASSERT(!currentStateHasOldBehavior() || localActionIndex < exploredChoiceIndices[currentMdpState + 1] - exploredChoiceIndices[currentMdpState],
-                             "Action index " << localActionIndex << " was not valid at state " << currentMdpState << " of the previously explored MDP.");
+            STORM_LOG_ASSERT(!currentStateHasOldBehavior() || localActionIndex < previousChoiceIndices[currentMdpState + 1] - previousChoiceIndices[currentMdpState] || getCurrentStateWasTruncated(),
+                             "Action index " << localActionIndex << " was not valid at non-truncated state " << currentMdpState << " of the previously explored MDP.");
             uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
             internalAddTransition(row, getCurrentMdpState(), value);
         }
@@ -238,8 +240,8 @@ namespace storm {
         bool BeliefMdpExplorer<PomdpType, BeliefValueType>::addTransitionToBelief(uint64_t const &localActionIndex, BeliefId const &transitionTarget, ValueType const &value,
                                                                                   bool ignoreNewBeliefs) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
-            STORM_LOG_ASSERT(!currentStateHasOldBehavior() || localActionIndex < exploredChoiceIndices[currentMdpState + 1] - exploredChoiceIndices[currentMdpState],
-                             "Action index " << localActionIndex << " was not valid at state " << currentMdpState << " of the previously explored MDP.");
+            STORM_LOG_ASSERT(!currentStateHasOldBehavior() || localActionIndex < previousChoiceIndices[currentMdpState + 1] - previousChoiceIndices[currentMdpState] || getCurrentStateWasTruncated(),
+                             "Action index " << localActionIndex << " was not valid at non-truncated state " << currentMdpState << " of the previously explored MDP.");
 
             MdpStateType column;
             if (ignoreNewBeliefs) {
@@ -249,6 +251,9 @@ namespace storm {
                 }
             } else {
                 column = getOrAddMdpState(transitionTarget, value);
+            }
+            if (getCurrentMdpState() == exploredChoiceIndices.size()){
+                internalAddRowGroupIndex();
             }
             uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
             internalAddTransition(row, column, value);
@@ -368,7 +373,7 @@ namespace storm {
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
             STORM_LOG_ASSERT(optimalChoices.is_initialized(),
                              "Method 'currentStateIsOptimalSchedulerReachable' called but 'computeOptimalChoicesAndReachableMdpStates' was not called before.");
-            uint64_t choice = getStartOfCurrentRowGroup() + localActionIndex;
+            uint64_t choice = previousChoiceIndices.at(getCurrentMdpState()) + localActionIndex;
             return optimalChoices->get(choice);
         }
 
@@ -385,15 +390,24 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType>
         void BeliefMdpExplorer<PomdpType, BeliefValueType>::restoreOldBehaviorAtCurrentState(uint64_t const &localActionIndex) {
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Cannot restore old behavior as the current state does not have any.");
-            STORM_LOG_ASSERT(localActionIndex < exploredChoiceIndices[currentMdpState + 1] - exploredChoiceIndices[currentMdpState],
+            STORM_LOG_ASSERT(localActionIndex < previousChoiceIndices[currentMdpState + 1] - previousChoiceIndices[currentMdpState],
                              "Action index " << localActionIndex << " was not valid at state " << currentMdpState << " of the previously explored MDP.");
 
-            uint64_t choiceIndex = exploredChoiceIndices[getCurrentMdpState()] + localActionIndex;
-            STORM_LOG_ASSERT(choiceIndex < exploredChoiceIndices[getCurrentMdpState() + 1], "Invalid local action index.");
+            if (getCurrentMdpState() == exploredChoiceIndices.size()){
+                internalAddRowGroupIndex();
+            }
+            if (!(getCurrentMdpState() < exploredChoiceIndices.size())){
+                std::cout << "state: " << getCurrentMdpState() << "eci size: " << exploredChoiceIndices.size() << ", current # mdp choices: " << getCurrentNumberOfMdpChoices() << " \n";
+            }
+
+            assert (getCurrentMdpState() < previousChoiceIndices.size());
+            assert (getCurrentMdpState() < exploredChoiceIndices.size());
+            uint64_t oldChoiceIndex = previousChoiceIndices.at(getCurrentMdpState()) + localActionIndex;
+            uint64_t newChoiceIndex = exploredChoiceIndices.at(getCurrentMdpState()) + localActionIndex;
 
             // Insert the transitions
-            for (auto const &transition : exploredMdp->getTransitionMatrix().getRow(choiceIndex)) {
-                internalAddTransition(choiceIndex, transition.getColumn(), transition.getValue());
+            for (auto const &transition : exploredMdp->getTransitionMatrix().getRow(oldChoiceIndex)) {
+                internalAddTransition(newChoiceIndex, transition.getColumn(), transition.getValue());
                 // Check whether exploration is needed
                 auto beliefId = getBeliefId(transition.getColumn());
                 if (beliefId != beliefManager->noId()) { // Not the extra target or bottom state
@@ -578,7 +592,7 @@ namespace storm {
                         if(! modelComponents.choiceLabeling->containsLabel(actionLabel.second)){
                             modelComponents.choiceLabeling->addLabel(actionLabel.second);
                         }
-                        modelComponents.choiceLabeling->addLabelToChoice(actionLabel.second, exploredChoiceIndices[rowGroup] + actionLabel.first);
+                        modelComponents.choiceLabeling->addLabelToChoice(actionLabel.second, exploredChoiceIndices.at(rowGroup) + actionLabel.first);
                     }
                 }
             }
@@ -674,8 +688,8 @@ namespace storm {
                 for (auto const &oldState : relevantMdpStates) {
                     if (oldState != newState) {
                         assert(oldState > newState);
-                        uint64_t groupSize = exploredChoiceIndices[oldState + 1] - exploredChoiceIndices[oldState];
-                        exploredChoiceIndices[newState + 1] = exploredChoiceIndices[newState] + groupSize;
+                        uint64_t groupSize = exploredChoiceIndices.at(oldState + 1) - exploredChoiceIndices.at(oldState);
+                        exploredChoiceIndices.at(newState + 1) = exploredChoiceIndices.at(newState) + groupSize;
                     }
                     ++newState;
                 }
@@ -724,7 +738,8 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpExplorer<PomdpType, BeliefValueType>::getStartOfCurrentRowGroup() const {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
-            return exploredChoiceIndices[getCurrentMdpState()];
+            assert(getCurrentMdpState() < exploredChoiceIndices.size());
+            return exploredChoiceIndices.at(getCurrentMdpState());
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -872,7 +887,7 @@ namespace storm {
                                                                                                                 storm::storage::BitVector const &observationSet) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method call is invalid since the current state has no old behavior");
-            uint64_t mdpChoice = getStartOfCurrentRowGroup() + localActionIndex;
+            uint64_t mdpChoice = previousChoiceIndices.at(getCurrentMdpState()) + localActionIndex;
             for(auto const &entry : exploredMdp->getTransitionMatrix().getRow(mdpChoice)) {
                 auto const &beliefId = getBeliefId(entry.getColumn());
                 if (observationSet.get(beliefManager->getBeliefObservation(beliefId))) {

@@ -270,6 +270,7 @@ namespace storm {
             std::vector<ValueType> probabilityEstimation;
             std::vector<std::map<MdpStateType, ValueType>> exploredMdpTransitions;
             std::vector<MdpStateType> exploredChoiceIndices;
+            std::vector<MdpStateType> previousChoiceIndices;
             std::vector<ValueType> mdpActionRewards;
             std::map<MdpStateType, ValueType> clippingTransitionRewards;
             uint64_t currentMdpState;
