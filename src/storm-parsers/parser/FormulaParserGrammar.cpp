@@ -77,25 +77,22 @@ void FormulaParserGrammar::initialize() {
     labelFormula =
         (qi::lit("\"") >> label >> qi::lit("\""))[qi::_val = phoenix::bind(&FormulaParserGrammar::createAtomicLabelFormula, phoenix::ref(*this), qi::_1)];
     labelFormula.name("label formula");
-    booleanLiteralFormula =
-        (qi::lit("true")[qi::_a = true] |
-         qi::lit("false")[qi::_a = false])[qi::_val = phoenix::bind(&FormulaParserGrammar::createBooleanLiteralFormula, phoenix::ref(*this), qi::_a)];
-    booleanLiteralFormula.name("boolean literal formula");
     expressionFormula = expressionParser[qi::_val = phoenix::bind(&FormulaParserGrammar::createAtomicExpressionFormula, phoenix::ref(*this), qi::_1)];
     expressionFormula.name("expression formula");
-    atomicPropositionFormula = (booleanLiteralFormula | labelFormula | expressionFormula);
-    atomicPropositionFormula.name("atomic proposition");
+
+    basicPropositionalFormula =
+        expressionFormula  // try as expression first, e.g. '(false)=false' is an atomic expression formula. Also should be checked before operator formulas and
+                           // others. Otherwise, e.g. variable "Random" would be parsed as reward operator 'R' (followed by andom)
+        | (qi::lit("(") >>
+           (formula(qi::_r1, qi::_r2) > qi::lit(")")))  // If we're starting with '(' but this is not an expression, we must have a formula inside the brackets
+        | labelFormula | negationPropositionalFormula(qi::_r1, qi::_r2) | operatorFormula |
+        (isPathFormula(qi::_r1) >> prefixOperatorPathFormula(qi::_r2))  // Needed for e.g. F "a" & X "a" = F ("a" & (X "a"))
+        | multiOperatorFormula  // Has to come after prefixOperatorPathFormula to avoid confusion with multiBoundedPathFormula
+        | quantileFormula | gameFormula;
 
     // Propositional Logic operators
     // To correctly parse the operator precedences (! binds stronger than & binds stronger than |), we run through different "precedence levels" starting with
-    // the weakest binding operator.
-    basicPropositionalFormula = (qi::lit("(") >> (formula(qi::_r1, qi::_r2) > qi::lit(")"))) |
-                                atomicPropositionFormula  // Should be checked before operator formulas and others. Otherwise, e.g. variable "Random" would be
-                                                          // parsed as reward operator 'R' (followed by andom)
-                                | negationPropositionalFormula(qi::_r1, qi::_r2) | operatorFormula |
-                                (isPathFormula(qi::_r1) >> prefixOperatorPathFormula(qi::_r2))  // Needed for e.g. F "a" & X "a" = F ("a" & (X "a"))
-                                | multiOperatorFormula  // Has to come after prefixOperatorPathFormula to avoid confusion with multiBoundedPathFormula
-                                | quantileFormula | gameFormula;
+    // the strongest binding operator.
     negationPropositionalFormula =
         (qi::lit("!") >
          basicPropositionalFormula(qi::_r1, qi::_r2))[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateOrPathFormula, phoenix::ref(*this),
@@ -247,8 +244,6 @@ void FormulaParserGrammar::initialize() {
     //            debug(operatorFormula)
     //            debug(labelFormula)
     //            debug(expressionFormula)
-    //            debug(booleanLiteralFormula)
-    //            debug(atomicPropositionFormula)
     //            debug(basicPropositionalFormula)
     //            debug(negationPropositionalFormula)
     //            debug(andLevelPropositionalFormula)
@@ -288,8 +283,6 @@ void FormulaParserGrammar::initialize() {
     qi::on_error<qi::fail>(operatorFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(labelFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(expressionFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-    qi::on_error<qi::fail>(booleanLiteralFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-    qi::on_error<qi::fail>(atomicPropositionFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(basicPropositionalFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(negationPropositionalFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
     qi::on_error<qi::fail>(andLevelPropositionalFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -420,6 +413,9 @@ std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createLongRun
 std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createAtomicExpressionFormula(storm::expressions::Expression const& expression) const {
     STORM_LOG_THROW(expression.hasBooleanType(), storm::exceptions::WrongFormatException,
                     "Expected expression " + expression.toString() + " to be of boolean type.");
+    if (expression.isLiteral()) {
+        return createBooleanLiteralFormula(expression.evaluateAsBool());
+    }
     return std::shared_ptr<storm::logic::Formula const>(new storm::logic::AtomicExpressionFormula(expression));
 }
 
