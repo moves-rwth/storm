@@ -7,8 +7,6 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
-#include "storm/settings/SettingsManager.h"
-
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -212,8 +210,6 @@ template class Distribution<double>;
 template std::ostream& operator<<(std::ostream& out, Distribution<double> const& distribution);
 template class Distribution<double, uint_fast64_t>;
 template std::ostream& operator<<(std::ostream& out, Distribution<double, uint_fast64_t> const& distribution);
-template class Distribution<float, uint_fast64_t>;
-template std::ostream& operator<<(std::ostream& out, Distribution<float, uint_fast64_t> const& distribution);
 
 #ifdef STORM_HAVE_CARL
 template class Distribution<storm::RationalNumber>;

@@ -11,8 +11,7 @@ namespace utility {
  * The computation follows the LTA/DR algorithm from:
  * Dutuit, Rauzy: "A linear-time algorithm to find modules of fault trees"
  * @see http://doi.org/10.1109/24.537011
- *
- * @note BEs are trivial modules and therefore not explicitly listed.
+ * Trivial modules containing single BEs are also contained.
  */
 template<typename ValueType>
 class DftModularizer {

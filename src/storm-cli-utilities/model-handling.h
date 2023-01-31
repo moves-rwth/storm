@@ -41,7 +41,6 @@
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
@@ -301,14 +300,11 @@ ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& in
     mpi.transformToJani = ioSettings.isPrismToJaniSet();
     if (input.model) {
         auto builderType = storm::utility::getBuilderType(mpi.engine);
-        bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
-        STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForJit,
-                            "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
         bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) &&
                                       (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA) && (!input.model->isJaniModel());
         STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA,
                             "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the input model.");
-        mpi.transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
+        mpi.transformToJani |= transformToJaniForDdMA;
     }
 
     // Set the Valuetype used during model building
@@ -442,8 +438,7 @@ std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& inpu
 }
 
 template<typename ValueType>
-std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings,
-                                                           bool useJit) {
+std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings) {
     storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
     options.setBuildChoiceLabels(options.isBuildChoiceLabelsSet() || buildSettings.isBuildChoiceLabelsSet());
     options.setBuildStateValuations(options.isBuildStateValuationsSet() || buildSettings.isBuildStateValuationsSet());
@@ -478,8 +473,7 @@ std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& 
         options.setAddOverlappingGuardsLabel(true);
     }
 
-    return storm::api::buildSparseModel<ValueType>(input.model.get(), options, useJit,
-                                                   storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
+    return storm::api::buildSparseModel<ValueType>(input.model.get(), options);
 }
 
 template<typename ValueType>
@@ -514,8 +508,8 @@ std::shared_ptr<storm::models::ModelBase> buildModel(SymbolicInput const& input,
         auto builderType = storm::utility::getBuilderType(mpi.engine);
         if (builderType == storm::builder::BuilderType::Dd) {
             result = buildModelDd<DdType, ValueType>(input);
-        } else if (builderType == storm::builder::BuilderType::Explicit || builderType == storm::builder::BuilderType::Jit) {
-            result = buildModelSparse<ValueType>(input, buildSettings, builderType == storm::builder::BuilderType::Jit);
+        } else if (builderType == storm::builder::BuilderType::Explicit) {
+            result = buildModelSparse<ValueType>(input, buildSettings);
         }
     } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
         STORM_LOG_THROW(mpi.engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException,

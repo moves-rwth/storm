@@ -28,7 +28,7 @@
 
 namespace {
 
-enum class MaEngine { PrismSparse, JaniSparse, JitSparse, JaniHybrid };
+enum class MaEngine { PrismSparse, JaniSparse, JaniHybrid };
 
 class SparseDoubleValueIterationEnvironment {
    public:
@@ -48,20 +48,6 @@ class JaniSparseDoubleValueIterationEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
     static const MaEngine engine = MaEngine::JaniSparse;
-    static const bool isExact = false;
-    typedef double ValueType;
-    typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
-    static storm::Environment createEnvironment() {
-        storm::Environment env;
-        env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
-        env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
-        return env;
-    }
-};
-class JitSparseDoubleValueIterationEnvironment {
-   public:
-    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // Unused for sparse models
-    static const MaEngine engine = MaEngine::JitSparse;
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
@@ -163,10 +149,10 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
         if (TestType::engine == MaEngine::PrismSparse) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
-        } else if (TestType::engine == MaEngine::JaniSparse || TestType::engine == MaEngine::JitSparse) {
+        } else if (TestType::engine == MaEngine::JaniSparse) {
             auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.second = storm::api::extractFormulasFromProperties(janiData.second);
-            result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == MaEngine::JitSparse)->template as<MT>();
+            result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second)->template as<MT>();
         }
         return result;
     }
@@ -196,7 +182,7 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
     template<typename MT = typename TestType::ModelType>
     typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type createModelChecker(
         std::shared_ptr<MT> const& model) const {
-        if (TestType::engine == MaEngine::PrismSparse || TestType::engine == MaEngine::JaniSparse || TestType::engine == MaEngine::JitSparse) {
+        if (TestType::engine == MaEngine::PrismSparse || TestType::engine == MaEngine::JaniSparse) {
             return std::make_shared<storm::modelchecker::SparseMarkovAutomatonCslModelChecker<SparseModelType>>(*model);
         }
         return nullptr;
@@ -240,9 +226,8 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<SparseDoubleValueIterationEnvironment, JaniSparseDoubleValueIterationEnvironment, JitSparseDoubleValueIterationEnvironment,
-                         JaniHybridDoubleValueIterationEnvironment, SparseDoubleIntervalIterationEnvironment, SparseRationalPolicyIterationEnvironment,
-                         SparseRationalRationalSearchEnvironment>
+typedef ::testing::Types<SparseDoubleValueIterationEnvironment, JaniSparseDoubleValueIterationEnvironment, JaniHybridDoubleValueIterationEnvironment,
+                         SparseDoubleIntervalIterationEnvironment, SparseRationalPolicyIterationEnvironment, SparseRationalRationalSearchEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(MarkovAutomatonCslModelCheckerTest, TestingTypes, );
@@ -376,7 +361,7 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, LtlSimple) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == MaEngine::PrismSparse || TypeParam::engine == MaEngine::JaniSparse || TypeParam::engine == MaEngine::JitSparse) {
+    if (TypeParam::engine == MaEngine::PrismSparse || TypeParam::engine == MaEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("1/10"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -413,7 +398,7 @@ TYPED_TEST(MarkovAutomatonCslModelCheckerTest, HOASimple) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == MaEngine::PrismSparse || TypeParam::engine == MaEngine::JaniSparse || TypeParam::engine == MaEngine::JitSparse) {
+    if (TypeParam::engine == MaEngine::PrismSparse || TypeParam::engine == MaEngine::JaniSparse) {
         result = checker->check(tasks[0]);
         EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 

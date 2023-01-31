@@ -24,7 +24,6 @@
 #include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
-#include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/HintSettings.h"
@@ -60,7 +59,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
-            storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
             storm::settings::addModule<storm::settings::modules::OviSolverSettings>();

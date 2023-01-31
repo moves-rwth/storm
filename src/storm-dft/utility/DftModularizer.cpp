@@ -96,15 +96,13 @@ void DftModularizer<ValueType>::obtainModules(DFTElementCPointer const element) 
         }
 
         if (counter.firstVisit < counter.minFirstVisit && counter.maxLastVisit < counter.secondVisit) {
-            if (!element->isBasicElement()) {
-                // Consider only non-trivial modules
-                // Create new module
-                storm::dft::storage::DftIndependentModule module(element->id(), modInfo.elements, modInfo.submodules, modInfo.isStatic, modInfo.fullyStatic);
-                // Update information
-                modInfo.elements = {};
-                modInfo.submodules = {module};
-                modInfo.isModule = true;
-            }
+            // Create new module
+            storm::dft::storage::DftIndependentModule module(element->id(), modInfo.elements, modInfo.submodules, modInfo.isStatic, modInfo.fullyStatic,
+                                                             element->isBasicElement());
+            // Update information
+            modInfo.elements = {};
+            modInfo.submodules = {module};
+            modInfo.isModule = true;
         }
     }
 }

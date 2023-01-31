@@ -370,7 +370,6 @@ SolverStatus AbstractEquationSolver<ValueType>::updateStatus(SolverStatus status
 }
 
 template class AbstractEquationSolver<double>;
-template class AbstractEquationSolver<float>;
 
 #ifdef STORM_HAVE_CARL
 template class AbstractEquationSolver<storm::RationalNumber>;

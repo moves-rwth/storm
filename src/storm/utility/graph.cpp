@@ -1,4 +1,6 @@
 #include "graph.h"
+#include <algorithm>
+
 #include "storm-config.h"
 #include "utility/OsDetection.h"
 
@@ -587,8 +589,27 @@ void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm
 
 template<typename T>
 void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::Scheduler<T>& scheduler) {
-    computeSchedulerWithOneSuccessorInStates(rewInfStates, transitionMatrix, scheduler);
+                            storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<T>& scheduler) {
+    // Get the states from which we can never exit the rewInfStates, i.e. the states satisfying  Pmax=1 [ G "rewInfStates"]
+    // Also set a corresponding choice for all those states
+    storm::storage::BitVector trapStates(rewInfStates.size(), false);
+    auto const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+    for (auto state : rewInfStates) {
+        STORM_LOG_ASSERT(nondeterministicChoiceIndices[state + 1] - nondeterministicChoiceIndices[state] > 0,
+                         "Expected at least one action enabled in state " << state);
+        for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+            auto const& row = transitionMatrix.getRow(choice);
+            if (std::all_of(row.begin(), row.end(), [&rewInfStates](auto const& entry) { return rewInfStates.get(entry.getColumn()); })) {
+                trapStates.set(state, true);
+                for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
+                    scheduler.setChoice(choice - nondeterministicChoiceIndices[state], state, memState);
+                }
+                break;
+            }
+        }
+    }
+    // All remaining rewInfStates must reach a trapState with positive probability
+    computeSchedulerProbGreater0E(transitionMatrix, backwardTransitions, rewInfStates, trapStates, scheduler);
 }
 
 template<typename T>
@@ -1922,7 +1943,7 @@ template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStat
                                      storm::storage::Scheduler<double>& scheduler);
 
 template void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<double> const& transitionMatrix,
-                                     storm::storage::Scheduler<double>& scheduler);
+                                     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::Scheduler<double>& scheduler);
 
 template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<double> const& transitionMatrix,
                                      storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates,
@@ -2068,6 +2089,7 @@ template void computeSchedulerProb0E(storm::storage::BitVector const& prob0EStat
                                      storm::storage::Scheduler<storm::RationalNumber>& scheduler);
 
 template void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
+                                     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
                                      storm::storage::Scheduler<storm::RationalNumber>& scheduler);
 
 template void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,

@@ -280,7 +280,6 @@ uint_fast64_t StronglyConnectedComponentDecomposition<ValueType>::getMaxSccDepth
 }
 
 // Explicitly instantiate the SCC decomposition.
-template class StronglyConnectedComponentDecomposition<float>;
 template class StronglyConnectedComponentDecomposition<double>;
 template class StronglyConnectedComponentDecomposition<storm::RationalNumber>;
 template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;

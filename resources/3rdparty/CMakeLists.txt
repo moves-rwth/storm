@@ -92,6 +92,11 @@ if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 
+if ("${Boost_VERSION}" STREQUAL "108100")
+    message(STATUS "Storm - Using workaround for Boost 1.81")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_PHOENIX_STL_TUPLE_H_")
+endif()
+
 set(CNTVAR 1)
 foreach(BOOSTLIB ${Boost_LIBRARIES})
     add_imported_library(target-boost-${CNTVAR} SHARED ${BOOSTLIB} ${Boost_INCLUDE_DIRS})
@@ -149,7 +154,7 @@ endforeach()
 #############################################################
 
 # Use the shipped version of cpphoafparser
-message (STATUS "storm - Including cpphoafparser 0.99.2")
+message (STATUS "Storm - Including cpphoafparser 0.99.2")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cpphoafparser-0.99.2/include")
 
 #############################################################
@@ -321,7 +326,7 @@ if (STORM_SHIPPED_CARL)
 	message(STATUS "Carl - Start of config process")
 	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download)
 	execute_process(
-	COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}"
+	COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}" "-DUse_CLN_NUMBERS=${SHIPPED_CARL_USE_CLN_NUMBERS}" "-DUse_GINAC=${SHIPPED_CARL_USE_GINAC}"
 	WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
 	OUTPUT_VARIABLE carlconfig_out
 	RESULT_VARIABLE carlconfig_result)
@@ -578,16 +583,6 @@ add_imported_library(sylvan STATIC ${sylvan_LIBRARY} ${sylvan_INCLUDE_DIR})
 add_dependencies(sylvan_STATIC sylvan)
 
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
-
-#############################################################
-##
-##	cpptemplate
-##
-#############################################################
-
-add_imported_library_interface(CppTemplate "${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/")
-list(APPEND STORM_DEP_TARGETS CppTemplate)
-list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cpptempl.cpp)
 
 #############################################################
 ##
