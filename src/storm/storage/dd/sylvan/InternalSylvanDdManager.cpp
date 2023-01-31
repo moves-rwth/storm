@@ -33,6 +33,10 @@ VOID_TASK_0(gc_end) {
     STORM_LOG_TRACE("Sylvan garbage collection done.");
 }
 
+VOID_TASK_1(execute_sylvan, std::function<void()> const*, f) {
+    (*f)();
+}
+
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
@@ -40,6 +44,7 @@ VOID_TASK_0(gc_end) {
 #endif
 
 uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
+bool InternalDdManager<DdType::Sylvan>::suspended = false;
 
 // It is important that the variable pairs start at an even offset, because sylvan assumes this to be true for
 // some operations.
@@ -61,11 +66,7 @@ InternalDdManager<DdType::Sylvan>::InternalDdManager() {
 
         // The default stacksize per worker is sometimes too large
         lace_set_stacksize(1024 * 1024);  // 1 MiB
-        // TODO: With the current set-up, storm runs concurrently to the n sylvan threads.
-        // Therefore, sylvan should leave one free ample thread for Storm
-        // We therefore recommend at most N-1 threads for sylvan, where N is the number of available processing units.
-        // This is a workaround until we improve our LACE usage, see https://github.com/moves-rwth/storm/pull/273
-        uint64_t numThreads = std::max(2u, lace_get_pu_count()) - 1;
+        uint64_t numThreads = std::max(1u, lace_get_pu_count());
         if (settings.isNumberOfThreadsSet()) {
             STORM_LOG_WARN_COND(settings.getNumberOfThreads() <= numThreads,
                                 "Setting the number of sylvan threads to " << settings.getNumberOfThreads()
@@ -85,6 +86,9 @@ InternalDdManager<DdType::Sylvan>::InternalDdManager() {
         sylvan_gc_hook_pregc(TASK(gc_start));
         sylvan_gc_hook_postgc(TASK(gc_end));
 #endif
+        // TODO: uncomment these to disable lace threads whenever they are not used. This requires that *all* DD code is run through execute
+        // lace_suspend();
+        // suspended = true;
     }
     ++numberOfInstances;
 }
@@ -242,6 +246,20 @@ void InternalDdManager<DdType::Sylvan>::triggerReordering() {
 
 void InternalDdManager<DdType::Sylvan>::debugCheck() const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Operation is not supported by sylvan.");
+}
+
+void InternalDdManager<DdType::Sylvan>::execute(std::function<void()> const& f) const {
+    // Only wake up the sylvan (i.e. lace) threads when they are suspended.
+    if (suspended) {
+        lace_resume();
+        suspended = false;
+        RUN(execute_sylvan, &f);
+        lace_suspend();
+        suspended = true;
+    } else {
+        // The sylvan threads are already running, don't suspend afterwards.
+        RUN(execute_sylvan, &f);
+    }
 }
 
 uint_fast64_t InternalDdManager<DdType::Sylvan>::getNumberOfDdVariables() const {

@@ -201,6 +201,10 @@ void InternalDdManager<DdType::CUDD>::debugCheck() const {
     this->getCuddManager().DebugCheck();
 }
 
+void InternalDdManager<DdType::CUDD>::execute(std::function<void()> const& f) const {
+    f();
+}
+
 cudd::Cudd& InternalDdManager<DdType::CUDD>::getCuddManager() {
     return cuddManager;
 }
