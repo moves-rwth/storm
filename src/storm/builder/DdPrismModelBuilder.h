@@ -236,6 +236,9 @@ class DdPrismModelBuilder {
     struct SystemResult;
 
    private:
+    std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(storm::prism::Program const& program, Options const& options,
+                                                                                   std::shared_ptr<storm::dd::DdManager<Type>> const& manager);
+
     template<storm::dd::DdType TypePrime, typename ValueTypePrime>
     friend class ModuleComposer;
 
