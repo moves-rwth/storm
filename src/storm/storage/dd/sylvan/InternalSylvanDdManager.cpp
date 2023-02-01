@@ -18,13 +18,13 @@
 namespace storm {
 namespace dd {
 
-#ifndef NDEBUG
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-length-array"
 #pragma clang diagnostic ignored "-Wc99-extensions"
 #endif
 
+#ifndef NDEBUG
 VOID_TASK_0(gc_start) {
     STORM_LOG_TRACE("Starting sylvan garbage collection...");
 }
@@ -32,6 +32,7 @@ VOID_TASK_0(gc_start) {
 VOID_TASK_0(gc_end) {
     STORM_LOG_TRACE("Sylvan garbage collection done.");
 }
+#endif
 
 VOID_TASK_1(execute_sylvan, std::function<void()> const*, f) {
     (*f)();
@@ -39,8 +40,6 @@ VOID_TASK_1(execute_sylvan, std::function<void()> const*, f) {
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
-#endif
-
 #endif
 
 uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
