@@ -902,7 +902,7 @@ namespace storm {
                                 }
                             }
                         } else {
-                            for (uint64_t i = 0; i < nrCutoffStrategies; ++i) {
+                            for (uint64_t i = addedActions; i < nrCutoffStrategies + addedActions; ++i) {
                                 auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i) : underApproximation->computeLowerValueBoundForScheduler(currId, i) ;
                                 if (computeRewards) {
                                     underApproximation->addTransitionsToExtraStates(i, storm::utility::one<ValueType>());
