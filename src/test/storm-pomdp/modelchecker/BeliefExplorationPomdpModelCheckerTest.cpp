@@ -121,21 +121,6 @@ namespace {
         static PreprocessingType const preprocessingType = PreprocessingType::All;
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {options.refine = true; options.refinePrecision = precision();}
     };
-
-    class PreprocessedClippingDoubleVIEnvironment {
-    public:
-        typedef double ValueType;
-        static storm::Environment createEnvironment() {
-            storm::Environment env;
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
-            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
-            return env;
-        }
-        static bool const isExactModelChecking = false;
-        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
-        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
-        static PreprocessingType const preprocessingType = PreprocessingType::All;
-    };
     
     class DefaultDoubleOVIEnvironment {
     public:
@@ -198,6 +183,12 @@ namespace {
             storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> opt(true, true); // Always compute both bounds (lower and upper)
             TestType::adaptOptions(opt);
             opt.useStateEliminationCutoff = true;
+            return opt;
+        }
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> optionsWithClipping() const {
+            storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> opt(true, true); // Always compute both bounds (lower and upper)
+            TestType::adaptOptions(opt);
+            opt.useGridClipping = true;
             return opt;
         }
         ValueType parseNumber(std::string const& str) {
@@ -264,8 +255,7 @@ namespace {
             PreprocessedRefineDoubleVIEnvironment,
             DefaultDoubleOVIEnvironment,
             DefaultRationalPIEnvironment,
-            PreprocessedDefaultRationalPIEnvironment,
-            PreprocessedClippingDoubleVIEnvironment
+            PreprocessedDefaultRationalPIEnvironment
     > TestingTypes;
     
     TYPED_TEST_SUITE(BeliefExplorationTest, TestingTypes,);
@@ -295,7 +285,20 @@ namespace {
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
-    
+
+    TYPED_TEST(BeliefExplorationTest, simple_Pmax_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("7/10");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
+
     TYPED_TEST(BeliefExplorationTest, simple_Pmin) {
         typedef typename TestFixture::ValueType ValueType;
 
@@ -314,6 +317,19 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("3/10");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
+
+    TYPED_TEST(BeliefExplorationTest, simple_Pmin_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("3/10");
@@ -340,6 +356,19 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("7/10");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
+
+    TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("7/10");
@@ -391,6 +420,28 @@ namespace {
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
 
     }
+
+    TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("3/10");
+        if (this->isExact()) {
+            // This model's value can only be approximated arbitrarily close but never reached
+            // Exact arithmetics will thus not reach the value with absoulute precision either.
+            ValueType approxPrecision = storm::utility::convertNumber<ValueType>(1e-5);
+            EXPECT_LE(result.lowerBound, expected + approxPrecision);
+            EXPECT_GE(result.upperBound, expected - approxPrecision);
+        } else {
+            EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+            EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        }
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+
+    }
     
     TYPED_TEST(BeliefExplorationTest, simple_Rmax) {
         typedef typename TestFixture::ValueType ValueType;
@@ -410,6 +461,19 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("29/50");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
+
+    TYPED_TEST(BeliefExplorationTest, simple_Rmax_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("29/50");
@@ -443,6 +507,19 @@ namespace {
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
+
+    TYPED_TEST(BeliefExplorationTest, simple_Rmin_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("19/50");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
     
     TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax) {
         typedef typename TestFixture::ValueType ValueType;
@@ -462,6 +539,19 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("29/30");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
+
+    TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("29/30");
@@ -495,7 +585,20 @@ namespace {
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
-    
+
+    TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("19/30");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
+
     TYPED_TEST(BeliefExplorationTest, maze2_Rmin) {
         typedef typename TestFixture::ValueType ValueType;
 
@@ -523,6 +626,20 @@ namespace {
         // Use relative difference of bounds for this one
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
+
+    TYPED_TEST(BeliefExplorationTest, maze2_Rmin_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("74/91");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        // Use relative difference of bounds for this one
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
     
     TYPED_TEST(BeliefExplorationTest, maze2_Rmax) {
         typedef typename TestFixture::ValueType ValueType;
@@ -540,6 +657,17 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
+        auto result = checker.check(*data.formula);
+
+        EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
+        EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
+    }
+
+    TYPED_TEST(BeliefExplorationTest, maze2_Rmax_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
@@ -573,6 +701,20 @@ namespace {
         // Use relative difference of bounds for this one
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
+
+    TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmin_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]min=? [F \"goal\"]", "sl=0.075");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("80/91");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        // Use relative difference of bounds for this one
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
     
     TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax) {
         typedef typename TestFixture::ValueType ValueType;
@@ -590,6 +732,17 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
+        auto result = checker.check(*data.formula);
+
+        EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
+        EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
+    }
+
+    TYPED_TEST(BeliefExplorationTest, maze2_slippery_Rmax_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "R[exp]max=? [F \"goal\"]", "sl=0.075");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
@@ -623,6 +776,20 @@ namespace {
         // Use relative difference of bounds for this one
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
     }
+
+    TYPED_TEST(BeliefExplorationTest, refuel_Pmax_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("38/155");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        // Use relative difference of bounds for this one
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
     
     TYPED_TEST(BeliefExplorationTest, refuel_Pmin) {
         typedef typename TestFixture::ValueType ValueType;
@@ -643,6 +810,20 @@ namespace {
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithStateElimination());
+        auto result = checker.check(*data.formula);
+
+        ValueType expected = this->parseNumber("0");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        // Use relative difference of bounds for this one
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise.\n";
+    }
+
+    TYPED_TEST(BeliefExplorationTest, refuel_Pmin_Clip) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->optionsWithClipping());
         auto result = checker.check(*data.formula);
 
         ValueType expected = this->parseNumber("0");
