@@ -34,8 +34,12 @@ VOID_TASK_0(gc_end) {
 }
 #endif
 
-VOID_TASK_1(execute_sylvan, std::function<void()> const*, f) {
-    (*f)();
+VOID_TASK_2(execute_sylvan, std::function<void()> const*, f, std::exception_ptr*, e) {
+    try {
+        (*f)();
+    } catch (std::exception& exception) {
+        *e = std::current_exception();
+    }
 }
 
 #if defined(__clang__)
@@ -249,15 +253,19 @@ void InternalDdManager<DdType::Sylvan>::debugCheck() const {
 
 void InternalDdManager<DdType::Sylvan>::execute(std::function<void()> const& f) const {
     // Only wake up the sylvan (i.e. lace) threads when they are suspended.
+    std::exception_ptr e = nullptr;  // propagate exception
     if (suspended) {
         lace_resume();
         suspended = false;
-        RUN(execute_sylvan, &f);
+        RUN(execute_sylvan, &f, &e);
         lace_suspend();
         suspended = true;
     } else {
         // The sylvan threads are already running, don't suspend afterwards.
-        RUN(execute_sylvan, &f);
+        RUN(execute_sylvan, &f, &e);
+    }
+    if (e) {
+        std::rethrow_exception(e);
     }
 }
 
