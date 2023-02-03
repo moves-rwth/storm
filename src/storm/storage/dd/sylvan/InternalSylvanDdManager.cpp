@@ -67,8 +67,7 @@ InternalDdManager<DdType::Sylvan>::InternalDdManager() {
         storm::settings::modules::SylvanSettings const& settings = storm::settings::getModule<storm::settings::modules::SylvanSettings>();
         size_t const task_deque_size = 1024 * 1024;
 
-        // The default stacksize per worker is sometimes too large
-        lace_set_stacksize(1024 * 1024);  // 1 MiB
+        lace_set_stacksize(1024 * 1024 * 16);  // 16 MiB
         uint64_t numThreads = std::max(1u, lace_get_pu_count());
         if (settings.isNumberOfThreadsSet()) {
             STORM_LOG_WARN_COND(settings.getNumberOfThreads() <= numThreads,
