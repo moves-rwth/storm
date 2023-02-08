@@ -903,7 +903,8 @@ namespace storm {
                             }
                         } else {
                             for (uint64_t i = addedActions; i < nrCutoffStrategies + addedActions; ++i) {
-                                auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i) : underApproximation->computeLowerValueBoundForScheduler(currId, i) ;
+                                auto schedID = i - addedActions;
+                                auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, schedID) : underApproximation->computeLowerValueBoundForScheduler(currId, schedID) ;
                                 if (computeRewards) {
                                     underApproximation->addTransitionsToExtraStates(i, storm::utility::one<ValueType>());
                                     underApproximation->addRewardToCurrentState(i, cutOffValue);
@@ -911,7 +912,7 @@ namespace storm {
                                     underApproximation->addTransitionsToExtraStates(i, cutOffValue,storm::utility::one<ValueType>() - cutOffValue);
                                 }
                                 if(pomdp().hasChoiceLabeling()){
-                                    underApproximation->addChoiceLabelToCurrentState(i, "sched_" + std::to_string(i));
+                                    underApproximation->addChoiceLabelToCurrentState(i, "sched_" + std::to_string(schedID));
                                 }
                             }
                         }
