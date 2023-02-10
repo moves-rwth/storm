@@ -43,6 +43,28 @@ TEST(FormulaParserTest, ExpressionTest) {
     EXPECT_TRUE(formula->isAtomicExpressionFormula());
 }
 
+TEST(FormulaParserTest, ExpressionTest2) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+
+    storm::parser::FormulaParser formulaParser(manager);
+
+    std::string input = "(false)=false";
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+
+    EXPECT_TRUE(formula->isInFragment(storm::logic::propositional()));
+    EXPECT_TRUE(formula->isAtomicExpressionFormula());
+}
+
+TEST(FormulaParserTest, ExpressionTest3) {
+    std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
+
+    storm::parser::FormulaParser formulaParser(manager);
+
+    std::string input = "1 & false";
+    STORM_SILENT_ASSERT_THROW(formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+}
+
 TEST(FormulaParserTest, LabelAndExpressionTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
     manager->declareBooleanVariable("x");
@@ -71,6 +93,19 @@ TEST(FormulaParserTest, ProbabilityOperatorTest) {
     EXPECT_TRUE(formula->isProbabilityOperatorFormula());
     EXPECT_TRUE(formula->asProbabilityOperatorFormula().hasBound());
     EXPECT_FALSE(formula->asProbabilityOperatorFormula().hasOptimalityType());
+}
+
+TEST(FormulaParserTest, ProbabilityOperatorTest2) {
+    storm::parser::FormulaParser formulaParser;
+
+    std::string input = "1 = 1 & 2 = 2 & true & P<0.9 [\"a\" U \"b\"]";
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+
+    ASSERT_TRUE(formula->isBinaryBooleanStateFormula());
+    EXPECT_TRUE(formula->asBinaryBooleanStateFormula().isAnd());
+    EXPECT_TRUE(formula->asBinaryBooleanStateFormula().getLeftSubformula().isAtomicExpressionFormula());
+    EXPECT_TRUE(formula->asBinaryBooleanStateFormula().getRightSubformula().isProbabilityOperatorFormula());
 }
 
 TEST(FormulaParserTest, UntilOperatorTest) {
@@ -400,7 +435,7 @@ TEST(FormulaParserTest, HOAPathFormulaTest) {
     EXPECT_EQ(4ul, da2->getNumberOfEdgesPerState());
 
     std::map<std::string, std::shared_ptr<storm::logic::Formula const>> apFormulaMap2 = nested2.asHOAPathFormula().getAPMapping();
-    EXPECT_TRUE(apFormulaMap2["p0"]->isBinaryBooleanStateFormula());
+    EXPECT_TRUE(apFormulaMap2["p0"]->isAtomicExpressionFormula());
     EXPECT_TRUE(apFormulaMap2["p1"]->isAtomicExpressionFormula());
 
     // Wrong format: p1 -> path formula
