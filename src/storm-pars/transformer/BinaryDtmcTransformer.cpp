@@ -15,13 +15,8 @@
 
 namespace storm {
     namespace transformer {
-
-        BinaryDtmcTransformer::BinaryDtmcTransformer() {
-            // Intentionally left empty
-        }
-        
-        std::shared_ptr<storm::models::sparse::Dtmc<RationalFunction>> BinaryDtmcTransformer::transform(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, bool transformSimple, bool keepStateValuations) const {
-            auto data = transformTransitions(dtmc, transformSimple);
+        std::shared_ptr<storm::models::sparse::Dtmc<RationalFunction>> BinaryDtmcTransformer::transform(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, bool keepStateValuations) const {
+            auto data = transformTransitions(dtmc);
             storm::storage::sparse::ModelComponents<RationalFunction> components;
             components.stateLabeling = transformStateLabeling(dtmc, data);
             for (auto const& rewModel : dtmc.getRewardModels()) {
@@ -40,7 +35,7 @@ namespace storm {
             std::vector<storage::MatrixEntry<uint_fast64_t, RationalFunction>> row;
         };
         
-        typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transformTransitions(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, bool transformSimple) const {
+        typename BinaryDtmcTransformer::TransformationData BinaryDtmcTransformer::transformTransitions(storm::models::sparse::Dtmc<RationalFunction> const& dtmc) const {
             auto const& matrix = dtmc.getTransitionMatrix();
            
             
@@ -143,16 +138,15 @@ namespace storm {
             result.simpleStateToOriginalState = std::move(origStates);
             return result;
         }
-        
-        
+
+
         storm::models::sparse::StateLabeling BinaryDtmcTransformer::transformStateLabeling(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, TransformationData const& data) const {
             storm::models::sparse::StateLabeling labeling(data.simpleMatrix.getRowCount());
             for (auto const& labelName : dtmc.getStateLabeling().getLabels()) {
                 storm::storage::BitVector newStates = dtmc.getStateLabeling().getStates(labelName);
                 newStates.resize(data.simpleMatrix.getRowCount(), false);
                 if (labelName != "init") {
-                    for (uint64_t newState = dtmc.getNumberOfStates();
-                         newState < data.simpleMatrix.getRowCount(); ++newState) {
+                    for (uint64_t newState = dtmc.getNumberOfStates(); newState < data.simpleMatrix.getRowCount(); ++newState) {
                         newStates.set(newState, newStates[data.simpleStateToOriginalState[newState]]);
                     }
                 }
@@ -161,7 +155,7 @@ namespace storm {
             }
             return labeling;
         }
-        
+
         storm::models::sparse::StandardRewardModel<RationalFunction> BinaryDtmcTransformer::transformRewardModel(storm::models::sparse::Dtmc<RationalFunction> const& dtmc, storm::models::sparse::StandardRewardModel<RationalFunction> const& rewardModel, TransformationData const& data) const {
             boost::optional<std::vector<RationalFunction>> stateRewards, actionRewards;
             STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::NotSupportedException, "Only state rewards supported.");

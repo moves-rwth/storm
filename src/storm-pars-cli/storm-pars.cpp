@@ -309,9 +309,6 @@ namespace storm {
             }
 
             if (parametricSettings.isTimeTravellingEnabled()) {
-                // storm::transformer::BinaryDtmcTransformer transformer;
-                // result.model = transformer.transform(*result.model->template as<storm::models::sparse::Dtmc<RationalFunction>>(), true);
-
                 transformer::TimeTravelling tt;
                 auto formulas = storm::api::extractFormulasFromProperties(input.properties);
                 modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> checkTask(*formulas[0]);

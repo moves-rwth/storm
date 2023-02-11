@@ -1,5 +1,4 @@
-#ifndef STORM_EQUALPARAMATERREDUCER_H
-#define STORM_EQUALPARAMATERREDUCER_H
+#pragma once
 
 #include <cstdint>
 #include <set>
@@ -19,7 +18,7 @@ class TimeTravelling {
      * This class re-orders parameteric transitions of a pMC so bounds computed by Parameter Lifting will eventually be better.
      * The parametric reachability probability for the given check task will be the same in the time-travelled and in the original model.
      */
-    TimeTravelling() {}
+    TimeTravelling() = default;
     /**
      * Perform time-travelling on the given model and the given checkTask.
      * 
@@ -75,7 +74,7 @@ class TimeTravelling {
      * transitions from a state into a single number that directly goes to the
      * next parametric transitions.
      * 
-     * @param state Root for the jip-convert algorithm.
+     * @param state Root for the algorithm.
      * @param matrix FlexibleMatrix of the pMC.
      * @param alreadyVisited Recursive argument, set this to the empty map.
      * @param treeStates The tree states (see updateTreeStates).
@@ -85,7 +84,7 @@ class TimeTravelling {
      * @param labelsInFormula The labels in the formula.
      * @return false (returns true in recursive cases)
      */
-    bool jipConvert(uint_fast64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix, std::map<uint_fast64_t, bool>& alreadyVisited,
+    bool collapseConstantTransitions(uint_fast64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix, std::map<uint_fast64_t, bool>& alreadyVisited,
                     const std::map<RationalFunctionVariable, std::map<uint_fast64_t, std::set<uint_fast64_t>>>& treeStates,
                     const std::set<carl::Variable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
                     const models::sparse::StateLabeling stateLabelling, const std::set<std::string> labelsInFormula);
@@ -94,5 +93,3 @@ class TimeTravelling {
 
 }  // namespace transformer
 }  // namespace storm
-
-#endif

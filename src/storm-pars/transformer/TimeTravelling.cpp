@@ -142,7 +142,7 @@ models::sparse::Dtmc<RationalFunction> TimeTravelling::timeTravel(models::sparse
             continue;
         }
         std::map<uint_fast64_t, bool> alreadyVisited;
-        jipConvert(state, flexibleMatrix, alreadyVisited, treeStates, allParameters, stateRewardVector, runningLabeling, labelsInFormula);
+        collapseConstantTransitions(state, flexibleMatrix, alreadyVisited, treeStates, allParameters, stateRewardVector, runningLabeling, labelsInFormula);
 
 #if WRITE_DTMCS
         models::sparse::Dtmc<RationalFunction> newnewDTMC(flexibleMatrix.createSparseMatrix(), runningLabeling);
@@ -474,7 +474,7 @@ void TimeTravelling::updateTreeStates(std::map<RationalFunctionVariable, std::ma
     }
 }
 
-bool TimeTravelling::jipConvert(uint_fast64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix, std::map<uint_fast64_t, bool>& alreadyVisited,
+bool TimeTravelling::collapseConstantTransitions(uint_fast64_t state, storage::FlexibleSparseMatrix<RationalFunction>& matrix, std::map<uint_fast64_t, bool>& alreadyVisited,
                                 const std::map<RationalFunctionVariable, std::map<uint_fast64_t, std::set<uint_fast64_t>>>& treeStates,
                                 const std::set<carl::Variable>& allParameters, const boost::optional<std::vector<RationalFunction>>& stateRewardVector,
                                 const models::sparse::StateLabeling stateLabeling, const std::set<std::string> labelsInFormula) {
@@ -501,7 +501,7 @@ bool TimeTravelling::jipConvert(uint_fast64_t state, storage::FlexibleSparseMatr
             } else {
                 alreadyVisited[nextState] = false;
                 continueConvertingHere =
-                    jipConvert(nextState, matrix, alreadyVisited, treeStates, allParameters, stateRewardVector, stateLabeling, labelsInFormula);
+                    collapseConstantTransitions(nextState, matrix, alreadyVisited, treeStates, allParameters, stateRewardVector, stateLabeling, labelsInFormula);
                 alreadyVisited[nextState] = continueConvertingHere;
             }
         }
