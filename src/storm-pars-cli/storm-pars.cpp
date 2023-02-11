@@ -52,8 +52,6 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
-#include "utility/logging.h"
-
 
 namespace storm {
     namespace pars {
