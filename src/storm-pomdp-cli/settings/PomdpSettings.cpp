@@ -22,7 +22,6 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
-#include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
@@ -65,7 +64,6 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GlpkSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
-            storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();

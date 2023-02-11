@@ -30,16 +30,20 @@ class DFTVot : public DFTGate<ValueType> {
         return std::shared_ptr<DFTElement<ValueType>>(new DFTVot<ValueType>(this->id(), this->name(), this->threshold(), {}));
     }
 
+    storm::dft::storage::elements::DFTElementType type() const override {
+        return storm::dft::storage::elements::DFTElementType::VOT;
+    }
+
+    bool isStaticElement() const override {
+        return true;
+    }
+
     /*!
      * Get the threshold k.
      * @return Threshold.
      */
     unsigned threshold() const {
         return mThreshold;
-    }
-
-    storm::dft::storage::elements::DFTElementType type() const override {
-        return storm::dft::storage::elements::DFTElementType::VOT;
     }
 
     std::string typestring() const override {

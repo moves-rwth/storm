@@ -9,9 +9,12 @@
 #include "storm/solver/GurobiLpSolver.h"
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/Variable.h"
+#include "storm/utility/solver.h"
 
 TEST(GurobiLpSolver, LPOptimizeMax) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -44,7 +47,9 @@ TEST(GurobiLpSolver, LPOptimizeMax) {
 }
 
 TEST(GurobiLpSolver, LPOptimizeMin) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Minimize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -77,7 +82,9 @@ TEST(GurobiLpSolver, LPOptimizeMin) {
 }
 
 TEST(GurobiLpSolver, MILPOptimizeMax) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -110,7 +117,9 @@ TEST(GurobiLpSolver, MILPOptimizeMax) {
 }
 
 TEST(GurobiLpSolver, MILPOptimizeMin) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Minimize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -143,7 +152,9 @@ TEST(GurobiLpSolver, MILPOptimizeMin) {
 }
 
 TEST(GurobiLpSolver, LPInfeasible) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -173,7 +184,9 @@ TEST(GurobiLpSolver, LPInfeasible) {
 }
 
 TEST(GurobiLpSolver, MILPInfeasible) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -203,7 +216,9 @@ TEST(GurobiLpSolver, MILPInfeasible) {
 }
 
 TEST(GurobiLpSolver, LPUnbounded) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -231,7 +246,9 @@ TEST(GurobiLpSolver, LPUnbounded) {
 }
 
 TEST(GurobiLpSolver, MILPUnbounded) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -259,7 +276,9 @@ TEST(GurobiLpSolver, MILPUnbounded) {
 }
 
 TEST(GurobiLpSolver, Incremental) {
-    storm::solver::GurobiLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GurobiLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GurobiLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x, y, z;
     ASSERT_NO_THROW(x = solver.addUnboundedContinuousVariable("x", 1));
 

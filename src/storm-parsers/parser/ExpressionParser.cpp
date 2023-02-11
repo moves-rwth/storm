@@ -96,10 +96,11 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     roundExpression.name("round expression");
 
     if (allowBacktracking) {
-        minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> expression[qi::_val = qi::_1] >>
-                            +(qi::lit(",") >> expression)[qi::_val = phoenix::bind(&ExpressionCreator::createMinimumMaximumExpression,
-                                                                                   phoenix::ref(*expressionCreator), qi::_val, qi::_a, qi::_1, qi::_pass)]) >>
-                           qi::lit(")");
+        minMaxExpression =
+            ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> expression[qi::_val = qi::_1] >>
+             +(qi::lit(",") >> expression)[qi::_b = phoenix::bind(&ExpressionCreator::createMinimumMaximumExpression, phoenix::ref(*expressionCreator),
+                                                                  qi::_val, qi::_a, qi::_1, qi::_pass)][qi::_val = qi::_b]) >>
+            qi::lit(")");
     } else {
         minMaxExpression =
             ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) > expression[qi::_val = qi::_1] >
@@ -149,8 +150,9 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     if (allowBacktracking) {
         infixPowerModuloExpression =
             unaryExpression[qi::_val = qi::_1] >>
-            -(infixPowerModuloOperator_ >> unaryExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPowerModuloExpression,
-                                                                                     phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+            -(infixPowerModuloOperator_ >>
+              unaryExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createPowerModuloExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1,
+                                                      qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         infixPowerModuloExpression =
             unaryExpression[qi::_val = qi::_1] >
@@ -163,8 +165,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
         multiplicationExpression =
             infixPowerModuloExpression[qi::_val = qi::_1] >>
             *(multiplicationOperator_ >>
-              infixPowerModuloExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1,
-                                                                   qi::_2, qi::_pass)];
+              infixPowerModuloExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createMultExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1,
+                                                                 qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         multiplicationExpression =
             infixPowerModuloExpression[qi::_val = qi::_1] >
@@ -177,8 +179,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     if (allowBacktracking) {
         plusExpression =
             multiplicationExpression[qi::_val = qi::_1] >>
-            *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createPlusExpression, phoenix::ref(*expressionCreator),
-                                                                                  qi::_val, qi::_1, qi::_2, qi::_pass)];
+            *(plusOperator_ >> multiplicationExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createPlusExpression, phoenix::ref(*expressionCreator),
+                                                                                qi::_val, qi::_1, qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         plusExpression =
             multiplicationExpression[qi::_val = qi::_1] >
@@ -190,8 +192,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     if (allowBacktracking) {
         relativeExpression =
             plusExpression[qi::_val = qi::_1] >>
-            -(relationalOperator_ >> plusExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createRelationalExpression, phoenix::ref(*expressionCreator),
-                                                                              qi::_val, qi::_1, qi::_2, qi::_pass)];
+            -(relationalOperator_ >> plusExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createRelationalExpression, phoenix::ref(*expressionCreator),
+                                                                            qi::_val, qi::_1, qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         relativeExpression =
             plusExpression[qi::_val = qi::_1] >
@@ -203,8 +205,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     if (allowBacktracking) {
         equalityExpression =
             relativeExpression[qi::_val = qi::_1] >>
-            *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createEqualsExpression, phoenix::ref(*expressionCreator),
-                                                                                qi::_val, qi::_1, qi::_2, qi::_pass)];
+            *(equalityOperator_ >> relativeExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createEqualsExpression, phoenix::ref(*expressionCreator),
+                                                                              qi::_val, qi::_1, qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         equalityExpression =
             relativeExpression[qi::_val = qi::_1] >>
@@ -215,8 +217,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
 
     if (allowBacktracking) {
         andExpression = equalityExpression[qi::_val = qi::_1] >>
-                        *(andOperator_ >> equalityExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createAndExpression,
-                                                                                       phoenix::ref(*expressionCreator), qi::_val, qi::_1, qi::_2, qi::_pass)];
+                        *(andOperator_ >> equalityExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createAndExpression, phoenix::ref(*expressionCreator),
+                                                                                     qi::_val, qi::_1, qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         andExpression = equalityExpression[qi::_val = qi::_1] >>
                         *(andOperator_ > equalityExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createAndExpression, phoenix::ref(*expressionCreator),
@@ -226,8 +228,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
 
     if (allowBacktracking) {
         orExpression = andExpression[qi::_val = qi::_1] >>
-                       *(orOperator_ >> andExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createOrExpression, phoenix::ref(*expressionCreator),
-                                                                                qi::_val, qi::_1, qi::_2, qi::_pass)];
+                       *(orOperator_ >> andExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createOrExpression, phoenix::ref(*expressionCreator),
+                                                                              qi::_val, qi::_1, qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         orExpression = andExpression[qi::_val = qi::_1] >
                        *(orOperator_ > andExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createOrExpression, phoenix::ref(*expressionCreator),
@@ -238,8 +240,8 @@ ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& 
     if (allowBacktracking) {
         iteExpression = orExpression[qi::_val = qi::_1] >>
                         -(qi::lit("?") >> iteExpression >> qi::lit(":") >>
-                          iteExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1,
-                                                                  qi::_2, qi::_pass)];
+                          iteExpression)[qi::_a = phoenix::bind(&ExpressionCreator::createIteExpression, phoenix::ref(*expressionCreator), qi::_val, qi::_1,
+                                                                qi::_2, qi::_pass)][qi::_val = qi::_a];
     } else {
         iteExpression =
             orExpression[qi::_val = qi::_1] > -(qi::lit("?") > iteExpression > qi::lit(":") >

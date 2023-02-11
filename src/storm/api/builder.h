@@ -25,7 +25,6 @@
 #include "storm/generator/PrismNextStateGenerator.h"
 
 #include "storm/builder/ExplicitModelBuilder.h"
-#include "storm/builder/jit/ExplicitJitJaniModelBuilder.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"
@@ -108,32 +107,16 @@ storm::builder::ExplicitModelBuilder<ValueType> makeExplicitModelBuilder(storm::
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model,
-                                                                          storm::builder::BuilderOptions const& options, bool jit = false,
-                                                                          bool doctor = false) {
-    if (jit) {
-        STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Cannot use JIT-based model builder for non-JANI model.");
-
-        storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType> builder(model.asJaniModel(), options);
-
-        if (doctor) {
-            bool result = builder.doctor();
-            STORM_LOG_THROW(result, storm::exceptions::NotSupportedException, "The JIT-based model builder cannot be used on your system.");
-            STORM_LOG_INFO("The JIT-based model builder seems to be working.");
-        }
-
-        return builder.build();
-    } else {
-        storm::builder::ExplicitModelBuilder<ValueType> builder = makeExplicitModelBuilder<ValueType>(model, options);
-        return builder.build();
-    }
+                                                                          storm::builder::BuilderOptions const& options) {
+    storm::builder::ExplicitModelBuilder<ValueType> builder = makeExplicitModelBuilder<ValueType>(model, options);
+    return builder.build();
 }
 
 template<typename ValueType>
 std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::storage::SymbolicModelDescription const& model,
-                                                                          std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-                                                                          bool jit = false, bool doctor = false) {
+                                                                          std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
     storm::builder::BuilderOptions options(formulas, model);
-    return buildSparseModel<ValueType>(model, options, jit, doctor);
+    return buildSparseModel<ValueType>(model, options);
 }
 
 template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>

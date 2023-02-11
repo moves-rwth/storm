@@ -2,6 +2,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <optional>
 #include <regex>
 
 #include "storm/exceptions/FileIoException.h"
@@ -150,8 +151,8 @@ storm::dft::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const 
 
     // Build DFT
     storm::dft::storage::DFT<ValueType> dft = builder.build();
-    STORM_LOG_DEBUG("DFT Elements:\n" << dft.getElementsString());
-    STORM_LOG_DEBUG("Spare Modules:\n" << dft.getSpareModulesString());
+    STORM_LOG_DEBUG("DFT elements:\n" << dft.getElementsString());
+    STORM_LOG_DEBUG("Spare modules:\n" << dft.getModulesString());
     return dft;
 }
 

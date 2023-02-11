@@ -7,6 +7,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/storage/expressions/Variable.h"
+#include "storm/utility/solver.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 
@@ -16,7 +17,9 @@
 #include <cmath>
 
 TEST(GlpkLpSolver, LPOptimizeMax) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -49,7 +52,9 @@ TEST(GlpkLpSolver, LPOptimizeMax) {
 }
 
 TEST(GlpkLpSolver, LPOptimizeMin) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Minimize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -82,7 +87,9 @@ TEST(GlpkLpSolver, LPOptimizeMin) {
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMax) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -115,7 +122,9 @@ TEST(GlpkLpSolver, MILPOptimizeMax) {
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMin) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Minimize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -148,7 +157,9 @@ TEST(GlpkLpSolver, MILPOptimizeMin) {
 }
 
 TEST(GlpkLpSolver, LPInfeasible) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -174,7 +185,9 @@ TEST(GlpkLpSolver, LPInfeasible) {
 }
 
 TEST(GlpkLpSolver, MILPInfeasible) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -200,7 +213,9 @@ TEST(GlpkLpSolver, MILPInfeasible) {
 }
 
 TEST(GlpkLpSolver, LPUnbounded) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -224,7 +239,9 @@ TEST(GlpkLpSolver, LPUnbounded) {
 }
 
 TEST(GlpkLpSolver, MILPUnbounded) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -248,7 +265,9 @@ TEST(GlpkLpSolver, MILPUnbounded) {
 }
 
 TEST(GlpkLpSolver, Incremental) {
-    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    auto solverPtr = storm::utility::solver::GlpkLpSolverFactory<double>().create("");
+    auto& solver = static_cast<storm::solver::GlpkLpSolver<double>&>(*solverPtr);
+    solver.setOptimizationDirection(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x, y, z;
     ASSERT_NO_THROW(x = solver.addUnboundedContinuousVariable("x", 1));
 

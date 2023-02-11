@@ -640,7 +640,7 @@ namespace storm {
                             }
                         }
                         bool expandedAtLeastOneAction = false;
-                        for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                        for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                             bool expandCurrentAction = exploreAllActions || truncateAllActions;
                             if (checkRewireForAllActions) {
                                 assert(refine);
@@ -797,7 +797,7 @@ namespace storm {
                                 underApproximation->setCurrentStateIsTruncated();
                             }
                         }
-                        for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                        for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                             // Always restore old behavior if available
                             if (stateAlreadyExplored) {
                                 underApproximation->restoreOldBehaviorAtCurrentState(action);

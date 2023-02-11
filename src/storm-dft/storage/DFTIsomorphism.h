@@ -488,7 +488,7 @@ class DFTIsomorphismCheck {
                 STORM_LOG_ASSERT(dft.isGate(indexpair.second), "Element is no gate.");
                 auto const& lGate = dft.getGate(indexpair.first);
                 auto const& rGate = dft.getGate(indexpair.second);
-                if (lGate->isDynamicGate()) {
+                if (!lGate->isStaticElement()) {
                     std::vector<size_t> childrenLeftMapped;
                     for (auto const& child : lGate->children()) {
                         if (bleft.has(child->id())) {

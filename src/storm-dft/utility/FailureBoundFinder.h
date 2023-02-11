@@ -1,4 +1,5 @@
-#include <vector>
+#pragma once
+
 #include "storm-dft/modelchecker/DFTASFChecker.h"
 #include "storm-dft/storage/DFT.h"
 

@@ -1,0 +1,6 @@
+toplevel "A";
+"A" and "B" "C";
+"B" lambda=1;
+"C" lambda=1;
+"F1" fdep "B" "C";
+"F2" fdep "C" "B";

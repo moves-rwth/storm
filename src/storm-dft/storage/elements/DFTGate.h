@@ -34,14 +34,6 @@ class DFTGate : public DFTChildren<ValueType> {
         return true;
     }
 
-    /*!
-     * Return whether the gate is a dynamic gate.
-     * @return True iff the gate is dynamic.
-     */
-    bool isDynamicGate() const {
-        return !isStaticGateType(this->type());
-    }
-
     virtual void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
         if (!this->isSpareGate()) {
             DFTElement<ValueType>::extendSpareModule(elementsInSpareModule);

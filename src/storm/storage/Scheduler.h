@@ -9,7 +9,7 @@ namespace storm {
 
 namespace storage {
 
-/*
+/**
  * This class defines which action is chosen in a particular state of a non-deterministic model. More concretely, a scheduler maps a state s to i
  * if the scheduler takes the i-th action available in s (i.e. the choices are relative to the states).
  * A Choice can be undefined, deterministic
@@ -128,7 +128,8 @@ class Scheduler {
     /*!
      * Prints the scheduler to the given output stream.
      * @param out The output stream
-     * @param model If given, provides additional information for printing (e.g., displaying the state valuations instead of state indices)
+     * @param model If given, provides additional information for printing (e.g., displaying the state valuations instead of state indices).
+     *              Must be passed if the scheduler is not memoryless.
      * @param skipUniqueChoices If true, the (unique) choice for deterministic states (i.e., states with only one enabled choice) is not printed explicitly.
      *                          Requires a model to be given.
      * @param skipDontCareStates If true, the choice for dontCareStates states is not printed explicitly.
@@ -138,6 +139,12 @@ class Scheduler {
 
     /*!
      * Prints the scheduler in json format to the given output stream.
+     * @param out The output stream
+     * @param model If given, provides additional information for printing (e.g., displaying the state valuations instead of state indices).
+     *              Must be passed if the scheduler is not memoryless.
+     * @param skipUniqueChoices If true, the (unique) choice for deterministic states (i.e., states with only one enabled choice) is not printed explicitly.
+     *                          Requires a model to be given.
+     * @param skipDontCareStates If true, the choice for dontCareStates states is not printed explicitly.
      */
     void printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model = nullptr, bool skipUniqueChoices = false,
                            bool skipDontCareStates = false) const;

@@ -16,7 +16,7 @@ namespace storm {
         namespace qualitative {
             namespace detail {
                 struct ObsActPair {
-                    ObsActPair(uint64_t observation, uint64 action) : observation(observation), action(action) {}
+                    ObsActPair(uint64_t observation, uint64_t action) : observation(observation), action(action) {}
 
                     uint64_t observation;
                     uint64_t action;

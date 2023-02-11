@@ -190,5 +190,14 @@ void BitVectorHashMap<ValueType, Hash>::remap(std::function<ValueType(ValueType 
 
 template class BitVectorHashMap<uint64_t>;
 template class BitVectorHashMap<uint32_t>;
+// These instantiations allow you to "group" states in a BitVectorHashMap. I.e.,
+// if you want to look at a state and know what "group" it is in (with groups
+// controlled by an 8 bit group index) you can instantiate a BitVectorHashMap<uint8_t>
+// which looks up your state and returns a group inded
+//
+// For example, the STAMINA project (built on STORM) uses this for thread indecies
+// in its multithreading implementation.
+template class BitVectorHashMap<uint8_t, Murmur3BitVectorHash<uint32_t>>;
+template class BitVectorHashMap<uint8_t, Murmur3BitVectorHash<uint64_t>>;
 }  // namespace storage
 }  // namespace storm

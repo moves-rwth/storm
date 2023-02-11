@@ -1,8 +1,6 @@
 #pragma once
 
-namespace storm {
-namespace builder {
-namespace jit {
+namespace storm::generator {
 
 template<typename StateType, typename ValueType>
 class DistributionEntry {
@@ -21,6 +19,4 @@ class DistributionEntry {
     ValueType value;
 };
 
-}  // namespace jit
-}  // namespace builder
-}  // namespace storm
+}  // namespace storm::generator

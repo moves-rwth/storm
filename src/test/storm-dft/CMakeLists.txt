@@ -8,6 +8,7 @@ register_source_groups_from_filestructure("${ALL_FILES}" test)
 
 # Note that the tests also need the source files, except for the main file
 include_directories(${GTEST_INCLUDE_DIR})
+include_directories(${GMOCK_INCLUDE_DIR})
 
 foreach (testsuite api bdd simulator storage transformations)
 

@@ -156,7 +156,7 @@ TEST(DftSimulatorTest, SeqUnreliability) {
     std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft", 1, 10000);
     EXPECT_EQ(invalid, 0ul);
     result = (double)count / 10000;
-    EXPECT_FLOAT_EQ(result, 0);
+    EXPECT_EQ(result, 0);
     std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft", 1, 10000);
     EXPECT_EQ(invalid, 0ul);
     result = (double)count / 10000;

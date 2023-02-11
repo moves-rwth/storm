@@ -11,8 +11,6 @@
 #include "storm/storage/prism/CompositionToJaniVisitor.h"
 #include "storm/storage/prism/Program.h"
 
-#include "storm/settings/SettingsManager.h"
-
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/utility/macros.h"
 
@@ -174,7 +172,7 @@ storm::jani::Model ToJaniConverter::convert(storm::prism::Program const& program
         storm::prism::Module const& module = program.getModule(index);
 
         // Gather all variables occurring in this module
-        std::set<storm::expressions::Variable> variables;
+        std::set<storm::expressions::Variable> variables = module.getAllExpressionVariables();
         for (auto const& command : module.getCommands()) {
             command.getGuardExpression().getBaseExpression().gatherVariables(variables);
             for (auto const& update : command.getUpdates()) {

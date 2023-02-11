@@ -228,7 +228,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquati
     } else if (method == MinMaxMethod::TopologicalCuda) {
         result = std::make_unique<TopologicalCudaMinMaxLinearEquationSolver<ValueType>>();
     } else if (method == MinMaxMethod::LinearProgramming) {
-        result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(std::make_unique<storm::utility::solver::LpSolverFactory<ValueType>>());
+        result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(storm::utility::solver::getLpSolverFactory<ValueType>());
     } else if (method == MinMaxMethod::Acyclic) {
         result = std::make_unique<AcyclicMinMaxLinearEquationSolver<ValueType>>();
     } else {
@@ -249,8 +249,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
         result = std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(
             std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
     } else if (method == MinMaxMethod::LinearProgramming) {
-        result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(
-            std::make_unique<storm::utility::solver::LpSolverFactory<storm::RationalNumber>>());
+        result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(storm::utility::solver::getLpSolverFactory<storm::RationalNumber>());
     } else if (method == MinMaxMethod::Acyclic) {
         result = std::make_unique<AcyclicMinMaxLinearEquationSolver<storm::RationalNumber>>();
     } else if (method == MinMaxMethod::Topological) {
@@ -262,7 +261,6 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
     return result;
 }
 
-template class MinMaxLinearEquationSolver<float>;
 template class MinMaxLinearEquationSolver<double>;
 
 template class MinMaxLinearEquationSolverFactory<double>;
