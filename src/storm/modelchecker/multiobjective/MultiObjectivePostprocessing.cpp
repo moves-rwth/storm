@@ -78,13 +78,13 @@ std::shared_ptr<storm::storage::Scheduler<ValueType>> transformObjectiveSchedule
                                                                                             std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler) {
     storm::storage::Scheduler<ValueType> result(originalModel->getNumberOfStates());
     // set common states
-    for (int state = 0; state < scheduler->getNumberOfChoices(); state++) {
+    for (int state = 0; state < scheduler->getNumberOfModelStates(); state++) {
         for (int memory = 0; memory < scheduler->getNumberOfMemoryStates(); memory++) {
-            result.setChoice(scheduler->getChoice(state, memory), state);
+            result.setChoice(scheduler->getChoice(state, memory), state, memory);
         }
     }
     // add irrelevant states removed in preprocessing
-    for (int state = scheduler->getNumberOfChoices(); state < originalModel->getNumberOfStates(); state++) {
+    for (int state = scheduler->getNumberOfModelStates(); state < originalModel->getNumberOfStates(); state++) {
         for (int memory = 0; memory < scheduler->getNumberOfMemoryStates(); memory++) {
             result.setDontCare(state, memory, false);
         }

@@ -238,11 +238,12 @@ StandardPcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
 template<class SparseModelType>
 storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType>
 StandardPcaaWeightVectorChecker<SparseModelType>::computeOriginalScheduler() const {
-    storm::storage::Scheduler<ValueType> result(this->optimalChoices.size());
-    uint_fast64_t state = 0;
-    for (auto const& choice : optimalChoices) {
-        result.setChoice(optimalChoices[mergerResult.oldToNewStateIndexMapping[state]], state);
-        ++state;
+    auto scheduler = this->computeScheduler();
+    storm::storage::Scheduler<ValueType> result(scheduler.getNumberOfModelStates(), scheduler.getMemoryStructure());
+    for (int state = 0; state < scheduler.getNumberOfModelStates(); state++) {
+        for (int memory = 0; memory < scheduler.getNumberOfMemoryStates(); memory++) {
+            result.setChoice(scheduler.getChoice(mergerResult.oldToNewStateIndexMapping[state], memory), state, memory);
+        }
     }
     return result;
 }
