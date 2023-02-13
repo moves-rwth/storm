@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/storage/geometry/Polytope.h"
 
 namespace storm {
@@ -16,6 +17,10 @@ std::vector<GeometryValueType> transformObjectiveValuesToOriginal(std::vector<Ob
 template<typename ValueType, typename GeometryValueType>
 std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transformObjectivePolytopeToOriginal(
     std::vector<Objective<ValueType>> objectives, std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope);
+
+template<typename ValueType, typename SparseModelType>
+std::shared_ptr<storm::storage::Scheduler<ValueType>> transformObjectiveSchedulerToOriginal(std::shared_ptr<SparseModelType> const& originalModel,
+                                                                                            std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler);
 
 }  // namespace multiobjective
 }  // namespace modelchecker

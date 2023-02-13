@@ -1,6 +1,9 @@
 #include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
 namespace modelchecker {
@@ -66,6 +69,29 @@ std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transform
     return polytope->affineTransformation(transformationMatrix, transformationVector);
 }
 
+/*
+ * This function is only responsible to reverse changes to the model made in the preprocessor
+ * (not the ones done by specific checkers)
+ */
+template<typename ValueType, typename SparseModelType>
+std::shared_ptr<storm::storage::Scheduler<ValueType>> transformObjectiveSchedulerToOriginal(std::shared_ptr<SparseModelType> const& originalModel,
+                                                                                            std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler) {
+    storm::storage::Scheduler<ValueType> result(originalModel->getNumberOfStates());
+    // set common states
+    for (int state = 0; state < scheduler->getNumberOfChoices(); state++) {
+        for (int memory = 0; memory < scheduler->getNumberOfMemoryStates(); memory++) {
+            result.setChoice(scheduler->getChoice(state, memory), state);
+        }
+    }
+    // add irrelevant states removed in preprocessing
+    for (int state = scheduler->getNumberOfChoices(); state < originalModel->getNumberOfStates(); state++) {
+        for (int memory = 0; memory < scheduler->getNumberOfMemoryStates(); memory++) {
+            result.setDontCare(state, memory, false);
+        }
+    }
+    return std::make_shared<storm::storage::Scheduler<ValueType>>(result);
+}
+
 template std::vector<storm::RationalNumber> transformObjectiveValuesToOriginal(std::vector<Objective<double>> objectives,
                                                                                std::vector<storm::RationalNumber> const& point);
 template std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumber>> transformObjectivePolytopeToOriginal(
@@ -74,6 +100,16 @@ template std::vector<storm::RationalNumber> transformObjectiveValuesToOriginal(s
                                                                                std::vector<storm::RationalNumber> const& point);
 template std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumber>> transformObjectivePolytopeToOriginal(
     std::vector<Objective<storm::RationalNumber>> objectives, std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumber>> const& polytope);
+template std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>> transformObjectiveSchedulerToOriginal(
+    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> const& originalModel,
+    std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>> scheduler);
+template std::shared_ptr<storm::storage::Scheduler<double>> transformObjectiveSchedulerToOriginal(
+    std::shared_ptr<storm::models::sparse::Mdp<double>> const& originalModel, std::shared_ptr<storm::storage::Scheduler<double>> scheduler);
+template std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>> transformObjectiveSchedulerToOriginal(
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> const& originalModel,
+    std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>> scheduler);
+template std::shared_ptr<storm::storage::Scheduler<double>> transformObjectiveSchedulerToOriginal(
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> const& originalModel, std::shared_ptr<storm::storage::Scheduler<double>> scheduler);
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm
