@@ -26,7 +26,7 @@ namespace storm {
             const std::string clipGridResolutionOption = "clip-resolution";
             const std::string sizeThresholdOption = "size-threshold";
             const std::string gapThresholdOption = "gap-threshold";
-            const std::string schedulerThresholdOption = "scheduler-threshold";
+            const std::string optimalChoiceValueThresholdOption = "optimal-choice-value-threshold";
             const std::string observationThresholdOption = "obs-threshold";
             const std::string numericPrecisionOption = "numeric-precision";
             const std::string triangulationModeOption = "triangulationmode";
@@ -43,7 +43,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationTimeLimitOption, false, "Sets after which time no further states shall be explored.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time","In seconds.").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, resolutionOption, false,"Sets the resolution of the discretization and how it is increased in case of refinement").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("init","the initial resolution (higher means more precise)").setDefaultValueUnsignedInteger(3).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the resolution of refined observations (higher means more precise).").setDefaultValueDouble(2).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, resolutionOption, false,"Sets the resolution of the discretization and how it is increased in case of refinement").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("init","the initial resolution (higher means more precise)").setDefaultValueUnsignedInteger(2).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the resolution of refined observations (higher means more precise).").setDefaultValueDouble(2).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, clipGridResolutionOption, false, "Sets the resolution of the clipping grid").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("resolution", "the resolution (higher means more precise)").setDefaultValueUnsignedInteger(2).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
 
@@ -53,7 +53,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, gapThresholdOption, false,"Sets how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means less precise").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the gap in each refinement step (higher means less precise).").setDefaultValueDouble(0.25).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, schedulerThresholdOption, false,"Sets how much worse a sub-optimal choice can be in order to be included in the relevant explored fragment").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means more precise").setDefaultValueDouble(1e-3).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the threshold in each refinement step (higher means more precise).").setDefaultValueDouble(1).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(1)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, optimalChoiceValueThresholdOption, false,"Sets how much worse a sub-optimal choice can be in order to be included in the relevant explored fragment").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means more precise").setDefaultValueDouble(1e-3).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the threshold in each refinement step (higher means more precise).").setDefaultValueDouble(1).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(1)).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, numericPrecisionOption, false,"Sets the precision used to determine whether two belief-states are equal.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createDoubleArgument("value","the precision").setDefaultValueDouble(1e-9).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0, 1)).build()).build());
@@ -130,11 +130,11 @@ namespace storm {
             }
             
             double BeliefExplorationSettings::getOptimalChoiceValueThresholdInit() const {
-                return this->getOption(schedulerThresholdOption).getArgumentByName("init").getValueAsDouble();
+                return this->getOption(optimalChoiceValueThresholdOption).getArgumentByName("init").getValueAsDouble();
             }
             
             double BeliefExplorationSettings::getOptimalChoiceValueThresholdFactor() const {
-                return this->getOption(schedulerThresholdOption).getArgumentByName("factor").getValueAsDouble();
+                return this->getOption(optimalChoiceValueThresholdOption).getArgumentByName("factor").getValueAsDouble();
             }
             
             double BeliefExplorationSettings::getObservationScoreThresholdInit() const {
@@ -229,7 +229,7 @@ namespace storm {
                 options.optimalChoiceValueThresholdFactor = storm::utility::convertNumber<ValueType>(getOptimalChoiceValueThresholdFactor());
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
-                options.useGridClipping = isUseClippingSet();
+                options.useClipping = isUseClippingSet();
                 options.useStateEliminationCutoff = isStateEliminationCutoffSet();
 
                 options.useParametricPreprocessing = isParametricPreprocessingSet();

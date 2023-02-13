@@ -189,7 +189,7 @@ namespace storm {
                 pomdpValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
-                if(options.useGridClipping && formula.isRewardOperatorFormula()){
+                if(options.useClipping && formula.isRewardOperatorFormula()){
                     pomdpValueBounds.extremePomdpValueBound =
                         PreprocessingPomdpValueBoundsModelChecker<ValueType>(pomdp()).getExtremeValueBound(formula, formulaInfo);
                 }
@@ -335,7 +335,7 @@ namespace storm {
                         }
                         underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
-                    if(options.useGridClipping && rewardModelName.is_initialized()) {
+                    if(options.useClipping && rewardModelName.is_initialized()) {
                         underApproximation->setExtremeValueBound(valueBounds.extremePomdpValueBound);
                     }
 
@@ -763,7 +763,7 @@ namespace storm {
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
                 statistics.underApproximationBuildTime.start();
-                if(options.useGridClipping){
+                if(options.useClipping){
                     STORM_PRINT_AND_LOG("Use Belief Clipping with grid beliefs \n")
                     statistics.nrClippingAttempts = 0;
                     statistics.nrClippedStates = 0;
@@ -778,7 +778,7 @@ namespace storm {
                 if (!refine) {
                     // Build a new under approximation
                     if (computeRewards) {
-                        if(options.useGridClipping){
+                        if(options.useClipping){
                             // If we clip, use the sink state for infinite correction values
                             underApproximation->startNewExploration(storm::utility::zero<ValueType>(), storm::utility::infinity<ValueType>());
                         } else {
@@ -808,7 +808,7 @@ namespace storm {
                     if (printUpdateStopwatch.getTimeInSeconds() >= 60) {
                         printUpdateStopwatch.restart();
                         STORM_PRINT_AND_LOG("### " << underApproximation->getCurrentNumberOfMdpStates() << " beliefs in underapproximation MDP" << " ##### " << underApproximation->getUnexploredStates().size() << " beliefs queued\n")
-                        if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useGridClipping){
+                        if(underApproximation->getCurrentNumberOfMdpStates() > heuristicParameters.sizeThreshold && options.useClipping){
                             STORM_PRINT_AND_LOG("##### Clipping Attempts: " << statistics.nrClippingAttempts.get() << " ##### " << "Clipped States: " << statistics.nrClippedStates.get() << "\n");
                         }
                     }
@@ -828,7 +828,7 @@ namespace storm {
                         bool stopExploration = false;
                         bool clipBelief = false;
                         if (timeLimitExceeded) {
-                            clipBelief = options.useGridClipping;
+                            clipBelief = options.useClipping;
                             stopExploration = true;
                             underApproximation->setCurrentStateIsTruncated();
                         } else if (!stateAlreadyExplored) {
@@ -840,7 +840,7 @@ namespace storm {
                                 underApproximation->setCurrentStateIsTruncated();
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >=
                                        heuristicParameters.sizeThreshold /*&& !statistics.beliefMdpDetectedToBeFinite*/) {
-                                clipBelief = options.useGridClipping;
+                                clipBelief = options.useClipping;
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
                             }

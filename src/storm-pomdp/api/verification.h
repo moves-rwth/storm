@@ -8,7 +8,7 @@ namespace api {
     underapproximateWithCutoffs(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp,
                               storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,  std::vector<std::vector<ValueType>> pomdpStateValues = std::vector<std::vector<ValueType>>()){
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
-        options.useGridClipping = false;
+        options.useClipping = false;
         options.useStateEliminationCutoff = false;
         options.sizeThresholdInit = sizeThreshold;
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> modelchecker(pomdp, options);

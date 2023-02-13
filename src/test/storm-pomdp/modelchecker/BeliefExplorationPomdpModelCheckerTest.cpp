@@ -188,7 +188,7 @@ namespace {
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> optionsWithClipping() const {
             storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> opt(true, true); // Always compute both bounds (lower and upper)
             TestType::adaptOptions(opt);
-            opt.useGridClipping = true;
+            opt.useClipping = true;
             return opt;
         }
         ValueType parseNumber(std::string const& str) {

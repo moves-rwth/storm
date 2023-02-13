@@ -17,7 +17,7 @@ namespace storm {
                 // TODO documentation?
                 bool discretize;
                 bool unfold;
-                bool useGridClipping = false;
+                bool useClipping = false;
                 bool refine = false;
                 bool cutZeroGap = false;
                 bool useParametricPreprocessing = false;
@@ -26,7 +26,7 @@ namespace storm {
                 double paramGDEps = 1e-6;
                 uint64_t paramGDMaxInstantiations = 1;
                 boost::optional<uint64_t> refineStepLimit;
-                ValueType refinePrecision = storm::utility::zero<ValueType>();
+                ValueType refinePrecision = storm::utility::convertNumber<ValueType>(1e-4);
                 boost::optional<uint64_t> explorationTimeLimit;
                 
                 // Control parameters for the refinement heuristic
