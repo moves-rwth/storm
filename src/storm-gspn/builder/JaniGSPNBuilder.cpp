@@ -183,6 +183,7 @@ void JaniGSPNBuilder::addEdges(storm::jani::Automaton& automaton, uint64_t locId
                     vars[inPlaceEntry.first]->getExpressionVariable() / expressionManager->integer(inPlaceEntry.second);  // Integer division!
                 if (firstArgumentOfMinExpression == true) {
                     enablingDegree = enablingDegreeInPlace;
+                    firstArgumentOfMinExpression = false;
                 } else {
                     enablingDegree = storm::expressions::minimum(enablingDegree, enablingDegreeInPlace);
                 }
