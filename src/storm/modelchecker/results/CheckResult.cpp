@@ -230,6 +230,8 @@ template ExplicitQuantitativeCheckResult<storm::RationalFunction> const& CheckRe
 
 template ExplicitParetoCurveCheckResult<storm::RationalNumber>& CheckResult::asExplicitParetoCurveCheckResult();
 template ExplicitParetoCurveCheckResult<storm::RationalNumber> const& CheckResult::asExplicitParetoCurveCheckResult() const;
+template ExplicitParetoCurveCheckResult<storm::RationalFunction>& CheckResult::asExplicitParetoCurveCheckResult();
+template ExplicitParetoCurveCheckResult<storm::RationalFunction> const& CheckResult::asExplicitParetoCurveCheckResult() const;
 
 template LexicographicCheckResult<storm::RationalNumber>& CheckResult::asLexicographicCheckResult();
 template LexicographicCheckResult<storm::RationalNumber> const& CheckResult::asLexicographicCheckResult() const;
