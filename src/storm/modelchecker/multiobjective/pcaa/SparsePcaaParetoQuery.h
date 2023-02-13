@@ -31,11 +31,19 @@ class SparsePcaaParetoQuery : public SparsePcaaQuery<SparseModelType, GeometryVa
      */
     virtual std::unique_ptr<CheckResult> check(Environment const& env) override;
 
+    /*
+     * Compute the scheduler for current underaproximated point and store it
+     */
+    void updateSchedulers();
    private:
     /*
      * Performs refinement steps until the approximation is sufficiently precise
      */
     void exploreSetOfAchievablePoints(Environment const& env);
+    /*
+     * Schedulers corresponding to the pareto optimal points
+     */
+    std::map<std::vector<typename SparseModelType::ValueType>, std::shared_ptr<storm::storage::Scheduler<typename SparseModelType::ValueType>>> schedulers;
 };
 
 }  // namespace multiobjective

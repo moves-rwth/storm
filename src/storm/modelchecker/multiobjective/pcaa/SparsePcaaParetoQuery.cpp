@@ -10,6 +10,7 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
 namespace modelchecker {
@@ -50,12 +51,25 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
         paretoOptimalPoints.push_back(
             storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(transformObjectiveValuesToOriginal(this->objectives, vertex)));
     }
-    return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>(
+    auto result = new ExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>(
         this->originalModel.getInitialStates().getNextSetIndex(0), std::move(paretoOptimalPoints),
         transformObjectivePolytopeToOriginal(this->objectives, this->underApproximation)
             ->template convertNumberRepresentation<typename SparseModelType::ValueType>(),
         transformObjectivePolytopeToOriginal(this->objectives, this->overApproximation)
-            ->template convertNumberRepresentation<typename SparseModelType::ValueType>()));
+            ->template convertNumberRepresentation<typename SparseModelType::ValueType>());
+    result->setSchedulers(std::move(schedulers));
+    return std::unique_ptr<CheckResult>(result);
+}
+
+template<class SparseModelType, typename GeometryValueType>
+void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::updateSchedulers() {
+    auto scheduler = 
+        std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(
+            this->weightVectorChecker->computeOriginalScheduler());
+    std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
+    auto targetScheduler = transformObjectiveSchedulerToOriginal(
+        std::make_shared<SparseModelType>(std::move(this->originalModel)), std::move(scheduler));
+    this->schedulers[point] = targetScheduler; // it overrides preexisting scheduler for this point
 }
 
 template<class SparseModelType, typename GeometryValueType>
@@ -68,6 +82,7 @@ void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchi
         WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());
         direction[objIndex] = storm::utility::one<GeometryValueType>();
         this->performRefinementStep(env, std::move(direction));
+        this->updateSchedulers();
         if (storm::utility::resources::isTerminate()) {
             break;
         }
@@ -95,6 +110,7 @@ void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::exploreSetOfAchi
         STORM_LOG_INFO("Current precision of the approximation of the pareto curve is ~" << storm::utility::convertNumber<double>(farestDistance));
         WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
         this->performRefinementStep(env, std::move(direction));
+        this->updateSchedulers();
     }
     STORM_LOG_ERROR("Could not reach the desired precision: Termination requested or maximum number of refinement steps exceeded.");
 }

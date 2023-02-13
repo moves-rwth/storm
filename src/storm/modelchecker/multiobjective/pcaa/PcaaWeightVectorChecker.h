@@ -69,6 +69,14 @@ class PcaaWeightVectorChecker {
      */
     virtual storm::storage::Scheduler<ValueType> computeScheduler() const;
 
+    /*!
+     * If changes has been made to the given model this function should inverse them to return a scheduler
+     * for the given model
+     */
+    virtual storm::storage::Scheduler<ValueType> computeOriginalScheduler() const {
+        return computeScheduler();
+    }
+
    protected:
     /*!
      * Computes the weighted lower or upper bounds for the provided set of objectives.

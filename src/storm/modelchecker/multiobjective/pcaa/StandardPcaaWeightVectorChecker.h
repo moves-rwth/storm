@@ -12,6 +12,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/transformer/EndComponentEliminator.h"
+#include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -66,6 +67,12 @@ class StandardPcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseMod
      * Also note that (currently) the scheduler only supports unbounded objectives.
      */
     virtual storm::storage::Scheduler<ValueType> computeScheduler() const override;
+
+    /*!
+     * Use the "oldToNewStateIndexMapping" from the merge result to build a scheduler fit for the original scheduler
+     * from the calculated scheduler from "computerScheduler"
+     */
+    virtual storm::storage::Scheduler<ValueType> computeOriginalScheduler() const override;
 
    protected:
     void initialize(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
@@ -172,6 +179,9 @@ class StandardPcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseMod
         std::vector<ValueType> auxChoiceValues;
     };
     boost::optional<EcQuotient> ecQuotient;
+
+    // Merge results
+    typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult;
 
     struct LraMecDecomposition {
         storm::storage::MaximalEndComponentDecomposition<ValueType> mecs;

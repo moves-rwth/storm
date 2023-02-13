@@ -61,7 +61,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
         obj.formula->gatherReferencedRewardModels(relevantRewardModels);
     }
     storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
-    auto mergerResult =
+    mergerResult =
         merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false),
                                         std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteTotalRewardChoices);
 
@@ -233,6 +233,22 @@ StandardPcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
         ++state;
     }
     return result;
+}
+
+template<class SparseModelType>
+storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType> 
+StandardPcaaWeightVectorChecker<SparseModelType>::computeOriginalScheduler() const {
+    auto scheduler = computeScheduler();
+    for (int state=0; state<scheduler.getNumberOfChoices(); state++){
+        for (int memory=0; memory<scheduler.getNumberOfMemoryStates(); memory++) {
+            scheduler.setChoice(
+                scheduler.getChoice(mergerResult.oldToNewStateIndexMapping[state], memory), 
+                state);
+        }
+    }
+    STORM_LOG_INFO("Original Scheduler calculated for: "
+                   << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(getUnderApproximationOfInitialStateResults())));
+    return scheduler;
 }
 
 template<typename ValueType>
