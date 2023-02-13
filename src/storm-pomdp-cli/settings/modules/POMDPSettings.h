@@ -23,6 +23,9 @@ namespace storm {
                 
                 bool isExportToParametricSet() const;
                 std::string getExportToParametricFilename() const;
+
+                bool isExportToJuliaSet() const;
+                std::string getExportToJuliaFilename() const;
                 
                 bool isQualitativeReductionSet() const;
 
@@ -44,9 +47,6 @@ namespace storm {
                 // The name of the module.
                 static const std::string moduleName;
 
-            private:
-
-                
             };
 
         } // namespace modules

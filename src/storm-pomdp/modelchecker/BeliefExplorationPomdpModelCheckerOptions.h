@@ -13,7 +13,8 @@ namespace storm {
                 BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold) : discretize(discretize), unfold(unfold) {
                     // Intentionally left empty
                 }
-                
+
+                // TODO documentation?
                 bool discretize;
                 bool unfold;
                 bool interactiveUnfolding = false;
@@ -21,7 +22,7 @@ namespace storm {
                 bool refine = false;
                 bool cutZeroGap = false;
                 bool useParametricPreprocessing = false;
-                bool useExplicitCutoff = false;
+                bool useStateEliminationCutoff = false;
                 uint64_t paramMemBound = 0;
                 double paramGDEps = 1e-6;
                 uint64_t paramGDMaxInstantiations = 1;
@@ -45,15 +46,11 @@ namespace storm {
                 // Controls which observations are refined.
                 ValueType obsThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
                 ValueType obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(0.1);
-                // Controls the delta value up to which clipping will be applied.
-                ValueType clippingThresholdInit = storm::utility::zero<ValueType>();
 
                 uint64_t clippingGridRes = 2;
 
-                bool disableClippingReduction = false;
-
                 bool skipHeuristicSchedulers = false;
-                
+
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)
 

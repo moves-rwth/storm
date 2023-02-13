@@ -15,6 +15,7 @@ namespace storm {
             const std::string POMDPSettings::moduleName = "pomdp";
             const std::string noCanonicOption = "nocanonic";
             const std::string exportAsParametricModelOption = "parametric-drn";
+            const std::string exportAsJuliaModelOption = "julia-export";
             const std::string beliefExplorationOption = "belief-exploration";
             std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold"};
             const std::string qualitativeReductionOption = "qualitativereduction";
@@ -29,6 +30,7 @@ namespace storm {
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, noCanonicOption, false, "If this is set, actions will not be ordered canonically. Could yield incorrect results.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportAsParametricModelOption, false, "Export the parametric file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportAsJuliaModelOption, false, "Export POMDP as JuliaPOMDP compatible model").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, qualitativeReductionOption, false, "Reduces the model size by performing qualitative analysis (E.g. merge states with prob. 1.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, analyzeUniqueObservationsOption, false, "Computes the states with a unique observation").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, selfloopReductionOption, false, "Reduces the model size by removing self loop actions").build());
@@ -49,6 +51,14 @@ namespace storm {
 
             std::string POMDPSettings::getExportToParametricFilename() const {
                 return this->getOption(exportAsParametricModelOption).getArgumentByName("filename").getValueAsString();
+            }
+
+            bool POMDPSettings::isExportToJuliaSet() const {
+                return this->getOption(exportAsJuliaModelOption).getHasOptionBeenSet();
+            }
+
+            std::string POMDPSettings::getExportToJuliaFilename() const {
+                return this->getOption(exportAsJuliaModelOption).getArgumentByName("filename").getValueAsString();
             }
             
             bool POMDPSettings::isQualitativeReductionSet() const {

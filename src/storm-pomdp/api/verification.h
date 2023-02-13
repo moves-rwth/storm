@@ -9,7 +9,7 @@ namespace api {
                               storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,  std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> pomdpStateValues = std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>>()){
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
         options.useGridClipping = false;
-        options.useExplicitCutoff = true;
+        options.useStateEliminationCutoff = false;
         options.sizeThresholdInit = sizeThreshold;
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> modelchecker(pomdp, options);
         return modelchecker.check(task.getFormula(), pomdpStateValues);

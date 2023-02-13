@@ -28,15 +28,14 @@ namespace storm {
             const std::string gapThresholdOption = "gap-threshold";
             const std::string schedulerThresholdOption = "scheduler-threshold";
             const std::string observationThresholdOption = "obs-threshold";
-            const std::string clippingThresholdOption = "clipping-threshold";
             const std::string numericPrecisionOption = "numeric-precision";
             const std::string triangulationModeOption = "triangulationmode";
             const std::string explHeuristicOption = "expl-heuristic";
-            const std::string clippingModeOption = "clipping-mode";
-            const std::string disableClippingReductionOption = "disable-clipping-reduction";
+            const std::string clippingOption = "use-clipping";
             const std::string cutZeroGapOption = "cut-zero-gap";
             const std::string parametricPreprocessingOption = "par-preprocessing";
-            const std::string explicitCutoffOption = "explicit-cutoff";
+            const std::string stateEliminationCutoffOption = "state-elimination-cutoff";
+            const std::string alphaVectorOption = "import-alphavec";
             const std::string preProcMinMaxMethodOption = "preproc-minmax";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
@@ -55,8 +54,6 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, gapThresholdOption, false,"Sets how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means less precise").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the gap in each refinement step (higher means less precise).").setDefaultValueDouble(0.25).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, clippingThresholdOption, false, "Sets how large the delta values are allowed to be for clipping to be applied.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init", "initial threshold").setDefaultValueDouble(0.0).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).build());
-
                 this->addOption(storm::settings::OptionBuilder(moduleName, schedulerThresholdOption, false,"Sets how much worse a sub-optimal choice can be in order to be included in the relevant explored fragment").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means more precise").setDefaultValueDouble(1e-3).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the threshold in each refinement step (higher means more precise).").setDefaultValueDouble(1).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(1)).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, numericPrecisionOption, false,"Sets the precision used to determine whether two belief-states are equal.").setIsAdvanced().addArgument(
@@ -64,27 +61,25 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, triangulationModeOption, false,"Sets how to triangulate beliefs when discretizing.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the triangulation mode").setDefaultValueString("dynamic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"})).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, clippingModeOption, false, "Sets how to clip beliefs after the size-threshold was reached").setIsAdvanced().addArgument(
-                        storm::settings::ArgumentBuilder::createStringArgument("value","the clipping mode").setDefaultValueString("classic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"classic", "grid"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, clippingOption, false, "If this is set, unfolding will use  (grid) clipping instead of cut-offs only.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, disableClippingReductionOption, false, "Disable the reduction of clipping candidate sets by difference 1-norm heuristic").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, beliefTypeOption, false,"Sets number type used to handle probabilities in beliefs").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the number type. 'default' is the POMDP datatype").setDefaultValueString("default").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"default", "float", "rational"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, cutZeroGapOption, false,"Cut beliefs where the gap between over- and underapproximation is 0.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricPreprocessingOption, false, "If this is set, the POMDP will be transformed to a pMC for preprocessing steps.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memoryBound", "number of memory states").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("gd-eps", "epsilon for gradient descent").setDefaultValueDouble(1e-6).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxInstantiations", "max. number of initial instantiations to use for gradient descent").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, explicitCutoffOption, false, "If this is set, the additional unfolding step for cut-off beliefs is skipped.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, preProcMinMaxMethodOption, false,"Sets the method to be used for model checking during pre-processing.").setIsAdvanced().addArgument(
-                                                                                                                                                                                     storm::settings::ArgumentBuilder::createStringArgument("method","the method to use").setDefaultValueString("svi").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"svi", "pi"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, stateEliminationCutoffOption, false, "If this is set, an additional unfolding step for cut-off beliefs is performed.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, alphaVectorOption, false, "Loads a set of alpha vectors that is used for preprocessing.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file containing the alpha vectors").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, preProcMinMaxMethodOption, false,"Sets the method to be used for model checking during pre-processing.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("method","the method to use").setDefaultValueString("svi").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"svi", "pi"})).build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
                 return this->getOption(refineOption).getHasOptionBeenSet();
             }
 
-            bool BeliefExplorationSettings::isExplicitCutoffSet() const {
-                return this->getOption(explicitCutoffOption).getHasOptionBeenSet();
+            bool BeliefExplorationSettings::isStateEliminationCutoffSet() const {
+                return this->getOption(stateEliminationCutoffOption).getHasOptionBeenSet();
             }
 
             double BeliefExplorationSettings::getRefinePrecision() const {
@@ -135,10 +130,6 @@ namespace storm {
             double BeliefExplorationSettings::getGapThresholdFactor() const {
                 return this->getOption(gapThresholdOption).getArgumentByName("factor").getValueAsDouble();
             }
-
-            double BeliefExplorationSettings::getClippingThresholdInit() const {
-                return this->getOption(clippingThresholdOption).getArgumentByName("init").getValueAsDouble();
-            }
             
             double BeliefExplorationSettings::getOptimalChoiceValueThresholdInit() const {
                 return this->getOption(schedulerThresholdOption).getArgumentByName("init").getValueAsDouble();
@@ -172,12 +163,8 @@ namespace storm {
                 return this->getOption(triangulationModeOption).getArgumentByName("value").getValueAsString() == "static";
             }
 
-            bool BeliefExplorationSettings::isClassicClippingModeSet() const {
-                return this->getOption(clippingModeOption).getArgumentByName("value").getValueAsString() == "classic";
-            }
-
-            bool BeliefExplorationSettings::isGridClippingModeSet() const {
-                return this->getOption(clippingModeOption).getArgumentByName("value").getValueAsString() == "grid";
+            bool BeliefExplorationSettings::isUseClippingSet() const {
+                return this->getOption(clippingOption).getHasOptionBeenSet();
             }
 
             storm::builder::ExplorationHeuristic BeliefExplorationSettings::getExplorationHeuristic() const {
@@ -197,10 +184,6 @@ namespace storm {
                     return storm::builder::ExplorationHeuristic::ProbabilityPrio;
                 }
                 return storm::builder::ExplorationHeuristic::BreadthFirst;
-            }
-
-            bool BeliefExplorationSettings::isDisableClippingReductionSet() const {
-                return this->getOption(disableClippingReductionOption).getHasOptionBeenSet();
             }
 
             bool BeliefExplorationSettings::isCutZeroGapSet() const {
@@ -231,7 +214,7 @@ namespace storm {
                     return storm::solver::MinMaxMethod::PolicyIteration;
                 }
             }
-            
+
             template<typename ValueType>
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
                 options.refine = isRefineSet();
@@ -257,17 +240,13 @@ namespace storm {
                 options.optimalChoiceValueThresholdFactor = storm::utility::convertNumber<ValueType>(getOptimalChoiceValueThresholdFactor());
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
-                options.useGridClipping = isGridClippingModeSet();
-                options.useExplicitCutoff = isExplicitCutoffSet();
+                options.useGridClipping = isUseClippingSet();
+                options.useStateEliminationCutoff = isStateEliminationCutoffSet();
 
                 options.useParametricPreprocessing = isParametricPreprocessingSet();
                 options.paramMemBound = getParametricPreprocessingMemoryBound();
                 options.paramGDEps = getParametricGDEpsilon();
                 options.paramGDMaxInstantiations = getParametricGDMaxInstantiations();
-
-                options.disableClippingReduction = isDisableClippingReductionSet();
-
-                options.clippingThresholdInit = storm::utility::convertNumber<ValueType>(getClippingThresholdInit());
                 
                 options.numericPrecision = storm::utility::convertNumber<ValueType>(getNumericPrecision());
                 if (storm::NumberTraits<ValueType>::IsExact) {
@@ -303,6 +282,13 @@ namespace storm {
                 }
                 STORM_LOG_WARN("Number Type for belief unknown, use default.");
                 return storm::pomdp::Default;
+            }
+
+            bool BeliefExplorationSettings::isAlphaVectorProcessingSet() const {
+                return this->getOption(alphaVectorOption).getHasOptionBeenSet();
+            }
+            std::string BeliefExplorationSettings::getAlphaVectorFileName() const {
+                return this->getOption(alphaVectorOption).getArgumentByName("filename").getValueAsString();
             }
 
             template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<double>& options) const;

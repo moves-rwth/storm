@@ -252,6 +252,8 @@ namespace storm {
 
             void restoreExplorationState();
 
+            std::vector<BeliefValueType> computeProductWithSparseMatrix(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix) const;
+
         private:
             MdpStateType noState() const;
 
@@ -284,6 +286,7 @@ namespace storm {
             std::vector<ValueType> probabilityEstimation;
             std::vector<std::map<MdpStateType, ValueType>> exploredMdpTransitions;
             std::vector<MdpStateType> exploredChoiceIndices;
+            std::vector<MdpStateType> previousChoiceIndices;
             std::vector<ValueType> mdpActionRewards;
             std::map<MdpStateType, ValueType> clippingTransitionRewards;
             uint64_t currentMdpState;

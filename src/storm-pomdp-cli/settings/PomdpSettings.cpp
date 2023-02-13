@@ -35,6 +35,7 @@
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
 #include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
+#include "storm-pomdp-cli/settings/modules/ToJuliaSettings.h"
 
 
 namespace storm {
@@ -53,6 +54,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
             storm::settings::addModule<storm::settings::modules::BeliefExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ToParametricSettings>();
+            storm::settings::addModule<storm::settings::modules::ToJuliaSettings>();
         
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();

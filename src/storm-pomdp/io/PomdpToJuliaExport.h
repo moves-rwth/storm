@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "storm/logic/Formula.h"
-#include "storm/io/file.h"
 #include "storm/models/sparse/Pomdp.h"
 
 namespace storm {
