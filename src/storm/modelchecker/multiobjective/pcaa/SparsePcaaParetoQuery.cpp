@@ -63,10 +63,14 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
 
 template<class SparseModelType, typename GeometryValueType>
 void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::updateSchedulers() {
-    auto scheduler = std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(this->weightVectorChecker->computeOriginalScheduler());
     std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
-    auto targetScheduler = transformObjectiveSchedulerToOriginal(std::make_shared<SparseModelType>(std::move(this->originalModel)), std::move(scheduler));
-    this->schedulers[point] = targetScheduler;  // it overrides preexisting scheduler for this point
+    if (!this->schedulers.count(point)){
+        auto scheduler = std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(this->weightVectorChecker->computeOriginalScheduler());
+        std::vector<typename SparseModelType::ValueType> vect;
+        vect.push_back(this->schedulers.size()+1);
+        auto targetScheduler = transformObjectiveSchedulerToOriginal(std::make_shared<SparseModelType>(std::move(this->originalModel)), std::move(scheduler));
+        this->schedulers[vect] = targetScheduler;  // it overrides preexisting scheduler for this point
+    }
 }
 
 template<class SparseModelType, typename GeometryValueType>
