@@ -57,6 +57,12 @@ class Scheduler {
     SchedulerChoice<ValueType> const& getChoice(uint_fast64_t modelState, uint_fast64_t memoryState = 0) const;
 
     /*!
+     * Returns the ammount of stored choices in this scheduler.
+     */
+    int getNumberOfChoices() const {
+        return schedulerChoices.front().size();
+    }
+    /*!
      * Set the combination of model state and memoryStructure state to dontCare.
      * These states are considered unreachable and are ignored when printing the scheduler.
      * If not specified otherwise, an arbitrary choice is set if no choice exists.
