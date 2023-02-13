@@ -7,10 +7,10 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/storage/Scheduler.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/storage/Scheduler.h"
 
 namespace storm {
 namespace modelchecker {
@@ -63,13 +63,10 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
 
 template<class SparseModelType, typename GeometryValueType>
 void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::updateSchedulers() {
-    auto scheduler = 
-        std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(
-            this->weightVectorChecker->computeOriginalScheduler());
+    auto scheduler = std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(this->weightVectorChecker->computeOriginalScheduler());
     std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
-    auto targetScheduler = transformObjectiveSchedulerToOriginal(
-        std::make_shared<SparseModelType>(std::move(this->originalModel)), std::move(scheduler));
-    this->schedulers[point] = targetScheduler; // it overrides preexisting scheduler for this point
+    auto targetScheduler = transformObjectiveSchedulerToOriginal(std::make_shared<SparseModelType>(std::move(this->originalModel)), std::move(scheduler));
+    this->schedulers[point] = targetScheduler;  // it overrides preexisting scheduler for this point
 }
 
 template<class SparseModelType, typename GeometryValueType>

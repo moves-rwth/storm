@@ -35,6 +35,7 @@ class SparsePcaaParetoQuery : public SparsePcaaQuery<SparseModelType, GeometryVa
      * Compute the scheduler for current underaproximated point and store it
      */
     void updateSchedulers();
+
    private:
     /*
      * Performs refinement steps until the approximation is sufficiently precise
