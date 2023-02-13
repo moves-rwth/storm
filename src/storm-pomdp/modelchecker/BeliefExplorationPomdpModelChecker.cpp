@@ -425,7 +425,7 @@ namespace storm {
                                 options.sizeThresholdFactor);
                             underApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
                             underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true,
-                                                                          underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
+                                                                          underApproxHeuristicPar, underApproxBeliefManager, underApproximation, true);
                             if (underApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                                 ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                                 bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);

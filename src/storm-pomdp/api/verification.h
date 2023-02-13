@@ -22,7 +22,7 @@ namespace api {
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
         options.skipHeuristicSchedulers = true;
         options.useGridClipping = false;
-        options.useExplicitCutoff = true;
+        options.useStateEliminationCutoff = false;
         options.sizeThresholdInit = sizeThreshold;
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> modelchecker(pomdp, options);
         return modelchecker.check(task.getFormula(), pomdpStateValues);
@@ -34,7 +34,7 @@ namespace api {
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
         options.skipHeuristicSchedulers = false;
         options.useGridClipping = useClipping;
-        options.useExplicitCutoff = true;
+        options.useStateEliminationCutoff = false;
         options.sizeThresholdInit = storm::utility::infinity<ValueType>();
         options.interactiveUnfolding = true;
         options.refine = false;
