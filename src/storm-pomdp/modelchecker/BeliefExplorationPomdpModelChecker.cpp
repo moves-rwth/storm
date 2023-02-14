@@ -467,81 +467,81 @@ namespace storm {
                                 STORM_LOG_WARN_COND(statistics.refinementSteps.get() < 1000, "Refinement requires  more than 1000 iterations.");
                             }
                         }
-                        if (options.unfold && !options.useStateEliminationCutoff) {
-                            std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
-                            storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
-                            auto nrPreprocessingScheds =
-                                min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
-                            for (uint64_t i = 0; i < nrPreprocessingScheds; ++i) {
-                                newLabeling.addLabel("sched_" + std::to_string(i));
-                            }
-                            newLabeling.addLabel("cutoff");
-                            newLabeling.addLabel("clipping");
-                            newLabeling.addLabel("finite_mem");
-
-                            auto transMatrix = scheduledModel->getTransitionMatrix();
-                            for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
-                                if (newLabeling.getStateHasLabel("truncated", i)) {
-                                    uint64_t localChosenActionIndex = underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
-                                    auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
-                                    if (scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).size() > 0) {
-                                        auto label = *(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).begin());
-                                        if (label.rfind("clip", 0) == 0) {
-                                            newLabeling.addLabelToState("clipping", i);
-                                            auto chosenRow = transMatrix.getRow(i, 0);
-                                            auto candidateIndex = (chosenRow.end() - 1)->getColumn();
-                                            transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
-                                        } else if (label.rfind("mem_node", 0) == 0) {
-                                            newLabeling.addLabelToState("finite_mem", i);
-                                            newLabeling.addLabelToState("cutoff", i);
-                                        } else {
-                                            newLabeling.addLabelToState(label, i);
-                                            newLabeling.addLabelToState("cutoff", i);
-                                        }
-                                    }
-                                }
-                            }
-                            newLabeling.removeLabel("truncated");
-
-                            transMatrix.dropZeroEntries();
-                            storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
-                            if (scheduledModel->hasChoiceLabeling()) {
-                                modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
-                            }
-                            storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
-                            auto inducedMC = newMDP.applyScheduler(*(underApproximation->getSchedulerForExploredMdp()), true);
-                            scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
-                            result.schedulerAsMarkovChain = scheduledModel;
-                            if (min) {
-                                result.cutoffSchedulers = underApproximation->getUpperValueBoundSchedulers();
-                            } else {
-                                result.cutoffSchedulers = underApproximation->getLowerValueBoundSchedulers();
-                            }
-                        }
                         if (overApproxFixPoint && underApproxFixPoint) {
                             STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations.\n");
                             statistics.refinementFixpointDetected = true;
                             break;
                         }
                     }
-                    // Print model information of final over- / under-approximation MDP
-                    if (options.discretize && overApproximation->hasComputedValues()) {
-                        auto printOverInfo = [&overApproximation]() {
-                            std::stringstream str;
-                            str << "Explored and checked Over-Approximation MDP:\n";
-                            overApproximation->getExploredMdp()->printModelInformationToStream(str);
-                            return str.str();
-                        };
-                        STORM_LOG_INFO(printOverInfo());
-                    }
-                    if (options.unfold && underApproximation->hasComputedValues()) {
-                        auto printUnderInfo = [&underApproximation]() {
-                            std::stringstream str;
-                            str << "Explored and checked Under-Approximation MDP:\n";
-                            underApproximation->getExploredMdp()->printModelInformationToStream(str);
-                            return str.str();
-                        };
-                        STORM_LOG_INFO(printUnderInfo());
+                }
+                // Print model information of final over- / under-approximation MDP
+                if (options.discretize && overApproximation->hasComputedValues()) {
+                    auto printOverInfo = [&overApproximation]() {
+                        std::stringstream str;
+                        str << "Explored and checked Over-Approximation MDP:\n";
+                        overApproximation->getExploredMdp()->printModelInformationToStream(str);
+                        return str.str();
+                    };
+                    STORM_LOG_INFO(printOverInfo());
+                }
+                if (options.unfold && underApproximation->hasComputedValues()) {
+                    auto printUnderInfo = [&underApproximation]() {
+                        std::stringstream str;
+                        str << "Explored and checked Under-Approximation MDP:\n";
+                        underApproximation->getExploredMdp()->printModelInformationToStream(str);
+                        return str.str();
+                    };
+                    STORM_LOG_INFO(printUnderInfo());
+                    if (!options.useStateEliminationCutoff) {
+                        std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
+                        storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
+                        auto nrPreprocessingScheds =
+                            min ? underApproximation->getNrSchedulersForUpperBounds() : underApproximation->getNrSchedulersForLowerBounds();
+                        for (uint64_t i = 0; i < nrPreprocessingScheds; ++i) {
+                            newLabeling.addLabel("sched_" + std::to_string(i));
+                        }
+                        newLabeling.addLabel("cutoff");
+                        newLabeling.addLabel("clipping");
+                        newLabeling.addLabel("finite_mem");
+
+                        auto transMatrix = scheduledModel->getTransitionMatrix();
+                        for (uint64_t i = 0; i < scheduledModel->getNumberOfStates(); ++i) {
+                            if (newLabeling.getStateHasLabel("truncated", i)) {
+                                uint64_t localChosenActionIndex = underApproximation->getSchedulerForExploredMdp()->getChoice(i).getDeterministicChoice();
+                                auto rowIndex = scheduledModel->getTransitionMatrix().getRowGroupIndices()[i];
+                                if (scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).size() > 0) {
+                                    auto label = *(scheduledModel->getChoiceLabeling().getLabelsOfChoice(rowIndex + localChosenActionIndex).begin());
+                                    if (label.rfind("clip", 0) == 0) {
+                                        newLabeling.addLabelToState("clipping", i);
+                                        auto chosenRow = transMatrix.getRow(i, 0);
+                                        auto candidateIndex = (chosenRow.end() - 1)->getColumn();
+                                        transMatrix.makeRowDirac(transMatrix.getRowGroupIndices()[i], candidateIndex);
+                                    } else if (label.rfind("mem_node", 0) == 0) {
+                                        newLabeling.addLabelToState("finite_mem", i);
+                                        newLabeling.addLabelToState("cutoff", i);
+                                    } else {
+                                        newLabeling.addLabelToState(label, i);
+                                        newLabeling.addLabelToState("cutoff", i);
+                                    }
+                                }
+                            }
+                        }
+                        newLabeling.removeLabel("truncated");
+
+                        transMatrix.dropZeroEntries();
+                        storm::storage::sparse::ModelComponents<ValueType> modelComponents(transMatrix, newLabeling);
+                        if (scheduledModel->hasChoiceLabeling()) {
+                            modelComponents.choiceLabeling = scheduledModel->getChoiceLabeling();
+                        }
+                        storm::models::sparse::Mdp<ValueType> newMDP(modelComponents);
+                        auto inducedMC = newMDP.applyScheduler(*(underApproximation->getSchedulerForExploredMdp()), true);
+                        scheduledModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(inducedMC);
+                        result.schedulerAsMarkovChain = scheduledModel;
+                        if (min) {
+                            result.cutoffSchedulers = underApproximation->getUpperValueBoundSchedulers();
+                        } else {
+                            result.cutoffSchedulers = underApproximation->getLowerValueBoundSchedulers();
+                        }
                     }
                 }
             }
