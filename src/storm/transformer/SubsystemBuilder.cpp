@@ -43,7 +43,7 @@ void transformModelSpecificComponents(storm::models::sparse::Model<ValueType, Re
 
 template<typename RewardModelType>
 RewardModelType transformRewardModel(RewardModelType const& originalRewardModel, storm::storage::BitVector const& subsystem,
-                                     storm::storage::BitVector const& subsystemActions) {
+                                     storm::storage::BitVector const& subsystemActions, bool makeRowGroupingTrivial) {
     boost::optional<std::vector<typename RewardModelType::ValueType>> stateRewardVector;
     boost::optional<std::vector<typename RewardModelType::ValueType>> stateActionRewardVector;
     boost::optional<storm::storage::SparseMatrix<typename RewardModelType::ValueType>> transitionRewardMatrix;
@@ -55,6 +55,10 @@ RewardModelType transformRewardModel(RewardModelType const& originalRewardModel,
     }
     if (originalRewardModel.hasTransitionRewards()) {
         transitionRewardMatrix = originalRewardModel.getTransitionRewardMatrix().getSubmatrix(false, subsystemActions, subsystem);
+        if(makeRowGroupingTrivial) {
+            STORM_LOG_ASSERT(transitionRewardMatrix.get().getColumnCount() == transitionRewardMatrix.get().getRowCount(), "Matrix should be square");
+            transitionRewardMatrix.get().makeRowGroupingTrivial();
+        }
     }
     return RewardModelType(std::move(stateRewardVector), std::move(stateActionRewardVector), std::move(transitionRewardMatrix));
 }
@@ -141,7 +145,7 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
 
     components.stateLabeling = originalModel.getStateLabeling().getSubLabeling(subsystemStates);
     for (auto const& rewardModel : originalModel.getRewardModels()) {
-        components.rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, keptActions)));
+        components.rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystemStates, keptActions, options.makeRowGroupingTrivial)));
     }
     if (originalModel.hasChoiceLabeling()) {
         components.choiceLabeling = originalModel.getChoiceLabeling().getSubLabeling(keptActions);
