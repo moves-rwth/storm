@@ -11,6 +11,9 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/settings/modules/IOSettings.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 
 namespace storm {
 namespace modelchecker {
@@ -63,10 +66,12 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
 
 template<class SparseModelType, typename GeometryValueType>
 void SparsePcaaParetoQuery<SparseModelType, GeometryValueType>::updateSchedulers() {
-    std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
-    if (!this->schedulers.count(point)) {
-        this->schedulers[point] =
-            std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(this->weightVectorChecker->computeOriginalScheduler());
+    if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExportSchedulerSet()) {
+        std::vector<typename SparseModelType::ValueType> point = this->weightVectorChecker->getUnderApproximationOfInitialStateResults();
+        if (!this->schedulers.count(point)) {
+            this->schedulers[point] =
+                std::make_shared<storm::storage::Scheduler<typename SparseModelType::ValueType>>(this->weightVectorChecker->computeOriginalScheduler());
+        }
     }
 }
 
