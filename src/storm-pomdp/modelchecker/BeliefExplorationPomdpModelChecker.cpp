@@ -468,8 +468,25 @@ namespace storm {
                     }
                 }
 
-                // TODO: UNDER CONSTRUCTION (START)
-                if (options.unfold) {
+
+                // Print model information of final over- / under-approximation MDP
+                if (options.discretize && overApproximation->hasComputedValues()) {
+                    auto printOverInfo = [&overApproximation]() {
+                        std::stringstream str;
+                        str << "Explored and checked Over-Approximation MDP:\n";
+                        overApproximation->getExploredMdp()->printModelInformationToStream(str);
+                        return str.str();
+                    };
+                    STORM_LOG_INFO(printOverInfo());
+                }
+                if (options.unfold && underApproximation->hasComputedValues()) {
+                    auto printUnderInfo = [&underApproximation]() {
+                        std::stringstream str;
+                        str << "Explored and checked Under-Approximation MDP:\n";
+                        underApproximation->getExploredMdp()->printModelInformationToStream(str);
+                        return str.str();
+                    };
+                    STORM_LOG_INFO(printUnderInfo());
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> scheduledModel = underApproximation->getExploredMdp();
                     if(!options.useStateEliminationCutoff) {
                         storm::models::sparse::StateLabeling newLabeling(scheduledModel->getStateLabeling());
@@ -502,28 +519,6 @@ namespace storm {
                     } else {
                         result.cutoffSchedulers = underApproximation->getLowerValueBoundSchedulers();
                     }
-                }
-                // TODO: UNDER CONSTRUCTION (END)
-
-
-                // Print model information of final over- / under-approximation MDP
-                if (options.discretize && overApproximation->hasComputedValues()) {
-                    auto printOverInfo = [&overApproximation]() {
-                        std::stringstream str;
-                        str << "Explored and checked Over-Approximation MDP:\n";
-                        overApproximation->getExploredMdp()->printModelInformationToStream(str);
-                        return str.str();
-                    };
-                    STORM_LOG_INFO(printOverInfo());
-                }
-                if (options.unfold && underApproximation->hasComputedValues()) {
-                    auto printUnderInfo = [&underApproximation]() {
-                        std::stringstream str;
-                        str << "Explored and checked Under-Approximation MDP:\n";
-                        underApproximation->getExploredMdp()->printModelInformationToStream(str);
-                        return str.str();
-                    };
-                    STORM_LOG_INFO(printUnderInfo());
                 }
             }
 
@@ -905,13 +900,13 @@ namespace storm {
                             for (uint64_t i = 0; i < nrCutoffStrategies; ++i) {
                                 auto cutOffValue = min ? underApproximation->computeUpperValueBoundForScheduler(currId, i) : underApproximation->computeLowerValueBoundForScheduler(currId, i) ;
                                 if (computeRewards) {
-                                    underApproximation->addTransitionsToExtraStates(i, storm::utility::one<ValueType>());
-                                    underApproximation->addRewardToCurrentState(i, cutOffValue);
+                                    underApproximation->addTransitionsToExtraStates(addedActions + i, storm::utility::one<ValueType>());
+                                    underApproximation->addRewardToCurrentState(addedActions + i, cutOffValue);
                                 } else {
-                                    underApproximation->addTransitionsToExtraStates(i, cutOffValue,storm::utility::one<ValueType>() - cutOffValue);
+                                    underApproximation->addTransitionsToExtraStates(addedActions + i, cutOffValue,storm::utility::one<ValueType>() - cutOffValue);
                                 }
                                 if(pomdp().hasChoiceLabeling()){
-                                    underApproximation->addChoiceLabelToCurrentState(i, "sched_" + std::to_string(i));
+                                    underApproximation->addChoiceLabelToCurrentState(addedActions + i, "sched_" + std::to_string(i));
                                 }
                             }
                         }
