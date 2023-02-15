@@ -7,6 +7,8 @@
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 namespace storm {
 
@@ -48,6 +50,9 @@ class SparseMultiObjectivePreprocessor {
 
         // If set, some states have been merged to a deadlock state with this label.
         boost::optional<std::string> deadlockLabel;
+
+        // Mapping of incorporated memory to model+memory
+        boost::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
 
         PreprocessorData(std::shared_ptr<SparseModelType> model);
     };

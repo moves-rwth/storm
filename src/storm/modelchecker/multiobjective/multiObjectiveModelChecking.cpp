@@ -1,12 +1,15 @@
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
+#include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
 #include "storm/modelchecker/multiobjective/deterministicScheds/DeterministicSchedsParetoExplorer.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaAchievabilityQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaParetoQuery.h"
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuantitativeQuery.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessor.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -83,6 +86,15 @@ std::unique_ptr<CheckResult> performMultiObjectiveModelChecking(Environment cons
                 }
 
                 result = query->check(env);
+
+                if (preprocessorResult.memoryIncorporationReverseData && result->isExplicitParetoCurveCheckResult() &&
+                    result->template asExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>().hasScheduler()) {
+                    // we have information to post-process schedulers
+                    auto schedulers = result->template asExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>().getSchedulers();
+                    result->template asExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>().setSchedulers(
+                        transformObjectiveSchedulersToOriginal(std::move(preprocessorResult.memoryIncorporationReverseData.value()),
+                                                               std::make_shared<SparseModelType>(model), schedulers));
+                }
 
                 if (env.modelchecker().multi().isExportPlotSet()) {
                     query->exportPlotOfCurrentApproximation(env);

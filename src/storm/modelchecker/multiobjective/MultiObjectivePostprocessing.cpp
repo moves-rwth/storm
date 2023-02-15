@@ -4,6 +4,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 namespace storm {
 namespace modelchecker {
@@ -74,22 +75,30 @@ std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transform
  * (not the ones done by specific checkers)
  */
 template<typename ValueType, typename SparseModelType>
-std::shared_ptr<storm::storage::Scheduler<ValueType>> transformObjectiveSchedulerToOriginal(std::shared_ptr<SparseModelType> const& originalModel,
-                                                                                            std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler) {
-    storm::storage::Scheduler<ValueType> result(originalModel->getNumberOfStates());
-    // set common states
-    for (int state = 0; state < scheduler->getNumberOfModelStates(); state++) {
-        for (int memory = 0; memory < scheduler->getNumberOfMemoryStates(); memory++) {
-            result.setChoice(scheduler->getChoice(state, memory), state, memory);
+std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> transformObjectiveSchedulersToOriginal(
+    storm::storage::SparseModelMemoryProductReverseData const& reverseData, std::shared_ptr<SparseModelType> const& originalModel,
+    std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> schedulers) {
+    auto num = originalModel->getNumberOfStates();
+    auto memoryStateCount = reverseData.memory.getNumberOfStates();
+
+    for (auto const& tuple : schedulers) {
+        std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler = tuple.second;
+        auto point = tuple.first;
+        storm::storage::Scheduler<ValueType> result(originalModel->getNumberOfStates(), reverseData.memory);
+        for (int state = 0; state < result.getNumberOfModelStates(); state++) {
+            for (int memState = 0; memState < memoryStateCount; memState++) {
+                auto const& productState =
+                    reverseData.toResultStateMapping[state * memoryStateCount + memState];  // reverseData.getResultState(state, memState);
+                if (productState != -1) {
+                    auto choice = scheduler->getChoice(productState);
+                    result.setChoice(choice, state, memState);
+                }
+            }
         }
+        schedulers[point] = std::move(std::make_shared<storm::storage::Scheduler<ValueType>>(result));
     }
-    // add irrelevant states removed in preprocessing
-    for (int state = scheduler->getNumberOfModelStates(); state < originalModel->getNumberOfStates(); state++) {
-        for (int memory = 0; memory < scheduler->getNumberOfMemoryStates(); memory++) {
-            result.setDontCare(state, memory, false);
-        }
-    }
-    return std::make_shared<storm::storage::Scheduler<ValueType>>(result);
+
+    return schedulers;
 }
 
 template std::vector<storm::RationalNumber> transformObjectiveValuesToOriginal(std::vector<Objective<double>> objectives,
@@ -100,16 +109,30 @@ template std::vector<storm::RationalNumber> transformObjectiveValuesToOriginal(s
                                                                                std::vector<storm::RationalNumber> const& point);
 template std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumber>> transformObjectivePolytopeToOriginal(
     std::vector<Objective<storm::RationalNumber>> objectives, std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumber>> const& polytope);
-template std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>> transformObjectiveSchedulerToOriginal(
+
+template std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>> transformObjectiveSchedulersToOriginal(
+    storm::storage::SparseModelMemoryProductReverseData const& modelMemoryProduct,
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> const& originalModel,
-    std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>> scheduler);
-template std::shared_ptr<storm::storage::Scheduler<double>> transformObjectiveSchedulerToOriginal(
-    std::shared_ptr<storm::models::sparse::Mdp<double>> const& originalModel, std::shared_ptr<storm::storage::Scheduler<double>> scheduler);
-template std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>> transformObjectiveSchedulerToOriginal(
+    // std::shared_ptr<std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>>> schedulers);
+    std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>> schedulers);
+
+template std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>> transformObjectiveSchedulersToOriginal(
+    storm::storage::SparseModelMemoryProductReverseData const& modelMemoryProduct, std::shared_ptr<storm::models::sparse::Mdp<double>> const& originalModel,
+    // std::shared_ptr<std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>>> schedulers);
+    std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>> schedulers);
+
+template std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>> transformObjectiveSchedulersToOriginal(
+    storm::storage::SparseModelMemoryProductReverseData const& modelMemoryProduct,
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> const& originalModel,
-    std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>> scheduler);
-template std::shared_ptr<storm::storage::Scheduler<double>> transformObjectiveSchedulerToOriginal(
-    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> const& originalModel, std::shared_ptr<storm::storage::Scheduler<double>> scheduler);
+    // std::shared_ptr<std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>>> schedulers);
+    std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>> schedulers);
+
+template std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>> transformObjectiveSchedulersToOriginal(
+    storm::storage::SparseModelMemoryProductReverseData const& modelMemoryProduct,
+    std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> const& originalModel,
+    // std::shared_ptr<std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>>> schedulers);
+    std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>> schedulers);
+
 }  // namespace multiobjective
 }  // namespace modelchecker
 }  // namespace storm

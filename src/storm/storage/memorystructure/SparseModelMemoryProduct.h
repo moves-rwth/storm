@@ -52,6 +52,10 @@ class SparseModelMemoryProduct {
     storm::models::sparse::Model<ValueType, RewardModelType> const& getOriginalModel() const;
     storm::storage::MemoryStructure const& getMemory() const;
 
+    std::vector<uint64_t> getResultStateMapping() {
+        return toResultStateMapping;
+    }
+
    private:
     // Initializes auxiliary data for building the product
     void initialize();

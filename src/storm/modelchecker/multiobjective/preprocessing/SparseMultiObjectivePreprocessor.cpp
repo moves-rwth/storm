@@ -14,6 +14,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/transformer/MemoryIncorporation.h"
 #include "storm/transformer/SubsystemBuilder.h"
@@ -35,12 +36,16 @@ template<typename SparseModelType>
 typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(
     Environment const& env, SparseModelType const& originalModel, storm::logic::MultiObjectiveFormula const& originalFormula) {
     std::shared_ptr<SparseModelType> model;
+    boost::optional<storm::storage::SparseModelMemoryProductReverseData> memoryIncorporationReverseData;
 
     // Incorporate the necessary memory
     if (env.modelchecker().multi().isSchedulerRestrictionSet()) {
         auto const& schedRestr = env.modelchecker().multi().getSchedulerRestriction();
         if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::GoalMemory) {
-            model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
+            // trying to do "auto [model, modelMemoryProduct]" causes seg fault when trying to access model
+            auto res = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
+            model = std::move(std::get<0>(res));
+            memoryIncorporationReverseData = std::move(std::get<1>(res));
         } else if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::Arbitrary && schedRestr.getMemoryStates() > 1) {
             model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateFullMemory(originalModel, schedRestr.getMemoryStates());
         } else if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::Counter && schedRestr.getMemoryStates() > 1) {
@@ -51,7 +56,10 @@ typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMul
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "The given scheduler restriction has not been implemented.");
         }
     } else {
-        model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
+        // trying to do "auto [model, modelMemoryProduct]" causes seg fault when trying to access model
+        auto res = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
+        model = std::move(std::get<0>(res));
+        memoryIncorporationReverseData = std::move(std::get<1>(res));
     }
 
     // Remove states that are irrelevant for all properties (e.g. because they are only reachable via goal states
@@ -60,6 +68,7 @@ typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMul
 
     PreprocessorData data(model);
     data.deadlockLabel = deadlockLabel;
+    data.memoryIncorporationReverseData = std::move(memoryIncorporationReverseData);
 
     // Invoke preprocessing on the individual objectives
     for (auto const& subFormula : originalFormula.getSubformulas()) {
@@ -726,6 +735,7 @@ typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMul
     ReturnType result(originalFormula, originalModel);
     auto backwardTransitions = data.model->getBackwardTransitions();
     result.preprocessedModel = data.model;
+    result.memoryIncorporationReverseData = std::move(data.memoryIncorporationReverseData);
 
     for (auto& obj : data.objectives) {
         result.objectives.push_back(std::move(*obj));

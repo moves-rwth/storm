@@ -6,6 +6,7 @@
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/geometry/Polytope.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 
 namespace storm {
 namespace modelchecker {
@@ -19,8 +20,9 @@ std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transform
     std::vector<Objective<ValueType>> objectives, std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope);
 
 template<typename ValueType, typename SparseModelType>
-std::shared_ptr<storm::storage::Scheduler<ValueType>> transformObjectiveSchedulerToOriginal(std::shared_ptr<SparseModelType> const& originalModel,
-                                                                                            std::shared_ptr<storm::storage::Scheduler<ValueType>> scheduler);
+std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> transformObjectiveSchedulersToOriginal(
+    storm::storage::SparseModelMemoryProductReverseData const& modelMemoryProduct, std::shared_ptr<SparseModelType> const& originalModel,
+    std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> schedulers);
 
 }  // namespace multiobjective
 }  // namespace modelchecker

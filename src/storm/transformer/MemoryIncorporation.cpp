@@ -10,6 +10,7 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/NondeterministicMemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
+#include "storm/storage/memorystructure/SparseModelMemoryProductReverseData.h"
 #include "storm/storage/memorystructure/SparseModelNondeterministicMemoryProduct.h"
 
 #include "storm/utility/macros.h"
@@ -56,7 +57,7 @@ storm::storage::MemoryStructure getUntilFormulaMemory(SparseModelType const& mod
 }
 
 template<class SparseModelType>
-std::shared_ptr<SparseModelType> MemoryIncorporation<SparseModelType>::incorporateGoalMemory(
+std::tuple<std::shared_ptr<SparseModelType>, storm::storage::SparseModelMemoryProductReverseData> MemoryIncorporation<SparseModelType>::incorporateGoalMemory(
     SparseModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
     storm::storage::MemoryStructure memory = storm::storage::MemoryStructureBuilder<ValueType, RewardModelType>::buildTrivialMemoryStructure(model);
 
@@ -87,7 +88,8 @@ std::shared_ptr<SparseModelType> MemoryIncorporation<SparseModelType>::incorpora
     }
 
     storm::storage::SparseModelMemoryProduct<ValueType> product = memory.product(model);
-    return std::dynamic_pointer_cast<SparseModelType>(product.build());
+    return std::make_tuple(std::dynamic_pointer_cast<SparseModelType>(product.build()),
+                           storm::storage::SparseModelMemoryProductReverseData(product.getMemory(), product.getResultStateMapping()));
 }
 
 template<class SparseModelType>
