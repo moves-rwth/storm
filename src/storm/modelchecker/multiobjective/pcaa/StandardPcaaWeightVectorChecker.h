@@ -181,7 +181,7 @@ class StandardPcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseMod
     boost::optional<EcQuotient> ecQuotient;
 
     // Merge results
-    typename storm::transformer::GoalStateMerger<SparseModelType>::ReturnType mergerResult;
+    std::vector<uint_fast64_t> goalStateMergerIndexMapping;
 
     struct LraMecDecomposition {
         storm::storage::MaximalEndComponentDecomposition<ValueType> mecs;
