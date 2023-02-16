@@ -78,7 +78,6 @@ template<typename ValueType, typename SparseModelType>
 std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> transformObjectiveSchedulersToOriginal(
     storm::storage::SparseModelMemoryProductReverseData const& reverseData, std::shared_ptr<SparseModelType> const& originalModel,
     std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> schedulers) {
-    auto num = originalModel->getNumberOfStates();
     auto memoryStateCount = reverseData.memory.getNumberOfStates();
 
     for (auto const& tuple : schedulers) {
@@ -88,11 +87,19 @@ std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<Value
         for (int state = 0; state < result.getNumberOfModelStates(); state++) {
             for (int memState = 0; memState < memoryStateCount; memState++) {
                 auto const& productState =
-                    reverseData.toResultStateMapping[state * memoryStateCount + memState];  // reverseData.getResultState(state, memState);
+                    reverseData.toResultStateMapping[state * memoryStateCount + memState];  
                 if (productState != -1) {
-                    auto choice = scheduler->getChoice(productState);
-                    result.setChoice(choice, state, memState);
+                    // if it's -1 it's unreachable
+                    if (productState>=scheduler->getNumberOfModelStates()) { 
+                        // means it's been deleted as irrelevant state
+                        result.setDontCare(productState, memState, true);
+                    }
+                    else {
+                        auto choice = scheduler->getChoice(productState);
+                        result.setChoice(choice, state, memState);
+                    }
                 }
+
             }
         }
         schedulers[point] = std::move(std::make_shared<storm::storage::Scheduler<ValueType>>(result));
