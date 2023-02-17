@@ -25,9 +25,9 @@ namespace storm {
                 uint64_t paramMemBound = 0;
                 double paramGDEps = 1e-6;
                 uint64_t paramGDMaxInstantiations = 1;
-                boost::optional<uint64_t> refineStepLimit;
+                uint64_t refineStepLimit = 0;
                 ValueType refinePrecision = storm::utility::convertNumber<ValueType>(1e-4);
-                boost::optional<uint64_t> explorationTimeLimit;
+                uint64_t explorationTimeLimit = 0;
                 
                 // Control parameters for the refinement heuristic
                 // Discretization Resolution

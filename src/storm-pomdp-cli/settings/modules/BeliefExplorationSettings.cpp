@@ -84,17 +84,8 @@ namespace storm {
                 return this->getOption(refineOption).getArgumentByName("prec").getValueAsDouble();
             }
             
-            bool BeliefExplorationSettings::isRefineStepLimitSet() const {
-                return this->getOption(refineOption).getArgumentByName("steps").getValueAsUnsignedInteger() != 0;
-            }
-            
             uint64_t BeliefExplorationSettings::getRefineStepLimit() const {
-                assert(isRefineStepLimitSet());
                 return this->getOption(refineOption).getArgumentByName("steps").getValueAsUnsignedInteger();
-            }
-            
-            bool BeliefExplorationSettings::isExplorationTimeLimitSet() const {
-                return this->getOption(explorationTimeLimitOption).getHasOptionBeenSet();
             }
             
             uint64_t BeliefExplorationSettings::getExplorationTimeLimit() const {
@@ -208,16 +199,9 @@ namespace storm {
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
                 options.refine = isRefineSet();
                 options.refinePrecision = storm::utility::convertNumber<ValueType>(getRefinePrecision());
-                if (isRefineStepLimitSet()) {
-                    options.refineStepLimit = getRefineStepLimit();
-                } else {
-                    options.refineStepLimit = boost::none;
-                }
-                if (isExplorationTimeLimitSet()) {
-                    options.explorationTimeLimit = getExplorationTimeLimit();
-                } else {
-                    options.explorationTimeLimit = boost::none;
-                }
+                options.refineStepLimit = getRefineStepLimit();
+                options.explorationTimeLimit = getExplorationTimeLimit();
+
                 options.clippingGridRes = getClippingGridResolution();
                 options.resolutionInit = getResolutionInit();
                 options.resolutionFactor = storm::utility::convertNumber<ValueType>(getResolutionFactor());

@@ -327,7 +327,7 @@ namespace storm {
                     underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;
                     if (underApproxHeuristicPar.sizeThreshold == 0) {
-                        if (!options.refine && options.explorationTimeLimit) {
+                        if (!options.refine && options.explorationTimeLimit != 0) {
                             underApproxHeuristicPar.sizeThreshold = std::numeric_limits<uint64_t>::max();
                         } else {
                             underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
@@ -373,11 +373,11 @@ namespace storm {
                 // Start refinement
                 if (options.refine) {
                     STORM_LOG_WARN_COND(
-                        options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision),
+                        options.refineStepLimit != 0 || !storm::utility::isZero(options.refinePrecision),
                         "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
                     STORM_LOG_WARN_COND(storm::utility::isZero(options.refinePrecision) || (options.unfold && options.discretize),
                                         "Refinement goal precision is given, but only one bound is going to be refined.");
-                    while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps.get() < options.refineStepLimit.get()) &&
+                    while ((options.refineStepLimit == 0 || statistics.refinementSteps.get() < options.refineStepLimit) &&
                            result.diff() > options.refinePrecision) {
                         bool overApproxFixPoint = true;
                         bool underApproxFixPoint = true;
@@ -573,14 +573,14 @@ namespace storm {
 
                 // Start exploration
                 storm::utility::Stopwatch explorationTime;
-                if (options.explorationTimeLimit) {
+                if (options.explorationTimeLimit != 0) {
                     explorationTime.start();
                 }
                 bool timeLimitExceeded = false;
                 std::map<uint32_t, typename ExplorerType::SuccessorObservationInformation> gatheredSuccessorObservations; // Declare here to avoid reallocations
                 uint64_t numRewiredOrExploredStates = 0;
                 while (overApproximation->hasUnexploredState()) {
-                    if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
+                    if (!timeLimitExceeded && options.explorationTimeLimit != 0 && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit) {
                         STORM_LOG_INFO("Exploration time limit exceeded.");
                         timeLimitExceeded = true;
                         STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because the exploration time limit is exceeded.");
@@ -796,12 +796,12 @@ namespace storm {
                 storm::utility::Stopwatch explorationTime;
                 storm::utility::Stopwatch printUpdateStopwatch;
                 printUpdateStopwatch.start();
-                if (options.explorationTimeLimit) {
+                if (options.explorationTimeLimit != 0) {
                     explorationTime.start();
                 }
                 bool timeLimitExceeded = false;
                 while (underApproximation->hasUnexploredState()) {
-                    if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
+                    if (!timeLimitExceeded && options.explorationTimeLimit != 0 && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit) {
                         STORM_LOG_INFO("Exploration time limit exceeded.");
                         timeLimitExceeded = true;
                     }
