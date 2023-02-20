@@ -44,8 +44,8 @@ typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMul
         if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::GoalMemory) {
             // trying to do "auto [model, modelMemoryProduct]" causes seg fault when trying to access model
             auto res = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
-            model = std::move(std::get<0>(res));
-            memoryIncorporationReverseData = std::move(std::get<1>(res));
+            model = std::get<0>(res);
+            memoryIncorporationReverseData = std::get<1>(res);
         } else if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::Arbitrary && schedRestr.getMemoryStates() > 1) {
             model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateFullMemory(originalModel, schedRestr.getMemoryStates());
         } else if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::Counter && schedRestr.getMemoryStates() > 1) {
@@ -58,8 +58,8 @@ typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMul
     } else {
         // trying to do "auto [model, modelMemoryProduct]" causes seg fault when trying to access model
         auto res = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
-        model = std::move(std::get<0>(res));
-        memoryIncorporationReverseData = std::move(std::get<1>(res));
+        model = std::get<0>(res);
+        memoryIncorporationReverseData = std::get<1>(res);
     }
 
     // Remove states that are irrelevant for all properties (e.g. because they are only reachable via goal states
@@ -735,7 +735,7 @@ typename SparseMultiObjectivePreprocessor<SparseModelType>::ReturnType SparseMul
     ReturnType result(originalFormula, originalModel);
     auto backwardTransitions = data.model->getBackwardTransitions();
     result.preprocessedModel = data.model;
-    result.memoryIncorporationReverseData = std::move(data.memoryIncorporationReverseData);
+    result.memoryIncorporationReverseData = data.memoryIncorporationReverseData;
 
     for (auto& obj : data.objectives) {
         result.objectives.push_back(std::move(*obj));
