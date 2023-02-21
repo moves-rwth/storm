@@ -161,7 +161,7 @@ uint_fast64_t Scheduler<ValueType>::getNumberOfMemoryStates() const {
 
 template<typename ValueType>
 uint_fast64_t Scheduler<ValueType>::getNumberOfModelStates() const {
-    return schedulerChoices.front().size();
+    return schedulerChoices.empty() ? 0 : schedulerChoices.front().size();
 }
 
 template<typename ValueType>

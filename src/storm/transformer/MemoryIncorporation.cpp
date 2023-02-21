@@ -89,8 +89,7 @@ std::tuple<std::shared_ptr<SparseModelType>, storm::storage::SparseModelMemoryPr
 
     storm::storage::SparseModelMemoryProduct<ValueType> product = memory.product(model);
     auto result = std::dynamic_pointer_cast<SparseModelType>(product.build());
-    return std::make_tuple(result,
-                           storm::storage::SparseModelMemoryProductReverseData(product.getMemory(), product.getResultStateMapping()));
+    return std::make_tuple(result, storm::storage::SparseModelMemoryProductReverseData(product.getMemory(), product.getResultStateMapping()));
 }
 
 template<class SparseModelType>

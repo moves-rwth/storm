@@ -54,14 +54,12 @@ std::unique_ptr<CheckResult> SparsePcaaParetoQuery<SparseModelType, GeometryValu
         paretoOptimalPoints.push_back(
             storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(transformObjectiveValuesToOriginal(this->objectives, vertex)));
     }
-    auto result = new ExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>(
-        this->originalModel.getInitialStates().getNextSetIndex(0), std::move(paretoOptimalPoints),
+    return std::unique_ptr<CheckResult>(new ExplicitParetoCurveCheckResult<typename SparseModelType::ValueType>(
+        this->originalModel.getInitialStates().getNextSetIndex(0), std::move(paretoOptimalPoints), std::move(schedulers),
         transformObjectivePolytopeToOriginal(this->objectives, this->underApproximation)
             ->template convertNumberRepresentation<typename SparseModelType::ValueType>(),
         transformObjectivePolytopeToOriginal(this->objectives, this->overApproximation)
-            ->template convertNumberRepresentation<typename SparseModelType::ValueType>());
-    result->setSchedulers(std::move(schedulers));
-    return std::unique_ptr<CheckResult>(result);
+            ->template convertNumberRepresentation<typename SparseModelType::ValueType>()));
 }
 
 template<class SparseModelType, typename GeometryValueType>

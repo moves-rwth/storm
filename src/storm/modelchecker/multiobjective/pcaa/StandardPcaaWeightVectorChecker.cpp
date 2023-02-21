@@ -240,7 +240,8 @@ storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelTy
 StandardPcaaWeightVectorChecker<SparseModelType>::computeOriginalScheduler() const {
     auto scheduler = this->computeScheduler();
     storm::storage::Scheduler<ValueType> result(goalStateMergerIndexMapping.size());
-    for (int state = 0; state < result.getNumberOfModelStates(); state++) {
+    auto numOfModelStates = result.getNumberOfModelStates();
+    for (int state = 0; state < numOfModelStates; state++) {
         result.setChoice(scheduler.getChoice(goalStateMergerIndexMapping[state]), state);
     }
     return result;
