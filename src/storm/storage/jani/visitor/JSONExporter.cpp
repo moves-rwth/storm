@@ -713,7 +713,12 @@ boost::any ExpressionToJson::visit(storm::expressions::UnaryBooleanFunctionExpre
 boost::any ExpressionToJson::visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
     ExportJsonType opDecl;
     opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
-    opDecl["exp"] = anyToJson(expression.getOperand()->accept(*this, data));
+    if (expression.getOperator() == storm::expressions::OperatorType::Minus) {
+        opDecl["left"] = 0;
+        opDecl["right"] = anyToJson(expression.getOperand()->accept(*this, data));
+    } else {
+        opDecl["exp"] = anyToJson(expression.getOperand()->accept(*this, data));
+    }
     return opDecl;
 }
 

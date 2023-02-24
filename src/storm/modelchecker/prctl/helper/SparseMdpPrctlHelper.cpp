@@ -379,7 +379,10 @@ SparseMdpHintType<ValueType> computeHints(Environment const& env, SolutionType c
     if (!result.eliminateEndComponents) {
         extractValueAndSchedulerHint(result, transitionMatrix, backwardTransitions, maybeStates, selectedChoices, hint, result.uniqueSolution);
     } else {
-        STORM_LOG_WARN_COND(hint.isEmpty(), "A non-empty hint was provided, but its information will be disregarded.");
+        //STORM_LOG_WARN_COND(hint.isEmpty(), "A non-empty hint was provided, but its information will be disregarded.");
+        if(hint.isEmpty()){
+            STORM_LOG_TRACE("Warn A non-empty hint was provided, but its information will be disregarded.");
+        }
     }
 
     // Only set bounds if we did not obtain them from the hint.
@@ -851,15 +854,22 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType
                 newRew0AStates.set(ecElimResult.oldToNewStateMapping[oldRew0AState]);
             }
 
+            if (goal.hasRelevantValues()) {
+                storm::storage::BitVector newRelevantValues(ecElimResult.matrix.getRowGroupCount(), false);
+                for (auto oldRelevantState : goal.relevantValues()) {
+                    newRelevantValues.set(ecElimResult.oldToNewStateMapping[oldRelevantState]);
+                }
+                goal.relevantValues() = std::move(newRelevantValues);
+            }
+
             MDPSparseModelCheckingHelperReturnType<ValueType> result = computeReachabilityRewardsHelper(
                 env, std::move(goal), ecElimResult.matrix, ecElimResult.matrix.transpose(true),
-                [&](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                [&](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix, storm::storage::BitVector const& maybeStates) {
                     std::vector<ValueType> result;
                     std::vector<ValueType> oldChoiceRewards = rewardModel.getTotalRewardVector(transitionMatrix);
                     result.reserve(rowCount);
                     for (uint64_t newState : maybeStates) {
-                        for (uint64_t newChoice = transitionMatrix.getRowGroupIndices()[newState];
-                             newChoice < transitionMatrix.getRowGroupIndices()[newState + 1]; ++newChoice) {
+                        for (auto newChoice : newTransitionMatrix.getRowGroupIndices(newState)) {
                             uint64_t oldChoice = ecElimResult.newToOldRowMapping[newChoice];
                             result.push_back(oldChoiceRewards[oldChoice]);
                         }

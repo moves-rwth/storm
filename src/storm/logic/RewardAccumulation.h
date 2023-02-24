@@ -8,6 +8,9 @@ class RewardAccumulation {
    public:
     RewardAccumulation(bool steps, bool time, bool exit);
     RewardAccumulation(RewardAccumulation const& other) = default;
+    RewardAccumulation(RewardAccumulation&& other) = default;
+    RewardAccumulation& operator=(RewardAccumulation const& other) = default;
+    RewardAccumulation& operator=(RewardAccumulation&& other) = default;
 
     bool isStepsSet() const;  // If set, choice rewards and transition rewards are accumulated upon taking the transition
     bool isTimeSet() const;   // If set, state rewards are accumulated over time (assuming 0 time passes in discrete-time model states)

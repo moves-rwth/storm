@@ -167,6 +167,8 @@ namespace storm {
 
             ValueType computeUpperValueBoundForScheduler(BeliefId const &beliefId, uint64_t schedulerId) const;
 
+            std::pair<bool, ValueType> computeFMSchedulerValueForMemoryNode(BeliefId const &beliefId, uint64_t memoryNode) const;
+
             storm::storage::Scheduler<ValueType> getUpperValueBoundScheduler(uint64_t schedulerId) const;
 
             storm::storage::Scheduler<ValueType> getLowerValueBoundScheduler(uint64_t schedulerId) const;
@@ -180,6 +182,8 @@ namespace storm {
             void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const &dir);
 
             bool hasComputedValues() const;
+
+            bool hasFMSchedulerValues() const;
 
             std::vector<ValueType> const &getValuesOfExploredMdp() const;
 
@@ -234,7 +238,19 @@ namespace storm {
 
             uint64_t getNrSchedulersForLowerBounds();
 
+            void markAsGridBelief(BeliefId const &beliefId);
+
+            bool isMarkedAsGridBelief(BeliefId const &beliefId);
+
             const std::shared_ptr<storm::storage::Scheduler<BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>> &getSchedulerForExploredMdp() const;
+
+            void setFMSchedValueList(std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> valueList);
+
+            uint64_t getNrOfMemoryNodesForObservation(uint32_t observation) const;
+
+            void storeExplorationState();
+
+            void restoreExplorationState();
 
             std::vector<BeliefValueType> computeProductWithSparseMatrix(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix) const;
 
@@ -286,6 +302,7 @@ namespace storm {
             storm::storage::BitVector clippedStates;
             MdpStateType initialMdpState;
             storm::storage::BitVector delayedExplorationChoices;
+            std::unordered_set<BeliefId> gridBeliefs;
 
             // Final Mdp
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
@@ -293,6 +310,7 @@ namespace storm {
             // Value and scheduler related information
             storm::pomdp::modelchecker::PreprocessingPomdpValueBounds<ValueType> pomdpValueBounds;
             storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremeValueBound;
+            std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> fmSchedulerValueList;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;
             std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed
@@ -303,6 +321,30 @@ namespace storm {
             // The current status of this explorer
             ExplorationHeuristic explHeuristic;
             Status status;
+
+            struct ExplorationStorage{
+                std::vector<BeliefId> storedMdpStateToBeliefIdMap;
+                std::map<BeliefId, MdpStateType> storedBeliefIdToMdpStateMap;
+                storm::storage::BitVector storedExploredBeliefIds;
+                std::map<BeliefId, std::map<uint64_t, std::string>> storedMdpStateToChoiceLabelsMap;
+                std::multimap<ValueType, uint64_t> storedMdpStatesToExplorePrioState;
+                std::map<uint64_t, ValueType> storedMdpStatesToExploreStatePrio;
+                std::vector<ValueType> storedProbabilityEstimation;
+                std::vector<std::map<MdpStateType, ValueType>> storedExploredMdpTransitions;
+                std::vector<MdpStateType> storedExploredChoiceIndices;
+                std::vector<ValueType> storedMdpActionRewards;
+                std::map<MdpStateType, ValueType> storedClippingTransitionRewards;
+                uint64_t storedCurrentMdpState;
+                std::map<MdpStateType, MdpStateType> storedStateRemapping;
+                uint64_t storedNextId;
+                ValueType storedPrio;
+                std::vector<ValueType> storedLowerValueBounds;
+                std::vector<ValueType> storedUpperValueBounds;
+                std::vector<ValueType> storedValues;
+                storm::storage::BitVector storedTargetStates;
+            };
+
+            ExplorationStorage explorationStorage;
         };
     }
 }

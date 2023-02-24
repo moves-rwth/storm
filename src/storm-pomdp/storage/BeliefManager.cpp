@@ -136,6 +136,23 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::pair<bool, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>
+        BeliefManager<PomdpType, BeliefValueType, StateType>::getWeightedSum(BeliefId const &beliefId, std::unordered_map<StateType, ValueType> const& summands) {
+            bool successful = true;
+            auto result = storm::utility::zero<ValueType>();
+            for (auto const &entry : getBelief(beliefId)) {
+                auto probIter = summands.find(entry.first);
+                if (probIter != summands.end()){
+                    result += storm::utility::convertNumber<ValueType>(entry.second) * storm::utility::convertNumber<ValueType>(summands.at(entry.first));
+                } else {
+                    successful = false;
+                    break;
+                }
+            }
+            return {successful, result};
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId const &BeliefManager<PomdpType, BeliefValueType, StateType>::getInitialBelief() const {
             return initialBeliefId;
         }
@@ -770,7 +787,9 @@ namespace storm {
             if(pomdp.hasObservationValuations()){
                 return pomdp.getObservationValuations().getStateInfo(getBeliefObservation(beliefId));
             } else {
-                STORM_LOG_WARN("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
+                // TODO PAYNT
+                // STORM_LOG_WARN("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
+                STORM_LOG_TRACE("Cannot get observation labels as no observation valuation has been defined for the POMDP. Return empty label instead.");
                 return "";
             }
 

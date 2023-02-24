@@ -6,13 +6,47 @@ namespace api {
     template<typename ValueType>
     typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>>::Result
     underapproximateWithCutoffs(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp,
-                              storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,  std::vector<std::vector<ValueType>> pomdpStateValues = std::vector<std::vector<ValueType>>()){
+                              storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,  std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> pomdpStateValues = std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>>()){
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
         options.useClipping = false;
         options.useStateEliminationCutoff = false;
         options.sizeThresholdInit = sizeThreshold;
         storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> modelchecker(pomdp, options);
         return modelchecker.check(task.getFormula(), pomdpStateValues);
+    }
+
+    template<typename ValueType>
+    typename storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>>::Result
+    underapproximateWithoutHeuristicValues(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp,
+                                storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, uint64_t sizeThreshold,  std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> pomdpStateValues){
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
+        options.skipHeuristicSchedulers = true;
+        options.useClipping = false;
+        options.useStateEliminationCutoff = false;
+        options.sizeThresholdInit = sizeThreshold;
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> modelchecker(pomdp, options);
+        return modelchecker.check(task.getFormula(), pomdpStateValues);
+    }
+
+    template<typename ValueType>
+    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>>
+    createInteractiveUnfoldingModelChecker(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp, bool useClipping){
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options(false,true);
+        options.skipHeuristicSchedulers = false;
+        options.useClipping = useClipping;
+        options.useStateEliminationCutoff = false;
+        options.sizeThresholdInit = storm::utility::infinity<ValueType>();
+        options.interactiveUnfolding = true;
+        options.refine = false;
+        options.gapThresholdInit = 0;
+        options.cutZeroGap = false;
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> modelchecker(pomdp, options);
+        return modelchecker;
+    }
+
+    template<typename ValueType>
+    void startInteractiveExploration(storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> & modelchecker, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> pomdpStateValues){
+         modelchecker.check(task.getFormula(), pomdpStateValues);
     }
 
     template<typename ValueType>

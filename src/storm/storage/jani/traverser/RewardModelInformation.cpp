@@ -24,16 +24,23 @@ RewardModelInformation::RewardModelInformation(Model const& model, storm::expres
     std::map<storm::expressions::Variable, storm::expressions::Expression> initialSubstitution;
     bool containsNonTransientVariable = false;
     for (auto const& v : variablesInRewardExpression) {
-        STORM_LOG_ASSERT(model.hasGlobalVariable(v.getName()), "Unable to find global variable " << v.getName() << " occurring in a reward expression.");
-        auto const& janiVar = model.getGlobalVariable(v.getName());
-        if (janiVar.hasInitExpression()) {
-            initialSubstitution.emplace(v, janiVar.getInitExpression());
-        }
-        if (!janiVar.isTransient()) {
-            containsNonTransientVariable = true;
+        if (model.hasConstant(v.getName())) {
+            auto const& janiConst = model.getConstant(v.getName());
+            if (janiConst.isDefined()) {
+                initialSubstitution.emplace(v, janiConst.getExpression());
+            }
+        } else {
+            STORM_LOG_ASSERT(model.hasGlobalVariable(v.getName()), "Unable to find global variable " << v.getName() << " occurring in a reward expression.");
+            auto const& janiVar = model.getGlobalVariable(v.getName());
+            if (janiVar.hasInitExpression()) {
+                initialSubstitution.emplace(v, janiVar.getInitExpression());
+            }
+            if (!janiVar.isTransient()) {
+                containsNonTransientVariable = true;
+            }
         }
     }
-    auto initExpr = storm::jani::substituteJaniExpression(rewardModelExpression, initialSubstitution);
+    auto initExpr = storm::jani::substituteJaniExpression(rewardModelExpression, initialSubstitution).simplify();
     if (containsNonTransientVariable || initExpr.containsVariables() || !storm::utility::isZero(initExpr.evaluateAsRational())) {
         stateRewards = true;
         actionRewards = true;

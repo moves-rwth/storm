@@ -72,6 +72,7 @@ namespace storm {
             mdpStateToChoiceLabelsMap.clear();
             optimalChoices = boost::none;
             optimalChoicesReachableMdpStates = boost::none;
+            scheduler = nullptr;
             exploredMdp = nullptr;
             internalAddRowGroupIndex(); // Mark the start of the first row group
 
@@ -154,6 +155,62 @@ namespace storm {
 
             // Set up the initial state.
             initialMdpState = getOrAddMdpState(beliefManager->getInitialBelief());
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::storeExplorationState() {
+            explorationStorage.storedMdpStateToBeliefIdMap = std::vector<BeliefId>(mdpStateToBeliefIdMap);
+            explorationStorage.storedBeliefIdToMdpStateMap = std::map<BeliefId, MdpStateType>(beliefIdToMdpStateMap);
+            explorationStorage.storedExploredBeliefIds = storm::storage::BitVector(exploredBeliefIds);
+            explorationStorage.storedMdpStateToChoiceLabelsMap = std::map<BeliefId, std::map<uint64_t, std::string>>(mdpStateToChoiceLabelsMap);
+            explorationStorage.storedMdpStatesToExplorePrioState = std::multimap<ValueType, uint64_t>(mdpStatesToExplorePrioState);
+            explorationStorage.storedMdpStatesToExploreStatePrio = std::map<uint64_t, ValueType>(mdpStatesToExploreStatePrio);
+            explorationStorage.storedProbabilityEstimation = std::vector<ValueType>(probabilityEstimation);
+            explorationStorage.storedExploredMdpTransitions = std::vector<std::map<MdpStateType, ValueType>>(exploredMdpTransitions);
+            explorationStorage.storedExploredChoiceIndices = std::vector<MdpStateType>(exploredChoiceIndices);
+            explorationStorage.storedMdpActionRewards = std::vector<ValueType>(mdpActionRewards);
+            explorationStorage.storedClippingTransitionRewards = std::map<MdpStateType, ValueType>(clippingTransitionRewards);
+            explorationStorage.storedCurrentMdpState = currentMdpState;
+            explorationStorage.storedStateRemapping = std::map<MdpStateType, MdpStateType>(stateRemapping);
+            explorationStorage.storedNextId = nextId;
+            explorationStorage.storedPrio = ValueType(prio);
+            explorationStorage.storedLowerValueBounds = std::vector<ValueType>(lowerValueBounds);
+            explorationStorage.storedUpperValueBounds = std::vector<ValueType>(upperValueBounds);
+            explorationStorage.storedValues = std::vector<ValueType>(values);
+
+            explorationStorage.storedTargetStates = storm::storage::BitVector(targetStates);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::restoreExplorationState() {
+            mdpStateToBeliefIdMap = std::vector<BeliefId>(explorationStorage.storedMdpStateToBeliefIdMap);
+            beliefIdToMdpStateMap = std::map<BeliefId, MdpStateType>(explorationStorage.storedBeliefIdToMdpStateMap);
+            exploredBeliefIds = storm::storage::BitVector(explorationStorage.storedExploredBeliefIds);
+            mdpStateToChoiceLabelsMap = std::map<BeliefId, std::map<uint64_t, std::string>>(explorationStorage.storedMdpStateToChoiceLabelsMap);
+            mdpStatesToExplorePrioState = std::multimap<ValueType, uint64_t>(explorationStorage.storedMdpStatesToExplorePrioState);
+            mdpStatesToExploreStatePrio = std::map<uint64_t, ValueType>(explorationStorage.storedMdpStatesToExploreStatePrio);
+            probabilityEstimation = std::vector<ValueType>(explorationStorage.storedProbabilityEstimation);
+            exploredMdpTransitions = std::vector<std::map<MdpStateType, ValueType>>(explorationStorage.storedExploredMdpTransitions);
+            exploredChoiceIndices = std::vector<MdpStateType>(explorationStorage.storedExploredChoiceIndices);
+            mdpActionRewards = std::vector<ValueType>(explorationStorage.storedMdpActionRewards);
+            clippingTransitionRewards = std::map<MdpStateType, ValueType>(explorationStorage.storedClippingTransitionRewards);
+            currentMdpState = explorationStorage.storedCurrentMdpState;
+            stateRemapping = std::map<MdpStateType, MdpStateType>(explorationStorage.storedStateRemapping);
+            nextId = explorationStorage.storedNextId;
+            prio = ValueType(explorationStorage.storedPrio);
+            lowerValueBounds = explorationStorage.storedLowerValueBounds;
+            upperValueBounds = explorationStorage.storedUpperValueBounds;
+            values = explorationStorage.storedValues;
+            status = Status::Exploring;
+            targetStates = explorationStorage.storedTargetStates;
+
+            truncatedStates.clear();
+            clippedStates.clear();
+            delayedExplorationChoices.clear();
+            optimalChoices = boost::none;
+            optimalChoicesReachableMdpStates = boost::none;
+            exploredMdp = nullptr;
+            scheduler = nullptr;
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -545,11 +602,19 @@ namespace storm {
                 } else {
                     STORM_LOG_DEBUG("Observation of MDP state " << state << " : " << beliefManager->getObservationLabel(mdpStateToBeliefIdMap[state]) << "\n");
                     std::string obsLabel = beliefManager->getObservationLabel(mdpStateToBeliefIdMap[state]);
+                    uint32_t obsId = beliefManager->getBeliefObservation(mdpStateToBeliefIdMap[state]);
                     if (!obsLabel.empty()) {
                         if (!mdpLabeling.containsLabel(obsLabel)) {
                             mdpLabeling.addLabel(obsLabel);
                         }
                         mdpLabeling.addLabelToState(obsLabel, state);
+                    }
+                    else if (mdpStateToBeliefIdMap[state] != beliefManager->noId()) {
+                        std::string obsIdLabel = "obs_" + std::to_string(obsId);
+                        if (!mdpLabeling.containsLabel(obsIdLabel)) {
+                            mdpLabeling.addLabel(obsIdLabel);
+                        }
+                        mdpLabeling.addLabelToState(obsIdLabel, state);
                     }
                 }
             }
@@ -795,6 +860,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        std::pair<bool, typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType>
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::computeFMSchedulerValueForMemoryNode(BeliefId const &beliefId, uint64_t memoryNode) const {
+            STORM_LOG_ASSERT(!fmSchedulerValueList.empty(), "Requested finite memory scheduler value bounds but none were available.");
+            auto obs = beliefManager->getBeliefObservation(beliefId);
+            STORM_LOG_ASSERT(fmSchedulerValueList.size() > obs, "Requested value bound for observation " << obs << " not available.");
+            STORM_LOG_ASSERT(fmSchedulerValueList.at(obs).size() > memoryNode, "Requested value bound for observation " << obs << " and memory node " << memoryNode << " not available.");
+            return beliefManager->getWeightedSum(beliefId, fmSchedulerValueList.at(obs).at(memoryNode));
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType
         BeliefMdpExplorer<PomdpType, BeliefValueType>::computeParametricBoundAtBelief(BeliefId const &beliefId) const {
             STORM_LOG_ASSERT(!pomdpValueBounds.parametric.empty(), "Parametric bounds not available.");
@@ -1013,6 +1088,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::markAsGridBelief(BeliefId const &beliefId){
+            gridBeliefs.insert(beliefId);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::isMarkedAsGridBelief(BeliefId const &beliefId){
+            return gridBeliefs.count(beliefId) > 0;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpExplorer<PomdpType, BeliefValueType>::getExploredMdpState(BeliefId const &beliefId) const {
             if (beliefId < exploredBeliefIds.size() && exploredBeliefIds.get(beliefId)) {
                 return beliefIdToMdpStateMap.at(beliefId);
@@ -1176,6 +1261,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::setFMSchedValueList(std::vector<std::vector<std::unordered_map<uint64_t,ValueType>>> valueList){
+            fmSchedulerValueList = valueList;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        uint64_t BeliefMdpExplorer<PomdpType, BeliefValueType>::getNrOfMemoryNodesForObservation(uint32_t observation) const{
+            return fmSchedulerValueList.at(observation).size();
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplorer<PomdpType, BeliefValueType>::getExtremeValueBoundAtPOMDPState(const uint64_t &pomdpState){
             return extremeValueBound.getValueForState(pomdpState);
         }
@@ -1223,6 +1318,12 @@ namespace storm {
         BeliefMdpExplorer<PomdpType, BeliefValueType>::getUpperValueBoundSchedulers() const {
             STORM_LOG_ASSERT(!pomdpValueBounds.upperSchedulers.empty(), "Requested upper bound schedulers but none were available.");
             return pomdpValueBounds.upperSchedulers;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::hasFMSchedulerValues() const {
+            return !fmSchedulerValueList.empty();
         }
 
         template<typename PomdpType, typename BeliefValueType>

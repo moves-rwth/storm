@@ -36,6 +36,7 @@ namespace storm {
             const std::string parametricPreprocessingOption = "par-preprocessing";
             const std::string stateEliminationCutoffOption = "state-elimination-cutoff";
             const std::string alphaVectorOption = "import-alphavec";
+            const std::string preProcMinMaxMethodOption = "preproc-minmax";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -70,6 +71,7 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, stateEliminationCutoffOption, false, "If this is set, an additional unfolding step for cut-off beliefs is performed.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, alphaVectorOption, false, "Loads a set of alpha vectors that is used for preprocessing.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file containing the alpha vectors").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, preProcMinMaxMethodOption, false,"Sets the method to be used for model checking during pre-processing.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("method","the method to use").setDefaultValueString("svi").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"svi", "pi"})).build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -194,7 +196,16 @@ namespace storm {
             double BeliefExplorationSettings::getParametricGDEpsilon() const {
                 return this->getOption(parametricPreprocessingOption).getArgumentByName("gd-eps").getValueAsDouble();
             }
-            
+
+            storm::solver::MinMaxMethod BeliefExplorationSettings::getPreProcMinMaxMethod() const {
+                if(this->getOption(preProcMinMaxMethodOption).getArgumentByName("method").getValueAsString() == "svi") {
+                    return storm::solver::MinMaxMethod::SoundValueIteration;
+                }
+                if(this->getOption(preProcMinMaxMethodOption).getArgumentByName("method").getValueAsString() == "pi") {
+                    return storm::solver::MinMaxMethod::PolicyIteration;
+                }
+            }
+
             template<typename ValueType>
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
                 options.refine = isRefineSet();
@@ -235,6 +246,8 @@ namespace storm {
                 options.explorationHeuristic = getExplorationHeuristic();
 
                 options.cutZeroGap = isCutZeroGapSet();
+
+                options.preProcMinMaxMethod = getPreProcMinMaxMethod();
             }
 
             bool BeliefExplorationSettings::isBeliefTypeSetFromDefault() const {

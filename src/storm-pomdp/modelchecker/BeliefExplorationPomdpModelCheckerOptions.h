@@ -17,7 +17,9 @@ namespace storm {
                 // TODO documentation?
                 bool discretize;
                 bool unfold;
+
                 bool useClipping = false;
+                bool interactiveUnfolding = false;
                 bool refine = false;
                 bool cutZeroGap = false;
                 bool useParametricPreprocessing = false;
@@ -48,11 +50,14 @@ namespace storm {
 
                 uint64_t clippingGridRes = 2;
 
-                
+                bool skipHeuristicSchedulers = false;
+
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)
 
                 storm::builder::ExplorationHeuristic explorationHeuristic = storm::builder::ExplorationHeuristic::BreadthFirst;
+
+                storm::solver::MinMaxMethod preProcMinMaxMethod = storm::solver::MinMaxMethod::SoundValueIteration;
 
             };
         }

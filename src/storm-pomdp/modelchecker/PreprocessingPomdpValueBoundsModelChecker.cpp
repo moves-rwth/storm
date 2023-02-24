@@ -10,9 +10,12 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/storage/Scheduler.h"
 
-#include "storm/utility/macros.h"
-#include "storm/exceptions/UnexpectedException.h"
+#include "environment/solver/MinMaxSolverEnvironment.h"
+#include "environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/exceptions/UnexpectedException.h"
+#include "storm/utility/macros.h"
+
 namespace storm {
     namespace pomdp {
         namespace modelchecker {
@@ -64,8 +67,13 @@ namespace storm {
             }
 
             template <typename ValueType>
-            PreprocessingPomdpValueBoundsModelChecker<ValueType>::PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp) : pomdp(pomdp) {
-                // Intentionally left empty
+            PreprocessingPomdpValueBoundsModelChecker<ValueType>::PreprocessingPomdpValueBoundsModelChecker(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::solver::MinMaxMethod minMaxMethod) : pomdp(pomdp) {
+                // Setup checker environment
+                mcEnvironment = storm::Environment();
+                mcEnvironment.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological, true);
+                mcEnvironment.solver().minMax().setMethod(minMaxMethod);
+                mcEnvironment.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-9));
+                mcEnvironment.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);
             }
 
             template <typename ValueType>
@@ -136,7 +144,7 @@ namespace storm {
                 STORM_LOG_ASSERT(!pomdpScheduler.isPartialScheduler(), "Expected a fully defined scheduler.");
                 auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
 
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
@@ -171,7 +179,7 @@ namespace storm {
                 // Model check the DTMC resulting from the policy
                 auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(memPomdp->getTransitionMatrix(), memPomdp->getStateLabeling(), memPomdp->getRewardModels());
                 auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
@@ -208,7 +216,7 @@ namespace storm {
 
                 auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
 
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> pomdpSchedulerResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
@@ -226,7 +234,7 @@ namespace storm {
                 // We need an actual MDP so that we can apply schedulers below.
                 // Also, the api call in the next line will require a copy anyway.
                 auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(underlyingMdp, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
+                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, underlyingMdp, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> fullyObservableResult = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
@@ -350,7 +358,7 @@ namespace storm {
                 }
                 auto formulaPtr = std::make_shared<storm::logic::RewardOperatorFormula>(newFormula);
                 auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
-                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(underlyingMdp, storm::api::createTask<ValueType>(formulaPtr, false));
+                auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(mcEnvironment, underlyingMdp, storm::api::createTask<ValueType>(formulaPtr, false));
                 STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
                 STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
                 std::vector<ValueType> resultVec = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
