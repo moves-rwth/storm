@@ -2,11 +2,9 @@
 
 #include <vector>
 
-#include "storm/builder/jit/DistributionEntry.h"
+#include "storm/generator/DistributionEntry.h"
 
-namespace storm {
-namespace builder {
-namespace jit {
+namespace storm::generator {
 
 template<typename IndexType, typename ValueType>
 class Distribution {
@@ -68,6 +66,4 @@ class Distribution {
     bool compressed;
 };
 
-}  // namespace jit
-}  // namespace builder
-}  // namespace storm
+}  // namespace storm::generator

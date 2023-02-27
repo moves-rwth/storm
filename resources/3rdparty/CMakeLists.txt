@@ -92,6 +92,11 @@ if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 
+if ("${Boost_VERSION}" STREQUAL "108100")
+    message(STATUS "Storm - Using workaround for Boost 1.81")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_PHOENIX_STL_TUPLE_H_")
+endif()
+
 set(CNTVAR 1)
 foreach(BOOSTLIB ${Boost_LIBRARIES})
     add_imported_library(target-boost-${CNTVAR} SHARED ${BOOSTLIB} ${Boost_INCLUDE_DIRS})
@@ -149,7 +154,7 @@ endforeach()
 #############################################################
 
 # Use the shipped version of cpphoafparser
-message (STATUS "storm - Including cpphoafparser 0.99.2")
+message (STATUS "Storm - Including cpphoafparser 0.99.2")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/cpphoafparser-0.99.2/include")
 
 #############################################################
@@ -321,7 +326,7 @@ if (STORM_SHIPPED_CARL)
 	message(STATUS "Carl - Start of config process")
 	file(MAKE_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download)
 	execute_process(
-	COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}"
+	COMMAND ${CMAKE_COMMAND} ${STORM_3RDPARTY_SOURCE_DIR}/carl "-DSTORM_3RDPARTY_BINARY_DIR=${STORM_3RDPARTY_BINARY_DIR}" "-DBoost_LIBRARY_DIRS=${Boost_LIBRARY_DIRS}" "-DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}" "-DUse_CLN_NUMBERS=${SHIPPED_CARL_USE_CLN_NUMBERS}" "-DUse_GINAC=${SHIPPED_CARL_USE_GINAC}"
 	WORKING_DIRECTORY ${STORM_3RDPARTY_BINARY_DIR}/carl_download
 	OUTPUT_VARIABLE carlconfig_out
 	RESULT_VARIABLE carlconfig_result)
@@ -550,12 +555,18 @@ else()
     set(SYLVAN_BUILD_TYPE "Release")
 endif()
 
+#for Apple Silicon, build Sylvan differently
+set(Sylvan_Portable STORM_PORTABLE)
+if(APPLE_SILICON)
+    set(Sylvan_Portable ON)
+endif()
+
 ExternalProject_Add(
         sylvan
         DOWNLOAD_COMMAND ""
         PREFIX "sylvan"
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DGMP_LOCATION=${GMP_LIB_LOCATION}  -DGMP_INCLUDE=${GMP_INCLUDE_DIR}  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DSYLVAN_PORTABLE=${STORM_PORTABLE} -DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS} -DBUILD_SHARED_LIBS=OFF -DSYLVAN_BUILD_TESTS=OFF
+        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DGMP_LOCATION=${GMP_LIB_LOCATION}  -DGMP_INCLUDE=${GMP_INCLUDE_DIR}  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DSYLVAN_BUILD_DOCS=OFF -DSYLVAN_BUILD_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=${SYLVAN_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DUSE_CARL=ON -Dcarl_DIR=${carl_DIR} -DSYLVAN_PORTABLE=${Sylvan_Portable} -DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS} -DBUILD_SHARED_LIBS=OFF -DSYLVAN_BUILD_TESTS=OFF
         BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/sylvan
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
@@ -592,16 +603,6 @@ endif()
 
 #############################################################
 ##
-##	cpptemplate
-##
-#############################################################
-
-add_imported_library_interface(CppTemplate "${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/")
-list(APPEND STORM_DEP_TARGETS CppTemplate)
-list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cpptempl.cpp)
-
-#############################################################
-##
 ##	Google Test gtest
 ##
 #############################################################
@@ -629,6 +630,7 @@ ExternalProject_Add(
 # Specify include dir
 ExternalProject_Get_Property(googletest source_dir)
 set(GTEST_INCLUDE_DIR ${source_dir}/googletest/include)
+set(GMOCK_INCLUDE_DIR ${source_dir}/googlemock/include)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
 set(GTEST_LIBRARIES ${binary_dir}/lib/libgtest${STATIC_EXT} ${binary_dir}/lib/libgtest_main${STATIC_EXT})

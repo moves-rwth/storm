@@ -8,9 +8,9 @@
 #include "storm-dft/modelchecker/DFTModelChecker.h"
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
-#include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
 #include "storm-dft/transformations/DftTransformer.h"
+#include "storm-dft/utility/DftValidator.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
 #include "storm-dft/utility/FailureBoundFinder.h"
 #include "storm-dft/utility/RelevantEvents.h"
@@ -57,13 +57,18 @@ std::shared_ptr<storm::dft::storage::DFT<ValueType>> loadDFTJsonFile(std::string
  * Check whether the DFT is well-formed.
  *
  * @param dft DFT.
- * @param validForAnalysis  If true, additional (more restrictive) checks are performed to check whether the DFT is valid for analysis.
- * @return Pair where the first entry is true iff the DFT is well-formed. The second entry contains the error messages for illformed parts.
+ * @param validForMarkovianAnalysis If true, additional checks are performed to check whether the DFT is valid for analysis via Markov models.
+ * @return Pair where the first entry is true iff the DFT is well-formed. The second entry contains the error messages for ill-formed parts.
  */
 template<typename ValueType>
-std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> const& dft, bool validForAnalysis = true) {
+std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> const& dft, bool validForMarkovianAnalysis = true) {
     std::stringstream stream;
-    bool wellFormed = dft.checkWellFormedness(validForAnalysis, stream);
+    bool wellFormed = false;
+    if (validForMarkovianAnalysis) {
+        wellFormed = storm::dft::utility::DftValidator<ValueType>::isDftValidForMarkovianAnalysis(dft, stream);
+    } else {
+        wellFormed = storm::dft::utility::DftValidator<ValueType>::isDftWellFormed(dft, stream);
+    }
     return std::pair<bool, std::string>(wellFormed, stream.str());
 }
 
@@ -73,13 +78,14 @@ std::pair<bool, std::string> isWellFormed(storm::dft::storage::DFT<ValueType> co
  * @param dft DFT.
  * @param uniqueBE Flag whether a unique constant failed BE is created.
  * @param binaryFDEP Flag whether all dependencies should be binary (only one dependent child).
+ * @param exponentialDistributions Flag whether distributions should be transformed to exponential distributions (if possible).
  * @return Transformed DFT.
  */
 template<typename ValueType>
 std::shared_ptr<storm::dft::storage::DFT<ValueType>> applyTransformations(storm::dft::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP,
-                                                                          bool markovianDistributions) {
+                                                                          bool exponentialDistributions) {
     std::shared_ptr<storm::dft::storage::DFT<ValueType>> transformedDft = std::make_shared<storm::dft::storage::DFT<ValueType>>(dft);
-    if (markovianDistributions && !storm::dft::transformations::DftTransformer<ValueType>::hasOnlyExponentialDistributions(*transformedDft)) {
+    if (exponentialDistributions && !storm::dft::transformations::DftTransformer<ValueType>::hasOnlyExponentialDistributions(*transformedDft)) {
         transformedDft = storm::dft::transformations::DftTransformer<ValueType>::transformExponentialDistributions(*transformedDft);
     }
     if (uniqueBE && !storm::dft::transformations::DftTransformer<ValueType>::hasUniqueFailedBE(*transformedDft)) {
@@ -260,9 +266,7 @@ void analyzeDFTSMT(storm::dft::storage::DFT<ValueType> const& dft, bool printOut
  * @param file File.
  */
 template<typename ValueType>
-void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file) {
-    storm::dft::storage::DftJsonExporter<ValueType>::toFile(dft, file);
-}
+void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file);
 
 /*!
  * Export DFT to JSON string.
@@ -271,11 +275,7 @@ void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::st
  * @return DFT in JSON format.
  */
 template<typename ValueType>
-std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft) {
-    std::stringstream stream;
-    storm::dft::storage::DftJsonExporter<ValueType>::toStream(dft, stream);
-    return stream.str();
-}
+std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft);
 
 /*!
  * Export DFT to SMT encoding.

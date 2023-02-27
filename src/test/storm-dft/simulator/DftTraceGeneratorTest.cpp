@@ -86,7 +86,6 @@ class DftTraceGeneratorTest : public ::testing::Test {
             auto colouring = dft->colourDFT();
             symmetries = dft->findSymmetries(colouring);
         }
-        EXPECT_EQ(config.useSR && config.useDC, !symmetries.sortedSymmetries.empty());
         storm::dft::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(symmetries));
         return std::make_pair(dft, stateGenerationInfo);
     }
@@ -102,6 +101,7 @@ TYPED_TEST_SUITE(DftTraceGeneratorTest, TestingTypes, );
 TYPED_TEST(DftTraceGeneratorTest, And) {
     auto pair = this->prepareDFT(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
     auto dft = pair.first;
+    EXPECT_EQ(this->getConfig().useSR && this->getConfig().useDC, pair.second.hasSymmetries());
     storm::dft::generator::DftNextStateGenerator<double> generator(*dft, pair.second);
 
     // Start with initial state
@@ -158,6 +158,7 @@ TYPED_TEST(DftTraceGeneratorTest, And) {
 TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     auto pair = this->prepareDFT(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
     auto dft = pair.first;
+    EXPECT_EQ(this->getConfig().useSR && this->getConfig().useDC, pair.second.hasSymmetries());
 
     // Init random number generator
     boost::mt19937 gen(5u);
@@ -173,7 +174,7 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_FLOAT_EQ(timebound, 0.522079);
+    EXPECT_NEAR(timebound, 0.522079, 1e-6);
 #endif
     state = simulator.getCurrentState();
     EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
@@ -182,8 +183,61 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
     // Older Boost versions yield different value
-    EXPECT_FLOAT_EQ(timebound, 0.9497214);
+    EXPECT_NEAR(timebound, 0.9497214, 1e-6);
 #endif
+    state = simulator.getCurrentState();
+    EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
+}
+
+TYPED_TEST(DftTraceGeneratorTest, Fdep) {
+    auto pair = this->prepareDFT(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
+    auto dft = pair.first;
+
+    // Init random number generator. Will not be important as we are choosing the steps deterministically.
+    boost::mt19937 gen(5u);
+    storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
+
+    // Start with initial state
+    auto state = simulator.getCurrentState();
+    EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
+
+    // Let B_Power fail
+    auto iterFailable = state->getFailableElements().begin();
+    ASSERT_NE(iterFailable, state->getFailableElements().end());
+    ++iterFailable;
+    ASSERT_NE(iterFailable, state->getFailableElements().end());
+    ++iterFailable;
+    ASSERT_NE(iterFailable, state->getFailableElements().end());
+
+    ASSERT_FALSE(iterFailable.isFailureDueToDependency());
+    auto nextBEPair = iterFailable.getFailBE(*dft);
+    auto nextBE = nextBEPair.first;
+    auto triggerDep = nextBEPair.second;
+    ASSERT_TRUE(nextBE);
+    ASSERT_FALSE(triggerDep);
+    ASSERT_EQ(nextBE->name(), "B_Power");
+
+    storm::dft::simulator::SimulationResult res = simulator.step(iterFailable);
+    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+    state = simulator.getCurrentState();
+    EXPECT_TRUE(state->hasFailed(4));
+
+    // Let B fail
+    iterFailable = state->getFailableElements().begin();
+    ASSERT_NE(iterFailable, state->getFailableElements().end());
+    ++iterFailable;
+    ASSERT_NE(iterFailable, state->getFailableElements().end());
+
+    ASSERT_TRUE(iterFailable.isFailureDueToDependency());
+    nextBEPair = iterFailable.getFailBE(*dft);
+    nextBE = nextBEPair.first;
+    triggerDep = nextBEPair.second;
+    ASSERT_TRUE(nextBE);
+    ASSERT_TRUE(triggerDep);
+    ASSERT_EQ(nextBE->name(), "B");
+
+    res = simulator.step(iterFailable);
+    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
     state = simulator.getCurrentState();
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 }

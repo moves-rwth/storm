@@ -851,15 +851,22 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType
                 newRew0AStates.set(ecElimResult.oldToNewStateMapping[oldRew0AState]);
             }
 
+            if (goal.hasRelevantValues()) {
+                storm::storage::BitVector newRelevantValues(ecElimResult.matrix.getRowGroupCount(), false);
+                for (auto oldRelevantState : goal.relevantValues()) {
+                    newRelevantValues.set(ecElimResult.oldToNewStateMapping[oldRelevantState]);
+                }
+                goal.relevantValues() = std::move(newRelevantValues);
+            }
+
             MDPSparseModelCheckingHelperReturnType<ValueType> result = computeReachabilityRewardsHelper(
                 env, std::move(goal), ecElimResult.matrix, ecElimResult.matrix.transpose(true),
-                [&](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                [&](uint_fast64_t rowCount, storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix, storm::storage::BitVector const& maybeStates) {
                     std::vector<ValueType> result;
                     std::vector<ValueType> oldChoiceRewards = rewardModel.getTotalRewardVector(transitionMatrix);
                     result.reserve(rowCount);
                     for (uint64_t newState : maybeStates) {
-                        for (uint64_t newChoice = transitionMatrix.getRowGroupIndices()[newState];
-                             newChoice < transitionMatrix.getRowGroupIndices()[newState + 1]; ++newChoice) {
+                        for (auto newChoice : newTransitionMatrix.getRowGroupIndices(newState)) {
                             uint64_t oldChoice = ecElimResult.newToOldRowMapping[newChoice];
                             result.push_back(oldChoiceRewards[oldChoice]);
                         }
@@ -1053,7 +1060,7 @@ void extendScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::sol
             scheduler.setChoice(0, state);
         }
     } else {
-        storm::utility::graph::computeSchedulerRewInf(qualitativeStateSets.infinityStates, transitionMatrix, scheduler);
+        storm::utility::graph::computeSchedulerRewInf(qualitativeStateSets.infinityStates, transitionMatrix, backwardTransitions, scheduler);
         for (auto state : qualitativeStateSets.rewardZeroStates) {
             scheduler.setChoice(0, state);
         }

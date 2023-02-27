@@ -210,7 +210,14 @@ void setResourceLimits() {
     }
 
     // register signal handler to handle aborts
-    storm::utility::resources::installSignalHandler();
+    storm::utility::resources::installSignalHandler(storm::settings::getModule<storm::settings::modules::ResourceSettings>().getSignalWaitingTimeInSeconds());
+}
+
+void setFileLogging() {
+    storm::settings::modules::DebugSettings const& debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+    if (debug.isLogfileSet()) {
+        storm::utility::initializeFileLogging(debug.getLogfilename());
+    }
 }
 
 void setLogLevel() {
@@ -226,16 +233,7 @@ void setLogLevel() {
     if (debug.isTraceSet()) {
         storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
     }
-    if (debug.isLogfileSet()) {
-        storm::utility::initializeFileLogging();
-    }
-}
-
-void setFileLogging() {
-    storm::settings::modules::DebugSettings const& debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
-    if (debug.isLogfileSet()) {
-        storm::utility::initializeFileLogging();
-    }
+    setFileLogging();
 }
 
 void setUrgentOptions() {

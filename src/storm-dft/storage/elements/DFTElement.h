@@ -162,6 +162,14 @@ class DFTElement {
     }
 
     /*!
+     * Check whether the element is static, ie a BE or a static gate (AND, OR, VOT).
+     * @return True iff element is static.
+     */
+    virtual bool isStaticElement() const {
+        return false;
+    }
+
+    /*!
      * Check whether the element is a SPARE gate.
      * @return True iff element is a SPARE gate.
      */
@@ -244,7 +252,7 @@ class DFTElement {
      */
     bool hasOnlyStaticParents() const {
         for (auto const& parent : this->parents()) {
-            if (!isStaticGateType(parent->type())) {
+            if (!parent->isStaticElement()) {
                 return false;
             }
         }

@@ -324,11 +324,12 @@ void computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transi
  *
  * @param rewInfStates The states that have a scheduler achieving reward infinity.
  * @param transitionMatrix The transition matrix of the system.
+ * @param backwardTransitions The reversed transition relation.
  * @param scheduler The resulting scheduler for the rewInf States. The scheduler is not set at other states.
  */
 template<typename T>
 void computeSchedulerRewInf(storm::storage::BitVector const& rewInfStates, storm::storage::SparseMatrix<T> const& transitionMatrix,
-                            storm::storage::Scheduler<T>& scheduler);
+                            storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::Scheduler<T>& scheduler);
 
 /*!
  * Computes a scheduler for the given states that have a scheduler that has a probability 0.

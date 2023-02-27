@@ -29,7 +29,7 @@
 
 namespace {
 
-enum class CtmcEngine { PrismSparse, JaniSparse, JitSparse, PrismHybrid, JaniHybrid };
+enum class CtmcEngine { PrismSparse, JaniSparse, PrismHybrid, JaniHybrid };
 
 class SparseGmmxxGmresIluEnvironment {
    public:
@@ -52,23 +52,6 @@ class JaniSparseGmmxxGmresIluEnvironment {
    public:
     static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
     static const CtmcEngine engine = CtmcEngine::JaniSparse;
-    static const bool isExact = false;
-    typedef double ValueType;
-    typedef storm::models::sparse::Ctmc<ValueType> ModelType;
-    static storm::Environment createEnvironment() {
-        storm::Environment env;
-        env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
-        env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
-        env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
-        env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
-        return env;
-    }
-};
-
-class JitSparseGmmxxGmresIluEnvironment {
-   public:
-    static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;  // unused for sparse models
-    static const CtmcEngine engine = CtmcEngine::JitSparse;
     static const bool isExact = false;
     typedef double ValueType;
     typedef storm::models::sparse::Ctmc<ValueType> ModelType;
@@ -217,11 +200,11 @@ class CtmcCslModelCheckerTest : public ::testing::Test {
         if (TestType::engine == CtmcEngine::PrismSparse) {
             result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             result.first = storm::api::buildSparseModel<ValueType>(program, result.second)->template as<MT>();
-        } else if (TestType::engine == CtmcEngine::JaniSparse || TestType::engine == CtmcEngine::JitSparse) {
+        } else if (TestType::engine == CtmcEngine::JaniSparse) {
             auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             janiData.first.substituteFunctions();
             result.second = storm::api::extractFormulasFromProperties(janiData.second);
-            result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second, TestType::engine == CtmcEngine::JitSparse)->template as<MT>();
+            result.first = storm::api::buildSparseModel<ValueType>(janiData.first, result.second)->template as<MT>();
         }
         return result;
     }
@@ -257,7 +240,7 @@ class CtmcCslModelCheckerTest : public ::testing::Test {
     template<typename MT = typename TestType::ModelType>
     typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type createModelChecker(
         std::shared_ptr<MT> const& model) const {
-        if (TestType::engine == CtmcEngine::PrismSparse || TestType::engine == CtmcEngine::JaniSparse || TestType::engine == CtmcEngine::JitSparse) {
+        if (TestType::engine == CtmcEngine::PrismSparse || TestType::engine == CtmcEngine::JaniSparse) {
             return std::make_shared<storm::modelchecker::SparseCtmcCslModelChecker<SparseModelType>>(*model);
         }
     }
@@ -297,9 +280,8 @@ class CtmcCslModelCheckerTest : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, JitSparseGmmxxGmresIluEnvironment, SparseEigenDGmresEnvironment,
-                         SparseEigenDoubleLUEnvironment, SparseNativeSorEnvironment, HybridCuddGmmxxGmresEnvironment, JaniHybridCuddGmmxxGmresEnvironment,
-                         HybridSylvanGmmxxGmresEnvironment>
+typedef ::testing::Types<SparseGmmxxGmresIluEnvironment, JaniSparseGmmxxGmresIluEnvironment, SparseEigenDGmresEnvironment, SparseEigenDoubleLUEnvironment,
+                         SparseNativeSorEnvironment, HybridCuddGmmxxGmresEnvironment, JaniHybridCuddGmmxxGmresEnvironment, HybridSylvanGmmxxGmresEnvironment>
     TestingTypes;
 
 TYPED_TEST_SUITE(CtmcCslModelCheckerTest, TestingTypes, );
@@ -473,7 +455,7 @@ TYPED_TEST(CtmcCslModelCheckerTest, LtlProbabilitiesEmbedded) {
 
     auto checker = this->createModelChecker(model);
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
+    if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
 
         EXPECT_NEAR(this->parseNumber("6201111489217/6635130141055"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
@@ -538,7 +520,7 @@ TYPED_TEST(CtmcCslModelCheckerTest, LtlProbabilitiesPolling) {
     auto checker = this->createModelChecker(model);
     std::unique_ptr<storm::modelchecker::CheckResult> result;
     // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
+    if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse) {
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("80400/160801"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -569,7 +551,7 @@ TYPED_TEST(CtmcCslModelCheckerTest, HOAProbabilitiesPolling) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
 
     // Not supported in all engines (Hybrid,  PrismDd, JaniDd)
-    if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse || TypeParam::engine == CtmcEngine::JitSparse) {
+    if (TypeParam::engine == CtmcEngine::PrismSparse || TypeParam::engine == CtmcEngine::JaniSparse) {
         result = checker->check(tasks[0]);
         EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 

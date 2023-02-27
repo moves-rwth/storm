@@ -213,20 +213,21 @@ class ExpressionParser : public qi::grammar<Iterator, storm::expressions::Expres
 
     // Rules for parsing a composed expression.
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> expression;
-    qi::rule<Iterator, storm::expressions::Expression(), Skipper> iteExpression;
-    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> orExpression;
-    qi::rule<Iterator, storm::expressions::Expression(), Skipper> andExpression;
-    qi::rule<Iterator, storm::expressions::Expression(), Skipper> relativeExpression;
-    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> equalityExpression;
-    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> plusExpression;
-    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> multiplicationExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::Expression>, Skipper> iteExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::Expression>, Skipper> orExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::Expression>, Skipper> andExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::Expression>, Skipper> relativeExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::Expression>, Skipper> equalityExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::Expression>, Skipper> plusExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::Expression>, Skipper> multiplicationExpression;
     qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> prefixPowerModuloExpression;
-    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> infixPowerModuloExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::Expression>, Skipper> infixPowerModuloExpression;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> atomicExpression;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> literalExpression;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> identifierExpression;
-    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> minMaxExpression;
+    qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType, storm::expressions::Expression>, Skipper>
+        minMaxExpression;
     qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> floorCeilExpression;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> roundExpression;
     qi::rule<Iterator, storm::expressions::Expression(), Skipper> predicateExpression;

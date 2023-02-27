@@ -34,7 +34,6 @@ enum class Engine {
     Hybrid,
     Dd,
     DdSparse,
-    Jit,
     Exploration,
     AbstractionRefinement,
     Automatic,

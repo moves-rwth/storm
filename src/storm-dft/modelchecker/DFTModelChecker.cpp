@@ -1,7 +1,7 @@
 #include "DFTModelChecker.h"
 
 #include "storm/builder/ParallelCompositionBuilder.h"
-#include "storm/exceptions/UnmetRequirementException.h"
+#include "storm/exceptions/InvalidModelException.h"
 #include "storm/io/DirectEncodingExporter.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -29,7 +29,7 @@ typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::che
 
     // Check well-formedness of DFT
     auto wellFormedResult = storm::dft::api::isWellFormed(origDft, true);
-    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed for analysis: " << wellFormedResult.second);
+    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::InvalidModelException, "DFT is not well-formed for analysis: " << wellFormedResult.second);
 
     // Optimizing DFT for modularisation
     storm::dft::storage::DFT<ValueType> dft = origDft;

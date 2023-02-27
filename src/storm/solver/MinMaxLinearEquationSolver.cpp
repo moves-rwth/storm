@@ -261,7 +261,6 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
     return result;
 }
 
-template class MinMaxLinearEquationSolver<float>;
 template class MinMaxLinearEquationSolver<double>;
 
 template class MinMaxLinearEquationSolverFactory<double>;

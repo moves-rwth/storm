@@ -11,7 +11,6 @@
 
 #include "storm/models/sparse/StateLabeling.h"
 
-#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
