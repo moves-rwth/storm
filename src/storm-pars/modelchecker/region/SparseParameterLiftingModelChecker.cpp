@@ -356,7 +356,7 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtrem
         if (this->isUseMonotonicitySet()) {
             STORM_LOG_INFO(
                 "Number of definitely monotone parameters:" << regionQueue.top().localMonRes->getGlobalMonotonicityResult()->getNumberOfMonotoneParameters());
-            STORM_PRINT("Number of sufficient states:" << regionQueue.top().order->getNumberOfSufficientStates() << std::endl);
+            STORM_LOG_INFO("Number of sufficient states:" << regionQueue.top().order->getNumberOfSufficientStates() << std::endl);
         }
         value = storm::utility::convertNumber<ConstantType>(init.first);
         valuation = std::move(init.second);

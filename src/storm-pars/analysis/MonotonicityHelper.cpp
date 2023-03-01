@@ -86,82 +86,13 @@ MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<
 template<typename ValueType, typename ConstantType>
 std::map<std::shared_ptr<Order>,
          std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<Assumption>>>
-MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::optional<std::ostream&> outfile, bool useBoundsFromPLA,
-                                                                      std::string dotOutfileName) {
+MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(bool useBoundsFromPLA, std::string dotOutfileName) {
     if (useBoundsFromPLA) {
-        storm::utility::Stopwatch plaWatch(true);
         this->extender->initializeMinMaxValues(region);
-        plaWatch.stop();
-        STORM_PRINT("\nTotal time for pla checking: " << plaWatch << ".\n\n");
     }
+
     createOrder();
-
-    // TODO Don't print if order is incomplete
-
-    // output of results
-    if (monResults.size() == 1) {
-        auto itr = monResults.begin();
-        if (itr->first != nullptr) {
-            STORM_PRINT("Number of sufficient states: " << itr->first->getNumberOfSufficientStates() << std::endl);
-        }
-        if (checkSamples) {
-            for (auto& entry : resultCheckOnSamples.getMonotonicityResult()) {
-                if (entry.second == Monotonicity::Not) {
-                    itr->second.first->updateMonotonicityResult(entry.first, entry.second, true);
-                }
-            }
-        }
-        if (outfile) {
-            outfile.get() << "Assumptions: no\n";
-            outfile.get() << "Monotonicity Result: \n"
-                          << "    " << itr->second.first->toString() << "\n\n";
-        } else {
-            STORM_PRINT("Assumptions: no\n"
-                        << "Monotonicity Result: \n"
-                        << "    " << itr->second.first->toString() << "\n\n");
-        }
-    } else if (monResults.size() > 1) {
-        storm::analysis::MonotonicityResult<VariableType> finalRes;
-        for (auto itr : monResults) {
-            if (!itr.first->isInvalid()) {
-                // only merge results of valid orders
-                assert(itr.second.first->isDone());
-                finalRes.merge(itr.second.first);
-            }
-        }
-
-        if (checkSamples) {
-            for (auto& entry : resultCheckOnSamples.getMonotonicityResult()) {
-                if (entry.second == Monotonicity::Not) {
-                    finalRes.updateMonotonicityResult(entry.first, entry.second, true);
-                }
-            }
-        }
-
-        if (outfile) {
-            outfile.get() << "Assumptions: yes\n";
-            outfile.get() << "Monotonicity Result: \n"
-                          << "    " << finalRes.toString() << "\n\n";
-        } else {
-            STORM_PRINT("Assumptions: yes\n"
-                        << "Monotonicity Result: \n"
-                        << "    " << finalRes.toString() << "\n\n");
-        }
-    } else {
-        if (outfile) {
-            outfile.get() << "No monotonicity found, as the order is insufficient\n";
-            if (checkSamples) {
-                outfile.get() << "Monotonicity Result on samples: " << resultCheckOnSamples.toString() << '\n';
-            }
-        } else {
-            STORM_PRINT("No monotonicity found, as the order is insufficient");
-            if (checkSamples) {
-                STORM_PRINT("Monotonicity Result on samples: " << resultCheckOnSamples.toString());
-            }
-        }
-    }
-
-    // dotoutput
+    // Writing orders as dot output
     if (dotOutput) {
         STORM_LOG_WARN_COND(monResults.size() <= 10, "Too many Reachability Orders. Dot Output will only be created for 10.");
         int i = 0;
@@ -185,6 +116,50 @@ MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(boost::opt
         }
     }
     return monResults;
+}
+
+template<typename ValueType, typename ConstantType>
+void MonotonicityHelper<ValueType, ConstantType>::printMonotonicityResult(std::ostream& outstream) {
+    if (monResults.size() == 1) {
+        auto itr = monResults.begin();
+        if (itr->first != nullptr) {
+            STORM_LOG_INFO("Number of sufficient states: " << itr->first->getNumberOfSufficientStates() << std::endl);
+        }
+        if (checkSamples) {
+            for (auto& entry : resultCheckOnSamples.getMonotonicityResult()) {
+                if (entry.second == Monotonicity::Not) {
+                    itr->second.first->updateMonotonicityResult(entry.first, entry.second, true);
+                }
+            }
+        }
+        outstream << "Assumptions: no\n";
+        outstream << "Monotonicity Result: \n" << "    " << itr->second.first->toString() << "\n\n";
+    } else if (monResults.size() > 1) {
+        storm::analysis::MonotonicityResult<VariableType> finalRes;
+        for (auto itr : monResults) {
+            if (!itr.first->isInvalid()) {
+                // only merge results of valid orders
+                assert(itr.second.first->isDone());
+                finalRes.merge(itr.second.first);
+            }
+        }
+
+        if (checkSamples) {
+            for (auto& entry : resultCheckOnSamples.getMonotonicityResult()) {
+                if (entry.second == Monotonicity::Not) {
+                    finalRes.updateMonotonicityResult(entry.first, entry.second, true);
+                }
+            }
+        }
+
+        outstream << "Assumptions: yes\n";
+        outstream << "Monotonicity Result: \n" << "    " << finalRes.toString() << "\n\n";
+    } else {
+        outstream << "No monotonicity found, as the order is insufficient\n";
+            if (checkSamples) {
+                outstream << "Monotonicity Result on samples: " << resultCheckOnSamples.toString() << '\n';
+            }
+    }
 }
 
 /*** Private methods ***/
@@ -434,7 +409,7 @@ void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std
 template<typename ValueType, typename ConstantType>
 void MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model,
                                                                              uint_fast64_t numberOfSamples) {
-    assert(numberOfSamples > 2);
+    assert(numberOfSamples > 2) ;
 
     auto instantiator = utility::ModelInstantiator<models::sparse::Mdp<ValueType>, models::sparse::Mdp<ConstantType>>(*model);
     std::set<VariableType> variables = models::sparse::getProbabilityParameters(*model);

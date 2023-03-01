@@ -142,7 +142,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
     storm::analysis::MonotonicityHelper<storm::RationalFunction, double> MonotonicityHelper =
         storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true);
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(boost::none, false);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(false);
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
@@ -197,7 +197,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
     storm::analysis::MonotonicityHelper<storm::RationalFunction, double> MonotonicityHelper =
         storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(boost::none, false);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(false);
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
@@ -250,7 +250,7 @@ TEST(MonotonicityHelperTest, zeroconf) {
     // Start testing
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 50);
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(boost::none, false);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(false);
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
@@ -296,7 +296,7 @@ TEST(MonotonicityHelperTest, Simple1) {
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
 
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(boost::none, false);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(false);
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
@@ -340,7 +340,7 @@ TEST(MonotonicityHelperTest, Casestudy1) {
     ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(boost::none, false);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(false);
     ASSERT_EQ(1ul, result.size());
 
     auto order = result.begin()->first;
@@ -385,7 +385,7 @@ TEST(MonotonicityHelperTest, CaseStudy2) {
     auto monotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
 
     // Check if correct result size
-    auto result = monotonicityHelper.checkMonotonicityInBuild(boost::none, false);
+    auto result = monotonicityHelper.checkMonotonicityInBuild(false);
     EXPECT_EQ(1ul, result.size());
     EXPECT_FALSE(result.begin()->first->getDoneBuilding());
 }
@@ -415,7 +415,7 @@ TEST(MonotonicityHelperTest, Casestudy3_not_monotone) {
     ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(boost::none, false);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(false);
 
     ASSERT_EQ(1ul, result.size());
     auto order = result.begin()->first;
@@ -458,7 +458,7 @@ TEST(MonotonicityHelperTest, Casestudy3_monotone) {
     ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(boost::none, false);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(false);
 
     ASSERT_EQ(1ul, result.size());
     auto order = result.begin()->first;

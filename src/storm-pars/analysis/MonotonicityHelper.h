@@ -95,14 +95,19 @@ class MonotonicityHelper {
     }
 
     /*!
-     * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity.
+     * Builds order for the given model and simultaneously uses them to check for Monotonicity.
      *
-     * @param outfile Outfile to which results are written.
      * @param dotOutfileName Name for the files of the dot outputs should they be generated
      * @return Map which maps each order to its Reachability Order and used assumptions.
      */
-    std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>> checkMonotonicityInBuild(
-        boost::optional<std::ostream&> outfile, bool useBoundsFromPLA, std::string dotOutfileName = "dotOutput");
+    std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<Assumption>>> checkMonotonicityInBuild(bool useBoundsFromPLA, std::string dotOutfileName = "dotOutput");
+
+    /*!
+     * Prints the monotonicity result to the given output stream.
+     *
+     * @param outstream
+     */
+    void printMonotonicityResult(std::ostream& outstream);
 
    private:
     std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region,
@@ -112,6 +117,7 @@ class MonotonicityHelper {
                                                                                  std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr,
                                                                                  std::optional<Assumption> assumption = {});
 
+    // Creates the order and simultaneously checks for monotonicity
     void createOrder();
 
     void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
@@ -121,9 +127,8 @@ class MonotonicityHelper {
     void extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<Assumption> assumptions,
                                     std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
-    Monotonicity checkTransitionMonRes(ValueType function, VariableType param, Region region);
-
-    ValueType getDerivative(ValueType function, VariableType var);
+    // Checks function for monotonicity in a given variable on a given region
+    Monotonicity checkTransitionMonRes(ValueType function, VariableType var, Region region);
 
     std::shared_ptr<models::ModelBase> model;
 
