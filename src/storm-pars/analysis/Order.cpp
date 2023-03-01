@@ -223,28 +223,20 @@ void Order::mergeNodes(Order::Node* node1, Order::Node* node2) {
         return;
     }
 
-    // if there are nodes between node1 and node2 the order is invalid
-
-    auto compareRes = compareFast(node1, node2);
-    compareRes = compareRes == ABOVE || compareRes == BELOW ? compareRes : compare(node1, node2);
+    // if node1 and node2 are already ordered, the order is invalid
+    auto compareRes = compare(node1, node2);
     if (compareRes == ABOVE || compareRes == BELOW) {
         setInvalid();
     }
 
     if (compareRes == BELOW) {
-        // To make life easier
+        // To make life easier later on
         std::swap(node1, node2);
     }
 
     // Merges node2 into node 1
-    // Add the states from node2 to node 1
-    node1->states.insert(node2->states.begin(), node2->states.end());
-
-    for (auto const& i : node2->states) {
-        nodes[i] = node1;
-    }
-
-    // Every node which has node2 above it, should now have node1 above it
+    // 1) Every node which has node2 above it, should now have (the states in) node1 above it
+    // First doing this, and then adding states from node2 to node1 to prevent adding states from node2 again to the states above node
     for (auto const& node : nodes) {
         if (node != node1 && node != node2 && compareFast(node2, node) == ABOVE) {
             for (auto state1 : node1->states) {
@@ -252,14 +244,20 @@ void Order::mergeNodes(Order::Node* node1, Order::Node* node2) {
             }
         }
     }
-
-    // everything above n2 also above n1
+    // 2) Add the states from node2 to node1
+    node1->states.insert(node2->states.begin(), node2->states.end());
+    for (auto const& i : node2->states) {
+        nodes[i] = node1;
+    }
+    // 3) All states that are above node2 should also be above node1
     node1->statesAbove |= ((node2->statesAbove));
+    // 4) states cannot be both above the node and in the node
     for (auto state : node1->states) {
-        node1->statesAbove.set(state, false);
+        STORM_LOG_ASSERT(!node1->statesAbove[state] || this->isInvalid(), "Expecting the order to be invalid if there are states which are both in the node and above the node");
     }
 
     if (compareRes == BELOW || compareRes == ABOVE) {
+        STORM_LOG_ASSERT(this->isInvalid(), "Expecting the order to be invalid if there are nodes between node1 and node2");
         // We need to merge all states between node1 and node2 as well
         // node1 will be above node2 right now, as we did swapping
         // so we collect all nodes above node2 that are below node1
@@ -274,7 +272,8 @@ void Order::mergeNodes(Order::Node* node1, Order::Node* node2) {
             }
         }
     }
-    assert(compare(node1, bottom) == ABOVE && (top == nullptr || compare(node1, top) == BELOW));
+    STORM_LOG_ASSERT(compare(node1, bottom) == ABOVE, "Something went wrong with merging the nodes, the resulting node is not above the bottom node");
+    STORM_LOG_ASSERT(top == nullptr || compare(node1, top) == BELOW, "Something went wrong with merging the nodes, the resulting node is not below the top node");
 }
 
 void Order::merge(uint_fast64_t state1, uint_fast64_t state2) {
