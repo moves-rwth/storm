@@ -124,10 +124,10 @@ namespace storm {
             exploredBeliefIds.clear();
             exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
             exploredMdpTransitions.clear();
-            exploredMdpTransitions.reserve(exploredMdp->getNumberOfChoices());
+            exploredMdpTransitions.resize(exploredMdp->getNumberOfChoices());
             clippingTransitionRewards.clear();
             previousChoiceIndices = exploredMdp->getNondeterministicChoiceIndices();
-            exploredChoiceIndices.clear();
+            exploredChoiceIndices = exploredMdp->getNondeterministicChoiceIndices();
             mdpActionRewards.clear();
             probabilityEstimation.clear();
             if (exploredMdp->hasRewardModel()) {
@@ -233,7 +233,7 @@ namespace storm {
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefId BeliefMdpExplorer<PomdpType, BeliefValueType>::exploreNextState() {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             // Mark the end of the previously explored row group.
-            if (currentMdpState != noState()) {
+            if (currentMdpState != noState() && mdpStatesToExplorePrioState.rbegin()->second == exploredChoiceIndices.size()) {
                 internalAddRowGroupIndex();
             }
 
@@ -753,7 +753,7 @@ namespace storm {
                 for (auto const &oldState : relevantMdpStates) {
                     if (oldState != newState) {
                         assert(oldState > newState);
-                        uint64_t groupSize = exploredChoiceIndices.at(oldState + 1) - exploredChoiceIndices.at(oldState);
+                        uint64_t groupSize = getRowGroupSizeOfState(oldState);
                         exploredChoiceIndices.at(newState + 1) = exploredChoiceIndices.at(newState) + groupSize;
                     }
                     ++newState;
@@ -805,6 +805,31 @@ namespace storm {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             assert(getCurrentMdpState() < exploredChoiceIndices.size());
             return exploredChoiceIndices.at(getCurrentMdpState());
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        uint64_t BeliefMdpExplorer<PomdpType, BeliefValueType>::getSizeOfCurrentRowGroup() const {
+            STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+            assert(getCurrentMdpState() < exploredChoiceIndices.size() - 1);
+            return exploredChoiceIndices.at(getCurrentMdpState() + 1) - exploredChoiceIndices.at(getCurrentMdpState());
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        uint64_t BeliefMdpExplorer<PomdpType, BeliefValueType>::getRowGroupSizeOfState(uint64_t state) const {
+            STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+            assert(state < exploredChoiceIndices.size());
+            if (state < exploredChoiceIndices.size() - 1){
+                return exploredChoiceIndices.at(state + 1) - exploredChoiceIndices.at(state);
+            } else if (state == exploredChoiceIndices.size() - 1) {
+                return exploredMdpTransitions.size() - exploredChoiceIndices.at(state);
+            } else {
+                return 0;
+            }
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::needsAdditionalActions(uint64_t numActionsNeeded) {
+            return (currentStateHasOldBehavior() && getCurrentStateWasTruncated() && getCurrentMdpState() < exploredChoiceIndices.size() - 1 && getSizeOfCurrentRowGroup() < numActionsNeeded);
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -1329,6 +1354,16 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType>
         std::vector<BeliefValueType> BeliefMdpExplorer<PomdpType, BeliefValueType>::computeProductWithSparseMatrix(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix) const{
             return beliefManager->computeMatrixBeliefProduct(beliefId, matrix);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addNewActions(uint64_t totalNumberOfActions) {
+            assert(getSizeOfCurrentRowGroup() == 1);
+            uint64_t numberOfActionsToAdd = totalNumberOfActions - getSizeOfCurrentRowGroup();
+            for (uint64_t i = getCurrentMdpState() + 1; i < exploredChoiceIndices.size(); i++) {
+                exploredChoiceIndices[i] += numberOfActionsToAdd;
+            }
+            exploredMdpTransitions.insert(exploredMdpTransitions.begin() + exploredChoiceIndices[getCurrentMdpState() + 1], numberOfActionsToAdd, std::map<MdpStateType, ValueType>());
         }
 
         template
