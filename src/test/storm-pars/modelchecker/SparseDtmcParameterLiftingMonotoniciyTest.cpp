@@ -99,7 +99,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_LEQ) {
 
     // Reachability order, as it is already done building we don't need to recreate the order for each region
     auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
-    auto order = monHelper->checkMonotonicityInBuild(boost::none, false).begin()->first;
+    auto order = monHelper->checkMonotonicityInBuild(false).begin()->first;
     ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
     ASSERT_TRUE(order->getDoneBuilding());
 
@@ -260,7 +260,7 @@ TYPED_TEST(SparseDtmcParameterLiftingMonotonicityTest, Brp_Prob_Mon_LEQ_Incr) {
 
     // Reachability order, as it is already done building we don't need to recreate the order for each region
     auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
-    auto order = monHelper->checkMonotonicityInBuild(boost::none, false).begin()->first;
+    auto order = monHelper->checkMonotonicityInBuild(false).begin()->first;
     ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
     ASSERT_TRUE(order->getDoneBuilding());
 

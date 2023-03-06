@@ -803,10 +803,12 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
             model, formulas, regions, monSettings.getNumberOfSamples(), storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision(),
             monSettings.isDotOutputSet());
         if (monSettings.isExportMonotonicitySet()) {
-            monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
+            monotonicityHelper.checkMonotonicityInBuild(monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
+            monotonicityHelper.printMonotonicityResult(outfile);
         } else {
-            monotonicityHelper.checkMonotonicityInBuild(boost::none, monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
-        }
+            monotonicityHelper.checkMonotonicityInBuild(monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
+            monotonicityHelper.printMonotonicityResult();
+=        }
     } else {
         // Checking monotonicity based on solution function
 
