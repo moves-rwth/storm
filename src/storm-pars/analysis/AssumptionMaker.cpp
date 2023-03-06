@@ -34,16 +34,16 @@ std::map<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>:
         STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2);
         STORM_LOG_ASSERT(order->compare(val1, val2) == Order::UNKNOWN, "It makes no sense to create assumptions when the order is known");
         auto assumptionPair =
-            createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);
+            createAndCheckStateAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);
         if (assumptionPair.second != AssumptionStatus::INVALID) {
             result.insert(assumptionPair);
             if (assumptionPair.second == AssumptionStatus::VALID) {
                 STORM_LOG_ASSERT(
-                    createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues)
+                    createAndCheckStateAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues)
                             .second != AssumptionStatus::VALID,
                     "Assumption " << val2 << " > " << val1 << " cannot be valid as " << val1 << " > " << val2 << " holds.");
                 STORM_LOG_ASSERT(
-                    createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues)
+                    createAndCheckStateAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues)
                             .second != AssumptionStatus::VALID,
                     "Assumption " << val2 << " == " << val1 << " cannot be valid as " << val1 << " > " << val2 << " holds.");
                 STORM_LOG_INFO("Assumption " << *(assumptionPair.first.getAssumption()) << " is valid" << std::endl);
@@ -52,17 +52,17 @@ std::map<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>:
         }
         assert(order->compare(val1, val2) == Order::UNKNOWN);
         assumptionPair =
-            createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);
+            createAndCheckStateAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);
         if (assumptionPair.second != AssumptionStatus::INVALID) {
             if (assumptionPair.second == AssumptionStatus::VALID) {
                 result.clear();
                 result.insert(assumptionPair);
                 STORM_LOG_ASSERT(
-                    createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues)
+                    createAndCheckStateAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues)
                             .second != AssumptionStatus::VALID,
                     "Assumption " << val1 << " > " << val2 << " cannot be valid as " << val2 << " > " << val1 << " holds.");
                 STORM_LOG_ASSERT(
-                    createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues)
+                    createAndCheckStateAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues)
                             .second != AssumptionStatus::VALID,
                     "Assumption " << val2 << " == " << val1 << " cannot be valid as " << val2 << " > " << val1 << " holds.");
                 STORM_LOG_INFO("Assumption " << *(assumptionPair.first.getAssumption()) << " is valid" << std::endl);
@@ -71,17 +71,17 @@ std::map<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>:
             result.insert(assumptionPair);
         }
         assert(order->compare(val1, val2) == Order::UNKNOWN);
-        assumptionPair = createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues);
+        assumptionPair = createAndCheckStateAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues);
         if (assumptionPair.second != AssumptionStatus::INVALID) {
             if (assumptionPair.second == AssumptionStatus::VALID) {
                 result.clear();
                 result.insert(assumptionPair);
                 STORM_LOG_ASSERT(
-                    createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues)
+                    createAndCheckStateAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues)
                             .second != AssumptionStatus::VALID,
                     "Assumption " << val1 << " > " << val2 << " cannot be valid as " << val2 << " == " << val1 << " holds.");
                 STORM_LOG_ASSERT(
-                    createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues)
+                    createAndCheckStateAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues)
                             .second != AssumptionStatus::VALID,
                     "Assumption " << val2 << " > " << val1 << " cannot be valid as " << val2 << " == " << val1 << " holds.");
                 STORM_LOG_INFO("Assumption " << *(assumptionPair.first.getAssumption()) << " is valid" << std::endl);
@@ -95,7 +95,7 @@ std::map<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>:
         STORM_LOG_INFO("Creating assumptions for the actions of state " << val1);
         auto numberOfActions = matrix.getRowGroupSize(val1);
         for (auto i = 0; i < numberOfActions; ++i) {
-            result.insert(createAndCheckAssumptionAction(val1, i));
+            result.insert(createActionAssumption(val1, i));
         }
     }
     return result;
@@ -114,7 +114,7 @@ void AssumptionMaker<ValueType, ConstantType>::setSampleValues(std::vector<std::
 }
 
 template<typename ValueType, typename ConstantType>
-std::pair<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumption(
+std::pair<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckStateAssumption(
     uint_fast64_t val1, uint_fast64_t val2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order,
     storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
     STORM_LOG_ASSERT(val1 != val2, "Cannot make assumption for the same state");
@@ -124,11 +124,10 @@ std::pair<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>
 }
 
 template<typename ValueType, typename ConstantType>
-std::pair<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptionAction(uint_fast64_t val1,
+std::pair<Assumption, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createActionAssumption(uint_fast64_t val1,
                                                                                                                  uint_fast64_t action) const {
     auto assumption = Assumption(false, expressionManager, val1, action, expressions::BinaryRelationExpression::RelationType::Equal);
     AssumptionStatus validationResult = UNKNOWN;
-    // TODO   STORM_LOG_WARN("Checking status of assumption for actions not yet implemented, therefore we assume status is unknown");
     return std::pair<Assumption, AssumptionStatus>(assumption, validationResult);
 }
 template<typename ValueType, typename ConstantType>

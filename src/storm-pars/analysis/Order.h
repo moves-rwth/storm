@@ -35,11 +35,11 @@ class Order {
      * @param topStates A Bitvector with the top states of the resulting order.
      * @param bottomStates A Bitvector with the bottom states of the resulting order.
      * @param numberOfStates Maximum number of states in order.
-     * @param sccsSorted TODO ??
+     * @param sccs Strongly connected components
      * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
      */
     Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates,
-          storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted, bool deterministic);
+          storage::Decomposition<storage::StronglyConnectedComponent> sccs, std::vector<uint_fast64_t> statesSorted, bool deterministic);
 
     /*!
      * Constructs an order with the given top state and bottom state.
@@ -47,10 +47,10 @@ class Order {
      * @param top The top state of the resulting order.
      * @param bottom The bottom state of the resulting order.
      * @param numberOfStates Maximum number of states in order.
-     * @param sccsSorted TODO ??
+     * @param sccs Strongly connected components
      * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
      */
-    Order(uint_fast64_t top, uint_fast64_t bottom, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted,
+    Order(uint_fast64_t top, uint_fast64_t bottom, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccs,
           std::vector<uint_fast64_t> statesSorted, bool deterministic);
 
     /*!
@@ -209,9 +209,11 @@ class Order {
     bool getDoneBuilding() const;
 
     /*!
-     * Returns the next state for which the order is sufficient, returns the number of state if end of sufficient states is reached.
+     * Returns the first state after the given state number for which the order is sufficient,
+     * returns the total number of states if no next sufficient state exists.
      *
-     * @param state TODO ??
+     * @param state Statenumber
+     * @return The next state number if a next sufficient state exists, the total number of states otherwise.
      */
     uint_fast64_t getNextSufficientState(uint_fast64_t state) const;
 
@@ -240,8 +242,10 @@ class Order {
     // std::vector<Node*> getNodes() const;
 
     /*!
-     * TODO ??
-     * @return
+     * Retrieves the vector of sorted states.
+     * Initially, this vector contains the states as provided when creating the order.
+     *
+     * @return Vector of sorted states which still need to be added to the order
      */
     std::vector<uint_fast64_t>& getStatesSorted();
 
@@ -356,35 +360,47 @@ class Order {
     bool existsNextState();
 
     /*!
-     * Checks if TODO ??
+     * Checks if there exists a state we need to handle when extending the order.
      *
-     * @return true if
+     * @return true if there exists a state we need to handle.
      */
     bool existsStateToHandle();
 
     /*!
-     * TODO ??
-     * @return
+     * Gets the next state to handle, if this doesn't exist, a state from the sorted states is returned.
+     * false: state originates from states to handle
+     * true: state originates from sorted states
+     *
+     * @return pair of state number and boolean representing whether or not the states originates from the sorted states vector
      */
     std::pair<uint_fast64_t, bool> getStateToHandle();
 
     /*!
-     * TODO ??
-     * @param state
+     * Adds a state to the list of states we need to handle.
+     *
+     * @param state Added states
      */
     void addStateToHandle(uint_fast64_t state);
+
+    /*!
+     * Adds a state to the list of special states we need to handle.
+     * Difference to the normal states to handle is that we prioritize these states over the normal states to handle when picking a next state.
+     *
+     * @param state Added state
+     */
     void addSpecialStateToHandle(uint_fast64_t state);
 
     /*!
-     * TODO ??
-     * @param state
+     * Adds a state to the list of sorted states.
+     * Can be used if a state was taken from the sorted states list but could not (yet) be added to the order.
+     *
+     * @param state Added state
      */
     void addStateSorted(uint_fast64_t state);
 
     /*!
      * If the order is fully built, this can be set to true.
      */
-    // void setDoneBuilding(bool done = true);
 
     /*!
      * Prints the dot output to normal STORM_PRINT.
@@ -469,11 +485,10 @@ class Order {
     /*!
      * Initializes the basic attributes of the order
      *
-     * @param numberOfStates numberOfStates The number of states the corresponding model has / the order will possibly have
-     * @param decomposition TODO ??
-     * @param doneBuilding
+     * @param numberOfStates The number of states the corresponding model has / the order will possibly have
+     * @param decomposition Decomposition of the states into sccs.
      */
-    void init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool deterministic, bool doneBuilding);
+    void init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool deterministic);
 
     /*!
      * Creates a name for a node in the dotOutput that represents a node in the order
@@ -518,7 +533,7 @@ class Order {
 
     /*** Important sets of states: ***/
 
-    // States in reversed topological order. If a state is added to the order, it is removed from this. TODO maybe find a better name?
+    // States in reversed topological order. If a state is added to the order, it is removed from this.
     std::vector<uint_fast64_t> statesSorted;
     // States whose successors can be ordered by this order
     storm::storage::BitVector sufficientForState;

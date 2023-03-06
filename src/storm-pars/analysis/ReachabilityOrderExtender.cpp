@@ -121,8 +121,8 @@ std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, Con
     // if number of successors is 3 we do a hack to see if we can also order state wrt other state
     if (sortedSuccs.size() == 3) {
         auto middleState = sortedSuccs[1];
-        auto assumptions =
-            this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
+        STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
+        auto assumptions = this->useMinMax[order]
                 ? this->assumptionMaker->createAndCheckAssumptions(currentState, middleState, order, region, this->minValues[order], this->maxValues[order])
                 : this->assumptionMaker->createAndCheckAssumptions(currentState, middleState, order, region);
         if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {

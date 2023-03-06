@@ -220,14 +220,13 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine, bool generateSplitEstimates = false, bool allowModelSimplification = true, bool preconditionsValidated = false, MonotonicitySetting monotonicitySetting = MonotonicitySetting(), boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>> monotoneParameters = boost::none) {
             switch (engine) {
-                // TODO: now we always use regionsplitestimates
                     case storm::modelchecker::RegionCheckEngine::ParameterLifting:
                             return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting, monotoneParameters);
                     case storm::modelchecker::RegionCheckEngine::ExactParameterLifting:
                             return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(env, model, task, generateSplitEstimates, allowModelSimplification, preconditionsValidated, monotonicitySetting, monotoneParameters);
                     case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
                             // TODO should this also apply to monotonicity?
-                            STORM_LOG_WARN_COND(preconditionsValidated, "Preconditions are checked anyway by a valicating model checker...");
+                            STORM_LOG_WARN_COND(preconditionsValidated, "Preconditions are checked anyway by a validating model checker...");
                             return initializeValidatingRegionModelChecker<ValueType, double, storm::RationalNumber>(env, model, task, generateSplitEstimates, allowModelSimplification);
                     default:
                             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected region model checker type.");
@@ -260,8 +259,8 @@ namespace storm {
          * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
          * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
          * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
-         * @param allowModelSimplification
-         * @param useMonotonicity
+         * @param allowModelSimplification if true, allows simplification of the model while initializing the region model checker
+         * @param monotonicitySetting if given, settings for the monotonicity checking
          * @param monThresh if given, determines at which depth to start using monotonicity
          */
         template <typename ValueType>
@@ -272,13 +271,15 @@ namespace storm {
             return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, monThresh);
         }
 
-        // TODO: update documentation
         /*!
          * Finds the extremal value in the given region
          * @param engine The considered region checking engine
-         * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
-         * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
-         * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
+         * @param dir The optimization direction
+         * @param precision The precision
+         * @param absolutePrecision If true an absolute precision is used, otherwise a relative precision is used
+         * @param monotonicitySetting Settings for the monotonicity checking
+         * @param generateSplitEstimates If set split estimates are generated
+         * @param monotoneParameters If given, set of monotone increasing and decreasing aparameters.
          */
         template <typename ValueType>
         std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, bool absolutePrecision, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
@@ -289,6 +290,7 @@ namespace storm {
             return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), absolutePrecision);
         }
 
+
         template <typename ValueType>
         std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> getBound(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dir, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
             Environment env;
@@ -297,13 +299,16 @@ namespace storm {
             return regionChecker->getBound(env, region, dir);
         }
 
-        // TODO: update documentation
         /*!
          * Checks if a given extremal value is indeed the extremal value in the given region
          * @param engine The considered region checking engine
-         * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
-         * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
-         * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
+         * @param dir The optimization direction
+         * @param precision The precision
+         * @param absolutePrecision If true an absolute precision is used, otherwise a relative precision is used
+         * @param suggestion Value which is checked to be the extremal value
+         * @param monotonicitySetting Settings for the monotonicity checking
+         * @param generateSplitEstimates If set split estimates are generated
+         * @param monotoneParameters If given, set of monotone increasing and decreasing aparameters.
          */
         template <typename ValueType>
         bool checkExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, bool absolutePrecision, ValueType const& suggestion, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false,  boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {

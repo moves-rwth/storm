@@ -62,7 +62,6 @@ namespace storm {
              */
             std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, uint64_t monThresh = 0);
 
-            // TODO: documentation
             /*!
              * Finds the extremal value within the given region and with the given precision.
              * The returned value v corresponds to the value at the returned valuation.

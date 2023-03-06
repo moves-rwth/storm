@@ -664,7 +664,6 @@ SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::checkForPossi
         auto valuationCenter = region.getCenterPoint();
 
         valuationCenter[var] = region.getLowerBoundary(var);
-        // TODO: make cmdline argument or 1/precision
         int numberOfSamples = 10;
         auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / (numberOfSamples - 1);
 

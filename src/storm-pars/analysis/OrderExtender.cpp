@@ -520,10 +520,10 @@ std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getInitialOrder(s
 
     if (this->minValuesInit && this->maxValuesInit) {
         this->continueExtending[order] = true;
-        this->usePLA[order] = true;
+        this->useMinMax[order] = true;
         this->addStatesMinMax(order, region);
     } else {
-        this->usePLA[order] = false;
+        this->useMinMax[order] = false;
     }
     this->continueExtending[order] = true;
 
@@ -600,7 +600,6 @@ void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Or
             } else if (n1 != nullptr) {
                 order->addBetween(val2, n1, order->getBottom());
             } else if (n2 != nullptr) {
-                // TODO: This should be moved to reward/reachorderextender, as top is only nullptr for rewards
                 if (order->getTop() == nullptr) {
                     order->addAbove(val1, n2);
                 } else {
@@ -627,10 +626,11 @@ void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Or
 template<typename ValueType, typename ConstantType>
 bool OrderExtender<ValueType, ConstantType>::extendWithAssumption(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region,
                                                                   uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
-    bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
+    STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Expecting order to be present in the min/max list");
+    bool useBounds = this->useMinMax[order];
     assert(order->compare(stateSucc1, stateSucc2) == Order::UNKNOWN);
     auto assumptions =
-        usePLANow ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region, this->minValues[order], this->maxValues[order])
+        useBounds ? this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region, this->minValues[order], this->maxValues[order])
                   : this->assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
         this->handleAssumption(order, assumptions.begin()->first);
@@ -667,7 +667,7 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             if (order != nullptr) {
                 minValues[order] = minCheck.getValueVector();
                 maxValues[order] = maxCheck.getValueVector();
-                usePLA[order] = true;
+                useMinMax[order] = true;
             } else {
                 minValuesInit = minCheck.getValueVector();
                 maxValuesInit = maxCheck.getValueVector();
@@ -686,7 +686,7 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             if (order != nullptr) {
                 minValues[order] = minCheck.getValueVector();
                 maxValues[order] = maxCheck.getValueVector();
-                usePLA[order] = true;
+                useMinMax[order] = true;
                 for (auto i = 0; i < minValues[order].size(); ++i) {
                     if (minValues[order][i] - maxValues[order][i] > 0) {
                         STORM_LOG_WARN("Bounds are invalid, please consider using a sound or exact method.");
@@ -722,7 +722,7 @@ void OrderExtender<ValueType, ConstantType>::setMinMaxValues(boost::optional<std
             this->maxValuesInit = std::move(maxValues.get());
         }
     } else {
-        usePLA[order] = true;
+        useMinMax[order] = true;
         if (minValues && maxValues && unknownStatesMap.find(order) != unknownStatesMap.end()) {
             auto& unknownStates = unknownStatesMap[order];
             if (unknownStates.first != numberOfStates) {
@@ -748,11 +748,12 @@ void OrderExtender<ValueType, ConstantType>::setMinMaxValues(boost::optional<std
 
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy) {
+    STORM_LOG_ASSERT(this->useMinMax.find(orderOriginal) != this->useMinMax.end(), "Order should exist in min/max values list");
     STORM_LOG_ASSERT(maxValues.find(orderOriginal) != maxValues.end(), "Max values can't be copied, order not found");
     STORM_LOG_ASSERT(minValues.find(orderOriginal) != minValues.end(), "Min values can't be copied, order not found");
 
-    usePLA[orderCopy] = usePLA[orderOriginal];
-    if (usePLA[orderCopy]) {
+    useMinMax[orderCopy] = useMinMax[orderOriginal];
+    if (useMinMax[orderCopy]) {
         minValues[orderCopy] = minValues[orderOriginal];
         maxValues[orderCopy] = maxValues[orderOriginal];
     }
@@ -834,7 +835,8 @@ void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Ord
     auto& max = this->maxValues[order];
 
     // Add the states that can be ordered based on min/max values
-    assert(this->usePLA[order]);
+    STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
+    STORM_LOG_ASSERT(this->useMinMax[order], "Cannot add states based on min/max if we don't use min/max values for the order.");
     std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> vars;
     for (auto& entry : this->matrix) {
         for (auto& var : entry.getValue().gatherVariables()) {
@@ -961,6 +963,7 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
     boost::container::flat_set<uint_fast64_t> const& states, std::shared_ptr<Order> order) {
     uint_fast64_t numberOfStatesToSort = states.size();
     std::vector<uint_fast64_t> result;
+    STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
     // Go over all states
     for (auto state : states) {
         if (result.size() == 0) {
@@ -975,7 +978,7 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
                 auto nextState = *itr;
                 auto compareRes = order->compareFast(state, nextState);
                 // If fast sorting didn't work, we try using PLA
-                if (compareRes == Order::NodeComparison::UNKNOWN && usePLA[order]) {
+                if (compareRes == Order::NodeComparison::UNKNOWN && useMinMax[order]) {
                     compareRes = addStatesBasedOnMinMax(order, state, nextState);
                 }
                 // If fast sorting and PLA didn't work, we try using normal sorting
@@ -1011,7 +1014,8 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
     uint_fast64_t currentState, std::shared_ptr<Order> order) {
     std::vector<uint_fast64_t> statesSorted;
     statesSorted.push_back(currentState);
-    bool pla = (this->usePLA.find(order) != this->usePLA.end() && this->usePLA.at(order));
+    STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
+    bool useBounds = this->useMinMax[order];
     // Go over all states
     bool oneUnknown = false;
     bool unknown = false;
@@ -1063,7 +1067,7 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
         bool added = false;
         for (auto itr = statesSorted.begin(); itr != statesSorted.end(); ++itr) {
             auto compareRes = order->compareFast(state, (*itr));
-            if (pla && compareRes == Order::NodeComparison::UNKNOWN) {
+            if (useBounds && compareRes == Order::NodeComparison::UNKNOWN) {
                 compareRes = this->addStatesBasedOnMinMax(order, state, (*itr));
             }
             if (compareRes == Order::NodeComparison::UNKNOWN) {
@@ -1115,6 +1119,9 @@ std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>> O
 //------------------------------------------------------------------------------
 template<typename ValueType, typename ConstantType>
 bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>& region, uint_fast64_t state) {
+    STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
+    bool useBounds = this->useMinMax[order];
+
     if (deterministic) {
         return true;
     }
@@ -1148,8 +1155,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
     auto orderedSuccs = order->sortStates(successors);
     if (orderedSuccs.back() == this->numberOfStates) {
         if (successors.size() == 2) {
-            bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
-            auto assumptions = usePLANow ? this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region,
+            auto assumptions = useBounds ? this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region,
                                                                                             this->minValues[order], this->maxValues[order])
                                          : this->assumptionMaker->createAndCheckAssumptions(*(successors.begin()), *(successors.begin() + 1), order, region);
             if (assumptions.size() == 1) {
@@ -1170,7 +1176,6 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                 }
             }
         } else if (successors.size() == 3) {
-            bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
             auto succ0 = *(successors.begin());
             auto succ1 = *(successors.begin() + 1);
             auto succ2 = *(successors.begin() + 2);
@@ -1179,7 +1184,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
             auto comp12 = order->compareFast(succ1, succ2);
             if (comp01 == Order::NodeComparison::UNKNOWN) {
                 auto assumptions =
-                    usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ0, succ1, order, region, this->minValues[order], this->maxValues[order])
+                    useBounds ? this->assumptionMaker->createAndCheckAssumptions(succ0, succ1, order, region, this->minValues[order], this->maxValues[order])
                               : this->assumptionMaker->createAndCheckAssumptions(succ0, succ1, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
@@ -1188,7 +1193,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
             }
             if (comp01 != Order::NodeComparison::UNKNOWN && comp02 == Order::NodeComparison::UNKNOWN) {
                 auto assumptions =
-                    usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ0, succ2, order, region, this->minValues[order], this->maxValues[order])
+                    useBounds ? this->assumptionMaker->createAndCheckAssumptions(succ0, succ2, order, region, this->minValues[order], this->maxValues[order])
                               : this->assumptionMaker->createAndCheckAssumptions(succ0, succ2, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
@@ -1197,7 +1202,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
             }
             if (comp01 != Order::NodeComparison::UNKNOWN && comp02 != Order::NodeComparison::UNKNOWN && comp12 == Order::NodeComparison::UNKNOWN) {
                 auto assumptions =
-                    usePLANow ? this->assumptionMaker->createAndCheckAssumptions(succ1, succ2, order, region, this->minValues[order], this->maxValues[order])
+                    useBounds ? this->assumptionMaker->createAndCheckAssumptions(succ1, succ2, order, region, this->minValues[order], this->maxValues[order])
                               : this->assumptionMaker->createAndCheckAssumptions(succ1, succ2, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
@@ -1211,7 +1216,6 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
         STORM_LOG_INFO("No best action found for state " << state << ".");
         return false;
     }
-    bool usePLANow = this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order];
 
     if (prMax) {
         STORM_LOG_INFO("Interested in max.");
@@ -1234,7 +1238,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                                 rew2 = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[state] + i);
                             }
                         }
-                        auto compRes = usePLANow ? actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB,
+                        auto compRes = useBounds ? actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB,
                                                                                      this->minValues[order], this->maxValues[order])
                                                  : actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB);
                         if (compRes == CompareResult::GEQ) {
@@ -1282,7 +1286,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                                 rew2 = this->rewardModel->getStateActionReward(this->matrix.getRowGroupIndices()[state] + i);
                             }
                         }
-                        auto compRes = usePLANow ? actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB,
+                        auto compRes = useBounds ? actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB,
                                                                                      this->minValues[order], this->maxValues[order])
                                                  : actionComparator.actionSMTCompare(order, orderedSuccs, region, rew1, rew2, &rowA, &rowB);
 

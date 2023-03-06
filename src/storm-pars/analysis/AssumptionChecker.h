@@ -1,4 +1,4 @@
-#pragma once
+    #pragma once
 #include "Assumption.h"
 #include "Order.h"
 #include "storm-pars/storage/ParameterRegion.h"

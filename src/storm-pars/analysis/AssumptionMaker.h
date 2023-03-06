@@ -58,11 +58,11 @@ class AssumptionMaker {
     void setRewardModel(std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel);
 
    private:
-    std::pair<Assumption, AssumptionStatus> createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2,
+    std::pair<Assumption, AssumptionStatus> createAndCheckStateAssumption(uint_fast64_t val1, uint_fast64_t val2,
                                                                      expressions::BinaryRelationExpression::RelationType relationType,
                                                                      std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
                                                                      std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
-    std::pair<Assumption, AssumptionStatus> createAndCheckAssumptionAction(uint_fast64_t val1, uint_fast64_t action) const;
+    std::pair<Assumption, AssumptionStatus> createActionAssumption(uint_fast64_t val1, uint_fast64_t action) const;
 
     AssumptionChecker<ValueType, ConstantType> assumptionChecker;
     storage::SparseMatrix<ValueType> matrix;

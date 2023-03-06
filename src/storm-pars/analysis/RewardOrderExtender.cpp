@@ -122,9 +122,6 @@ void RewardOrderExtender<ValueType, ConstantType>::setBottomTopStates() {
     if (this->bottomStates == boost::none || this->topStates == boost::none) {
         STORM_LOG_ASSERT(this->model != nullptr, "Can't get initial order if model is not specified");
         modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*(this->model));
-
-        // TODO check if eventually formula is true for all initial states?
-        // TODO Add UNTIL formulas
         STORM_LOG_THROW(this->formula->asRewardOperatorFormula().getSubformula().isEventuallyFormula(), storm::exceptions::NotImplementedException,
                         "Expected reward only implemented for eventually formulla");
         this->topStates = storage::BitVector(this->numberOfStates, false);
@@ -371,7 +368,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
         STORM_LOG_ASSERT(s2 == this->numberOfStates, "Expecting only one state not to be sorted");
         STORM_LOG_ASSERT(s1 != this->numberOfStates, "Expecting only one state not to be sorted");
         STORM_LOG_ASSERT(s1 != currentState, "Expecting the unsorted state to not be the current state");
-        // TODO: change all usePLA[order] to find version.
+        STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
         if (statesSorted.at(statesSorted.size() - 1) == currentState) {
             // the current state is lower than all other successors, so s1 should be smaller then all other successors
 
@@ -413,8 +410,7 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                 order->addStateToHandle(s1);
             }
             return {s2, s2};
-        } else if (this->usePLA[order]) {
-            // TODO: make use of forward reasoning and do backward as last solution
+        } else if (this->useMinMax[order]) {
             return extendByBackwardReasoning(order, region, currentState);
         } else {
             for (uint_fast64_t state : this->getSuccessors(currentState, order)) {
@@ -433,7 +429,9 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
             // Relation between s1 and currState is still unknown, maybe we can find out
 
             // We check if we can also sort something based on assumptions.
-            if (this->usePLA[order]) {
+            STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
+
+            if (this->useMinMax[order]) {
                 auto assumptions =
                     this->assumptionMaker->createAndCheckAssumptions(currentState, s1, order, region, this->minValues[order], this->maxValues[order]);
                 if (assumptions.size() == 1 && assumptions.begin()->second == storm::analysis::AssumptionStatus::VALID) {
@@ -488,23 +486,27 @@ bool RewardOrderExtender<ValueType, ConstantType>::extendByForwardReasoningOneSu
             STORM_LOG_ASSERT(false, "Expecting reward");
         }
         if (allZero) {
+            // Reward is zero, so the only successor (realSucc) is at the same node as currentState
             if (!order->contains(realSucc)) {
                 if (!order->contains(currentState)) {
                     order->add(currentState);
                 }
                 order->addToNode(realSucc, order->getNode(currentState));
             } else {
+                // This adds currentState to the node of realSucc, if currentState has already a node, it merges the nodes
                 order->addToNode(currentState, order->getNode(realSucc));
             }
         } else if (allGreaterZero) {
+            // Reward we get when leaving the state (either by the action reward or state reward) is always greater than zero
+            // So we add current state above the only successor
             if (!order->contains(realSucc)) {
                 order->add(realSucc);
                 order->addStateToHandle(realSucc);
             }
             order->addAbove(currentState, order->getNode(realSucc));
         } else {
-            assert(false);
-            // TODO Implement
+            // We cannot do anything as for some actions we get a strictly positive reward whereas for other actions we get no reward
+            STORM_LOG_INFO("Cannot extend the order as there are action assumptions with strictly positive rewards and action assumptions with zero reward");
         }
     } else if (order->isBottomState(succ0) || order->isBottomState(succ1)) {
         auto bottomState = order->isBottomState(succ0) ? succ0 : succ1;
@@ -573,8 +575,8 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
             } else if (allGreaterZero) {
                 order->addAbove(currentState, order->getNode(realSucc));
             } else {
-                assert(false);
-                // TODO
+                // We cannot do anything as for some actions we get a strictly positive reward whereas for other actions we get no reward
+                STORM_LOG_INFO("Cannot extend the order as there are action assumptions with strictly positive rewards and action assumptions with zero reward");
             }
         } else {
             return sortedSuccStates.first;
@@ -628,7 +630,8 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                 // We are considering rewards, so our current state is always above the lowest one of all our successor states
                 order->addAbove(currentState, order->getNode(sortedSuccStates.second.back()));
                 // We check if we can also sort something based on assumptions.
-                if (this->usePLA[order] && order->isActionSetAtState(currentState)) {
+                STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
+                if (this->useMinMax[order] && order->isActionSetAtState(currentState)) {
                     for (uint_fast64_t succ : successors) {
                         if (order->compare(currentState, succ) == Order::NodeComparison::UNKNOWN) {
                             auto compare = this->addStatesBasedOnMinMax(order, currentState, succ);
@@ -702,8 +705,8 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
                     }
                 }
             } else {
-                assert(false);
-                // TODO implement
+                // We cannot do anything as for some actions we get a strictly positive reward whereas for other actions we get no reward
+                STORM_LOG_INFO("Cannot extend the order as there are action assumptions with strictly positive rewards and action assumptions with zero reward");
             }
         }
     }
@@ -715,8 +718,8 @@ std::pair<uint_fast64_t, uint_fast64_t> RewardOrderExtender<ValueType, ConstantT
     // if number of successors is 3 we do a hack to see if we can also order state wrt other state
     if (sortedSuccStates.second.size() == 3 && order->compareFast(currentState, sortedSuccStates.second[1]) == Order::UNKNOWN) {
         auto middleState = sortedSuccStates.second[1];
-        auto assumptions =
-            this->usePLA.find(order) != this->usePLA.end() && this->usePLA[order]
+        STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
+        auto assumptions = this->useMinMax[order]
                 ? this->assumptionMaker->createAndCheckAssumptions(currentState, middleState, order, region, this->minValues[order], this->maxValues[order])
                 : this->assumptionMaker->createAndCheckAssumptions(currentState, middleState, order, region);
         if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {

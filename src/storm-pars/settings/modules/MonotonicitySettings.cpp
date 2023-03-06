@@ -1,17 +1,11 @@
 #include "storm-pars/settings/modules/MonotonicitySettings.h"
 
-#include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
-#include "storm/settings/Argument.h"
-
-#include "storm/utility/macros.h"
-#include "storm/exceptions/IllegalArgumentValueException.h"
 
 namespace storm {
     namespace settings {
         namespace modules {
-    // TODO @Svenja, check what the module prefix is, maybe instead of doing mon- we could set this to true for the onces where we now have mon-"optionname"
             const std::string MonotonicitySettings::moduleName = "mon";
             const std::string MonotonicitySettings::monotonicityAnalysis = "monotonicity-analysis";
             const std::string MonotonicitySettings::monotonicityAnalysisShortName = "ma";

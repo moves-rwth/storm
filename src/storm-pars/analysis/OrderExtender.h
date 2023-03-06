@@ -223,7 +223,7 @@ class OrderExtender {
     boost::optional<storm::storage::BitVector> bottomStates;
     boost::optional<std::vector<ConstantType>> minValuesInit;
     boost::optional<std::vector<ConstantType>> maxValuesInit;
-    std::map<std::shared_ptr<Order>, bool> usePLA;
+    std::map<std::shared_ptr<Order>, bool> useMinMax;
     std::map<std::shared_ptr<Order>, bool> continueExtending;
     std::map<std::shared_ptr<Order>, std::vector<ConstantType>> minValues;
     std::map<std::shared_ptr<Order>, std::vector<ConstantType>> maxValues;

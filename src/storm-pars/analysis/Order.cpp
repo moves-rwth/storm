@@ -9,7 +9,7 @@ namespace analysis {
 Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates,
              storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool deterministic) {
     STORM_LOG_ASSERT(bottomStates->getNumberOfSetBits() > 0, "Expecting order to contain at least one bottom state");
-    init(numberOfStates, decomposition, deterministic, false);
+    init(numberOfStates, decomposition, deterministic);
     this->numberOfAddedStates = 0;
     this->onlyInitialOrder = true;
     if (!topStates->empty()) {
@@ -44,7 +44,7 @@ Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bo
 
 Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates,
              storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted, bool deterministic) {
-    init(numberOfStates, decomposition, deterministic, false);
+    init(numberOfStates, decomposition, deterministic);
 
     this->onlyInitialOrder = true;
     this->sufficientForState.set(topState);
@@ -365,12 +365,6 @@ Order::Node* Order::getNode(uint_fast64_t stateNumber) const {
     assert(stateNumber < numberOfStates);
     return nodes[stateNumber];
 }
-
-/*
-std::vector<Order::Node*> Order::getNodes() const {
-    return nodes;
-}
-*/
 
 std::vector<uint_fast64_t>& Order::getStatesSorted() {
     return statesSorted;
@@ -695,8 +689,7 @@ void Order::dotOutputToFile(std::ostream& dotOutfile) const {
 
 /*** Private methods ***/
 
-void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool deterministic,
-                 bool doneBuilding) {
+void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool deterministic) {
     this->numberOfStates = numberOfStates;
     this->nodes = std::vector<Node*>(numberOfStates, nullptr);
     this->sufficientForState = storm::storage::BitVector(numberOfStates, false);

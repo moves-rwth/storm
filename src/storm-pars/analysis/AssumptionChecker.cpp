@@ -129,28 +129,27 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
             } else if (order->isActionSetAtState(state1)) {
                 STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state1)
                                                         << " for state " << state1 << " and all actions for " << state2);
-                bool initialized = false;
                 bool viableActionSeen = false;
                 bool viableActionsSeen = false;
                 auto actionFound = 0;
                 for (auto action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
-                    // TODO: check if the action is not overruled by another action
                     auto tempResult = validateAssumptionSMTSolver(state1, state2, order->getActionAtState(state1), action2, fullAssumption, order, region,
                                                                   minValues, maxValues);
                     if (tempResult == AssumptionStatus::INVALID) {
                         // Do nothing, action2 should never be picked
-                    } else if (!initialized) {
+                    } else if (!viableActionSeen) {
+                        // This is the first action for which the assumption is not invalid
                         result = tempResult;
-                        initialized = true;
                         viableActionSeen = true;
                         actionFound = action2;
                     } else {
+                        // This is > 1 action for which the assumption is valid
                         viableActionsSeen = true;
                         if (tempResult == AssumptionStatus::UNKNOWN) {
                             result = tempResult;
                         }
                     }
-                    if (initialized && result == AssumptionStatus::UNKNOWN && viableActionsSeen) {
+                    if (result == AssumptionStatus::UNKNOWN && viableActionsSeen) {
                         break;
                     }
                 }
@@ -158,27 +157,24 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                     STORM_LOG_INFO("Best action for state " << state2 << " found by assumption checking and set to " << actionFound);
                     order->addToMdpScheduler(state2, actionFound);
                 }
-                if (!initialized) {
+                if (!viableActionSeen) {
+                    // No action exists for which the assumption might hold
                     order->setInvalid();
                     result = AssumptionStatus::INVALID;
                 }
             } else if (order->isActionSetAtState(state2)) {
                 STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with action " << order->getActionAtState(state2)
                                                         << " for state " << state2 << " and all actions for " << state1);
-
-                bool initialized = false;
                 bool viableActionSeen = false;
                 bool viableActionsSeen = false;
                 auto actionFound = 0;
                 for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
-                    // TODO: check if the action is not overruled by another action
                     auto tempResult = validateAssumptionSMTSolver(state1, state2, action1, order->getActionAtState(state2), fullAssumption, order, region,
                                                                   minValues, maxValues);
                     if (tempResult == AssumptionStatus::INVALID) {
                         // Do nothing, action2 should never be picked
-                    } else if (!initialized) {
+                    } else if (!viableActionSeen) {
                         result = tempResult;
-                        initialized = true;
                         viableActionSeen = true;
                         actionFound = action1;
                     } else {
@@ -187,7 +183,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                             result = tempResult;
                         }
                     }
-                    if (initialized && result == AssumptionStatus::UNKNOWN && viableActionsSeen) {
+                    if (result == AssumptionStatus::UNKNOWN && viableActionsSeen) {
                         break;
                     }
                 }
@@ -195,13 +191,13 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                     STORM_LOG_INFO("Best action for state " << state1 << " found by assumption checking and set to " << actionFound);
                     order->addToMdpScheduler(state1, actionFound);
                 }
-                if (!initialized) {
+                if (!viableActionSeen) {
+                    // No action exists for which the assumption might hold
                     order->setInvalid();
                     result = AssumptionStatus::INVALID;
                 }
             } else {
                 STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with all actions for " << state1 << " and " << state2);
-
                 bool initialized = false;
                 for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
                     for (auto action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
