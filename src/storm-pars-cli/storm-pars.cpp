@@ -807,8 +807,8 @@ void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>
             monotonicityHelper.printMonotonicityResult(outfile);
         } else {
             monotonicityHelper.checkMonotonicityInBuild(monSettings.isUsePLABoundsSet(), monSettings.getDotOutputFilename());
-            monotonicityHelper.printMonotonicityResult();
-=        }
+            monotonicityHelper.printMonotonicityResult(std::cout);
+        }
     } else {
         // Checking monotonicity based on solution function
 
