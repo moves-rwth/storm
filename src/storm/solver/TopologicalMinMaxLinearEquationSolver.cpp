@@ -113,7 +113,7 @@ bool TopologicalMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(En
                     } else {
                         auto row = this->A->getRowGroupIndices()[group] + this->getInitialScheduler()[group];
                         sccRowsAsBitVector.set(row, true);
-//                        STORM_LOG_INFO("Fixing state " << group << " to choice " << this->getInitialScheduler()[group] << ".");
+                        //                        STORM_LOG_INFO("Fixing state " << group << " to choice " << this->getInitialScheduler()[group] << ".");
                     }
                 }
                 returnValue = solveScc(sccSolverEnvironment, dir, sccRowGroupsAsBitVector, sccRowsAsBitVector, x, b) && returnValue;

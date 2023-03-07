@@ -509,9 +509,6 @@ class Order {
     // void nodeOutput();
 
     /*** Order Information ***/
-    // True if the order is finished
-    bool doneBuilding;
-
     // True if the order only consists of a bottom and a top node
     bool onlyInitialOrder;
 

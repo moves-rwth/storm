@@ -36,9 +36,6 @@ Order::Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bo
     }
     assert(numberOfAddedStates <= numberOfStates);
     assert(sufficientForState.getNumberOfSetBits() == (topStates->getNumberOfSetBits() + bottomStates->getNumberOfSetBits()));
-    if (numberOfAddedStates == numberOfStates) {
-        doneBuilding = sufficientForState.full();
-    }
     changed = true;
 }
 
@@ -64,9 +61,6 @@ Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t nu
 
     this->statesSorted = statesSorted;
     assert(sufficientForState.getNumberOfSetBits() == 2);
-    if (numberOfAddedStates == numberOfStates) {
-        doneBuilding = sufficientForState.full();
-    }
     changed = true;
 }
 
@@ -104,9 +98,6 @@ void Order::addAbove(uint_fast64_t state, Node* node) {
         node->statesAbove.set(state);
         numberOfAddedStates++;
         onlyInitialOrder = false;
-        if (numberOfAddedStates == numberOfStates) {
-            doneBuilding = sufficientForState.full();
-        }
     } else {
         addRelationNodes(getNode(state), node);
     }
@@ -127,9 +118,7 @@ void Order::addBelow(uint_fast64_t state, Node* node) {
         bottom->statesAbove.set(state);
         numberOfAddedStates++;
         onlyInitialOrder = false;
-        if (numberOfAddedStates == numberOfStates) {
-            doneBuilding = sufficientForState.full();
-        }
+
     } else {
         addRelationNodes(node, getNode(state));
     }
@@ -160,9 +149,6 @@ void Order::addBetween(uint_fast64_t state, Node* above, Node* below) {
         below->statesAbove.set(state);
         numberOfAddedStates++;
         onlyInitialOrder = false;
-        if (numberOfAddedStates == numberOfStates) {
-            doneBuilding = sufficientForState.full();
-        }
         assert(numberOfAddedStates <= numberOfStates);
     } else {
         // State is in the order already, so we add the new relations
@@ -202,9 +188,6 @@ void Order::addToNode(uint_fast64_t state, Node* node) {
         node->states.insert(state);
         nodes[state] = node;
         numberOfAddedStates++;
-        if (numberOfAddedStates == numberOfStates) {
-            doneBuilding = sufficientForState.full();
-        }
         assert(numberOfAddedStates <= numberOfStates);
 
     } else {
@@ -529,7 +512,6 @@ std::shared_ptr<Order> Order::copy() const {
     copiedOrder->sufficientForState = storm::storage::BitVector(sufficientForState);
     copiedOrder->doneForState = storm::storage::BitVector(doneForState);
     copiedOrder->numberOfAddedStates = numberOfAddedStates;
-    copiedOrder->doneBuilding = doneBuilding;
     copiedOrder->setChanged(this->getChanged());
     copiedOrder->setInvalid(this->invalid);
     copiedOrder->deterministic = deterministic;
@@ -708,7 +690,6 @@ void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::S
     this->bottom = new Node();
     this->top->statesAbove = storm::storage::BitVector(numberOfStates, false);
     this->bottom->statesAbove = storm::storage::BitVector(numberOfStates, false);
-    this->doneBuilding = doneBuilding;
     this->invalid = false;
     this->deterministic = deterministic;
     if (!this->deterministic) {
@@ -731,7 +712,6 @@ bool Order::above(Node* node1, Node* node2) {
     // Check whether node1 is above node2 by going over all states that are above state 2
     bool above = false;
     // Only do this when we have to deal with forward reasoning or we are not yet done with the building of the order
-    //    if (!trivialStates.full() || !doneBuilding) {
     // First gather all states that are above node 2;
 
     storm::storage::BitVector statesSeen((node2->statesAbove));

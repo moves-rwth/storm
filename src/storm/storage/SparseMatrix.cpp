@@ -835,7 +835,6 @@ SparseMatrix<ValueType> SparseMatrix<ValueType>::getSquareMatrix() {
             }
         }
 
-
         // columnCount will be equal to rowcount
         SparseMatrixBuilder<ValueType> matrixBuilder(this->getRowGroupCount(), this->getColumnCount(), entries);
         for (index_type i = 0; i < this->getRowGroupCount(); ++i) {

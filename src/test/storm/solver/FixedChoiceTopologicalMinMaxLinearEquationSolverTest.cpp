@@ -25,7 +25,6 @@ class DoubleTopologicalViEnvironment {
     }
 };
 
-
 template<typename TestType>
 class FixedChoiceTopoligicalMinMaxLinearEquationSolverTest : public ::testing::Test {
    public:
@@ -45,8 +44,7 @@ class FixedChoiceTopoligicalMinMaxLinearEquationSolverTest : public ::testing::T
     storm::Environment _environment;
 };
 
-typedef ::testing::Types<DoubleTopologicalViEnvironment>
-    TestingTypes;
+typedef ::testing::Types<DoubleTopologicalViEnvironment> TestingTypes;
 
 TYPED_TEST_SUITE(FixedChoiceTopoligicalMinMaxLinearEquationSolverTest, TestingTypes, );
 
@@ -68,8 +66,9 @@ TYPED_TEST(FixedChoiceTopoligicalMinMaxLinearEquationSolverTest, SolveEquationsF
     storm::storage::SparseMatrix<ValueType> A;
     ASSERT_NO_THROW(A = builder.build());
 
-    std::vector<ValueType> x(4,1);
-    std::vector<ValueType> b = {this->parseNumber("0"), this->parseNumber("0"), this->parseNumber("0"),  this->parseNumber("3"), this->parseNumber("5"), this->parseNumber("7")};
+    std::vector<ValueType> x(4, 1);
+    std::vector<ValueType> b = {this->parseNumber("0"), this->parseNumber("0"), this->parseNumber("0"),
+                                this->parseNumber("3"), this->parseNumber("5"), this->parseNumber("7")};
 
     auto factory = storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType>();
     auto solver = factory.create(this->env(), A);

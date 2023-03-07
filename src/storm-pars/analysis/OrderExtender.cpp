@@ -83,7 +83,7 @@ void OrderExtender<ValueType, ConstantType>::init(storm::storage::SparseMatrix<V
     this->numberOfStates = this->matrix.getColumnCount();
     this->deterministic = matrix.getRowGroupCount() == matrix.getRowCount();
     this->transposeMatrix = this->matrix.getSquareMatrix().transpose();
-    this->precision = storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision();
+    this->precision = storm::utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision());
 }
 
 template<typename ValueType, typename ConstantType>

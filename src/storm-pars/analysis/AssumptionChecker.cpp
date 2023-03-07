@@ -21,7 +21,7 @@ template<typename ValueType, typename ConstantType>
 AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(storage::SparseMatrix<ValueType> matrix,
                                                               std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel) {
     this->matrix = matrix;
-    this->precision = storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision();
+    this->precision = storm::utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision());
     if (rewardModel != nullptr) {
         this->rewardModel = rewardModel;
     }

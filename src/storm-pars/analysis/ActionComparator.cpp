@@ -13,7 +13,7 @@ namespace analysis {
 
 template<typename ValueType, typename ConstantType>
 ActionComparator<ValueType, ConstantType>::ActionComparator(std::shared_ptr<storm::models::sparse::StandardRewardModel<ValueType>> rewardModel) {
-    this->precision = storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision();
+    this->precision = storm::utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::RegionSettings>().getExtremumValuePrecision());
     if (rewardModel != nullptr) {
         this->rewardModel = rewardModel;
     }
