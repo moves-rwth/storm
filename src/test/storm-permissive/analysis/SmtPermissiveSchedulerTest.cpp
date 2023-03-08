@@ -5,7 +5,7 @@
 #include "storm/environment/Environment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/permissivesched/PermissiveSchedulers.h"
+#include "storm-permissive/analysis/PermissiveSchedulers.h"
 #include "test/storm_gtest.h"
 
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"

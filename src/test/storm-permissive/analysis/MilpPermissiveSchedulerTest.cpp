@@ -7,7 +7,7 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/permissivesched/PermissiveSchedulers.h"
+#include "storm-permissive/analysis/PermissiveSchedulers.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "test/storm_gtest.h"
