@@ -42,4 +42,3 @@ class PermissiveSchedulerPenalties {
 };
 }  // namespace ps
 }  // namespace storm
-

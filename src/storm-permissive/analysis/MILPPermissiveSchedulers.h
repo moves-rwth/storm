@@ -4,14 +4,14 @@
 #include <memory>
 #include <unordered_map>
 
+#include "storm-permissive/analysis/PermissiveSchedulerComputation.h"
+#include "storm-permissive/analysis/PermissiveSchedulers.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/StateActionPair.h"
 #include "storm/storage/StateActionTargetTuple.h"
 #include "storm/storage/expressions/Variable.h"
-#include "storm-permissive/analysis/PermissiveSchedulers.h"
-#include "storm-permissive/analysis/PermissiveSchedulerComputation.h"
 
 namespace storm {
 namespace ps {
@@ -224,4 +224,3 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
 };
 }  // namespace ps
 }  // namespace storm
-

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "storm/transformer/ChoiceSelector.h"
 #include "storm/logic/ProbabilityOperatorFormula.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/transformer/ChoiceSelector.h"
 
 namespace storm {
 namespace ps {
@@ -82,4 +82,3 @@ boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(
                                                                                 storm::logic::ProbabilityOperatorFormula const& safeProp);
 }  // namespace ps
 }  // namespace storm
-

@@ -2,10 +2,10 @@
 
 #include <memory>
 
-#include "storm/models/sparse/Mdp.h"
-#include "storm/storage/BitVector.h"
 #include "storm-permissive/analysis/PermissiveSchedulerPenalty.h"
 #include "storm-permissive/analysis/PermissiveSchedulers.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
 namespace ps {
@@ -46,4 +46,3 @@ class PermissiveSchedulerComputation {
 
 }  // namespace ps
 }  // namespace storm
-
