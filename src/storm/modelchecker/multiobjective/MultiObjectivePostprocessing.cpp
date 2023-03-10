@@ -117,24 +117,20 @@ template std::shared_ptr<storm::storage::geometry::Polytope<storm::RationalNumbe
 template void transformObjectiveSchedulersToOriginal(
     storm::storage::SparseModelMemoryProductReverseData const& reverseData,
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalNumber>> const& originalModel,
-    // std::shared_ptr<std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>>> schedulers);
     std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>> schedulers);
 
 template void transformObjectiveSchedulersToOriginal(
     storm::storage::SparseModelMemoryProductReverseData const& reverseData, std::shared_ptr<storm::models::sparse::Mdp<double>> const& originalModel,
-    // std::shared_ptr<std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>>> schedulers);
     std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>> schedulers);
 
 template void transformObjectiveSchedulersToOriginal(
     storm::storage::SparseModelMemoryProductReverseData const& reverseData,
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> const& originalModel,
-    // std::shared_ptr<std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>>> schedulers);
     std::map<std::vector<storm::RationalNumber>, std::shared_ptr<storm::storage::Scheduler<storm::RationalNumber>>> schedulers);
 
 template void transformObjectiveSchedulersToOriginal(
     storm::storage::SparseModelMemoryProductReverseData const& reverseData,
     std::shared_ptr<storm::models::sparse::MarkovAutomaton<double>> const& originalModel,
-    // std::shared_ptr<std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>>> schedulers);
     std::map<std::vector<double>, std::shared_ptr<storm::storage::Scheduler<double>>> schedulers);
 
 }  // namespace multiobjective

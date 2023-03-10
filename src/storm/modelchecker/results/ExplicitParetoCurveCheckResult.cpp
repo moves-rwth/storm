@@ -40,7 +40,6 @@ ExplicitParetoCurveCheckResult<ValueType>::ExplicitParetoCurveCheckResult(
     typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation,
     typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation)
     : ParetoCurveCheckResult<ValueType>(points, underApproximation, overApproximation), state(state), schedulers(schedulers) {
-    // Intentionally left empty.
 }
 
 template<typename ValueType>

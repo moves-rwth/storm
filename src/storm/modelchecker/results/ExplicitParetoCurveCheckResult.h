@@ -44,7 +44,7 @@ class ExplicitParetoCurveCheckResult : public ParetoCurveCheckResult<ValueType> 
     storm::storage::sparse::state_type const& getState() const;
 
     virtual bool hasScheduler() const override;
-    // void addScheduler(const std::shared_ptr<storm::storage::Scheduler<ValueType>>& scheduler);
+
     void setSchedulers(std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> schedulers);
 
     std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>> const& getSchedulers() const;
