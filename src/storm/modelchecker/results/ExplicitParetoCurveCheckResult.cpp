@@ -39,8 +39,7 @@ ExplicitParetoCurveCheckResult<ValueType>::ExplicitParetoCurveCheckResult(
     std::map<std::vector<ValueType>, std::shared_ptr<storm::storage::Scheduler<ValueType>>>&& schedulers,
     typename ParetoCurveCheckResult<ValueType>::polytope_type&& underApproximation,
     typename ParetoCurveCheckResult<ValueType>::polytope_type&& overApproximation)
-    : ParetoCurveCheckResult<ValueType>(points, underApproximation, overApproximation), state(state), schedulers(schedulers) {
-}
+    : ParetoCurveCheckResult<ValueType>(points, underApproximation, overApproximation), state(state), schedulers(schedulers) {}
 
 template<typename ValueType>
 std::unique_ptr<CheckResult> ExplicitParetoCurveCheckResult<ValueType>::clone() const {
