@@ -5,9 +5,7 @@
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 
-namespace storm {
-    namespace pomdp {
-
+namespace storm::pomdp {
         namespace detail {
             void printRelevantInfoFromModel(std::shared_ptr<storm::solver::SmtSolver::ModelReference> const& model, std::vector<storm::expressions::Variable> const& reachVars, std::vector<storm::expressions::Variable> const& continuationVars) {
                 uint64_t i = 0;
@@ -85,7 +83,7 @@ namespace storm {
         template <typename ValueType>
         bool IterativePolicySearch<ValueType>::initialize(uint64_t k) {
             STORM_LOG_INFO("Start intializing solver...");
-            bool delayedSwitching = false; // Notice that delayed switching is currently broken.
+            bool delayedSwitching = false; // Notice that delayed switching is currently not compatible with some of the other optimizations and it is unclear which of these optimizations causes the problem.
             bool lookaheadConstraintsRequired;
             if (options.forceLookahead) {
                 lookaheadConstraintsRequired = true;
@@ -249,6 +247,7 @@ namespace storm {
                         if (!delayedSwitching || pomdp.getObservation(entries.getColumn()) != pomdp.getObservation(state)) {
                             subexprreachSwitch.push_back(continuationVarExpressions.at(entries.getColumn()));
                         } else {
+                            // TODO: This could be the spot where delayed switching is broken.
                             subexprreachSwitch.push_back(reachVarExpressions.at(entries.getColumn()));
                             subexprreachSwitch.push_back(continuationVarExpressions.at(entries.getColumn()));
                         }
@@ -665,7 +664,6 @@ namespace storm {
                         remainingExpressions.push_back(observationUpdatedExpressions[index]);
                     }
 
-
                     if (remainingExpressions.empty()) {
                         stats.encodeExtensionSolverTime.stop();
                         break;
@@ -781,7 +779,6 @@ namespace storm {
                             return analyze(k, ~targetStates & ~surelyReachSinkStates, allOfTheseStates);
                         }
                     }
-
                 }
                 STORM_LOG_ASSERT(!updated.empty(), "The strategy should be new in at least one place");
                 if(options.computeDebugOutput()) {
@@ -875,7 +872,7 @@ namespace storm {
             }
             return true;
         }
-        
+
 
         template<typename ValueType>
         void IterativePolicySearch<ValueType>::coveredStatesToStream(std::ostream& os, storm::storage::BitVector const &remaining) const {
