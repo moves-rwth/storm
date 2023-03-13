@@ -196,21 +196,7 @@ namespace storm {
         typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getSplittingPoint(const std::set<VariableType>& consideredVariables, const std::set<VariableType>& possiblyMonotoneIncrVars, const std::set<VariableType>& possiblyMonotoneDecrVars, bool minimize) const {
             Valuation result;
             for (auto const& variable : consideredVariables) {
-//                if (possiblyMonotoneIncrVars.find(variable) != possiblyMonotoneIncrVars.end()) {
-//                    if (minimize) {
-//                        result.insert(typename Valuation::value_type(variable, this->getLowerBoundary(variable) + (this->getUpperBoundary(variable) - this->getLowerBoundary(variable) ) / 4));
-//                    } else {
-//                        result.insert(typename Valuation::value_type(variable, this->getLowerBoundary(variable) + 3 * (this->getUpperBoundary(variable) - this->getLowerBoundary(variable) ) / 4));
-//                    }
-//                } else if (possiblyMonotoneDecrVars.find(variable) != possiblyMonotoneDecrVars.end()) {
-//                    if (minimize) {
-//                        result.insert(typename Valuation::value_type(variable, this->getLowerBoundary(variable) + 3 * (this->getUpperBoundary(variable) - this->getLowerBoundary(variable) ) / 4));
-//                    } else {
-//                        result.insert(typename Valuation::value_type(variable, this->getLowerBoundary(variable) + (this->getUpperBoundary(variable) - this->getLowerBoundary(variable) ) / 4));
-//                    }
-//                } else {
                     result.insert(typename Valuation::value_type(variable, (this->getLowerBoundary(variable) + this->getUpperBoundary(variable)) / 2));
-//                }
             }
             return result;
         }
