@@ -160,7 +160,7 @@ SimulationResult DFTTraceSimulator<ValueType>::simulateCompleteTrace(double time
 
         // Check whether time is up
         // Checking whether the time is up must be performed after checking if a state is invalid.
-        // Otherwise we would erroneously mark invalid traces as unsucessful.
+        // Otherwise we would erroneously mark invalid traces as unsuccessful.
         time += addTime;
         if (time > timebound) {
             STORM_LOG_TRACE("Time limit" << timebound << " exceeded: " << time);

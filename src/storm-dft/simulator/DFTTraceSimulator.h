@@ -45,7 +45,7 @@ class DFTTraceSimulator {
     void setRandomNumberGenerator(boost::mt19937& randomNumberGenerator);
 
     /*!
-     * Set the current state back to the intial state in order to start a new simulation.
+     * Set the current state back to the initial state in order to start a new simulation.
      */
     void resetToInitial();
 
@@ -61,8 +61,8 @@ class DFTTraceSimulator {
      *
      * @param nextFailElement Iterator giving the next element which should fail.
      * @param dependencySuccessful Whether the triggering dependency was successful.
-     *              If the dependency is unsuccessful, no BE fails and only the depedendy is marked as failed.
-     * @return Successful if step could be performed, unsuccesful if no element can fail or invalid if the next state is invalid (due to a restrictor).
+     *              If the dependency is unsuccessful, no BE fails and only the dependency is marked as failed.
+     * @return Successful if step could be performed, unsuccessful if no element can fail or invalid if the next state is invalid (due to a restrictor).
      */
     SimulationResult step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful = true);
 
@@ -78,7 +78,7 @@ class DFTTraceSimulator {
     /*!
      * Perform a random step by using the random number generator.
      *
-     * @return Pair of the simulation result (successful, unsuccesful, invalid) and the time which progessed between the last step and this step.
+     * @return Pair of the simulation result (successful, unsuccessful, invalid) and the time which progressed between the last step and this step.
      */
     std::pair<SimulationResult, double> randomStep();
 
@@ -90,7 +90,7 @@ class DFTTraceSimulator {
      *
      * @param timebound Time bound in which the system failure should occur.
      * @return Simulation result is (1) successful if a system failure occurred for the generated trace within the time bound,
-     *                              (2) unsuccesfull, if no system failure occurred within the time bound, or
+     *                              (2) unsuccessful, if no system failure occurred within the time bound, or
      *                              (3) invalid, if an invalid state (due to a restrictor) was reached during the trace generation.
      */
     SimulationResult simulateCompleteTrace(double timebound);
