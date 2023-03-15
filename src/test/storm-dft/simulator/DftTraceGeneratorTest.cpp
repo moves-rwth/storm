@@ -189,6 +189,54 @@ TYPED_TEST(DftTraceGeneratorTest, RandomStepsAnd) {
     EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
 }
 
+TYPED_TEST(DftTraceGeneratorTest, Reset) {
+    auto pair = this->prepareDFT(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
+    auto dft = pair.first;
+    EXPECT_EQ(this->getConfig().useSR && this->getConfig().useDC, pair.second.hasSymmetries());
+
+    // Init random number generator
+    boost::mt19937 gen(5u);
+    storm::dft::simulator::DFTTraceSimulator<double> simulator(*dft, pair.second, gen);
+
+    auto state = simulator.getCurrentState();
+    EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
+
+    storm::dft::simulator::SimulationResult res;
+    double timebound;
+    // First random step
+    std::tie(res, timebound) = simulator.randomStep();
+    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+#if BOOST_VERSION > 106400
+    // Older Boost versions yield different value
+    EXPECT_NEAR(timebound, 0.522079, 1e-6);
+#endif
+    auto stateStep1 = simulator.getCurrentState();
+    EXPECT_FALSE(stateStep1->hasFailed(dft->getTopLevelIndex()));
+
+    std::tie(res, timebound) = simulator.randomStep();
+    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+#if BOOST_VERSION > 106400
+    // Older Boost versions yield different value
+    EXPECT_NEAR(timebound, 0.9497214, 1e-6);
+#endif
+    state = simulator.getCurrentState();
+    EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
+
+    // Reset to previous state
+    simulator.resetToState(stateStep1);
+    state = simulator.getCurrentState();
+    EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
+
+    std::tie(res, timebound) = simulator.randomStep();
+    EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
+#if BOOST_VERSION > 106400
+    // Older Boost versions yield different value
+    EXPECT_NEAR(timebound, 2.4686932, 1e-6);
+#endif
+    state = simulator.getCurrentState();
+    EXPECT_TRUE(state->hasFailed(dft->getTopLevelIndex()));
+}
+
 TYPED_TEST(DftTraceGeneratorTest, Fdep) {
     auto pair = this->prepareDFT(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
     auto dft = pair.first;

@@ -50,6 +50,11 @@ class DFTTraceSimulator {
     void resetToInitial();
 
     /*!
+     * Set the current state back to the given state.
+     */
+    void resetToState(DFTStatePointer state);
+
+    /*!
      * Get the current DFT state.
      *
      * @return DFTStatePointer DFT state.
