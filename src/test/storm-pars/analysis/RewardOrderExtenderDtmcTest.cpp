@@ -42,8 +42,8 @@ TEST(RewardOrderExtenderTest, RewardTest1) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(model->getNumberOfStates(), 8);
-    ASSERT_EQ(model->getNumberOfTransitions(), 14);
+    ASSERT_EQ(8ul, model->getNumberOfStates());
+    ASSERT_EQ(14ul, model->getNumberOfTransitions());
 
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);
@@ -115,8 +115,8 @@ TEST(RewardOrderExtenderTest, RewardTest2) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(model->getNumberOfStates(), 8);
-    ASSERT_EQ(model->getNumberOfTransitions(), 14);
+    ASSERT_EQ(8ul, model->getNumberOfStates());
+    ASSERT_EQ(14ul, model->getNumberOfTransitions());
 
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);
@@ -181,8 +181,8 @@ TEST(RewardOrderExtenderTest, RewardTest3) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(model->getNumberOfStates(), 7);
-    ASSERT_EQ(model->getNumberOfTransitions(), 10);
+    ASSERT_EQ(7ul, model->getNumberOfStates());
+    ASSERT_EQ(10ul, model->getNumberOfTransitions());
 
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);
@@ -227,8 +227,8 @@ TEST(RewardOrderExtenderTest, RewardTest4) {
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-    ASSERT_EQ(model->getNumberOfStates(), 7);
-    ASSERT_EQ(model->getNumberOfTransitions(), 11);
+    ASSERT_EQ(7ul, model->getNumberOfStates());
+    ASSERT_EQ(11ul, model->getNumberOfTransitions());
 
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.9", vars);

@@ -316,7 +316,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
     STORM_LOG_ASSERT(order->getNumberOfSufficientStates() == this->numberOfStates, "Expecting to be sufficient for all states");
     if (monRes != nullptr) {
         if (this->deterministic) {
-            for (auto state = 0; state < numberOfStates; ++state) {
+            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
                 for (auto& param : this->occuringVariablesAtState[state]) {
                     this->checkParOnStateMonRes(state, order, param, region, monRes);
                 }
@@ -324,7 +324,7 @@ std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<V
         } else {
             auto ignoredStates = 0;
             this->reachableStates.reset();
-            for (auto state = 0; state < numberOfStates; ++state) {
+            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
                 if (this->isStateReachable(state, order)) {
                     for (auto& param : this->occuringVariablesAtState[state]) {
                         this->checkParOnStateMonRes(state, order, param, region, monRes);
@@ -350,7 +350,7 @@ bool OrderExtender<ValueType, ConstantType>::extendNonDeterministic(std::shared_
         // We could order all successors, now check if all actions yield at least two successors
         order->setSufficientForState(currentState);
         bool allManySuccs;
-        for (auto act = 0; act < this->stateMap[currentState].size(); ++act) {
+        for (uint_fast64_t act = 0; act < this->stateMap[currentState].size(); ++act) {
             auto row = matrix.getRow(currentState, act);
             allManySuccs = (row.begin() + 1) != row.end();
         }
@@ -687,7 +687,7 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
                 minValues[order] = minCheck.getValueVector();
                 maxValues[order] = maxCheck.getValueVector();
                 useMinMax[order] = true;
-                for (auto i = 0; i < minValues[order].size(); ++i) {
+                for (uint_fast64_t i = 0; i < minValues[order].size(); ++i) {
                     if (minValues[order][i] - maxValues[order][i] > 0) {
                         STORM_LOG_WARN("Bounds are invalid, please consider using a sound or exact method.");
                     }
@@ -695,7 +695,7 @@ void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues(storage::Par
             } else {
                 minValuesInit = minCheck.getValueVector();
                 maxValuesInit = maxCheck.getValueVector();
-                for (auto i = 0; i < minValuesInit.get().size(); ++i) {
+                for (uint_fast64_t i = 0; i < minValuesInit.get().size(); ++i) {
                     if (minValuesInit.get()[i] - maxValuesInit.get()[i] > 0) {
                         STORM_LOG_WARN("Bounds are invalid, please consider using a sound or exact method.");
                     }
@@ -831,9 +831,6 @@ Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMi
 }
 template<typename ValueType, typename ConstantType>
 void OrderExtender<ValueType, ConstantType>::addStatesMinMax(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
-    auto& min = this->minValues[order];
-    auto& max = this->maxValues[order];
-
     // Add the states that can be ordered based on min/max values
     STORM_LOG_ASSERT(this->useMinMax.find(order) != this->useMinMax.end(), "Order should exist in min/max values list");
     STORM_LOG_ASSERT(this->useMinMax[order], "Cannot add states based on min/max if we don't use min/max values for the order.");
@@ -1165,11 +1162,11 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                     order->addToMdpScheduler(state, 0);
                     STORM_LOG_INFO("Best action for state " << state << " set to 0.");
                     return true;
-                } else if (comp == Order::NodeComparison::ABOVE && prMax || comp == Order::NodeComparison::BELOW && !prMax) {
+                } else if ((comp == Order::NodeComparison::ABOVE && prMax) || (comp == Order::NodeComparison::BELOW && !prMax)) {
                     order->addToMdpScheduler(state, 0);
                     STORM_LOG_INFO("Best action for state " << state << " set to 0.");
                     return true;
-                } else if (comp == Order::NodeComparison::BELOW && prMax || comp == Order::NodeComparison::ABOVE && !prMax) {
+                } else if ((comp == Order::NodeComparison::BELOW && prMax) || (comp == Order::NodeComparison::ABOVE && !prMax)) {
                     order->addToMdpScheduler(state, 1);
                     STORM_LOG_INFO("Best action for state " << state << " set to 1.");
                     return true;
@@ -1188,7 +1185,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                               : this->assumptionMaker->createAndCheckAssumptions(succ0, succ1, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
-                    auto comp01 = order->compare(succ0, succ1);
+                    comp01 = order->compare(succ0, succ1);
                 }
             }
             if (comp01 != Order::NodeComparison::UNKNOWN && comp02 == Order::NodeComparison::UNKNOWN) {
@@ -1197,7 +1194,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                               : this->assumptionMaker->createAndCheckAssumptions(succ0, succ2, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
-                    auto comp01 = order->compare(succ0, succ2);
+                    comp02 = order->compare(succ0, succ2);
                 }
             }
             if (comp01 != Order::NodeComparison::UNKNOWN && comp02 != Order::NodeComparison::UNKNOWN && comp12 == Order::NodeComparison::UNKNOWN) {
@@ -1206,7 +1203,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
                               : this->assumptionMaker->createAndCheckAssumptions(succ1, succ2, order, region);
                 if (assumptions.size() == 1) {
                     this->handleAssumption(order, (assumptions.begin()->first));
-                    auto comp01 = order->compare(succ1, succ2);
+                    comp12 = order->compare(succ1, succ2);
                 }
             }
             if (comp01 != Order::NodeComparison::UNKNOWN && comp02 != Order::NodeComparison::UNKNOWN && comp12 != Order::NodeComparison::UNKNOWN) {
@@ -1267,7 +1264,7 @@ bool OrderExtender<ValueType, ConstantType>::findBestAction(std::shared_ptr<Orde
         return false;
     } else {
         STORM_LOG_INFO("Interested in min.");
-        auto action = 0;
+        uint_fast64_t action = 0;
         auto numberOfOptionsForState = this->matrix.getRowGroupSize(state);
         std::set<uint_fast64_t> actionsToIgnore;
         while (action < numberOfOptionsForState) {

@@ -131,8 +131,8 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                                                         << " for state " << state1 << " and all actions for " << state2);
                 bool viableActionSeen = false;
                 bool viableActionsSeen = false;
-                auto actionFound = 0;
-                for (auto action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
+                uint_fast64_t actionFound = 0;
+                for (uint_fast64_t action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
                     auto tempResult = validateAssumptionSMTSolver(state1, state2, order->getActionAtState(state1), action2, fullAssumption, order, region,
                                                                   minValues, maxValues);
                     if (tempResult == AssumptionStatus::INVALID) {
@@ -167,8 +167,8 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
                                                         << " for state " << state2 << " and all actions for " << state1);
                 bool viableActionSeen = false;
                 bool viableActionsSeen = false;
-                auto actionFound = 0;
-                for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
+                uint_fast64_t actionFound = 0;
+                for (uint_fast64_t action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
                     auto tempResult = validateAssumptionSMTSolver(state1, state2, action1, order->getActionAtState(state2), fullAssumption, order, region,
                                                                   minValues, maxValues);
                     if (tempResult == AssumptionStatus::INVALID) {
@@ -199,8 +199,8 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
             } else {
                 STORM_LOG_INFO("Validating assumption " << assumption->toExpression().toString() << " with all actions for " << state1 << " and " << state2);
                 bool initialized = false;
-                for (auto action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
-                    for (auto action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
+                for (uint_fast64_t action1 = 0; action1 < this->matrix.getRowGroupSize(state1); ++action1) {
+                    for (uint_fast64_t action2 = 0; action2 < this->matrix.getRowGroupSize(state2); ++action2) {
                         auto tempResult = validateAssumptionSMTSolver(state1, state2, action1, action2, fullAssumption, order, region, minValues, maxValues);
                         if (!initialized) {
                             result = tempResult;
@@ -262,7 +262,7 @@ expressions::Expression AssumptionChecker<ValueType, ConstantType>::getExpressio
         if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
             // the var is a state
             std::string stateName = var.getName();
-            auto state = std::stoi(stateName.substr(1, stateName.size() - 1));
+            uint_fast64_t state = std::stoi(stateName.substr(1, stateName.size() - 1));
             STORM_LOG_ASSERT(state < this->matrix.getRowGroupCount(), "Invalid state number");
             //                    if (stateName != state1 && stateName != state2) {
             if (minValues.size() > 0) {
@@ -417,7 +417,7 @@ AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionS
         auto var1 = assumption.getAssumption()->getFirstOperand()->asVariableExpression().getVariableName();
         auto var2 = assumption.getAssumption()->getSecondOperand()->asVariableExpression().getVariableName();
 
-        // We first try to validate it with an slightly modification
+        // We first try to validate it with a slightly modification
         auto successors1 = getSuccessors(state1, action1);
         auto successors2 = getSuccessors(state2, action2);
 

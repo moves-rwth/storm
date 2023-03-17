@@ -376,6 +376,50 @@ TEST(ReachabilityOrderExtenderDtmcTest, casestudy1_on_matrix) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2, 4));
 }
 
+TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_model) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
+    std::string formulaAsString = "P > 0.5 [ F s=4 ]";
+    std::string constantsAsString = "";
+
+    // Program and formula
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas =
+        storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
+        storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    model = simplifier.getSimplifiedModel();
+
+    // Create region
+    auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.6<=p<=0.9", modelParameters);
+    std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
+
+    ASSERT_EQ(6ul, model->getNumberOfStates());
+    ASSERT_EQ(12ul, model->getNumberOfTransitions());
+
+    // Start testing
+    auto extender = storm::analysis::ReachabilityOrderExtender<storm::RationalFunction, double>(model, formulas[0]);
+    auto order = std::get<0>(extender.toOrder(region));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order->compare(0, 1));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(0, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order->compare(0, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order->compare(1, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order->compare(2, 3));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order->compare(2, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order->compare(3, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3, 5));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(4, 5));
+}
+
 TEST(ReachabilityOrderExtenderDtmcTest, casestudy2_on_matrix) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
     std::string formulaAsString = "P=? [F s=4 ]";

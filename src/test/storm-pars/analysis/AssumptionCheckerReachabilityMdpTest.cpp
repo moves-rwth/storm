@@ -26,7 +26,7 @@ TEST(AssumptionCheckerReachabilityMdpTest, simpleCase1_max) {
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
 
-    ASSERT_EQ(7, model->getNumberOfStates());
+    ASSERT_EQ(7ul, model->getNumberOfStates());
     auto vars = storm::models::sparse::getProbabilityParameters(*model);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.999999, 0.00001 <= q <= 0.999999", vars);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};

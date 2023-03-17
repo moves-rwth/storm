@@ -16,7 +16,7 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
         return checkLocalMonotonicity(order, state, var, region, order->getActionAtState(state));
     } else {
         Monotonicity localMonotonicity = checkLocalMonotonicity(order, state, var, region, 0);
-        for (auto act = 1; act < this->matrix.getRowGroupSize(state); ++act) {
+        for (typename storage::SparseMatrix<ValueType>::index_type act = 1; act < this->matrix.getRowGroupSize(state); ++act) {
             if (localMonotonicity == Monotonicity::Constant) {
                 localMonotonicity = checkLocalMonotonicity(order, state, var, region, act);
             } else if (localMonotonicity == Monotonicity::Not || localMonotonicity == Monotonicity::Unknown) {
@@ -43,16 +43,19 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
     // Create + fill Vector containing the Monotonicity of the transitions to the succs
     auto row = matrix.getRow(state, action);
 
-    uint_fast64_t numberOfConstantEntries = 0;
+    // Check if all transition probabilities are constant
+    uint_fast64_t numberOfConstantTransitions = 0;
     for (auto& entry : row) {
         if (entry.getValue().isConstant()) {
-            numberOfConstantEntries++;
+            numberOfConstantTransitions++;
         }
     }
-    if (row.getNumberOfEntries() == numberOfConstantEntries) {
+    if (row.getNumberOfEntries() == numberOfConstantTransitions) {
         return Monotonicity::Constant;
     }
-    if (row.getNumberOfEntries() - numberOfConstantEntries == 2) {
+
+    // Check if there are exactly two non-constant transition probabilities
+    if (row.getNumberOfEntries() - numberOfConstantTransitions == 2) {
         uint_fast64_t offset1 = 0;
         while (row.begin()->getValue().isConstant()) {
             offset1++;
@@ -80,24 +83,25 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
         }
     }
 
-    // Ignore if all entries are constant
-    bool ignore = true;
-
+    // There are more than two non-constant transition probabilities.
+    // We need to go over all and combine the results
+    // Vector containing the successor states
     std::vector<uint_fast64_t> succs;
+    // Vector containing the monotonicity result of the transition from the state to the successor states
     std::vector<Monotonicity> succsMonUnsorted;
-    bool checkAllow = true;
     for (auto entry : row) {
         auto succState = entry.getColumn();
         auto mon = checkTransitionMonRes(entry.getValue(), var, region);
         succsMonUnsorted.push_back(mon);
         succs.push_back(succState);
-        ignore &= entry.getValue().isConstant();
     }
-    if (ignore) {
-        return Monotonicity::Constant;
-    }
-    auto succsSorted = order->sortStates(succs);
 
+    // Sort the successors based on the order
+    auto succsSorted = order->sortStates(succs);
+    // if the states could not be sorted, we should return unknown
+    if (succsSorted.size() != succs.size() || succsSorted[succsSorted.size() - 1] == matrix.getRowGroupCount()) {
+        return Monotonicity::Unknown;
+    }
     uint_fast64_t succSize = succs.size();
     // First check as long as it stays constant and either incr or decr
     bool allowedToSwap = true;
@@ -117,6 +121,7 @@ typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueT
     while (index < succSize && localMonotonicity != Monotonicity::Not && localMonotonicity != Monotonicity::Unknown) {
         // We get here as soon as we have seen incr/decr once
         auto itr = std::find(succs.begin(), succs.end(), succsSorted[index]);
+        STORM_LOG_ASSERT(itr != succs.end(), "Itr cannot be end of successors");
         auto newIndex = std::distance(succs.begin(), itr);
         auto transitionMon = succsMonUnsorted[newIndex];
 
