@@ -32,22 +32,12 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     // The matrix builder for the new matrix. The correct number of rows and entries is not known yet.
     storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
     rowGroupToStateNumber = std::vector<uint_fast64_t>();
-    uint_fast64_t newRowIndex = 0;
-    uint_fast64_t countNonParam = 0;
-    uint_fast64_t stateNumber = 0;
-    uint_fast64_t startNextRow = 0;
+    uint_fast64_t newRowIndex = 0; // The new index of the row
+    uint_fast64_t countNonParam = 0; // Counter for non-parameteric states
     for (auto const& rowIndex : selectedRows) {
+        // Create a new row group for the current (new) row index
         builder.newRowGroup(newRowIndex);
-
-        bool newState = false;
-        while (startNextRow <= rowIndex) {
-            stateNumber++;
-            startNextRow += pMatrix.getRowGroupSize(stateNumber);
-            newState = true;
-        }
-        if (newState) {
-            rowGroupToStateNumber.push_back(rowIndex);
-        }
+        rowGroupToStateNumber.push_back(rowIndex);
 
         // Gather the occurring variables within this row and set which entries are non-constant
         std::set<VariableType> occurringVariables;
