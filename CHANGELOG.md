@@ -9,9 +9,11 @@ Version 1.7.x
 -------------
 
 ## Version 1.7.1
+- Added SoPlex as a possible LP solver
 - Removed support for just-in-time compilation (JIT). If the JIT engine is needed, use Storm version 1.7.0.
 - `storm-dft`: better modularization: improved algorithm for finding independent modules and revised the DFT analysis via modularization.
 - `storm-dft`: added checks whether a given DFT is well-formed and conventional.
+- Developer: LpSolver interface now supports RawMode (to avoid overhead of `storm::expression`) and indicator constraints
 
 ## Version 1.7.0 (2022/07)
 - Fixed a bug in LP-based MDP model checking.

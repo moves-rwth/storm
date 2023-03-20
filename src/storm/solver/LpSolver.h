@@ -358,7 +358,7 @@ class LpSolver {
      * @return The manager for the variables created for this solver.
      */
     storm::expressions::ExpressionManager const& getManager() const;
-    
+
     /*!
      * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those
      * assertions from the solver's stack that were added after this call.
