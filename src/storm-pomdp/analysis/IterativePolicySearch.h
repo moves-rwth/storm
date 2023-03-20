@@ -207,7 +207,7 @@ namespace pomdp {
 
         }
         void printScheduler(std::vector<InternalObservationScheduler> const& );
-        void printCoveredStates(storm::storage::BitVector const& remaining) const;
+        void coveredStatesToStream(std::ostream& os, storm::storage::BitVector const& remaining) const;
 
         bool initialize(uint64_t k);
 
@@ -255,8 +255,6 @@ namespace pomdp {
         std::shared_ptr<WinningRegionQueryInterface<ValueType>> validator;
 
         mutable  bool useFindOffset = false;
-
-
     };
 }
 }
