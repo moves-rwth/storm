@@ -87,17 +87,18 @@ namespace storm {
         storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb1Max(storm::storage::BitVector const& okay, storm::storage::BitVector const& good) const {
             storm::storage::BitVector newGoalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), okay, good);
             STORM_LOG_TRACE("Prob1A states according to MDP: " << newGoalStates);
-            // Now find a set of observations such that there is a memoryless scheduler inducing prob. 1 for each state whose observation is in the set.
+            // Now find a set of observations such that there is (a memoryless) scheduler inducing prob. 1 for each state whose observation is in the set.
             storm::storage::BitVector potentialGoalStates = storm::utility::graph::performProb1E(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), okay, newGoalStates);
             STORM_LOG_TRACE("Prob1E states according to MDP: " << potentialGoalStates);
 
-            storm::storage::BitVector notGoalStates = ~potentialGoalStates;
+            storm::storage::BitVector avoidStates = ~potentialGoalStates;
             storm::storage::BitVector potentialGoalObservations(pomdp.getNrObservations(), true);
             for (uint64_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
-                for (uint64_t state : notGoalStates) {
+                for (uint64_t state : avoidStates) {
                     potentialGoalObservations.set(pomdp.getObservation(state), false);
                 }
             }
+            // Prob1E observations are observations from which every state is in Prob1E in the underlying MDP
             STORM_LOG_TRACE("Prob1E observations according to MDP: " << potentialGoalObservations);
 
             std::vector<std::vector<uint64_t>> statesPerObservation(pomdp.getNrObservations(), std::vector<uint64_t>());
@@ -124,7 +125,6 @@ namespace storm {
                     // Search whether we find an action that works for this observation.
                     for (uint64_t act = 0; act < actsForObservation; act++) {
                         STORM_LOG_TRACE("Consider action " << act);
-
                         bool isGoalAction = true; // Assume that this works, then check whether we find a violation.
                         for (uint64_t state : statesPerObservation[observation]) {
                             STORM_LOG_TRACE("Consider state " << state);
@@ -133,7 +133,8 @@ namespace storm {
 
                                 // A state is only a goal state if all actions work,
                                 // or if all states with the same observation are goal states (and then, it does not matter which action is a goal action).
-                                // Notice that this can mean that we wrongly conclude that some action is okay even if this is not the correct action (but then some other action exists which is okay for all states).
+                                // Notice that this can mean that we wrongly conclude that some action is okay even if this is not the correct action
+                                // (but then some other action exists which is okay for all states).
                                 continue;
                             }
                             uint64_t row = pomdp.getNondeterministicChoiceIndices()[state] + act;
@@ -141,13 +142,12 @@ namespace storm {
                             bool hasGoalEntry = false;
                             for (auto const& entry : pomdp.getTransitionMatrix().getRow(row)) {
                                 assert(!storm::utility::isZero(entry.getValue()));
-
                                 if(newGoalStates.get(entry.getColumn())) {
                                     STORM_LOG_TRACE("Reaches state " << entry.getColumn() << " which is a PROB1e state");
                                     hasGoalEntry = true;
                                 }
                                 else if(pomdp.getObservation(entry.getColumn()) != observation) {
-                                    STORM_LOG_TRACE("Reaches state " << entry.getColumn() << " which is not a PROB1e state");
+                                    STORM_LOG_TRACE("Reaches state " << entry.getColumn() << " which may not be a PROB1e state");
                                     isGoalAction = false;
                                     break;
                                 }
