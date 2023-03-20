@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        distro: ["debian-10", "debian-11", "ubuntu-18.04", "ubuntu-20.04"]
+        distro: ["debian-10", "debian-11", "ubuntu-20.04"]
         debugOrRelease: ["release"]
     steps:
       - name: Setup cmake arguments
