@@ -647,86 +647,90 @@ std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ModelType>::performG
         abstractor = std::make_shared<storm::abstraction::jani::JaniMenuGameAbstractor<Type, ValueType>>(preprocessedModel.asJaniModel(), smtSolverFactory,
                                                                                                          abstractorOptions);
     }
-    if (!constraintExpression.isTrue()) {
-        abstractor->addTerminalStates(!constraintExpression);
+    std::unique_ptr<CheckResult> result;
+    abstractor->getDdManager().execute([&]() {
+        if (!constraintExpression.isTrue()) {
+            abstractor->addTerminalStates(!constraintExpression);
+        }
+        abstractor->addTerminalStates(targetStateExpression);
+        abstractor->setTargetStates(targetStateExpression);
+
+        // Create a refiner that can be used to refine the abstraction when needed.
+        storm::abstraction::MenuGameRefinerOptions refinerOptions(std::move(options.injectedRefinementPredicates));
+        storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()), refinerOptions);
+        refiner.refine(initialPredicates, false);
+
+        storm::dd::Bdd<Type> globalConstraintStates = abstractor->getStates(constraintExpression);
+        storm::dd::Bdd<Type> globalTargetStates = abstractor->getStates(targetStateExpression);
+        setupWatch.stop();
+
+        // Enter the main-loop of abstraction refinement.
+        boost::optional<SymbolicQualitativeGameResultMinMax<Type>> previousSymbolicQualitativeResult = boost::none;
+        boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>> previousSymbolicMinQuantitativeResult = boost::none;
+        boost::optional<PreviousExplicitResult<ValueType>> previousExplicitResult = boost::none;
+        uint64_t peakPlayer1States = 0;
+        uint64_t peakTransitions = 0;
+        for (iteration = 0; iteration < maximalNumberOfAbstractions; ++iteration) {
+            auto iterationStart = std::chrono::high_resolution_clock::now();
+            STORM_LOG_TRACE("Starting iteration " << iteration << ".");
+
+            // (1) build the abstraction.
+            storm::utility::Stopwatch abstractionWatch(true);
+            storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
+            abstractionWatch.stop();
+            totalAbstractionWatch.add(abstractionWatch);
+
+            uint64_t numberOfPlayer1States = game.getNumberOfStates();
+            peakPlayer1States = std::max(peakPlayer1States, numberOfPlayer1States);
+            uint64_t numberOfTransitions = game.getNumberOfTransitions();
+            peakTransitions = std::max(peakTransitions, numberOfTransitions);
+            STORM_LOG_INFO("Abstraction in iteration "
+                           << iteration << " has " << numberOfPlayer1States << " player 1 states (" << game.getInitialStates().getNonZeroCount()
+                           << " initial), " << game.getNumberOfPlayer2States() << " player 2 states, " << numberOfTransitions << " transitions, "
+                           << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates() << " predicate(s), "
+                           << game.getTransitionMatrix().getNodeCount() << " nodes (transition matrix) (computed in "
+                           << abstractionWatch.getTimeInMilliseconds() << "ms).");
+
+            // (2) Prepare initial, constraint and target state BDDs for later use.
+            storm::dd::Bdd<Type> initialStates = game.getInitialStates();
+            //                STORM_LOG_THROW(initialStates.getNonZeroCount() == 1 || checkTask.isBoundSet(), storm::exceptions::InvalidPropertyException,
+            //                "Game-based abstraction refinement requires a bound on the formula for model with " << initialStates.getNonZeroCount() << "
+            //                initial states.");
+            storm::dd::Bdd<Type> constraintStates = globalConstraintStates && game.getReachableStates();
+            storm::dd::Bdd<Type> targetStates = globalTargetStates && game.getReachableStates();
+            if (player1Direction == storm::OptimizationDirection::Minimize) {
+                targetStates |= game.getBottomStates();
+            }
+
+            // #ifdef LOCAL_DEBUG
+            //                initialStates.template toAdd<ValueType>().exportToDot("init" + std::to_string(iteration) + ".dot");
+            //                targetStates.template toAdd<ValueType>().exportToDot("target" + std::to_string(iteration) + ".dot");
+            //                abstractor->exportToDot("game" + std::to_string(iteration) + ".dot", targetStates, game.getManager().getBddOne());
+            //                game.getReachableStates().template toAdd<ValueType>().exportToDot("reach" + std::to_string(iteration) + ".dot");
+            // #endif
+
+            if (solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Dd) {
+                result = performSymbolicAbstractionSolutionStep(env, checkTask, game, player1Direction, initialStates, constraintStates, targetStates, refiner,
+                                                                previousSymbolicQualitativeResult, previousSymbolicMinQuantitativeResult);
+            } else {
+                result = performExplicitAbstractionSolutionStep(env, checkTask, game, player1Direction, initialStates, constraintStates, targetStates, refiner,
+                                                                previousExplicitResult);
+            }
+
+            if (result) {
+                totalWatch.stop();
+                printStatistics(*abstractor, game, iteration, peakPlayer1States, peakTransitions);
+                return;
+            }
+
+            auto iterationEnd = std::chrono::high_resolution_clock::now();
+            STORM_LOG_INFO("Iteration " << iteration << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count()
+                                        << "ms.");
+        }
+    });
+    if (result) {
+        return result;
     }
-    abstractor->addTerminalStates(targetStateExpression);
-    abstractor->setTargetStates(targetStateExpression);
-
-    // Create a refiner that can be used to refine the abstraction when needed.
-    storm::abstraction::MenuGameRefinerOptions refinerOptions(std::move(options.injectedRefinementPredicates));
-    storm::abstraction::MenuGameRefiner<Type, ValueType> refiner(*abstractor, smtSolverFactory->create(preprocessedModel.getManager()), refinerOptions);
-    refiner.refine(initialPredicates, false);
-
-    storm::dd::Bdd<Type> globalConstraintStates = abstractor->getStates(constraintExpression);
-    storm::dd::Bdd<Type> globalTargetStates = abstractor->getStates(targetStateExpression);
-    setupWatch.stop();
-
-    // Enter the main-loop of abstraction refinement.
-    boost::optional<SymbolicQualitativeGameResultMinMax<Type>> previousSymbolicQualitativeResult = boost::none;
-    boost::optional<SymbolicQuantitativeGameResult<Type, ValueType>> previousSymbolicMinQuantitativeResult = boost::none;
-    boost::optional<PreviousExplicitResult<ValueType>> previousExplicitResult = boost::none;
-    uint64_t peakPlayer1States = 0;
-    uint64_t peakTransitions = 0;
-    for (iteration = 0; iteration < maximalNumberOfAbstractions; ++iteration) {
-        auto iterationStart = std::chrono::high_resolution_clock::now();
-        STORM_LOG_TRACE("Starting iteration " << iteration << ".");
-
-        // (1) build the abstraction.
-        storm::utility::Stopwatch abstractionWatch(true);
-        storm::abstraction::MenuGame<Type, ValueType> game = abstractor->abstract();
-        abstractionWatch.stop();
-        totalAbstractionWatch.add(abstractionWatch);
-
-        uint64_t numberOfPlayer1States = game.getNumberOfStates();
-        peakPlayer1States = std::max(peakPlayer1States, numberOfPlayer1States);
-        uint64_t numberOfTransitions = game.getNumberOfTransitions();
-        peakTransitions = std::max(peakTransitions, numberOfTransitions);
-        STORM_LOG_INFO("Abstraction in iteration " << iteration << " has " << numberOfPlayer1States << " player 1 states ("
-                                                   << game.getInitialStates().getNonZeroCount() << " initial), " << game.getNumberOfPlayer2States()
-                                                   << " player 2 states, " << numberOfTransitions << " transitions, "
-                                                   << game.getBottomStates().getNonZeroCount() << " bottom states, " << abstractor->getNumberOfPredicates()
-                                                   << " predicate(s), " << game.getTransitionMatrix().getNodeCount()
-                                                   << " nodes (transition matrix) (computed in " << abstractionWatch.getTimeInMilliseconds() << "ms).");
-
-        // (2) Prepare initial, constraint and target state BDDs for later use.
-        storm::dd::Bdd<Type> initialStates = game.getInitialStates();
-        //                STORM_LOG_THROW(initialStates.getNonZeroCount() == 1 || checkTask.isBoundSet(), storm::exceptions::InvalidPropertyException,
-        //                "Game-based abstraction refinement requires a bound on the formula for model with " << initialStates.getNonZeroCount() << " initial
-        //                states.");
-        storm::dd::Bdd<Type> constraintStates = globalConstraintStates && game.getReachableStates();
-        storm::dd::Bdd<Type> targetStates = globalTargetStates && game.getReachableStates();
-        if (player1Direction == storm::OptimizationDirection::Minimize) {
-            targetStates |= game.getBottomStates();
-        }
-
-        // #ifdef LOCAL_DEBUG
-        //                initialStates.template toAdd<ValueType>().exportToDot("init" + std::to_string(iteration) + ".dot");
-        //                targetStates.template toAdd<ValueType>().exportToDot("target" + std::to_string(iteration) + ".dot");
-        //                abstractor->exportToDot("game" + std::to_string(iteration) + ".dot", targetStates, game.getManager().getBddOne());
-        //                game.getReachableStates().template toAdd<ValueType>().exportToDot("reach" + std::to_string(iteration) + ".dot");
-        // #endif
-
-        std::unique_ptr<CheckResult> result;
-        if (solveMode == storm::settings::modules::AbstractionSettings::SolveMode::Dd) {
-            result = performSymbolicAbstractionSolutionStep(env, checkTask, game, player1Direction, initialStates, constraintStates, targetStates, refiner,
-                                                            previousSymbolicQualitativeResult, previousSymbolicMinQuantitativeResult);
-        } else {
-            result = performExplicitAbstractionSolutionStep(env, checkTask, game, player1Direction, initialStates, constraintStates, targetStates, refiner,
-                                                            previousExplicitResult);
-        }
-
-        if (result) {
-            totalWatch.stop();
-            printStatistics(*abstractor, game, iteration, peakPlayer1States, peakTransitions);
-            return result;
-        }
-
-        auto iterationEnd = std::chrono::high_resolution_clock::now();
-        STORM_LOG_INFO("Iteration " << iteration << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(iterationEnd - iterationStart).count()
-                                    << "ms.");
-    }
-
     totalWatch.stop();
 
     // If this point is reached, we have given up on abstraction.

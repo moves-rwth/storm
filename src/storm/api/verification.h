@@ -107,22 +107,24 @@ typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<
     storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model,
     storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
     std::unique_ptr<storm::modelchecker::CheckResult> result;
-    if (model->getType() == storm::models::ModelType::Dtmc) {
-        storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(
-            *model->template as<storm::models::symbolic::Dtmc<DdType, double>>());
-        if (modelchecker.canHandle(task)) {
-            result = modelchecker.check(env, task);
+    model->getManager().execute([&]() {
+        if (model->getType() == storm::models::ModelType::Dtmc) {
+            storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<DdType, ValueType>> modelchecker(
+                *model->template as<storm::models::symbolic::Dtmc<DdType, double>>());
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(env, task);
+            }
+        } else if (model->getType() == storm::models::ModelType::Mdp) {
+            storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(
+                *model->template as<storm::models::symbolic::Mdp<DdType, double>>());
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(env, task);
+            }
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "The model type " << model->getType() << " is not supported by the abstraction refinement engine.");
         }
-    } else if (model->getType() == storm::models::ModelType::Mdp) {
-        storm::modelchecker::BisimulationAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<DdType, ValueType>> modelchecker(
-            *model->template as<storm::models::symbolic::Mdp<DdType, double>>());
-        if (modelchecker.canHandle(task)) {
-            result = modelchecker.check(env, task);
-        }
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                        "The model type " << model->getType() << " is not supported by the abstraction refinement engine.");
-    }
+    });
     return result;
 }
 

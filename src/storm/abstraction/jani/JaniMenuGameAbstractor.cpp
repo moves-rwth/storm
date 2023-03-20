@@ -96,6 +96,11 @@ JaniMenuGameAbstractor<DdType, ValueType>::JaniMenuGameAbstractor(storm::jani::M
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
+storm::dd::DdManager<DdType> const& JaniMenuGameAbstractor<DdType, ValueType>::getDdManager() const {
+    return abstractionInformation.getDdManager();
+}
+
+template<storm::dd::DdType DdType, typename ValueType>
 void JaniMenuGameAbstractor<DdType, ValueType>::refine(RefinementCommand const& command) {
     // Add the predicates to the global list of predicates and gather their indices.
     std::vector<uint_fast64_t> predicateIndices;
