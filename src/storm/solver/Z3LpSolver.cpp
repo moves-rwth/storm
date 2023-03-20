@@ -24,8 +24,9 @@ namespace solver {
 
 #ifdef STORM_HAVE_Z3_OPTIMIZE
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir), isIncremental(false) {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir)
+    : LpSolver<ValueType, RawMode>(optDir), isIncremental(false) {
     z3::config config;
     config.set("model", true);
     context = std::unique_ptr<z3::context>(new z3::context(config));
@@ -33,198 +34,127 @@ Z3LpSolver<ValueType>::Z3LpSolver(std::string const& name, OptimizationDirection
     expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*this->manager, *context));
 }
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::Z3LpSolver(std::string const& name) : Z3LpSolver(name, OptimizationDirection::Minimize) {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const& name) : Z3LpSolver(name, OptimizationDirection::Minimize) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::Z3LpSolver(OptimizationDirection const& optDir) : Z3LpSolver("", optDir) {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::Z3LpSolver(OptimizationDirection const& optDir) : Z3LpSolver("", optDir) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::Z3LpSolver() : Z3LpSolver("", OptimizationDirection::Minimize) {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::Z3LpSolver() : Z3LpSolver("", OptimizationDirection::Minimize) {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::~Z3LpSolver() {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::~Z3LpSolver() {
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-void Z3LpSolver<ValueType>::update() const {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::update() const {
     // Since the model changed, we erase the optimality flag.
     lastCheckObjectiveValue.reset(nullptr);
     lastCheckModel.reset(nullptr);
     this->currentModelHasBeenOptimized = false;
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound,
-                                                                                 ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
-    } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+template<typename ValueType, bool RawMode>
+typename Z3LpSolver<ValueType, RawMode>::Variable Z3LpSolver<ValueType, RawMode>::addVariable(std::string const& name, VariableType const& type,
+                                                                                              std::optional<ValueType> const& lowerBound,
+                                                                                              std::optional<ValueType> const& upperBound,
+                                                                                              ValueType objectiveFunctionCoefficient) {
+    STORM_LOG_ASSERT(isIncremental || !this->manager->hasVariable(name), "Variable with name " << name << " already exists.");
+    storm::expressions::Variable newVariable = this->declareOrGetExpressionVariable(name, type);
+    if (type == VariableType::Binary) {
+        solver->add(expressionAdapter->translateExpression(newVariable.getExpression() >= this->manager->integer(0)));
+        solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->integer(1)));
     }
-    solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(lowerBound)) &&
-                                                       (newVariable.getExpression() <= this->manager->rational(upperBound))));
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
-        optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+    if (lowerBound) {
+        solver->add(expressionAdapter->translateExpression(newVariable.getExpression() >= this->manager->rational(*lowerBound)));
     }
-    return newVariable;
-}
-
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound,
-                                                                                      ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
-    } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
-    }
-    solver->add(expressionAdapter->translateExpression(newVariable.getExpression() >= this->manager->rational(lowerBound)));
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
-        optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
-    }
-    return newVariable;
-}
-
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound,
-                                                                                      ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
-    } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
-    }
-    solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->rational(upperBound)));
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
-        optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
-    }
-    return newVariable;
-}
-
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
-    } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+    if (upperBound) {
+        solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->rational(*upperBound)));
     }
     if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
         optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
     }
-    return newVariable;
-}
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound,
-                                                                              ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
+    if constexpr (RawMode) {
+        rawIndexToVariableMap.push_back(newVariable);
+        return rawIndexToVariableMap.size() - 1;
     } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+        return newVariable;
     }
-    solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(lowerBound)) &&
-                                                       (newVariable.getExpression() <= this->manager->rational(upperBound))));
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
-        optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
-    }
-    return newVariable;
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound,
-                                                                                   ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Constraint const& constraint) {
+    if constexpr (RawMode) {
+        // Generate expression from raw constraint
+        STORM_LOG_ASSERT(constraint._lhsVariableIndices.size() == constraint._lhsCoefficients.size(), "number of variables and coefficients do not match.");
+        std::vector<storm::expressions::Expression> lhsSummands;
+        lhsSummands.reserve(constraint._lhsVariableIndices.size());
+        auto varIt = constraint._lhsVariableIndices.cbegin();
+        auto varItEnd = constraint._lhsVariableIndices.cend();
+        auto coefIt = constraint._lhsCoefficients.cbegin();
+        for (; varIt != varItEnd; ++varIt, ++coefIt) {
+            lhsSummands.push_back(rawIndexToVariableMap[*varIt] * this->manager->rational(*coefIt));
+        }
+        if (lhsSummands.empty()) {
+            lhsSummands.push_back(this->manager->rational(storm::utility::zero<ValueType>()));
+        }
+        storm::expressions::Expression constraintExpr = storm::expressions::makeBinaryRelationExpression(
+            storm::expressions::sum(lhsSummands), this->manager->rational(constraint._rhs), constraint._relationType);
+        solver->add(expressionAdapter->translateExpression(constraintExpr));
     } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+        STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
+        STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException,
+                        "Illegal constraint uses inequality operator.");
+        solver->add(expressionAdapter->translateExpression(constraint));
     }
-    solver->add(expressionAdapter->translateExpression(newVariable.getExpression() >= this->manager->rational(lowerBound)));
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
-        optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
-    }
-    return newVariable;
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound,
-                                                                                   ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const& name, Variable indicatorVariable, bool indicatorValue,
+                                                            Constraint const& constraint) {
+    if constexpr (RawMode) {
+        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Indicator constraints not implemented in RawMode");
     } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+        // binary variables are encoded as integer variables with domain {0,1}.
+        STORM_LOG_THROW(indicatorVariable.hasIntegerType(), storm::exceptions::InvalidArgumentException,
+                        "Variable " << indicatorVariable.getName() << " is not binary.");
+        STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
+        STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException,
+                        "Illegal constraint uses inequality operator.");
+
+        storm::expressions::Expression invertedIndicatorVal =
+            this->getConstant(indicatorValue ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>());
+        auto indicatorConstraint = (indicatorVariable.getExpression() == invertedIndicatorVal) || constraint;
+        solver->add(expressionAdapter->translateExpression(indicatorConstraint));
     }
-    solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->rational(upperBound)));
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
-        optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
-    }
-    return newVariable;
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
-    } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
-    }
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
-        optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
-    }
-    return newVariable;
-}
-
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-    storm::expressions::Variable newVariable;
-    if (isIncremental) {
-        newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
-    } else {
-        newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
-    }
-    solver->add(
-        expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::zero<storm::RationalNumber>())) &&
-                                               (newVariable.getExpression() <= this->manager->rational(storm::utility::one<storm::RationalNumber>()))));
-    if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
-        optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
-    }
-    return newVariable;
-}
-
-template<typename ValueType>
-void Z3LpSolver<ValueType>::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
-    STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
-    STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException,
-                    "Illegal constraint uses inequality operator.");
-    solver->add(expressionAdapter->translateExpression(constraint));
-}
-
-template<typename ValueType>
-void Z3LpSolver<ValueType>::optimize() const {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::optimize() const {
     // First incorporate all recent changes.
     this->update();
 
     // Invoke push() as we want to be able to erase the current optimization function after checking
     solver->push();
 
+    storm::expressions::Expression optimizationFunction = this->manager->integer(0);
     // Solve the optimization problem depending on the optimization direction
-    storm::expressions::Expression optimizationFunction = storm::expressions::sum(optimizationSummands);
+    if (!optimizationSummands.empty()) {
+        optimizationFunction = storm::expressions::sum(optimizationSummands);
+    }
     z3::optimize::handle optFuncHandle = this->getOptimizationDirection() == OptimizationDirection::Minimize
                                              ? solver->minimize(expressionAdapter->translateExpression(optimizationFunction))
                                              : solver->maximize(expressionAdapter->translateExpression(optimizationFunction));
+
     z3::check_result chkRes = solver->check();
     STORM_LOG_THROW(chkRes != z3::unknown, storm::exceptions::InvalidStateException, "Unable to solve LP problem with Z3: Check result is unknown.");
 
@@ -255,30 +185,29 @@ void Z3LpSolver<ValueType>::optimize() const {
     this->currentModelHasBeenOptimized = true;
 }
 
-template<typename ValueType>
-bool Z3LpSolver<ValueType>::isInfeasible() const {
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::isInfeasible() const {
     STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
-                    "Illegal call to Z3LpSolver<ValueType>::isInfeasible: model has not been optimized.");
+                    "Illegal call to Z3LpSolver<ValueType, RawMode>::isInfeasible: model has not been optimized.");
     return lastCheckInfeasible;
 }
 
-template<typename ValueType>
-bool Z3LpSolver<ValueType>::isUnbounded() const {
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::isUnbounded() const {
     STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
-                    "Illegal call to Z3LpSolver<ValueType>::isUnbounded: model has not been optimized.");
+                    "Illegal call to Z3LpSolver<ValueType, RawMode>::isUnbounded: model has not been optimized.");
     return lastCheckUnbounded;
 }
 
-template<typename ValueType>
-bool Z3LpSolver<ValueType>::isOptimal() const {
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::isOptimal() const {
     STORM_LOG_THROW(this->currentModelHasBeenOptimized, storm::exceptions::InvalidStateException,
-                    "Illegal call to Z3LpSolver<ValueType>::isOptimal: model has not been optimized.");
+                    "Illegal call to Z3LpSolver<ValueType, RawMode>::isOptimal: model has not been optimized.");
     return !lastCheckInfeasible && !lastCheckUnbounded;
 }
 
-template<typename ValueType>
-storm::expressions::Expression Z3LpSolver<ValueType>::getValue(storm::expressions::Variable const& variable) const {
-    STORM_LOG_ASSERT(variable.getManager() == this->getManager(), "Requested variable is managed by a different manager.");
+template<typename ValueType, bool RawMode>
+storm::expressions::Expression Z3LpSolver<ValueType, RawMode>::getValue(Variable const& variable) const {
     if (!this->isOptimal()) {
         STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from infeasible model.");
         STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from unbounded model.");
@@ -286,12 +215,19 @@ storm::expressions::Expression Z3LpSolver<ValueType>::getValue(storm::expression
     }
     STORM_LOG_ASSERT(lastCheckModel, "Model has not been stored.");
 
-    z3::expr z3Var = this->expressionAdapter->translateExpression(variable);
-    return this->expressionAdapter->translateExpression(lastCheckModel->eval(z3Var, true));
+    if constexpr (RawMode) {
+        STORM_LOG_ASSERT(variable < rawIndexToVariableMap.size(), "Requested variable out of range.");
+        z3::expr z3Var = this->expressionAdapter->translateExpression(rawIndexToVariableMap[variable]);
+        return this->expressionAdapter->translateExpression(lastCheckModel->eval(z3Var, true));
+    } else {
+        STORM_LOG_ASSERT(variable.getManager() == this->getManager(), "Requested variable is managed by a different manager.");
+        z3::expr z3Var = this->expressionAdapter->translateExpression(variable);
+        return this->expressionAdapter->translateExpression(lastCheckModel->eval(z3Var, true));
+    }
 }
 
-template<typename ValueType>
-ValueType Z3LpSolver<ValueType>::getContinuousValue(storm::expressions::Variable const& variable) const {
+template<typename ValueType, bool RawMode>
+ValueType Z3LpSolver<ValueType, RawMode>::getContinuousValue(Variable const& variable) const {
     storm::expressions::Expression value = getValue(variable);
     if (value.getBaseExpression().isIntegerLiteralExpression()) {
         return storm::utility::convertNumber<ValueType>(value.getBaseExpression().asIntegerLiteralExpression().getValue());
@@ -301,16 +237,16 @@ ValueType Z3LpSolver<ValueType>::getContinuousValue(storm::expressions::Variable
     return storm::utility::convertNumber<ValueType>(value.getBaseExpression().asRationalLiteralExpression().getValue());
 }
 
-template<typename ValueType>
-int_fast64_t Z3LpSolver<ValueType>::getIntegerValue(storm::expressions::Variable const& variable) const {
+template<typename ValueType, bool RawMode>
+int_fast64_t Z3LpSolver<ValueType, RawMode>::getIntegerValue(Variable const& variable) const {
     storm::expressions::Expression value = getValue(variable);
     STORM_LOG_THROW(value.getBaseExpression().isIntegerLiteralExpression(), storm::exceptions::ExpressionEvaluationException,
                     "Expected an integer literal while obtaining the value of an integer variable. Got " << value << "instead.");
     return value.getBaseExpression().asIntegerLiteralExpression().getValue();
 }
 
-template<typename ValueType>
-bool Z3LpSolver<ValueType>::getBinaryValue(storm::expressions::Variable const& variable) const {
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::getBinaryValue(Variable const& variable) const {
     storm::expressions::Expression value = getValue(variable);
     // Binary variables are in fact represented as integer variables!
     STORM_LOG_THROW(value.getBaseExpression().isIntegerLiteralExpression(), storm::exceptions::ExpressionEvaluationException,
@@ -321,8 +257,8 @@ bool Z3LpSolver<ValueType>::getBinaryValue(storm::expressions::Variable const& v
     return val == 1;
 }
 
-template<typename ValueType>
-ValueType Z3LpSolver<ValueType>::getObjectiveValue() const {
+template<typename ValueType, bool RawMode>
+ValueType Z3LpSolver<ValueType, RawMode>::getObjectiveValue() const {
     if (!this->isOptimal()) {
         STORM_LOG_THROW(!this->isInfeasible(), storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from infeasible model.");
         STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::InvalidAccessException, "Unable to get Z3 solution from unbounded model.");
@@ -339,22 +275,24 @@ ValueType Z3LpSolver<ValueType>::getObjectiveValue() const {
     return storm::utility::convertNumber<ValueType>(result.getBaseExpression().asRationalLiteralExpression().getValue());
 }
 
-template<typename ValueType>
-void Z3LpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
     std::ofstream stream;
     storm::utility::openFile(filename, stream);
     stream << Z3_optimize_to_string(*context, *solver);
     storm::utility::closeFile(stream);
 }
 
-template<typename ValueType>
-void Z3LpSolver<ValueType>::push() {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::push() {
+    STORM_LOG_THROW(!RawMode, storm::exceptions::NotImplementedException, "Incremental solving is not supported in Raw mode.");
     incrementaOptimizationSummandIndicators.push_back(optimizationSummands.size());
     solver->push();
 }
 
-template<typename ValueType>
-void Z3LpSolver<ValueType>::pop() {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::pop() {
+    STORM_LOG_THROW(!RawMode, storm::exceptions::NotImplementedException, "Incremental solving is not supported in Raw mode.");
     STORM_LOG_ASSERT(!incrementaOptimizationSummandIndicators.empty(), "Tried to pop() without push()ing first.");
     solver->pop();
     // Delete summands of the optimization function that have been added since the last call to push()
@@ -363,197 +301,158 @@ void Z3LpSolver<ValueType>::pop() {
     isIncremental = true;
 }
 
-template<typename ValueType>
-void Z3LpSolver<ValueType>::setMaximalMILPGap(ValueType const&, bool) {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, bool) {
     // Since the solver is always exact, setting a gap has no effect.
     // Intentionally left empty.
 }
 
-template<typename ValueType>
-ValueType Z3LpSolver<ValueType>::getMILPGap(bool relative) const {
+template<typename ValueType, bool RawMode>
+ValueType Z3LpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
     // Since the solver is precise, the milp gap is always zero.
     return storm::utility::zero<ValueType>();
 }
 #else
-template<typename ValueType>
-Z3LpSolver<ValueType>::Z3LpSolver(std::string const&, OptimizationDirection const&) {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const&, OptimizationDirection const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::Z3LpSolver(std::string const&) {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::Z3LpSolver(OptimizationDirection const&) {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::Z3LpSolver(OptimizationDirection const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::Z3LpSolver() {
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::Z3LpSolver() {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-Z3LpSolver<ValueType>::~Z3LpSolver() {}
+template<typename ValueType, bool RawMode>
+Z3LpSolver<ValueType, RawMode>::~Z3LpSolver() {}
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addBoundedContinuousVariable(std::string const&, ValueType, ValueType, ValueType) {
+template<typename ValueType, bool RawMode>
+typename Z3LpSolver<ValueType, RawMode>::Variable Z3LpSolver<ValueType, RawMode>::addVariable(std::string const&, VariableType const&,
+                                                                                              std::optional<ValueType> const&, std::optional<ValueType> const&,
+                                                                                              ValueType) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addLowerBoundedContinuousVariable(std::string const&, ValueType, ValueType) {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::update() const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addUpperBoundedContinuousVariable(std::string const&, ValueType, ValueType) {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const&, Constraint const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addUnboundedContinuousVariable(std::string const&, ValueType) {
+<typename ValueType, bool RawMode> void Z3LpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addBoundedIntegerVariable(std::string const&, ValueType, ValueType, ValueType) {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::optimize() const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addLowerBoundedIntegerVariable(std::string const&, ValueType, ValueType) {
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::isInfeasible() const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addUpperBoundedIntegerVariable(std::string const&, ValueType, ValueType) {
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::isUnbounded() const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addUnboundedIntegerVariable(std::string const&, ValueType) {
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::isOptimal() const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Variable Z3LpSolver<ValueType>::addBinaryVariable(std::string const&, ValueType) {
+template<typename ValueType, bool RawMode>
+storm::expressions::Expression Z3LpSolver<ValueType, RawMode>::getValue(Variable const& variable) const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-void Z3LpSolver<ValueType>::update() const {
+template<typename ValueType, bool RawMode>
+ValueType Z3LpSolver<ValueType, RawMode>::getContinuousValue(Variable const&) const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-void Z3LpSolver<ValueType>::addConstraint(std::string const&, storm::expressions::Expression const&) {
+template<typename ValueType, bool RawMode>
+int_fast64_t Z3LpSolver<ValueType, RawMode>::getIntegerValue(Variable const&) const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-void Z3LpSolver<ValueType>::optimize() const {
+template<typename ValueType, bool RawMode>
+bool Z3LpSolver<ValueType, RawMode>::getBinaryValue(Variable const&) const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-bool Z3LpSolver<ValueType>::isInfeasible() const {
+template<typename ValueType, bool RawMode>
+ValueType Z3LpSolver<ValueType, RawMode>::getObjectiveValue() const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-bool Z3LpSolver<ValueType>::isUnbounded() const {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::writeModelToFile(std::string const& filename) const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-bool Z3LpSolver<ValueType>::isOptimal() const {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::push() {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-storm::expressions::Expression Z3LpSolver<ValueType>::getValue(storm::expressions::Variable const& variable) const {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::pop() {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-ValueType Z3LpSolver<ValueType>::getContinuousValue(storm::expressions::Variable const&) const {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::setMaximalMILPGap(ValueType const&, bool) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 
-template<typename ValueType>
-int_fast64_t Z3LpSolver<ValueType>::getIntegerValue(storm::expressions::Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
-}
-
-template<typename ValueType>
-bool Z3LpSolver<ValueType>::getBinaryValue(storm::expressions::Variable const&) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
-}
-
-template<typename ValueType>
-ValueType Z3LpSolver<ValueType>::getObjectiveValue() const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
-}
-
-template<typename ValueType>
-void Z3LpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
-}
-
-template<typename ValueType>
-void Z3LpSolver<ValueType>::push() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
-}
-
-template<typename ValueType>
-void Z3LpSolver<ValueType>::pop() {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
-}
-
-template<typename ValueType>
-void Z3LpSolver<ValueType>::setMaximalMILPGap(ValueType const& gap, bool relative) {
-    throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
-                                                          "Yet, a method was called that requires this support.";
-}
-
-template<typename ValueType>
-ValueType Z3LpSolver<ValueType>::getMILPGap(bool relative) const {
+template<typename ValueType, bool RawMode>
+ValueType Z3LpSolver<ValueType, RawMode>::getMILPGap(bool relative) const {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
 #endif
 
-template class Z3LpSolver<double>;
-template class Z3LpSolver<storm::RationalNumber>;
+template class Z3LpSolver<double, false>;
+template class Z3LpSolver<storm::RationalNumber, false>;
+template class Z3LpSolver<double, true>;
+template class Z3LpSolver<storm::RationalNumber, true>;
 }  // namespace solver
 }  // namespace storm
