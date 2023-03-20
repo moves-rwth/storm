@@ -84,7 +84,7 @@ namespace storm {
             assert (result != AssumptionStatus::VALID);
 
             if (minValues.size() != 0) {
-                if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
+                if (assumption->getRelationType() == expressions::RelationType::Greater) {
                     if (minValues[val1] > maxValues[val2]) {
                         return AssumptionStatus::VALID;
                     } else  if (minValues[val1] == maxValues[val2] && minValues[val1] == maxValues[val1] && minValues[val2] == maxValues[val2]) {
@@ -109,9 +109,9 @@ namespace storm {
                 assumption->gatherVariables(vars);
 
                 STORM_LOG_THROW(assumption->getRelationType() ==
-                                expressions::BinaryRelationExpression::RelationType::Greater ||
+                                expressions::RelationType::Greater ||
                                 assumption->getRelationType() ==
-                                expressions::BinaryRelationExpression::RelationType::Equal,
+                                expressions::RelationType::Equal,
                                 exceptions::NotSupportedException,
                                 "Only Greater Or Equal assumptions supported");
                 result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
@@ -245,10 +245,10 @@ namespace storm {
                 // It is the negation of actual assumption
 
                 expressions::Expression exprToCheck;
-                if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
+                if (assumption->getRelationType() == expressions::RelationType::Greater) {
                     exprToCheck = expr1 <= expr2;
                 } else {
-                    assert (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal);
+                    assert (assumption->getRelationType() == expressions::RelationType::Equal);
                     exprToCheck = expr1 != expr2;
                 }
 

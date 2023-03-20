@@ -127,42 +127,42 @@ boost::any ToExprtkStringVisitor::visit(BinaryNumericalFunctionExpression const&
 
 boost::any ToExprtkStringVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
     switch (expression.getRelationType()) {
-        case BinaryRelationExpression::RelationType::Equal:
+        case RelationType::Equal:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << "==";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::NotEqual:
+        case RelationType::NotEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << "!=";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::Less:
+        case RelationType::Less:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << "<";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::LessOrEqual:
+        case RelationType::LessOrEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << "<=";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::Greater:
+        case RelationType::Greater:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << ">";
             expression.getSecondOperand()->accept(*this, data);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::GreaterOrEqual:
+        case RelationType::GreaterOrEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, data);
             stream << ">=";

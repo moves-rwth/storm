@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "storm/storage/expressions/BaseExpression.h"
+#include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {
@@ -463,7 +464,7 @@ Expression apply(std::vector<storm::expressions::Expression> const& expressions,
                  std::function<Expression(Expression const&, Expression const&)> const& function);
 Expression applyAssociative(std::vector<storm::expressions::Expression> const& expressions,
                             std::function<Expression(Expression const&, Expression const&)> const& function);
-
+Expression makeBinaryRelationExpression(Expression const& lhs, Expression const& rhs, RelationType const& reltype);
 }  // namespace expressions
 }  // namespace storm
 

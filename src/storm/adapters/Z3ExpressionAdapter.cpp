@@ -273,22 +273,22 @@ boost::any Z3ExpressionAdapter::visit(storm::expressions::BinaryRelationExpressi
 
     z3::expr result(context);
     switch (expression.getRelationType()) {
-        case storm::expressions::BinaryRelationExpression::RelationType::Equal:
+        case storm::expressions::RelationType::Equal:
             result = leftResult == rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::NotEqual:
+        case storm::expressions::RelationType::NotEqual:
             result = leftResult != rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::Less:
+        case storm::expressions::RelationType::Less:
             result = leftResult < rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::LessOrEqual:
+        case storm::expressions::RelationType::LessOrEqual:
             result = leftResult <= rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::Greater:
+        case storm::expressions::RelationType::Greater:
             result = leftResult > rightResult;
             break;
-        case storm::expressions::BinaryRelationExpression::RelationType::GreaterOrEqual:
+        case storm::expressions::RelationType::GreaterOrEqual:
             result = leftResult >= rightResult;
             break;
         default:

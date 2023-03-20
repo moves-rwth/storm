@@ -130,7 +130,7 @@ bool BinaryRelationExpression::isBinaryRelationExpression() const {
     return true;
 }
 
-BinaryRelationExpression::RelationType BinaryRelationExpression::getRelationType() const {
+RelationType BinaryRelationExpression::getRelationType() const {
     return this->relationType;
 }
 
