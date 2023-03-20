@@ -1,9 +1,8 @@
-#ifndef PERMISSIVESCHEDULERPENALTY_H
-#define PERMISSIVESCHEDULERPENALTY_H
+#pragma once
 
 #include <unordered_map>
 
-#include "../storage/StateActionPair.h"
+#include "storm/storage/StateActionPair.h"
 
 namespace storm {
 namespace ps {
@@ -25,7 +24,7 @@ class PermissiveSchedulerPenalties {
         }
     }
 
-    void set(uint_fast64_t state, uint_fast64_t action, double penalty) {
+    void set(uint64_t state, uint64_t action, double penalty) {
         STORM_LOG_ASSERT(penalty >= 1.0, "Penalty too low.");
         if (penalty == 1.0) {
             auto it = mPenalties.find(std::make_pair(state, action));
@@ -43,5 +42,3 @@ class PermissiveSchedulerPenalties {
 };
 }  // namespace ps
 }  // namespace storm
-
-#endif /* PERMISSIVESCHEDULERPENALTY_H */

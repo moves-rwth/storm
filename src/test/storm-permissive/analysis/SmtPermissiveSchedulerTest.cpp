@@ -1,11 +1,11 @@
 #include "storm-config.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm-permissive/analysis/PermissiveSchedulers.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/environment/Environment.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/permissivesched/PermissiveSchedulers.h"
 #include "test/storm_gtest.h"
 
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"

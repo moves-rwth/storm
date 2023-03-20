@@ -1,5 +1,4 @@
-#ifndef SMTBASEDPERMISSIVESCHEDULERS_H
-#define SMTBASEDPERMISSIVESCHEDULERS_H
+#pragma once
 
 #include "storm/solver/SmtSolver.h"
 
@@ -245,5 +244,3 @@ class SmtPermissiveSchedulerComputation : public PermissiveSchedulerComputation<
 
 }  // namespace ps
 }  // namespace storm
-
-#endif /* SMTBASEDPERMISSIVESCHEDULERS_H */
