@@ -32,6 +32,21 @@ std::unique_ptr<LpSolverFactory<ValueType>> GlpkLpSolverFactory<ValueType>::clon
 }
 
 template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType>> SoplexLpSolverFactory<ValueType>::create(std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::SoplexLpSolver<ValueType>(name));
+}
+
+template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> SoplexLpSolverFactory<ValueType>::createRaw(std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(new storm::solver::SoplexLpSolver<ValueType, true>(name));
+}
+
+template<typename ValueType>
+std::unique_ptr<LpSolverFactory<ValueType>> SoplexLpSolverFactory<ValueType>::clone() const {
+    return std::make_unique<SoplexLpSolverFactory<ValueType>>(*this);
+}
+
+template<typename ValueType>
 GurobiLpSolverFactory<ValueType>::GurobiLpSolverFactory() {
     environment = std::make_shared<storm::solver::GurobiEnvironment>();
     environment->initialize();
