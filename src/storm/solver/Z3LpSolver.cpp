@@ -360,7 +360,8 @@ void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const&, Constrain
                                                           "Yet, a method was called that requires this support.";
 }
 
-<typename ValueType, bool RawMode> void Z3LpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
+template<typename ValueType, bool RawMode>
+void Z3LpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
     throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. "
                                                           "Yet, a method was called that requires this support.";
 }
