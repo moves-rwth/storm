@@ -1,4 +1,6 @@
 #include <storm/exceptions/WrongFormatException.h>
+#include <boost/algorithm/string.hpp>
+
 #include "storm-pars/parser/ParameterRegionParser.h"
 
 #include "storm/utility/macros.h"

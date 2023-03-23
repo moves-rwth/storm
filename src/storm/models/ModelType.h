@@ -1,7 +1,7 @@
 #ifndef STORM_MODELS_MODELTYPE_H_
 #define STORM_MODELS_MODELTYPE_H_
 
-#include <ostream>
+#include <iosfwd>
 
 namespace storm {
 namespace models {

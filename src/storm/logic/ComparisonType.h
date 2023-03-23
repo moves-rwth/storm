@@ -1,9 +1,8 @@
 #ifndef STORM_LOGIC_COMPARISONTYPE_H_
 #define STORM_LOGIC_COMPARISONTYPE_H_
 
-#include <iostream>
+#include <iosfwd>
 
-#include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -29,7 +28,7 @@ inline ComparisonType invert(ComparisonType t) {
         case ComparisonType::GreaterEqual:
             return ComparisonType::Less;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
+    STORM_LOG_ASSERT(false, "Unknown ComparisonType");
 }
 
 inline ComparisonType invertPreserveStrictness(ComparisonType t) {
@@ -43,7 +42,7 @@ inline ComparisonType invertPreserveStrictness(ComparisonType t) {
         case ComparisonType::GreaterEqual:
             return ComparisonType::LessEqual;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
+    STORM_LOG_ASSERT(false, "Unknown ComparisonType");
 }
 
 std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);

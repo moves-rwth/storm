@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <vector>
 

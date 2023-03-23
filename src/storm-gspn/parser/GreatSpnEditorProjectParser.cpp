@@ -1,4 +1,6 @@
 #include "GreatSpnEditorProjectParser.h"
+#include <boost/algorithm/string.hpp>
+
 #ifdef STORM_HAVE_XERCES
 
 #include <algorithm>

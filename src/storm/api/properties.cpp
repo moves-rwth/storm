@@ -1,5 +1,6 @@
 #include "storm/api/properties.h"
 
+#include <boost/algorithm/string.hpp>
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"

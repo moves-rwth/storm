@@ -1,7 +1,7 @@
 #ifndef STORM_MODELCHECKER_CHECKRESULT_H_
 #define STORM_MODELCHECKER_CHECKRESULT_H_
 
-#include <iostream>
+#include <iosfwd>
 #include <memory>
 
 #include "storm/logic/ComparisonType.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include <iosfwd>
 #include "storm/storage/expressions/Expression.h"
 
 namespace storm {

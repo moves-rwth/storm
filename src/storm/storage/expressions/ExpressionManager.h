@@ -2,7 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSIONMANAGER_H_
 
 #include <cstdint>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 #include <unordered_map>
 #include <unordered_set>
