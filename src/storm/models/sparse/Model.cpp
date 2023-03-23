@@ -1,6 +1,7 @@
 #include "storm/models/sparse/Model.h"
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string/split.hpp>
 
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

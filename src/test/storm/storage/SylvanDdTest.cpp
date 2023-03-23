@@ -11,6 +11,8 @@
 
 #include "storm/storage/SparseMatrix.h"
 
+#include "carl/util/stringparser.h"
+
 #include <iostream>
 #include <memory>
 

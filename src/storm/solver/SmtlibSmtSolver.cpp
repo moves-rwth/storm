@@ -21,6 +21,8 @@
 #include "storm/settings/modules/Smt2SmtSolverSettings.h"
 #include "storm/utility/macros.h"
 
+#include <boost/algorithm/string.hpp>
+
 namespace storm {
 namespace solver {
 

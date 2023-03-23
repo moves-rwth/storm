@@ -2,7 +2,7 @@
 #define STORM_STORAGE_EXPRESSIONS_EXPRESSIONRETURNTYPE_H_
 
 #include <cstdint>
-#include <iostream>
+#include <iosfwd>
 #include <memory>
 
 #include "storm/storage/expressions/OperatorType.h"

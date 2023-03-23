@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <functional>
-#include <iostream>
+#include <iosfwd>
 #include <numeric>
 #include "storm/adapters/IntelTbbAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

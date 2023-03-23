@@ -22,6 +22,8 @@
 
 #include "storm-parsers/api/storm-parsers.h"
 
+#include "carl/util/stringparser.h"
+
 TEST(MonotonicityHelperTest, Derivative_checker) {
     // Create the region
     typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lowerBoundaries;

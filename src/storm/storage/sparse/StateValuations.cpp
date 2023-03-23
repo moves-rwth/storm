@@ -1,5 +1,7 @@
 #include "storm/storage/sparse/StateValuations.h"
 
+#include <boost/algorithm/string/join.hpp>
+
 #include "storm/storage/BitVector.h"
 
 #include "storm/exceptions/InvalidTypeException.h"

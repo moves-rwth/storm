@@ -1,7 +1,7 @@
 #ifndef STORM_LOGIC_FORMULA_H_
 #define STORM_LOGIC_FORMULA_H_
 
-#include <iostream>
+#include <iosfwd>
 #include <memory>
 #include <set>
 #include <vector>
@@ -9,11 +9,14 @@
 #include <boost/any.hpp>
 
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
 
 #include "storm/logic/FormulasForwardDeclarations.h"
 
 namespace storm {
+namespace expressions {
+class Variable;
+}
+
 namespace logic {
 
 // Forward-declare visitor for accept() method.

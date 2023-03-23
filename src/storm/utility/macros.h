@@ -4,7 +4,7 @@
 #include "storm/utility/logging.h"
 
 #include <cassert>
-#include <iostream>
+#include <iosfwd>
 
 // Define STORM_LOG_ASSERT which is only checked when NDEBUG is not set.
 #ifndef NDEBUG
