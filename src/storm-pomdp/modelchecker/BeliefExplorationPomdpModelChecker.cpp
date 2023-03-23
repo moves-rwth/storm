@@ -744,7 +744,6 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType, typename BeliefMDPType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType, BeliefMDPType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
-                std::cout << "GO\n";
                 // Detect whether the refinement reached a fixpoint.
                 bool fixPoint = true;
 
@@ -1100,8 +1099,8 @@ namespace storm {
                         if(options.useStateEliminationCutoff || !stopExploration){
                             // Add successor transitions or cut-off transitions when exploration is stopped
                             uint64_t numActions = beliefManager->getBeliefNumberOfChoices(currId);
-                            if (underApproximation->needsAdditionalActions(numActions)) {
-                                underApproximation->addNewActions(numActions);
+                            if (underApproximation->needsActionAdjustment(numActions)) {
+                                underApproximation->adjustActions(numActions);
                             }
                             for (uint64_t action = 0; action < numActions; ++action) {
                                 // Always restore old behavior if available

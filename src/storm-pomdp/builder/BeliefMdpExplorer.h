@@ -159,7 +159,7 @@ namespace storm {
 
             uint64_t getRowGroupSizeOfState(uint64_t state) const;
 
-            bool needsAdditionalActions(uint64_t numActionsNeeded);
+            bool needsActionAdjustment(uint64_t numActionsNeeded);
 
             ValueType getLowerValueBoundAtCurrentState() const;
 
@@ -258,7 +258,7 @@ namespace storm {
 
             void restoreExplorationState();
 
-            void addNewActions(uint64_t totalNumberOfActions);
+            void adjustActions(uint64_t totalNumberOfActions);
 
             std::vector<BeliefValueType> computeProductWithSparseMatrix(BeliefId const &beliefId, storm::storage::SparseMatrix<BeliefValueType> &matrix) const;
 

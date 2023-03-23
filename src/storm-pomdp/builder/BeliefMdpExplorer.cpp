@@ -453,9 +453,6 @@ namespace storm {
             if (getCurrentMdpState() == exploredChoiceIndices.size()){
                 internalAddRowGroupIndex();
             }
-            if (!(getCurrentMdpState() < exploredChoiceIndices.size())){
-                std::cout << "state: " << getCurrentMdpState() << "eci size: " << exploredChoiceIndices.size() << ", current # mdp choices: " << getCurrentNumberOfMdpChoices() << " \n";
-            }
 
             assert (getCurrentMdpState() < previousChoiceIndices.size());
             assert (getCurrentMdpState() < exploredChoiceIndices.size());
@@ -514,7 +511,7 @@ namespace storm {
 
             // Complete the exploration
             // Finish the last row grouping in case the last explored state was new
-            if (!currentStateHasOldBehavior()) {
+            if (!currentStateHasOldBehavior() || exploredChoiceIndices.back() < getCurrentNumberOfMdpChoices()) {
                 internalAddRowGroupIndex();
             }
             // Resize state- and choice based vectors to the correct size
@@ -778,6 +775,16 @@ namespace storm {
             storm::utility::vector::filterVectorInPlace(upperValueBounds, relevantMdpStates);
             storm::utility::vector::filterVectorInPlace(values, relevantMdpStates);
 
+            { // mdpStateToChoiceLabelsMap
+                if(!mdpStateToChoiceLabelsMap.empty()) {
+                     auto temp = std::map<BeliefId, std::map<uint64_t, std::string>>();
+                    for (auto const &relevantState : relevantMdpStates) {
+                        temp[toRelevantStateIndexMap[relevantState]] = mdpStateToChoiceLabelsMap[relevantState];
+                    }
+                    mdpStateToChoiceLabelsMap = temp;
+                }
+            }
+
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -828,8 +835,8 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::needsAdditionalActions(uint64_t numActionsNeeded) {
-            return (currentStateHasOldBehavior() && getCurrentStateWasTruncated() && getCurrentMdpState() < exploredChoiceIndices.size() - 1 && getSizeOfCurrentRowGroup() < numActionsNeeded);
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::needsActionAdjustment(uint64_t numActionsNeeded) {
+            return (currentStateHasOldBehavior() && getCurrentStateWasTruncated() && getCurrentMdpState() < exploredChoiceIndices.size() - 1 && getSizeOfCurrentRowGroup() != numActionsNeeded);
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -1357,13 +1364,25 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addNewActions(uint64_t totalNumberOfActions) {
-            assert(getSizeOfCurrentRowGroup() == 1);
-            uint64_t numberOfActionsToAdd = totalNumberOfActions - getSizeOfCurrentRowGroup();
-            for (uint64_t i = getCurrentMdpState() + 1; i < exploredChoiceIndices.size(); i++) {
-                exploredChoiceIndices[i] += numberOfActionsToAdd;
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::adjustActions(uint64_t totalNumberOfActions) {
+            uint64_t currentRowGroupSize = getSizeOfCurrentRowGroup();
+            assert(totalNumberOfActions != currentRowGroupSize);
+            if (totalNumberOfActions > currentRowGroupSize) {
+                uint64_t numberOfActionsToAdd = totalNumberOfActions - currentRowGroupSize;
+                exploredMdpTransitions.insert(exploredMdpTransitions.begin() + (exploredChoiceIndices[getCurrentMdpState() + 1]), numberOfActionsToAdd, std::map<MdpStateType, ValueType>());
+                for (uint64_t i = getCurrentMdpState() + 1; i < exploredChoiceIndices.size(); i++) {
+                    exploredChoiceIndices[i] += numberOfActionsToAdd;
+                }
+                return;
             }
-            exploredMdpTransitions.insert(exploredMdpTransitions.begin() + exploredChoiceIndices[getCurrentMdpState() + 1], numberOfActionsToAdd, std::map<MdpStateType, ValueType>());
+            if (totalNumberOfActions < currentRowGroupSize) {
+                uint64_t numberOfActionsToRemove = currentRowGroupSize - totalNumberOfActions;
+                exploredMdpTransitions.erase(exploredMdpTransitions.begin() + (exploredChoiceIndices[getCurrentMdpState() + 1]) - numberOfActionsToRemove, exploredMdpTransitions.begin() + (exploredChoiceIndices[getCurrentMdpState() + 1]));
+                for (uint64_t i = getCurrentMdpState() + 1; i < exploredChoiceIndices.size(); i++) {
+                    exploredChoiceIndices[i] -= numberOfActionsToRemove;
+                }
+                return;
+            }
         }
 
         template
