@@ -1,12 +1,11 @@
-#ifndef PERMISSIVESCHEDULERCOMPUTATION_H
-#define PERMISSIVESCHEDULERCOMPUTATION_H
+#pragma once
 
 #include <memory>
 
-#include "../models/sparse/Mdp.h"
-#include "../storage/BitVector.h"
-#include "PermissiveSchedulerPenalty.h"
-#include "PermissiveSchedulers.h"
+#include "storm-permissive/analysis/PermissiveSchedulerPenalty.h"
+#include "storm-permissive/analysis/PermissiveSchedulers.h"
+#include "storm/models/sparse/Mdp.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
 namespace ps {
@@ -47,5 +46,3 @@ class PermissiveSchedulerComputation {
 
 }  // namespace ps
 }  // namespace storm
-
-#endif /* PERMISSIVESCHEDULERCOMPUTATION_H */

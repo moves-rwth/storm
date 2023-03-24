@@ -72,9 +72,10 @@ class DftIndependentModule : public DftModule {
      * @param submodules Set of sub-modules contained in the module.
      * @param staticElements Whether the module contains only static elements. Dynamic elements in sub-modules are allowed.
      * @param fullyStatic Whether the independent module contains only static static elements and all sub-modules also contain only static elements.
+     * @param singleBE Whether the independent module consists of a single BE.
      */
     DftIndependentModule(size_t representative, std::set<size_t> const& elements, std::set<DftIndependentModule> const& submodules, bool staticElements,
-                         bool fullyStatic);
+                         bool fullyStatic, bool singleBE);
 
     /*!
      * Returns whether the module contains only static elements (except in sub-modules).
@@ -99,6 +100,14 @@ class DftIndependentModule : public DftModule {
      */
     std::set<DftIndependentModule> const& getSubModules() const {
         return submodules;
+    }
+
+    /*!
+     * Returns whether the module is a single BE, i.e., a trivial module.
+     * @return Whether it is a single BE.
+     */
+    bool isSingleBE() const {
+        return singleBE;
     }
 
     /*!
@@ -131,6 +140,7 @@ class DftIndependentModule : public DftModule {
    private:
     bool staticElements;
     bool fullyStatic;
+    bool singleBE;
     std::set<DftIndependentModule> submodules;
 };
 

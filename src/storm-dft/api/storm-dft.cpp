@@ -11,6 +11,7 @@
 #include "storm-dft/modelchecker/DftModularizationChecker.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/storage/DFT.h"
+#include "storm-dft/storage/DftJsonExporter.h"
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
@@ -166,6 +167,18 @@ void analyzeDFTBdd(std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunct
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");
 }
 
+template<typename ValueType>
+void exportDFTToJsonFile(storm::dft::storage::DFT<ValueType> const& dft, std::string const& file) {
+    storm::dft::storage::DftJsonExporter<ValueType>::toFile(dft, file);
+}
+
+template<typename ValueType>
+std::string exportDFTToJsonString(storm::dft::storage::DFT<ValueType> const& dft) {
+    std::stringstream stream;
+    storm::dft::storage::DftJsonExporter<ValueType>::toStream(dft, stream);
+    return stream.str();
+}
+
 template<>
 void exportDFTToSMT(storm::dft::storage::DFT<double> const& dft, std::string const& file) {
     storm::dft::modelchecker::DFTASFChecker asfChecker(dft);
@@ -246,6 +259,13 @@ template<>
 std::pair<std::shared_ptr<storm::gspn::GSPN>, uint64_t> transformToGSPN(storm::dft::storage::DFT<storm::RationalFunction> const& dft) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation to GSPN not supported for this data type.");
 }
+
+// Explicitly instantiate methods
+template void exportDFTToJsonFile(storm::dft::storage::DFT<double> const&, std::string const&);
+template std::string exportDFTToJsonString(storm::dft::storage::DFT<double> const&);
+
+template void exportDFTToJsonFile(storm::dft::storage::DFT<storm::RationalFunction> const&, std::string const&);
+template std::string exportDFTToJsonString(storm::dft::storage::DFT<storm::RationalFunction> const&);
 
 }  // namespace api
 }  // namespace storm::dft

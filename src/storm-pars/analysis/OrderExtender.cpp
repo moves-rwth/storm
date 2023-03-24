@@ -198,7 +198,7 @@ namespace storm {
             Order::Node* n1 = order->getNode(val1);
             Order::Node* n2 = order->getNode(val2);
 
-            if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal) {
+            if (assumption->getRelationType() == expressions::RelationType::Equal) {
                 if (n1 != nullptr && n2 != nullptr) {
                     order->mergeNodes(n1,n2);
                 } else if (n1 != nullptr) {
@@ -210,7 +210,7 @@ namespace storm {
                     order->addToNode(val2, order->getNode(val1));
                 }
             } else {
-                assert (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater);
+                assert (assumption->getRelationType() == expressions::RelationType::Greater);
                 if (n1 != nullptr && n2 != nullptr) {
                     order->addRelationNodes(n1, n2);
                 } else if (n1 != nullptr) {

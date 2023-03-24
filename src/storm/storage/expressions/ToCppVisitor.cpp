@@ -159,42 +159,42 @@ boost::any ToCppVisitor::visit(BinaryRelationExpression const& expression, boost
     ToCppTranslationOptions newOptions = boost::any_cast<ToCppTranslationOptions>(data);
 
     switch (expression.getRelationType()) {
-        case BinaryRelationExpression::RelationType::Equal:
+        case RelationType::Equal:
             stream << "(";
             expression.getFirstOperand()->accept(*this, newOptions);
             stream << " == ";
             expression.getSecondOperand()->accept(*this, newOptions);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::NotEqual:
+        case RelationType::NotEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, newOptions);
             stream << " != ";
             expression.getSecondOperand()->accept(*this, newOptions);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::Less:
+        case RelationType::Less:
             stream << "(";
             expression.getFirstOperand()->accept(*this, newOptions);
             stream << " < ";
             expression.getSecondOperand()->accept(*this, newOptions);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::LessOrEqual:
+        case RelationType::LessOrEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, newOptions);
             stream << " <= ";
             expression.getSecondOperand()->accept(*this, newOptions);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::Greater:
+        case RelationType::Greater:
             stream << "(";
             expression.getFirstOperand()->accept(*this, newOptions);
             stream << " > ";
             expression.getSecondOperand()->accept(*this, newOptions);
             stream << ")";
             break;
-        case BinaryRelationExpression::RelationType::GreaterOrEqual:
+        case RelationType::GreaterOrEqual:
             stream << "(";
             expression.getFirstOperand()->accept(*this, newOptions);
             stream << " >= ";

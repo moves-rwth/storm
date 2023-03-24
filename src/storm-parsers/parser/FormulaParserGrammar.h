@@ -144,8 +144,6 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     // Atomic propositions
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> labelFormula;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> expressionFormula;
-    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), qi::locals<bool>, Skipper> booleanLiteralFormula;
-    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> atomicPropositionFormula;
 
     // Propositional logic operators
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(FormulaKind, storm::logic::FormulaContext), Skipper> basicPropositionalFormula;
