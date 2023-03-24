@@ -135,7 +135,7 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
         if (this->hasIntegerType()) {
             int_fast64_t firstOperandEvaluation = firstOperandSimplified->evaluateAsInt();
             int_fast64_t secondOperandEvaluation = secondOperandSimplified->evaluateAsInt();
-            boost::optional<int_fast64_t> newValue;
+            std::optional<int_fast64_t> newValue;
             switch (this->getOperatorType()) {
                 case OperatorType::Plus:
                     newValue = firstOperandEvaluation + secondOperandEvaluation;
@@ -172,12 +172,12 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                     break;
             }
             if (newValue) {
-                return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue.get()));
+                return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue.value()));
             }
         } else if (this->hasRationalType()) {
             storm::RationalNumber firstOperandEvaluation = firstOperandSimplified->evaluateAsRational();
             storm::RationalNumber secondOperandEvaluation = secondOperandSimplified->evaluateAsRational();
-            boost::optional<storm::RationalNumber> newValue;
+            std::optional<storm::RationalNumber> newValue;
             switch (this->getOperatorType()) {
                 case OperatorType::Plus:
                     newValue = firstOperandEvaluation + secondOperandEvaluation;
@@ -217,7 +217,7 @@ std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplif
                 }
             }
             if (newValue) {
-                return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue.get()));
+                return std::shared_ptr<BaseExpression>(new RationalLiteralExpression(this->getManager(), newValue.value()));
             }
         }
     }

@@ -56,8 +56,8 @@ RewardModelType transformRewardModel(RewardModelType const& originalRewardModel,
     if (originalRewardModel.hasTransitionRewards()) {
         transitionRewardMatrix = originalRewardModel.getTransitionRewardMatrix().getSubmatrix(false, subsystemActions, subsystem);
         if (makeRowGroupingTrivial) {
-            STORM_LOG_ASSERT(transitionRewardMatrix.get().getColumnCount() == transitionRewardMatrix.get().getRowCount(), "Matrix should be square");
-            transitionRewardMatrix.get().makeRowGroupingTrivial();
+            STORM_LOG_ASSERT(transitionRewardMatrix.value().getColumnCount() == transitionRewardMatrix.value().getRowCount(), "Matrix should be square");
+            transitionRewardMatrix.value().makeRowGroupingTrivial();
         }
     }
     return RewardModelType(std::move(stateRewardVector), std::move(stateActionRewardVector), std::move(transitionRewardMatrix));
