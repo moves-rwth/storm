@@ -278,7 +278,7 @@ namespace storm {
             if(rewardModelName) {
                 std::vector<typename SparseModelType::ValueType> newActionRewards(ecEliminatorResult.matrix.getRowCount());
                 storm::utility::vector::selectVectorValues(newActionRewards, ecEliminatorResult.newToOldRowMapping, actionRewards);
-                rewardModels.insert(std::make_pair(*rewardModelName, typename SparseModelType::RewardModelType(boost::none, std::move(actionRewards))));
+                rewardModels.insert(std::make_pair(*rewardModelName, typename SparseModelType::RewardModelType(std::nullopt, std::move(actionRewards))));
             }
             
             // the new labeling

@@ -44,9 +44,9 @@ void transformModelSpecificComponents(storm::models::sparse::Model<ValueType, Re
 template<typename RewardModelType>
 RewardModelType transformRewardModel(RewardModelType const& originalRewardModel, storm::storage::BitVector const& subsystem,
                                      storm::storage::BitVector const& subsystemActions) {
-    boost::optional<std::vector<typename RewardModelType::ValueType>> stateRewardVector;
-    boost::optional<std::vector<typename RewardModelType::ValueType>> stateActionRewardVector;
-    boost::optional<storm::storage::SparseMatrix<typename RewardModelType::ValueType>> transitionRewardMatrix;
+    std::optional<std::vector<typename RewardModelType::ValueType>> stateRewardVector;
+    std::optional<std::vector<typename RewardModelType::ValueType>> stateActionRewardVector;
+    std::optional<storm::storage::SparseMatrix<typename RewardModelType::ValueType>> transitionRewardMatrix;
     if (originalRewardModel.hasStateRewards()) {
         stateRewardVector = storm::utility::vector::filterVector(originalRewardModel.getStateRewardVector(), subsystem);
     }
@@ -168,14 +168,14 @@ SubsystemBuilderReturnType<ValueType, RewardModelType> internalBuildSubsystem(st
                 auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
                 nonDeadlockChoices.set(choice, false);
             }
-            for (auto const& label : components.choiceLabeling.get().getLabels()) {
+            for (auto const& label : components.choiceLabeling.value().getLabels()) {
                 components.choiceLabeling->setChoices(label, components.choiceLabeling->getChoices(label) & nonDeadlockChoices);
             }
         }
         if (components.choiceOrigins) {
             for (auto state : subDeadlockStates) {
                 auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
-                components.choiceOrigins.get()->clearOriginOfChoice(choice);
+                components.choiceOrigins.value()->clearOriginOfChoice(choice);
             }
         }
         // get a unique label for the deadlock states

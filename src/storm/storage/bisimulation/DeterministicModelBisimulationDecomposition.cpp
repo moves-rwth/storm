@@ -133,13 +133,12 @@ void DeterministicModelBisimulationDecomposition<ModelType>::postProcessInitialP
 
         // Here, we assume that the initial partition already respects state (and action) rewards. Therefore, it suffices to
         // check the first state of each block for a non-zero reward.
-        boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = this->model.getUniqueRewardModel().getOptionalStateRewardVector();
-        boost::optional<std::vector<ValueType>> const& optionalStateActionRewardVector =
-            this->model.getUniqueRewardModel().getOptionalStateActionRewardVector();
+        std::optional<std::vector<ValueType>> const& optionalStateRewardVector = this->model.getUniqueRewardModel().getOptionalStateRewardVector();
+        std::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = this->model.getUniqueRewardModel().getOptionalStateActionRewardVector();
         for (auto& block : this->partition.getBlocks()) {
             auto state = *this->partition.begin(*block);
-            block->data().setHasRewards((optionalStateRewardVector && !storm::utility::isZero(optionalStateRewardVector.get()[state])) ||
-                                        (optionalStateActionRewardVector && !storm::utility::isZero(optionalStateActionRewardVector.get()[state])));
+            block->data().setHasRewards((optionalStateRewardVector && !storm::utility::isZero(optionalStateRewardVector.value()[state])) ||
+                                        (optionalStateActionRewardVector && !storm::utility::isZero(optionalStateActionRewardVector.value()[state])));
         }
     }
 }
@@ -613,7 +612,7 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
     }
 
     // If the model had state rewards, we need to build the state rewards for the quotient as well.
-    boost::optional<std::vector<ValueType>> stateRewards;
+    std::optional<std::vector<ValueType>> stateRewards;
     if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
         stateRewards = std::vector<ValueType>(this->blocks.size());
     }
@@ -699,10 +698,10 @@ void DeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
         if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
             auto const& rewardModel = this->model.getUniqueRewardModel();
             if (rewardModel.hasStateRewards()) {
-                stateRewards.get()[blockIndex] = rewardModel.getStateRewardVector()[representativeState];
+                stateRewards.value()[blockIndex] = rewardModel.getStateRewardVector()[representativeState];
             }
             if (rewardModel.hasStateActionRewards()) {
-                stateRewards.get()[blockIndex] += rewardModel.getStateActionRewardVector()[representativeState];
+                stateRewards.value()[blockIndex] += rewardModel.getStateActionRewardVector()[representativeState];
             }
         }
     }

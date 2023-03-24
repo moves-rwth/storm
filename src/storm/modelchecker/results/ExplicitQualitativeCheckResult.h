@@ -65,8 +65,8 @@ class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
     virtual void filter(QualitativeCheckResult const& filter) override;
 
     template<typename JsonRationalType = storm::RationalNumber>
-    storm::json<JsonRationalType> toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none,
-                                         boost::optional<storm::models::sparse::StateLabeling> const& stateLabels = boost::none) const;
+    storm::json<JsonRationalType> toJson(std::optional<storm::storage::sparse::StateValuations> const& stateValuations = std::nullopt,
+                                         std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) const;
 
    private:
     static void performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, bool logicalAnd);

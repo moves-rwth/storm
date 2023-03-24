@@ -456,8 +456,8 @@ void ExplicitQuantitativeCheckResult<ValueType>::oneMinus() {
 
 template<typename ValueType>
 void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType const& value,
-                     boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none,
-                     boost::optional<storm::models::sparse::StateLabeling> const& stateLabels = boost::none) {
+                     std::optional<storm::storage::sparse::StateValuations> const& stateValuations = std::nullopt,
+                     std::optional<storm::models::sparse::StateLabeling> const& stateLabels = std::nullopt) {
     typename storm::json<ValueType> entry;
     if (stateValuations) {
         entry["s"] = stateValuations->template toJson<ValueType>(id);
@@ -473,8 +473,8 @@ void insertJsonEntry(storm::json<ValueType>& json, uint64_t const& id, ValueType
 }
 
 template<typename ValueType>
-storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations,
-                                                                          boost::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
+storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(std::optional<storm::storage::sparse::StateValuations> const& stateValuations,
+                                                                          std::optional<storm::models::sparse::StateLabeling> const& stateLabels) const {
     storm::json<ValueType> result;
     if (this->isResultForAllStates()) {
         vector_type const& valuesAsVector = boost::get<vector_type>(values);
@@ -492,7 +492,7 @@ storm::json<ValueType> ExplicitQuantitativeCheckResult<ValueType>::toJson(boost:
 
 template<>
 storm::json<storm::RationalFunction> ExplicitQuantitativeCheckResult<storm::RationalFunction>::toJson(
-    boost::optional<storm::storage::sparse::StateValuations> const&, boost::optional<storm::models::sparse::StateLabeling> const&) const {
+    std::optional<storm::storage::sparse::StateValuations> const&, std::optional<storm::models::sparse::StateLabeling> const&) const {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of Check results is not supported for Rational Functions.");
 }
 

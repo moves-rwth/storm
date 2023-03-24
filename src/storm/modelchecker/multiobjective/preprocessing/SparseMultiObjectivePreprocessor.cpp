@@ -466,7 +466,7 @@ void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessUntilFormula(s
             }
         }
         std::string rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
-        data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(boost::none, std::move(objectiveRewards)));
+        data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::nullopt, std::move(objectiveRewards)));
         if (subformula == nullptr) {
             subformula = std::make_shared<storm::logic::TotalRewardFormula>();
         }

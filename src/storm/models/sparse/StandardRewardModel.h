@@ -23,9 +23,9 @@ class StandardRewardModel {
      * @param optionalStateActionRewardVector The reward values associated with state-action pairs.
      * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
      */
-    StandardRewardModel(boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::none,
-                        boost::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = boost::none,
-                        boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::none);
+    StandardRewardModel(std::optional<std::vector<ValueType>> const& optionalStateRewardVector = std::nullopt,
+                        std::optional<std::vector<ValueType>> const& optionalStateActionRewardVector = std::nullopt,
+                        std::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = std::nullopt);
 
     /*!
      * Constructs a reward model by moving the given data.
@@ -34,9 +34,9 @@ class StandardRewardModel {
      * @param optionalStateActionRewardVector The reward values associated with state-action pairs.
      * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
      */
-    StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
-                        boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = boost::none,
-                        boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::none);
+    StandardRewardModel(std::optional<std::vector<ValueType>>&& optionalStateRewardVector,
+                        std::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = std::nullopt,
+                        std::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = std::nullopt);
 
     StandardRewardModel(StandardRewardModel<ValueType> const& other) = default;
     StandardRewardModel& operator=(StandardRewardModel<ValueType> const& other) = default;
@@ -87,7 +87,7 @@ class StandardRewardModel {
      *
      * @return The state reward vector if there is one.
      */
-    boost::optional<std::vector<ValueType>> const& getOptionalStateRewardVector() const;
+    std::optional<std::vector<ValueType>> const& getOptionalStateRewardVector() const;
 
     /*!
      * Retrieves whether the reward model has state-action rewards.
@@ -134,7 +134,7 @@ class StandardRewardModel {
      *
      * @return The state-action reward vector if there is one.
      */
-    boost::optional<std::vector<ValueType>> const& getOptionalStateActionRewardVector() const;
+    std::optional<std::vector<ValueType>> const& getOptionalStateActionRewardVector() const;
 
     /*!
      * Retrieves whether the reward model has transition rewards.
@@ -164,7 +164,7 @@ class StandardRewardModel {
      *
      * @return The transition reward matrix if there is one.
      */
-    boost::optional<storm::storage::SparseMatrix<ValueType>> const& getOptionalTransitionRewardMatrix() const;
+    std::optional<storm::storage::SparseMatrix<ValueType>> const& getOptionalTransitionRewardMatrix() const;
 
     /*!
      * @param choiceIndex The index of the considered choice
@@ -338,13 +338,13 @@ class StandardRewardModel {
 
    private:
     // An (optional) vector representing the state rewards.
-    boost::optional<std::vector<ValueType>> optionalStateRewardVector;
+    std::optional<std::vector<ValueType>> optionalStateRewardVector;
 
     // An (optional) vector representing the state-action rewards.
-    boost::optional<std::vector<ValueType>> optionalStateActionRewardVector;
+    std::optional<std::vector<ValueType>> optionalStateActionRewardVector;
 
     // An (optional) matrix representing the transition rewards.
-    boost::optional<storm::storage::SparseMatrix<ValueType>> optionalTransitionRewardMatrix;
+    std::optional<storm::storage::SparseMatrix<ValueType>> optionalTransitionRewardMatrix;
 };
 
 template<typename ValueType>

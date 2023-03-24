@@ -111,7 +111,7 @@ template<typename SparseModelType>
 storm::models::sparse::StandardRewardModel<typename SparseModelNondeterministicMemoryProduct<SparseModelType>::ValueType>
 SparseModelNondeterministicMemoryProduct<SparseModelType>::buildRewardModel(storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel,
                                                                             storm::storage::BitVector const& reachableStates) const {
-    boost::optional<std::vector<ValueType>> stateRewards, actionRewards;
+    std::optional<std::vector<ValueType>> stateRewards, actionRewards;
     if (rewardModel.hasStateRewards()) {
         stateRewards = std::vector<ValueType>();
         stateRewards->reserve(model.getNumberOfStates() * memory.getNumberOfStates());

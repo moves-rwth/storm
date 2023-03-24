@@ -35,13 +35,13 @@ NondeterministicModelParser<ValueType, RewardValueType>::parseNondeterministicMo
                                                                                                                            std::move(labeling));
 
     // Only parse state rewards if a file is given.
-    boost::optional<std::vector<RewardValueType>> stateRewards;
+    std::optional<std::vector<RewardValueType>> stateRewards;
     if (!stateRewardFilename.empty()) {
         stateRewards = std::move(storm::parser::SparseStateRewardParser<RewardValueType>::parseSparseStateReward(stateCount, stateRewardFilename));
     }
 
     // Only parse transition rewards if a file is given.
-    boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
+    std::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
     if (!transitionRewardFilename.empty()) {
         transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(
             transitionRewardFilename, result.transitionMatrix));
@@ -49,11 +49,11 @@ NondeterministicModelParser<ValueType, RewardValueType>::parseNondeterministicMo
 
     if (stateRewards || transitionRewards) {
         result.rewardModels.insert(std::make_pair(
-            "", storm::models::sparse::StandardRewardModel<RewardValueType>(std::move(stateRewards), boost::none, std::move(transitionRewards))));
+            "", storm::models::sparse::StandardRewardModel<RewardValueType>(std::move(stateRewards), std::nullopt, std::move(transitionRewards))));
     }
 
     // Only parse choice labeling if a file is given.
-    boost::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
+    std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
     if (!choiceLabelingFilename.empty()) {
         result.choiceLabeling = storm::parser::SparseItemLabelingParser::parseChoiceLabeling(result.transitionMatrix.getRowCount(), choiceLabelingFilename,
                                                                                              result.transitionMatrix.getRowGroupIndices());
